@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "app-bartolomed",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

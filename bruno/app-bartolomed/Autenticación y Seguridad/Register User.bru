@@ -1,0 +1,19 @@
+meta {
+  name: Register User
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:3000/api/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+      "email": "paola@gmdail.com",
+      "password": "1321Bvs",
+      "fullName": "Paola Meneses"
+  }
+}
