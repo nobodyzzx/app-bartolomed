@@ -1,0 +1,52 @@
+[
+  {
+    "email": "usuario1@example.com",
+    "password": "Abc123",
+    "fullName": "Juan Pérez"
+  },
+  {
+    "email": "usuario2@example.com",
+    "password": "Abc123",
+    "fullName": "María González"
+  },
+  {
+    "email": "usuario3@example.com",
+    "password": "Abc123",
+    "fullName": "Carlos Rodríguez"
+  },
+  {
+    "email": "usuario4@example.com",
+    "password": "Abc123",
+    "fullName": "Ana Martínez"
+  },
+  {
+    "email": "usuario5@example.com",
+    "password": "Abc123",
+    "fullName": "Luis Sánchez"
+  },
+  {
+    "email": "usuario6@example.com",
+    "password": "Abc123",
+    "fullName": "Laura López"
+  },
+  {
+    "email": "usuario7@example.com",
+    "password": "Abc123",
+    "fullName": "Pedro Gómez"
+  },
+  {
+    "email": "usuario8@example.com",
+    "password": "Abc123",
+    "fullName": "Sofía Fernández"
+  },
+  {
+    "email": "usuario9@example.com",
+    "password": "Abc123",
+    "fullName": "Javier Díaz"
+  },
+  {
+    "email": "usuario10@example.com",
+    "password": "Abc123",
+    "fullName": "Carmen Ruiz"
+  }
+]

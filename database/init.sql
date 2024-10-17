@@ -1,4 +1,4 @@
-CREATE DATABASE myappclinic;
+CREATE DATABASE ${POSTGRES_DB};
 \c myapp;
 
 -- Aquí puedes agregar la creación de tablas o datos iniciales si lo deseas
