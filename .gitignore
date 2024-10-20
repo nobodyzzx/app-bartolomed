@@ -3,7 +3,7 @@
 /tmp
 /out-tsc
 /bazel-out
-
+/bruno
 # Node
 /node_modules
 npm-debug.log
