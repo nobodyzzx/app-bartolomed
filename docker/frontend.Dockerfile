@@ -1,5 +1,5 @@
 # Usa una imagen de Node.js como base
-FROM docker.io/node:18
+FROM node:18-alpine
 
 # Establece el directorio de trabajo en /app
 WORKDIR /app
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instala las dependencias
-RUN npm ci
+RUN npm install
 
 # Instala Angular CLI globalmente
 RUN npm install -g @angular/cli
@@ -19,5 +19,5 @@ COPY . .
 # Expone el puerto 4200
 EXPOSE 4200
 
-# Comando para iniciar la aplicación
-CMD ["ng", "serve", "--host", "0.0.0.0"]
+# Comando para iniciar la aplicación en el contenedor
+CMD ["npx", "ng", "serve", "--host", "0.0.0.0"]

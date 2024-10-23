@@ -1,22 +1,45 @@
-<mat-card class="max-w-md mx-auto my-4 shadow-lg">
-    <mat-card-header class="bg-gray-50">
-      <mat-card-title class="text-xl font-bold text-gray-800">
-        Mi Tarjeta
-      </mat-card-title>
-    </mat-card-header>
-
-    <mat-card-content class="p-4">
-      <p class="text-gray-600">
-        Contenido de la tarjeta usando ambos estilos
+<div class="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8">
+    <div>
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        Iniciar Sesión
+      </h2>
+      <p class="mt-2 text-center text-sm text-gray-600">
+        Accede a tu cuenta del consultorio médico
       </p>
-    </mat-card-content>
+    </div>
+    <form class="mt-8 space-y-6">
+      <div class="rounded-md shadow-sm -space-y-px">
+        <div>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Correo electrónico</mat-label>
+            <input matInput type="email" required>
+            <mat-error>Por favor, ingrese un correo electrónico válido</mat-error>
+          </mat-form-field>
+        </div>
+        <div>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Contraseña</mat-label>
+            <input matInput required>
+            <button mat-icon-button matSuffix  type="button">
+              <mat-icon></mat-icon>
+            </button>
+            <mat-error>La contraseña es requerida</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+      <mat-checkbox>Recordar mi cuenta</mat-checkbox>
+      <div class="flex items-center justify-between">
+        <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+          ¿Olvidaste tu contraseña?
+        </a>
+      </div>
 
-    <mat-card-actions class="flex justify-end gap-2 p-4">
-      <button mat-button class="hover:bg-gray-100">
-        Cancelar
-      </button>
-      <button mat-raised-button color="primary" class="px-6">
-        Aceptar
-      </button>
-    </mat-card-actions>
-  </mat-card>
+      <div>
+        <button mat-raised-button color="primary" class="w-full" type="submit">
+          Iniciar Sesión
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

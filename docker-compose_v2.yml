@@ -6,7 +6,7 @@ services:
     ports:
       - '4200:4200'
     volumes:
-      - ./frontend:/app:Z
+      - ./frontend:/app
       - /app/node_modules
     command: ng serve --host 0.0.0.0
     environment:
@@ -21,33 +21,31 @@ services:
     ports:
       - '3000:3000'
     volumes:
-      - ./backend:/app:Z
+      - ./backend:/app
       - /app/node_modules
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     environment:
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=${POSTGRES_USER}
       - DB_PASS=${POSTGRES_PASSWORD}
       - DB_NAME=${POSTGRES_DB}
-    command: npm run start:dev
+    command: bash -c "while !</dev/tcp/db/5432; do sleep 1; done; npm run start:dev" # Esperar a que Postgres esté listo
 
   db:
     image: postgres:13
     ports:
       - '5432:5432'
     volumes:
-      - postgres_data:/var/lib/postgresql/data:Z
+      - postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+    healthcheck: # Verificación de salud para asegurarse que PostgreSQL está listo
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER}']
       interval: 10s
-      timeout: 5s
       retries: 5
 
 volumes:
