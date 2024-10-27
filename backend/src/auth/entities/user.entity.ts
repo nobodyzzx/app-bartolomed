@@ -24,7 +24,9 @@ export class User {
   @Column('text')
   fullName: string;
 
-  @Column('boolean', { default: true })
+  @Column('bool', {
+    default: true,
+  })
   isActive: boolean;
 
   @Column('text', {
@@ -37,9 +39,9 @@ export class User {
   checkFieldsBeforeInsert() {
     this.email = this.email.toLowerCase().trim();
   }
+
   @BeforeUpdate()
-  checkFiedsBeforeUpdate() {
-    this.email = this.email.toLowerCase().trim();
-    //this.checkFieldsBeforeInsert(); tambien se puede hacer asi
+  checkFieldsBeforeUpdate() {
+    this.checkFieldsBeforeInsert();
   }
 }

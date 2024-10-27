@@ -1,1 +1,47 @@
-<p>login-page works!</p>
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8 bg-slate-100 bg-opacity-90 p-10 rounded-xl shadow-xl">
+    <div>
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Iniciar Sesión</h2>
+      <p class="mt-2 text-center text-sm text-gray-600">Accede a tu cuenta del consultorio médico</p>
+    </div>
+    <form class="mt-8 space-y-6" [formGroup]="myForm" (ngSubmit)="onSubmit()">
+      <div class="rounded-md shadow-sm -space-y-px">
+        <div>
+          <mat-form-field appearance="outline" class="w-full pb-2">
+            <mat-label>Correo electrónico</mat-label>
+            <input matInput type="email" formControlName="email" required />
+            <mat-error>Por favor, ingrese un correo electrónico válido</mat-error>
+          </mat-form-field>
+        </div>
+        <div>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Contraseña</mat-label>
+            <input matInput formControlName="password" [type]="hidePassword ? 'password' : 'text'" required />
+            <button
+              mat-icon-button
+              matSuffix
+              (click)="hidePassword = !hidePassword"
+              [attr.aria-label]="'Hide password'"
+              [attr.aria-pressed]="hidePassword"
+              type="button"
+            >
+              <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-error>La contraseña es requerida</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <mat-checkbox class="text-sm">Recordarme</mat-checkbox>
+        <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500"> ¿Olvidaste tu contraseña? </a>
+      </div>
+
+      <div>
+        <button mat-raised-button color="primary" class="w-full" type="submit" [disabled]="myForm.invalid">
+          Iniciar Sesión
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

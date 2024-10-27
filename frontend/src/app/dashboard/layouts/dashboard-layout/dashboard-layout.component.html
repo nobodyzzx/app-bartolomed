@@ -1,1 +1,148 @@
-<p>dashboard-layout works!</p>
+<div class="flex flex-col h-screen bg-gray-100">
+  <mat-toolbar class="z-10 shadow-md bg-blue-100">
+    <button mat-icon-button (click)="toggleSidenav()" class="text-blue-900">
+      <mat-icon>menu</mat-icon>
+    </button>
+    <span class="ml-4 text-xl font-semibold text-blue-900">BARTOLOMED - Consultorio Médico</span>
+    <span class="flex-grow"></span>
+    <button mat-icon-button [matMenuTriggerFor]="menu" class="text-[#005cbb]">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+    <mat-menu #menu="matMenu">
+      <button mat-menu-item class="flex items-center">
+        <mat-icon class="mr-2 text-[#005cbb]">account_circle</mat-icon>
+        <span>Mi Perfil</span>
+      </button>
+      <button mat-menu-item class="flex items-center">
+        <mat-icon class="mr-2">settings</mat-icon>
+        <span>Configuración</span>
+      </button>
+      <button mat-menu-item class="flex items-center">
+        <mat-icon class="mr-2">exit_to_app</mat-icon>
+        <span>Cerrar Sesión</span>
+      </button>
+    </mat-menu>
+  </mat-toolbar>
+
+  <mat-sidenav-container class="flex-grow">
+    <mat-sidenav #sidenav mode="side" [opened]="isExpanded" class="pt-3 w-64 bg-blue-50 shadow-md">
+      <mat-nav-list>
+        <a mat-list-item routerLink="/pacientes" class="hover:bg-blue-100">
+          <div class="flex items-center gap-x-4">
+            <mat-icon svgIcon="medical-services"></mat-icon>
+            <span class="text-blue-900">Gestión de Pacientes</span>
+          </div>
+        </a>
+        <a mat-list-item routerLink="/farmacia" class="hover:bg-blue-100">
+          <div lass="flex items-center gap-x-4">
+            <mat-icon svgIcon="pill" class="mr-4 text-blue-600"></mat-icon>
+            <span class="text-blue-900">Control de Farmacia</span>
+          </div>
+        </a>
+
+        <a mat-list-item routerLink="/reportes" class="hover:bg-blue-100">
+          <div lass="flex items-center gap-x-4">
+            <mat-icon svgIcon="clipboard" class="mr-4 text-blue-600"></mat-icon>
+            <span class="text-blue-900">Reportes</span>
+          </div>
+        </a>
+        <a mat-list-item routerLink="/activos" class="hover:bg-blue-100">
+          <div lass="flex items-center gap-x-4">
+            <mat-icon svgIcon="assets" class="mr-4 text-blue-600"></mat-icon>
+            <span class="text-blue-900">Control de Activos</span>
+          </div>
+        </a>
+      </mat-nav-list>
+    </mat-sidenav>
+
+    <mat-sidenav-content class="p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <mat-card class="bg-white shadow-md">
+          <mat-card-header>
+            <mat-card-title class="text-blue-900 font-semibold">Pacientes</mat-card-title>
+          </mat-card-header>
+          <mat-card-content class="flex flex-col items-center">
+            <p class="text-4xl font-bold text-blue-600">150</p>
+            <p class="text-blue-800">Total de pacientes registrados</p>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="bg-white shadow-md">
+          <mat-card-header>
+            <mat-card-title class="text-blue-900 font-semibold">Citas</mat-card-title>
+          </mat-card-header>
+          <mat-card-content class="flex flex-col items-center">
+            <p class="text-4xl font-bold text-blue-600">25</p>
+            <p class="text-blue-800">Citas programadas hoy</p>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="bg-white shadow-md">
+          <mat-card-header>
+            <mat-card-title class="text-blue-900 font-semibold">Inventario</mat-card-title>
+          </mat-card-header>
+          <mat-card-content class="flex flex-col items-center">
+            <p class="text-4xl font-bold text-blue-600">500</p>
+            <p class="text-blue-800">Medicamentos en stock</p>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="bg-white shadow-md">
+          <mat-card-header>
+            <mat-card-title class="text-blue-900 font-semibold">Activos</mat-card-title>
+          </mat-card-header>
+          <mat-card-content class="flex flex-col items-center">
+            <p class="text-4xl font-bold text-blue-600">75</p>
+            <p class="text-blue-800">Total de activos registrados</p>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <mat-card class="bg-white shadow-md">
+          <mat-card-header>
+            <mat-card-title class="text-blue-900 font-semibold">Próximas Citas</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <mat-list>
+              <mat-list-item class="hover:bg-blue-50">
+                <span matListItemTitle class="text-blue-800 font-medium">Juan Pérez</span>
+                <span matListItemLine class="text-blue-600">10:00 AM - Consulta General</span>
+              </mat-list-item>
+              <mat-list-item class="hover:bg-blue-50">
+                <span matListItemTitle class="text-blue-800 font-medium">María García</span>
+                <span matListItemLine class="text-blue-600">11:30 AM - Seguimiento</span>
+              </mat-list-item>
+              <mat-list-item class="hover:bg-blue-50">
+                <span matListItemTitle class="text-blue-800 font-medium">Carlos López</span>
+                <span matListItemLine class="text-blue-600">2:00 PM - Revisión</span>
+              </mat-list-item>
+            </mat-list>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="bg-white shadow-md">
+          <mat-card-header>
+            <mat-card-title class="text-blue-900 font-semibold">Medicamentos por Reabastecer</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <mat-list>
+              <mat-list-item class="hover:bg-blue-50">
+                <span matListItemTitle class="text-blue-800 font-medium">Paracetamol</span>
+                <span matListItemLine class="text-blue-600">Stock bajo: 10 unidades</span>
+              </mat-list-item>
+              <mat-list-item class="hover:bg-blue-50">
+                <span matListItemTitle class="text-blue-800 font-medium">Amoxicilina</span>
+                <span matListItemLine class="text-blue-600">Stock bajo: 5 unidades</span>
+              </mat-list-item>
+              <mat-list-item class="hover:bg-blue-50">
+                <span matListItemTitle class="text-blue-800 font-medium">Ibuprofeno</span>
+                <span matListItemLine class="text-blue-600">Stock bajo: 8 unidades</span>
+              </mat-list-item>
+            </mat-list>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>

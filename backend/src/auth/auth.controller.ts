@@ -14,7 +14,7 @@ import { CreateUserDto, LoginUserDto } from './dto';
 import { Auth, GetUser, RawHeaders, RoleProtected } from './decorators';
 import { User } from './entities/user.entity';
 import { UserRoleGuard } from './guards/user-role/user-role.guard';
-import { ValidRoles } from './interfaces';
+import { LoginResponse, ValidRoles } from './interfaces';
 
 @Controller('auth')
 export class AuthController {
@@ -25,7 +25,7 @@ export class AuthController {
     return this.authService.create(createUserDto);
   }
   @Post('login')
-  loginUser(@Body() loginUserDto: LoginUserDto) {
+  loginUser(@Body() loginUserDto: LoginUserDto): Promise<LoginResponse> {
     return this.authService.login(loginUserDto);
   }
   @Get('private')
@@ -48,7 +48,7 @@ export class AuthController {
   }
   // @SetMetadata('roles', ['admin', 'super-user'])
   @Get('private2')
-  @RoleProtected(ValidRoles.admin)
+  @RoleProtected(ValidRoles.superUser)
   @UseGuards(AuthGuard(), UserRoleGuard)
   privateRoute2(@GetUser() user: User) {
     return {

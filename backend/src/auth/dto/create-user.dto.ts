@@ -1,7 +1,5 @@
 import {
-  // IsBoolean,
   IsEmail,
-  // IsOptional,
   IsString,
   Matches,
   MaxLength,
@@ -18,16 +16,11 @@ export class CreateUserDto {
   @MaxLength(50)
   @Matches(/(?:(?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
     message:
-      'The password must have an uppercase letter, a lowercase letter, and a number or special character',
+      'The password must have a Uppercase, lowercase letter and a number',
   })
   password: string;
 
   @IsString()
   @MinLength(1)
-  @MaxLength(100) // Limitar el nombre a un tamaño razonable
   fullName: string;
-
-  // @IsBoolean()
-  // @IsOptional()
-  // isActive?: boolean = true; // Aquí indicas que el valor predeterminado es true
 }

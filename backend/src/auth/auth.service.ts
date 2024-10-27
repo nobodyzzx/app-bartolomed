@@ -13,6 +13,7 @@ import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { CreateUserDto, LoginUserDto } from './dto';
 import { JwtPayload } from './interfaces/jwt-payload.interfaces';
+import { LoginResponse } from './interfaces';
 
 @Injectable()
 export class AuthService {
@@ -42,31 +43,82 @@ export class AuthService {
     }
   }
 
-  async login(loginUserDto: LoginUserDto) {
+  async login(loginUserDto: LoginUserDto): Promise<LoginResponse> {
     const { password, email } = loginUserDto;
+
     const user = await this.userRepository.findOne({
       where: { email },
-      select: { email: true, password: true, id: true },
+      select: {
+        email: true,
+        password: true,
+        id: true,
+        fullName: true,
+        isActive: true,
+        roles: true,
+      }, //! OJO!
     });
 
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user)
+      throw new UnauthorizedException(
+        'Las credenciales proporcionadas no son válidas. Por favor, verifica tu dirección de correo electrónico.',
+      );
 
     if (!bcrypt.compareSync(password, user.password))
-      throw new UnauthorizedException('Invalid credentials pw');
+      throw new UnauthorizedException(
+        'La contraseña ingresada no es correcta. Por favor, intenta nuevamente.',
+      );
+
+    return {
+      user,
+      token: this.getJwtToken({ id: user.id }),
+    };
+  }
+
+  async checkAuthStatus(user: User) {
     return {
       ...user,
       token: this.getJwtToken({ id: user.id }),
     };
-    //TODO: JWt
   }
-  private getJwtToken(payload: JwtPayload) {
-    const token = this.jwtService.sign(payload);
-    return token;
+
+  private getJwtToken(payload: JwtPayload): string {
+    return this.jwtService.sign(payload);
   }
 
   private handleDBError(error: any): never {
-    if (error.code === '23505') throw new BadRequestException(error.detail);
+    if (error.code === '23505') {
+      throw new BadRequestException(error.detail);
+    }
     console.log(error);
-    throw new InternalServerErrorException('Please ckech server logs');
+    throw new InternalServerErrorException(
+      'Por favor, revisa los logs del servidor',
+    );
   }
+  // async login(loginUserDto: LoginUserDto): Promise<LoginResponse> {
+  //   const { password, email } = loginUserDto;
+  //   const user = await this.userRepository.findOne({
+  //     where: { email },
+  //     select: { email: true, password: true, id: true },
+  //   });
+
+  //   if (!user) throw new UnauthorizedException('Invalid credentials');
+
+  //   if (!bcrypt.compareSync(password, user.password))
+  //     throw new UnauthorizedException('Invalid credentials pw');
+  //   return {
+  //     ...user,
+  //     token: this.getJwtToken({ id: user.id }),
+  //   };
+  //   //TODO: JWt
+  // }
+  // private getJwtToken(payload: JwtPayload) {
+  //   const token = this.jwtService.sign(payload);
+  //   return token;
+  // }
+
+  // private handleDBError(error: any): never {
+  //   if (error.code === '23505') throw new BadRequestException(error.detail);
+  //   console.log(error);
+  //   throw new InternalServerErrorException('Please ckech server logs');
+  // }
 }
