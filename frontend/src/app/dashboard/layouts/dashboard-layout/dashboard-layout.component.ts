@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { AuthService } from '../../../auth/services/auth.service';
 import { DomSanitizer } from '@angular/platform-browser';
 import { MatIconRegistry } from '@angular/material/icon';
@@ -8,36 +8,25 @@ import { MatIconRegistry } from '@angular/material/icon';
   templateUrl: './dashboard-layout.component.html',
   styleUrl: './dashboard-layout.component.css',
 })
-export class DashboardLayoutComponent {
-  isExpanded = true;
-
-  constructor(
-    private matIconRegistry: MatIconRegistry,
-    private domSanitizer: DomSanitizer
-  ) {
-    this.matIconRegistry.addSvgIcon(
-      'medical-services',
-      this.domSanitizer.bypassSecurityTrustResourceUrl('assets/icons/medical_services.svg')
-    );
-    this.matIconRegistry.addSvgIcon('pill', this.domSanitizer.bypassSecurityTrustResourceUrl('assets/icons/pill.svg'));
-    this.matIconRegistry.addSvgIcon(
-      'clipboard',
-      this.domSanitizer.bypassSecurityTrustResourceUrl('assets/icons/clipboard.svg')
-    );
-    this.matIconRegistry.addSvgIcon(
-      'assets',
-      this.domSanitizer.bypassSecurityTrustResourceUrl('assets/icons/assets.svg')
-    );
-  }
-
-  toggleSidenav() {
-    this.isExpanded = !this.isExpanded;
-  }
+export class DashboardLayoutComponent implements OnInit {
+  readonly panelOpenState = signal(false);
   private authService = inject(AuthService);
-
   public user = computed(() => this.authService.currentUser());
 
   // get user() {
   //   return this.authService.currentUser();
   // }
+
+  ngOnInit() {
+    this.authService.checkAuthStatus().subscribe();
+  }
+  isExpanded = true;
+
+  toggleSidenav() {
+    this.isExpanded = !this.isExpanded;
+  }
+
+  onLogout() {
+    this.authService.logout();
+  }
 }

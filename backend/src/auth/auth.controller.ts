@@ -28,6 +28,19 @@ export class AuthController {
   loginUser(@Body() loginUserDto: LoginUserDto): Promise<LoginResponse> {
     return this.authService.login(loginUserDto);
   }
+
+  @Get('check-status')
+  @UseGuards(AuthGuard())
+  async checkStatus(@Req() request: any, @GetUser() user: User) {
+    const token = request.headers.authorization.split(' ')[1];
+    return {
+      ok: true,
+      message: 'Token is valid',
+      user,
+      token,
+    };
+  }
+
   @Get('private')
   @UseGuards(AuthGuard())
   testingPrivateRoute(

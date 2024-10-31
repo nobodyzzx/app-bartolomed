@@ -5,6 +5,9 @@
     </button>
     <span class="ml-4 text-xl font-semibold text-blue-900">BARTOLOMED - Consultorio Médico</span>
     <span class="flex-grow"></span>
+    <mat-icon class="mr-1 text-blue-900">person</mat-icon>
+    <span class="text-base font-bold text mr-6 text-blue-900">{{ user()?.fullName }}</span>
+    <mat-icon class="mr-4 text-blue-900">notifications</mat-icon>
     <button mat-icon-button [matMenuTriggerFor]="menu" class="text-[#005cbb]">
       <mat-icon>more_vert</mat-icon>
     </button>
@@ -17,41 +20,168 @@
         <mat-icon class="mr-2">settings</mat-icon>
         <span>Configuración</span>
       </button>
-      <button mat-menu-item class="flex items-center">
-        <mat-icon class="mr-2">exit_to_app</mat-icon>
+      <button mat-menu-item class="flex items-center" (click)="onLogout()">
+        <mat-icon class="mr-2">logout</mat-icon>
         <span>Cerrar Sesión</span>
       </button>
     </mat-menu>
   </mat-toolbar>
 
   <mat-sidenav-container class="flex-grow">
-    <mat-sidenav #sidenav mode="side" [opened]="isExpanded" class="pt-3 w-64 bg-blue-50 shadow-md">
-      <mat-nav-list>
-        <a mat-list-item routerLink="/pacientes" class="hover:bg-blue-100">
-          <div class="flex items-center gap-x-4">
-            <mat-icon svgIcon="medical-services"></mat-icon>
-            <span class="text-blue-900">Gestión de Pacientes</span>
-          </div>
-        </a>
-        <a mat-list-item routerLink="/farmacia" class="hover:bg-blue-100">
-          <div lass="flex items-center gap-x-4">
-            <mat-icon svgIcon="pill" class="mr-4 text-blue-600"></mat-icon>
-            <span class="text-blue-900">Control de Farmacia</span>
-          </div>
-        </a>
+    <mat-sidenav #sidenav mode="side" [opened]="isExpanded" class="pt-3 w-96 bg-blue-50 shadow-md">
+      <mat-nav-list class="flex flex-col justify-between h-full">
+        <div>
+          <mat-accordion>
+            <mat-expansion-panel class="bg-blue-50 shadow-none px-4" hideToggle>
+              <mat-expansion-panel-header class="bg-blue-50 hover:bg-blue-100 rounded-full">
+                <mat-panel-title class="flex justify-start items-center gap-x-4">
+                  <mat-icon color="primary">monitor_heart</mat-icon>
+                  <span class="text-blue-900 font-normal">Gestión del Consultorio Médico</span>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              <mat-nav-list>
+                <a mat-list-item routerLink="/pacientes" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">people</mat-icon>
+                    <span class="text-blue-900">Pacientes</span>
+                  </div>
+                </a>
+                <a mat-list-item routerLink="/expedientes" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">description</mat-icon>
+                    <span class="text-blue-900">Expedientes Médicos</span>
+                  </div>
+                </a>
+                <a mat-list-item routerLink="/citas" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">calendar_today</mat-icon>
+                    <span class="text-blue-900">Calendario de Citas</span>
+                  </div>
+                </a>
+                <a mat-list-item routerLink="/recetas" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">receipt</mat-icon>
+                    <span class="text-blue-900">Recetas Electrónicas</span>
+                  </div>
+                </a>
+                <a mat-list-item routerLink="/facturacion" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">payment</mat-icon>
+                    <span class="text-blue-900">Facturación y Pagos</span>
+                  </div>
+                </a>
+              </mat-nav-list>
+            </mat-expansion-panel>
 
-        <a mat-list-item routerLink="/reportes" class="hover:bg-blue-100">
-          <div lass="flex items-center gap-x-4">
-            <mat-icon svgIcon="clipboard" class="mr-4 text-blue-600"></mat-icon>
-            <span class="text-blue-900">Reportes</span>
-          </div>
-        </a>
-        <a mat-list-item routerLink="/activos" class="hover:bg-blue-100">
-          <div lass="flex items-center gap-x-4">
-            <mat-icon svgIcon="assets" class="mr-4 text-blue-600"></mat-icon>
-            <span class="text-blue-900">Control de Activos</span>
-          </div>
-        </a>
+            <mat-expansion-panel class="bg-blue-50 shadow-none px-4" hideToggle>
+              <mat-expansion-panel-header class="bg-blue-50 hover:bg-blue-100 rounded-full">
+                <mat-panel-title class="flex justify-start items-center gap-x-4">
+                  <mat-icon color="primary">medication</mat-icon>
+                  <span class="text-blue-900 font-normal">Control de Farmacia</span>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              <mat-nav-list>
+                <a mat-list-item routerLink="/inventario" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">inventory</mat-icon>
+                    <span class="text-blue-900">Inventario</span>
+                  </div>
+                </a>
+                <a mat-list-item routerLink="/pedidos" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">shopping_cart</mat-icon>
+                    <span class="text-blue-900">Generación de Pedidos</span>
+                  </div>
+                </a>
+                <a mat-list-item routerLink="/ventas" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">point_of_sale</mat-icon>
+                    <span class="text-blue-900">Ventas y Dispensación</span>
+                  </div>
+                </a>
+                <a mat-list-item routerLink="/facturacion-farmacia" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">receipt_long</mat-icon>
+                    <span class="text-blue-900">Facturación</span>
+                  </div>
+                </a>
+              </mat-nav-list>
+            </mat-expansion-panel>
+
+            <mat-expansion-panel class="bg-blue-50 shadow-none px-4" hideToggle>
+              <mat-expansion-panel-header class="bg-blue-50 hover:bg-blue-100 rounded-full">
+                <mat-panel-title class="flex justify-start items-center gap-x-4">
+                  <mat-icon color="primary">analytics</mat-icon>
+                  <span class="text-blue-900 font-normal">Reportes</span>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              <mat-nav-list>
+                <a mat-list-item routerLink="/informes-medicos" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">medical_services</mat-icon>
+                    <span class="text-blue-900">Informes Médicos</span>
+                  </div>
+                </a>
+                <a mat-list-item routerLink="/reportes-financieros" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">attach_money</mat-icon>
+                    <span class="text-blue-900">Reportes Financieros</span>
+                  </div>
+                </a>
+                <a mat-list-item routerLink="/control-stock" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">inventory_2</mat-icon>
+                    <span class="text-blue-900">Control de Stock</span>
+                  </div>
+                </a>
+              </mat-nav-list>
+            </mat-expansion-panel>
+
+            <mat-expansion-panel class="bg-blue-50 shadow-none px-4" hideToggle>
+              <mat-expansion-panel-header class="bg-blue-50 hover:bg-blue-100 rounded-full">
+                <mat-panel-title class="flex justify-start items-center gap-x-4">
+                  <mat-icon color="primary">inventory</mat-icon>
+                  <span class="text-blue-900 font-normal">Control de Activos</span>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              <mat-nav-list>
+                <a mat-list-item routerLink="/registro-activos" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">add_box</mat-icon>
+                    <span class="text-blue-900">Registro de Activos</span>
+                  </div>
+                </a>
+                <a mat-list-item routerLink="/mantenimiento-activos" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">build</mat-icon>
+                    <span class="text-blue-900">Mantenimiento de Activos</span>
+                  </div>
+                </a>
+                <a mat-list-item routerLink="/inventario-activos" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">inventory_2</mat-icon>
+                    <span class="text-blue-900">Control de Inventario de Activos</span>
+                  </div>
+                </a>
+                <a mat-list-item routerLink="/reportes-activos" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">description</mat-icon>
+                    <span class="text-blue-900">Reportes de Activos</span>
+                  </div>
+                </a>
+              </mat-nav-list>
+            </mat-expansion-panel>
+          </mat-accordion>
+        </div>
+
+        <div class="px-4">
+          <a mat-list-item class="hover:bg-blue-100" (click)="onLogout()">
+            <div class="flex items-center gap-x-4">
+              <mat-icon color="primary">logout</mat-icon>
+              <span class="text-blue-900">Cerrar Sesión</span>
+            </div>
+          </a>
+        </div>
       </mat-nav-list>
     </mat-sidenav>
 
@@ -143,6 +273,10 @@
           </mat-card-content>
         </mat-card>
       </div>
+
+      <h3>User</h3>
+      <pre class="text-red-500">{{ user() | json }}</pre>
+      <p class="text-red-500">{{ user()?.fullName }}</p>
     </mat-sidenav-content>
   </mat-sidenav-container>
 </div>

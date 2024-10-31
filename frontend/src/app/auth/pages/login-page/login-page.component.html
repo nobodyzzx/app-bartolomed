@@ -1,8 +1,15 @@
 <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
   <div class="max-w-md w-full space-y-8 bg-slate-100 bg-opacity-90 p-10 rounded-xl shadow-xl">
     <div>
-      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Iniciar Sesión</h2>
-      <p class="mt-2 text-center text-sm text-gray-600">Accede a tu cuenta del consultorio médico</p>
+      <div class="mx-auto w-48">
+        <img
+          class="mx-auto w-full h-full object-cover"
+          src="../../../../assets/images/logo-big-bartolomed.png"
+          alt=""
+        />
+      </div>
+      <p class="mt-2 text-center text-base text-gray-600">Plataforma de Gestión Clínica</p>
+      <h2 class="mt-6 text-center text-2xl font-extrabold text-gray-900">Iniciar Sesión</h2>
     </div>
     <form class="mt-8 space-y-6" [formGroup]="myForm" (ngSubmit)="onSubmit()">
       <div class="rounded-md shadow-sm -space-y-px">
