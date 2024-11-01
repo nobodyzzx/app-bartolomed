@@ -9,7 +9,6 @@ import { MatIconRegistry } from '@angular/material/icon';
   styleUrl: './dashboard-layout.component.css',
 })
 export class DashboardLayoutComponent implements OnInit {
-  readonly panelOpenState = signal(false);
   private authService = inject(AuthService);
   public user = computed(() => this.authService.currentUser());
 
@@ -18,7 +17,7 @@ export class DashboardLayoutComponent implements OnInit {
   // }
 
   ngOnInit() {
-    this.authService.checkAuthStatus().subscribe();
+    this.authService.checkAuthStatus().subscribe(this.user);
   }
   isExpanded = true;
 
