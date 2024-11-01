@@ -1,3 +1,3 @@
-export { JwtPayload } from './jwt-payload.interfaces';
+export { JwtPayload } from './jwt-payload.interface';
 export { ValidRoles } from './valid-roles';
-export { LoginResponse } from './login-response';
+export { LoginResponse } from './login-response.interface';

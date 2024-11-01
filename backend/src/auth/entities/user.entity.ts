@@ -2,8 +2,10 @@ import {
   BeforeInsert,
   BeforeUpdate,
   Column,
+  CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity('users')
@@ -11,22 +13,16 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('text', {
-    unique: true,
-  })
+  @Column('text', { unique: true })
   email: string;
 
-  @Column('text', {
-    select: false,
-  })
+  @Column('text', { select: false })
   password: string;
 
   @Column('text')
   fullName: string;
 
-  @Column('bool', {
-    default: true,
-  })
+  @Column('bool', { default: true })
   isActive: boolean;
 
   @Column('text', {
@@ -34,6 +30,12 @@ export class User {
     default: ['user'],
   })
   roles: string[];
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 
   @BeforeInsert()
   checkFieldsBeforeInsert() {

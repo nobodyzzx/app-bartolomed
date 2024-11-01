@@ -5,14 +5,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
+import { JwtService } from '@nestjs/jwt';
 
 import * as bcrypt from 'bcrypt';
 
 import { User } from './entities/user.entity';
-import { CreateUserDto, LoginUserDto } from './dto';
-import { JwtPayload } from './interfaces/jwt-payload.interfaces';
+import { LoginUserDto, CreateUserDto } from './dto';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { LoginResponse } from './interfaces';
 
 @Injectable()
@@ -26,10 +26,9 @@ export class AuthService {
   async create(createUserDto: CreateUserDto) {
     try {
       const { password, ...userData } = createUserDto;
-
       const user = this.userRepository.create({
         ...userData,
-        password: await bcrypt.hashSync(password, 10),
+        password: bcrypt.hashSync(password, 10),
       });
       await this.userRepository.save(user);
       delete user.password;
@@ -37,42 +36,30 @@ export class AuthService {
         ...user,
         token: this.getJwtToken({ id: user.id }),
       };
-      //TODO: retornar el JWT
     } catch (error) {
       this.handleDBError(error);
     }
   }
 
-  async login(loginUserDto: LoginUserDto): Promise<LoginResponse> {
-    const { password, email } = loginUserDto;
-
+  async login(loginUserDto: LoginUserDto) {
+    const { email, password } = loginUserDto;
     const user = await this.userRepository.findOne({
       where: { email },
-      select: {
-        email: true,
-        password: true,
-      }, //! OJO!
+      select: { email: true, password: true, id: true },
     });
-
     if (!user)
-      throw new UnauthorizedException(
-        'Las credenciales proporcionadas no son válidas. Por favor, verifica tu dirección de correo electrónico.',
-      );
-
+      throw new UnauthorizedException('Credenciales no Validas (email)');
     if (!bcrypt.compareSync(password, user.password))
-      throw new UnauthorizedException(
-        'La contraseña ingresada no es correcta. Por favor, intenta nuevamente.',
-      );
-
+      throw new UnauthorizedException('Credenciales no Validas (password)');
     return {
-      user,
+      ...user,
       token: this.getJwtToken({ id: user.id }),
     };
   }
 
-  async checkAuthStatus(user: User) {
+  async checkAuthStatus(user: User): Promise<LoginResponse> {
     return {
-      ...user,
+      user,
       token: this.getJwtToken({ id: user.id }),
     };
   }
@@ -85,6 +72,6 @@ export class AuthService {
   private handleDBError(error: any): never {
     if (error.code === '23505') throw new BadRequestException(error.detail);
     console.log(error);
-    throw new InternalServerErrorException('Please ckech server logs');
+    throw new InternalServerErrorException('Something went wrong');
   }
 }
