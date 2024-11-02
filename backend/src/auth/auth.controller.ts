@@ -1,21 +1,14 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Get,
-  UseGuards,
-  Req,
-  SetMetadata,
-} from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
 
 import { CreateUserDto, LoginUserDto } from './dto';
 import { Auth, GetUser, RawHeaders } from './decorators';
-import { User } from './entities/user.entity';
-import { UserRoleGuard } from './guards/user-role/user-role.guard';
+import { User } from '../users/entities/user.entity';
+import { UserRoleGuard } from './guards/user-role.guard';
 import { RoleProtected } from './decorators/role-protected.decorator';
-import { LoginResponse, ValidRoles } from './interfaces';
+import { LoginResponse } from './interfaces';
+import { ValidRoles } from '../users/interfaces';
 
 @Controller('auth')
 export class AuthController {
