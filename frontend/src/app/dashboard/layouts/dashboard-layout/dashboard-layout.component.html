@@ -1,30 +1,77 @@
 <div class="flex flex-col h-screen bg-gray-100">
-  <mat-toolbar class="z-10 shadow-md bg-blue-100">
-    <button mat-icon-button (click)="toggleSidenav()" class="text-blue-900">
-      <mat-icon>menu</mat-icon>
-    </button>
-    <span class="ml-4 text-xl font-semibold text-blue-900">BARTOLOMED - Consultorio Médico</span>
-    <span class="flex-grow"></span>
-    <mat-icon class="mr-1 text-blue-900">person</mat-icon>
-    <span class="text-base font-bold text mr-6 text-blue-900">{{ user()?.fullName }}</span>
-    <mat-icon class="mr-4 text-blue-900">notifications</mat-icon>
-    <button mat-icon-button [matMenuTriggerFor]="menu" class="text-[#005cbb]">
-      <mat-icon>more_vert</mat-icon>
-    </button>
-    <mat-menu #menu="matMenu">
-      <button mat-menu-item class="flex items-center">
-        <mat-icon class="mr-2 text-[#005cbb]">account_circle</mat-icon>
-        <span>Mi Perfil</span>
-      </button>
-      <button mat-menu-item class="flex items-center">
-        <mat-icon class="mr-2">settings</mat-icon>
-        <span>Configuración</span>
-      </button>
-      <button mat-menu-item class="flex items-center" (click)="onLogout()">
-        <mat-icon class="mr-2">logout</mat-icon>
-        <span>Cerrar Sesión</span>
-      </button>
-    </mat-menu>
+  <mat-toolbar class="bg-blue-100 shadow-md px-4 py-2">
+    <div class="flex items-center w-full">
+      <!-- Left Section: Navigation Menu -->
+      <div class="flex items-center flex-shrink-0">
+        <button
+          mat-icon-button
+          (click)="toggleSidenav()"
+          aria-label="Toggle side navigation"
+          class="text-blue-900 hover:bg-blue-200 transition-colors"
+        >
+          <mat-icon>menu</mat-icon>
+        </button>
+      </div>
+
+      <!-- Center Section: Logo -->
+      <div class="flex-grow flex justify-center mx-4">
+        <img class="max-h-12 object-contain" src="assets/images/logo-horizontal-bartolomed.png" alt="Bartolomed Logo" />
+      </div>
+
+      <!-- Right Section: User Info and Actions -->
+      <div class="flex items-center space-x-4">
+        <!-- User Information -->
+        <div class="flex items-center space-x-2 text-blue-800">
+          <div class="flex flex-col text-right">
+            <span class="text-sm font-medium">
+              {{ user()?.fullName || 'Usuario' }}
+            </span>
+            <span class="uppercase text-xs font-medium text-blue-600">
+              {{ user()?.roles?.join(' | ') || 'Sin rol asignado' }}
+            </span>
+          </div>
+
+          <!-- User Menu -->
+          <button
+            mat-icon-button
+            [matMenuTriggerFor]="userMenu"
+            aria-label="User menu"
+            class="text-blue-900 hover:bg-blue-200 transition-colors"
+          >
+            <mat-icon>more_vert</mat-icon>
+          </button>
+
+          <mat-menu #userMenu="matMenu" class="user-menu bg-slate-50">
+            <div mat-menu-content class="min-w-[250px]">
+              <!-- Opción de Perfil -->
+              <button mat-menu-item class="flex items-center p-3 hover:bg-blue-50 transition-colors duration-200 group">
+                <mat-icon class="mr-3 text-blue-800 group-hover:text-blue-800">account_circle</mat-icon>
+                <span class="text-blue-800 group-hover:text-blue-900">Mi Perfil</span>
+              </button>
+
+              <!-- Opción de Configuración -->
+              <button mat-menu-item class="flex items-center p-3 hover:bg-blue-50 transition-colors duration-200 group">
+                <mat-icon class="mr-3 text-blue-600 group-hover:text-gray-800">settings</mat-icon>
+                <span class="text-blue-900 group-hover:text-gray-900">Configuración</span>
+              </button>
+
+              <!-- Separador -->
+              <mat-divider class="my-2"></mat-divider>
+
+              <!-- Opción de Cerrar Sesión -->
+              <button
+                mat-menu-item
+                (click)="onLogout()"
+                class="flex items-center p-3 hover:bg-red-50 transition-colors duration-200 group"
+              >
+                <mat-icon class="mr-3 text-red-600 group-hover:text-red-800">logout</mat-icon>
+                <span class="text-red-600 group-hover:text-red-800">Cerrar Sesión</span>
+              </button>
+            </div>
+          </mat-menu>
+        </div>
+      </div>
+    </div>
   </mat-toolbar>
 
   <mat-sidenav-container class="flex-grow">
@@ -171,16 +218,44 @@
                 </a>
               </mat-nav-list>
             </mat-expansion-panel>
+
+            <!-- Menú de Tareas Administrativas -->
+            <mat-expansion-panel class="bg-blue-50 shadow-none px-4" hideToggle>
+              <mat-expansion-panel-header class="bg-blue-50 hover:bg-blue-100 rounded-full">
+                <mat-panel-title class="flex justify-start items-center gap-x-4">
+                  <mat-icon color="primary">admin_panel_settings</mat-icon>
+                  <span class="text-blue-900 font-normal">Tareas Administrativas</span>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              <mat-nav-list>
+                <a mat-list-item routerLink="/usuarios" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">person_add</mat-icon>
+                    <span class="text-blue-900">Agregar Usuarios</span>
+                  </div>
+                </a>
+                <a mat-list-item routerLink="/roles" class="hover:bg-blue-100">
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">manage_accounts</mat-icon>
+                    <span class="text-blue-900">Cambiar Roles</span>
+                  </div>
+                </a>
+              </mat-nav-list>
+            </mat-expansion-panel>
           </mat-accordion>
         </div>
 
         <div class="px-4">
-          <a mat-list-item class="hover:bg-blue-100" (click)="onLogout()">
+          <a mat-list-item class="mb-4 hover:bg-red-50 transition-colors duration-200 group" (click)="onLogout()">
             <div class="flex items-center gap-x-4">
-              <mat-icon color="primary">logout</mat-icon>
-              <span class="text-blue-900">Cerrar Sesión</span>
+              <mat-icon class="text-red-600 group-hover:text-red-800">logout</mat-icon>
+              <span class="text-red-600 group-hover:text-red-800">Cerrar Sesión</span>
             </div>
           </a>
+          <mat-divider class="my-2 text-blue-600"></mat-divider>
+          <div class="text-center">
+            <span class="text-sm font-medium text-blue-600">PLATAFORMA DE GESTIÓN CLÍNICA</span>
+          </div>
         </div>
       </mat-nav-list>
     </mat-sidenav>

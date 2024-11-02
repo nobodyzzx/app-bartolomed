@@ -4,9 +4,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Clinic } from '../../clinics/entities';
+import { PersonalInfo, ProfessionalInfo } from './';
 
 @Entity('users')
 export class User {
@@ -30,6 +35,30 @@ export class User {
     default: ['user'],
   })
   roles: string[];
+
+  @OneToOne(() => PersonalInfo, (personalInfo) => personalInfo.user, {
+    cascade: true,
+    eager: true,
+  })
+  @JoinColumn()
+  personalInfo: PersonalInfo;
+
+  @OneToOne(
+    () => ProfessionalInfo,
+    (professionalInfo) => professionalInfo.user,
+    {
+      cascade: true,
+      eager: true,
+    },
+  )
+  @JoinColumn()
+  professionalInfo: ProfessionalInfo;
+
+  @ManyToOne(() => Clinic, (clinic) => clinic.users, {
+    eager: true,
+  })
+  @JoinColumn()
+  clinic: Clinic;
 
   @CreateDateColumn()
   createdAt: Date;
