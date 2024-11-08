@@ -2,17 +2,17 @@ import { IsDateString, IsString } from 'class-validator';
 
 export class PersonalInfoDto {
   @IsString()
-  address: string;
+  firstName: string;
+
+  @IsString()
+  lastName: string;
 
   @IsString()
   phone: string;
 
+  @IsString()
+  address: string;
+
   @IsDateString()
   birthDate: Date;
-
-  @IsString()
-  documentType: string;
-
-  @IsString()
-  documentNumber: string;
 }

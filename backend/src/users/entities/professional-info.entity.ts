@@ -1,5 +1,6 @@
 import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from './user.entity';
+import { ProfessionalRoles } from '../interfaces/professional-roles';
 
 @Entity('professional_info')
 export class ProfessionalInfo {
@@ -7,7 +8,17 @@ export class ProfessionalInfo {
   id: string;
 
   @Column('text')
-  specialty: string;
+  title: string;
+
+  @Column({
+    type: 'enum',
+    enum: ProfessionalRoles,
+    default: ProfessionalRoles.OTHER,
+  })
+  role: ProfessionalRoles;
+
+  @Column('text')
+  specialization: string;
 
   @Column('text')
   license: string;
@@ -15,12 +26,17 @@ export class ProfessionalInfo {
   @Column('text', { array: true, default: [] })
   certifications: string[];
 
-  @Column('text', { nullable: true })
-  education: string;
+  @Column('date')
+  startDate: Date;
 
   @Column('text', { nullable: true })
-  experience: string;
+  description?: string;
 
-  @OneToOne(() => User, (user) => user.professionalInfo)
+  @Column('text', { array: true, default: [], nullable: true })
+  areas?: string[];
+
+  @OneToOne(() => User, (user) => user.professionalInfo, {
+    onDelete: 'CASCADE',
+  })
   user: User;
 }

@@ -2,16 +2,15 @@ import {
   BeforeInsert,
   BeforeUpdate,
   Column,
-  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
-import { Clinic } from '../../clinics/entities';
-import { PersonalInfo, ProfessionalInfo } from './';
+import { PersonalInfo } from './personal-info.entity';
+import { ProfessionalInfo } from './professional-info.entity';
+import { Clinic } from '../../clinics/entities/clinic.entity';
 
 @Entity('users')
 export class User {
@@ -24,17 +23,14 @@ export class User {
   @Column('text', { select: false })
   password: string;
 
-  @Column('text')
-  fullName: string;
-
-  @Column('bool', { default: true })
-  isActive: boolean;
-
   @Column('text', {
     array: true,
     default: ['user'],
   })
   roles: string[];
+
+  @Column('bool', { default: true })
+  isActive: boolean;
 
   @OneToOne(() => PersonalInfo, (personalInfo) => personalInfo.user, {
     cascade: true,
@@ -46,25 +42,13 @@ export class User {
   @OneToOne(
     () => ProfessionalInfo,
     (professionalInfo) => professionalInfo.user,
-    {
-      cascade: true,
-      eager: true,
-    },
+    { cascade: true, eager: true },
   )
   @JoinColumn()
   professionalInfo: ProfessionalInfo;
 
-  @ManyToOne(() => Clinic, (clinic) => clinic.users, {
-    eager: true,
-  })
-  @JoinColumn()
+  @ManyToOne(() => Clinic, (clinic) => clinic.users)
   clinic: Clinic;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 
   @BeforeInsert()
   checkFieldsBeforeInsert() {

@@ -7,20 +7,20 @@ export class PersonalInfo {
   id: string;
 
   @Column('text')
-  address: string;
+  firstName: string;
+
+  @Column('text')
+  lastName: string;
 
   @Column('text')
   phone: string;
 
+  @Column('text')
+  address: string;
+
   @Column('date')
   birthDate: Date;
 
-  @Column('text')
-  documentType: string;
-
-  @Column('text', { unique: true })
-  documentNumber: string;
-
-  @OneToOne(() => User, (user) => user.personalInfo)
+  @OneToOne(() => User, (user) => user.personalInfo, { onDelete: 'CASCADE' })
   user: User;
 }
