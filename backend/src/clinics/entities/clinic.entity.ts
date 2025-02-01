@@ -18,6 +18,6 @@ export class Clinic {
   @Column('bool', { default: true })
   isActive: boolean;
 
-  @OneToMany(() => User, (user) => user.clinic)
+  @OneToMany(() => User, user => user.clinic)
   users: User[];
 }

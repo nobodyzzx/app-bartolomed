@@ -29,14 +29,14 @@ export class AppComponent implements OnInit {
     switch (this.authService.authStatus()) {
       case AuthStatus.checking:
         return;
-      case AuthStatus.authenticated:
-        this.router.navigateByUrl('/dashboard');
-        return;
+        /* case AuthStatus.authenticated:
+        this.router.navigateByUrl('/dashboard/users/register');
+        return; */
       case AuthStatus.notAuthenticated:
         this.router.navigateByUrl('/auth/login');
         return;
     }
   });
 
-  title = 'frontend';
+  title = 'Bartolomed';
 }

@@ -8,10 +8,7 @@ import { ProfessionalInfo } from './entities/professional-info.entity';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([User, PersonalInfo, ProfessionalInfo]),
-    AuthModule,
-  ],
+  imports: [TypeOrmModule.forFeature([User, PersonalInfo, ProfessionalInfo]), AuthModule],
   controllers: [UsersController],
   providers: [UsersService],
   exports: [TypeOrmModule, UsersService],

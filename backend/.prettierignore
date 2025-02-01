@@ -1,0 +1,7 @@
+# .prettierignore
+dist/
+node_modules/
+coverage/
+*.md
+*.json
+Dockerfile

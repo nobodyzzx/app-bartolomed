@@ -35,7 +35,7 @@ export class ProfessionalInfo {
   @Column('text', { array: true, default: [], nullable: true })
   areas?: string[];
 
-  @OneToOne(() => User, (user) => user.professionalInfo, {
+  @OneToOne(() => User, user => user.professionalInfo, {
     onDelete: 'CASCADE',
   })
   user: User;

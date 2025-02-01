@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  ParseUUIDPipe,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, Query } from '@nestjs/common';
 import { UsersService } from './services/users.service'; // Ensure this path is correct and the file exists
 import { CreateUserDto } from './dto';
 import { Auth } from '../auth/decorators/auth.decorator';
@@ -39,10 +29,7 @@ export class UsersController {
 
   @Patch(':id')
   @Auth(ValidRoles.ADMIN)
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateUserDto: Partial<CreateUserDto>,
-  ) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateUserDto: Partial<CreateUserDto>) {
     return this.usersService.update(id, updateUserDto);
   }
 

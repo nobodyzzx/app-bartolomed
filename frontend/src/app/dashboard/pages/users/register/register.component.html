@@ -1,0 +1,247 @@
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 py-12">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
+    <!-- Encabezado del formulario con diseño mejorado -->
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-bold text-blue-900 mb-3">Registro de Usuario</h2>
+      <div class="w-20 h-1 bg-blue-600 mx-auto rounded-full mb-3"></div>
+      <p class="text-blue-600">Complete el formulario para crear una nueva cuenta</p>
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-8">
+      <!-- Información de Cuenta -->
+      <div
+        class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 transition-all duration-300 hover:shadow-xl backdrop-blur-sm backdrop-filter"
+      >
+        <div class="flex items-center mb-8">
+          <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-3 rounded-xl shadow-md mr-4">
+            <mat-icon class="text-white">account_circle</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-xl font-semibold text-blue-900">Información de Cuenta</h3>
+            <p class="text-blue-600 text-sm mt-1">Datos principales de acceso</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
+            <mat-label>Email</mat-label>
+            <input matInput formControlName="email" type="email" required />
+            <mat-icon matSuffix class="text-blue-400">email</mat-icon>
+            <mat-error *ngIf="registerForm.get('email')?.hasError('required')">El email es obligatorio</mat-error>
+            <mat-error *ngIf="registerForm.get('email')?.hasError('email')">Formato de email inválido</mat-error>
+          </mat-form-field>
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
+            <mat-label>Contraseña</mat-label>
+            <input matInput formControlName="password" type="password" required />
+            <mat-error *ngIf="registerForm.get('password')?.hasError('required')"
+              >La contraseña es obligatoria</mat-error
+            >
+            <mat-error *ngIf="registerForm.get('password')?.hasError('minlength')">
+              La contraseña debe tener al menos 6 caracteres
+            </mat-error>
+          </mat-form-field>
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
+            <mat-label>Roles</mat-label>
+            <mat-select formControlName="roles" multiple required>
+              <mat-select-trigger>
+                <mat-icon class="mr-2 align-middle text-blue-400">assignment_ind</mat-icon>
+                {{ registerForm.get('roles')?.value?.length || 0 }} roles seleccionados
+              </mat-select-trigger>
+              <mat-option *ngFor="let role of validRoles" [value]="role.value">
+                <div class="flex items-center gap-2">
+                  <mat-icon class="text-blue-400">{{ role.icon }}</mat-icon>
+                  <div>
+                    <div>{{ role.label }}</div>
+                    <small class="text-gray-500">{{ role.description }}</small>
+                  </div>
+                </div>
+              </mat-option>
+            </mat-select>
+            <mat-icon matPrefix class="text-blue-400">admin_panel_settings</mat-icon>
+            <mat-icon matSuffix class="text-blue-400">arrow_drop_down</mat-icon>
+            <mat-error *ngIf="registerForm.get('roles')?.hasError('required')">
+              Debe seleccionar al menos un rol
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Información Personal -->
+      <div
+        class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 transition-all duration-300 hover:shadow-xl backdrop-blur-sm backdrop-filter"
+        formGroupName="personalInfo"
+      >
+        <div class="flex items-center mb-8">
+          <div class="bg-gradient-to-r from-green-500 to-green-600 p-3 rounded-xl shadow-md mr-4">
+            <mat-icon class="text-white">person</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-xl font-semibold text-blue-900">Información Personal</h3>
+            <p class="text-blue-600 text-sm mt-1">Datos personales del usuario</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="firstName" required />
+            <mat-icon matSuffix class="text-blue-400">badge</mat-icon>
+            <mat-error *ngIf="registerForm.get('personalInfo.firstName')?.hasError('required')"
+              >El nombre es obligatorio</mat-error
+            >
+          </mat-form-field>
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
+            <mat-label>Apellido</mat-label>
+            <input matInput formControlName="lastName" required />
+            <mat-icon matSuffix class="text-blue-400">badge</mat-icon>
+            <mat-error *ngIf="registerForm.get('personalInfo.lastName')?.hasError('required')"
+              >El apellido es obligatorio</mat-error
+            >
+          </mat-form-field>
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
+            <mat-label>Teléfono</mat-label>
+            <input matInput formControlName="phone" />
+            <mat-icon matSuffix class="text-blue-400">phone</mat-icon>
+          </mat-form-field>
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
+            <mat-label>Dirección</mat-label>
+            <input matInput formControlName="address" />
+            <mat-icon matSuffix class="text-blue-400">home</mat-icon>
+          </mat-form-field>
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
+            <mat-label>Fecha de Nacimiento</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="birthDate" />
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Información Profesional -->
+      <div
+        class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 transition-all duration-300 hover:shadow-xl backdrop-blur-sm backdrop-filter"
+        formGroupName="professionalInfo"
+      >
+        <div class="flex items-center mb-8">
+          <div class="bg-gradient-to-r from-purple-500 to-purple-600 p-3 rounded-xl shadow-md mr-4">
+            <mat-icon class="text-white">work</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-xl font-semibold text-blue-900">Información Profesional</h3>
+            <p class="text-blue-600 text-sm mt-1">Información laboral y especialización</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
+            <mat-label>Título</mat-label>
+            <input matInput formControlName="title" required />
+            <mat-icon matSuffix class="text-blue-400">school</mat-icon>
+            <mat-error *ngIf="registerForm.get('professionalInfo.title')?.hasError('required')"
+              >El título es obligatorio</mat-error
+            >
+          </mat-form-field>
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
+            <mat-label>Rol Profesional</mat-label>
+            <mat-select formControlName="role" required>
+              <mat-option *ngFor="let role of roles" [value]="role.value">
+                {{ role.label }}
+              </mat-option>
+            </mat-select>
+            <mat-icon matSuffix class="text-blue-400">assignment_ind</mat-icon>
+            <mat-error *ngIf="registerForm.get('professionalInfo.role')?.hasError('required')"
+              >El rol es obligatorio</mat-error
+            >
+          </mat-form-field>
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
+            <mat-label>Especialización</mat-label>
+            <input matInput formControlName="specialization" required />
+            <mat-icon matSuffix class="text-blue-400">local_hospital</mat-icon>
+            <mat-error *ngIf="registerForm.get('professionalInfo.specialization')?.hasError('required')">
+              La especialización es obligatoria
+            </mat-error>
+          </mat-form-field>
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
+            <mat-label>Licencia</mat-label>
+            <input matInput formControlName="license" required />
+            <mat-icon matSuffix class="text-blue-400">card_membership</mat-icon>
+            <mat-error *ngIf="registerForm.get('professionalInfo.license')?.hasError('required')"
+              >La licencia es obligatoria</mat-error
+            >
+          </mat-form-field>
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
+            <mat-label>Fecha de Inicio</mat-label>
+            <input matInput [matDatepicker]="startPicker" formControlName="startDate" required />
+            <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+            <mat-datepicker #startPicker></mat-datepicker>
+            <mat-error *ngIf="registerForm.get('professionalInfo.startDate')?.hasError('required')">
+              La fecha de inicio es obligatoria
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="w-full mt-6">
+          <mat-label>Descripción</mat-label>
+          <textarea matInput formControlName="description" rows="3"></textarea>
+          <mat-icon matSuffix class="text-blue-400">description</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <!-- Botones de acción -->
+      <div class="flex justify-end space-x-4 mt-8">
+        <button
+          mat-stroked-button
+          type="button"
+          class="px-8 py-3 rounded-xl border-2 border-blue-400 text-blue-600 hover:bg-blue-50 transition-all duration-300 hover:shadow-md"
+        >
+          Cancelar
+        </button>
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="registerForm.invalid"
+          class="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Registrar Usuario
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

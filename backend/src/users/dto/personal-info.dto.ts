@@ -1,18 +1,22 @@
-import { IsDateString, IsString } from 'class-validator';
+import { IsDateString, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class PersonalInfoDto {
   @IsString()
   firstName: string;
 
+  @IsNotEmpty()
   @IsString()
-  lastName: string;
+  lastName?: string;
 
+  @IsOptional()
   @IsString()
-  phone: string;
+  phone?: string;
 
+  @IsOptional()
   @IsString()
-  address: string;
+  address?: string;
 
+  @IsOptional()
   @IsDateString()
-  birthDate: Date;
+  birthDate?: Date;
 }

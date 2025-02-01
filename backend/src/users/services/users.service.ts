@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
@@ -31,7 +27,11 @@ export class UsersService {
 
       return user;
     } catch (error) {
-      this.handleDBErrors(error);
+      if (error.code === '23505') {
+        // Código de error de PostgreSQL para clave duplicada
+        throw new BadRequestException('El correo ya está registrado');
+      }
+      throw new InternalServerErrorException('Error al crear usuario');
     }
   }
 
@@ -81,8 +81,7 @@ export class UsersService {
   }
 
   private handleDBErrors(error: any): never {
-    if (error.code === '23505')
-      throw new BadRequestException(error.detail.replace('Key ', ''));
+    if (error.code === '23505') throw new BadRequestException(error.detail.replace('Key ', ''));
 
     throw new BadRequestException('Please check server logs');
   }

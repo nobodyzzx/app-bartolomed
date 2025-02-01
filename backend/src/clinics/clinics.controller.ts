@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 import { ClinicsService } from './services/clinics.service';
 import { CreateClinicDto, UpdateClinicDto } from './dto';
 import { Auth } from '../auth/decorators/auth.decorator';
@@ -37,10 +28,7 @@ export class ClinicsController {
 
   @Patch(':id')
   @Auth(ValidRoles.ADMIN)
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateClinicDto: UpdateClinicDto,
-  ) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateClinicDto: UpdateClinicDto) {
     return this.clinicsService.update(id, updateClinicDto);
   }
 

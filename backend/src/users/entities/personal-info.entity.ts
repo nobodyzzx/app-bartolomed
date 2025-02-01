@@ -12,15 +12,15 @@ export class PersonalInfo {
   @Column('text')
   lastName: string;
 
-  @Column('text')
+  @Column('text', { nullable: true })
   phone: string;
 
-  @Column('text')
+  @Column('text', { nullable: true })
   address: string;
 
-  @Column('date')
+  @Column('date', { nullable: true })
   birthDate: Date;
 
-  @OneToOne(() => User, (user) => user.personalInfo, { onDelete: 'CASCADE' })
+  @OneToOne(() => User, user => user.personalInfo, { onDelete: 'CASCADE' })
   user: User;
 }

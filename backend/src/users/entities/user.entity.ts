@@ -32,22 +32,18 @@ export class User {
   @Column('bool', { default: true })
   isActive: boolean;
 
-  @OneToOne(() => PersonalInfo, (personalInfo) => personalInfo.user, {
+  @OneToOne(() => PersonalInfo, personalInfo => personalInfo.user, {
     cascade: true,
     eager: true,
   })
   @JoinColumn()
   personalInfo: PersonalInfo;
 
-  @OneToOne(
-    () => ProfessionalInfo,
-    (professionalInfo) => professionalInfo.user,
-    { cascade: true, eager: true },
-  )
+  @OneToOne(() => ProfessionalInfo, professionalInfo => professionalInfo.user, { cascade: true, eager: true })
   @JoinColumn()
   professionalInfo: ProfessionalInfo;
 
-  @ManyToOne(() => Clinic, (clinic) => clinic.users)
+  @ManyToOne(() => Clinic, clinic => clinic.users)
   clinic: Clinic;
 
   @BeforeInsert()

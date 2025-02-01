@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Clinic } from '../entities/clinic.entity';
@@ -73,13 +69,12 @@ export class ClinicsService {
 
   async removeUserFromClinic(userId: string, clinicId: string) {
     const clinic = await this.findOne(clinicId);
-    clinic.users = clinic.users.filter((u) => u.id !== userId);
+    clinic.users = clinic.users.filter(u => u.id !== userId);
     return await this.clinicRepository.save(clinic);
   }
 
   private handleDBErrors(error: any): never {
-    if (error.code === '23505')
-      throw new BadRequestException(error.detail.replace('Key ', ''));
+    if (error.code === '23505') throw new BadRequestException(error.detail.replace('Key ', ''));
 
     throw new BadRequestException('Please check server logs');
   }

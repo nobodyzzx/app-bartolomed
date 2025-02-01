@@ -1,10 +1,4 @@
-import {
-  IsArray,
-  IsDateString,
-  IsEnum,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsArray, IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
 import { ProfessionalRoles } from '../interfaces/professional-roles';
 
 export class ProfessionalInfoDto {

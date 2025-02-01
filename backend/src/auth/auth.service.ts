@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -15,6 +10,7 @@ import { LoginUserDto } from './dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { LoginResponse } from './interfaces';
 import { CreateUserDto } from '../users/dto';
+import { ValidRoles } from 'src/users/interfaces';
 
 @Injectable()
 export class AuthService {
@@ -26,13 +22,17 @@ export class AuthService {
 
   async create(createUserDto: CreateUserDto) {
     try {
-      const { password, ...userData } = createUserDto;
+      const { password, roles = [ValidRoles.USER], ...userData } = createUserDto;
+
       const user = this.userRepository.create({
         ...userData,
         password: bcrypt.hashSync(password, 10),
+        roles: roles,
       });
+
       await this.userRepository.save(user);
       delete user.password;
+
       return {
         ...user,
         token: this.getJwtToken({ id: user.id }),
@@ -48,8 +48,7 @@ export class AuthService {
       where: { email },
       select: { email: true, password: true, id: true },
     });
-    if (!user)
-      throw new UnauthorizedException('Credenciales no Validas (email)');
+    if (!user) throw new UnauthorizedException('Credenciales no Validas (email)');
     if (!bcrypt.compareSync(password, user.password))
       throw new UnauthorizedException('Credenciales no Validas (password)');
     return {
