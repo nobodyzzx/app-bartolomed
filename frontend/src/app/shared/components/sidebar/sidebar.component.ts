@@ -1,7 +1,7 @@
 import { Component, computed, inject, OnInit } from '@angular/core';
-import { AuthService } from '../../../auth/services/auth.service';
 import { SidenavService } from '../services/sidenav.services';
 import { UserRoles } from '../../../modules/dashboard/interfaces/userRoles.enum';
+import { AuthService } from '../../../modules/auth/services/auth.service';
 
 @Component({
   selector: 'shared-sidebar',

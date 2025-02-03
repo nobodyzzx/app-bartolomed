@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, OnInit } from '@angular/core';
-import { AuthService } from './auth/services/auth.service';
-import { AuthStatus } from './auth/interfaces';
+import { AuthService } from './modules/auth/services/auth.service';
+import { AuthStatus } from './modules/auth/interfaces';
 import { Router } from '@angular/router';
 
 @Component({
@@ -29,7 +29,7 @@ export class AppComponent implements OnInit {
     switch (this.authService.authStatus()) {
       case AuthStatus.checking:
         return;
-        /* case AuthStatus.authenticated:
+      /* case AuthStatus.authenticated:
         this.router.navigateByUrl('/dashboard/users/register');
         return; */
       case AuthStatus.notAuthenticated:
