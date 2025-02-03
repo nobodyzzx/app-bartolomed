@@ -24,6 +24,7 @@ export class AuthService {
   }
 
   private setAuthentication(user: User, token: string): boolean {
+    console.log('Setting authentication:', user);
     this._currentUser.set(user);
     this._authStatus.set(AuthStatus.authenticated);
     localStorage.setItem('token', token);
