@@ -6,7 +6,7 @@ import { ProfessionalRoles } from '../../../interfaces/professionalRoles.enum';
 import { UserRoles } from '../../../interfaces/userRoles.enum';
 import { UserRoleItem } from '../../../interfaces/userRoleItem.interface';
 import Swal from 'sweetalert2';
-import { ErrorService } from '../../../../shared/components/services/error.service';
+import { ErrorService } from '../../../../../shared/components/services/error.service';
 @Component({
   selector: 'app-register',
   templateUrl: './register.component.html',

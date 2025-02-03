@@ -21,7 +21,9 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTreeModule } from '@angular/material/tree';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
-
+import { MatTableModule } from '@angular/material/table';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatSortModule } from '@angular/material/sort';
 
 @NgModule({
   exports: [
@@ -40,19 +42,17 @@ import { MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
     MatSidenavModule,
     MatSnackBarModule,
     MatToolbarModule,
-    MatCardModule,
     MatCheckboxModule,
     MatMenuModule,
     MatExpansionModule,
     MatTreeModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatNativeDateModule,
     MatDatepickerModule,
-    MatSnackBarModule
+    MatTableModule,
+    MatPaginatorModule,
+    MatSortModule,
+    MatChipsModule,
   ],
-  providers: [MatDatepickerModule, 
-    { provide: MAT_DATE_LOCALE, useValue: 'es-BO' },
-  ], 
+  providers: [MatDatepickerModule, { provide: MAT_DATE_LOCALE, useValue: 'es-BO' }],
 })
 export class MaterialModule {}

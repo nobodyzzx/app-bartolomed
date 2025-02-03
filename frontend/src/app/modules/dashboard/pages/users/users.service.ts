@@ -1,9 +1,9 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { catchError, map, Observable, tap, throwError } from 'rxjs';
-import { environment } from '../../../environments/environments';
+import { environment } from '../../../../environments/environments';
 import { AuthService } from '../../../auth/services/auth.service';
-import { ErrorService } from '../../../shared/components/services/error.service';
+import { ErrorService } from '../../../../shared/components/services/error.service';
 import { User } from '../../../auth/interfaces/user.interface';
 import { CreateUserDto, UpdateUserDto } from '../../interfaces/user.dto';
 
@@ -24,6 +24,10 @@ export class UsersService {
   private getHeaders(): HttpHeaders {
     const token = localStorage.getItem('token');
     return new HttpHeaders().set('Authorization', `Bearer ${token}`);
+  }
+
+  get authHeaders(): HttpHeaders {
+    return new HttpHeaders().set('Authorization', `Bearer ${localStorage.getItem('token')}`);
   }
 
   getUsers(): Observable<User[]> {
