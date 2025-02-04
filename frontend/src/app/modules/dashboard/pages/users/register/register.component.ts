@@ -1,20 +1,31 @@
-import { Component } from '@angular/core';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { UsersService } from '../users.service';
-import { Router } from '@angular/router';
-import { ProfessionalRoles } from '../../../interfaces/professionalRoles.enum';
-import { UserRoles } from '../../../interfaces/userRoles.enum';
-import { UserRoleItem } from '../../../interfaces/userRoleItem.interface';
-import Swal from 'sweetalert2';
-import { ErrorService } from '../../../../../shared/components/services/error.service';
+import { Component, OnInit } from '@angular/core'
+import { FormControl, FormGroup, Validators } from '@angular/forms'
+import { UsersService } from '../users.service'
+import { Router } from '@angular/router'
+import { ProfessionalRoles } from '../../../interfaces/professionalRoles.enum'
+import { UserRoles } from '../../../interfaces/userRoles.enum'
+import { UserRoleItem } from '../../../interfaces/userRoleItem.interface'
+import Swal from 'sweetalert2'
+import { ErrorService } from '../../../../../shared/components/services/error.service'
+import { SidenavService } from '../../../../../shared/components/services/sidenav.services'
 @Component({
   selector: 'app-register',
   templateUrl: './register.component.html',
-  styles: ``,
+  styleUrls: ['./register.component.css'],
 })
-export class UserRegisterComponent {
-  protected professionalRoles = ProfessionalRoles;
+export class UserRegisterComponent implements OnInit {
+  isExpanded: boolean = true
+  constructor(
+    private usersService: UsersService,
+    private router: Router,
+    private errorService: ErrorService,
+    private sidenavService: SidenavService,
+  ) {}
 
+  ngOnInit() {
+    this.sidenavService.isExpanded$.subscribe(isExpanded => (this.isExpanded = isExpanded))
+  }
+  protected professionalRoles = ProfessionalRoles
   protected readonly validRoles: UserRoleItem[] = [
     {
       value: UserRoles.USER,
@@ -40,7 +51,7 @@ export class UserRegisterComponent {
       icon: 'person_add',
       description: 'Acceso limitado',
     },
-  ];
+  ]
 
   protected readonly roles = [
     { value: ProfessionalRoles.DOCTOR, label: 'Doctor' },
@@ -55,13 +66,7 @@ export class UserRegisterComponent {
     { value: ProfessionalRoles.ADMINISTRATIVE, label: 'Administrativo/a' },
     { value: ProfessionalRoles.RECEPTIONIST, label: 'Recepcionista' },
     { value: ProfessionalRoles.OTHER, label: 'Otro' },
-  ];
-
-  constructor(
-    private usersService: UsersService,
-    private router: Router,
-    private errorService: ErrorService
-  ) {}
+  ]
 
   public registerForm: FormGroup = new FormGroup({
     email: new FormControl('h@h.com', [Validators.required, Validators.email]),
@@ -85,20 +90,18 @@ export class UserRegisterComponent {
       description: new FormControl('nada '),
       areas: new FormControl([]),
     }),
-  });
+  })
 
   onSubmit() {
     if (this.registerForm.invalid) {
-      this.registerForm.markAllAsTouched();
-      return;
+      this.registerForm.markAllAsTouched()
+      return
     }
 
-    const userData = this.registerForm.value;
-    console.log('Datos enviados:', userData);
+    const userData = this.registerForm.value
 
     this.usersService.createUser(userData).subscribe({
-      next: (response) => {
-        console.log('Respuesta exitosa:', response);
+      next: response => {
         Swal.fire({
           icon: 'success',
           title: 'Usuario creado',
@@ -118,28 +121,27 @@ export class UserRegisterComponent {
             popup: 'animate__animated animate__fadeOutDown animate__faster',
           },
           didOpen: () => {
-            const popup = document.querySelector('.swal2-popup') as HTMLElement;
+            const popup = document.querySelector('.swal2-popup') as HTMLElement
             if (popup) {
-              popup.style.borderRadius = '12px';
-              popup.style.padding = '20px';
-              popup.style.boxShadow = '0px 4px 15px rgba(0, 0, 0, 0.2)';
+              popup.style.borderRadius = '12px'
+              popup.style.padding = '20px'
+              popup.style.boxShadow = '0px 4px 15px rgba(0, 0, 0, 0.2)'
             }
 
-            const title = document.querySelector('.swal2-title') as HTMLElement;
+            const title = document.querySelector('.swal2-title') as HTMLElement
             if (title) {
-              title.style.fontSize = '20px';
-              title.style.fontWeight = 'bold';
-              title.style.color = '#198754'; // Verde éxito
+              title.style.fontSize = '20px'
+              title.style.fontWeight = 'bold'
+              title.style.color = '#198754' // Verde éxito
             }
           },
         }).then(() => {
-          this.router.navigate(['/dashboard/users']);
-        });
+          this.router.navigate(['/dashboard/users'])
+        })
       },
-      error: (error) => {
-        console.log('Error detallado:', error);
-        this.errorService.handleError(error); // Muestra mensaje amigable
+      error: error => {
+        this.errorService.handleError(error) // Muestra mensaje amigable
       },
-    });
+    })
   }
 }

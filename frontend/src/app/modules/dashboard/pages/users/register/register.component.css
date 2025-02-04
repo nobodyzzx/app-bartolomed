@@ -1,0 +1,34 @@
+.register-container {
+  transition: all 0.3s ease;
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, #ebf4ff, #ffffff, #ebf4ff);
+  padding: 3rem 1rem;
+}
+
+.register-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  transition: all 0.3s ease;
+}
+
+.sidebar-collapsed {
+  margin-left: 5rem;
+  width: calc(100% - 5rem);
+}
+
+.sidebar-expanded {
+  margin-left: 16rem;
+  width: calc(100% - 16rem);
+}
+
+@media (max-width: 768px) {
+  .register-container {
+    padding: 2rem 1rem;
+  }
+
+  .sidebar-collapsed,
+  .sidebar-expanded {
+    margin-left: 0;
+    width: 100%;
+  }
+}
