@@ -6,9 +6,10 @@ import { UserRegisterComponent } from './register/register.component';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MaterialModule } from '../../../../material/material.module';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { UserListComponent } from './user-list/user-list.component';
 
 @NgModule({
-  declarations: [UserRegisterComponent],
+  declarations: [UserRegisterComponent, UserListComponent],
   imports: [CommonModule, UsersRoutingModule, ReactiveFormsModule, MaterialModule, HttpClientModule],
 })
 export class UsersModule {}

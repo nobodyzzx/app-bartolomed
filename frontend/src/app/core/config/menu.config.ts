@@ -1,11 +1,11 @@
-import { UserRoles } from '../../modules/dashboard/interfaces/userRoles.enum';
+import { UserRoles } from '../../modules/dashboard/interfaces/userRoles.enum'
 
 export interface MenuItem {
-  label: string;
-  icon: string;
-  route: string;
-  allowedRoles: UserRoles[];
-  children?: MenuItem[];
+  label: string
+  icon: string
+  route: string
+  allowedRoles: UserRoles[]
+  children?: MenuItem[]
 }
 
 export const MENU_ITEMS: MenuItem[] = [
@@ -144,6 +144,12 @@ export const MENU_ITEMS: MenuItem[] = [
     allowedRoles: [UserRoles.ADMIN],
     children: [
       {
+        label: 'Lista de Usuarios',
+        icon: 'group',
+        route: '/dashboard/users/list',
+        allowedRoles: [UserRoles.ADMIN],
+      },
+      {
         label: 'Agregar Usuario',
         icon: 'person_add',
         route: '/dashboard/users/register',
@@ -157,4 +163,4 @@ export const MENU_ITEMS: MenuItem[] = [
       },
     ],
   },
-];
+]
