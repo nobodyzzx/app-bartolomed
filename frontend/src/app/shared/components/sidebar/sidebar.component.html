@@ -1,46 +1,97 @@
-<mat-sidenav #sidenav mode="side" [opened]="isExpanded" class="pt-3 w-96 bg-blue-50 shadow-md">
-  <mat-nav-list class="flex flex-col justify-between h-full">
-    <div>
-      <mat-accordion>
-        <ng-container *ngFor="let menuItem of menuItems()">
-          <mat-expansion-panel class="bg-blue-50 shadow-none px-4" hideToggle>
-            <mat-expansion-panel-header class="bg-blue-50 hover:bg-blue-100 rounded-full">
-              <mat-panel-title class="flex justify-start items-center gap-x-4">
-                <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
-                <span class="text-blue-900 font-normal">{{ menuItem.label }}</span>
-              </mat-panel-title>
-            </mat-expansion-panel-header>
+<div class="h-full bg-blue-50 flex flex-col">
+  <div class="flex-1 overflow-y-auto pt-3">
+    <!-- Vista expandida -->
+    <mat-accordion *ngIf="isExpanded">
+      <ng-container *ngFor="let menuItem of menuItems()">
+        <mat-expansion-panel class="bg-blue-50 shadow-none px-4" hideToggle>
+          <mat-expansion-panel-header class="bg-blue-50 hover:bg-blue-100 rounded-full">
+            <mat-panel-title class="flex justify-start items-center gap-x-4">
+              <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
+              <span class="text-blue-900 font-normal">{{ menuItem.label }}</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
 
-            <mat-nav-list>
-              <a
-                mat-list-item
-                *ngFor="let child of menuItem.children"
-                [routerLink]="child.route"
-                routerLinkActive="bg-blue-200"
-                class="hover:bg-blue-100"
-              >
-                <div class="flex items-center gap-x-4">
-                  <mat-icon color="primary">{{ child.icon }}</mat-icon>
-                  <span class="text-blue-900">{{ child.label }}</span>
-                </div>
-              </a>
-            </mat-nav-list>
-          </mat-expansion-panel>
-        </ng-container>
-      </mat-accordion>
-    </div>
+          <mat-nav-list>
+            <a
+              mat-list-item
+              *ngFor="let child of menuItem.children"
+              [routerLink]="child.route"
+              routerLinkActive="bg-blue-200"
+              class="hover:bg-blue-100"
+            >
+              <div class="flex items-center gap-x-4">
+                <mat-icon color="primary">{{ child.icon }}</mat-icon>
+                <span class="text-blue-900">{{ child.label }}</span>
+              </div>
+            </a>
+          </mat-nav-list>
+        </mat-expansion-panel>
+      </ng-container>
+    </mat-accordion>
 
-    <div class="px-4">
-      <a mat-list-item class="mb-4 hover:bg-red-50 transition-colors duration-200 group" (click)="onLogout()">
-        <div class="flex items-center gap-x-4">
-          <mat-icon class="text-red-600 group-hover:text-red-800">logout</mat-icon>
-          <span class="text-red-600 group-hover:text-red-800">Cerrar Sesión</span>
-        </div>
-      </a>
-      <mat-divider class="my-2 text-blue-600"></mat-divider>
-      <div class="text-center">
-        <span class="text-sm font-medium text-blue-600">PLATAFORMA DE GESTIÓN CLÍNICA test</span>
+    <!-- Vista contraída - Solo iconos principales con menús desplegables -->
+    <div *ngIf="!isExpanded" class="px-2">
+      <div *ngFor="let menuItem of menuItems(); let i = index" class="mb-2">
+        <!-- Icono principal del menú con dropdown -->
+        <button 
+          mat-icon-button
+          [matMenuTriggerFor]="menu"
+          [matTooltip]="menuItem.label"
+          matTooltipPosition="right"
+          class="w-12 h-12 hover:bg-blue-100 transition-colors duration-200 rounded-full"
+        >
+          <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
+        </button>
+        
+        <!-- Menú desplegable para los submenús -->
+        <mat-menu #menu="matMenu" class="sidebar-menu" xPosition="after">
+          <ng-container *ngFor="let child of menuItem.children">
+            <a
+              mat-menu-item
+              [routerLink]="child.route"
+              routerLinkActive="bg-blue-200"
+              class="hover:bg-blue-100"
+            >
+              <mat-icon color="primary">{{ child.icon }}</mat-icon>
+              <span class="text-blue-900">{{ child.label }}</span>
+            </a>
+          </ng-container>
+        </mat-menu>
       </div>
     </div>
-  </mat-nav-list>
-</mat-sidenav>
+  </div>
+
+  <div class="mt-auto pb-4" [class.px-4]="isExpanded" [class.px-2]="!isExpanded">
+    <!-- Botón de logout expandido -->
+    <a 
+      mat-list-item 
+      *ngIf="isExpanded"
+      class="mb-4 hover:bg-red-50 transition-colors duration-200 group" 
+      (click)="onLogout()"
+    >
+      <div class="flex items-center gap-x-4">
+        <mat-icon class="text-red-600 group-hover:text-red-800">logout</mat-icon>
+        <span class="text-red-600 group-hover:text-red-800">Cerrar Sesión</span>
+      </div>
+    </a>
+    
+    <!-- Botón de logout contraído -->
+    <button 
+      *ngIf="!isExpanded"
+      mat-icon-button
+      [matTooltip]="'Cerrar Sesión'"
+      matTooltipPosition="right"
+      class="w-12 h-12 hover:bg-red-50 transition-colors duration-200 group mb-4 rounded-full" 
+      (click)="onLogout()"
+    >
+      <mat-icon class="text-red-600 group-hover:text-red-800">logout</mat-icon>
+    </button>
+    
+    <mat-divider class="my-2 text-blue-600"></mat-divider>
+    
+    <!-- Texto de plataforma solo en modo expandido -->
+    <div class="text-center" *ngIf="isExpanded">
+      <span class="text-sm font-medium text-blue-600">PLATAFORMA DE GESTIÓN CLÍNICA</span>
+    </div>
+  </div>
+</div>

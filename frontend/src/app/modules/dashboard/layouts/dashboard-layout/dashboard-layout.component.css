@@ -1,1 +1,31 @@
+/* Asegura que el host ocupe toda la altura disponible */
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
 
+/* Contenedor principal */
+.flex-1 {
+  flex: 1;
+}
+
+/* Transiciones suaves para el sidebar */
+.transition-all {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Asegura que el sidebar ocupe toda la altura */
+.h-full {
+  height: 100%;
+}
+
+/* Estilos para el contenido principal */
+.overflow-auto {
+  overflow: auto;
+}
+
+/* Sombra del sidebar */
+.shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}

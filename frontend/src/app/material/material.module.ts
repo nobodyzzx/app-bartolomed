@@ -25,6 +25,7 @@ import { MatTableModule } from '@angular/material/table'
 import { MatPaginatorModule } from '@angular/material/paginator'
 import { MatSortModule } from '@angular/material/sort'
 import { MatSlideToggleModule } from '@angular/material/slide-toggle'
+import { MatTooltipModule } from '@angular/material/tooltip'
 
 @NgModule({
   exports: [
@@ -54,6 +55,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle'
     MatSortModule,
     MatChipsModule,
     MatSlideToggleModule,
+    MatTooltipModule,
   ],
   providers: [MatDatepickerModule, { provide: MAT_DATE_LOCALE, useValue: 'es-BO' }],
 })

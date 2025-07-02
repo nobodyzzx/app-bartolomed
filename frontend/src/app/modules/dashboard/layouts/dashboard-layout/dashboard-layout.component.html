@@ -1,25 +1,22 @@
-<div class="min-h-screen flex flex-col">
+<div class="h-screen flex flex-col">
   <!-- Navbar -->
   <share-navbar></share-navbar>
 
   <!-- Contenedor principal -->
-  <mat-sidenav-container class="flex-grow">
+  <div class="flex-1 flex">
     <!-- Sidebar -->
-    <mat-sidenav
-      #sidenav
-      mode="side"
-      opened
-      class="w-96"
-      [class.w-20]="!isExpanded"
+    <div 
+      [ngClass]="{'w-96': isExpanded, 'w-16': !isExpanded}"
+      class="h-full transition-all duration-300 ease-in-out shadow-lg bg-blue-50 overflow-hidden"
     >
       <shared-sidebar></shared-sidebar>
-    </mat-sidenav>
+    </div>
 
     <!-- Contenido principal -->
-    <mat-sidenav-content class="p-6">
+    <div class="flex-1 p-6 h-full overflow-auto">
       <router-outlet></router-outlet>
-    </mat-sidenav-content>
-  </mat-sidenav-container>
+    </div>
+  </div>
 </div>
 
 
