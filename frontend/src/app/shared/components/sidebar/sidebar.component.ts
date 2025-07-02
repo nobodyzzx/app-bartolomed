@@ -8,66 +8,68 @@ import { Subscription } from 'rxjs'
 @Component({
   selector: 'shared-sidebar',
   templateUrl: './sidebar.component.html',
-  styles: [`
-    ::ng-deep .sidebar-menu .mat-mdc-menu-panel {
-      margin-left: 8px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      min-width: 240px;
-      background-color: #dbeafe !important; /* bg-blue-50 - mismo que el sidebar */
-      border: 1px solid rgba(147, 197, 253, 0.3);
-    }
-    
-    ::ng-deep .sidebar-menu .mat-mdc-menu-item {
-      height: 48px;
-      line-height: 48px;
-      padding: 8px 16px;
-      border-radius: 12px;
-      margin: 2px 8px;
-      color: #1e3a8a; /* text-blue-900 */
-      text-decoration: none;
-      background-color: transparent;
-    }
-    
-    ::ng-deep .sidebar-menu .mat-mdc-menu-item:hover {
-      background-color: #bfdbfe !important; /* hover:bg-blue-100 - mismo que el sidebar */
-      color: #1e3a8a !important; /* text-blue-900 */
-    }
-    
-    ::ng-deep .sidebar-menu .mat-mdc-menu-item.bg-blue-200,
-    ::ng-deep .sidebar-menu .mat-mdc-menu-item.active,
-    ::ng-deep .sidebar-menu .mat-mdc-menu-item[aria-current="page"] {
-      background-color: #bfdbfe !important; /* bg-blue-200 */
-      color: #1e3a8a !important; /* text-blue-900 */
-      font-weight: normal;
-    }
-    
-    ::ng-deep .sidebar-menu .mat-mdc-menu-item .mat-icon {
-      margin-right: 16px;
-      width: 24px;
-      height: 24px;
-      font-size: 24px;
-      /* Mantener el color="primary" de Angular Material */
-    }
-    
-    ::ng-deep .sidebar-menu .mat-mdc-menu-item span {
-      font-size: 14px;
-      font-weight: normal;
-      color: #1e3a8a; /* text-blue-900 */
-    }
-    
-    /* Asegurar que los links mantengan el estilo */
-    ::ng-deep .sidebar-menu a.mat-mdc-menu-item {
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-    }
-    
-    /* Evitar que el hover cambie el color del texto */
-    ::ng-deep .sidebar-menu .mat-mdc-menu-item:hover span {
-      color: #1e3a8a !important; /* text-blue-900 */
-    }
-  `]
+  styles: [
+    `
+      ::ng-deep .sidebar-menu .mat-mdc-menu-panel {
+        margin-left: 8px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        min-width: 280px; /* Aumentado de 240px a 280px para hacerlo más ancho */
+        background-color: #dbeafe !important; /* bg-blue-50 - mismo que el sidebar */
+        border: 1px solid rgba(147, 197, 253, 0.3);
+      }
+
+      ::ng-deep .sidebar-menu .mat-mdc-menu-item {
+        height: 48px;
+        line-height: 48px;
+        padding: 8px 16px;
+        border-radius: 12px;
+        margin: 2px 8px;
+        color: #1e3a8a; /* text-blue-900 */
+        text-decoration: none;
+        background-color: transparent; /* Mantener el fondo transparente para evitar conflictos */
+      }
+
+      ::ng-deep .sidebar-menu .mat-mdc-menu-item:hover {
+        background-color: #bfdbfe !important; /* hover:bg-blue-100 - mismo que el sidebar */
+        color: #1e3a8a !important; /* text-blue-900 */
+      }
+
+      ::ng-deep .sidebar-menu .mat-mdc-menu-item.bg-blue-200,
+      ::ng-deep .sidebar-menu .mat-mdc-menu-item.active,
+      ::ng-deep .sidebar-menu .mat-mdc-menu-item[aria-current='page'] {
+        background-color: #bfdbfe !important; /* bg-blue-200 */
+        color: #1e3a8a !important; /* text-blue-900 */
+        font-weight: normal;
+      }
+
+      ::ng-deep .sidebar-menu .mat-mdc-menu-item .mat-icon {
+        margin-right: 16px;
+        width: 24px;
+        height: 24px;
+        font-size: 24px;
+        /* Mantener el color="primary" de Angular Material */
+      }
+
+      ::ng-deep .sidebar-menu .mat-mdc-menu-item span {
+        font-size: 14px;
+        font-weight: normal;
+        color: #1e3a8a; /* text-blue-900 */
+      }
+
+      /* Asegurar que los links mantengan el estilo */
+      ::ng-deep .sidebar-menu a.mat-mdc-menu-item {
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+      }
+
+      /* Evitar que el hover cambie el color del texto */
+      ::ng-deep .sidebar-menu .mat-mdc-menu-item:hover span {
+        color: #1e3a8a !important; /* text-blue-900 */
+      }
+    `,
+  ],
 })
 export class SidebarComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService)
@@ -113,7 +115,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.subscription.add(
       this.sidenavService.isExpanded$.subscribe(isExpanded => {
         this.isExpanded = isExpanded
-      })
+      }),
     )
 
     // Forzar verificación inicial del estado de autenticación
