@@ -4,11 +4,12 @@
 
   <!-- Contenedor principal -->
   <div class="flex-1 flex">
-    <!-- Sidebar -->
+    <!-- Espacio reservado para el sidebar fijo -->
     <div 
       [ngClass]="{'w-96': isExpanded, 'w-16': !isExpanded}"
-      class="h-full transition-all duration-300 ease-in-out shadow-lg bg-blue-50 overflow-hidden"
+      class="transition-all duration-300 ease-in-out flex-shrink-0"
     >
+      <!-- Sidebar fijo posicionado independientemente -->
       <shared-sidebar></shared-sidebar>
     </div>
 

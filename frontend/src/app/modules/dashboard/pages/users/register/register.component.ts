@@ -14,7 +14,6 @@ import { of } from 'rxjs'
 @Component({
   selector: 'app-register',
   templateUrl: './register.component.html',
-  styleUrls: ['./register.component.css'],
 })
 export class UserRegisterComponent implements OnInit {
   isExpanded: boolean = true
