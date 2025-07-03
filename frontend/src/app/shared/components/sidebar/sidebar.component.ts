@@ -14,9 +14,13 @@ import { Subscription } from 'rxjs'
         margin-left: 8px;
         border-radius: 12px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        min-width: 280px; /* Aumentado de 240px a 280px para hacerlo más ancho */
+        min-width: 280px !important; /* Cambiado a 280px */
+        width: 280px !important; /* Forzar el ancho específico */
+        max-width: 280px !important; /* Asegurar que no se reduzca */
         background-color: #dbeafe !important; /* bg-blue-50 - mismo que el sidebar */
         border: 1px solid rgba(147, 197, 253, 0.3);
+        overflow: hidden !important; /* Ocultar cualquier overflow */
+        box-sizing: border-box !important; /* Incluir padding y border en el ancho */
       }
 
       ::ng-deep .sidebar-menu .mat-mdc-menu-item {
@@ -28,6 +32,10 @@ import { Subscription } from 'rxjs'
         color: #1e3a8a; /* text-blue-900 */
         text-decoration: none;
         background-color: transparent; /* Mantener el fondo transparente para evitar conflictos */
+        box-sizing: border-box !important; /* Incluir padding y margin en el ancho */
+        overflow: hidden !important; /* Ocultar cualquier overflow */
+        white-space: nowrap !important; /* Evitar que el texto se divida en líneas */
+        text-overflow: ellipsis !important; /* Mostrar ... si el texto es muy largo */
       }
 
       ::ng-deep .sidebar-menu .mat-mdc-menu-item:hover {
@@ -67,6 +75,27 @@ import { Subscription } from 'rxjs'
       /* Evitar que el hover cambie el color del texto */
       ::ng-deep .sidebar-menu .mat-mdc-menu-item:hover span {
         color: #1e3a8a !important; /* text-blue-900 */
+      }
+      
+      /* Asegurar que no haya fondos grises por defecto */
+      ::ng-deep .sidebar-menu .mat-mdc-menu-content {
+        background-color: #dbeafe !important; /* bg-blue-50 - mismo que el sidebar */
+        width: 100% !important;
+        min-width: 280px !important;
+        overflow-x: hidden !important; /* Ocultar scroll horizontal */
+        overflow-y: auto !important; /* Permitir scroll vertical si es necesario */
+      }
+      
+      ::ng-deep .sidebar-menu .cdk-overlay-pane {
+        background-color: transparent !important;
+        min-width: 280px !important;
+        overflow: hidden !important; /* Ocultar cualquier overflow */
+      }
+      
+      /* Forzar el ancho en todos los niveles */
+      ::ng-deep .sidebar-menu {
+        min-width: 280px !important;
+        overflow-x: hidden !important; /* Ocultar scroll horizontal */
       }
     `,
   ],
