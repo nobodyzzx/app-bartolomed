@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core'
 import { HttpClient, HttpHeaders } from '@angular/common/http'
 import { catchError, map, Observable, tap, throwError } from 'rxjs'
-import { environment } from '../../../../environments/environments'
+import { environment } from '../../../../environments/environment'
 import { AuthService } from '../../../auth/services/auth.service'
 import { ErrorService } from '../../../../shared/components/services/error.service'
 import { User } from '../../../auth/interfaces/user.interface'
