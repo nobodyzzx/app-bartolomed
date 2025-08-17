@@ -31,42 +31,27 @@ COPY . .
 EXPOSE 4200
 CMD ["npx", "ng", "serve", "--host", "0.0.0.0"]
 
-# Etapa de producción
-FROM nginx:alpine AS production
+# Etapa de producción - usando Node.js para servir archivos estáticos
+FROM node:20-alpine AS production
+
+# Instala serve para servir archivos estáticos
+RUN npm install -g serve
+
+# Crear usuario no-root para seguridad
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S angular -u 1001
+
+# Establece el directorio de trabajo
+WORKDIR /app
 
 # Copia la aplicación compilada desde la etapa de construcción
-COPY --from=builder /app/dist/frontend /usr/share/nginx/html
+COPY --from=builder --chown=angular:nodejs /app/dist/frontend ./dist
 
-# Crear configuración de nginx para proxy
-RUN echo 'server { \
-    listen 4200; \
-    server_name localhost; \
-    root /usr/share/nginx/html; \
-    index index.html; \
-    \
-    # Proxy para API \
-    location /api/ { \
-        proxy_pass http://backend:3000/; \
-        proxy_set_header Host $host; \
-        proxy_set_header X-Real-IP $remote_addr; \
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
-        proxy_set_header X-Forwarded-Proto $scheme; \
-    } \
-    \
-    # Servir archivos estáticos \
-    location / { \
-        try_files $uri $uri/ /index.html; \
-    } \
-    \
-    # Cache para assets \
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ { \
-        expires 1y; \
-        add_header Cache-Control "public, immutable"; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+# Cambia al usuario no-root
+USER angular
 
 # Expone el puerto 4200
 EXPOSE 4200
 
-# Inicia nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Comando para servir la aplicación estática con soporte para SPA
+CMD ["serve", "-s", "dist", "-l", "4200"]

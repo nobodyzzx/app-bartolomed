@@ -15,6 +15,9 @@ services:
     networks:
       - app-network
     restart: unless-stopped
+    labels:
+      - "coolify.type=application"
+      - "coolify.name=frontend"
 
   backend:
     build:
@@ -30,13 +33,17 @@ services:
       - DB_USER=${POSTGRES_USER:-bartolomed_user}
       - DB_PASS=${POSTGRES_PASSWORD:-bartolomed_pass}
       - DB_NAME=${POSTGRES_DB:-bartolomed_db}
-      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-key}
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-change-in-production}
+      - PORT=3000
     depends_on:
       database:
         condition: service_healthy
     networks:
       - app-network
     restart: unless-stopped
+    labels:
+      - "coolify.type=application"
+      - "coolify.name=backend"
 
   database:
     image: postgres:16-alpine
@@ -51,12 +58,15 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bartolomed_user} -d ${POSTGRES_DB:-bartolomed_db} -h localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 40s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bartolomed_user} -d ${POSTGRES_DB:-bartolomed_db}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     restart: unless-stopped
+    labels:
+      - "coolify.type=database"
+      - "coolify.name=database"
 
 volumes:
   db_data:
