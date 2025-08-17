@@ -45,8 +45,8 @@ RUN adduser -S angular -u 1001
 # Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia la aplicación compilada desde la etapa de construcción
-COPY --from=builder --chown=angular:nodejs /app/dist/frontend ./dist
+# Copia la aplicación compilada desde la etapa de construcción directamente
+COPY --from=builder --chown=angular:nodejs /app/dist/frontend .
 
 # Cambia al usuario no-root
 USER angular
@@ -54,5 +54,5 @@ USER angular
 # Expone el puerto 4200
 EXPOSE 4200
 
-# Comando para servir la aplicación estática con soporte para SPA
-CMD ["serve", "-s", "dist", "-l", "4200"]
+# Comando para servir la aplicación estática con soporte para SPA (desde el directorio actual)
+CMD ["serve", "-s", ".", "-l", "4200"]
