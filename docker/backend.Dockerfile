@@ -9,11 +9,8 @@ WORKDIR /app
 # Copia package.json y package-lock.json
 COPY package*.json ./
 
-# Instala las dependencias de producción
-RUN npm ci --only=production && npm cache clean --force
-
-# Instala dependencias de desarrollo para la construcción
-RUN npm ci
+# Instala todas las dependencias (incluidas las de desarrollo para el build)
+RUN npm ci && npm cache clean --force
 
 # Instala NestJS CLI globalmente
 RUN npm install -g @nestjs/cli
@@ -51,7 +48,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instala solo las dependencias de producción
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Copia la aplicación compilada desde la etapa de construcción
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
