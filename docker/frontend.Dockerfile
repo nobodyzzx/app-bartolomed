@@ -45,8 +45,8 @@ RUN adduser -S angular -u 1001
 # Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia la aplicación compilada desde la etapa de construcción directamente
-COPY --from=builder --chown=angular:nodejs /app/dist/frontend .
+# Copia la aplicación compilada desde la etapa de construcción (nueva estructura de Angular)
+COPY --from=builder --chown=angular:nodejs /app/dist/frontend/browser .
 
 # Cambia al usuario no-root
 USER angular
