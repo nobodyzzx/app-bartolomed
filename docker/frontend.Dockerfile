@@ -34,8 +34,9 @@ CMD ["npx", "ng", "serve", "--host", "0.0.0.0"]
 # Etapa de producción - usando Node.js para servir archivos estáticos
 FROM node:20-alpine AS production
 
-# Instala serve para servir archivos estáticos
-RUN npm install -g serve
+# Instala serve para servir archivos estáticos y wget para health checks
+RUN npm install -g serve && \
+    apk add --no-cache wget
 
 # Crear usuario no-root para seguridad
 RUN addgroup -g 1001 -S nodejs

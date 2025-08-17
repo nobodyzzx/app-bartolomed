@@ -6,26 +6,27 @@ services:
       context: ./frontend
       dockerfile: ../docker/frontend.Dockerfile
       target: production
-    expose:
-      - "4200"
+    ports:
+      - "4200:4200"
     environment:
       - NODE_ENV=production
     depends_on:
       - backend
-    networks:
-      - app-network
     restart: unless-stopped
-    labels:
-      - "coolify.type=application"
-      - "coolify.name=frontend"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4200/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   backend:
     build:
       context: ./backend
       dockerfile: ../docker/backend.Dockerfile
       target: production
-    expose:
-      - "3000"
+    ports:
+      - "3000:3000"
     environment:
       - NODE_ENV=production
       - DB_HOST=database
@@ -38,12 +39,13 @@ services:
     depends_on:
       database:
         condition: service_healthy
-    networks:
-      - app-network
     restart: unless-stopped
-    labels:
-      - "coolify.type=application"
-      - "coolify.name=backend"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   database:
     image: postgres:16-alpine
@@ -55,23 +57,14 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    networks:
-      - app-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bartolomed_user} -d ${POSTGRES_DB:-bartolomed_db}"]
-      interval: 30s
-      timeout: 10s
+      interval: 15s
+      timeout: 5s
       retries: 5
       start_period: 30s
     restart: unless-stopped
-    labels:
-      - "coolify.type=database"
-      - "coolify.name=database"
 
 volumes:
   db_data:
     driver: local
-
-networks:
-  app-network:
-    driver: bridge

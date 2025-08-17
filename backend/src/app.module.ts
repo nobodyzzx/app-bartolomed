@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
 import { ClinicsModule } from './clinics/clinics.module';
+import { HealthModule } from './health/health.module';
 import { PersonalInfo, ProfessionalInfo, User } from './users/entities';
 import { Clinic } from './clinics/entities';
 
@@ -26,6 +27,7 @@ import { Clinic } from './clinics/entities';
     UsersModule,
     CommonModule,
     ClinicsModule,
+    HealthModule,
   ],
 })
 export class AppModule {}

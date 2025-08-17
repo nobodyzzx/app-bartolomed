@@ -37,8 +37,8 @@ CMD ["npm", "run", "start:dev"]
 # Etapa de producción
 FROM node:20-alpine AS production
 
-# Instala dumb-init para manejo de señales
-RUN apk add --no-cache dumb-init
+# Instala dumb-init para manejo de señales y wget para health checks
+RUN apk add --no-cache dumb-init wget
 
 # Crear usuario no-root para seguridad
 RUN addgroup -g 1001 -S nodejs
