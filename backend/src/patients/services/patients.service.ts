@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Patient } from '../entities/patient.entity';
@@ -40,10 +35,8 @@ export class PatientsService {
         throw new ConflictException('Patient with this document number already exists');
       }
 
-      const { clinicId, ...patientData } = createPatientDto;
-
       const patient = this.patientRepository.create({
-        ...patientData,
+        ...createPatientDto,
         clinic,
         createdBy: user,
       });
@@ -59,7 +52,7 @@ export class PatientsService {
 
   async findAll(clinicId?: string): Promise<Patient[]> {
     const whereConditions: any = { isActive: true };
-    
+
     if (clinicId) {
       whereConditions.clinic = { id: clinicId };
     }
@@ -121,8 +114,7 @@ export class PatientsService {
         throw new NotFoundException('Clinic not found');
       }
 
-      const { clinicId, ...patientData } = updatePatientDto;
-      Object.assign(patient, { ...patientData, clinic });
+      Object.assign(patient, { ...updatePatientDto, clinic });
     } else {
       Object.assign(patient, updatePatientDto);
     }
@@ -144,7 +136,7 @@ export class PatientsService {
       .where('patient.isActive = :isActive', { isActive: true })
       .andWhere(
         '(patient.firstName ILIKE :searchTerm OR patient.lastName ILIKE :searchTerm OR patient.documentNumber ILIKE :searchTerm OR patient.email ILIKE :searchTerm)',
-        { searchTerm: `%${searchTerm}%` }
+        { searchTerm: `%${searchTerm}%` },
       );
 
     if (clinicId) {
@@ -189,7 +181,7 @@ export class PatientsService {
           WHEN EXTRACT(YEAR FROM AGE(patient.birthDate)) BETWEEN 51 AND 70 THEN '51-70'
           ELSE 'Over 70'
         END`,
-        'ageRange'
+        'ageRange',
       )
       .addSelect('COUNT(*)', 'count')
       .where(whereConditions, parameters)

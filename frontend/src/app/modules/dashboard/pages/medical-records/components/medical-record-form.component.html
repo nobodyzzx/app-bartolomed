@@ -1,0 +1,458 @@
+<div class="medical-record-form-container">
+  <div class="form-header">
+    <h1 class="text-3xl font-bold text-blue-900 mb-2">
+      {{isEditMode ? 'Editar' : 'Nuevo'}} Expediente Médico
+    </h1>
+    <p class="text-gray-600">Complete la información del expediente médico del paciente</p>
+  </div>
+
+  <!-- Stepper -->
+  <mat-stepper [selectedIndex]="currentStep" #stepper orientation="horizontal" class="mb-6">
+    <mat-step label="Información Médica">
+      <ng-template matStepContent>
+        <div class="step-content">
+          <form [formGroup]="medicalRecordForm" class="space-y-6">
+            
+            <!-- Información Básica -->
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>Información Básica</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  
+                  <mat-form-field>
+                    <mat-label>Paciente</mat-label>
+                    <mat-select formControlName="patientId" required>
+                      <mat-option *ngFor="let patient of patients" [value]="patient.id">
+                        {{patient.firstName}} {{patient.lastName}} - {{patient.documentNumber}}
+                      </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="medicalRecordForm.get('patientId')?.hasError('required')">
+                      Seleccione un paciente
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Doctor</mat-label>
+                    <mat-select formControlName="doctorId" required>
+                      <mat-option *ngFor="let doctor of doctors" [value]="doctor.id">
+                        Dr. {{doctor.firstName}} {{doctor.lastName}}
+                      </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="medicalRecordForm.get('doctorId')?.hasError('required')">
+                      Seleccione un doctor
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Tipo de Registro</mat-label>
+                    <mat-select formControlName="type" required>
+                      <mat-option *ngFor="let type of recordTypes" [value]="type">
+                        {{getTypeText(type)}}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field class="md:col-span-2">
+                    <mat-label>Motivo de Consulta</mat-label>
+                    <textarea matInput formControlName="chiefComplaint" required rows="3" 
+                              placeholder="Describa el motivo principal de la consulta"></textarea>
+                    <mat-error *ngIf="medicalRecordForm.get('chiefComplaint')?.hasError('required')">
+                      El motivo de consulta es obligatorio
+                    </mat-error>
+                  </mat-form-field>
+
+                  <div class="flex items-center">
+                    <mat-checkbox formControlName="isEmergency" color="warn">
+                      <span class="text-red-600 font-medium">Emergencia</span>
+                    </mat-checkbox>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Historia Clínica -->
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>Historia Clínica</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  <mat-form-field>
+                    <mat-label>Historia de la Enfermedad Actual</mat-label>
+                    <textarea matInput formControlName="historyOfPresentIllness" rows="4"
+                              placeholder="Describe la evolución de los síntomas actuales"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Antecedentes Médicos Personales</mat-label>
+                    <textarea matInput formControlName="pastMedicalHistory" rows="4"
+                              placeholder="Enfermedades previas, cirugías, hospitalizaciones"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Medicamentos Actuales</mat-label>
+                    <textarea matInput formControlName="medications" rows="3"
+                              placeholder="Lista de medicamentos que toma actualmente"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Alergias</mat-label>
+                    <textarea matInput formControlName="allergies" rows="3"
+                              placeholder="Alergias conocidas a medicamentos, alimentos, etc."></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Historia Social</mat-label>
+                    <textarea matInput formControlName="socialHistory" rows="3"
+                              placeholder="Hábitos: tabaco, alcohol, drogas, ejercicio"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Antecedentes Familiares</mat-label>
+                    <textarea matInput formControlName="familyHistory" rows="3"
+                              placeholder="Enfermedades familiares relevantes"></textarea>
+                  </mat-form-field>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Signos Vitales -->
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>Signos Vitales</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  
+                  <mat-form-field>
+                    <mat-label>Temperatura (°C)</mat-label>
+                    <input matInput type="number" formControlName="temperature" step="0.1" min="35" max="45">
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Presión Sistólica</mat-label>
+                    <input matInput type="number" formControlName="systolicBP" min="70" max="250">
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Presión Diastólica</mat-label>
+                    <input matInput type="number" formControlName="diastolicBP" min="40" max="150">
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Frecuencia Cardíaca</mat-label>
+                    <input matInput type="number" formControlName="heartRate" min="30" max="200">
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Frecuencia Respiratoria</mat-label>
+                    <input matInput type="number" formControlName="respiratoryRate" min="8" max="60">
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Saturación O₂ (%)</mat-label>
+                    <input matInput type="number" formControlName="oxygenSaturation" min="70" max="100">
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Peso (kg)</mat-label>
+                    <input matInput type="number" formControlName="weight" step="0.1" min="1" max="300"
+                           (input)="calculateBMI()">
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Altura (cm)</mat-label>
+                    <input matInput type="number" formControlName="height" min="30" max="250"
+                           (input)="calculateBMI()">
+                  </mat-form-field>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Examen Físico -->
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>Examen Físico</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  <mat-form-field>
+                    <mat-label>Apariencia General</mat-label>
+                    <textarea matInput formControlName="generalAppearance" rows="3"
+                              placeholder="Estado general del paciente"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Cabeza, Ojos, Oídos, Nariz, Garganta</mat-label>
+                    <textarea matInput formControlName="heent" rows="3"
+                              placeholder="Hallazgos en HEENT"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Sistema Cardiovascular</mat-label>
+                    <textarea matInput formControlName="cardiovascular" rows="3"
+                              placeholder="Examen cardiovascular"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Sistema Respiratorio</mat-label>
+                    <textarea matInput formControlName="respiratory" rows="3"
+                              placeholder="Examen respiratorio"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Abdomen</mat-label>
+                    <textarea matInput formControlName="abdominal" rows="3"
+                              placeholder="Examen abdominal"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Sistema Neurológico</mat-label>
+                    <textarea matInput formControlName="neurological" rows="3"
+                              placeholder="Examen neurológico"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Sistema Musculoesquelético</mat-label>
+                    <textarea matInput formControlName="musculoskeletal" rows="3"
+                              placeholder="Examen musculoesquelético"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Piel</mat-label>
+                    <textarea matInput formControlName="skin" rows="3"
+                              placeholder="Examen dermatológico"></textarea>
+                  </mat-form-field>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Evaluación y Plan -->
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>Evaluación y Plan de Tratamiento</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  <mat-form-field>
+                    <mat-label>Evaluación Clínica</mat-label>
+                    <textarea matInput formControlName="assessment" rows="4"
+                              placeholder="Evaluación clínica del caso"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Plan de Tratamiento</mat-label>
+                    <textarea matInput formControlName="plan" rows="4"
+                              placeholder="Plan de tratamiento y manejo"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Diagnóstico Principal</mat-label>
+                    <textarea matInput formControlName="diagnosis" rows="3"
+                              placeholder="Diagnóstico principal"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Diagnósticos Diferenciales</mat-label>
+                    <textarea matInput formControlName="differentialDiagnosis" rows="3"
+                              placeholder="Diagnósticos diferenciales considerados"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Instrucciones de Seguimiento</mat-label>
+                    <textarea matInput formControlName="followUpInstructions" rows="3"
+                              placeholder="Instrucciones para el seguimiento"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Educación al Paciente</mat-label>
+                    <textarea matInput formControlName="patientEducation" rows="3"
+                              placeholder="Información proporcionada al paciente"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Fecha de Seguimiento</mat-label>
+                    <input matInput [matDatepicker]="followUpPicker" formControlName="followUpDate">
+                    <mat-datepicker-toggle matSuffix [for]="followUpPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #followUpPicker></mat-datepicker>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Notas Adicionales</mat-label>
+                    <textarea matInput formControlName="notes" rows="3"
+                              placeholder="Notas adicionales del médico"></textarea>
+                  </mat-form-field>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </form>
+        </div>
+      </ng-template>
+    </mat-step>
+
+    <mat-step label="Consentimiento Informado">
+      <ng-template matStepContent>
+        <div class="step-content">
+          <form [formGroup]="consentForm" class="space-y-6">
+            
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>Formulario de Consentimiento Informado</mat-card-title>
+                <mat-card-subtitle>Complete la información del consentimiento del paciente</mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  <mat-form-field>
+                    <mat-label>Tipo de Consentimiento</mat-label>
+                    <mat-select formControlName="consentType" required>
+                      <mat-option *ngFor="let type of consentTypes" [value]="type">
+                        {{getConsentTypeText(type)}}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Firmado por</mat-label>
+                    <input matInput formControlName="signedBy" 
+                           placeholder="Nombre completo de quien firma">
+                  </mat-form-field>
+
+                  <mat-form-field class="md:col-span-2">
+                    <mat-label>Descripción del Consentimiento</mat-label>
+                    <textarea matInput formControlName="description" rows="6" required
+                              placeholder="Detalle completo del procedimiento, riesgos, beneficios y alternativas explicadas al paciente"></textarea>
+                    <mat-error *ngIf="consentForm.get('description')?.hasError('required')">
+                      La descripción del consentimiento es obligatoria
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <!-- Sección de Firmas -->
+                <div class="mt-6">
+                  <h3 class="text-lg font-semibold text-gray-800 mb-4">Firmas Requeridas</h3>
+                  
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <mat-checkbox formControlName="patientSignature" required color="primary">
+                      <span class="font-medium">Firma del Paciente</span>
+                      <br>
+                      <span class="text-sm text-gray-600">Confirmo que he leído y entendido la información</span>
+                    </mat-checkbox>
+
+                    <mat-checkbox formControlName="doctorSignature" required color="primary">
+                      <span class="font-medium">Firma del Médico</span>
+                      <br>
+                      <span class="text-sm text-gray-600">Confirmo que he explicado el procedimiento</span>
+                    </mat-checkbox>
+
+                    <mat-checkbox formControlName="witnessSignature" color="primary">
+                      <span class="font-medium">Firma del Testigo</span>
+                      <br>
+                      <span class="text-sm text-gray-600">Opcional: Testigo de la explicación</span>
+                    </mat-checkbox>
+                  </div>
+                </div>
+
+                <!-- Subida de Documento -->
+                <div class="mt-6">
+                  <h3 class="text-lg font-semibold text-gray-800 mb-4">Documento Firmado</h3>
+                  
+                  <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <mat-icon class="text-gray-400 text-4xl mb-2">cloud_upload</mat-icon>
+                    <p class="text-gray-600 mb-4">Suba el documento de consentimiento firmado</p>
+                    
+                    <input type="file" 
+                           (change)="onFileSelected($event)" 
+                           accept=".pdf,.jpg,.jpeg,.png"
+                           class="hidden" 
+                           #fileInput>
+                    
+                    <button mat-raised-button color="primary" (click)="fileInput.click()">
+                      Seleccionar Archivo
+                    </button>
+                    
+                    <p class="text-sm text-gray-500 mt-2">Formatos permitidos: PDF, JPG, PNG (Máx. 10MB)</p>
+                    
+                    <div *ngIf="selectedConsentFile" class="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                      <div class="flex items-center justify-center gap-2">
+                        <mat-icon class="text-green-600">check_circle</mat-icon>
+                        <span class="text-green-800 font-medium">{{selectedConsentFile.name}}</span>
+                        <button mat-icon-button color="warn" (click)="selectedConsentFile = null">
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </form>
+        </div>
+      </ng-template>
+    </mat-step>
+
+    <mat-step label="Confirmación">
+      <ng-template matStepContent>
+        <div class="step-content">
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>Resumen del Expediente Médico</mat-card-title>
+              <mat-card-subtitle>Revise la información antes de guardar</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 class="font-semibold text-gray-800">Información Básica</h4>
+                    <p><strong>Tipo:</strong> {{getTypeText(medicalRecordForm.get('type')?.value)}}</p>
+                    <p><strong>Motivo:</strong> {{medicalRecordForm.get('chiefComplaint')?.value}}</p>
+                    <p><strong>Emergencia:</strong> {{medicalRecordForm.get('isEmergency')?.value ? 'Sí' : 'No'}}</p>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-800">Consentimiento</h4>
+                    <p><strong>Tipo:</strong> {{getConsentTypeText(consentForm.get('consentType')?.value)}}</p>
+                    <p><strong>Documento:</strong> {{selectedConsentFile?.name || 'No subido'}}</p>
+                  </div>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </ng-template>
+    </mat-step>
+  </mat-stepper>
+
+  <!-- Botones de Navegación -->
+  <div class="flex justify-between items-center mt-6">
+    <div>
+      <button mat-button (click)="cancel()" class="mr-2">
+        Cancelar
+      </button>
+      <button mat-button (click)="saveDraft()" *ngIf="!isEditMode" [disabled]="loading">
+        Guardar Borrador
+      </button>
+    </div>
+
+    <div class="flex gap-2">
+      <button mat-button (click)="previousStep()" [disabled]="currentStep === 0">
+        Anterior
+      </button>
+      
+      <button mat-raised-button color="primary" (click)="nextStep()" 
+              *ngIf="currentStep < 2" [disabled]="!medicalRecordForm.valid">
+        Siguiente
+      </button>
+      
+      <button mat-raised-button color="primary" (click)="onSubmit()" 
+              *ngIf="currentStep === 2" [disabled]="loading || !medicalRecordForm.valid">
+        <mat-spinner diameter="20" *ngIf="loading" class="mr-2"></mat-spinner>
+        {{isEditMode ? 'Actualizar' : 'Guardar'}} Expediente
+      </button>
+    </div>
+  </div>
+</div>

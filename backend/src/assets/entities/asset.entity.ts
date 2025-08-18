@@ -243,10 +243,7 @@ export class Asset {
     if (this.depreciationMethod === DepreciationMethod.STRAIGHT_LINE) {
       const depreciableAmount = this.purchasePrice - this.salvageValue;
       this.monthlyDepreciation = depreciableAmount / totalMonths;
-      this.accumulatedDepreciation = Math.min(
-        this.monthlyDepreciation * monthsOwned,
-        depreciableAmount
-      );
+      this.accumulatedDepreciation = Math.min(this.monthlyDepreciation * monthsOwned, depreciableAmount);
       this.currentValue = this.purchasePrice - this.accumulatedDepreciation;
     }
   }

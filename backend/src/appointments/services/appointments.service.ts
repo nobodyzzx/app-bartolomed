@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, Not } from 'typeorm';
+import { Repository, Between, Not, In } from 'typeorm';
 import { Appointment, AppointmentStatus } from '../entities/appointment.entity';
-import { CreateAppointmentDto, UpdateAppointmentDto } from '../dto';
+import { CreateAppointmentDto, UpdateAppointmentDto } from '../dto/index';
 import { User } from '../../users/entities/user.entity';
 import { Patient } from '../../patients/entities/patient.entity';
 import { Clinic } from '../../clinics/entities/clinic.entity';
@@ -56,9 +56,9 @@ export class AppointmentsService {
         doctor: { id: doctorId },
         appointmentDate: Between(
           new Date(appointmentStart.getTime() - 15 * 60000), // 15 min buffer antes
-          appointmentEnd
+          appointmentEnd,
         ),
-        status: AppointmentStatus.SCHEDULED || AppointmentStatus.CONFIRMED,
+        status: In([AppointmentStatus.SCHEDULED, AppointmentStatus.CONFIRMED]),
         isActive: true,
       },
     });
@@ -79,7 +79,7 @@ export class AppointmentsService {
       });
 
       return await this.appointmentRepository.save(appointment);
-    } catch (error) {
+    } catch {
       throw new BadRequestException('Error creating appointment');
     }
   }
@@ -127,9 +127,7 @@ export class AppointmentsService {
       queryBuilder.andWhere('appointment.appointmentDate <= :endDate', { endDate });
     }
 
-    return await queryBuilder
-      .orderBy('appointment.appointmentDate', 'ASC')
-      .getMany();
+    return await queryBuilder.orderBy('appointment.appointmentDate', 'ASC').getMany();
   }
 
   async findOne(id: string): Promise<Appointment> {
@@ -150,20 +148,17 @@ export class AppointmentsService {
 
     // Si se está actualizando la fecha/hora, verificar disponibilidad
     if (updateAppointmentDto.appointmentDate || updateAppointmentDto.duration) {
-      const newDate = updateAppointmentDto.appointmentDate 
+      const newDate = updateAppointmentDto.appointmentDate
         ? new Date(updateAppointmentDto.appointmentDate)
         : appointment.appointmentDate;
       const newDuration = updateAppointmentDto.duration || appointment.duration;
-      
+
       const appointmentEnd = new Date(newDate.getTime() + newDuration * 60000);
 
       const conflictingAppointment = await this.appointmentRepository.findOne({
         where: {
           doctor: { id: appointment.doctor.id },
-          appointmentDate: Between(
-            new Date(newDate.getTime() - 15 * 60000),
-            appointmentEnd
-          ),
+          appointmentDate: Between(new Date(newDate.getTime() - 15 * 60000), appointmentEnd),
           status: AppointmentStatus.SCHEDULED || AppointmentStatus.CONFIRMED,
           isActive: true,
           id: Not(id), // Excluir la cita actual
@@ -233,11 +228,12 @@ export class AppointmentsService {
   ): Promise<{ available: boolean; conflictingAppointments: Appointment[] }> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
-    
+
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const queryBuilder = this.appointmentRepository.createQueryBuilder('appointment')
+    const queryBuilder = this.appointmentRepository
+      .createQueryBuilder('appointment')
       .where('appointment.doctor.id = :doctorId', { doctorId })
       .andWhere('appointment.appointmentDate BETWEEN :startOfDay AND :endOfDay', {
         startOfDay,

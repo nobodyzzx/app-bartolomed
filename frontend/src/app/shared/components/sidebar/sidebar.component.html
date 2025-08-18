@@ -4,7 +4,23 @@
     <!-- Vista expandida -->
     <mat-accordion *ngIf="isExpanded">
       <ng-container *ngFor="let menuItem of menuItems()">
-        <mat-expansion-panel class="bg-blue-50 shadow-none px-4" hideToggle>
+        <!-- Elementos independientes (sin hijos) -->
+        <div *ngIf="!menuItem.children || menuItem.children.length === 0" class="px-4 mb-2">
+          <a
+            mat-list-item
+            [routerLink]="menuItem.route"
+            routerLinkActive="bg-blue-200"
+            class="hover:bg-blue-100 rounded-lg"
+          >
+            <div class="flex items-center gap-x-4">
+              <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
+              <span class="text-blue-900 font-normal">{{ menuItem.label }}</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- Elementos con submenús -->
+        <mat-expansion-panel *ngIf="menuItem.children && menuItem.children.length > 0" class="bg-blue-50 shadow-none px-4" hideToggle>
           <mat-expansion-panel-header class="bg-blue-50 hover:bg-blue-100 rounded-full">
             <mat-panel-title class="flex justify-start items-center gap-x-4">
               <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
@@ -33,31 +49,47 @@
     <!-- Vista contraída - Solo iconos principales con menús desplegables -->
     <div *ngIf="!isExpanded" class="px-2">
       <div *ngFor="let menuItem of menuItems(); let i = index" class="mb-2">
-        <!-- Icono principal del menú con dropdown -->
-        <button 
-          mat-icon-button
-          [matMenuTriggerFor]="menu"
-          [matTooltip]="menuItem.label"
-          matTooltipPosition="right"
-          class="w-12 h-12 hover:bg-blue-100 transition-colors duration-200 rounded-full"
-        >
-          <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
-        </button>
-        
-        <!-- Menú desplegable para los submenús -->
-        <mat-menu #menu="matMenu" class="sidebar-menu" xPosition="after">
-          <ng-container *ngFor="let child of menuItem.children">
-            <a
-              mat-menu-item
-              [routerLink]="child.route"
-              routerLinkActive="bg-blue-200"
-              class="hover:bg-blue-100"
-            >
-              <mat-icon color="primary">{{ child.icon }}</mat-icon>
-              <span class="text-blue-900">{{ child.label }}</span>
-            </a>
-          </ng-container>
-        </mat-menu>
+        <!-- Elementos independientes (sin hijos) -->
+        <div *ngIf="!menuItem.children || menuItem.children.length === 0">
+          <a 
+            mat-icon-button
+            [routerLink]="menuItem.route"
+            routerLinkActive="bg-blue-200"
+            [matTooltip]="menuItem.label"
+            matTooltipPosition="right"
+            class="w-12 h-12 hover:bg-blue-100 transition-colors duration-200 rounded-full"
+          >
+            <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
+          </a>
+        </div>
+
+        <!-- Elementos con submenús -->
+        <div *ngIf="menuItem.children && menuItem.children.length > 0">
+          <button 
+            mat-icon-button
+            [matMenuTriggerFor]="menu"
+            [matTooltip]="menuItem.label"
+            matTooltipPosition="right"
+            class="w-12 h-12 hover:bg-blue-100 transition-colors duration-200 rounded-full"
+          >
+            <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
+          </button>
+          
+          <!-- Menú desplegable para los submenús -->
+          <mat-menu #menu="matMenu" class="sidebar-menu" xPosition="after">
+            <ng-container *ngFor="let child of menuItem.children">
+              <a
+                mat-menu-item
+                [routerLink]="child.route"
+                routerLinkActive="bg-blue-200"
+                class="hover:bg-blue-100"
+              >
+                <mat-icon color="primary">{{ child.icon }}</mat-icon>
+                <span class="text-blue-900">{{ child.label }}</span>
+              </a>
+            </ng-container>
+          </mat-menu>
+        </div>
       </div>
     </div>
   </div>

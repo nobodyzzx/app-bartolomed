@@ -1,0 +1,183 @@
+.medical-records-dashboard {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header-section {
+  margin-bottom: 24px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  padding: 20px;
+  border-radius: 12px;
+  border-left: 4px solid;
+  transition: transform 0.2s ease-in-out;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.filter-section {
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.table-container {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.mat-mdc-table {
+  width: 100%;
+}
+
+.mat-mdc-row:hover {
+  background-color: #f8fafc;
+}
+
+.mat-mdc-header-cell {
+  font-weight: 600;
+  color: #1e40af;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.mat-mdc-cell {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.emergency-badge {
+  background-color: #fee2e2;
+  color: #dc2626;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-chip {
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 16px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #6b7280;
+}
+
+.empty-state mat-icon {
+  font-size: 4rem;
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.filters-panel {
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.advanced-filters {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+@media (max-width: 768px) {
+  .medical-records-dashboard {
+    padding: 16px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .mat-mdc-table {
+    font-size: 0.875rem;
+  }
+}
+
+/* Animaciones */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Estilos para los chips de estado */
+.mat-mdc-chip.mat-primary {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.mat-mdc-chip.mat-accent {
+  background-color: #f3e8ff;
+  color: #7c3aed;
+}
+
+.mat-mdc-chip.mat-warn {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+/* Estilos para las tarjetas de estadísticas */
+.stat-card.blue {
+  border-left-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.stat-card.orange {
+  border-left-color: #f97316;
+  background-color: #fff7ed;
+}
+
+.stat-card.green {
+  border-left-color: #10b981;
+  background-color: #f0fdf4;
+}
+
+.stat-card.red {
+  border-left-color: #ef4444;
+  background-color: #fef2f2;
+}

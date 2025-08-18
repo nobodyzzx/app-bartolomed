@@ -165,7 +165,7 @@ export class Invoice {
     // Calcular subtotal desde los items si no está establecido
     if (!this.subtotal && this.items) {
       this.subtotal = this.items.reduce((sum: number, item: any) => {
-        return sum + (item.quantity * item.unitPrice);
+        return sum + item.quantity * item.unitPrice;
       }, 0);
     }
 

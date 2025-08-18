@@ -8,12 +8,13 @@ import { ClinicsModule } from './clinics/clinics.module';
 import { HealthModule } from './health/health.module';
 import { PatientsModule } from './patients/patients.module';
 import { AppointmentsModule } from './appointments/appointments.module';
+import { MedicalRecordsModule } from './medical-records/medical-records.module';
 import { ReportsModule } from './reports/reports.module';
 import { PersonalInfo, ProfessionalInfo, User } from './users/entities';
 import { Clinic } from './clinics/entities';
 import { Patient } from './patients/entities';
 import { Appointment } from './appointments/entities/appointment.entity';
-import { MedicalRecord } from './medical-records/entities/medical-record.entity';
+import { MedicalRecord, ConsentForm } from './medical-records/entities';
 import { Prescription, PrescriptionItem } from './prescriptions/entities/prescription.entity';
 import { Invoice, InvoiceItem, Payment } from './billing/entities/billing.entity';
 import { Asset, MaintenanceRecord } from './assets/entities/asset.entity';
@@ -45,6 +46,7 @@ import {
         Patient,
         Appointment,
         MedicalRecord,
+        ConsentForm,
         Prescription,
         PrescriptionItem,
         Invoice,
@@ -68,6 +70,7 @@ import {
     HealthModule,
     PatientsModule,
     AppointmentsModule,
+    MedicalRecordsModule,
     ReportsModule,
   ],
 })

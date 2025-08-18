@@ -100,9 +100,7 @@ export class Prescription {
   }
 
   canBeRefilled(): boolean {
-    return this.refillsUsed < this.refillsAllowed && 
-           !this.isExpired() && 
-           this.status === PrescriptionStatus.ACTIVE;
+    return this.refillsUsed < this.refillsAllowed && !this.isExpired() && this.status === PrescriptionStatus.ACTIVE;
   }
 
   getRemainingRefills(): number {

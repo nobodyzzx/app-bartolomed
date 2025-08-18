@@ -9,7 +9,6 @@ import {
   Min,
   Max,
   IsEmail,
-  IsPhoneNumber,
 } from 'class-validator';
 import { AppointmentType, AppointmentPriority } from '../entities/appointment.entity';
 

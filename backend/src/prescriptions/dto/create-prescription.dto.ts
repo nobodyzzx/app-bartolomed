@@ -1,5 +1,4 @@
 import {
-  IsEnum,
   IsOptional,
   IsString,
   IsUUID,
@@ -12,7 +11,6 @@ import {
   Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PrescriptionStatus } from '../entities/prescription.entity';
 
 export class CreatePrescriptionItemDto {
   @IsString()

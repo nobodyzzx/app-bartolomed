@@ -179,9 +179,7 @@ export class Appointment {
   isToday(): boolean {
     const today = new Date();
     const appointmentDate = new Date(this.appointmentDate);
-    return (
-      appointmentDate.toDateString() === today.toDateString()
-    );
+    return appointmentDate.toDateString() === today.toDateString();
   }
 
   isPast(): boolean {
@@ -193,13 +191,11 @@ export class Appointment {
   }
 
   canBeCancelled(): boolean {
-    return this.status === AppointmentStatus.SCHEDULED || 
-           this.status === AppointmentStatus.CONFIRMED;
+    return this.status === AppointmentStatus.SCHEDULED || this.status === AppointmentStatus.CONFIRMED;
   }
 
   canBeRescheduled(): boolean {
-    return this.status === AppointmentStatus.SCHEDULED || 
-           this.status === AppointmentStatus.CONFIRMED;
+    return this.status === AppointmentStatus.SCHEDULED || this.status === AppointmentStatus.CONFIRMED;
   }
 
   @BeforeInsert()
@@ -207,7 +203,8 @@ export class Appointment {
   validateAppointment() {
     // Validar que la fecha de la cita no sea en el pasado (para nuevas citas)
     if (this.appointmentDate && new Date(this.appointmentDate) < new Date()) {
-      if (!this.id) { // Solo para nuevas citas
+      if (!this.id) {
+        // Solo para nuevas citas
         throw new Error('Appointment date cannot be in the past');
       }
     }
@@ -218,7 +215,8 @@ export class Appointment {
     }
 
     // Validar duración máxima
-    if (this.duration && this.duration > 480) { // 8 horas
+    if (this.duration && this.duration > 480) {
+      // 8 horas
       throw new Error('Appointment duration cannot exceed 8 hours');
     }
 

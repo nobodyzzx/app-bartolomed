@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  ParseUUIDPipe,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
 import { PatientsService } from './services/patients.service';
 import { CreatePatientDto, UpdatePatientDto } from './dto';
 import { Auth, GetUser } from '../auth/decorators';
@@ -32,10 +22,7 @@ export class PatientsController {
   }
 
   @Get('search')
-  search(
-    @Query('term') searchTerm: string,
-    @Query('clinicId') clinicId?: string,
-  ) {
+  search(@Query('term') searchTerm: string, @Query('clinicId') clinicId?: string) {
     return this.patientsService.searchPatients(searchTerm, clinicId);
   }
 
@@ -57,10 +44,7 @@ export class PatientsController {
 
   @Patch(':id')
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.RECEPTIONIST)
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() updatePatientDto: UpdatePatientDto,
-  ) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updatePatientDto: UpdatePatientDto) {
     return this.patientsService.update(id, updatePatientDto);
   }
 

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Patient } from '../../patients/entities/patient.entity';
 import { Appointment, AppointmentStatus } from '../../appointments/entities/appointment.entity';
 import { MedicalRecord } from '../../medical-records/entities/medical-record.entity';
@@ -68,7 +68,7 @@ export class ReportsService {
           WHEN EXTRACT(YEAR FROM AGE(patient.birthDate)) BETWEEN 51 AND 70 THEN '51-70'
           ELSE 'Over 70'
         END`,
-        'ageGroup'
+        'ageGroup',
       )
       .addSelect('COUNT(*)', 'count')
       .groupBy('ageGroup')
@@ -275,9 +275,7 @@ export class ReportsService {
   }
 
   async getPaymentMethodReport(filters: ReportFilters) {
-    const queryBuilder = this.invoiceRepository
-      .createQueryBuilder('invoice')
-      .leftJoin('invoice.payments', 'payment');
+    const queryBuilder = this.invoiceRepository.createQueryBuilder('invoice').leftJoin('invoice.payments', 'payment');
 
     if (filters.clinicId) {
       queryBuilder.andWhere('invoice.clinic.id = :clinicId', { clinicId: filters.clinicId });
@@ -305,6 +303,8 @@ export class ReportsService {
   async getStockReport(filters: ReportFilters) {
     // Este reporte se implementaría cuando tengamos el repositorio de MedicationStock
     // Por ahora retornamos un placeholder
+    // TODO: Implementar con filtros cuando esté disponible el repositorio de MedicationStock
+    console.log('Stock report filters:', filters);
     return {
       lowStockMedications: [],
       expiringMedications: [],
@@ -314,11 +314,7 @@ export class ReportsService {
 
   // REPORTE GENERAL DEL DASHBOARD
   async getDashboardReport(filters: ReportFilters) {
-    const [
-      patientStats,
-      appointmentStats,
-      financialStats,
-    ] = await Promise.all([
+    const [patientStats, appointmentStats, financialStats] = await Promise.all([
       this.getPatientDemographicsReport(filters),
       this.getAppointmentStatisticsReport(filters),
       this.getFinancialSummaryReport(filters),

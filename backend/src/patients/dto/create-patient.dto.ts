@@ -1,13 +1,4 @@
-import {
-  IsEmail,
-  IsEnum,
-  IsOptional,
-  IsString,
-  IsDateString,
-  MinLength,
-  MaxLength,
-  IsUUID,
-} from 'class-validator';
+import { IsEmail, IsEnum, IsOptional, IsString, IsDateString, MinLength, MaxLength, IsUUID } from 'class-validator';
 import { Gender, BloodType, MaritalStatus } from '../entities/patient.entity';
 
 export class CreatePatientDto {

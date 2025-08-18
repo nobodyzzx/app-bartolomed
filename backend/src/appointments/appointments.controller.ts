@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  ParseUUIDPipe,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
 import { AppointmentsService } from './services/appointments.service';
 import { CreateAppointmentDto, UpdateAppointmentDto } from './dto';
 import { Auth, GetUser } from '../auth/decorators';
@@ -22,10 +12,7 @@ export class AppointmentsController {
 
   @Post()
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.RECEPTIONIST)
-  create(
-    @Body() createAppointmentDto: CreateAppointmentDto,
-    @GetUser() user: User,
-  ) {
+  create(@Body() createAppointmentDto: CreateAppointmentDto, @GetUser() user: User) {
     return this.appointmentsService.create(createAppointmentDto, user);
   }
 
@@ -39,14 +26,7 @@ export class AppointmentsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    return this.appointmentsService.findAll(
-      clinicId,
-      doctorId,
-      patientId,
-      status,
-      startDate,
-      endDate,
-    );
+    return this.appointmentsService.findAll(clinicId, doctorId, patientId, status, startDate, endDate);
   }
 
   @Get('statistics')
@@ -57,12 +37,7 @@ export class AppointmentsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    return this.appointmentsService.getAppointmentStatistics(
-      clinicId,
-      doctorId,
-      startDate,
-      endDate,
-    );
+    return this.appointmentsService.getAppointmentStatistics(clinicId, doctorId, startDate, endDate);
   }
 
   @Get('availability/:doctorId')
@@ -93,19 +68,13 @@ export class AppointmentsController {
 
   @Patch(':id/confirm')
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.RECEPTIONIST)
-  confirm(
-    @Param('id', ParseUUIDPipe) id: string,
-    @GetUser() user: User,
-  ) {
+  confirm(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
     return this.appointmentsService.confirm(id, user);
   }
 
   @Patch(':id/complete')
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR)
-  complete(
-    @Param('id', ParseUUIDPipe) id: string,
-    @GetUser() user: User,
-  ) {
+  complete(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
     return this.appointmentsService.complete(id, user);
   }
 

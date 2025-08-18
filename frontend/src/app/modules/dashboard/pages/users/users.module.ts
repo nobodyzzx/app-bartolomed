@@ -7,9 +7,10 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MaterialModule } from '../../../../material/material.module';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { UserListComponent } from './user-list/user-list.component';
+import { UserManagementComponent } from './user-management/user-management.component';
 
 @NgModule({
-  declarations: [UserRegisterComponent, UserListComponent],
+  declarations: [UserRegisterComponent, UserListComponent, UserManagementComponent],
   imports: [CommonModule, UsersRoutingModule, ReactiveFormsModule, MaterialModule, HttpClientModule],
 })
 export class UsersModule {}

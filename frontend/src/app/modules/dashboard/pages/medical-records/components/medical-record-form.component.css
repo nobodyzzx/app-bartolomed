@@ -1,0 +1,289 @@
+.medical-record-form-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.form-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.step-content {
+  margin-top: 24px;
+  margin-bottom: 24px;
+}
+
+.mat-mdc-card {
+  margin-bottom: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.mat-mdc-card-header {
+  background-color: #f8fafc;
+  border-radius: 12px 12px 0 0;
+  margin: -24px -24px 16px -24px;
+  padding: 20px 24px;
+}
+
+.mat-mdc-card-title {
+  color: #1e40af;
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.mat-mdc-card-subtitle {
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.mat-mdc-form-field {
+  width: 100%;
+}
+
+.mat-mdc-form-field + .mat-mdc-form-field {
+  margin-top: 16px;
+}
+
+/* Grid layout para formularios */
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+  .md\\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  
+  .md\\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  
+  .md\\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  
+  .md\\:col-span-2 {
+    grid-column: span 2 / span 2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  
+  .lg\\:grid-cols-6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+/* Estilos para signos vitales */
+.vital-signs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+/* Estilos para las secciones del examen físico */
+.physical-exam-section {
+  border-left: 4px solid #3b82f6;
+  padding-left: 16px;
+  margin-bottom: 16px;
+}
+
+/* Estilos para el área de subida de archivos */
+.file-upload-area {
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  padding: 32px;
+  text-align: center;
+  transition: border-color 0.3s ease;
+}
+
+.file-upload-area:hover {
+  border-color: #3b82f6;
+  background-color: #f8fafc;
+}
+
+.file-upload-area.dragover {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.file-selected {
+  background-color: #f0fdf4;
+  border-color: #10b981;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+/* Estilos para los checkboxes de firmas */
+.signature-section {
+  background-color: #f9fafb;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.signature-checkbox {
+  margin-bottom: 16px;
+}
+
+.signature-checkbox .mat-mdc-checkbox-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Estilos para el stepper */
+.mat-mdc-stepper-horizontal {
+  margin-bottom: 24px;
+}
+
+.mat-mdc-step-header {
+  border-radius: 8px;
+  margin: 0 8px;
+}
+
+.mat-mdc-step-header.cdk-program-focused,
+.mat-mdc-step-header.cdk-keyboard-focused {
+  background-color: #eff6ff;
+}
+
+/* Botones de acción */
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.action-buttons .left-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.action-buttons .right-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+/* Estilos para campos obligatorios */
+.mat-mdc-form-field.mat-form-field-invalid .mat-mdc-text-field-wrapper {
+  border-color: #ef4444;
+}
+
+/* Estilos para textareas */
+.mat-mdc-input-element[aria-invalid="true"] {
+  border-color: #ef4444;
+}
+
+/* Indicadores de progreso */
+.progress-indicator {
+  margin: 16px 0;
+}
+
+.upload-progress {
+  margin-top: 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .medical-record-form-container {
+    padding: 16px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .action-buttons .left-buttons,
+  .action-buttons .right-buttons {
+    justify-content: center;
+  }
+  
+  .grid-cols-2,
+  .grid-cols-3,
+  .grid-cols-4,
+  .grid-cols-6 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Estilos para estados de carga */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 12px;
+}
+
+/* Animaciones */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Estilos para el resumen */
+.summary-section {
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.summary-section h4 {
+  color: #1e40af;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.summary-section p {
+  margin: 4px 0;
+  color: #374151;
+}
+
+/* Estilos para validación visual */
+.form-section-complete {
+  border-left: 4px solid #10b981;
+}
+
+.form-section-incomplete {
+  border-left: 4px solid #f59e0b;
+}
+
+.form-section-error {
+  border-left: 4px solid #ef4444;
+}

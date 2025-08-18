@@ -12,16 +12,7 @@ import { Invoice } from '../billing/entities/billing.entity';
 @Module({
   controllers: [ReportsController],
   providers: [ReportsService],
-  imports: [
-    TypeOrmModule.forFeature([
-      Patient,
-      Appointment,
-      MedicalRecord,
-      Prescription,
-      Invoice,
-    ]),
-    AuthModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Patient, Appointment, MedicalRecord, Prescription, Invoice]), AuthModule],
   exports: [ReportsService],
 })
 export class ReportsModule {}

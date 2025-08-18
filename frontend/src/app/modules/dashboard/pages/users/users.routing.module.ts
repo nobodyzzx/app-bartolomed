@@ -2,8 +2,17 @@ import { NgModule } from '@angular/core'
 import { RouterModule, Routes } from '@angular/router'
 import { UserRegisterComponent } from './register/register.component'
 import { UserListComponent } from './user-list/user-list.component'
+import { UserManagementComponent } from './user-management/user-management.component'
 
 const routes: Routes = [
+  {
+    path: '',
+    component: UserManagementComponent,
+  },
+  {
+    path: 'management',
+    component: UserManagementComponent,
+  },
   {
     path: 'register',
     component: UserRegisterComponent,
@@ -15,11 +24,6 @@ const routes: Routes = [
   {
     path: 'edit/:id',
     component: UserRegisterComponent,
-  },
-  {
-    path: '',
-    redirectTo: 'list',
-    pathMatch: 'full',
   },
 ]
 
