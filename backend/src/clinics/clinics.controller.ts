@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from
 import { ClinicsService } from './services/clinics.service';
 import { CreateClinicDto, UpdateClinicDto } from './dto';
 import { Auth } from '../auth/decorators/auth.decorator';
-import { ValidRoles } from '../users/interfaces';
+import { ValidRoles } from '../auth/interfaces';
 
 @Controller('clinics')
 export class ClinicsController {

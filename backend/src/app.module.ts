@@ -6,8 +6,10 @@ import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
 import { ClinicsModule } from './clinics/clinics.module';
 import { HealthModule } from './health/health.module';
+import { PatientsModule } from './patients/patients.module';
 import { PersonalInfo, ProfessionalInfo, User } from './users/entities';
 import { Clinic } from './clinics/entities';
+import { Patient } from './patients/entities';
 
 @Module({
   imports: [
@@ -20,7 +22,7 @@ import { Clinic } from './clinics/entities';
       username: process.env.DB_USER,
       password: process.env.DB_PASS,
       autoLoadEntities: true,
-      entities: [User, PersonalInfo, ProfessionalInfo, Clinic],
+      entities: [User, PersonalInfo, ProfessionalInfo, Clinic, Patient],
       synchronize: true,
     }),
     AuthModule,
@@ -28,6 +30,7 @@ import { Clinic } from './clinics/entities';
     CommonModule,
     ClinicsModule,
     HealthModule,
+    PatientsModule,
   ],
 })
 export class AppModule {}

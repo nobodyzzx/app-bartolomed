@@ -20,4 +20,7 @@ export class Clinic {
 
   @OneToMany(() => User, user => user.clinic)
   users: User[];
+
+  @OneToMany('Patient', 'clinic')
+  patients: any[];
 }
