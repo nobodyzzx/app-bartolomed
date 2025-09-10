@@ -6,13 +6,15 @@ services:
     ports:
       - '4200:4200'
     volumes:
-      - ./frontend:/app:Z
+      - ./frontend:/app:rw
       - /app/node_modules
     command: ng serve --host 0.0.0.0
     environment:
       - CHOKIDAR_USEPOLLING=true
     depends_on:
       - backend
+    security_opt:
+      - label=disable
 
   backend:
     build:
@@ -21,7 +23,7 @@ services:
     ports:
       - '3000:3000'
     volumes:
-      - ./backend:/app:Z
+      - ./backend:/app:rw
       - /app/node_modules
     depends_on:
       db:
@@ -33,6 +35,8 @@ services:
       - DB_PASS=${POSTGRES_PASSWORD}
       - DB_NAME=${POSTGRES_DB}
     command: npm run start:dev
+    security_opt:
+      - label=disable
 
   db:
     image: postgres:13

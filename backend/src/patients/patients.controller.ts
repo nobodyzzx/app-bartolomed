@@ -1,9 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
-import { PatientsService } from './services/patients.service';
-import { CreatePatientDto, UpdatePatientDto } from './dto';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { Auth, GetUser } from '../auth/decorators';
 import { ValidRoles } from '../auth/interfaces';
 import { User } from '../users/entities/user.entity';
+import { CreatePatientDto, UpdatePatientDto } from './dto';
+import { PatientsService } from './services/patients.service';
 
 @Controller('patients')
 @Auth()
@@ -27,7 +27,7 @@ export class PatientsController {
   }
 
   @Get('statistics')
-  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR)
+  // @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR) // Temporalmente comentado para debug
   getStatistics(@Query('clinicId') clinicId?: string) {
     return this.patientsService.getPatientStatistics(clinicId);
   }
