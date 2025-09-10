@@ -1,0 +1,245 @@
+.asset-registration-container {
+  padding: 20px;
+}
+
+.main-content-card {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #2c3e50;
+  margin-bottom: 10px;
+  font-size: 2rem;
+  font-weight: 500;
+}
+
+.page-description {
+  color: #7f8c8d;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Formulario de Registro */
+.registration-form-card {
+  margin-bottom: 30px;
+}
+
+.registration-form-card mat-card-title {
+  color: #2c3e50;
+  font-size: 1.4rem;
+}
+
+.form-section {
+  margin-bottom: 30px;
+}
+
+.form-section h3 {
+  color: #34495e;
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e3f2fd;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.form-grid.full-width {
+  grid-template-columns: 1fr;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.form-actions button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Lista de Activos */
+.assets-list-card mat-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.assets-list-card mat-card-title {
+  color: #2c3e50;
+  font-size: 1.4rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Filtros */
+.filters-section {
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.filters-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  align-items: end;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Tabla */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+  gap: 20px;
+}
+
+.loading-container p {
+  color: #666;
+  margin: 0;
+}
+
+.no-data {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.no-data mat-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: #bbb;
+  margin-bottom: 20px;
+}
+
+.no-data p {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.no-data small {
+  color: #999;
+}
+
+.table-container {
+  overflow-x: auto;
+  margin-top: 20px;
+}
+
+.assets-table {
+  width: 100%;
+  min-width: 1000px;
+}
+
+.asset-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.asset-name strong {
+  color: #2c3e50;
+  font-size: 0.95rem;
+}
+
+.asset-name small {
+  color: #7f8c8d;
+  font-size: 0.8rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.action-buttons button {
+  width: 36px;
+  height: 36px;
+}
+
+/* Chips */
+mat-chip-list mat-chip {
+  font-size: 0.85rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .asset-registration-container {
+    padding: 15px;
+  }
+  
+  .page-title {
+    font-size: 1.6rem;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .form-actions {
+    justify-content: center;
+    flex-direction: column;
+  }
+  
+  .filters-form {
+    grid-template-columns: 1fr;
+  }
+  
+  .filter-actions {
+    justify-content: center;
+  }
+  
+  .assets-table {
+    min-width: 700px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .action-buttons button {
+    width: 32px;
+    height: 32px;
+  }
+}

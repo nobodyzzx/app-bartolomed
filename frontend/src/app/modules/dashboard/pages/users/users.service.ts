@@ -1,10 +1,10 @@
-import { computed, inject, Injectable, signal } from '@angular/core'
 import { HttpClient, HttpHeaders } from '@angular/common/http'
-import { catchError, map, Observable, tap, throwError, of } from 'rxjs'
+import { computed, inject, Injectable, signal } from '@angular/core'
+import { catchError, Observable, of, tap, throwError } from 'rxjs'
 import { environment } from '../../../../environments/environments'
-import { AuthService } from '../../../auth/services/auth.service'
 import { ErrorService } from '../../../../shared/components/services/error.service'
 import { User } from '../../../auth/interfaces/user.interface'
+import { AuthService } from '../../../auth/services/auth.service'
 import { CreateUserDto, UpdateUserDto } from '../../interfaces/user.dto'
 
 @Injectable({
@@ -61,14 +61,14 @@ export class UsersService {
           },
           {
             id: '2',
-            email: 'doctor@bartolomed.com',
-            roles: ['user'],
+            email: 'dr.garcia@bartolomed.com',
+            roles: ['doctor'],
             isActive: true,
             startDate: new Date('2024-02-01'),
             personalInfo: {
               firstName: 'María Elena',
               lastName: 'García',
-              phone: '+1234567891'
+              phone: '+591-70111222'
             },
             professionalInfo: {
               specialization: 'Medicina General',
@@ -82,6 +82,69 @@ export class UsersService {
           },
           {
             id: '3',
+            email: 'dr.martinez@bartolomed.com',
+            roles: ['doctor'],
+            isActive: true,
+            startDate: new Date('2024-01-20'),
+            personalInfo: {
+              firstName: 'Carlos Alberto',
+              lastName: 'Martínez',
+              phone: '+591-70333444'
+            },
+            professionalInfo: {
+              specialization: 'Cardiología',
+              title: 'Doctor',
+              role: 'Cardiólogo',
+              license: 'MED456789',
+              certifications: ['Cardiología Clínica', 'Ecocardiografía'],
+              areas: ['Cardiología', 'Medicina Interna'],
+              description: 'Especialista en enfermedades cardiovasculares'
+            }
+          },
+          {
+            id: '4',
+            email: 'dra.lopez@bartolomed.com',
+            roles: ['doctor'],
+            isActive: true,
+            startDate: new Date('2024-02-15'),
+            personalInfo: {
+              firstName: 'Patricia',
+              lastName: 'López',
+              phone: '+591-70555666'
+            },
+            professionalInfo: {
+              specialization: 'Pediatría',
+              title: 'Doctora',
+              role: 'Pediatra',
+              license: 'MED321654',
+              certifications: ['Pediatría General', 'Neonatología'],
+              areas: ['Pediatría', 'Medicina Infantil'],
+              description: 'Especialista en salud infantil y adolescente'
+            }
+          },
+          {
+            id: '5',
+            email: 'dr.vargas@bartolomed.com',
+            roles: ['doctor'],
+            isActive: true,
+            startDate: new Date('2024-03-01'),
+            personalInfo: {
+              firstName: 'Roberto',
+              lastName: 'Vargas',
+              phone: '+591-70777888'
+            },
+            professionalInfo: {
+              specialization: 'Cirugía General',
+              title: 'Doctor',
+              role: 'Cirujano',
+              license: 'MED987654',
+              certifications: ['Cirugía General', 'Laparoscopía'],
+              areas: ['Cirugía', 'Emergencias'],
+              description: 'Cirujano general con experiencia en cirugía mínimamente invasiva'
+            }
+          },
+          {
+            id: '6',
             email: 'enfermera@bartolomed.com',
             roles: ['nurse'],
             isActive: true,

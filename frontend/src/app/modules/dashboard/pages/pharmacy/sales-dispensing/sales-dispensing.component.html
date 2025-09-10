@@ -1,0 +1,178 @@
+<div class="sales-dispensing-container">
+  <!-- Header -->
+  <div class="page-header">
+    <h1 class="page-title">
+      <mat-icon>point_of_sale</mat-icon>
+      Ventas y Dispensación
+    </h1>
+    <p class="page-subtitle">Control de ventas y entrega de medicamentos</p>
+  </div>
+
+  <!-- Estadísticas -->
+  <div class="stats-grid">
+    <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-blue-600 text-sm font-medium">Total Ventas</p>
+          <p class="text-2xl font-bold text-blue-900">{{stats.totalSales}}</p>
+        </div>
+        <mat-icon class="text-blue-500 text-3xl">receipt</mat-icon>
+      </div>
+    </div>
+    
+    <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-green-600 text-sm font-medium">Completadas</p>
+          <p class="text-2xl font-bold text-green-900">{{stats.completedSales}}</p>
+        </div>
+        <mat-icon class="text-green-500 text-3xl">check_circle</mat-icon>
+      </div>
+    </div>
+    
+    <div class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-orange-600 text-sm font-medium">Pendientes</p>
+          <p class="text-2xl font-bold text-orange-900">{{stats.pendingSales}}</p>
+        </div>
+        <mat-icon class="text-orange-500 text-3xl">pending</mat-icon>
+      </div>
+    </div>
+    
+    <div class="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-500">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-purple-600 text-sm font-medium">Ingresos</p>
+          <p class="text-2xl font-bold text-purple-900">${{stats.totalRevenue | number:'1.2-2'}}</p>
+        </div>
+        <mat-icon class="text-purple-500 text-3xl">trending_up</mat-icon>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenido Principal -->
+  <mat-card class="content-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>list_alt</mat-icon>
+        Registro de Ventas
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <!-- Filtros y Acciones -->
+      <div class="filter-actions">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Buscar ventas</mat-label>
+          <input matInput (keyup)="applyFilter($event)" placeholder="ID, paciente...">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+        
+        <div class="action-buttons">
+          <button mat-raised-button color="primary" (click)="createNewSale()">
+            <mat-icon>add</mat-icon>
+            Nueva Venta
+          </button>
+          <button mat-stroked-button color="accent">
+            <mat-icon>download</mat-icon>
+            Exportar
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabla de Ventas -->
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" matSort class="w-full">
+          
+          <!-- Columna ID -->
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">ID Venta</th>
+            <td mat-cell *matCellDef="let sale" class="text-blue-700 font-medium">{{sale.id}}</td>
+          </ng-container>
+
+          <!-- Columna Paciente -->
+          <ng-container matColumnDef="patient">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">Paciente</th>
+            <td mat-cell *matCellDef="let sale">
+              <div class="patient-info">
+                <mat-icon class="patient-icon">person</mat-icon>
+                <span class="patient-name">{{sale.patientName}}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Columna Fecha -->
+          <ng-container matColumnDef="date">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">Fecha</th>
+            <td mat-cell *matCellDef="let sale">{{sale.date | date:'dd/MM/yyyy HH:mm'}}</td>
+          </ng-container>
+
+          <!-- Columna Total -->
+          <ng-container matColumnDef="total">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">Total</th>
+            <td mat-cell *matCellDef="let sale" class="text-green-700 font-semibold">
+              ${{sale.total | number:'1.2-2'}}
+            </td>
+          </ng-container>
+
+          <!-- Columna Estado -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef class="table-header">Estado</th>
+            <td mat-cell *matCellDef="let sale">
+              <mat-chip-set>
+                <mat-chip [ngClass]="getStatusChipClass(sale.status || 'pending')">
+                  {{getStatusLabel(sale.status || 'pending')}}
+                </mat-chip>
+              </mat-chip-set>
+            </td>
+          </ng-container>
+
+          <!-- Columna Método de Pago -->
+          <ng-container matColumnDef="paymentMethod">
+            <th mat-header-cell *matHeaderCellDef class="table-header">Método de Pago</th>
+            <td mat-cell *matCellDef="let sale">
+              <div class="payment-method">
+                <mat-icon class="payment-icon">{{getPaymentMethodIcon(sale.paymentMethod || '')}}</mat-icon>
+                <span>{{sale.paymentMethod}}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Columna Acciones -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="table-header">Acciones</th>
+            <td mat-cell *matCellDef="let sale">
+              <div class="action-buttons">
+                <button mat-icon-button color="primary" (click)="viewSaleDetails(sale)" matTooltip="Ver detalle">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                <button mat-icon-button color="accent" (click)="printReceipt(sale)" matTooltip="Imprimir recibo">
+                  <mat-icon>print</mat-icon>
+                </button>
+                <button mat-icon-button color="primary" (click)="completeSale(sale)" matTooltip="Completar"
+                        [disabled]="sale.status !== 'pending'">
+                  <mat-icon>check</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="cancelSale(sale)" matTooltip="Cancelar"
+                        [disabled]="sale.status === 'completed' || sale.status === 'cancelled'">
+                  <mat-icon>cancel</mat-icon>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+
+      <!-- Paginador -->
+      <mat-paginator 
+        [pageSizeOptions]="[10, 25, 50, 100]" 
+        showFirstLastButtons
+        aria-label="Seleccionar página de ventas"
+      ></mat-paginator>
+    </mat-card-content>
+  </mat-card>
+</div>

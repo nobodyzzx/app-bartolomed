@@ -1,0 +1,171 @@
+<div class="asset-maintenance-container">
+  <div class="main-content-card">
+    <h1 class="page-title">
+      <mat-icon>build</mat-icon>
+      Mantenimiento de Activos
+    </h1>
+    <div class="content-wrapper">
+      
+      <!-- Formulario de Programación -->
+      <mat-card class="schedule-form-card">
+        <mat-card-header>
+          <mat-card-title>Programar Mantenimiento</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="maintenanceForm" (ngSubmit)="onScheduleMaintenance()">
+            <div class="form-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>ID del Activo</mat-label>
+                <input matInput formControlName="assetId" required>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre del Activo</mat-label>
+                <input matInput formControlName="assetName" required>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Fecha de Mantenimiento</mat-label>
+                <input matInput [matDatepicker]="maintenancePicker" formControlName="maintenanceDate" required>
+                <mat-datepicker-toggle matSuffix [for]="maintenancePicker"></mat-datepicker-toggle>
+                <mat-datepicker #maintenancePicker></mat-datepicker>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Tipo de Mantenimiento</mat-label>
+                <mat-select formControlName="type" required>
+                  <mat-option *ngFor="let type of maintenanceTypes" [value]="type">
+                    <mat-icon>{{ getTypeIcon(type) }}</mat-icon>
+                    {{ type }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Estado</mat-label>
+                <mat-select formControlName="status" required>
+                  <mat-option *ngFor="let status of maintenanceStatuses" [value]="status">
+                    {{ status }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Costo Estimado</mat-label>
+                <input matInput type="number" formControlName="cost">
+                <span matPrefix>$&nbsp;</span>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Descripción</mat-label>
+                <textarea matInput formControlName="description" rows="3" required></textarea>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Realizado por</mat-label>
+                <input matInput formControlName="performedBy">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Notas</mat-label>
+                <textarea matInput formControlName="notes" rows="2"></textarea>
+              </mat-form-field>
+            </div>
+
+            <div class="form-actions">
+              <button mat-raised-button color="primary" type="submit" [disabled]="maintenanceForm.invalid || loading">
+                <mat-icon>schedule</mat-icon>
+                Programar Mantenimiento
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Lista de Mantenimientos -->
+      <mat-card class="maintenance-list-card">
+        <mat-card-header>
+          <mat-card-title>Registros de Mantenimiento</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div *ngIf="loading" class="loading-container">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p>Cargando registros de mantenimiento...</p>
+          </div>
+
+          <div *ngIf="!loading && maintenanceRecords.length === 0" class="no-data">
+            <mat-icon>build</mat-icon>
+            <p>No hay registros de mantenimiento</p>
+          </div>
+
+          <div *ngIf="!loading && maintenanceRecords.length > 0" class="table-container">
+            <table mat-table [dataSource]="maintenanceRecords" class="maintenance-table">
+              <!-- Activo -->
+              <ng-container matColumnDef="assetName">
+                <th mat-header-cell *matHeaderCellDef>Activo</th>
+                <td mat-cell *matCellDef="let record">{{ record.assetName }}</td>
+              </ng-container>
+
+              <!-- Tipo -->
+              <ng-container matColumnDef="type">
+                <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                <td mat-cell *matCellDef="let record">
+                  <mat-chip-list>
+                    <mat-chip color="accent" selected>
+                      <mat-icon>{{ getTypeIcon(record.type) }}</mat-icon>
+                      {{ record.type }}
+                    </mat-chip>
+                  </mat-chip-list>
+                </td>
+              </ng-container>
+
+              <!-- Fecha -->
+              <ng-container matColumnDef="maintenanceDate">
+                <th mat-header-cell *matHeaderCellDef>Fecha</th>
+                <td mat-cell *matCellDef="let record">{{ record.maintenanceDate | date:'short' }}</td>
+              </ng-container>
+
+              <!-- Estado -->
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let record">
+                  <mat-chip-list>
+                    <mat-chip [color]="getStatusColor(record.status)" selected>
+                      {{ record.status }}
+                    </mat-chip>
+                  </mat-chip-list>
+                </td>
+              </ng-container>
+
+              <!-- Costo -->
+              <ng-container matColumnDef="cost">
+                <th mat-header-cell *matHeaderCellDef>Costo</th>
+                <td mat-cell *matCellDef="let record">{{ formatCurrency(record.cost) }}</td>
+              </ng-container>
+
+              <!-- Realizado por -->
+              <ng-container matColumnDef="performedBy">
+                <th mat-header-cell *matHeaderCellDef>Realizado por</th>
+                <td mat-cell *matCellDef="let record">{{ record.performedBy || 'N/A' }}</td>
+              </ng-container>
+
+              <!-- Acciones -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>Acciones</th>
+                <td mat-cell *matCellDef="let record">
+                  <button mat-icon-button matTooltip="Ver detalles">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            </table>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      
+    </div>
+  </div>
+</div>

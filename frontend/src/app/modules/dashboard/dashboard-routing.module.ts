@@ -1,10 +1,10 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
+import { PlaceholderComponent } from '../../shared/components/placeholder/placeholder.component';
+import { authGuard } from '../auth/guards';
 import { DashboardLayoutComponent } from './layouts/dashboard-layout/dashboard-layout.component';
 import { MainDashboardComponent } from './pages/main-dashboard/main-dashboard.component';
-import { authGuard } from '../auth/guards';
-import { PlaceholderComponent } from '../../shared/components/placeholder/placeholder.component';
 
 const routes: Routes = [
   {
@@ -46,50 +46,79 @@ const routes: Routes = [
       },
       // Rutas de farmacia
       {
+        path: 'pharmacy',
+        loadChildren: () =>
+          import('./pages/pharmacy/pharmacy.module').then((m) => m.PharmacyModule),
+      },
+      // Rutas legacy de farmacia (redirect a nuevas rutas)
+      {
         path: 'pharmacy-inventory',
-        component: PlaceholderComponent,
+        redirectTo: 'pharmacy/inventory',
+        pathMatch: 'full'
       },
       {
         path: 'pharmacy-orders',
-        component: PlaceholderComponent,
+        redirectTo: 'pharmacy/order-generation',
+        pathMatch: 'full'
       },
       {
         path: 'pharmacy-sales',
-        component: PlaceholderComponent,
+        redirectTo: 'pharmacy/sales-dispensing',
+        pathMatch: 'full'
       },
       {
         path: 'pharmacy-billing',
-        component: PlaceholderComponent,
+        redirectTo: 'pharmacy/invoicing',
+        pathMatch: 'full'
       },
       // Rutas de reportes
       {
+        path: 'reports',
+        loadChildren: () =>
+          import('./pages/reports/reports.module').then((m) => m.ReportsModule),
+      },
+      // Rutas legacy de reportes (redirect a nuevas rutas)
+      {
         path: 'medical-reports',
-        component: PlaceholderComponent,
+        redirectTo: 'reports/medical-reports',
+        pathMatch: 'full'
       },
       {
         path: 'financial-reports',
-        component: PlaceholderComponent,
+        redirectTo: 'reports/financial-reports',
+        pathMatch: 'full'
       },
       {
         path: 'stock-control',
-        component: PlaceholderComponent,
+        redirectTo: 'reports/stock-control',
+        pathMatch: 'full'
       },
       // Rutas de activos
       {
+        path: 'assets-control',
+        loadChildren: () =>
+          import('./pages/assets-control/assets-control.module').then((m) => m.AssetsControlModule),
+      },
+      // Rutas legacy de activos (redirect a nuevas rutas)
+      {
         path: 'asset-registry',
-        component: PlaceholderComponent,
+        redirectTo: 'assets-control/registration',
+        pathMatch: 'full'
       },
       {
         path: 'asset-maintenance',
-        component: PlaceholderComponent,
+        redirectTo: 'assets-control/maintenance',
+        pathMatch: 'full'
       },
       {
         path: 'asset-inventory',
-        component: PlaceholderComponent,
+        redirectTo: 'assets-control/inventory',
+        pathMatch: 'full'
       },
       {
         path: 'asset-reports',
-        component: PlaceholderComponent,
+        redirectTo: 'assets-control/reports',
+        pathMatch: 'full'
       },
       // Rutas para funcionalidades administrativas
       {
@@ -106,7 +135,8 @@ const routes: Routes = [
       },
       {
         path: 'clinics',
-        component: PlaceholderComponent,
+        loadChildren: () =>
+          import('./pages/clinics/clinics.module').then((m) => m.ClinicsModule),
       },
       {
         path: 'system-params',

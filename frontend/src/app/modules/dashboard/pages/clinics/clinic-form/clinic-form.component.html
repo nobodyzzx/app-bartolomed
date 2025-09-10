@@ -1,0 +1,172 @@
+<div class="clinic-form">
+  <!-- Header -->
+  <div class="form-header">
+    <h1>{{ isEditMode ? 'Editar Clínica' : 'Nueva Clínica' }}</h1>
+    <button 
+      mat-icon-button 
+      (click)="onCancel()"
+      matTooltip="Volver">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+  </div>
+
+  <!-- Loading indicator -->
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <!-- Form -->
+  <mat-card class="form-card" *ngIf="!isLoading">
+    <mat-card-content>
+      <form [formGroup]="clinicForm" (ngSubmit)="onSubmit()">
+        
+        <!-- Información Básica -->
+        <div class="form-section">
+          <h3>Información Básica</h3>
+          
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Nombre de la Clínica *</mat-label>
+              <input 
+                matInput 
+                formControlName="name"
+                placeholder="Ej: Clínica San Juan">
+              <mat-error>{{ getErrorMessage('name') }}</mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Descripción</mat-label>
+              <textarea 
+                matInput 
+                formControlName="description"
+                rows="3"
+                placeholder="Descripción opcional de la clínica">
+              </textarea>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Información de Contacto -->
+        <div class="form-section">
+          <h3>Información de Contacto</h3>
+          
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>Teléfono *</mat-label>
+              <input 
+                matInput 
+                formControlName="phone"
+                placeholder="Ej: +1 234 567 8900">
+              <mat-error>{{ getErrorMessage('phone') }}</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>Email</mat-label>
+              <input 
+                matInput 
+                type="email"
+                formControlName="email"
+                placeholder="Ej: contacto@clinica.com">
+              <mat-error>{{ getErrorMessage('email') }}</mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Dirección -->
+        <div class="form-section">
+          <h3>Dirección</h3>
+          
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Dirección *</mat-label>
+              <input 
+                matInput 
+                formControlName="address"
+                placeholder="Ej: Calle Principal 123">
+              <mat-error>{{ getErrorMessage('address') }}</mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>Ciudad</mat-label>
+              <input 
+                matInput 
+                formControlName="city"
+                placeholder="Ej: Ciudad de México">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>Estado/Provincia</mat-label>
+              <input 
+                matInput 
+                formControlName="state"
+                placeholder="Ej: CDMX">
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>Código Postal</mat-label>
+              <input 
+                matInput 
+                formControlName="zipCode"
+                placeholder="Ej: 12345">
+              <mat-error>{{ getErrorMessage('zipCode') }}</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>País</mat-label>
+              <input 
+                matInput 
+                formControlName="country"
+                placeholder="Ej: México">
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Estado -->
+        <div class="form-section">
+          <h3>Estado</h3>
+          
+          <div class="form-row">
+            <mat-slide-toggle 
+              formControlName="isActive"
+              class="status-toggle">
+              <span class="toggle-label">
+                {{ clinicForm.get('isActive')?.value ? 'Clínica Activa' : 'Clínica Inactiva' }}
+              </span>
+            </mat-slide-toggle>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="form-actions">
+          <button 
+            type="button"
+            mat-button 
+            (click)="onCancel()"
+            class="cancel-btn">
+            Cancelar
+          </button>
+          
+          <button 
+            type="submit"
+            mat-raised-button 
+            color="primary"
+            [disabled]="clinicForm.invalid || isLoading"
+            class="submit-btn">
+            <mat-spinner 
+              *ngIf="isLoading" 
+              diameter="20" 
+              class="button-spinner">
+            </mat-spinner>
+            {{ isEditMode ? 'Actualizar' : 'Crear' }} Clínica
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

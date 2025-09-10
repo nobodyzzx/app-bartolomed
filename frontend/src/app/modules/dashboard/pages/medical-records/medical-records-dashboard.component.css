@@ -4,6 +4,35 @@
   margin: 0 auto;
 }
 
+/* Correcciones para iconos */
+.mat-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+/* Iconos en botones de acción */
+.action-buttons .mat-icon {
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Iconos en badges de emergencia */
+.emergency-badge .mat-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Iconos en chips de estado */
+.status-chip .mat-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+}
+
 .header-section {
   margin-bottom: 24px;
 }
@@ -95,7 +124,7 @@
   color: #6b7280;
 }
 
-.empty-state mat-icon {
+.empty-state .mat-icon {
   font-size: 4rem;
   width: 4rem;
   height: 4rem;

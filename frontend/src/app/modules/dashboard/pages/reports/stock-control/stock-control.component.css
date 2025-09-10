@@ -1,0 +1,339 @@
+.stock-control-container {
+  padding: 20px;
+}
+
+.header-section {
+  margin-bottom: 30px;
+}
+
+.title-area h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #2c3e50;
+  margin-bottom: 8px;
+  font-size: 1.8rem;
+  font-weight: 500;
+}
+
+.title-area p {
+  color: #7f8c8d;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* Stock Metrics */
+.stock-metrics {
+  margin-bottom: 30px;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.metric-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-left: 4px solid #3498db;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.metric-card.warning {
+  border-left-color: #f39c12;
+}
+
+.metric-card.expired {
+  border-left-color: #e74c3c;
+}
+
+.metric-card.value {
+  border-left-color: #27ae60;
+}
+
+.metric-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+}
+
+.metric-icon.inventory {
+  color: #3498db;
+}
+
+.metric-icon.warning {
+  color: #f39c12;
+}
+
+.metric-icon.expired {
+  color: #e74c3c;
+}
+
+.metric-icon.value {
+  color: #27ae60;
+}
+
+.metric-content h3 {
+  margin: 0 0 8px 0;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-value {
+  margin: 0 0 4px 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.metric-content small {
+  color: #7f8c8d;
+  font-size: 0.8rem;
+}
+
+/* Form Styles */
+.generate-form-card {
+  margin-bottom: 30px;
+}
+
+.generate-form-card mat-card-title {
+  color: #2c3e50;
+  font-size: 1.3rem;
+}
+
+.form-row {
+  margin-bottom: 20px;
+}
+
+.date-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 10px;
+}
+
+.form-actions button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Reports List */
+.reports-list-card {
+  margin-bottom: 20px;
+}
+
+.reports-list-card mat-card-title {
+  color: #2c3e50;
+  font-size: 1.3rem;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+  gap: 20px;
+}
+
+.loading-container p {
+  color: #666;
+  margin: 0;
+}
+
+.no-data {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.no-data mat-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: #bbb;
+  margin-bottom: 20px;
+}
+
+.no-data p {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.no-data small {
+  color: #999;
+}
+
+.table-container {
+  overflow-x: auto;
+  margin-top: 20px;
+}
+
+.reports-table {
+  width: 100%;
+  min-width: 1000px;
+}
+
+.title-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title-cell strong {
+  color: #2c3e50;
+}
+
+.title-cell small {
+  color: #7f8c8d;
+  font-size: 0.85rem;
+}
+
+.product-count {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.stock-indicators {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.warning-icon {
+  color: #f39c12;
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.expired-icon {
+  color: #e74c3c;
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.stock-value {
+  font-weight: 600;
+  color: #27ae60;
+  font-size: 1.1rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.action-buttons button {
+  width: 36px;
+  height: 36px;
+}
+
+/* Chips with icons */
+mat-chip-list mat-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+mat-chip mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+/* Select options with icons */
+mat-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+mat-option mat-icon {
+  color: #666;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stock-control-container {
+    padding: 15px;
+  }
+  
+  .metrics-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .metric-card {
+    padding: 15px;
+  }
+  
+  .metric-value {
+    font-size: 1.5rem;
+  }
+  
+  .date-range {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .title-area h2 {
+    font-size: 1.5rem;
+  }
+  
+  .form-actions {
+    justify-content: center;
+  }
+  
+  .reports-table {
+    min-width: 700px;
+  }
+}
+
+@media (max-width: 480px) {
+  .metric-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .action-buttons button {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .metric-value {
+    font-size: 1.3rem;
+  }
+}

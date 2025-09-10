@@ -1,18 +1,12 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
-
-export interface Patient {
-  id: number;
-  name: string;
-  age: number;
-  gender: string;
-  phone: string;
-  email: string;
-  lastVisit: Date;
-  status: string;
-}
+import { MatTableDataSource } from '@angular/material/table';
+import { Router } from '@angular/router';
+import Swal from 'sweetalert2';
+import { ErrorService } from '../../../../../shared/components/services/error.service';
+import { Patient } from '../interfaces';
+import { PatientsService } from '../services';
 
 @Component({
   selector: 'app-patient-list',
@@ -20,30 +14,45 @@ export interface Patient {
   styleUrl: './patient-list.component.css'
 })
 export class PatientListComponent implements OnInit {
-  displayedColumns: string[] = ['id', 'name', 'age', 'gender', 'phone', 'lastVisit', 'status', 'actions'];
+  displayedColumns: string[] = ['documentNumber', 'name', 'age', 'gender', 'phone', 'email', 'clinic', 'actions'];
   dataSource: MatTableDataSource<Patient>;
+  isLoading = false;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
-  patients: Patient[] = [
-    { id: 1, name: 'Juan Pérez González', age: 45, gender: 'Masculino', phone: '+1234567890', email: 'juan@email.com', lastVisit: new Date('2024-08-15'), status: 'Activo' },
-    { id: 2, name: 'María García López', age: 32, gender: 'Femenino', phone: '+1234567891', email: 'maria@email.com', lastVisit: new Date('2024-08-14'), status: 'Activo' },
-    { id: 3, name: 'Carlos López Martín', age: 58, gender: 'Masculino', phone: '+1234567892', email: 'carlos@email.com', lastVisit: new Date('2024-08-13'), status: 'Activo' },
-    { id: 4, name: 'Ana Rodríguez Silva', age: 28, gender: 'Femenino', phone: '+1234567893', email: 'ana@email.com', lastVisit: new Date('2024-08-12'), status: 'Inactivo' },
-    { id: 5, name: 'Luis Martínez Ruiz', age: 67, gender: 'Masculino', phone: '+1234567894', email: 'luis@email.com', lastVisit: new Date('2024-08-11'), status: 'Activo' }
-  ];
+  patients: Patient[] = [];
 
-  constructor() {
+  constructor(
+    private patientsService: PatientsService,
+    private router: Router,
+    private errorService: ErrorService
+  ) {
     this.dataSource = new MatTableDataSource(this.patients);
   }
 
   ngOnInit(): void {
+    this.loadPatients();
   }
 
   ngAfterViewInit() {
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
+  }
+
+  loadPatients() {
+    this.isLoading = true;
+    this.patientsService.findAll().subscribe({
+      next: (patients) => {
+        this.patients = patients;
+        this.dataSource.data = this.patients;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        this.errorService.handleError(error);
+        this.isLoading = false;
+      }
+    });
   }
 
   applyFilter(event: Event) {
@@ -55,15 +64,75 @@ export class PatientListComponent implements OnInit {
     }
   }
 
+  searchPatients(searchTerm: string) {
+    if (searchTerm.trim()) {
+      this.isLoading = true;
+      this.patientsService.searchPatients(searchTerm).subscribe({
+        next: (patients) => {
+          this.dataSource.data = patients;
+          this.isLoading = false;
+        },
+        error: (error) => {
+          this.errorService.handleError(error);
+          this.isLoading = false;
+        }
+      });
+    } else {
+      this.loadPatients();
+    }
+  }
+
+  getPatientFullName(patient: Patient): string {
+    return `${patient.firstName} ${patient.lastName}`;
+  }
+
+  getPatientAge(patient: Patient): number {
+    const today = new Date();
+    const birthDate = new Date(patient.birthDate);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
+  }
+
+  createPatient() {
+    this.router.navigate(['/dashboard/patients/new']);
+  }
+
   editPatient(patient: Patient) {
-    console.log('Editar paciente:', patient);
+    this.router.navigate(['/dashboard/patients/edit', patient.id]);
   }
 
   viewPatient(patient: Patient) {
-    console.log('Ver paciente:', patient);
+    this.router.navigate(['/dashboard/patients/view', patient.id]);
   }
 
   deletePatient(patient: Patient) {
-    console.log('Eliminar paciente:', patient);
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: `¿Deseas eliminar al paciente ${this.getPatientFullName(patient)}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.patientsService.removePatient(patient.id).subscribe({
+          next: () => {
+            Swal.fire('Eliminado', 'El paciente ha sido eliminado.', 'success');
+            this.loadPatients();
+          },
+          error: (error) => {
+            this.errorService.handleError(error);
+          }
+        });
+      }
+    });
   }
 }

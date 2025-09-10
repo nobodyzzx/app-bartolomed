@@ -1,16 +1,397 @@
 .patient-form-container {
-  min-height: 100vh;
+  padding: 32px 24px;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  padding: 2rem;
+  min-height: 100vh;
 }
 
-.patient-form-content {
-  max-width: 1000px;
+.form-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.form-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1e40af;
+  margin-bottom: 8px;
+}
+
+.form-title mat-icon {
+  font-size: 2.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  color: #3b82f6;
+}
+
+.form-subtitle {
+  font-size: 1.125rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.stepper-container {
+  max-width: 900px;
   margin: 0 auto;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
+.step-content {
+  padding: 32px;
+}
+
+.step-content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 24px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.form-grid .full-width {
+  grid-column: 1 / -1;
+}
+
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.step-actions button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  min-width: 120px;
+}
+
+.summary-card {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+  border: 1px solid #e2e8f0;
+}
+
+.summary-section {
+  margin-bottom: 24px;
+}
+
+.summary-section:last-child {
+  margin-bottom: 0;
+}
+
+.summary-section h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.summary-section h4 mat-icon {
+  color: #3b82f6;
+}
+
+.summary-section p {
+  margin: 8px 0;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.summary-section strong {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.final-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.final-actions button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  min-width: 140px;
+}
+
+.draft-button {
+  color: #059669 !important;
+  border-color: #059669 !important;
+}
+
+.bottom-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+}
+
+.bottom-actions button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 1000;
+}
+
+.loading-overlay p {
+  color: #64748b;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Material Angular Overrides */
+.mat-stepper-horizontal {
+  background: white;
+}
+
+.mat-step-header {
+  padding: 16px 24px !important;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.mat-step-header .mat-step-icon {
+  background-color: #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+.mat-step-header .mat-step-icon-selected {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.mat-step-header .mat-step-icon-state-done {
+  background-color: #059669 !important;
+  color: white !important;
+}
+
+.mat-step-label {
+  color: #64748b !important;
+  font-weight: 500 !important;
+}
+
+.mat-step-label-selected {
+  color: #1e293b !important;
+  font-weight: 600 !important;
+}
+
+.mat-form-field {
+  width: 100%;
+}
+
+.mat-form-field-appearance-outline .mat-form-field-outline {
+  color: #d1d5db;
+}
+
+.mat-form-field-appearance-outline .mat-form-field-outline-thick {
+  color: #3b82f6;
+}
+
+.mat-form-field-appearance-outline.mat-focused .mat-form-field-outline-thick {
+  color: #3b82f6;
+}
+
+.mat-form-field-label {
+  color: #64748b !important;
+}
+
+.mat-form-field-appearance-outline.mat-focused .mat-form-field-label {
+  color: #3b82f6 !important;
+}
+
+.mat-input-element {
+  color: #1e293b;
+}
+
+.mat-input-element::placeholder {
+  color: #94a3b8;
+}
+
+.mat-select-value {
+  color: #1e293b;
+}
+
+.mat-select-placeholder {
+  color: #94a3b8;
+}
+
+.mat-button, .mat-raised-button, .mat-stroked-button {
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+}
+
+.mat-raised-button.mat-primary {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.mat-raised-button.mat-primary:hover {
+  background-color: #2563eb !important;
+}
+
+.mat-stroked-button {
+  border-color: #d1d5db !important;
+  color: #64748b !important;
+}
+
+.mat-stroked-button:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
   .patient-form-container {
-    padding: 1rem;
+    padding: 16px 12px;
+  }
+  
+  .form-title {
+    font-size: 2rem;
+  }
+  
+  .form-title mat-icon {
+    font-size: 2rem;
+    width: 2rem;
+    height: 2rem;
+  }
+  
+  .step-content {
+    padding: 24px 16px;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .step-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .step-actions button {
+    width: 100%;
+  }
+  
+  .final-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .final-actions button {
+    width: 100%;
+  }
+  
+  .mat-stepper-horizontal {
+    display: block;
+  }
+  
+  .mat-horizontal-stepper-header-container {
+    display: none;
+  }
+  
+  .step-content h3 {
+    font-size: 1.25rem;
+  }
+}
+
+/* Error States */
+.mat-form-field.mat-form-field-invalid .mat-form-field-outline-thick {
+  color: #dc2626 !important;
+}
+
+.mat-form-field.mat-form-field-invalid .mat-form-field-label {
+  color: #dc2626 !important;
+}
+
+.mat-error {
+  color: #dc2626 !important;
+  font-size: 0.875rem !important;
+}
+
+/* Success States */
+.mat-snack-bar-container.success-snackbar {
+  background-color: #059669 !important;
+  color: white !important;
+}
+
+.mat-snack-bar-container.error-snackbar {
+  background-color: #dc2626 !important;
+  color: white !important;
+}
+
+/* Animations */
+.step-content {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.loading-overlay mat-spinner {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
   }
 }

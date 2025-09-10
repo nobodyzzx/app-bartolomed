@@ -1,0 +1,137 @@
+<div class="clinic-dashboard">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h1>Gestión de Clínicas</h1>
+    <button 
+      mat-raised-button 
+      color="primary" 
+      (click)="navigateToNewClinic()"
+      class="add-clinic-btn">
+      <mat-icon>add</mat-icon>
+      Nueva Clínica
+    </button>
+  </div>
+
+  <!-- Loading indicator -->
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <!-- Statistics cards -->
+  <div *ngIf="statistics && !isLoading" class="stats-grid">
+    <mat-card class="stat-card">
+      <mat-card-content>
+        <div class="stat-content">
+          <div class="stat-icon total">
+            <mat-icon>business</mat-icon>
+          </div>
+          <div class="stat-info">
+            <h3>{{ statistics.totalClinics }}</h3>
+            <p>Total de Clínicas</p>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="stat-card">
+      <mat-card-content>
+        <div class="stat-content">
+          <div class="stat-icon active">
+            <mat-icon>check_circle</mat-icon>
+          </div>
+          <div class="stat-info">
+            <h3>{{ statistics.activeClinics }}</h3>
+            <p>Clínicas Activas</p>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="stat-card">
+      <mat-card-content>
+        <div class="stat-content">
+          <div class="stat-icon inactive">
+            <mat-icon>cancel</mat-icon>
+          </div>
+          <div class="stat-info">
+            <h3>{{ statistics.inactiveClinics }}</h3>
+            <p>Clínicas Inactivas</p>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="stat-card">
+      <mat-card-content>
+        <div class="stat-content">
+          <div class="stat-icon users">
+            <mat-icon>group</mat-icon>
+          </div>
+          <div class="stat-info">
+            <h3>{{ statistics.totalUsers }}</h3>
+            <p>Usuarios Asignados</p>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Recent clinics section -->
+  <mat-card class="recent-clinics-card">
+    <mat-card-header>
+      <mat-card-title>Clínicas Recientes</mat-card-title>
+      <mat-card-subtitle>Últimas clínicas registradas</mat-card-subtitle>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <div *ngIf="recentClinics.length === 0" class="no-data">
+        <mat-icon>business</mat-icon>
+        <p>No hay clínicas registradas</p>
+        <button mat-stroked-button color="primary" (click)="navigateToNewClinic()">
+          Registrar Primera Clínica
+        </button>
+      </div>
+
+      <div *ngIf="recentClinics.length > 0" class="clinics-list">
+        <div 
+          *ngFor="let clinic of recentClinics" 
+          class="clinic-item"
+          (click)="viewClinic(clinic)">
+          <div class="clinic-info">
+            <h4>{{ clinic.name }}</h4>
+            <p class="clinic-address">
+              <mat-icon>location_on</mat-icon>
+              {{ clinic.address }}
+              <span *ngIf="clinic.city">, {{ clinic.city }}</span>
+            </p>
+            <p class="clinic-contact">
+              <mat-icon>phone</mat-icon>
+              {{ clinic.phone }}
+              <span *ngIf="clinic.email" class="email">
+                <mat-icon>email</mat-icon>
+                {{ clinic.email }}
+              </span>
+            </p>
+          </div>
+          <div class="clinic-status">
+            <mat-chip 
+              [class]="clinic.isActive ? 'status-active' : 'status-inactive'"
+              [color]="clinic.isActive ? 'primary' : 'warn'">
+              {{ clinic.isActive ? 'Activa' : 'Inactiva' }}
+            </mat-chip>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+
+    <mat-card-actions>
+      <button 
+        mat-button 
+        color="primary" 
+        (click)="navigateToClinics()"
+        *ngIf="recentClinics.length > 0">
+        Ver Todas las Clínicas
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>

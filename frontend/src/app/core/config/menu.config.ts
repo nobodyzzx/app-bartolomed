@@ -62,25 +62,25 @@ export const MENU_ITEMS: MenuItem[] = [
       {
         label: 'Inventario',
         icon: 'inventory',
-        route: '/dashboard/pharmacy-inventory',
+        route: '/dashboard/pharmacy/inventory',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
       {
         label: 'Generación de Pedidos',
         icon: 'shopping_cart',
-        route: '/dashboard/pharmacy-orders',
+        route: '/dashboard/pharmacy/order-generation',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
       {
         label: 'Ventas y Dispensación',
         icon: 'point_of_sale',
-        route: '/dashboard/pharmacy-sales',
+        route: '/dashboard/pharmacy/sales-dispensing',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER, UserRoles.USER],
       },
       {
         label: 'Facturación',
         icon: 'receipt_long',
-        route: '/dashboard/pharmacy-billing',
+        route: '/dashboard/pharmacy/invoicing',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
     ],
@@ -94,19 +94,19 @@ export const MENU_ITEMS: MenuItem[] = [
       {
         label: 'Informes Médicos',
         icon: 'medical_services',
-        route: '/dashboard/medical-reports',
+        route: '/dashboard/reports/medical-reports',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
       {
         label: 'Reportes Financieros',
         icon: 'attach_money',
-        route: '/dashboard/financial-reports',
+        route: '/dashboard/reports/financial-reports',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
       {
         label: 'Control de Stock',
         icon: 'inventory_2',
-        route: '/dashboard/stock-control',
+        route: '/dashboard/reports/stock-control',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
     ],
@@ -119,26 +119,26 @@ export const MENU_ITEMS: MenuItem[] = [
     children: [
       {
         label: 'Registro de Activos',
-        icon: 'add_box',
-        route: '/dashboard/asset-registry',
+        icon: 'add_circle',
+        route: '/dashboard/assets-control/registration',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
       {
         label: 'Mantenimiento de Activos',
         icon: 'build',
-        route: '/dashboard/asset-maintenance',
+        route: '/dashboard/assets-control/maintenance',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
       {
         label: 'Control de Inventario de Activos',
         icon: 'inventory_2',
-        route: '/dashboard/asset-inventory',
+        route: '/dashboard/assets-control/inventory',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
       {
         label: 'Reportes de Activos',
-        icon: 'description',
-        route: '/dashboard/asset-reports',
+        icon: 'assessment',
+        route: '/dashboard/assets-control/reports',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
     ],
@@ -149,6 +149,12 @@ export const MENU_ITEMS: MenuItem[] = [
     route: '/admin',
     allowedRoles: [UserRoles.ADMIN],
     children: [
+      {
+        label: 'Gestión de Usuarios',
+        icon: 'people_alt',
+        route: '/dashboard/users',
+        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
+      },
       {
         label: 'Lista de Usuarios',
         icon: 'group',
@@ -189,7 +195,27 @@ export const MENU_ITEMS: MenuItem[] = [
         label: 'Gestión de Clínicas',
         icon: 'domain',
         route: '/dashboard/clinics',
-        allowedRoles: [UserRoles.ADMIN],
+        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
+        children: [
+          {
+            label: 'Dashboard de Clínicas',
+            icon: 'dashboard',
+            route: '/dashboard/clinics',
+            allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
+          },
+          {
+            label: 'Lista de Clínicas',
+            icon: 'list',
+            route: '/dashboard/clinics/list',
+            allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
+          },
+          {
+            label: 'Nueva Clínica',
+            icon: 'add_business',
+            route: '/dashboard/clinics/new',
+            allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
+          },
+        ],
       },
     ],
   },
@@ -199,12 +225,6 @@ export const MENU_ITEMS: MenuItem[] = [
     route: '/advanced',
     allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
     children: [
-      {
-        label: 'Gestión de Usuarios',
-        icon: 'people_alt',
-        route: '/dashboard/users',
-        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
-      },
       {
         label: 'Parámetros del Sistema',
         icon: 'settings_applications',

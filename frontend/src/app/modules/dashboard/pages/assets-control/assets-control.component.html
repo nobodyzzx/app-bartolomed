@@ -1,0 +1,43 @@
+<div class="assets-control-container">
+  <div class="header">
+    <h1>Control de Activos</h1>
+    <p class="subtitle">Sistema integral de gestión y control de activos institucionales</p>
+  </div>
+
+  <div class="navigation-tabs">
+    <nav mat-tab-nav-bar>
+      <a mat-tab-link 
+         routerLink="registration"
+         routerLinkActive="active"
+         class="nav-link">
+        <mat-icon>add_box</mat-icon>
+        <span>Registro de Activos</span>
+      </a>
+      <a mat-tab-link 
+         routerLink="maintenance"
+         routerLinkActive="active"
+         class="nav-link">
+        <mat-icon>build</mat-icon>
+        <span>Mantenimiento</span>
+      </a>
+      <a mat-tab-link 
+         routerLink="inventory"
+         routerLinkActive="active"
+         class="nav-link">
+        <mat-icon>inventory_2</mat-icon>
+        <span>Control de Inventario</span>
+      </a>
+      <a mat-tab-link 
+         routerLink="reports"
+         routerLinkActive="active"
+         class="nav-link">
+        <mat-icon>description</mat-icon>
+        <span>Reportes</span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="content-area">
+    <router-outlet></router-outlet>
+  </div>
+</div>

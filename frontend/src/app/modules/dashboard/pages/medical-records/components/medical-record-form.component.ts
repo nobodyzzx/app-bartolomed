@@ -1,16 +1,18 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Observable, forkJoin } from 'rxjs';
-import { 
-  MedicalRecord, 
-  CreateMedicalRecordDto, 
-  UpdateMedicalRecordDto, 
-  RecordType, 
-  RecordStatus,
-  ConsentType,
-  CreateConsentDto
+import { ActivatedRoute, Router } from '@angular/router';
+import { Observable, of } from 'rxjs';
+import { User } from '../../../../auth/interfaces/user.interface';
+import { Patient } from '../../patients/interfaces';
+import { PatientsService } from '../../patients/services/patients.service';
+import { UsersService } from '../../users/users.service';
+import {
+    ConsentType,
+    CreateConsentDto,
+    CreateMedicalRecordDto,
+    MedicalRecord,
+    RecordType
 } from '../interfaces';
 import { MedicalRecordsService } from '../services/medical-records.service';
 
@@ -20,68 +22,75 @@ import { MedicalRecordsService } from '../services/medical-records.service';
   styleUrls: ['./medical-record-form.component.css']
 })
 export class MedicalRecordFormComponent implements OnInit {
-  medicalRecordForm!: FormGroup;
+  
+  // Stepper form groups
+  patientInfoForm!: FormGroup;
+  medicalHistoryForm!: FormGroup;
+  vitalSignsForm!: FormGroup;
+  physicalExamForm!: FormGroup;
+  assessmentForm!: FormGroup;
   consentForm!: FormGroup;
   
-  isEditMode = false;
-  recordId: string | null = null;
-  loading = false;
-  currentStep = 0;
+  // Data for dropdowns
+  patients$: Observable<Patient[]> = of([]);
+  doctors$: Observable<User[]> = of([]);
   
+  // Enums for templates
   recordTypes = Object.values(RecordType);
-  recordStatuses = Object.values(RecordStatus);
   consentTypes = Object.values(ConsentType);
   
-  // Para subida de archivos
-  selectedConsentFile: File | null = null;
-  uploadProgress = 0;
+  // File handling
+  selectedFile: File | null = null;
+  filePreview: string | null = null;
   
-  // Para autocompletado de pacientes y doctores
-  patients: any[] = [];
-  doctors: any[] = [];
-
+  // Loading states
+  isLoading = false;
+  isSaving = false;
+  
+  // Edit mode
+  isEditMode = false;
+  recordId: string | null = null;
+  
   constructor(
     private fb: FormBuilder,
-    private medicalRecordsService: MedicalRecordsService,
-    private route: ActivatedRoute,
     private router: Router,
-    private snackBar: MatSnackBar
+    private route: ActivatedRoute,
+    private snackBar: MatSnackBar,
+    private medicalRecordsService: MedicalRecordsService,
+    private patientsService: PatientsService,
+    private usersService: UsersService
   ) {
     this.initializeForms();
   }
 
   ngOnInit(): void {
-    this.recordId = this.route.snapshot.paramMap.get('id');
-    this.isEditMode = !!this.recordId;
-    
-    if (this.isEditMode) {
-      this.loadMedicalRecord();
-    }
-    
-    this.loadPatients();
-    this.loadDoctors();
+    this.loadData();
+    this.checkEditMode();
   }
 
   private initializeForms(): void {
-    this.medicalRecordForm = this.fb.group({
-      // Información básica
-      type: [RecordType.CONSULTATION, Validators.required],
-      status: [RecordStatus.DRAFT],
+    // Paso 1: Información del Paciente
+    this.patientInfoForm = this.fb.group({
       patientId: ['', Validators.required],
       doctorId: ['', Validators.required],
+      type: [RecordType.CONSULTATION, Validators.required],
       isEmergency: [false],
-      
-      // Historia clínica
-      chiefComplaint: ['', Validators.required],
+      chiefComplaint: ['Dolor abdominal de 2 días de evolución', [Validators.required, Validators.minLength(10)]]
+    });
+
+    // Paso 2: Historia Médica
+    this.medicalHistoryForm = this.fb.group({
       historyOfPresentIllness: [''],
       pastMedicalHistory: [''],
       medications: [''],
       allergies: [''],
       socialHistory: [''],
       familyHistory: [''],
-      reviewOfSystems: [''],
-      
-      // Signos vitales
+      reviewOfSystems: ['']
+    });
+
+    // Paso 3: Signos Vitales
+    this.vitalSignsForm = this.fb.group({
       temperature: [''],
       systolicBP: [''],
       diastolicBP: [''],
@@ -89,9 +98,11 @@ export class MedicalRecordFormComponent implements OnInit {
       respiratoryRate: [''],
       oxygenSaturation: [''],
       weight: [''],
-      height: [''],
-      
-      // Examen físico
+      height: ['']
+    });
+
+    // Paso 4: Examen Físico
+    this.physicalExamForm = this.fb.group({
       physicalExamination: [''],
       generalAppearance: [''],
       heent: [''],
@@ -100,9 +111,11 @@ export class MedicalRecordFormComponent implements OnInit {
       abdominal: [''],
       neurological: [''],
       musculoskeletal: [''],
-      skin: [''],
-      
-      // Evaluación y Plan
+      skin: ['']
+    });
+
+    // Paso 5: Evaluación y Plan
+    this.assessmentForm = this.fb.group({
       assessment: [''],
       plan: [''],
       diagnosis: [''],
@@ -114,66 +127,115 @@ export class MedicalRecordFormComponent implements OnInit {
       followUpDate: ['']
     });
 
+    // Paso 6: Formulario de Consentimiento
     this.consentForm = this.fb.group({
       consentType: [ConsentType.GENERAL_TREATMENT, Validators.required],
-      description: ['', Validators.required],
-      signedBy: [''],
-      patientSignature: [false, Validators.requiredTrue],
-      doctorSignature: [false, Validators.requiredTrue],
-      witnessSignature: [false],
-      consentDocument: ['']
+      description: ['', [Validators.required, Validators.minLength(20)]],
+      signedBy: ['']
     });
   }
 
-  private loadMedicalRecord(): void {
-    if (!this.recordId) return;
+  private loadData(): void {
+    // Cargar pacientes
+    this.patients$ = this.patientsService.findAll();
+    this.patients$.subscribe(patients => {
+      console.log('Pacientes cargados:', patients);
+      if (patients.length > 0) {
+        // Pre-seleccionar el primer paciente para facilitar las pruebas
+        this.patientInfoForm.patchValue({
+          patientId: patients[0].id
+        });
+      }
+    });
     
-    this.loading = true;
-    this.medicalRecordsService.getMedicalRecordById(this.recordId).subscribe({
+    // Cargar doctores (usuarios con rol médico)
+    this.doctors$ = this.usersService.getUsers();
+    this.doctors$.subscribe(doctors => {
+      console.log('Doctores cargados:', doctors);
+      // Filtrar solo los usuarios con rol de doctor
+      const filteredDoctors = doctors.filter(user => 
+        user.roles.includes('doctor') || user.professionalInfo?.role?.toLowerCase().includes('médico')
+      );
+      if (filteredDoctors.length > 0) {
+        // Pre-seleccionar el primer doctor para facilitar las pruebas
+        this.patientInfoForm.patchValue({
+          doctorId: filteredDoctors[0].id
+        });
+      }
+    });
+  }
+
+  private checkEditMode(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.isEditMode = true;
+      this.recordId = id;
+      this.loadMedicalRecord(id);
+    }
+  }
+
+  private loadMedicalRecord(id: string): void {
+    this.isLoading = true;
+    this.medicalRecordsService.getMedicalRecordById(id).subscribe({
       next: (record) => {
         this.populateForm(record);
-        this.loading = false;
+        this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error cargando expediente:', error);
-        this.snackBar.open('Error cargando el expediente', 'Cerrar', { duration: 3000 });
-        this.loading = false;
+        this.showError('Error al cargar el expediente médico');
+        this.isLoading = false;
       }
     });
   }
 
   private populateForm(record: MedicalRecord): void {
-    this.medicalRecordForm.patchValue({
-      type: record.type,
-      status: record.status,
+    // Poblar formularios con datos existentes
+    this.patientInfoForm.patchValue({
       patientId: record.patientId,
       doctorId: record.doctorId,
+      type: record.type,
       isEmergency: record.isEmergency,
-      chiefComplaint: record.chiefComplaint,
+      chiefComplaint: record.chiefComplaint
+    });
+
+    this.medicalHistoryForm.patchValue({
       historyOfPresentIllness: record.historyOfPresentIllness,
       pastMedicalHistory: record.pastMedicalHistory,
       medications: record.medications,
       allergies: record.allergies,
       socialHistory: record.socialHistory,
       familyHistory: record.familyHistory,
-      reviewOfSystems: record.reviewOfSystems,
-      temperature: record.vitalSigns?.temperature,
-      systolicBP: record.vitalSigns?.systolicBP,
-      diastolicBP: record.vitalSigns?.diastolicBP,
-      heartRate: record.vitalSigns?.heartRate,
-      respiratoryRate: record.vitalSigns?.respiratoryRate,
-      oxygenSaturation: record.vitalSigns?.oxygenSaturation,
-      weight: record.vitalSigns?.weight,
-      height: record.vitalSigns?.height,
-      physicalExamination: record.physicalExamination,
-      generalAppearance: record.physicalExam?.generalAppearance,
-      heent: record.physicalExam?.heent,
-      cardiovascular: record.physicalExam?.cardiovascular,
-      respiratory: record.physicalExam?.respiratory,
-      abdominal: record.physicalExam?.abdominal,
-      neurological: record.physicalExam?.neurological,
-      musculoskeletal: record.physicalExam?.musculoskeletal,
-      skin: record.physicalExam?.skin,
+      reviewOfSystems: record.reviewOfSystems
+    });
+
+    if (record.vitalSigns) {
+      this.vitalSignsForm.patchValue({
+        temperature: record.vitalSigns.temperature,
+        systolicBP: record.vitalSigns.systolicBP,
+        diastolicBP: record.vitalSigns.diastolicBP,
+        heartRate: record.vitalSigns.heartRate,
+        respiratoryRate: record.vitalSigns.respiratoryRate,
+        oxygenSaturation: record.vitalSigns.oxygenSaturation,
+        weight: record.vitalSigns.weight,
+        height: record.vitalSigns.height
+      });
+    }
+
+    if (record.physicalExam) {
+      this.physicalExamForm.patchValue({
+        physicalExamination: record.physicalExamination,
+        generalAppearance: record.physicalExam.generalAppearance,
+        heent: record.physicalExam.heent,
+        cardiovascular: record.physicalExam.cardiovascular,
+        respiratory: record.physicalExam.respiratory,
+        abdominal: record.physicalExam.abdominal,
+        neurological: record.physicalExam.neurological,
+        musculoskeletal: record.physicalExam.musculoskeletal,
+        skin: record.physicalExam.skin
+      });
+    }
+
+    this.assessmentForm.patchValue({
       assessment: record.assessment,
       plan: record.plan,
       diagnosis: record.diagnosis,
@@ -186,201 +248,197 @@ export class MedicalRecordFormComponent implements OnInit {
     });
   }
 
-  private loadPatients(): void {
-    // Aquí deberías llamar a un servicio para cargar pacientes
-    // this.patientsService.getPatients().subscribe(patients => this.patients = patients);
-    this.patients = []; // Temporal
-  }
-
-  private loadDoctors(): void {
-    // Aquí deberías llamar a un servicio para cargar doctores
-    // this.usersService.getDoctors().subscribe(doctors => this.doctors = doctors);
-    this.doctors = []; // Temporal
-  }
-
   onFileSelected(event: any): void {
     const file = event.target.files[0];
     if (file) {
-      if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
-        this.selectedConsentFile = file;
-        this.consentForm.patchValue({ consentDocument: file.name });
+      this.selectedFile = file;
+      
+      // Crear preview para archivos de imagen
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.filePreview = e.target?.result as string;
+        };
+        reader.readAsDataURL(file);
       } else {
-        this.snackBar.open('Solo se permiten archivos PDF o imágenes', 'Cerrar', { duration: 3000 });
+        this.filePreview = null;
       }
     }
   }
 
-  calculateBMI(): void {
-    const weight = this.medicalRecordForm.get('weight')?.value;
-    const height = this.medicalRecordForm.get('height')?.value;
-    
-    if (weight && height) {
-      const heightInMeters = height / 100;
-      const bmi = weight / (heightInMeters * heightInMeters);
-      // Mostrar BMI calculado (podríías agregarlo como campo readonly)
-      console.log('BMI calculado:', bmi.toFixed(2));
-    }
+  getTypeText(type: RecordType): string {
+    const types = {
+      [RecordType.CONSULTATION]: 'Consulta',
+      [RecordType.EMERGENCY]: 'Emergencia',
+      [RecordType.SURGERY]: 'Cirugía',
+      [RecordType.FOLLOW_UP]: 'Seguimiento',
+      [RecordType.LABORATORY]: 'Laboratorio',
+      [RecordType.IMAGING]: 'Imagenología',
+      [RecordType.OTHER]: 'Otro'
+    };
+    return types[type] || type;
   }
 
-  nextStep(): void {
-    if (this.currentStep === 0 && this.medicalRecordForm.valid) {
-      this.currentStep++;
-    } else if (this.currentStep === 1) {
-      this.currentStep++;
-    }
-  }
-
-  previousStep(): void {
-    if (this.currentStep > 0) {
-      this.currentStep--;
-    }
+  getConsentTypeText(type: ConsentType): string {
+    const types = {
+      [ConsentType.GENERAL_TREATMENT]: 'Tratamiento General',
+      [ConsentType.SURGERY]: 'Cirugía',
+      [ConsentType.ANESTHESIA]: 'Anestesia',
+      [ConsentType.BLOOD_TRANSFUSION]: 'Transfusión Sanguínea',
+      [ConsentType.EXPERIMENTAL_TREATMENT]: 'Tratamiento Experimental',
+      [ConsentType.PHOTOGRAPHY]: 'Fotografías Médicas',
+      [ConsentType.DATA_SHARING]: 'Compartir Datos',
+      [ConsentType.OTHER]: 'Otro'
+    };
+    return types[type] || type;
   }
 
   onSubmit(): void {
-    if (this.medicalRecordForm.valid) {
-      this.loading = true;
+    if (this.isAllFormsValid()) {
+      this.isSaving = true;
       
-      const formData = this.medicalRecordForm.value;
+      const medicalRecord = this.createMedicalRecordDto();
       
-      if (this.isEditMode) {
-        this.updateMedicalRecord(formData);
+      if (this.isEditMode && this.recordId) {
+        this.updateMedicalRecord(medicalRecord);
       } else {
-        this.createMedicalRecord(formData);
+        this.createMedicalRecord(medicalRecord);
       }
     } else {
-      this.markFormGroupTouched(this.medicalRecordForm);
-      this.snackBar.open('Por favor complete todos los campos obligatorios', 'Cerrar', { duration: 3000 });
+      this.showError('Por favor complete todos los campos requeridos');
     }
   }
 
-  private createMedicalRecord(formData: any): void {
-    const createDto: CreateMedicalRecordDto = {
-      ...formData
+  private isAllFormsValid(): boolean {
+    return this.patientInfoForm.valid && this.consentForm.valid;
+  }
+
+  private createMedicalRecordDto(): CreateMedicalRecordDto {
+    const patientData = this.patientInfoForm.value;
+    const historyData = this.medicalHistoryForm.value;
+    const vitalSignsData = this.vitalSignsForm.value;
+    const physicalExamData = this.physicalExamForm.value;
+    const assessmentData = this.assessmentForm.value;
+
+    return {
+      ...patientData,
+      ...historyData,
+      ...vitalSignsData,
+      ...physicalExamData,
+      ...assessmentData
     };
-    
-    this.medicalRecordsService.createMedicalRecord(createDto).subscribe({
+  }
+
+  private createMedicalRecord(medicalRecord: CreateMedicalRecordDto): void {
+    this.medicalRecordsService.createMedicalRecord(medicalRecord).subscribe({
       next: (record) => {
-        this.snackBar.open('Expediente médico creado exitosamente', 'Cerrar', { duration: 3000 });
-        
-        // Si hay consentimiento, crearlo también
-        if (this.consentForm.valid && this.consentForm.value.description) {
+        this.showSuccess('Expediente médico creado exitosamente');
+        if (this.consentForm.valid && this.selectedFile) {
           this.createConsentForm(record.id!);
         } else {
           this.router.navigate(['/dashboard/medical-records']);
         }
-        
-        this.loading = false;
       },
       error: (error) => {
-        console.error('Error creando expediente:', error);
-        this.snackBar.open('Error al crear el expediente médico', 'Cerrar', { duration: 3000 });
-        this.loading = false;
+        this.showError('Error al crear el expediente médico');
+        this.isSaving = false;
       }
     });
   }
 
-  private updateMedicalRecord(formData: any): void {
-    const updateDto: UpdateMedicalRecordDto = {
-      ...formData
-    };
-    
-    this.medicalRecordsService.updateMedicalRecord(this.recordId!, updateDto).subscribe({
+  private updateMedicalRecord(medicalRecord: CreateMedicalRecordDto): void {
+    this.medicalRecordsService.updateMedicalRecord(this.recordId!, medicalRecord).subscribe({
       next: (record) => {
-        this.snackBar.open('Expediente médico actualizado exitosamente', 'Cerrar', { duration: 3000 });
+        this.showSuccess('Expediente médico actualizado exitosamente');
         this.router.navigate(['/dashboard/medical-records']);
-        this.loading = false;
+        this.isSaving = false;
       },
       error: (error) => {
-        console.error('Error actualizando expediente:', error);
-        this.snackBar.open('Error al actualizar el expediente médico', 'Cerrar', { duration: 3000 });
-        this.loading = false;
+        this.showError('Error al actualizar el expediente médico');
+        this.isSaving = false;
       }
     });
   }
 
   private createConsentForm(medicalRecordId: string): void {
-    const consentData: CreateConsentDto = {
+    const consentData = this.consentForm.value;
+    const consent: CreateConsentDto = {
       medicalRecordId,
-      patientId: this.medicalRecordForm.get('patientId')?.value,
-      doctorId: this.medicalRecordForm.get('doctorId')?.value,
-      consentType: this.consentForm.get('consentType')?.value,
-      description: this.consentForm.get('description')?.value,
-      signedBy: this.consentForm.get('signedBy')?.value
+      patientId: this.patientInfoForm.value.patientId,
+      doctorId: this.patientInfoForm.value.doctorId,
+      consentType: consentData.consentType,
+      description: consentData.description,
+      signedBy: consentData.signedBy
     };
 
-    this.medicalRecordsService.createConsentForm(consentData).subscribe({
-      next: (consent) => {
-        // Si hay archivo, subirlo
-        if (this.selectedConsentFile) {
-          this.uploadConsentDocument(consent.id!);
+    this.medicalRecordsService.createConsentForm(consent).subscribe({
+      next: (consentRecord) => {
+        if (this.selectedFile) {
+          this.uploadConsentFile(consentRecord.id!);
         } else {
           this.router.navigate(['/dashboard/medical-records']);
+          this.isSaving = false;
         }
       },
       error: (error) => {
-        console.error('Error creando consentimiento:', error);
-        this.snackBar.open('Error al crear el consentimiento', 'Cerrar', { duration: 3000 });
-        this.router.navigate(['/dashboard/medical-records']);
+        this.showError('Error al crear el formulario de consentimiento');
+        this.isSaving = false;
       }
     });
   }
 
-  private uploadConsentDocument(consentId: string): void {
-    if (!this.selectedConsentFile) return;
-    
-    this.medicalRecordsService.uploadSignedConsent(consentId, this.selectedConsentFile).subscribe({
-      next: (consent) => {
-        this.snackBar.open('Documento de consentimiento subido exitosamente', 'Cerrar', { duration: 3000 });
-        this.router.navigate(['/dashboard/medical-records']);
-      },
-      error: (error) => {
-        console.error('Error subiendo documento:', error);
-        this.snackBar.open('Error al subir el documento de consentimiento', 'Cerrar', { duration: 3000 });
-        this.router.navigate(['/dashboard/medical-records']);
-      }
-    });
+  private uploadConsentFile(consentId: string): void {
+    if (this.selectedFile) {
+      this.medicalRecordsService.uploadSignedConsent(consentId, this.selectedFile).subscribe({
+        next: () => {
+          this.showSuccess('Archivo de consentimiento subido exitosamente');
+          this.router.navigate(['/dashboard/medical-records']);
+          this.isSaving = false;
+        },
+        error: (error) => {
+          this.showError('Error al subir el archivo de consentimiento');
+          this.isSaving = false;
+        }
+      });
+    }
+  }
+
+  saveDraft(): void {
+    if (this.patientInfoForm.valid) {
+      this.isSaving = true;
+      const medicalRecord = this.createMedicalRecordDto();
+      
+      this.medicalRecordsService.createMedicalRecord(medicalRecord).subscribe({
+        next: (record) => {
+          this.showSuccess('Borrador guardado exitosamente');
+          this.router.navigate(['/dashboard/medical-records']);
+          this.isSaving = false;
+        },
+        error: (error) => {
+          this.showError('Error al guardar el borrador');
+          this.isSaving = false;
+        }
+      });
+    } else {
+      this.showError('Debe completar al menos la información básica del paciente');
+    }
   }
 
   cancel(): void {
     this.router.navigate(['/dashboard/medical-records']);
   }
 
-  saveDraft(): void {
-    this.medicalRecordForm.patchValue({ status: RecordStatus.DRAFT });
-    this.onSubmit();
-  }
-
-  private markFormGroupTouched(formGroup: FormGroup): void {
-    Object.keys(formGroup.controls).forEach(key => {
-      const control = formGroup.get(key);
-      control?.markAsTouched();
+  private showSuccess(message: string): void {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 3000,
+      panelClass: ['success-snackbar']
     });
   }
 
-  getTypeText(type: RecordType): string {
-    switch (type) {
-      case RecordType.CONSULTATION: return 'Consulta';
-      case RecordType.EMERGENCY: return 'Emergencia';
-      case RecordType.SURGERY: return 'Cirugía';
-      case RecordType.FOLLOW_UP: return 'Seguimiento';
-      case RecordType.LABORATORY: return 'Laboratorio';
-      case RecordType.IMAGING: return 'Imagenología';
-      case RecordType.OTHER: return 'Otro';
-      default: return type;
-    }
-  }
-
-  getConsentTypeText(type: ConsentType): string {
-    switch (type) {
-      case ConsentType.GENERAL_TREATMENT: return 'Tratamiento General';
-      case ConsentType.SURGERY: return 'Cirugía';
-      case ConsentType.ANESTHESIA: return 'Anestesia';
-      case ConsentType.BLOOD_TRANSFUSION: return 'Transfusión Sanguínea';
-      case ConsentType.EXPERIMENTAL_TREATMENT: return 'Tratamiento Experimental';
-      case ConsentType.PHOTOGRAPHY: return 'Fotografía Médica';
-      case ConsentType.DATA_SHARING: return 'Compartir Datos';
-      case ConsentType.OTHER: return 'Otro';
-      default: return type;
-    }
+  private showError(message: string): void {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 3000,
+      panelClass: ['error-snackbar']
+    });
   }
 }
