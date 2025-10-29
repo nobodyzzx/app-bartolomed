@@ -1,0 +1,105 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend.Dockerfile
+      target: production
+    # No exponemos puertos fijos - Dokploy maneja el proxy reverso
+    expose:
+      - '4200'
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:4200/',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    networks:
+      - bartolomed_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/backend.Dockerfile
+      target: production
+    # No exponemos puertos fijos - Dokploy maneja el proxy reverso
+    expose:
+      - '3000'
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=database
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER:-bartolomed_user}
+      - DB_PASS=${POSTGRES_PASSWORD:-bartolomed_pass}
+      - DB_NAME=${POSTGRES_DB:-bartolomed_db}
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-change-in-production}
+      - PORT=3000
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:3000/health',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - bartolomed_network
+
+  database:
+    image: postgres:16-alpine
+    # Puerto de base de datos interno - no expuesto al host
+    expose:
+      - '5432'
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-bartolomed_db}
+      - POSTGRES_USER=${POSTGRES_USER:-bartolomed_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-bartolomed_pass}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - bartolomed_db_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-bartolomed_user} -d ${POSTGRES_DB:-bartolomed_db}',
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - bartolomed_network
+
+volumes:
+  bartolomed_db_data:
+    driver: local
+    name: bartolomed_db_data
+
+networks:
+  bartolomed_network:
+    driver: bridge
+    name: bartolomed_network
