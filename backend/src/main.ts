@@ -79,12 +79,23 @@ async function bootstrap() {
     return d.startsWith('http://') || d.startsWith('https://') ? d : `https://${d}`;
   };
   const prodOrigins = [toUrl(frontendDomain), toUrl(backendDomain), ...extraOrigins].filter(Boolean) as string[];
+
+  // En producción con Docker interno, permitir origen null (peticiones desde el mismo servidor/red Docker)
+  const allowedOrigins = isProduction
+    ? prodOrigins.length
+      ? prodOrigins
+      : ['https://bartolomed.tecnocondor.dev', 'https://api.bartolomed.tecnocondor.dev']
+    : ['http://localhost:4200', 'http://localhost:3000'];
+
   app.enableCors({
-    origin: isProduction
-      ? prodOrigins.length
-        ? prodOrigins
-        : ['https://bartolomed.tecnocondor.dev', 'https://api.bartolomed.tecnocondor.dev']
-      : ['http://localhost:4200', 'http://localhost:3000'],
+    origin: (origin, callback) => {
+      // Permitir peticiones sin origen (llamadas internas Docker, curl, etc.) en producción
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-god-token', 'x-clinic-id'],

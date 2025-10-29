@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  baseUrl: 'https://api.bartolomed.tecnocondor.dev/api',
+  baseUrl: 'http://backend:3000/api',
 }
