@@ -1,0 +1,213 @@
+<div class="invoicing-container">
+  <!-- Header -->
+  <div class="page-header">
+    <h1 class="page-title">
+      <mat-icon>receipt_long</mat-icon>
+      Facturación
+    </h1>
+    <p class="page-subtitle">Gestión de facturas y cobros</p>
+  </div>
+
+  <!-- Estadísticas -->
+  <div class="stats-grid">
+    <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-blue-600 text-sm font-medium">Total Facturas</p>
+          <p class="text-2xl font-bold text-blue-900">{{stats.totalInvoices}}</p>
+        </div>
+        <mat-icon class="text-blue-500 text-3xl">description</mat-icon>
+      </div>
+    </div>
+    
+    <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-green-600 text-sm font-medium">Pagadas</p>
+          <p class="text-2xl font-bold text-green-900">{{stats.paidInvoices}}</p>
+        </div>
+        <mat-icon class="text-green-500 text-3xl">check_circle</mat-icon>
+      </div>
+    </div>
+    
+    <div class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-orange-600 text-sm font-medium">Pendientes</p>
+          <p class="text-2xl font-bold text-orange-900">{{stats.pendingInvoices}}</p>
+        </div>
+        <mat-icon class="text-orange-500 text-3xl">pending</mat-icon>
+      </div>
+    </div>
+    
+    <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-500">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-red-600 text-sm font-medium">Vencidas</p>
+          <p class="text-2xl font-bold text-red-900">{{stats.overdueInvoices}}</p>
+        </div>
+        <mat-icon class="text-red-500 text-3xl">warning</mat-icon>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resumen Financiero -->
+  <div class="financial-summary">
+    <div class="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-xl text-white">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-green-100 text-sm font-medium">Ingresos Totales</p>
+          <p class="text-3xl font-bold">${{stats.totalRevenue | number:'1.2-2'}}</p>
+        </div>
+        <mat-icon class="text-green-200 text-4xl">trending_up</mat-icon>
+      </div>
+    </div>
+    
+    <div class="bg-gradient-to-r from-orange-500 to-orange-600 p-6 rounded-xl text-white">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-orange-100 text-sm font-medium">Monto Pendiente</p>
+          <p class="text-3xl font-bold">${{stats.pendingAmount | number:'1.2-2'}}</p>
+        </div>
+        <mat-icon class="text-orange-200 text-4xl">schedule</mat-icon>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenido Principal -->
+  <mat-card class="content-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>list_alt</mat-icon>
+        Lista de Facturas
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <!-- Filtros y Acciones -->
+      <div class="filter-actions">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Buscar facturas</mat-label>
+          <input matInput (keyup)="applyFilter($event)" placeholder="ID, paciente...">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+        
+        <div class="action-buttons">
+          <button mat-raised-button color="primary" (click)="createNewInvoice()">
+            <mat-icon>add</mat-icon>
+            Nueva Factura
+          </button>
+          <button mat-stroked-button color="accent">
+            <mat-icon>download</mat-icon>
+            Exportar
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabla de Facturas -->
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" matSort class="w-full">
+          
+          <!-- Columna ID -->
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">ID Factura</th>
+            <td mat-cell *matCellDef="let invoice" class="text-blue-700 font-medium">{{invoice.id}}</td>
+          </ng-container>
+
+          <!-- Columna Paciente -->
+          <ng-container matColumnDef="patient">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">Paciente</th>
+            <td mat-cell *matCellDef="let invoice">
+              <div class="patient-info">
+                <mat-icon class="patient-icon">person</mat-icon>
+                <div class="patient-details">
+                  <div class="patient-name">{{invoice.patientName}}</div>
+                  <div class="sale-id">Venta: {{invoice.saleId}}</div>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Columna Fecha -->
+          <ng-container matColumnDef="date">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">Fecha</th>
+            <td mat-cell *matCellDef="let invoice">{{invoice.date | date:'dd/MM/yyyy'}}</td>
+          </ng-container>
+
+          <!-- Columna Total -->
+          <ng-container matColumnDef="total">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">Total</th>
+            <td mat-cell *matCellDef="let invoice" class="text-green-700 font-semibold">
+              ${{invoice.total | number:'1.2-2'}}
+            </td>
+          </ng-container>
+
+          <!-- Columna Estado -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef class="table-header">Estado</th>
+            <td mat-cell *matCellDef="let invoice">
+              <mat-chip-set>
+                <mat-chip [ngClass]="getStatusChipClass(invoice.status)">
+                  {{getStatusLabel(invoice.status)}}
+                  <span *ngIf="isOverdue(invoice)" class="overdue-days"> 
+                    ({{getDaysOverdue(invoice)}} días)
+                  </span>
+                </mat-chip>
+              </mat-chip-set>
+            </td>
+          </ng-container>
+
+          <!-- Columna Fecha de Vencimiento -->
+          <ng-container matColumnDef="dueDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">Vencimiento</th>
+            <td mat-cell *matCellDef="let invoice">
+              <div [ngClass]="{
+                'due-date-normal': !isOverdue(invoice),
+                'due-date-overdue': isOverdue(invoice)
+              }">
+                {{invoice.dueDate | date:'dd/MM/yyyy'}}
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Columna Acciones -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="table-header">Acciones</th>
+            <td mat-cell *matCellDef="let invoice">
+              <div class="action-buttons">
+                <button mat-icon-button color="primary" (click)="viewInvoiceDetails(invoice)" matTooltip="Ver detalle">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                <button mat-icon-button color="accent" (click)="printInvoice(invoice)" matTooltip="Imprimir">
+                  <mat-icon>print</mat-icon>
+                </button>
+                <button mat-icon-button color="primary" (click)="markAsPaid(invoice)" matTooltip="Marcar como pagada"
+                        [disabled]="invoice.status === 'paid' || invoice.status === 'cancelled'">
+                  <mat-icon>payment</mat-icon>
+                </button>
+                <button mat-icon-button color="accent" (click)="sendReminder(invoice)" matTooltip="Enviar recordatorio"
+                        [disabled]="invoice.status === 'paid' || invoice.status === 'cancelled'">
+                  <mat-icon>email</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="cancelInvoice(invoice)" matTooltip="Cancelar"
+                        [disabled]="invoice.status === 'paid' || invoice.status === 'cancelled'">
+                  <mat-icon>cancel</mat-icon>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+
+      <!-- Paginador -->
+      <mat-paginator 
+        [pageSizeOptions]="[10, 25, 50, 100]" 
+        showFirstLastButtons
+        aria-label="Seleccionar página de facturas"
+      ></mat-paginator>
+    </mat-card-content>
+  </mat-card>
+</div>

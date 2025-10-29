@@ -3,7 +3,7 @@ import { UsersService } from './services/users.service'; // Ensure this path is 
 import { CreateUserDto } from './dto';
 import { Auth } from '../auth/decorators/auth.decorator';
 import { PaginationDto } from '../common/dtos/pagination.dto';
-import { ValidRoles } from './interfaces';
+import { ValidRoles } from '../auth/interfaces';
 
 @Controller('users')
 export class UsersController {

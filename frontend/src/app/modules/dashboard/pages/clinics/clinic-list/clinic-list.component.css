@@ -1,0 +1,198 @@
+.clinic-list {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.list-header {
+  margin-bottom: 30px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header-content h1 {
+  margin: 0;
+  color: #333;
+  font-weight: 500;
+}
+
+.add-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Correcciones para iconos */
+.mat-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+/* Iconos en botones de acción */
+.add-btn .mat-icon {
+  font-size: 1.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+/* Iconos en tabla */
+.actions .mat-icon {
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Iconos de contacto */
+.contact-icon {
+  font-size: 1rem !important;
+  width: 1rem !important;
+  height: 1rem !important;
+  color: #666;
+}
+
+.search-container {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.search-field {
+  flex: 1;
+  max-width: 400px;
+}
+
+.search-btn {
+  height: 56px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+}
+
+.table-card {
+  overflow: hidden;
+}
+
+.clinic-table {
+  width: 100%;
+}
+
+.clinic-name strong {
+  display: block;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.clinic-name small {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.address-info {
+  max-width: 200px;
+}
+
+.address-info div {
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.address-info small {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.contact-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #333;
+}
+
+.no-data {
+  color: #999;
+  font-style: italic;
+}
+
+.status-active {
+  background-color: #e8f5e8 !important;
+  color: #2e7d32 !important;
+}
+
+.status-inactive {
+  background-color: #ffebee !important;
+  color: #c62828 !important;
+}
+
+.actions {
+  display: flex;
+  gap: 4px;
+}
+
+.actions button {
+  width: 36px;
+  height: 36px;
+}
+
+.no-data {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.no-data .mat-icon {
+  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+  color: #ccc;
+  margin-bottom: 20px;
+}
+
+.no-data h3 {
+  margin: 16px 0;
+  color: #333;
+}
+
+.no-data p {
+  margin: 16px 0 24px 0;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .clinic-list {
+    padding: 16px;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  
+  .search-container {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .search-field {
+    max-width: 100%;
+  }
+  
+  .actions {
+    flex-direction: column;
+  }
+  
+  .address-info {
+    max-width: 150px;
+  }
+}

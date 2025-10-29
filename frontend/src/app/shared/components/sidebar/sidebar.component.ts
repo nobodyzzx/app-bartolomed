@@ -94,7 +94,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
     // Forzar la re-evaluación si el usuario o el rol cambian
     if (currentUser && currentRole) {
-      return this.filterMenuItemsByRole(MENU_ITEMS, currentRole)
+      const filteredItems = this.filterMenuItemsByRole(MENU_ITEMS, currentRole)
+      return filteredItems
     }
 
     return [] // Devolver un array vacío mientras se inicializa
@@ -126,6 +127,14 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   private filterMenuItemsByRole(items: MenuItem[], role: UserRoles): MenuItem[] {
+    // Si es ADMIN, mostrar todo sin restricciones
+    if (role === UserRoles.ADMIN) {
+      return items.map(item => ({
+        ...item,
+        children: item.children ? [...item.children] : undefined
+      }))
+    }
+
     return items.filter(item => {
       // Verificar si el ítem padre tiene acceso o si algún hijo lo tiene
       const hasDirectAccess = item.allowedRoles.includes(role)

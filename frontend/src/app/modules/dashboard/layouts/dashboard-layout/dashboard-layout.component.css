@@ -29,3 +29,26 @@
 .shadow-lg {
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
+
+/* Correcciones globales para iconos en el layout */
+.mat-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  overflow: hidden !important;
+}
+
+/* Iconos en botones del header */
+.mat-icon-button .mat-icon {
+  font-size: 1.5rem !important;
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+}
+
+/* Iconos en toolbar */
+.mat-toolbar .mat-icon {
+  font-size: 1.5rem !important;
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+}

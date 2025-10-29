@@ -1,0 +1,196 @@
+.main-dashboard-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 2rem;
+}
+
+.main-dashboard-content {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Estilos para iconos de Material Design */
+.mat-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  overflow: hidden !important;
+}
+
+/* Iconos en las tarjetas de métricas */
+.bg-gradient-to-br .mat-icon {
+  font-size: 3rem !important;
+  width: 3rem !important;
+  height: 3rem !important;
+  line-height: 1 !important;
+}
+
+/* Iconos en botones de la tabla */
+.mat-table .mat-icon {
+  font-size: 1.25rem !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  line-height: 1 !important;
+}
+
+/* Contenedor de tabla con estilo mejorado */
+.table-container {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.mat-table {
+  width: 100%;
+  background: white;
+}
+
+.mat-header-cell {
+  background-color: #f8fafc !important;
+  color: #374151 !important;
+  font-weight: 600 !important;
+  border-bottom: 2px solid #e5e7eb !important;
+}
+
+.mat-cell {
+  border-bottom: 1px solid #f3f4f6 !important;
+  padding: 12px 16px !important;
+}
+
+.mat-row:hover {
+  background-color: #f9fafb !important;
+}
+
+/* Chips en las tablas */
+.mat-chip {
+  min-height: 28px !important;
+  line-height: 28px !important;
+  font-size: 0.75rem !important;
+  padding: 0 12px !important;
+  border-radius: 14px !important;
+}
+
+/* Botones de acción en tablas */
+.table-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+/* Iconos en botones de acción rápida */
+.mat-raised-button .mat-icon {
+  font-size: 2rem !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  line-height: 1 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* Botones de acción rápida - diseño uniforme */
+.quick-action-button {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1.5rem !important;
+  min-height: 120px !important;
+  text-align: center !important;
+  border-radius: 12px !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.quick-action-button:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.quick-action-button .mat-icon {
+  font-size: 2.5rem !important;
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.quick-action-button div {
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+}
+
+/* Iconos en mini-fab buttons */
+.mat-mini-fab .mat-icon {
+  font-size: 1.2rem !important;
+  width: 1.2rem !important;
+  height: 1.2rem !important;
+  line-height: 1 !important;
+}
+
+/* Asegurar que los iconos no se desborden */
+.mat-icon-button {
+  width: 40px !important;
+  height: 40px !important;
+  line-height: 40px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.mat-icon-button .mat-icon {
+  font-size: 1.5rem !important;
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+}
+
+/* Animaciones para las cards */
+.bg-gradient-to-br {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.bg-gradient-to-br:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para las métricas */
+.text-5xl {
+  opacity: 0.7;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .main-dashboard-container {
+    padding: 1rem;
+  }
+  
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Ajustar iconos en móviles */
+  .bg-gradient-to-br .mat-icon {
+    font-size: 2.5rem !important;
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+  }
+  
+  .mat-raised-button .mat-icon {
+    font-size: 1.5rem !important;
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+  }
+}
+
+/* Animación para las barras de progreso */
+@keyframes progressAnimation {
+  from {
+    width: 0%;
+  }
+  to {
+    width: var(--progress-width);
+  }
+}
+
+.bg-red-600 {
+  animation: progressAnimation 1s ease-out;
+}

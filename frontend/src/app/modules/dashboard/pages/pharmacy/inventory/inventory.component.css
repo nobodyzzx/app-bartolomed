@@ -1,0 +1,188 @@
+.inventory-container {
+  padding: 24px;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+.page-header {
+  margin-bottom: 32px;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px 0;
+}
+
+.page-title mat-icon {
+  color: #3b82f6;
+  font-size: 2rem;
+  width: 2rem;
+  height: 2rem;
+}
+
+.page-subtitle {
+  color: #64748b;
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+/* Estadísticas */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+/* Contenido principal */
+.content-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.content-card mat-card-header {
+  padding: 24px 24px 0 24px;
+}
+
+.content-card mat-card-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.content-card mat-card-title mat-icon {
+  color: #3b82f6;
+}
+
+/* Filtros y acciones */
+.filter-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.search-field {
+  flex: 1;
+  min-width: 300px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Tabla */
+.table-container {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+}
+
+.table-header {
+  background-color: #f8fafc;
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.product-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.product-name {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.product-category {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+/* Chips */
+.low-stock-chip {
+  background-color: #fee2e2 !important;
+  color: #dc2626 !important;
+}
+
+.normal-stock-chip {
+  background-color: #dcfce7 !important;
+  color: #16a34a !important;
+}
+
+.expiring-chip {
+  background-color: #fef3c7 !important;
+  color: #d97706 !important;
+}
+
+.normal-date-chip {
+  background-color: #e0e7ff !important;
+  color: #3730a3 !important;
+}
+
+/* Hover effects */
+.mat-mdc-row:hover {
+  background-color: #f8fafc;
+}
+
+/* Buttons */
+.mat-mdc-raised-button {
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+}
+
+.mat-mdc-stroked-button {
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+}
+
+.mat-mdc-icon-button {
+  width: 36px !important;
+  height: 36px !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .inventory-container {
+    padding: 16px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .filter-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-field {
+    min-width: unset;
+  }
+  
+  .action-buttons {
+    justify-content: center;
+  }
+}

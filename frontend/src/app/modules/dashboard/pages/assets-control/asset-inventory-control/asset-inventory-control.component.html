@@ -1,0 +1,151 @@
+<div class="asset-inventory-container">
+  <div class="main-content-card">
+    <h1 class="page-title">
+      <mat-icon>inventory_2</mat-icon>
+      Control de Inventario de Activos
+    </h1>
+
+    <!-- Dashboard de Métricas -->
+    <div class="metrics-dashboard" *ngIf="stats.totalAssets">
+      <div class="metrics-grid">
+        <div class="metric-card primary">
+          <mat-icon>inventory</mat-icon>
+          <div class="metric-content">
+            <h3>Total Activos</h3>
+            <p class="metric-value">{{ stats.totalAssets }}</p>
+            <small>En inventario</small>
+          </div>
+        </div>
+        
+        <div class="metric-card success">
+          <mat-icon>check_circle</mat-icon>
+          <div class="metric-content">
+            <h3>Activos Activos</h3>
+            <p class="metric-value">{{ stats.byStatus?.active || 0 }}</p>
+            <small>En funcionamiento</small>
+          </div>
+        </div>
+        
+        <div class="metric-card warning">
+          <mat-icon>build</mat-icon>
+          <div class="metric-content">
+            <h3>En Mantenimiento</h3>
+            <p class="metric-value">{{ stats.byStatus?.maintenance || 0 }}</p>
+            <small>Requieren atención</small>
+          </div>
+        </div>
+        
+        <div class="metric-card info">
+          <mat-icon>location_on</mat-icon>
+          <div class="metric-content">
+            <h3>Ubicaciones</h3>
+            <p class="metric-value">{{ Object.keys(stats.byDepartment || {}).length }}</p>
+            <small>Departamentos</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inventario de Activos -->
+    <mat-card class="inventory-card">
+      <mat-card-header>
+        <mat-card-title>Inventario de Activos</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div *ngIf="loading" class="loading-container">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Cargando inventario...</p>
+        </div>
+
+        <div *ngIf="!loading && inventory.length === 0" class="no-data">
+          <mat-icon>inventory_2</mat-icon>
+          <p>No hay activos en el inventario</p>
+        </div>
+
+        <div *ngIf="!loading && inventory.length > 0" class="table-container">
+          <table mat-table [dataSource]="inventory" class="inventory-table">
+            <!-- Nombre del Activo -->
+            <ng-container matColumnDef="assetName">
+              <th mat-header-cell *matHeaderCellDef>Activo</th>
+              <td mat-cell *matCellDef="let item">
+                <div class="asset-info">
+                  <strong>{{ item.assetName }}</strong>
+                  <small *ngIf="item.responsiblePerson">Responsable: {{ item.responsiblePerson }}</small>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Ubicación -->
+            <ng-container matColumnDef="location">
+              <th mat-header-cell *matHeaderCellDef>Ubicación</th>
+              <td mat-cell *matCellDef="let item">
+                <div class="location-info">
+                  <span>{{ item.location }}</span>
+                  <small *ngIf="item.department">{{ item.department }}</small>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Cantidad -->
+            <ng-container matColumnDef="quantity">
+              <th mat-header-cell *matHeaderCellDef>Cantidad</th>
+              <td mat-cell *matCellDef="let item">
+                <span class="quantity-badge">{{ item.quantity }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Condición -->
+            <ng-container matColumnDef="condition">
+              <th mat-header-cell *matHeaderCellDef>Condición</th>
+              <td mat-cell *matCellDef="let item">
+                <mat-chip-list>
+                  <mat-chip [color]="getConditionColor(item.condition)" selected>
+                    {{ item.condition }}
+                  </mat-chip>
+                </mat-chip-list>
+              </td>
+            </ng-container>
+
+            <!-- Estado -->
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let item">
+                <mat-chip-list>
+                  <mat-chip [color]="getStatusColor(item.status)" selected>
+                    {{ item.status }}
+                  </mat-chip>
+                </mat-chip-list>
+              </td>
+            </ng-container>
+
+            <!-- Última Inspección -->
+            <ng-container matColumnDef="lastInspection">
+              <th mat-header-cell *matHeaderCellDef>Última Inspección</th>
+              <td mat-cell *matCellDef="let item">
+                {{ item.lastInspectionDate | date:'short' || 'No registrada' }}
+              </td>
+            </ng-container>
+
+            <!-- Acciones -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Acciones</th>
+              <td mat-cell *matCellDef="let item">
+                <div class="action-buttons">
+                  <button mat-icon-button matTooltip="Inspeccionar">
+                    <mat-icon>search</mat-icon>
+                  </button>
+                  <button mat-icon-button matTooltip="Mover ubicación">
+                    <mat-icon>location_on</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

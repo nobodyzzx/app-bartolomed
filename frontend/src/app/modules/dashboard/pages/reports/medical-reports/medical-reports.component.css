@@ -1,0 +1,184 @@
+.medical-reports-container {
+  padding: 20px;
+}
+
+.header-section {
+  margin-bottom: 30px;
+}
+
+.title-area h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #2c3e50;
+  margin-bottom: 8px;
+  font-size: 1.8rem;
+  font-weight: 500;
+}
+
+.title-area p {
+  color: #7f8c8d;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.generate-form-card {
+  margin-bottom: 30px;
+}
+
+.generate-form-card mat-card-title {
+  color: #2c3e50;
+  font-size: 1.3rem;
+}
+
+.form-row {
+  margin-bottom: 20px;
+}
+
+.date-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 10px;
+}
+
+.form-actions button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reports-list-card {
+  margin-bottom: 20px;
+}
+
+.reports-list-card mat-card-title {
+  color: #2c3e50;
+  font-size: 1.3rem;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+  gap: 20px;
+}
+
+.loading-container p {
+  color: #666;
+  margin: 0;
+}
+
+.no-data {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.no-data mat-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: #bbb;
+  margin-bottom: 20px;
+}
+
+.no-data p {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.no-data small {
+  color: #999;
+}
+
+.table-container {
+  overflow-x: auto;
+  margin-top: 20px;
+}
+
+.reports-table {
+  width: 100%;
+  min-width: 800px;
+}
+
+.title-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title-cell strong {
+  color: #2c3e50;
+}
+
+.title-cell small {
+  color: #7f8c8d;
+  font-size: 0.85rem;
+}
+
+.patient-count {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.action-buttons button {
+  width: 36px;
+  height: 36px;
+}
+
+/* Chips styling */
+mat-chip-list mat-chip {
+  font-size: 0.85rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .medical-reports-container {
+    padding: 15px;
+  }
+  
+  .date-range {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .title-area h2 {
+    font-size: 1.5rem;
+  }
+  
+  .form-actions {
+    justify-content: center;
+  }
+  
+  .reports-table {
+    min-width: 600px;
+  }
+}
+
+@media (max-width: 480px) {
+  .action-buttons {
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .action-buttons button {
+    width: 32px;
+    height: 32px;
+  }
+}
