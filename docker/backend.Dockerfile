@@ -56,6 +56,10 @@ RUN npm ci --only=production && npm cache clean --force
 # Copia la aplicación compilada desde la etapa de construcción
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 
+# Crea el directorio de uploads con permisos para el usuario nestjs
+RUN mkdir -p /app/uploads/consent-forms && \
+    chown -R nestjs:nodejs /app/uploads
+
 # Cambia al usuario no-root
 USER nestjs
 

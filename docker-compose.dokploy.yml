@@ -46,6 +46,8 @@ services:
       - DB_NAME=${POSTGRES_DB:-bartolomed_db}
       - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-change-in-production}
       - PORT=3000
+    volumes:
+      - bartolomed_uploads:/app/uploads
     depends_on:
       database:
         condition: service_healthy
@@ -98,6 +100,9 @@ volumes:
   bartolomed_db_data:
     driver: local
     name: bartolomed_db_data
+  bartolomed_uploads:
+    driver: local
+    name: bartolomed_uploads
 
 networks:
   bartolomed_network:
