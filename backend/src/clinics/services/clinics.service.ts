@@ -1,8 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { UserClinic } from '../../users/entities/user-clinic.entity';
 import { User } from '../../users/entities/user.entity';
 import { CreateClinicDto, UpdateClinicDto } from '../dto';
+import { AddClinicMemberDto } from '../dto/add-clinic-member.dto';
+import { UpdateClinicMemberDto } from '../dto/update-clinic-member.dto';
 import { Clinic } from '../entities/clinic.entity';
 
 @Injectable()
@@ -12,6 +15,8 @@ export class ClinicsService {
     private readonly clinicRepository: Repository<Clinic>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(UserClinic)
+    private readonly userClinicRepo: Repository<UserClinic>,
   ) {}
 
   async create(createClinicDto: CreateClinicDto, user: User): Promise<Clinic> {
@@ -28,7 +33,7 @@ export class ClinicsService {
 
   async findAll(isActive?: boolean): Promise<Clinic[]> {
     const whereConditions: any = {};
-    
+
     if (isActive !== undefined) {
       whereConditions.isActive = isActive;
     }
@@ -75,7 +80,7 @@ export class ClinicsService {
     if (!clinic) {
       throw new NotFoundException(`Clinic with id ${id} not found`);
     }
-    
+
     clinic.isActive = true;
     return await this.clinicRepository.save(clinic);
   }
@@ -101,7 +106,7 @@ export class ClinicsService {
 
   async getClinicStatistics(): Promise<any> {
     const totalClinics = await this.clinicRepository.count();
-    
+
     const activeClinics = await this.clinicRepository.count({
       where: { isActive: true },
     });
@@ -142,27 +147,70 @@ export class ClinicsService {
   }
 
   async addUserToClinic(userId: string, clinicId: string): Promise<Clinic> {
-    const clinic = await this.findOne(clinicId);
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-
-    if (!user) {
-      throw new NotFoundException(`User with id ${userId} not found`);
-    }
-
-    // Verificar si el usuario ya está asignado a la clínica
-    const isUserAlreadyAssigned = clinic.users.some(u => u.id === userId);
-    if (isUserAlreadyAssigned) {
-      throw new BadRequestException('User is already assigned to this clinic');
-    }
-
-    clinic.users.push(user);
-    return await this.clinicRepository.save(clinic);
+    // Mantener compatibilidad: delegar a nuevo método con roles vacíos
+    return this.addMemberWithRoles(clinicId, { userId, roles: [] });
   }
 
   async removeUserFromClinic(userId: string, clinicId: string): Promise<Clinic> {
     const clinic = await this.findOne(clinicId);
-    clinic.users = clinic.users.filter(u => u.id !== userId);
-    return await this.clinicRepository.save(clinic);
+    const membership = await this.userClinicRepo.findOne({
+      where: { user: { id: userId }, clinic: { id: clinicId } },
+      relations: ['user', 'clinic'],
+    });
+    if (!membership) return clinic;
+    await this.userClinicRepo.remove(membership);
+    return clinic;
+  }
+
+  // Nuevo: agregar miembro con roles
+  async addMemberWithRoles(clinicId: string, dto: AddClinicMemberDto): Promise<Clinic> {
+    const clinic = await this.findOne(clinicId);
+    const user = await this.userRepository.findOne({ where: { id: dto.userId } });
+    if (!user) throw new NotFoundException(`User with id ${dto.userId} not found`);
+    const existing = await this.userClinicRepo.findOne({ where: { user: { id: user.id }, clinic: { id: clinic.id } } });
+    if (existing) throw new BadRequestException('User is already assigned to this clinic');
+    const uc = this.userClinicRepo.create({ user, clinic, roles: dto.roles ?? [] });
+    await this.userClinicRepo.save(uc);
+    return clinic;
+  }
+
+  async updateMemberRoles(clinicId: string, userId: string, dto: UpdateClinicMemberDto): Promise<Clinic> {
+    const clinic = await this.findOne(clinicId);
+    const membership = await this.userClinicRepo.findOne({ where: { user: { id: userId }, clinic: { id: clinicId } } });
+    if (!membership) throw new NotFoundException('Membership not found');
+    membership.roles = dto.roles ?? [];
+    await this.userClinicRepo.save(membership);
+    return clinic;
+  }
+
+  async getClinicMembers(clinicId: string) {
+    const memberships = await this.userClinicRepo.find({
+      where: { clinic: { id: clinicId } },
+      relations: ['user', 'user.personalInfo', 'clinic'],
+      select: {
+        id: true,
+        roles: true,
+        user: {
+          id: true,
+          email: true,
+          roles: true,
+          isActive: true,
+          personalInfo: {
+            firstName: true,
+            lastName: true,
+            phone: true,
+          },
+        },
+      },
+    });
+    return memberships.map(m => ({
+      userId: m.user.id,
+      email: m.user.email,
+      globalRoles: m.user.roles,
+      clinicRoles: m.roles,
+      isActive: m.user.isActive,
+      personalInfo: m.user.personalInfo,
+    }));
   }
 
   private handleDBErrors(error: any): never {

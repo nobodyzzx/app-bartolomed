@@ -1,8 +1,9 @@
-import { computed, inject, Injectable, signal } from '@angular/core'
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http'
+import { computed, inject, Injectable, signal } from '@angular/core'
+import { Router } from '@angular/router'
 
+import { catchError, map, Observable, of, throwError } from 'rxjs'
 import { environment } from '../../../environments/environments'
-import { catchError, map, Observable, of, tap, throwError } from 'rxjs'
 
 import { AuthStatus, CheckTokenResponse, LoginResponse, User } from '../interfaces'
 
@@ -12,6 +13,7 @@ import { AuthStatus, CheckTokenResponse, LoginResponse, User } from '../interfac
 export class AuthService {
   private readonly baseUrl: string = environment.baseUrl
   private http = inject(HttpClient)
+  private router = inject(Router)
 
   private _currentUser = signal<User | null>(null)
   private _authStatus = signal<AuthStatus>(AuthStatus.checking)
@@ -33,7 +35,7 @@ export class AuthService {
   login(email: string, password: string): Observable<boolean> {
     const url = `${this.baseUrl}/auth/login`
     const body = { email, password }
-    return this.http.post<LoginResponse>(url, body).pipe(
+    return this.http.post<LoginResponse>(url, body, { withCredentials: true }).pipe(
       map(({ user, token }) => this.setAuthentication(user, token)),
       catchError(err => throwError(() => err.error.message)),
     )
@@ -44,61 +46,51 @@ export class AuthService {
     const token = localStorage.getItem('token')
 
     if (!token) {
-      console.warn('No hay token, usando usuario mock admin para testing')
-      // Usuario mock para testing cuando no hay autenticación
-      const mockUser: User = {
-        id: 'mock-admin-id',
-        email: 'admin@bartolomed.com',
-        roles: ['admin'],
-        isActive: true,
-        personalInfo: {
-          firstName: 'Administrador',
-          lastName: 'Sistema',
-          phone: '+1234567890'
-        },
-        professionalInfo: {
-          specialization: 'Administración',
-          title: 'Administrador',
-          role: 'Admin'
-        }
-      }
-      
-      this.setAuthentication(mockUser, 'mock-token')
-      return of(true)
+      // Sin token no se permite el acceso a rutas protegidas
+      this._authStatus.set(AuthStatus.notAuthenticated)
+      this._currentUser.set(null)
+      return of(false)
     }
 
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`)
 
-    return this.http.get<CheckTokenResponse>(url, { headers }).pipe(
+    return this.http.get<CheckTokenResponse>(url, { headers, withCredentials: true }).pipe(
       map(({ user, token }) => this.setAuthentication(user, token)),
-      catchError(() => {
-        console.warn('Backend no disponible, usando usuario mock con rol admin')
-        // Usuario mock para testing cuando el backend no está disponible
-        const mockUser: User = {
-          id: 'mock-admin-id',
-          email: 'admin@bartolomed.com',
-          roles: ['admin'],
-          isActive: true,
-          personalInfo: {
-            firstName: 'Administrador',
-            lastName: 'Sistema',
-            phone: '+1234567890'
-          },
-          professionalInfo: {
-            specialization: 'Administración',
-            title: 'Administrador',
-            role: 'Admin'
-          }
-        }
-        
-        this.setAuthentication(mockUser, token || 'mock-token')
-        return of(true)
+      catchError((_err: HttpErrorResponse) => {
+        // Si el backend rechaza el token o no responde, forzar logout
+        this._authStatus.set(AuthStatus.notAuthenticated)
+        this._currentUser.set(null)
+        localStorage.removeItem('token')
+        return of(false)
       }),
     )
   }
   logout(): void {
+    // Revocar refresh token en el servidor (best-effort)
+    const token = localStorage.getItem('token')
+    if (token) {
+      const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`)
+      this.http
+        .post(`${this.baseUrl}/auth/logout`, {}, { headers, withCredentials: true })
+        .pipe(catchError(() => of(null)))
+        .subscribe()
+    }
+
+    // Limpiar estado local
     this._currentUser.set(null)
     this._authStatus.set(AuthStatus.notAuthenticated)
     localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
+
+    // Redirigir a login
+    this.router.navigateByUrl('/auth/login')
+  }
+
+  refreshAccessToken(): Observable<boolean> {
+    const url = `${this.baseUrl}/auth/refresh`
+    return this.http.post<LoginResponse>(url, {}, { withCredentials: true }).pipe(
+      map(({ user, token }) => this.setAuthentication(user, token)),
+      catchError(() => of(false)),
+    )
   }
 }

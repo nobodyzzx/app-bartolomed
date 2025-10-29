@@ -14,7 +14,7 @@ Este proyecto usa **subdominios separados** para frontend y backend:
 
 Configurar estas variables en Dokploy (usar `.env.production` como referencia):
 
-```bash
+````bash
 # Database
 POSTGRES_DB=bartolomed_prod
 POSTGRES_USER=bartolomed_user
@@ -23,27 +23,21 @@ POSTGRES_PASSWORD=BartolomedSecure2024!
 # Backend
 NODE_ENV=production
 JWT_SECRET=m+8USdiEpXiBolgQ0CyMtk+lzT11/eTu3oP9SQCVC9aAQ9e1fQgcHz2j5TJNXpL1s72YZG2DtbcxUgmOTrbnqA
+JWT_REFRESH_SECRET=please-change-me-strong-refresh-secret
+GOD_MODE_TOKEN=please-change-me-very-strong
 PORT=3000
 
 # Domain
-DOMAIN=bartolomed.tecnocondor.dev
-```
 
 ### 2. Configuración de Servicios
 
-#### Frontend
-
-- **Docker Compose**: `docker-compose.dokploy.yml`
 - **Servicio**: `frontend`
 - **Puerto del contenedor**: `4200`
 - **Dominio**: `bartolomed.tecnocondor.dev`
 - **Health Check**: `GET /` cada 30s
 
-#### Backend
 
 - **Docker Compose**: `docker-compose.dokploy.yml`
-- **Servicio**: `backend`
-- **Puerto del contenedor**: `3000`
 - **Dominio**: `api.bartolomed.tecnocondor.dev`
 - **Health Check**: `GET /health` cada 30s
 - **API Prefix**: `/api`
@@ -64,7 +58,7 @@ Todos los servicios están en la red `bartolomed_network` para comunicación int
 ```yaml
 bartolomed_db_data: Datos de PostgreSQL
 bartolomed_uploads: Archivos subidos (formularios de consentimiento)
-```
+````
 
 ## 🔧 URLs de la Aplicación
 
@@ -106,6 +100,7 @@ El backend está configurado para aceptar peticiones solo de:
 ⚠️ **IMPORTANTE**: Cambiar estos valores en producción:
 
 - `JWT_SECRET`
+- `JWT_REFRESH_SECRET`
 - `POSTGRES_PASSWORD`
 
 ## 🚦 Verificación de Despliegue

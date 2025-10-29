@@ -11,6 +11,5 @@ export class LoginUserDto {
     message: 'The password must have a Uppercase, lowercase letter and a number',
   })
   password: string;
-
-  role: string;
+  // role field is not required for login
 }

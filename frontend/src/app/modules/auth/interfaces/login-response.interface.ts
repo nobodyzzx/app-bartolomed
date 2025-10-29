@@ -1,8 +1,9 @@
 // import { User } from './user.interface';
 
-import { User } from './user.interface';
+import { User } from './user.interface'
 
 export interface LoginResponse {
-  user: User;
-  token: string;
+  user: User
+  token: string
+  refreshToken?: string
 }

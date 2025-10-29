@@ -36,6 +36,10 @@ services:
       - DB_USER=${POSTGRES_USER}
       - DB_PASS=${POSTGRES_PASSWORD}
       - DB_NAME=${POSTGRES_DB}
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-change-me}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your-refresh-secret-change-me}
+      - GOD_MODE_TOKEN=${GOD_MODE_TOKEN:-change-me-very-strong}
+      - NODE_ENV=development
     command: npm run start:dev
     security_opt:
       - label=disable
