@@ -66,10 +66,25 @@ async function bootstrap() {
 
   // Configuración de CORS para producción y desarrollo
   const isProduction = process.env.NODE_ENV === 'production';
+  const frontendDomain = process.env.FRONTEND_DOMAIN;
+  const backendDomain = process.env.BACKEND_DOMAIN;
+  const extraOrigins = (process.env.CORS_EXTRA_ORIGINS || '')
+    .split(',')
+    .map(o => o.trim())
+    .filter(o => !!o);
+
+  // Construye orígenes de producción a partir de variables de entorno
+  const toUrl = (d?: string) => {
+    if (!d) return undefined;
+    return d.startsWith('http://') || d.startsWith('https://') ? d : `https://${d}`;
+  };
+  const prodOrigins = [toUrl(frontendDomain), toUrl(backendDomain), ...extraOrigins].filter(Boolean) as string[];
   app.enableCors({
     origin: isProduction
-      ? ['https://bartolomed.tecnocondor.dev', 'https://api.bartolomed.tecnocondor.dev']
-      : ['http://localhost:4200', 'http://localhost:3000'], // En desarrollo permite localhost específicos
+      ? prodOrigins.length
+        ? prodOrigins
+        : ['https://bartolomed.tecnocondor.dev', 'https://api.bartolomed.tecnocondor.dev']
+      : ['http://localhost:4200', 'http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-god-token', 'x-clinic-id'],
