@@ -1,4 +1,5 @@
 export const environment = {
   production: true,
-  baseUrl: 'http://backend:3000/api',
+  // Usamos el mismo origen: Nginx proxy en el contenedor del frontend redirige /api -> backend interno
+  baseUrl: '/api',
 }
