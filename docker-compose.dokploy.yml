@@ -47,6 +47,11 @@ services:
       - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-change-in-production}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your-refresh-secret-change-in-production}
       - GOD_MODE_TOKEN=${GOD_MODE_TOKEN:-change-me-very-strong}
+      # CORS domains (optional but recommended)
+      - FRONTEND_DOMAIN=${FRONTEND_DOMAIN:-bartolomed.tecnocondor.dev}
+      - BACKEND_DOMAIN=${BACKEND_DOMAIN:-api.bartolomed.tecnocondor.dev}
+      # Additional comma-separated origins (e.g., Dokploy preview domains)
+      - CORS_EXTRA_ORIGINS=${CORS_EXTRA_ORIGINS:-}
       - PORT=3000
     volumes:
       - bartolomed_uploads:/app/uploads
