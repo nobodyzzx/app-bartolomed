@@ -26,6 +26,12 @@ services:
       timeout: 10s
       retries: 3
       start_period: 90s
+    labels:
+      traefik.enable: 'true'
+      # Router del frontend por host
+      traefik.http.routers.frontend.rule: 'Host(`${FRONTEND_DOMAIN:-bartolomed.tecnocondor.dev}`)'
+      traefik.http.routers.frontend.service: 'frontend-svc'
+      traefik.http.services.frontend-svc.loadbalancer.server.port: '4200'
     networks:
       - bartolomed_network
 
@@ -47,12 +53,6 @@ services:
       - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-change-in-production}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your-refresh-secret-change-in-production}
       - GOD_MODE_TOKEN=${GOD_MODE_TOKEN:-change-me-very-strong}
-      # CORS domains (optional but recommended)
-      - FRONTEND_DOMAIN=${FRONTEND_DOMAIN:-bartolomed.tecnocondor.dev}
-      - BACKEND_DOMAIN=${BACKEND_DOMAIN:-api.bartolomed.tecnocondor.dev}
-      # Additional comma-separated origins (e.g., Dokploy preview domains)
-      - CORS_EXTRA_ORIGINS=${CORS_EXTRA_ORIGINS:-}
-      - PORT=3000
     volumes:
       - bartolomed_uploads:/app/uploads
     depends_on:
@@ -67,12 +67,18 @@ services:
           '--no-verbose',
           '--tries=1',
           '--spider',
-          'http://localhost:3000/health',
+          'http://localhost:3000/api/health',
         ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
+    labels:
+      traefik.enable: 'true'
+      # Router para /api en el MISMO dominio del frontend (evita CORS y DNS del api.*)
+      traefik.http.routers.backend-path.rule: 'Host(`${FRONTEND_DOMAIN:-bartolomed.tecnocondor.dev}`) && PathPrefix(`/api`)'
+      traefik.http.routers.backend-path.service: 'backend-svc'
+      traefik.http.services.backend-svc.loadbalancer.server.port: '3000'
     networks:
       - bartolomed_network
 

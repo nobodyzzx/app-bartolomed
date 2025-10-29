@@ -34,13 +34,12 @@ CMD ["npx", "ng", "serve", "--host", "0.0.0.0"]
 # Etapa de producción - usando Node.js para servir archivos estáticos
 FROM node:20-alpine AS production
 
-# Instala serve para servir archivos estáticos y wget para health checks
+# Instala "serve" para servir archivos estáticos y wget para health checks
 RUN npm install -g serve && \
-    apk add --no-cache wget
+        apk add --no-cache wget
 
 # Crear usuario no-root para seguridad
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S angular -u 1001
+RUN addgroup -g 1001 -S nodejs && adduser -S angular -u 1001
 
 # Establece el directorio de trabajo
 WORKDIR /app
@@ -50,9 +49,9 @@ COPY --from=builder --chown=angular:nodejs /app/dist/frontend ./
 
 # Verifica la estructura y mueve archivos si es necesario
 RUN if [ -d browser ]; then \
-      mv browser/* . && rmdir browser; \
-    fi && \
-    ls -la
+            mv browser/* . && rmdir browser; \
+        fi && \
+        ls -la
 
 # Cambia al usuario no-root
 USER angular
@@ -60,5 +59,5 @@ USER angular
 # Expone el puerto 4200
 EXPOSE 4200
 
-# Comando simple para servir la aplicación con soporte SPA
+# Comando para servir la aplicación con soporte SPA
 CMD ["serve", "-s", ".", "-l", "4200", "--no-clipboard"]
