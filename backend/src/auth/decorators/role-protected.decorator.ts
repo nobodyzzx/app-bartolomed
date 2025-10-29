@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-import { ValidRoles } from '../../users/interfaces';
+import { ValidRoles } from '../interfaces';
 
 export const META_ROLES = 'roles';
 export const RoleProtected = (...args: ValidRoles[]) => {

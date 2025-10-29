@@ -1,0 +1,76 @@
+.patient-list-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 2rem;
+}
+
+.patient-list-content {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Correcciones para iconos de Material Design */
+.mat-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  overflow: hidden !important;
+}
+
+/* Iconos en botones de la tabla */
+.mat-table .mat-icon {
+  font-size: 1.25rem !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}
+
+/* Iconos en botones de acción */
+.mat-raised-button .mat-icon,
+.mat-button .mat-icon {
+  font-size: 1.2rem !important;
+  width: 1.2rem !important;
+  height: 1.2rem !important;
+  margin-right: 0.5rem !important;
+}
+
+/* Iconos en mat-icon-button */
+.mat-icon-button {
+  width: 40px !important;
+  height: 40px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.mat-icon-button .mat-icon {
+  font-size: 1.5rem !important;
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+}
+
+/* Iconos en encabezados */
+.bg-gradient-to-r .mat-icon {
+  font-size: 1.5rem !important;
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+}
+
+@media (max-width: 768px) {
+  .patient-list-container {
+    padding: 1rem;
+  }
+  
+  /* Iconos más pequeños en móviles */
+  .mat-icon {
+    font-size: 1.25rem !important;
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+  }
+  
+  .mat-table .mat-icon {
+    font-size: 1rem !important;
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+}

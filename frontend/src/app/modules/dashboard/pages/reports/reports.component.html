@@ -1,0 +1,36 @@
+<div class="reports-container">
+  <div class="header">
+    <h1>Gestión de Reportes</h1>
+    <p class="subtitle">Sistema integral de reportes médicos, financieros y de inventario</p>
+  </div>
+
+  <div class="navigation-tabs">
+    <nav mat-tab-nav-bar>
+      <a mat-tab-link 
+         routerLink="medical-reports"
+         routerLinkActive="active"
+         class="nav-link">
+        <mat-icon>assignment</mat-icon>
+        <span>Reportes Médicos</span>
+      </a>
+      <a mat-tab-link 
+         routerLink="financial-reports"
+         routerLinkActive="active"
+         class="nav-link">
+        <mat-icon>account_balance</mat-icon>
+        <span>Reportes Financieros</span>
+      </a>
+      <a mat-tab-link 
+         routerLink="stock-control"
+         routerLinkActive="active"
+         class="nav-link">
+        <mat-icon>inventory</mat-icon>
+        <span>Control de Stock</span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="content-area">
+    <router-outlet></router-outlet>
+  </div>
+</div>

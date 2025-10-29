@@ -1,0 +1,183 @@
+.clinic-form {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Correcciones para iconos */
+.mat-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+/* Iconos en form fields */
+.mat-form-field .mat-icon {
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Iconos en botones */
+.submit-btn .mat-icon,
+.cancel-btn .mat-icon {
+  font-size: 1.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.form-header h1 {
+  margin: 0;
+  color: #333;
+  font-weight: 500;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+}
+
+.form-card {
+  margin-top: 20px;
+}
+
+.form-section {
+  margin-bottom: 32px;
+}
+
+.form-section h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-weight: 500;
+  font-size: 1.1rem;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 8px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.half-width {
+  flex: 1;
+}
+
+.status-toggle {
+  display: flex;
+  align-items: center;
+  margin: 16px 0;
+}
+
+.toggle-label {
+  margin-left: 12px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.cancel-btn {
+  min-width: 100px;
+}
+
+.submit-btn {
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.button-spinner {
+  margin-right: 8px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .clinic-form {
+    padding: 16px;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .half-width {
+    width: 100%;
+  }
+  
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+  
+  .cancel-btn,
+  .submit-btn {
+    width: 100%;
+  }
+}
+
+/* Form field customizations */
+.mat-mdc-form-field {
+  width: 100%;
+}
+
+.mat-mdc-form-field + .mat-mdc-form-field {
+  margin-left: 0;
+}
+
+/* Error styles */
+.mat-mdc-form-field-error {
+  font-size: 0.85rem;
+}
+
+/* Slide toggle customizations */
+.mat-mdc-slide-toggle {
+  margin: 8px 0;
+}
+
+.mat-mdc-slide-toggle .mdc-form-field {
+  align-items: center;
+}
+
+/* Card content spacing */
+.mat-mdc-card-content {
+  padding: 24px;
+}
+
+/* Disabled button state */
+.submit-btn:disabled {
+  opacity: 0.6;
+}
+
+/* Focus styles */
+.mat-mdc-form-field.mat-focused .mat-mdc-floating-label {
+  color: #2196F3;
+}
+
+/* Required field indicator */
+.mat-mdc-form-field-required-marker {
+  color: #f44336;
+}

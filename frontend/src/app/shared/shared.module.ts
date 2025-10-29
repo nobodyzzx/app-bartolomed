@@ -1,13 +1,20 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
-import { MaterialModule } from '../material/material.module';
 import { NavbarComponent } from './components/navbar/navbar.component';
-import { DashboardRoutingModule } from '../modules/dashboard/dashboard-routing.module';
+import { PlaceholderComponent } from './components/placeholder/placeholder.component';
+import { MaterialModule } from '../material/material.module';
 
 @NgModule({
-  declarations: [SidebarComponent, NavbarComponent],
-  imports: [CommonModule, MaterialModule, DashboardRoutingModule],
-  exports: [SidebarComponent, NavbarComponent],
+  declarations: [SidebarComponent, NavbarComponent, PlaceholderComponent],
+  imports: [CommonModule, MaterialModule, RouterModule],
+  exports: [
+    SidebarComponent, 
+    NavbarComponent, 
+    PlaceholderComponent,
+    CommonModule,
+    MaterialModule
+  ],
 })
 export class SharedModule {}
