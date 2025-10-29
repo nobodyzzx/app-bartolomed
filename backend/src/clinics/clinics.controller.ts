@@ -1,8 +1,12 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { Auth, GetUser } from '../auth/decorators';
+import { ClinicRoles } from '../auth/decorators/clinic-roles.decorator';
+import { ClinicScopeGuard } from '../auth/guards/clinic-scope.guard';
 import { ValidRoles } from '../auth/interfaces';
 import { User } from '../users/entities/user.entity';
 import { CreateClinicDto, UpdateClinicDto } from './dto';
+import { AddClinicMemberDto } from './dto/add-clinic-member.dto';
+import { UpdateClinicMemberDto } from './dto/update-clinic-member.dto';
 import { ClinicsService } from './services/clinics.service';
 
 @Controller('clinics')
@@ -60,5 +64,41 @@ export class ClinicsController {
   @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN)
   deactivate(@Param('id', ParseUUIDPipe) id: string) {
     return this.clinicsService.deactivate(id);
+  }
+
+  // Membership management scoped by clinic: SUPER_ADMIN or clinic admin
+  @Get(':clinicId/members')
+  @Auth()
+  @UseGuards(ClinicScopeGuard)
+  getMembers(@Param('clinicId', ParseUUIDPipe) clinicId: string) {
+    return this.clinicsService.getClinicMembers(clinicId);
+  }
+
+  @Post(':clinicId/members')
+  @Auth() // requiere JWT
+  @UseGuards(ClinicScopeGuard)
+  @ClinicRoles('admin')
+  addMember(@Param('clinicId', ParseUUIDPipe) clinicId: string, @Body() dto: AddClinicMemberDto) {
+    return this.clinicsService.addMemberWithRoles(clinicId, dto);
+  }
+
+  @Patch(':clinicId/members/:userId')
+  @Auth()
+  @UseGuards(ClinicScopeGuard)
+  @ClinicRoles('admin')
+  updateMember(
+    @Param('clinicId', ParseUUIDPipe) clinicId: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Body() dto: UpdateClinicMemberDto,
+  ) {
+    return this.clinicsService.updateMemberRoles(clinicId, userId, dto);
+  }
+
+  @Delete(':clinicId/members/:userId')
+  @Auth()
+  @UseGuards(ClinicScopeGuard)
+  @ClinicRoles('admin')
+  removeMember(@Param('clinicId', ParseUUIDPipe) clinicId: string, @Param('userId', ParseUUIDPipe) userId: string) {
+    return this.clinicsService.removeUserFromClinic(userId, clinicId);
   }
 }

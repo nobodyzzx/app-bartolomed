@@ -8,9 +8,9 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Clinic } from '../../clinics/entities/clinic.entity';
 import { PersonalInfo } from './personal-info.entity';
 import { ProfessionalInfo } from './professional-info.entity';
-import { Clinic } from '../../clinics/entities/clinic.entity';
 
 @Entity('users')
 export class User {
@@ -22,6 +22,10 @@ export class User {
 
   @Column('text', { select: false })
   password: string;
+
+  // Almacena el hash del refresh token vigente (rotado en cada uso)
+  @Column('text', { nullable: true, select: false })
+  refreshTokenHash?: string | null;
 
   @Column('text', {
     array: true,

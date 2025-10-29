@@ -67,10 +67,12 @@ async function bootstrap() {
   // Configuración de CORS para producción y desarrollo
   const isProduction = process.env.NODE_ENV === 'production';
   app.enableCors({
-    origin: isProduction ? ['https://bartolomed.tecnocondor.dev', 'https://api.bartolomed.tecnocondor.dev'] : '*', // En desarrollo permite todos los orígenes
+    origin: isProduction
+      ? ['https://bartolomed.tecnocondor.dev', 'https://api.bartolomed.tecnocondor.dev']
+      : ['http://localhost:4200', 'http://localhost:3000'], // En desarrollo permite localhost específicos
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-god-token', 'x-clinic-id'],
   });
 
   app.setGlobalPrefix('api');

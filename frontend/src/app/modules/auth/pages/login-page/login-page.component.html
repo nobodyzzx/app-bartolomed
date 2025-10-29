@@ -23,7 +23,12 @@
         <div>
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Contraseña</mat-label>
-            <input matInput formControlName="password" [type]="hidePassword ? 'password' : 'text'" required />
+            <input
+              matInput
+              formControlName="password"
+              [type]="hidePassword ? 'password' : 'text'"
+              required
+            />
             <button
               mat-icon-button
               matSuffix
@@ -41,12 +46,24 @@
 
       <div class="flex items-center justify-between">
         <mat-checkbox class="text-sm">Recordarme</mat-checkbox>
-        <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500"> ¿Olvidaste tu contraseña? </a>
+        <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+          ¿Olvidaste tu contraseña?
+        </a>
       </div>
 
       <div>
-        <button mat-raised-button color="primary" class="w-full" type="submit" [disabled]="myForm.invalid">
-          Iniciar Sesión
+        <button
+          mat-raised-button
+          color="primary"
+          class="w-full"
+          type="submit"
+          [disabled]="isLoading"
+        >
+          <span *ngIf="!isLoading">Iniciar Sesión</span>
+          <span *ngIf="isLoading" class="flex items-center justify-center">
+            <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+            Iniciando sesión...
+          </span>
         </button>
       </div>
     </form>

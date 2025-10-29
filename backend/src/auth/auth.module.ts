@@ -4,18 +4,20 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { UserClinic } from '../users/entities/user-clinic.entity';
 import { User } from '../users/entities/user.entity';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { ClinicScopeGuard } from './guards/clinic-scope.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, ClinicScopeGuard],
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, UserClinic]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -39,6 +41,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     // }),
   ],
 
-  exports: [TypeOrmModule, JwtStrategy, PassportModule, JwtModule, JwtAuthGuard],
+  exports: [TypeOrmModule, JwtStrategy, PassportModule, JwtModule, JwtAuthGuard, ClinicScopeGuard],
 })
 export class AuthModule {}
