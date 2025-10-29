@@ -9,23 +9,23 @@ import { User } from './users/entities/user.entity';
 
 async function seedDefaultUser(dataSource: DataSource): Promise<void> {
   const logger = new Logger('Seeder');
-  
+
   try {
     const userRepository = dataSource.getRepository(User);
     const personalInfoRepository = dataSource.getRepository(PersonalInfo);
-    
+
     // Check if default user already exists
     const existingUser = await userRepository.findOne({
       where: { email: 'doctor@example.com' },
     });
-    
+
     if (existingUser) {
       logger.log('✅ Default user already exists: doctor@example.com');
       return;
     }
-    
+
     logger.log('🌱 Creating default user...');
-    
+
     // Create personal info first
     const personalInfo = personalInfoRepository.create({
       firstName: 'Doctor',
@@ -34,9 +34,9 @@ async function seedDefaultUser(dataSource: DataSource): Promise<void> {
       address: 'Sistema Médico Bartolomé',
       birthDate: new Date('1980-01-01'),
     });
-    
+
     await personalInfoRepository.save(personalInfo);
-    
+
     // Create the default user
     const defaultUser = userRepository.create({
       email: 'doctor@example.com',
@@ -45,9 +45,9 @@ async function seedDefaultUser(dataSource: DataSource): Promise<void> {
       isActive: true,
       personalInfo: personalInfo,
     });
-    
+
     await userRepository.save(defaultUser);
-    
+
     logger.log('✅ Default user created successfully:');
     logger.log(`   Name: Doctor Default`);
     logger.log(`   Email: doctor@example.com`);
@@ -61,9 +61,18 @@ async function seedDefaultUser(dataSource: DataSource): Promise<void> {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
-  
+
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.enableCors();
+
+  // Configuración de CORS para producción y desarrollo
+  const isProduction = process.env.NODE_ENV === 'production';
+  app.enableCors({
+    origin: isProduction ? ['https://bartolomed.tecnocondor.dev', 'https://api.bartolomed.tecnocondor.dev'] : '*', // En desarrollo permite todos los orígenes
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+
   app.setGlobalPrefix('api');
   app.useGlobalPipes(
     new ValidationPipe({
