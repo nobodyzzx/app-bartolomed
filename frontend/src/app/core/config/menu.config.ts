@@ -168,10 +168,10 @@ export const MENU_ITEMS: MenuItem[] = [
         allowedRoles: [UserRoles.ADMIN],
       },
       {
-        label: 'Cambiar Roles',
-        icon: 'manage_accounts',
+        label: 'Gestión de Roles',
+        icon: 'security',
         route: '/dashboard/roles',
-        allowedRoles: [UserRoles.ADMIN],
+        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
       {
         label: 'Configuración del Sistema',

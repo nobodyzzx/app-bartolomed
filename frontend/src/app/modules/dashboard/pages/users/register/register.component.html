@@ -87,17 +87,20 @@
             class="w-full transform transition-all duration-300 hover:-translate-y-1"
           >
             <mat-label>Roles</mat-label>
-            <mat-select formControlName="roles" multiple required>
+            <mat-select formControlName="roles" multiple required [disabled]="isLoadingRoles">
               <mat-select-trigger>
                 <mat-icon class="mr-2 align-middle text-blue-400">assignment_ind</mat-icon>
                 {{ registerForm.get('roles')?.value?.length || 0 }} roles seleccionados
               </mat-select-trigger>
-              <mat-option *ngFor="let role of validRoles" [value]="role.value">
+              <mat-option *ngIf="isLoadingRoles" disabled>
+                <span class="text-gray-500">Cargando roles...</span>
+              </mat-option>
+              <mat-option *ngFor="let role of availableRoles" [value]="role.name">
                 <div class="flex items-center gap-2">
-                  <mat-icon class="text-blue-400">{{ role.icon }}</mat-icon>
+                  <mat-icon class="text-blue-400">security</mat-icon>
                   <div>
-                    <div>{{ role.label }}</div>
-                    <small class="text-gray-500">{{ role.description }}</small>
+                    <div>{{ role.name }}</div>
+                    <small class="text-gray-500">{{ role.description || 'Sin descripción' }}</small>
                   </div>
                 </div>
               </mat-option>

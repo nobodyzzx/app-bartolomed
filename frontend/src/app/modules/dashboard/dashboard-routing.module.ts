@@ -1,36 +1,37 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
+import { NgModule } from '@angular/core'
+import { RouterModule, Routes } from '@angular/router'
 
-import { PlaceholderComponent } from '../../shared/components/placeholder/placeholder.component';
-import { authGuard } from '../auth/guards';
-import { DashboardLayoutComponent } from './layouts/dashboard-layout/dashboard-layout.component';
-import { MainDashboardComponent } from './pages/main-dashboard/main-dashboard.component';
+import { PlaceholderComponent } from '../../shared/components/placeholder/placeholder.component'
+import { authGuard } from '../auth/guards'
+import { DashboardLayoutComponent } from './layouts/dashboard-layout/dashboard-layout.component'
+import { MainDashboardComponent } from './pages/main-dashboard/main-dashboard.component'
+import { RolesManagementComponent } from './pages/roles/roles-management/roles-management.component'
 
 const routes: Routes = [
   {
     path: '',
     component: DashboardLayoutComponent,
     canActivate: [authGuard],
-     children: [
+    children: [
       {
         path: 'home',
         component: MainDashboardComponent,
       },
       {
         path: 'users',
-        loadChildren: () =>
-          import('./pages/users/users.module').then((m) => m.UsersModule),
+        loadChildren: () => import('./pages/users/users.module').then(m => m.UsersModule),
       },
       {
         path: 'patients',
-        loadChildren: () =>
-          import('./pages/patients/patients.module').then((m) => m.PatientsModule),
+        loadChildren: () => import('./pages/patients/patients.module').then(m => m.PatientsModule),
       },
       // Rutas médicas
       {
         path: 'medical-records',
         loadChildren: () =>
-          import('./pages/medical-records/medical-records.module').then((m) => m.MedicalRecordsModule),
+          import('./pages/medical-records/medical-records.module').then(
+            m => m.MedicalRecordsModule,
+          ),
       },
       {
         path: 'appointments',
@@ -47,78 +48,76 @@ const routes: Routes = [
       // Rutas de farmacia
       {
         path: 'pharmacy',
-        loadChildren: () =>
-          import('./pages/pharmacy/pharmacy.module').then((m) => m.PharmacyModule),
+        loadChildren: () => import('./pages/pharmacy/pharmacy.module').then(m => m.PharmacyModule),
       },
       // Rutas legacy de farmacia (redirect a nuevas rutas)
       {
         path: 'pharmacy-inventory',
         redirectTo: 'pharmacy/inventory',
-        pathMatch: 'full'
+        pathMatch: 'full',
       },
       {
         path: 'pharmacy-orders',
         redirectTo: 'pharmacy/order-generation',
-        pathMatch: 'full'
+        pathMatch: 'full',
       },
       {
         path: 'pharmacy-sales',
         redirectTo: 'pharmacy/sales-dispensing',
-        pathMatch: 'full'
+        pathMatch: 'full',
       },
       {
         path: 'pharmacy-billing',
         redirectTo: 'pharmacy/invoicing',
-        pathMatch: 'full'
+        pathMatch: 'full',
       },
       // Rutas de reportes
       {
         path: 'reports',
-        loadChildren: () =>
-          import('./pages/reports/reports.module').then((m) => m.ReportsModule),
+        loadChildren: () => import('./pages/reports/reports.module').then(m => m.ReportsModule),
       },
       // Rutas legacy de reportes (redirect a nuevas rutas)
       {
         path: 'medical-reports',
         redirectTo: 'reports/medical-reports',
-        pathMatch: 'full'
+        pathMatch: 'full',
       },
       {
         path: 'financial-reports',
         redirectTo: 'reports/financial-reports',
-        pathMatch: 'full'
+        pathMatch: 'full',
       },
       {
         path: 'stock-control',
         redirectTo: 'reports/stock-control',
-        pathMatch: 'full'
+        pathMatch: 'full',
       },
       // Rutas de activos
       {
         path: 'assets-control',
         loadChildren: () =>
-          import('./pages/assets-control/assets-control.module').then((m) => m.AssetsControlModule),
+          import('./pages/assets-control/assets-control.module').then(m => m.AssetsControlModule),
       },
       // Rutas legacy de activos (redirect a nuevas rutas)
       {
         path: 'asset-registry',
         redirectTo: 'assets-control/registration',
-        pathMatch: 'full'
+        pathMatch: 'full',
       },
       {
         path: 'asset-maintenance',
         redirectTo: 'assets-control/maintenance',
-        pathMatch: 'full'
+        pathMatch: 'full',
       },
       {
         path: 'asset-inventory',
         redirectTo: 'assets-control/inventory',
-        pathMatch: 'full'
+        pathMatch: 'full',
       },
       {
         path: 'asset-reports',
         redirectTo: 'assets-control/reports',
-        pathMatch: 'full'
+        pathMatch: 'full',
       },
       // Rutas para funcionalidades administrativas
       {
@@ -135,8 +134,11 @@ const routes: Routes = [
       },
       {
         path: 'clinics',
-        loadChildren: () =>
-          import('./pages/clinics/clinics.module').then((m) => m.ClinicsModule),
+        loadChildren: () => import('./pages/clinics/clinics.module').then(m => m.ClinicsModule),
+      },
+      {
+        path: 'roles',
+        component: RolesManagementComponent,
       },
       {
         path: 'system-params',
@@ -155,21 +157,16 @@ const routes: Routes = [
         component: PlaceholderComponent,
       },
       {
-        path: 'roles',
-        component: PlaceholderComponent,
-      },
-      {
         path: '',
         redirectTo: 'home',
         pathMatch: 'full',
       },
     ],
-  }
-
-];
+  },
+]
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class DashboardRoutingModule { }
+export class DashboardRoutingModule {}
