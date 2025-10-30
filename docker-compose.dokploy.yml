@@ -32,8 +32,11 @@ services:
       traefik.http.routers.frontend.rule: 'Host(`${FRONTEND_DOMAIN:-bartolomed.tecnocondor.dev}`)'
       traefik.http.routers.frontend.service: 'frontend-svc'
       traefik.http.services.frontend-svc.loadbalancer.server.port: '4200'
+      # Forzar a Traefik a usar su red compartida
+      traefik.docker.network: '${TRAEFIK_NETWORK:-dokploy-network}'
     networks:
       - bartolomed_network
+      - traefik
 
   backend:
     build:
@@ -79,8 +82,11 @@ services:
       traefik.http.routers.backend-path.rule: 'Host(`${FRONTEND_DOMAIN:-bartolomed.tecnocondor.dev}`) && PathPrefix(`/api`)'
       traefik.http.routers.backend-path.service: 'backend-svc'
       traefik.http.services.backend-svc.loadbalancer.server.port: '3000'
+      # Forzar a Traefik a usar su red compartida
+      traefik.docker.network: '${TRAEFIK_NETWORK:-dokploy-network}'
     networks:
       - bartolomed_network
+      - traefik
 
   database:
     image: postgres:16-alpine
@@ -121,4 +127,7 @@ networks:
   bartolomed_network:
     driver: bridge
     name: bartolomed_network
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK:-dokploy-network}
 # prueba de push
