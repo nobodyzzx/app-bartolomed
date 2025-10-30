@@ -25,18 +25,27 @@ export class AuthController {
   @Post('login')
   async loginUser(@Body() loginUserDto: LoginUserDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(loginUserDto);
+    const remember = !!loginUserDto.rememberMe;
     // Set httpOnly refresh token cookie for rotation
     if (result.refreshToken) {
       const isProduction = process.env.NODE_ENV === 'production';
-      res.cookie('rt', result.refreshToken, {
+      const cookieCommon: any = {
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? 'lax' : 'lax',
         path: '/',
-        maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days
+      };
+      const rtOptions = remember ? { ...cookieCommon, maxAge: 15 * 24 * 60 * 60 * 1000 } : cookieCommon;
+      res.cookie('rt', result.refreshToken, rtOptions);
+      // Helper cookie to remember choice (not httpOnly so FE could read if needed, but keep httpOnly off)
+      res.cookie('rtr', remember ? '1' : '0', {
+        secure: isProduction,
+        sameSite: isProduction ? 'lax' : 'lax',
+        path: '/',
+        ...(remember ? { maxAge: 15 * 24 * 60 * 60 * 1000 } : {}),
       });
     }
-    return { user: result.user, token: result.token };
+    return { user: result.user, token: result.token, rememberMe: remember };
   }
 
   @Post('refresh')
@@ -55,15 +64,30 @@ export class AuthController {
 
     if (result.refreshToken) {
       const isProduction = process.env.NODE_ENV === 'production';
-      res.cookie('rt', result.refreshToken, {
+      const cookieHeader = req.headers['cookie'] || '';
+      const rtr = cookieHeader
+        .split(';')
+        .map(c => c.trim())
+        .find(c => c.startsWith('rtr='));
+      const remember = rtr ? rtr.split('=')[1] === '1' : false;
+      const cookieCommon: any = {
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? 'lax' : 'lax',
         path: '/',
-        maxAge: 15 * 24 * 60 * 60 * 1000,
+      };
+      const rtOptions = remember ? { ...cookieCommon, maxAge: 15 * 24 * 60 * 60 * 1000 } : cookieCommon;
+      res.cookie('rt', result.refreshToken, rtOptions);
+      // refresh rtr as well
+      res.cookie('rtr', remember ? '1' : '0', {
+        secure: isProduction,
+        sameSite: isProduction ? 'lax' : 'lax',
+        path: '/',
+        ...(remember ? { maxAge: 15 * 24 * 60 * 60 * 1000 } : {}),
       });
+      return { user: result.user, token: result.token, rememberMe: remember };
     }
-    return { user: result.user, token: result.token };
+    return { user: result.user, token: result.token, rememberMe: false };
   }
 
   @Post('logout')

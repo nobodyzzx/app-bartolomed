@@ -98,7 +98,7 @@ export class ClinicsService {
       .leftJoinAndSelect('clinic.users', 'users')
       .where('clinic.isActive = :isActive', { isActive: true })
       .andWhere(
-        '(clinic.name ILIKE :searchTerm OR clinic.address ILIKE :searchTerm OR clinic.city ILIKE :searchTerm)',
+        '(clinic.name ILIKE :searchTerm OR clinic.address ILIKE :searchTerm OR clinic.departamento ILIKE :searchTerm OR clinic.provincia ILIKE :searchTerm OR clinic.localidad ILIKE :searchTerm)',
         { searchTerm: `%${searchTerm}%` },
       )
       .getMany();

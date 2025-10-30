@@ -3,34 +3,32 @@
   <div class="list-header">
     <div class="header-content">
       <h1>Lista de Clínicas</h1>
-      <button 
-        mat-raised-button 
-        color="primary" 
-        (click)="navigateToNew()"
-        class="add-btn">
+      <button mat-raised-button color="primary" (click)="navigateToNew()" class="add-btn">
         <mat-icon>add</mat-icon>
         Nueva Clínica
       </button>
     </div>
-    
+
     <!-- Search -->
     <div class="search-container">
       <mat-form-field appearance="outline" class="search-field">
         <mat-label>Buscar clínicas</mat-label>
-        <input 
-          matInput 
+        <input
+          matInput
           [(ngModel)]="searchTerm"
           (input)="applyFilter($event)"
-          placeholder="Nombre, dirección, teléfono...">
+          placeholder="Nombre, dirección, teléfono..."
+        />
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
-      
-      <button 
-        mat-raised-button 
+
+      <button
+        mat-raised-button
         color="accent"
         (click)="searchClinics()"
         [disabled]="!searchTerm.trim()"
-        class="search-btn">
+        class="search-btn"
+      >
         Buscar
       </button>
     </div>
@@ -44,7 +42,6 @@
   <!-- Table -->
   <mat-card class="table-card" *ngIf="!isLoading">
     <mat-table [dataSource]="dataSource" matSort class="clinic-table">
-      
       <!-- Name Column -->
       <ng-container matColumnDef="name">
         <mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</mat-header-cell>
@@ -62,10 +59,10 @@
         <mat-cell *matCellDef="let clinic">
           <div class="address-info">
             <div>{{ clinic.address }}</div>
-            <small *ngIf="clinic.city">
-              {{ clinic.city }}
-              <span *ngIf="clinic.state">, {{ clinic.state }}</span>
-              <span *ngIf="clinic.country"> - {{ clinic.country }}</span>
+            <small *ngIf="clinic.departamento || clinic.provincia || clinic.localidad">
+              <ng-container *ngIf="clinic.departamento">{{ clinic.departamento }}</ng-container>
+              <ng-container *ngIf="clinic.provincia"> - {{ clinic.provincia }}</ng-container>
+              <ng-container *ngIf="clinic.localidad"> - {{ clinic.localidad }}</ng-container>
             </small>
           </div>
         </mat-cell>
@@ -100,9 +97,10 @@
       <ng-container matColumnDef="isActive">
         <mat-header-cell *matHeaderCellDef>Estado</mat-header-cell>
         <mat-cell *matCellDef="let clinic">
-          <mat-chip 
+          <mat-chip
             [class]="clinic.isActive ? 'status-active' : 'status-inactive'"
-            [color]="clinic.isActive ? 'primary' : 'warn'">
+            [color]="clinic.isActive ? 'primary' : 'warn'"
+          >
             {{ clinic.isActive ? 'Activa' : 'Inactiva' }}
           </mat-chip>
         </mat-cell>
@@ -113,35 +111,34 @@
         <mat-header-cell *matHeaderCellDef>Acciones</mat-header-cell>
         <mat-cell *matCellDef="let clinic">
           <div class="actions">
-            <button 
-              mat-icon-button 
+            <button
+              mat-icon-button
               color="primary"
               (click)="viewClinic(clinic)"
-              matTooltip="Ver detalles">
+              matTooltip="Ver detalles"
+            >
               <mat-icon>visibility</mat-icon>
             </button>
-            
-            <button 
-              mat-icon-button 
-              color="accent"
-              (click)="editClinic(clinic)"
-              matTooltip="Editar">
+
+            <button mat-icon-button color="accent" (click)="editClinic(clinic)" matTooltip="Editar">
               <mat-icon>edit</mat-icon>
             </button>
-            
-            <button 
-              mat-icon-button 
+
+            <button
+              mat-icon-button
               [color]="clinic.isActive ? 'warn' : 'primary'"
               (click)="toggleClinicStatus(clinic)"
-              [matTooltip]="clinic.isActive ? 'Desactivar' : 'Activar'">
+              [matTooltip]="clinic.isActive ? 'Desactivar' : 'Activar'"
+            >
               <mat-icon>{{ clinic.isActive ? 'block' : 'check_circle' }}</mat-icon>
             </button>
-            
-            <button 
-              mat-icon-button 
+
+            <button
+              mat-icon-button
               color="warn"
               (click)="deleteClinic(clinic)"
-              matTooltip="Eliminar">
+              matTooltip="Eliminar"
+            >
               <mat-icon>delete</mat-icon>
             </button>
           </div>
@@ -149,14 +146,11 @@
       </ng-container>
 
       <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-      <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+      <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
     </mat-table>
 
     <!-- Paginator -->
-    <mat-paginator 
-      [pageSizeOptions]="[5, 10, 20, 50]"
-      showFirstLastButtons>
-    </mat-paginator>
+    <mat-paginator [pageSizeOptions]="[5, 10, 20, 50]" showFirstLastButtons> </mat-paginator>
   </mat-card>
 
   <!-- No data message -->

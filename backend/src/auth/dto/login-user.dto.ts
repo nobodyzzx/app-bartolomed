@@ -1,4 +1,4 @@
-import { IsEmail, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
 export class LoginUserDto {
   @IsEmail()
@@ -12,4 +12,8 @@ export class LoginUserDto {
   })
   password: string;
   // role field is not required for login
+
+  @IsOptional()
+  @IsBoolean()
+  rememberMe?: boolean;
 }
