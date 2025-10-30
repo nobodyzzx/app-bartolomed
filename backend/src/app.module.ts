@@ -21,6 +21,9 @@ import { PurchaseOrder, PurchaseOrderItem, Supplier } from './pharmacy/entities/
 import { PharmacyModule } from './pharmacy/pharmacy.module';
 import { Prescription, PrescriptionItem } from './prescriptions/entities/prescription.entity';
 import { ReportsModule } from './reports/reports.module';
+import { Role } from './roles/entities/role.entity';
+import { RolesModule } from './roles/roles.module';
+import { SeedModule } from './seed/seed.module';
 import { PersonalInfo, ProfessionalInfo, User } from './users/entities';
 import { UsersModule } from './users/users.module';
 
@@ -60,6 +63,7 @@ import { UsersModule } from './users/users.module';
         PharmacySale,
         PharmacySaleItem,
         PharmacyInvoice,
+        Role,
       ],
       synchronize: true,
     }),
@@ -73,6 +77,8 @@ import { UsersModule } from './users/users.module';
     MedicalRecordsModule,
     ReportsModule,
     PharmacyModule,
+    RolesModule,
+    SeedModule,
   ],
 })
 export class AppModule {}

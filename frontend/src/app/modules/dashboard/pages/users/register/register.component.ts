@@ -6,6 +6,7 @@ import { switchMap } from 'rxjs/operators'
 import Swal from 'sweetalert2'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
 import { SidenavService } from '../../../../../shared/components/services/sidenav.services'
+import { Role, RolesService } from '../../../services/roles.service'
 import { ClinicsService } from '../../clinics/services/clinics.service'
 import { UsersService } from '../users.service'
 
@@ -44,51 +45,8 @@ export class UserRegisterComponent implements OnInit {
   isEditMode: boolean = false
   userId: string | null = null
   clinics: Clinic[] = []
-
-  protected readonly validRoles: UserRoleItem[] = [
-    {
-      value: ValidRoles.USER,
-      label: 'Usuario',
-      icon: 'person',
-      description: 'Acceso estándar al sistema',
-    },
-    {
-      value: ValidRoles.ADMIN,
-      label: 'Administrador',
-      icon: 'admin_panel_settings',
-      description: 'Control total del sistema',
-    },
-    {
-      value: ValidRoles.SUPER_ADMIN,
-      label: 'Super Administrador',
-      icon: 'shield',
-      description: 'Acceso completo y gestión de administradores',
-    },
-    {
-      value: ValidRoles.DOCTOR,
-      label: 'Doctor',
-      icon: 'local_hospital',
-      description: 'Médico profesional',
-    },
-    {
-      value: ValidRoles.NURSE,
-      label: 'Enfermero/a',
-      icon: 'medical_services',
-      description: 'Personal de enfermería',
-    },
-    {
-      value: ValidRoles.PHARMACIST,
-      label: 'Farmacéutico/a',
-      icon: 'local_pharmacy',
-      description: 'Especialista en farmacia',
-    },
-    {
-      value: ValidRoles.RECEPTIONIST,
-      label: 'Recepcionista',
-      icon: 'desk',
-      description: 'Personal de recepción',
-    },
-  ]
+  availableRoles: Role[] = []
+  isLoadingRoles: boolean = false
 
   protected readonly specializations = [
     'Medicina General',
@@ -141,6 +99,7 @@ export class UserRegisterComponent implements OnInit {
   constructor(
     private usersService: UsersService,
     private clinicsService: ClinicsService,
+    private rolesService: RolesService,
     public router: Router,
     private route: ActivatedRoute,
     private errorService: ErrorService,
@@ -152,6 +111,9 @@ export class UserRegisterComponent implements OnInit {
 
     // Cargar clínicas activas
     this.loadClinics()
+
+    // Cargar roles disponibles
+    this.loadRoles()
 
     // Verificar si estamos en modo edición
     this.route.paramMap
@@ -187,6 +149,20 @@ export class UserRegisterComponent implements OnInit {
       },
       error: error => {
         console.error('Error al cargar clínicas:', error)
+      },
+    })
+  }
+
+  loadRoles() {
+    this.isLoadingRoles = true
+    this.rolesService.findAll(true).subscribe({
+      next: roles => {
+        this.availableRoles = roles
+        this.isLoadingRoles = false
+      },
+      error: error => {
+        console.error('Error al cargar roles:', error)
+        this.isLoadingRoles = false
       },
     })
   }

@@ -1,12 +1,11 @@
 import { Component, OnInit, ViewChild } from '@angular/core'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatTableDataSource } from '@angular/material/table'
-import { UsersService } from '../users.service'
-import { User } from '../../../../auth/interfaces'
-import { ProfessionalRoles } from '../../../interfaces/professionalRoles.enum'
 import { Router } from '@angular/router'
 import Swal from 'sweetalert2'
-import { UserRoles } from '../../../interfaces/userRoles.enum'
+import { User } from '../../../../auth/interfaces'
+import { ProfessionalRoles } from '../../../interfaces/professionalRoles.enum'
+import { UsersService } from '../users.service'
 
 @Component({
   selector: 'app-user-list',
@@ -305,6 +304,30 @@ export class UserListComponent implements OnInit {
   editUser(user: User): void {
     // Navegar a la página de edición con el ID del usuario
     this.router.navigate(['/dashboard/users/edit', user.id])
+  }
+
+  editRoles(user: User): void {
+    // Mostrar modal de edición de roles
+    Swal.fire({
+      title: `Editar roles de ${user.personalInfo?.firstName} ${user.personalInfo?.lastName}`,
+      html: `
+        <div style="text-align: left;">
+          <p style="margin-bottom: 1rem;"><strong>Email:</strong> ${user.email}</p>
+          <p style="margin-bottom: 1rem;"><strong>Roles actuales:</strong></p>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem;">
+            ${user.roles?.map(role => `<span style="background-color: #dbeafe; color: #1e40af; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem;">${role}</span>`).join('') || '<em>Sin roles</em>'}
+          </div>
+          <p style="margin-bottom: 0.5rem;"><strong>Para editar los roles, navega a la sección de edición de usuario.</strong></p>
+        </div>
+      `,
+      confirmButtonText: 'Editar usuario',
+      cancelButtonText: 'Cerrar',
+      showCancelButton: true,
+    }).then(result => {
+      if (result.isConfirmed) {
+        this.editUser(user)
+      }
+    })
   }
 
   deleteUser(user: User): void {

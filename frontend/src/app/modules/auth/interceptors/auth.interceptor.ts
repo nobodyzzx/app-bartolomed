@@ -16,7 +16,7 @@ export class AuthInterceptor implements HttpInterceptor {
   private auth = inject(AuthService)
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token')
     const authReq = token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req
 
     return next.handle(authReq).pipe(
@@ -27,7 +27,7 @@ export class AuthInterceptor implements HttpInterceptor {
             switchMap(success => {
               isRefreshing = false
               if (success) {
-                const newToken = localStorage.getItem('token')
+                const newToken = localStorage.getItem('token') || sessionStorage.getItem('token')
                 const retried = newToken
                   ? authReq.clone({ setHeaders: { Authorization: `Bearer ${newToken}` } })
                   : authReq
