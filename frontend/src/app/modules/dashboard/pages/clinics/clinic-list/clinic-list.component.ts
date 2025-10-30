@@ -3,7 +3,7 @@ import { MatDialog } from '@angular/material/dialog'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
-import { Router } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import Swal from 'sweetalert2'
 import { ConfirmDialogComponent } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
@@ -22,6 +22,8 @@ export class ClinicListComponent implements OnInit {
   isExpanded: boolean = true
   isLoading = false
   searchTerm = ''
+  filterStatus: 'all' | 'active' | 'inactive' = 'all'
+  allClinics: Clinic[] = []
 
   @ViewChild(MatPaginator) paginator!: MatPaginator
   @ViewChild(MatSort) sort!: MatSort
@@ -29,6 +31,7 @@ export class ClinicListComponent implements OnInit {
   constructor(
     private clinicsService: ClinicsService,
     private router: Router,
+    private route: ActivatedRoute,
     private dialog: MatDialog,
     private errorService: ErrorService,
     private sidenavService: SidenavService,
@@ -36,7 +39,18 @@ export class ClinicListComponent implements OnInit {
 
   ngOnInit(): void {
     this.sidenavService.isExpanded$.subscribe(isExpanded => (this.isExpanded = isExpanded))
-    this.loadClinics()
+
+    this.route.queryParams.subscribe(params => {
+      const status = params['status']
+      if (status === 'active') {
+        this.filterStatus = 'active'
+      } else if (status === 'inactive') {
+        this.filterStatus = 'inactive'
+      } else {
+        this.filterStatus = 'all'
+      }
+      this.loadClinics()
+    })
   }
 
   ngAfterViewInit() {
@@ -46,9 +60,21 @@ export class ClinicListComponent implements OnInit {
 
   loadClinics() {
     this.isLoading = true
-    this.clinicsService.findAll(true).subscribe({
+
+    // Cargar todas las clínicas primero
+    this.clinicsService.findAll().subscribe({
       next: clinics => {
-        this.dataSource.data = clinics
+        this.allClinics = clinics
+
+        // Aplicar filtro según el estado seleccionado
+        let filteredClinics = clinics
+        if (this.filterStatus === 'active') {
+          filteredClinics = clinics.filter(c => c.isActive === true)
+        } else if (this.filterStatus === 'inactive') {
+          filteredClinics = clinics.filter(c => c.isActive === false)
+        }
+
+        this.dataSource.data = filteredClinics
         this.isLoading = false
       },
       error: error => {
@@ -165,5 +191,26 @@ export class ClinicListComponent implements OnInit {
 
   navigateToNew() {
     this.router.navigate(['/dashboard/clinics/new'])
+  }
+
+  navigateToDashboard() {
+    this.router.navigate(['/dashboard/clinics'])
+  }
+
+  setFilterStatus(status: 'all' | 'active' | 'inactive') {
+    this.filterStatus = status
+    if (status === 'all') {
+      this.router.navigate(['/dashboard/clinics/list'])
+    } else {
+      this.router.navigate(['/dashboard/clinics/list'], { queryParams: { status } })
+    }
+  }
+
+  getActiveClinicsCount(): number {
+    return this.allClinics.filter(c => c.isActive).length
+  }
+
+  getInactiveClinicsCount(): number {
+    return this.allClinics.filter(c => !c.isActive).length
   }
 }

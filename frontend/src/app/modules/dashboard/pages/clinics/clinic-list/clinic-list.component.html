@@ -1,165 +1,299 @@
-<div class="clinic-list">
-  <!-- Header -->
-  <div class="list-header">
-    <div class="header-content">
-      <h1>Lista de Clínicas</h1>
-      <button mat-raised-button color="primary" (click)="navigateToNew()" class="add-btn">
-        <mat-icon>add</mat-icon>
+<div
+  class="clinic-list min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100 relative overflow-hidden p-8"
+>
+  <!-- Elementos decorativos de fondo -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div
+      class="absolute top-0 right-0 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"
+    ></div>
+    <div
+      class="absolute top-0 left-0 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"
+    ></div>
+    <div
+      class="absolute bottom-0 left-1/2 w-96 h-96 bg-slate-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"
+    ></div>
+  </div>
+
+  <div class="relative z-10">
+    <!-- Header -->
+    <div class="clinic-header text-center mb-12 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <button
+          mat-icon-button
+          (click)="navigateToDashboard()"
+          class="text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-300"
+          matTooltip="Volver al dashboard"
+        >
+          <mat-icon class="text-2xl">arrow_back</mat-icon>
+        </button>
+        <div class="text-left">
+          <h1 class="text-4xl font-bold text-blue-900 mb-1">Lista de Clínicas</h1>
+          <p class="text-blue-600">Gestiona todas tus clínicas</p>
+        </div>
+      </div>
+      <button
+        mat-flat-button
+        color="primary"
+        (click)="navigateToNew()"
+        class="h-12 md:h-14 px-6 font-medium"
+      >
+        <mat-icon class="mr-2">add</mat-icon>
         Nueva Clínica
       </button>
     </div>
 
-    <!-- Search -->
-    <div class="search-container">
-      <mat-form-field appearance="outline" class="search-field">
-        <mat-label>Buscar clínicas</mat-label>
-        <input
-          matInput
-          [(ngModel)]="searchTerm"
-          (input)="applyFilter($event)"
-          placeholder="Nombre, dirección, teléfono..."
-        />
-        <mat-icon matSuffix>search</mat-icon>
-      </mat-form-field>
+    <!-- Search and Filter Controls -->
+    <div
+      class="controls-section bg-white rounded-2xl shadow-lg p-6 mb-8 backdrop-blur-sm backdrop-filter border border-blue-100"
+    >
+      <!-- Search -->
+      <div class="search-container flex items-center gap-4 mb-6">
+        <mat-form-field appearance="outline" class="search-field flex-1 max-w-md">
+          <mat-label>Buscar clínicas</mat-label>
+          <input
+            matInput
+            [(ngModel)]="searchTerm"
+            (input)="applyFilter($event)"
+            placeholder="Nombre, dirección, teléfono..."
+          />
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
 
-      <button
-        mat-raised-button
-        color="accent"
-        (click)="searchClinics()"
-        [disabled]="!searchTerm.trim()"
-        class="search-btn"
-      >
-        Buscar
-      </button>
+        <button
+          mat-flat-button
+          color="primary"
+          (click)="searchClinics()"
+          [disabled]="!searchTerm.trim()"
+          class="search-btn px-6 font-medium"
+        >
+          Buscar
+        </button>
+      </div>
+
+      <!-- Filter by Status -->
+      <div class="filter-container flex flex-wrap gap-3">
+        <button
+          mat-stroked-button
+          (click)="setFilterStatus('all')"
+          [ngClass]="{
+            'bg-blue-600 text-white border-0': filterStatus === 'all',
+            'text-blue-600 border-blue-300 hover:bg-blue-50': filterStatus !== 'all',
+          }"
+          class="flex items-center gap-2 rounded-lg transition-all duration-300"
+        >
+          <mat-icon>done_all</mat-icon>
+          Todas ({{ allClinics.length }})
+        </button>
+        <button
+          mat-stroked-button
+          (click)="setFilterStatus('active')"
+          [ngClass]="{
+            'bg-green-600 text-white border-0': filterStatus === 'active',
+            'text-green-600 border-green-300 hover:bg-green-50': filterStatus !== 'active',
+          }"
+          class="flex items-center gap-2 rounded-lg transition-all duration-300"
+        >
+          <mat-icon>check_circle</mat-icon>
+          Activas ({{ getActiveClinicsCount() }})
+        </button>
+        <button
+          mat-stroked-button
+          (click)="setFilterStatus('inactive')"
+          [ngClass]="{
+            'bg-red-600 text-white border-0': filterStatus === 'inactive',
+            'text-red-600 border-red-300 hover:bg-red-50': filterStatus !== 'inactive',
+          }"
+          class="flex items-center gap-2 rounded-lg transition-all duration-300"
+        >
+          <mat-icon>cancel</mat-icon>
+          Inactivas ({{ getInactiveClinicsCount() }})
+        </button>
+      </div>
     </div>
-  </div>
 
-  <!-- Loading indicator -->
-  <div *ngIf="isLoading" class="loading-container">
-    <mat-spinner></mat-spinner>
-  </div>
+    <!-- Loading indicator -->
+    <div *ngIf="isLoading" class="loading-container flex justify-center items-center py-20">
+      <mat-spinner diameter="60"></mat-spinner>
+    </div>
 
-  <!-- Table -->
-  <mat-card class="table-card" *ngIf="!isLoading">
-    <mat-table [dataSource]="dataSource" matSort class="clinic-table">
-      <!-- Name Column -->
-      <ng-container matColumnDef="name">
-        <mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</mat-header-cell>
-        <mat-cell *matCellDef="let clinic">
-          <div class="clinic-name">
-            <strong>{{ clinic.name }}</strong>
-            <small *ngIf="clinic.description">{{ clinic.description }}</small>
-          </div>
-        </mat-cell>
-      </ng-container>
+    <!-- Table Card -->
+    <mat-card
+      *ngIf="!isLoading"
+      class="table-card bg-white rounded-2xl shadow-lg overflow-hidden backdrop-blur-sm backdrop-filter border border-blue-100"
+    >
+      <mat-table [dataSource]="dataSource" matSort class="clinic-table w-full">
+        <!-- Name Column -->
+        <ng-container matColumnDef="name">
+          <mat-header-cell
+            *matHeaderCellDef
+            mat-sort-header
+            class="bg-blue-600 text-white font-semibold"
+            >Nombre</mat-header-cell
+          >
+          <mat-cell *matCellDef="let clinic">
+            <div class="clinic-name flex items-center gap-3">
+              <div class="avatar-circle">
+                <mat-icon>business</mat-icon>
+              </div>
+              <div>
+                <strong class="text-blue-900">{{ clinic.name }}</strong>
+                <small class="text-gray-600 block" *ngIf="clinic.description">{{
+                  clinic.description
+                }}</small>
+              </div>
+            </div>
+          </mat-cell>
+        </ng-container>
 
-      <!-- Address Column -->
-      <ng-container matColumnDef="address">
-        <mat-header-cell *matHeaderCellDef>Dirección</mat-header-cell>
-        <mat-cell *matCellDef="let clinic">
-          <div class="address-info">
-            <div>{{ clinic.address }}</div>
-            <small *ngIf="clinic.departamento || clinic.provincia || clinic.localidad">
-              <ng-container *ngIf="clinic.departamento">{{ clinic.departamento }}</ng-container>
-              <ng-container *ngIf="clinic.provincia"> - {{ clinic.provincia }}</ng-container>
-              <ng-container *ngIf="clinic.localidad"> - {{ clinic.localidad }}</ng-container>
-            </small>
-          </div>
-        </mat-cell>
-      </ng-container>
+        <!-- Address Column -->
+        <ng-container matColumnDef="address">
+          <mat-header-cell *matHeaderCellDef class="bg-blue-600 text-white font-semibold"
+            >Dirección</mat-header-cell
+          >
+          <mat-cell *matCellDef="let clinic">
+            <div class="text-sm">
+              <div class="text-blue-900 font-medium">{{ clinic.address }}</div>
+              <small
+                class="text-gray-600"
+                *ngIf="clinic.departamento || clinic.provincia || clinic.localidad"
+              >
+                <ng-container *ngIf="clinic.departamento">{{ clinic.departamento }}</ng-container>
+                <ng-container *ngIf="clinic.provincia"> - {{ clinic.provincia }}</ng-container>
+                <ng-container *ngIf="clinic.localidad"> - {{ clinic.localidad }}</ng-container>
+              </small>
+            </div>
+          </mat-cell>
+        </ng-container>
 
-      <!-- Phone Column -->
-      <ng-container matColumnDef="phone">
-        <mat-header-cell *matHeaderCellDef>Teléfono</mat-header-cell>
-        <mat-cell *matCellDef="let clinic">
-          <div class="contact-info">
-            <div>
-              <mat-icon class="contact-icon">phone</mat-icon>
+        <!-- Phone Column -->
+        <ng-container matColumnDef="phone">
+          <mat-header-cell *matHeaderCellDef class="bg-blue-600 text-white font-semibold"
+            >Teléfono</mat-header-cell
+          >
+          <mat-cell *matCellDef="let clinic">
+            <div class="flex items-center gap-2 text-blue-900">
+              <mat-icon class="text-base text-gray-600">phone</mat-icon>
               {{ clinic.phone }}
             </div>
-          </div>
-        </mat-cell>
-      </ng-container>
+          </mat-cell>
+        </ng-container>
 
-      <!-- Email Column -->
-      <ng-container matColumnDef="email">
-        <mat-header-cell *matHeaderCellDef>Email</mat-header-cell>
-        <mat-cell *matCellDef="let clinic">
-          <div class="contact-info" *ngIf="clinic.email">
-            <mat-icon class="contact-icon">email</mat-icon>
-            {{ clinic.email }}
-          </div>
-          <span *ngIf="!clinic.email" class="no-data">-</span>
-        </mat-cell>
-      </ng-container>
-
-      <!-- Status Column -->
-      <ng-container matColumnDef="isActive">
-        <mat-header-cell *matHeaderCellDef>Estado</mat-header-cell>
-        <mat-cell *matCellDef="let clinic">
-          <mat-chip
-            [class]="clinic.isActive ? 'status-active' : 'status-inactive'"
-            [color]="clinic.isActive ? 'primary' : 'warn'"
+        <!-- Email Column -->
+        <ng-container matColumnDef="email">
+          <mat-header-cell *matHeaderCellDef class="bg-blue-600 text-white font-semibold"
+            >Email</mat-header-cell
           >
-            {{ clinic.isActive ? 'Activa' : 'Inactiva' }}
-          </mat-chip>
-        </mat-cell>
-      </ng-container>
+          <mat-cell *matCellDef="let clinic">
+            <div class="flex items-center gap-2 text-blue-900" *ngIf="clinic.email">
+              <mat-icon class="text-base text-gray-600">email</mat-icon>
+              {{ clinic.email }}
+            </div>
+            <span *ngIf="!clinic.email" class="text-gray-400">-</span>
+          </mat-cell>
+        </ng-container>
 
-      <!-- Actions Column -->
-      <ng-container matColumnDef="actions">
-        <mat-header-cell *matHeaderCellDef>Acciones</mat-header-cell>
-        <mat-cell *matCellDef="let clinic">
-          <div class="actions">
-            <button
-              mat-icon-button
-              color="primary"
-              (click)="viewClinic(clinic)"
-              matTooltip="Ver detalles"
+        <!-- Status Column -->
+        <ng-container matColumnDef="isActive">
+          <mat-header-cell *matHeaderCellDef class="bg-blue-600 text-white font-semibold"
+            >Estado</mat-header-cell
+          >
+          <mat-cell *matCellDef="let clinic">
+            <span
+              class="status-badge"
+              [ngClass]="clinic.isActive ? 'status-active-badge' : 'status-inactive-badge'"
             >
-              <mat-icon>visibility</mat-icon>
-            </button>
+              <span
+                class="status-dot"
+                [ngClass]="clinic.isActive ? 'dot-active' : 'dot-inactive'"
+              ></span>
+              {{ clinic.isActive ? 'Activo' : 'Inactivo' }}
+            </span>
+          </mat-cell>
+        </ng-container>
 
-            <button mat-icon-button color="accent" (click)="editClinic(clinic)" matTooltip="Editar">
-              <mat-icon>edit</mat-icon>
-            </button>
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <mat-header-cell *matHeaderCellDef class="bg-blue-600 text-white font-semibold"
+            >Acciones</mat-header-cell
+          >
+          <mat-cell *matCellDef="let clinic">
+            <div class="flex gap-2">
+              <button
+                mat-icon-button
+                (click)="viewClinic(clinic)"
+                class="text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-300"
+                matTooltip="Ver detalles"
+              >
+                <mat-icon>visibility</mat-icon>
+              </button>
 
-            <button
-              mat-icon-button
-              [color]="clinic.isActive ? 'warn' : 'primary'"
-              (click)="toggleClinicStatus(clinic)"
-              [matTooltip]="clinic.isActive ? 'Desactivar' : 'Activar'"
-            >
-              <mat-icon>{{ clinic.isActive ? 'block' : 'check_circle' }}</mat-icon>
-            </button>
+              <button
+                mat-icon-button
+                (click)="editClinic(clinic)"
+                class="text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-300"
+                matTooltip="Editar"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
 
-            <button
-              mat-icon-button
-              color="warn"
-              (click)="deleteClinic(clinic)"
-              matTooltip="Eliminar"
-            >
-              <mat-icon>delete</mat-icon>
-            </button>
-          </div>
-        </mat-cell>
-      </ng-container>
+              <button
+                mat-icon-button
+                [class]="
+                  clinic.isActive
+                    ? 'text-red-600 hover:bg-red-100'
+                    : 'text-green-600 hover:bg-green-100'
+                "
+                (click)="toggleClinicStatus(clinic)"
+                [matTooltip]="clinic.isActive ? 'Desactivar' : 'Activar'"
+                class="rounded-lg transition-all duration-300"
+              >
+                <mat-icon>{{ clinic.isActive ? 'block' : 'check_circle' }}</mat-icon>
+              </button>
 
-      <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-      <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
-    </mat-table>
+              <button
+                mat-icon-button
+                (click)="deleteClinic(clinic)"
+                class="text-red-600 hover:bg-red-100 rounded-lg transition-all duration-300"
+                matTooltip="Eliminar"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </mat-cell>
+        </ng-container>
 
-    <!-- Paginator -->
-    <mat-paginator [pageSizeOptions]="[5, 10, 20, 50]" showFirstLastButtons> </mat-paginator>
-  </mat-card>
+        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+        <mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          class="hover:bg-blue-50 transition-all duration-200"
+        ></mat-row>
+      </mat-table>
 
-  <!-- No data message -->
-  <div *ngIf="!isLoading && dataSource.data.length === 0" class="no-data">
-    <mat-icon>business</mat-icon>
-    <h3>No se encontraron clínicas</h3>
-    <p>No hay clínicas registradas en el sistema.</p>
-    <button mat-raised-button color="primary" (click)="navigateToNew()">
-      Crear Primera Clínica
-    </button>
+      <!-- Paginator -->
+      <mat-paginator
+        [pageSizeOptions]="[5, 10, 20, 50]"
+        showFirstLastButtons
+        class="bg-gray-50 border-t border-gray-200"
+      ></mat-paginator>
+    </mat-card>
+
+    <!-- No data message -->
+    <div
+      *ngIf="!isLoading && dataSource.data.length === 0"
+      class="no-data text-center py-20 bg-white rounded-2xl shadow-lg border border-blue-100 backdrop-blur-sm backdrop-filter"
+    >
+      <mat-icon class="text-6xl text-blue-300 mb-4">business</mat-icon>
+      <h3 class="text-2xl font-bold text-blue-900 mb-2">No se encontraron clínicas</h3>
+      <p class="text-blue-600 mb-6">No hay clínicas registradas en el sistema.</p>
+      <button
+        mat-flat-button
+        color="primary"
+        (click)="navigateToNew()"
+        class="h-12 md:h-14 px-6 font-medium"
+      >
+        <mat-icon class="mr-2">add</mat-icon>
+        Crear Primera Clínica
+      </button>
+    </div>
   </div>
 </div>
