@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import {
   IsArray,
   IsEmail,
@@ -5,14 +6,14 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   Matches,
   MaxLength,
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { PersonalInfoDto, ProfessionalInfoDto } from './';
-import { Type } from 'class-transformer';
 import { ValidRoles } from '../interfaces';
+import { PersonalInfoDto, ProfessionalInfoDto } from './';
 
 export class CreateUserDto {
   @IsEmail()
@@ -38,4 +39,8 @@ export class CreateUserDto {
   @IsEnum(ValidRoles, { each: true })
   @IsOptional()
   roles?: ValidRoles[] = [ValidRoles.USER];
+
+  @IsOptional()
+  @IsUUID()
+  clinicId?: string;
 }

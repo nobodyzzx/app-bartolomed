@@ -1,23 +1,23 @@
 import { Component, OnInit } from '@angular/core'
 import { FormControl, FormGroup, Validators } from '@angular/forms'
-import { UsersService } from '../users.service'
-import { Router, ActivatedRoute } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
+import { of } from 'rxjs'
+import { switchMap } from 'rxjs/operators'
 import Swal from 'sweetalert2'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
 import { SidenavService } from '../../../../../shared/components/services/sidenav.services'
-import { switchMap } from 'rxjs/operators'
-import { of } from 'rxjs'
+import { ClinicsService } from '../../clinics/services/clinics.service'
+import { UsersService } from '../users.service'
 
 // Enums actualizados basados en el backend
 export enum ValidRoles {
+  SUPER_ADMIN = 'super-admin',
   ADMIN = 'admin',
-  USER = 'user',
   DOCTOR = 'doctor',
   NURSE = 'nurse',
-  PHARMACIST = 'pharmacist',
   RECEPTIONIST = 'receptionist',
-  PATIENT = 'patient',
-  LAB_TECHNICIAN = 'lab_technician',
+  PHARMACIST = 'pharmacist',
+  USER = 'user',
 }
 
 export interface UserRoleItem {
@@ -25,6 +25,14 @@ export interface UserRoleItem {
   label: string
   icon: string
   description: string
+}
+
+export interface Clinic {
+  id: string
+  name: string
+  address: string
+  phone: string
+  isActive: boolean
 }
 
 @Component({
@@ -35,6 +43,7 @@ export class UserRegisterComponent implements OnInit {
   isExpanded: boolean = true
   isEditMode: boolean = false
   userId: string | null = null
+  clinics: Clinic[] = []
 
   protected readonly validRoles: UserRoleItem[] = [
     {
@@ -48,6 +57,12 @@ export class UserRegisterComponent implements OnInit {
       label: 'Administrador',
       icon: 'admin_panel_settings',
       description: 'Control total del sistema',
+    },
+    {
+      value: ValidRoles.SUPER_ADMIN,
+      label: 'Super Administrador',
+      icon: 'shield',
+      description: 'Acceso completo y gestión de administradores',
     },
     {
       value: ValidRoles.DOCTOR,
@@ -72,18 +87,6 @@ export class UserRegisterComponent implements OnInit {
       label: 'Recepcionista',
       icon: 'desk',
       description: 'Personal de recepción',
-    },
-    {
-      value: ValidRoles.PATIENT,
-      label: 'Paciente',
-      icon: 'person_outline',
-      description: 'Usuario paciente',
-    },
-    {
-      value: ValidRoles.LAB_TECHNICIAN,
-      label: 'Técnico de Laboratorio',
-      icon: 'science',
-      description: 'Técnico especializado en laboratorio',
     },
   ]
 
@@ -115,6 +118,7 @@ export class UserRegisterComponent implements OnInit {
     email: new FormControl('', [Validators.required, Validators.email]),
     password: new FormControl('', [Validators.required, Validators.minLength(6)]),
     roles: new FormControl([], [Validators.required]),
+    clinicId: new FormControl(''),
 
     personalInfo: new FormGroup({
       firstName: new FormControl('', Validators.required),
@@ -136,6 +140,7 @@ export class UserRegisterComponent implements OnInit {
 
   constructor(
     private usersService: UsersService,
+    private clinicsService: ClinicsService,
     public router: Router,
     private route: ActivatedRoute,
     private errorService: ErrorService,
@@ -144,6 +149,9 @@ export class UserRegisterComponent implements OnInit {
 
   ngOnInit() {
     this.sidenavService.isExpanded$.subscribe(isExpanded => (this.isExpanded = isExpanded))
+
+    // Cargar clínicas activas
+    this.loadClinics()
 
     // Verificar si estamos en modo edición
     this.route.paramMap
@@ -172,6 +180,17 @@ export class UserRegisterComponent implements OnInit {
       })
   }
 
+  loadClinics() {
+    this.clinicsService.findAll(true).subscribe({
+      next: clinics => {
+        this.clinics = clinics
+      },
+      error: error => {
+        console.error('Error al cargar clínicas:', error)
+      },
+    })
+  }
+
   fillFormWithUserData(user: any) {
     // Eliminar validación de contraseña en modo edición
     const passwordControl = this.registerForm.get('password')
@@ -184,6 +203,7 @@ export class UserRegisterComponent implements OnInit {
     this.registerForm.patchValue({
       email: user.email,
       roles: user.roles,
+      clinicId: user.clinic?.id || '',
       personalInfo: {
         firstName: user.personalInfo?.firstName || '',
         lastName: user.personalInfo?.lastName || '',
@@ -213,6 +233,11 @@ export class UserRegisterComponent implements OnInit {
     }
 
     const userData = this.registerForm.value
+
+    // Si no se seleccionó clínica, eliminar el campo
+    if (!userData.clinicId) {
+      delete userData.clinicId
+    }
 
     if (this.isEditMode && this.userId) {
       // Modo edición

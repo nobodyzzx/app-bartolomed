@@ -1,22 +1,46 @@
-<div class="register-container min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100 relative overflow-hidden p-8">
+<div
+  class="register-container min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100 relative overflow-hidden p-8"
+>
   <!-- Elementos decorativos de fondo -->
   <div class="absolute inset-0 overflow-hidden pointer-events-none">
-    <div class="absolute top-0 right-0 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-    <div class="absolute top-0 left-0 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-    <div class="absolute bottom-0 left-1/2 w-96 h-96 bg-slate-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+    <div
+      class="absolute top-0 right-0 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"
+    ></div>
+    <div
+      class="absolute top-0 left-0 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"
+    ></div>
+    <div
+      class="absolute bottom-0 left-1/2 w-96 h-96 bg-slate-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"
+    ></div>
   </div>
-  <div class="register-content" [ngClass]="{ 'sidebar-collapsed': !isExpanded, 'sidebar-expanded': isExpanded }">
+  <div
+    class="register-content"
+    [ngClass]="{ 'sidebar-collapsed': !isExpanded, 'sidebar-expanded': isExpanded }"
+  >
     <!-- Contenido existente -->
     <div class="text-center mb-12">
-      <h2 class="text-3xl font-bold text-blue-900 mb-3">{{ isEditMode ? 'Editar Usuario' : 'Registro de Usuario' }}</h2>
+      <h2 class="text-3xl font-bold text-blue-900 mb-3">
+        {{ isEditMode ? 'Editar Usuario' : 'Registro de Usuario' }}
+      </h2>
       <div class="w-20 h-1 bg-blue-600 mx-auto rounded-full mb-3"></div>
-      <p class="text-blue-600">{{ isEditMode ? 'Actualice la información del usuario' : 'Complete el formulario para crear una nueva cuenta' }}</p>
+      <p class="text-blue-600">
+        {{
+          isEditMode
+            ? 'Actualice la información del usuario'
+            : 'Complete el formulario para crear una nueva cuenta'
+        }}
+      </p>
     </div>
 
-    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="mx-auto w-full max-w-5xl p-8 rounded-2xl shadow-lg bg-white space-y-8">
+    <form
+      [formGroup]="registerForm"
+      (ngSubmit)="onSubmit()"
+      class="mx-auto w-full max-w-5xl p-8 rounded-2xl shadow-lg bg-white space-y-8"
+    >
       <!-- Información de Cuenta -->
       <div
-        class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 transition-all duration-300 hover:shadow-xl backdrop-blur-sm backdrop-filter">
+        class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 transition-all duration-300 hover:shadow-xl backdrop-blur-sm backdrop-filter"
+      >
         <div class="flex items-center mb-8">
           <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-3 rounded-xl shadow-md mr-4">
             <mat-icon class="text-white">account_circle</mat-icon>
@@ -27,28 +51,41 @@
           </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <mat-form-field appearance="outline"
-            class="w-full transform transition-all duration-300 hover:-translate-y-1">
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
             <mat-label>Email</mat-label>
             <input matInput formControlName="email" type="email" required />
             <mat-icon matSuffix class="text-blue-400">email</mat-icon>
-            <mat-error *ngIf="registerForm.get('email')?.hasError('required')">El email es obligatorio</mat-error>
-            <mat-error *ngIf="registerForm.get('email')?.hasError('email')">Formato de email inválido</mat-error>
+            <mat-error *ngIf="registerForm.get('email')?.hasError('required')"
+              >El email es obligatorio</mat-error
+            >
+            <mat-error *ngIf="registerForm.get('email')?.hasError('email')"
+              >Formato de email inválido</mat-error
+            >
           </mat-form-field>
-          <mat-form-field appearance="outline"
-            class="w-full transform transition-all duration-300 hover:-translate-y-1">
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
             <mat-label>{{ isEditMode ? 'Contraseña (opcional)' : 'Contraseña' }}</mat-label>
             <input matInput formControlName="password" type="password" [required]="!isEditMode" />
             <mat-icon matSuffix class="text-blue-400">lock</mat-icon>
-            <mat-hint *ngIf="isEditMode">Deje en blanco para mantener la contraseña actual</mat-hint>
-            <mat-error *ngIf="registerForm.get('password')?.hasError('required') && !isEditMode">La contraseña es
-              obligatoria</mat-error>
+            <mat-hint *ngIf="isEditMode"
+              >Deje en blanco para mantener la contraseña actual</mat-hint
+            >
+            <mat-error *ngIf="registerForm.get('password')?.hasError('required') && !isEditMode"
+              >La contraseña es obligatoria</mat-error
+            >
             <mat-error *ngIf="registerForm.get('password')?.hasError('minlength')">
               La contraseña debe tener al menos 6 caracteres
             </mat-error>
           </mat-form-field>
-          <mat-form-field appearance="outline"
-            class="w-full transform transition-all duration-300 hover:-translate-y-1">
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
             <mat-label>Roles</mat-label>
             <mat-select formControlName="roles" multiple required>
               <mat-select-trigger>
@@ -71,13 +108,37 @@
               Debe seleccionar al menos un rol
             </mat-error>
           </mat-form-field>
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
+            <mat-label>Clínica</mat-label>
+            <mat-select formControlName="clinicId">
+              <mat-option value="">
+                <em>Sin asignar</em>
+              </mat-option>
+              <mat-option *ngFor="let clinic of clinics" [value]="clinic.id">
+                <div class="flex items-center gap-2">
+                  <mat-icon class="text-blue-400">local_hospital</mat-icon>
+                  <div>
+                    <div>{{ clinic.name }}</div>
+                    <small class="text-gray-500">{{ clinic.address }}</small>
+                  </div>
+                </div>
+              </mat-option>
+            </mat-select>
+            <mat-icon matPrefix class="text-blue-400">business</mat-icon>
+            <mat-icon matSuffix class="text-blue-400">arrow_drop_down</mat-icon>
+            <mat-hint>Opcional: asigne el usuario a una clínica específica</mat-hint>
+          </mat-form-field>
         </div>
       </div>
 
       <!-- Información Personal -->
       <div
         class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 transition-all duration-300 hover:shadow-xl backdrop-blur-sm backdrop-filter"
-        formGroupName="personalInfo">
+        formGroupName="personalInfo"
+      >
         <div class="flex items-center mb-8">
           <div class="bg-gradient-to-r from-green-500 to-green-600 p-3 rounded-xl shadow-md mr-4">
             <mat-icon class="text-white">person</mat-icon>
@@ -88,36 +149,48 @@
           </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <mat-form-field appearance="outline"
-            class="w-full transform transition-all duration-300 hover:-translate-y-1">
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
             <mat-label>Nombre</mat-label>
             <input matInput formControlName="firstName" required />
             <mat-icon matSuffix class="text-blue-400">badge</mat-icon>
-            <mat-error *ngIf="registerForm.get('personalInfo.firstName')?.hasError('required')">El nombre es
-              obligatorio</mat-error>
+            <mat-error *ngIf="registerForm.get('personalInfo.firstName')?.hasError('required')"
+              >El nombre es obligatorio</mat-error
+            >
           </mat-form-field>
-          <mat-form-field appearance="outline"
-            class="w-full transform transition-all duration-300 hover:-translate-y-1">
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
             <mat-label>Apellido</mat-label>
             <input matInput formControlName="lastName" required />
             <mat-icon matSuffix class="text-blue-400">badge</mat-icon>
-            <mat-error *ngIf="registerForm.get('personalInfo.lastName')?.hasError('required')">El apellido es
-              obligatorio</mat-error>
+            <mat-error *ngIf="registerForm.get('personalInfo.lastName')?.hasError('required')"
+              >El apellido es obligatorio</mat-error
+            >
           </mat-form-field>
-          <mat-form-field appearance="outline"
-            class="w-full transform transition-all duration-300 hover:-translate-y-1">
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
             <mat-label>Teléfono</mat-label>
             <input matInput formControlName="phone" />
             <mat-icon matSuffix class="text-blue-400">phone</mat-icon>
           </mat-form-field>
-          <mat-form-field appearance="outline"
-            class="w-full transform transition-all duration-300 hover:-translate-y-1">
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
             <mat-label>Dirección</mat-label>
             <input matInput formControlName="address" />
             <mat-icon matSuffix class="text-blue-400">home</mat-icon>
           </mat-form-field>
-          <mat-form-field appearance="outline"
-            class="w-full transform transition-all duration-300 hover:-translate-y-1">
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
             <mat-label>Fecha de Nacimiento</mat-label>
             <input matInput [matDatepicker]="picker" formControlName="birthDate" />
             <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
@@ -129,7 +202,8 @@
       <!-- Información professional -->
       <div
         class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 transition-all duration-300 hover:shadow-xl backdrop-blur-sm backdrop-filter"
-        formGroupName="professionalInfo">
+        formGroupName="professionalInfo"
+      >
         <div class="flex items-center mb-8">
           <div class="bg-gradient-to-r from-purple-500 to-purple-600 p-3 rounded-xl shadow-md mr-4">
             <mat-icon class="text-white">work</mat-icon>
@@ -140,16 +214,21 @@
           </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <mat-form-field appearance="outline"
-            class="w-full transform transition-all duration-300 hover:-translate-y-1">
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
             <mat-label>Título</mat-label>
             <input matInput formControlName="title" required />
             <mat-icon matSuffix class="text-blue-400">school</mat-icon>
-            <mat-error *ngIf="registerForm.get('professionalInfo.title')?.hasError('required')">El título es
-              obligatorio</mat-error>
+            <mat-error *ngIf="registerForm.get('professionalInfo.title')?.hasError('required')"
+              >El título es obligatorio</mat-error
+            >
           </mat-form-field>
-          <mat-form-field appearance="outline"
-            class="w-full transform transition-all duration-300 hover:-translate-y-1">
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
             <mat-label>Especialización</mat-label>
             <mat-select formControlName="specialization" required>
               <mat-option *ngFor="let spec of specializations" [value]="spec">
@@ -157,20 +236,27 @@
               </mat-option>
             </mat-select>
             <mat-icon matSuffix class="text-blue-400">local_hospital</mat-icon>
-            <mat-error *ngIf="registerForm.get('professionalInfo.specialization')?.hasError('required')">
+            <mat-error
+              *ngIf="registerForm.get('professionalInfo.specialization')?.hasError('required')"
+            >
               La especialización es obligatoria
             </mat-error>
           </mat-form-field>
-          <mat-form-field appearance="outline"
-            class="w-full transform transition-all duration-300 hover:-translate-y-1">
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
             <mat-label>Licencia</mat-label>
             <input matInput formControlName="license" required />
             <mat-icon matSuffix class="text-blue-400">card_membership</mat-icon>
-            <mat-error *ngIf="registerForm.get('professionalInfo.license')?.hasError('required')">La licencia es
-              obligatoria</mat-error>
+            <mat-error *ngIf="registerForm.get('professionalInfo.license')?.hasError('required')"
+              >La licencia es obligatoria</mat-error
+            >
           </mat-form-field>
-          <mat-form-field appearance="outline"
-            class="w-full transform transition-all duration-300 hover:-translate-y-1">
+          <mat-form-field
+            appearance="outline"
+            class="w-full transform transition-all duration-300 hover:-translate-y-1"
+          >
             <mat-label>Fecha de Inicio</mat-label>
             <input matInput [matDatepicker]="startPicker" formControlName="startDate" required />
             <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
@@ -190,12 +276,21 @@
 
       <!-- Botones de acción -->
       <div class="flex justify-end space-x-4 mt-8">
-        <button mat-stroked-button type="button" (click)="router.navigate(['/dashboard/users/list'])"
-          class="px-8 py-3 rounded-xl border-2 border-blue-400 text-blue-600 hover:bg-blue-50 transition-all duration-300 hover:shadow-md">
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="router.navigate(['/dashboard/users/list'])"
+          class="px-8 py-3 rounded-xl border-2 border-blue-400 text-blue-600 hover:bg-blue-50 transition-all duration-300 hover:shadow-md"
+        >
           Cancelar
         </button>
-        <button mat-raised-button color="primary" type="submit" [disabled]="registerForm.invalid"
-          class="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="registerForm.invalid"
+          class="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           {{ isEditMode ? 'Actualizar Usuario' : 'Registrar Usuario' }}
         </button>
       </div>

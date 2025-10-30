@@ -1,102 +1,166 @@
-.clinic-form {
-  padding: 20px;
-  max-width: 800px;
-  margin: 0 auto;
+/* Contenedor principal con fondo degradado */
+.register-container {
+  position: relative;
+  transition: all 0.3s ease;
 }
 
-/* Correcciones para iconos */
-.mat-icon {
+/* Animación de blobs */
+@keyframes blob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Contenido con transición suave */
+.register-content {
+  position: relative;
+  z-index: 10;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: 0;
+}
+
+.register-content.sidebar-expanded {
+  margin-left: 0;
+}
+
+.register-content.sidebar-collapsed {
+  margin-left: 0;
+}
+
+/* Ajustes responsivos para el sidebar */
+@media (min-width: 768px) {
+  .register-content.sidebar-expanded {
+    padding-left: 1rem;
+  }
+
+  .register-content.sidebar-collapsed {
+    padding-left: 1rem;
+  }
+}
+
+/* Material form fields */
+::ng-deep .mat-mdc-form-field {
+  width: 100%;
+}
+
+::ng-deep .mat-mdc-form-field-error {
+  font-size: 0.875rem;
+}
+
+/* Iconos en form fields */
+::ng-deep .mat-icon {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   overflow: hidden !important;
+  font-size: 1.25rem !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
 }
 
-/* Iconos en form fields */
-.mat-form-field .mat-icon {
-  font-size: 1.25rem;
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
-/* Iconos en botones */
-.submit-btn .mat-icon,
-.cancel-btn .mat-icon {
-  font-size: 1.2rem;
-  width: 1.2rem;
-  height: 1.2rem;
-}
-
-.form-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-}
-
-.form-header h1 {
-  margin: 0;
-  color: #333;
-  font-weight: 500;
-}
-
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 300px;
-}
-
-.form-card {
-  margin-top: 20px;
-}
-
-.form-section {
-  margin-bottom: 32px;
-}
-
-.form-section h3 {
-  margin: 0 0 20px 0;
-  color: #333;
-  font-weight: 500;
-  font-size: 1.1rem;
-  border-bottom: 2px solid #f0f0f0;
-  padding-bottom: 8px;
-}
-
-.form-row {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.full-width {
-  width: 100%;
-}
-
-.half-width {
-  flex: 1;
-}
-
-.status-toggle {
+/* Slide toggle personalizado */
+::ng-deep .mat-mdc-slide-toggle {
   display: flex;
   align-items: center;
-  margin: 16px 0;
 }
 
-.toggle-label {
-  margin-left: 12px;
+::ng-deep .mat-mdc-slide-toggle .mdc-switch {
+  margin-right: 12px;
+}
+
+/* Botones */
+button {
   font-weight: 500;
-  color: #333;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
 }
 
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 16px;
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid #e0e0e0;
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Spinner en botón */
+::ng-deep .mat-mdc-progress-spinner {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Transiciones suaves */
+* {
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* Sombras y hover effects */
+.hover\:shadow-xl:hover {
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.hover\:shadow-lg:hover {
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.hover\:shadow-md:hover {
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Animaciones de entrada */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.register-content > * {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .register-container {
+    padding: 1rem;
+  }
+
+  .register-content form {
+    padding: 1.5rem;
+  }
 }
 
 .cancel-btn {
@@ -119,20 +183,20 @@
   .clinic-form {
     padding: 16px;
   }
-  
+
   .form-row {
     flex-direction: column;
     gap: 0;
   }
-  
+
   .half-width {
     width: 100%;
   }
-  
+
   .form-actions {
     flex-direction: column-reverse;
   }
-  
+
   .cancel-btn,
   .submit-btn {
     width: 100%;
@@ -174,7 +238,7 @@
 
 /* Focus styles */
 .mat-mdc-form-field.mat-focused .mat-mdc-floating-label {
-  color: #2196F3;
+  color: #2196f3;
 }
 
 /* Required field indicator */

@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
 export class CreateClinicDto {
   @IsString()
@@ -12,8 +12,9 @@ export class CreateClinicDto {
   address: string;
 
   @IsString()
-  @MinLength(10)
-  @MaxLength(20)
+  @MinLength(8)
+  @MaxLength(8)
+  @Matches(/^[67]\d{7}$/i, { message: 'Phone must be 8 digits starting with 6 or 7' })
   phone: string;
 
   @IsOptional()
@@ -28,22 +29,17 @@ export class CreateClinicDto {
   @IsOptional()
   @IsString()
   @MaxLength(50)
-  city?: string;
+  departamento?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(50)
-  state?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(10)
-  zipCode?: string;
+  provincia?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(50)
-  country?: string;
+  localidad?: string;
 
   @IsBoolean()
   @IsOptional()

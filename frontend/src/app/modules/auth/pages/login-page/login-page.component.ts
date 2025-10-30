@@ -19,7 +19,15 @@ export class LoginPageComponent {
   public myForm: FormGroup = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(6)]],
+    rememberMe: [true],
   })
+
+  ngOnInit(): void {
+    const rememberedEmail = localStorage.getItem('rememberedEmail')
+    if (rememberedEmail) {
+      this.myForm.patchValue({ email: rememberedEmail, rememberMe: true })
+    }
+  }
 
   onSubmit() {
     if (this.myForm.invalid) {
@@ -29,10 +37,15 @@ export class LoginPageComponent {
     }
 
     this.isLoading = true
-    const { email, password } = this.myForm.value
+    const { email, password, rememberMe } = this.myForm.value
 
-    this.authService.login(email, password).subscribe({
+    this.authService.login(email, password, rememberMe).subscribe({
       next: response => {
+        if (rememberMe) {
+          localStorage.setItem('rememberedEmail', email)
+        } else {
+          localStorage.removeItem('rememberedEmail')
+        }
         this.notificationService.success('¡Bienvenido! Inicio de sesión exitoso')
         this.router.navigateByUrl('/dashboard')
       },

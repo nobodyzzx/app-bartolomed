@@ -5,4 +5,5 @@ export interface LoginResponse {
   user: User;
   token: string;
   refreshToken?: string;
+  rememberMe?: boolean;
 }
