@@ -1,26 +1,44 @@
-<div class="fixed top-16 left-0 h-[calc(100vh-4rem)] bg-blue-50 flex flex-col z-40 transition-all duration-300 ease-in-out shadow-lg" 
-     [ngClass]="{'w-96': isExpanded, 'w-16': !isExpanded}">
+<div
+  class="fixed top-16 left-0 h-[calc(100vh-4rem)] bg-blue-50 flex flex-col z-40 transition-all duration-300 ease-in-out shadow-lg"
+  [ngClass]="{ 'w-96': isExpanded(), 'w-16': !isExpanded() }"
+>
   <div class="flex-1 overflow-y-auto pt-3">
-    <!-- Vista expandida -->
-    <mat-accordion *ngIf="isExpanded">
-      <ng-container *ngFor="let menuItem of menuItems()">
-        <!-- Elementos independientes (sin hijos) -->
+    <mat-accordion *ngIf="isExpanded()">
+      <ng-container *ngFor="let menuItem of filteredMenuItems()">
         <div *ngIf="!menuItem.children || menuItem.children.length === 0" class="px-4 mb-2">
-          <a
-            mat-list-item
-            [routerLink]="menuItem.route"
-            routerLinkActive="bg-blue-200"
-            class="hover:bg-blue-100 rounded-lg"
-          >
-            <div class="flex items-center gap-x-4">
-              <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
-              <span class="text-blue-900 font-normal">{{ menuItem.label }}</span>
-            </div>
-          </a>
+          <ng-container *ngIf="!isDemo; else demoTopItem">
+            <a
+              mat-list-item
+              [routerLink]="menuItem.route"
+              routerLinkActive="bg-blue-200"
+              class="hover:bg-blue-100 rounded-lg"
+            >
+              <div class="flex items-center gap-x-4">
+                <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
+                <span class="text-blue-900 font-normal">{{ menuItem.label }}</span>
+              </div>
+            </a>
+          </ng-container>
+          <ng-template #demoTopItem>
+            <button
+              mat-list-item
+              (click)="onDemoClick()"
+              class="hover:bg-blue-100 rounded-lg opacity-75"
+              matTooltip="Inicia sesión para acceder"
+            >
+              <div class="flex items-center gap-x-4">
+                <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
+                <span class="text-blue-900 font-normal">{{ menuItem.label }}</span>
+              </div>
+            </button>
+          </ng-template>
         </div>
 
-        <!-- Elementos con submenús -->
-        <mat-expansion-panel *ngIf="menuItem.children && menuItem.children.length > 0" class="bg-blue-50 shadow-none px-4" hideToggle>
+        <mat-expansion-panel
+          *ngIf="menuItem.children && menuItem.children.length > 0"
+          class="bg-blue-50 shadow-none px-4"
+          hideToggle
+        >
           <mat-expansion-panel-header class="bg-blue-50 hover:bg-blue-100 rounded-full">
             <mat-panel-title class="flex justify-start items-center gap-x-4">
               <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
@@ -29,43 +47,69 @@
           </mat-expansion-panel-header>
 
           <mat-nav-list>
-            <a
-              mat-list-item
-              *ngFor="let child of menuItem.children"
-              [routerLink]="child.route"
-              routerLinkActive="bg-blue-200"
-              class="hover:bg-blue-100"
-            >
-              <div class="flex items-center gap-x-4">
-                <mat-icon color="primary">{{ child.icon }}</mat-icon>
-                <span class="text-blue-900">{{ child.label }}</span>
-              </div>
-            </a>
+            <ng-container *ngFor="let child of menuItem.children">
+              <ng-container *ngIf="!isDemo; else demoChildItem">
+                <a
+                  mat-list-item
+                  [routerLink]="child.route"
+                  routerLinkActive="bg-blue-200"
+                  class="hover:bg-blue-100"
+                >
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">{{ child.icon }}</mat-icon>
+                    <span class="text-blue-900">{{ child.label }}</span>
+                  </div>
+                </a>
+              </ng-container>
+              <ng-template #demoChildItem>
+                <button
+                  mat-list-item
+                  (click)="onDemoClick()"
+                  class="hover:bg-blue-100 opacity-75"
+                  matTooltip="Inicia sesión para acceder"
+                >
+                  <div class="flex items-center gap-x-4">
+                    <mat-icon color="primary">{{ child.icon }}</mat-icon>
+                    <span class="text-blue-900">{{ child.label }}</span>
+                  </div>
+                </button>
+              </ng-template>
+            </ng-container>
           </mat-nav-list>
         </mat-expansion-panel>
       </ng-container>
     </mat-accordion>
 
-    <!-- Vista contraída - Solo iconos principales con menús desplegables -->
-    <div *ngIf="!isExpanded" class="px-2">
-      <div *ngFor="let menuItem of menuItems(); let i = index" class="mb-2">
-        <!-- Elementos independientes (sin hijos) -->
+    <div *ngIf="!isExpanded()" class="px-2">
+      <div *ngFor="let menuItem of filteredMenuItems(); let i = index" class="mb-2">
         <div *ngIf="!menuItem.children || menuItem.children.length === 0">
-          <a 
-            mat-icon-button
-            [routerLink]="menuItem.route"
-            routerLinkActive="bg-blue-200"
-            [matTooltip]="menuItem.label"
-            matTooltipPosition="right"
-            class="w-12 h-12 hover:bg-blue-100 transition-colors duration-200 rounded-full"
-          >
-            <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
-          </a>
+          <ng-container *ngIf="!isDemo; else demoCompactItem">
+            <a
+              mat-icon-button
+              [routerLink]="menuItem.route"
+              routerLinkActive="bg-blue-200"
+              [matTooltip]="menuItem.label"
+              matTooltipPosition="right"
+              class="w-12 h-12 hover:bg-blue-100 transition-colors duration-200 rounded-full"
+            >
+              <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
+            </a>
+          </ng-container>
+          <ng-template #demoCompactItem>
+            <button
+              mat-icon-button
+              (click)="onDemoClick()"
+              [matTooltip]="menuItem.label + ' (requiere iniciar sesión)'"
+              matTooltipPosition="right"
+              class="w-12 h-12 hover:bg-blue-100 transition-colors duration-200 rounded-full opacity-75"
+            >
+              <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
+            </button>
+          </ng-template>
         </div>
 
-        <!-- Elementos con submenús -->
         <div *ngIf="menuItem.children && menuItem.children.length > 0">
-          <button 
+          <button
             mat-icon-button
             [matMenuTriggerFor]="menu"
             [matTooltip]="menuItem.label"
@@ -74,19 +118,26 @@
           >
             <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
           </button>
-          
-          <!-- Menú desplegable para los submenús -->
+
           <mat-menu #menu="matMenu" class="sidebar-menu" xPosition="after">
             <ng-container *ngFor="let child of menuItem.children">
-              <a
-                mat-menu-item
-                [routerLink]="child.route"
-                routerLinkActive="bg-blue-200"
-                class="hover:bg-blue-100"
-              >
-                <mat-icon color="primary">{{ child.icon }}</mat-icon>
-                <span class="text-blue-900">{{ child.label }}</span>
-              </a>
+              <ng-container *ngIf="!isDemo; else demoMenuChild">
+                <a
+                  mat-menu-item
+                  [routerLink]="child.route"
+                  routerLinkActive="bg-blue-200"
+                  class="hover:bg-blue-100"
+                >
+                  <mat-icon color="primary">{{ child.icon }}</mat-icon>
+                  <span class="text-blue-900">{{ child.label }}</span>
+                </a>
+              </ng-container>
+              <ng-template #demoMenuChild>
+                <button mat-menu-item (click)="onDemoClick()" class="opacity-75">
+                  <mat-icon color="primary">{{ child.icon }}</mat-icon>
+                  <span class="text-blue-900">{{ child.label }}</span>
+                </button>
+              </ng-template>
             </ng-container>
           </mat-menu>
         </div>
@@ -94,12 +145,11 @@
     </div>
   </div>
 
-  <div class="mt-auto pb-4" [class.px-4]="isExpanded" [class.px-2]="!isExpanded">
-    <!-- Botón de logout expandido -->
-    <a 
-      mat-list-item 
-      *ngIf="isExpanded"
-      class="mb-4 hover:bg-red-50 transition-colors duration-200 group" 
+  <div class="mt-auto pb-4" [class.px-4]="isExpanded()" [class.px-2]="!isExpanded()">
+    <a
+      mat-list-item
+      *ngIf="isExpanded()"
+      class="mb-4 hover:bg-red-50 transition-colors duración-200 group"
       (click)="onLogout()"
     >
       <div class="flex items-center gap-x-4">
@@ -107,23 +157,21 @@
         <span class="text-red-600 group-hover:text-red-800">Cerrar Sesión</span>
       </div>
     </a>
-    
-    <!-- Botón de logout contraído -->
-    <button 
-      *ngIf="!isExpanded"
+
+    <button
+      *ngIf="!isExpanded()"
       mat-icon-button
       [matTooltip]="'Cerrar Sesión'"
       matTooltipPosition="right"
-      class="w-12 h-12 hover:bg-red-50 transition-colors duration-200 group mb-4 rounded-full" 
+      class="w-12 h-12 hover:bg-red-50 transition-colors duration-200 group mb-4 rounded-full"
       (click)="onLogout()"
     >
       <mat-icon class="text-red-600 group-hover:text-red-800">logout</mat-icon>
     </button>
-    
+
     <mat-divider class="my-2 text-blue-600"></mat-divider>
-    
-    <!-- Texto de plataforma solo en modo expandido -->
-    <div class="text-center" *ngIf="isExpanded">
+
+    <div class="text-center" *ngIf="isExpanded()">
       <span class="text-sm font-medium text-blue-600">PLATAFORMA DE GESTIÓN CLÍNICA</span>
     </div>
   </div>

@@ -1,5 +1,20 @@
 <div class="medical-records-dashboard-container">
   <div class="medical-records-dashboard-content">
+    <!-- Aviso de Modo DEMO -->
+    <div *ngIf="isDemo" class="mb-4">
+      <mat-card class="border border-amber-200 bg-amber-50">
+        <mat-card-content class="flex items-start gap-3 text-amber-800">
+          <mat-icon class="mt-0.5">info</mat-icon>
+          <div>
+            <div class="font-semibold">Modo DEMO activo</div>
+            <div class="text-sm">
+              No se realizarán llamadas al backend. Algunas acciones como crear, editar o eliminar
+              están deshabilitadas.
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
     <!-- Botón Volver -->
     <div class="mb-4 flex items-center">
       <button mat-stroked-button color="primary" (click)="goBack()">
@@ -112,11 +127,24 @@
         </mat-form-field>
 
         <div class="flex gap-3">
-          <button mat-flat-button color="primary" routerLink="new">
+          <button
+            mat-flat-button
+            color="primary"
+            routerLink="new"
+            [disabled]="isDemo"
+            matTooltip="Inicia sesión para crear expedientes"
+            matTooltipDisabled="!isDemo"
+          >
             <mat-icon>add</mat-icon>
             Nuevo Expediente
           </button>
-          <button mat-stroked-button color="accent">
+          <button
+            mat-stroked-button
+            color="accent"
+            [disabled]="isDemo"
+            matTooltip="Inicia sesión para exportar"
+            matTooltipDisabled="!isDemo"
+          >
             <mat-icon>download</mat-icon>
             Exportar
           </button>
@@ -331,7 +359,7 @@
                   color="accent"
                   (click)="editRecord(record)"
                   matTooltip="Editar expediente"
-                  [disabled]="record.status === 'archived'"
+                  [disabled]="record.status === 'archived' || isDemo"
                 >
                   <mat-icon>edit</mat-icon>
                 </button>
@@ -341,6 +369,7 @@
                   color="warn"
                   (click)="deleteRecord(record)"
                   matTooltip="Eliminar"
+                  [disabled]="isDemo"
                 >
                   <mat-icon>delete</mat-icon>
                 </button>
