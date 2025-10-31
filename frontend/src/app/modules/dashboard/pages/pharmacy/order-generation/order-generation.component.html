@@ -1,168 +1,325 @@
-<div class="order-generation-container">
-  <!-- Header -->
-  <div class="page-header">
-    <h1 class="page-title">
-      <mat-icon>shopping_cart</mat-icon>
-      Generación de Pedidos
-    </h1>
-    <p class="page-subtitle">Gestión de pedidos a proveedores</p>
-  </div>
-
-  <!-- Estadísticas -->
-  <div class="stats-grid">
-    <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-blue-600 text-sm font-medium">Total Pedidos</p>
-          <p class="text-2xl font-bold text-blue-900">{{stats.totalOrders}}</p>
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
+        <button
+          type="button"
+          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          matTooltip="Volver"
+          aria-label="Volver"
+        >
+          <mat-icon class="!text-[20px] leading-none">arrow_back</mat-icon>
+        </button>
+        <div class="text-left">
+          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">
+            Generación de Pedidos
+          </h1>
+          <p class="text-slate-600">Gestión de pedidos a proveedores</p>
         </div>
-        <mat-icon class="text-blue-500 text-3xl">receipt_long</mat-icon>
+      </div>
+      <button
+        type="button"
+        (click)="createNewOrder()"
+        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+        aria-label="Crear nuevo pedido"
+      >
+        <mat-icon class="!text-[20px] leading-none">add</mat-icon>
+        Nuevo Pedido
+      </button>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      <div
+        class="bg-blue-50 p-4 rounded-xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-blue-600 text-sm font-semibold">Total Pedidos</p>
+            <p class="text-3xl font-bold text-blue-900 mt-2">{{ stats.totalOrders }}</p>
+            <p class="text-xs text-blue-600/60 mt-1">Pedidos registrados</p>
+          </div>
+          <mat-icon class="text-blue-500 !text-[40px] !w-10 !h-10">receipt_long</mat-icon>
+        </div>
+      </div>
+
+      <div
+        class="bg-orange-50 p-4 rounded-xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-orange-600 text-sm font-semibold">Pendientes</p>
+            <p class="text-3xl font-bold text-orange-900 mt-2">{{ stats.pendingOrders }}</p>
+            <p class="text-xs text-orange-600/60 mt-1">Esperando aprobación</p>
+          </div>
+          <mat-icon class="text-orange-500 !text-[40px] !w-10 !h-10">pending</mat-icon>
+        </div>
+      </div>
+
+      <div
+        class="bg-green-50 p-4 rounded-xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-green-600 text-sm font-semibold">Aprobados</p>
+            <p class="text-3xl font-bold text-green-900 mt-2">{{ stats.approvedOrders }}</p>
+            <p class="text-xs text-green-600/60 mt-1">Listos para procesar</p>
+          </div>
+          <mat-icon class="text-green-500 !text-[40px] !w-10 !h-10">check_circle</mat-icon>
+        </div>
+      </div>
+
+      <div
+        class="bg-purple-50 p-4 rounded-xl border-l-4 border-purple-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-purple-600 text-sm font-semibold">Valor Total</p>
+            <p class="text-3xl font-bold text-purple-900 mt-2">
+              ${{ stats.totalValue | number: '1.2-2' }}
+            </p>
+            <p class="text-xs text-purple-600/60 mt-1">En pedidos activos</p>
+          </div>
+          <mat-icon class="text-purple-500 !text-[40px] !w-10 !h-10">attach_money</mat-icon>
+        </div>
       </div>
     </div>
-    
-    <div class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-orange-600 text-sm font-medium">Pendientes</p>
-          <p class="text-2xl font-bold text-orange-900">{{stats.pendingOrders}}</p>
+
+    <!-- Búsqueda y Acciones -->
+    <div class="flex items-center gap-4 mb-6">
+      <div class="flex-1 max-w-2xl">
+        <div class="relative">
+          <input
+            type="text"
+            (keyup)="applyFilter($event)"
+            placeholder="ID, proveedor, estado..."
+            class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
+          />
+          <mat-icon class="absolute right-3 top-2.5 text-blue-400">search</mat-icon>
         </div>
-        <mat-icon class="text-orange-500 text-3xl">pending</mat-icon>
       </div>
+
+      <button
+        type="button"
+        (keyup.enter)="applyFilter($event)"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <mat-icon class="!text-[18px]">search</mat-icon>
+        Buscar
+      </button>
+
+      <div class="flex-1"></div>
+
+      <button
+        type="button"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <mat-icon class="!text-[18px]">download</mat-icon>
+        Exportar
+      </button>
     </div>
-    
-    <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-green-600 text-sm font-medium">Aprobados</p>
-          <p class="text-2xl font-bold text-green-900">{{stats.approvedOrders}}</p>
-        </div>
-        <mat-icon class="text-green-500 text-3xl">check_circle</mat-icon>
-      </div>
-    </div>
-    
-    <div class="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-500">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-purple-600 text-sm font-medium">Valor Total</p>
-          <p class="text-2xl font-bold text-purple-900">${{stats.totalValue | number:'1.2-2'}}</p>
-        </div>
-        <mat-icon class="text-purple-500 text-3xl">attach_money</mat-icon>
-      </div>
-    </div>
-  </div>
 
-  <!-- Contenido Principal -->
-  <mat-card class="content-card">
-    <mat-card-header>
-      <mat-card-title>
-        <mat-icon>list_alt</mat-icon>
-        Lista de Pedidos
-      </mat-card-title>
-    </mat-card-header>
+    <!-- Tabla de Pedidos -->
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
+        <!-- Columna ID -->
+        <ng-container matColumnDef="id">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            mat-sort-header
+            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
+          >
+            <div class="flex items-center gap-2">
+              <mat-icon class="!text-[18px] text-slate-600">confirmation_number</mat-icon>
+              ID Pedido
+            </div>
+          </th>
+          <td
+            mat-cell
+            *matCellDef="let order"
+            class="!p-4 !border-b !border-slate-100 text-blue-700 font-medium"
+          >
+            {{ order.id }}
+          </td>
+        </ng-container>
 
-    <mat-card-content>
-      <!-- Filtros y Acciones -->
-      <div class="filter-actions">
-        <mat-form-field appearance="outline" class="search-field">
-          <mat-label>Buscar pedidos</mat-label>
-          <input matInput (keyup)="applyFilter($event)" placeholder="ID, proveedor...">
-          <mat-icon matSuffix>search</mat-icon>
-        </mat-form-field>
-        
-        <div class="action-buttons">
-          <button mat-raised-button color="primary" (click)="createNewOrder()">
-            <mat-icon>add</mat-icon>
-            Nuevo Pedido
-          </button>
-          <button mat-stroked-button color="accent">
-            <mat-icon>download</mat-icon>
-            Exportar
-          </button>
-        </div>
-      </div>
+        <!-- Columna Proveedor -->
+        <ng-container matColumnDef="supplier">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            mat-sort-header
+            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
+          >
+            <div class="flex items-center gap-2">
+              <mat-icon class="!text-[18px] text-slate-600">business</mat-icon>
+              Proveedor
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let order" class="!p-4 !border-b !border-slate-100">
+            <div>
+              <div class="font-medium text-slate-900">{{ order.supplierName }}</div>
+              <div class="text-xs text-slate-500">ID: {{ order.supplierId }}</div>
+            </div>
+          </td>
+        </ng-container>
 
-      <!-- Tabla de Pedidos -->
-      <div class="table-container">
-        <table mat-table [dataSource]="dataSource" matSort class="w-full">
-          
-          <!-- Columna ID -->
-          <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">ID Pedido</th>
-            <td mat-cell *matCellDef="let order" class="text-blue-700 font-medium">{{order.id}}</td>
-          </ng-container>
+        <!-- Columna Fecha -->
+        <ng-container matColumnDef="date">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            mat-sort-header
+            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
+          >
+            <div class="flex items-center gap-2">
+              <mat-icon class="!text-[18px] text-slate-600">calendar_today</mat-icon>
+              Fecha
+            </div>
+          </th>
+          <td
+            mat-cell
+            *matCellDef="let order"
+            class="!p-4 !border-b !border-slate-100 text-slate-700"
+          >
+            {{ order.date | date: 'dd/MM/yyyy' }}
+          </td>
+        </ng-container>
 
-          <!-- Columna Proveedor -->
-          <ng-container matColumnDef="supplier">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">Proveedor</th>
-            <td mat-cell *matCellDef="let order">
-              <div class="supplier-info">
-                <div class="supplier-name">{{order.supplierName}}</div>
-                <div class="supplier-id">ID: {{order.supplierId}}</div>
-              </div>
-            </td>
-          </ng-container>
+        <!-- Columna Estado -->
+        <ng-container matColumnDef="status">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
+          >
+            <div class="flex items-center gap-2">
+              <mat-icon class="!text-[18px] text-slate-600">flag</mat-icon>
+              Estado
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let order" class="!p-4 !border-b !border-slate-100">
+            <span
+              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border"
+              [ngClass]="{
+                'bg-orange-50 text-orange-700 border-orange-200': order.status === 'pending',
+                'bg-green-50 text-green-700 border-green-200': order.status === 'approved',
+                'bg-blue-50 text-blue-700 border-blue-200': order.status === 'delivered',
+                'bg-red-50 text-red-700 border-red-200': order.status === 'cancelled',
+              }"
+            >
+              <span
+                class="w-1.5 h-1.5 rounded-full"
+                [ngClass]="{
+                  'bg-orange-600': order.status === 'pending',
+                  'bg-green-600': order.status === 'approved',
+                  'bg-blue-600': order.status === 'delivered',
+                  'bg-red-600': order.status === 'cancelled',
+                }"
+              >
+              </span>
+              {{ getStatusLabel(order.status || 'pending') }}
+            </span>
+          </td>
+        </ng-container>
 
-          <!-- Columna Fecha -->
-          <ng-container matColumnDef="date">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">Fecha</th>
-            <td mat-cell *matCellDef="let order">{{order.date | date:'dd/MM/yyyy'}}</td>
-          </ng-container>
+        <!-- Columna Total -->
+        <ng-container matColumnDef="total">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            mat-sort-header
+            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
+          >
+            <div class="flex items-center gap-2">
+              <mat-icon class="!text-[18px] text-slate-600">attach_money</mat-icon>
+              Total
+            </div>
+          </th>
+          <td
+            mat-cell
+            *matCellDef="let order"
+            class="!p-4 !border-b !border-slate-100 text-green-700 font-semibold"
+          >
+            ${{ order.total | number: '1.2-2' }}
+          </td>
+        </ng-container>
 
-          <!-- Columna Estado -->
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef class="table-header">Estado</th>
-            <td mat-cell *matCellDef="let order">
-              <mat-chip-set>
-                <mat-chip [ngClass]="getStatusChipClass(order.status || 'pending')">
-                  {{getStatusLabel(order.status || 'pending')}}
-                </mat-chip>
-              </mat-chip-set>
-            </td>
-          </ng-container>
+        <!-- Columna Acciones -->
+        <ng-container matColumnDef="actions">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
+          >
+            <div class="flex items-center gap-2">
+              <mat-icon class="!text-[18px] text-slate-600">settings</mat-icon>
+              Acciones
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let order" class="!p-4 !border-b !border-slate-100">
+            <div class="flex items-center gap-1">
+              <button
+                mat-icon-button
+                class="w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-200"
+                (click)="viewOrder(order)"
+                matTooltip="Ver detalle del pedido"
+                aria-label="Ver detalle del pedido"
+              >
+                <mat-icon class="!text-[20px] leading-none">visibility</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                class="w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-amber-200"
+                (click)="editOrder(order)"
+                [disabled]="order.status === 'delivered' || order.status === 'cancelled'"
+                matTooltip="Editar pedido"
+                aria-label="Editar pedido"
+              >
+                <mat-icon class="!text-[20px] leading-none">edit</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                class="w-9 h-9 text-green-600 hover:bg-green-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-green-200"
+                (click)="approveOrder(order)"
+                [disabled]="order.status !== 'pending'"
+                matTooltip="Aprobar pedido"
+                aria-label="Aprobar pedido"
+              >
+                <mat-icon class="!text-[20px] leading-none">check_circle</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                class="w-9 h-9 text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-200"
+                (click)="cancelOrder(order)"
+                [disabled]="order.status === 'delivered' || order.status === 'cancelled'"
+                matTooltip="Cancelar pedido"
+                aria-label="Cancelar pedido"
+              >
+                <mat-icon class="!text-[20px] leading-none">cancel</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
 
-          <!-- Columna Total -->
-          <ng-container matColumnDef="total">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">Total</th>
-            <td mat-cell *matCellDef="let order" class="text-green-700 font-semibold">
-              ${{order.total | number:'1.2-2'}}
-            </td>
-          </ng-container>
-
-          <!-- Columna Acciones -->
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="table-header">Acciones</th>
-            <td mat-cell *matCellDef="let order">
-              <div class="action-buttons">
-                <button mat-icon-button color="primary" (click)="viewOrder(order)" matTooltip="Ver detalle">
-                  <mat-icon>visibility</mat-icon>
-                </button>
-                <button mat-icon-button color="accent" (click)="editOrder(order)" matTooltip="Editar" 
-                        [disabled]="order.status === 'delivered' || order.status === 'cancelled'">
-                  <mat-icon>edit</mat-icon>
-                </button>
-                <button mat-icon-button color="primary" (click)="approveOrder(order)" matTooltip="Aprobar"
-                        [disabled]="order.status !== 'pending'">
-                  <mat-icon>check</mat-icon>
-                </button>
-                <button mat-icon-button color="warn" (click)="cancelOrder(order)" matTooltip="Cancelar"
-                        [disabled]="order.status === 'delivered' || order.status === 'cancelled'">
-                  <mat-icon>cancel</mat-icon>
-                </button>
-              </div>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-        </table>
-      </div>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="hover:bg-transparent"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          class="hover:bg-slate-50 transition-colors"
+        ></tr>
+      </table>
 
       <!-- Paginador -->
-      <mat-paginator 
-        [pageSizeOptions]="[10, 25, 50, 100]" 
-        showFirstLastButtons
-        aria-label="Seleccionar página de pedidos"
-      ></mat-paginator>
-    </mat-card-content>
-  </mat-card>
+      <div class="border-t border-slate-100">
+        <mat-paginator
+          [pageSizeOptions]="[10, 25, 50, 100]"
+          showFirstLastButtons
+          aria-label="Seleccionar página de pedidos"
+        ></mat-paginator>
+      </div>
+    </div>
+  </div>
 </div>

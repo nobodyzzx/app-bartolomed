@@ -22,7 +22,14 @@ export class AuthService {
     // Cargar roles desde localStorage si existen al iniciar
     const storedRoles = localStorage.getItem('userRoles')
     if (storedRoles) {
-      this._currentUserRoles.set(JSON.parse(storedRoles))
+      const roles = JSON.parse(storedRoles) as UserRoles[]
+      this._currentUserRoles.set(roles)
+      // IMPORTANTE: Recalcular permisos desde los roles al recargar
+      this._currentPermissions.set(permissionsForRoles(roles))
+      console.log('[AuthService] Restaurado desde localStorage:', {
+        roles,
+        permissions: this._currentPermissions().length,
+      })
     }
   }
 

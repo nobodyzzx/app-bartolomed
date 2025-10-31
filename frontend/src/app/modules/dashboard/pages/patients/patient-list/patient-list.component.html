@@ -1,69 +1,87 @@
 <div class="patient-list-container">
   <div class="patient-list-content">
-    <!-- Botón Volver -->
-    <div class="mb-4 flex items-center">
-      <button mat-stroked-button color="primary" (click)="goBack()">
-        <mat-icon>arrow_back</mat-icon>
-        Volver
-      </button>
-    </div>
-    <!-- Encabezado -->
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-blue-900 mb-4">Lista de Pacientes</h1>
-      <div class="w-24 h-1 bg-blue-600 mx-auto rounded-full mb-4"></div>
-      <p class="text-lg text-blue-600">Gestión completa de todos los pacientes registrados</p>
-    </div>
-
-    <!-- Filtros y Acciones -->
-    <div class="bg-white p-6 rounded-2xl shadow-lg border border-blue-100 mb-6">
-      <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <mat-form-field appearance="outline" class="w-full md:w-96">
-          <mat-label>Buscar paciente</mat-label>
-          <input
-            matInput
-            (keyup)="searchPatients($any($event.target).value)"
-            placeholder="Nombre, teléfono, email..."
-          />
-          <button
-            mat-icon-button
-            matSuffix
-            aria-label="Limpiar búsqueda"
-            (click)="loadPatients()"
-            matTooltip="Limpiar"
-          >
-            <mat-icon>close</mat-icon>
-          </button>
-          <mat-icon matSuffix>search</mat-icon>
-        </mat-form-field>
-
-        <div class="flex gap-3">
-          <button mat-raised-button color="primary" routerLink="../new">
-            <mat-icon>person_add</mat-icon>
-            Nuevo Paciente
-          </button>
-          <button mat-stroked-button color="accent">
-            <mat-icon>download</mat-icon>
-            Exportar
-          </button>
+    <!-- Header Unificado -->
+    <div class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
+        <button
+          type="button"
+          (click)="goBack()"
+          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          matTooltip="Volver"
+          aria-label="Volver"
+        >
+          <mat-icon class="!text-[20px] leading-none">arrow_back</mat-icon>
+        </button>
+        <div class="text-left">
+          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Lista de Pacientes</h1>
+          <p class="text-slate-600">Gestión completa de pacientes</p>
         </div>
       </div>
+      <button
+        type="button"
+        (click)="createPatient()"
+        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+        aria-label="Crear nuevo paciente"
+      >
+        <mat-icon class="!text-[20px] leading-none">person_add</mat-icon>
+        Nuevo Paciente
+      </button>
+    </div>
+
+    <!-- Búsqueda y Acciones -->
+    <div class="flex items-center gap-4 mb-6">
+      <div class="flex-1 max-w-2xl">
+        <div class="relative">
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            (keyup.enter)="searchPatients(searchTerm)"
+            placeholder="Nombre, teléfono, email..."
+            class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
+          />
+          <mat-icon class="absolute right-3 top-2.5 text-blue-400">search</mat-icon>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        (click)="searchPatients(searchTerm)"
+        [disabled]="!searchTerm?.trim()"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
+      >
+        <mat-icon class="!text-[18px]">search</mat-icon>
+        Buscar
+      </button>
+
+      <div class="flex-1"></div>
+
+      <button
+        type="button"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <mat-icon class="!text-[18px]">download</mat-icon>
+        Exportar
+      </button>
     </div>
 
     <!-- Tabla de Pacientes -->
-    <div class="bg-white rounded-2xl shadow-lg border border-blue-100 overflow-hidden">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="overflow-x-auto">
-        <table mat-table [dataSource]="dataSource" matSort class="w-full">
+        <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
           <!-- Columna Documento -->
           <ng-container matColumnDef="documentNumber">
             <th
               mat-header-cell
               *matHeaderCellDef
               mat-sort-header
-              class="bg-blue-50 text-blue-900 font-semibold"
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
-              Documento
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-blue-600 !text-[18px]">badge</mat-icon>
+                Documento
+              </div>
             </th>
-            <td mat-cell *matCellDef="let patient" class="text-blue-700 font-medium">
+            <td mat-cell *matCellDef="let patient" class="p-4 text-slate-900 font-medium">
               {{ patient.documentNumber }}
             </td>
           </ng-container>
@@ -74,18 +92,25 @@
               mat-header-cell
               *matHeaderCellDef
               mat-sort-header
-              class="bg-blue-50 text-blue-900 font-semibold"
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
-              Nombre Completo
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-blue-600 !text-[18px]">person</mat-icon>
+                Nombre Completo
+              </div>
             </th>
-            <td mat-cell *matCellDef="let patient">
+            <td mat-cell *matCellDef="let patient" class="p-4">
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <mat-icon class="text-blue-600">person</mat-icon>
+                <div
+                  class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0"
+                >
+                  <mat-icon class="text-blue-600 !text-[20px]">person</mat-icon>
                 </div>
                 <div>
-                  <div class="font-medium text-blue-900">{{ getPatientFullName(patient) }}</div>
-                  <div class="text-sm text-blue-600" *ngIf="patient.email">{{ patient.email }}</div>
+                  <div class="font-medium text-slate-900">{{ getPatientFullName(patient) }}</div>
+                  <div class="text-sm text-slate-600" *ngIf="patient.email">
+                    {{ patient.email }}
+                  </div>
                 </div>
               </div>
             </td>
@@ -97,11 +122,14 @@
               mat-header-cell
               *matHeaderCellDef
               mat-sort-header
-              class="bg-blue-50 text-blue-900 font-semibold"
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
-              Edad
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-blue-600 !text-[18px]">cake</mat-icon>
+                Edad
+              </div>
             </th>
-            <td mat-cell *matCellDef="let patient" class="text-blue-700">
+            <td mat-cell *matCellDef="let patient" class="p-4 text-slate-600">
               {{ getPatientAge(patient) }} años
             </td>
           </ng-container>
@@ -112,19 +140,26 @@
               mat-header-cell
               *matHeaderCellDef
               mat-sort-header
-              class="bg-blue-50 text-blue-900 font-semibold"
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
-              Género
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-blue-600 !text-[18px]">wc</mat-icon>
+                Género
+              </div>
             </th>
-            <td mat-cell *matCellDef="let patient">
+            <td mat-cell *matCellDef="let patient" class="p-4">
               <span
-                class="px-3 py-1 rounded-full text-xs font-medium"
+                class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
                 [ngClass]="
                   patient.gender === 'male'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-pink-100 text-pink-800'
+                    ? 'bg-blue-100 text-blue-800 border-blue-200'
+                    : 'bg-pink-100 text-pink-800 border-pink-200'
                 "
               >
+                <span
+                  class="w-2 h-2 rounded-full"
+                  [ngClass]="patient.gender === 'male' ? 'bg-blue-500' : 'bg-pink-500'"
+                ></span>
                 {{
                   patient.gender === 'male'
                     ? 'Masculino'
@@ -138,54 +173,74 @@
 
           <!-- Columna Teléfono -->
           <ng-container matColumnDef="phone">
-            <th mat-header-cell *matHeaderCellDef class="bg-blue-50 text-blue-900 font-semibold">
-              Teléfono
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-blue-600 !text-[18px]">phone</mat-icon>
+                Teléfono
+              </div>
             </th>
-            <td mat-cell *matCellDef="let patient" class="text-blue-700">{{ patient.phone }}</td>
+            <td mat-cell *matCellDef="let patient" class="p-4 text-slate-600">
+              {{ patient.phone }}
+            </td>
           </ng-container>
 
           <!-- Eliminadas columnas lastVisit y status por no estar en el modelo actual -->
 
           <!-- Columna Acciones -->
           <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="bg-blue-50 text-blue-900 font-semibold">
-              Acciones
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-blue-600 !text-[18px]">settings</mat-icon>
+                Acciones
+              </div>
             </th>
-            <td mat-cell *matCellDef="let patient">
-              <div class="flex gap-2">
+            <td mat-cell *matCellDef="let patient" class="p-4">
+              <div class="flex gap-2 items-center">
                 <button
                   mat-icon-button
-                  color="primary"
+                  class="w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-200"
                   (click)="viewPatient(patient)"
                   matTooltip="Ver detalles"
                 >
-                  <mat-icon>visibility</mat-icon>
+                  <mat-icon class="!text-[20px] leading-none">visibility</mat-icon>
                 </button>
                 <button
                   mat-icon-button
-                  color="accent"
+                  class="w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-amber-200"
                   (click)="editPatient(patient)"
                   matTooltip="Editar"
                 >
-                  <mat-icon>edit</mat-icon>
+                  <mat-icon class="!text-[20px] leading-none">edit</mat-icon>
                 </button>
                 <button
                   mat-icon-button
-                  color="warn"
+                  class="w-9 h-9 text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-200"
                   (click)="deletePatient(patient)"
                   matTooltip="Eliminar"
                 >
-                  <mat-icon>delete</mat-icon>
+                  <mat-icon class="!text-[20px] leading-none">delete</mat-icon>
                 </button>
               </div>
             </td>
           </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr
+            mat-header-row
+            *matHeaderRowDef="displayedColumns"
+            class="border-b-2 border-slate-200"
+          ></tr>
           <tr
             mat-row
             *matRowDef="let row; columns: displayedColumns"
-            class="hover:bg-blue-50 transition-colors"
+            class="border-b border-slate-100 hover:bg-slate-50 transition-colors"
           ></tr>
         </table>
       </div>
@@ -195,19 +250,19 @@
         [pageSizeOptions]="[5, 10, 20]"
         showFirstLastButtons
         aria-label="Seleccionar página de pacientes"
-        class="border-t border-blue-100"
+        class="bg-slate-50 border-t border-slate-200"
       >
       </mat-paginator>
     </div>
 
     <!-- Estadísticas de la tabla -->
-    <div class="mt-6 text-center text-blue-600" *ngIf="!isLoading">
-      <p *ngIf="dataSource.data.length > 0">
+    <div class="mt-6 text-center text-slate-600" *ngIf="!isLoading">
+      <p *ngIf="dataSource.data.length > 0" class="text-sm">
         Mostrando {{ dataSource.data.length }} pacientes en total
       </p>
       <div *ngIf="dataSource.data.length === 0" class="py-8">
-        <mat-icon class="text-6xl text-gray-400 mb-4">people_outline</mat-icon>
-        <p class="text-gray-500">No se encontraron pacientes</p>
+        <mat-icon class="text-6xl text-slate-400 mb-4">people_outline</mat-icon>
+        <p class="text-slate-500">No se encontraron pacientes</p>
       </div>
     </div>
   </div>

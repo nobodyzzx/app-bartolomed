@@ -1,143 +1,222 @@
-<div class="patient-dashboard-container">
-  <div class="patient-dashboard-content">
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
     <!-- Encabezado -->
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-blue-900 mb-4">Panel de Pacientes</h1>
-      <div class="w-24 h-1 bg-blue-600 mx-auto rounded-full mb-4"></div>
-      <p class="text-lg text-blue-600">Gestión completa de pacientes del consultorio</p>
+    <div class="mb-10">
+      <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Panel de Pacientes</h1>
+      <p class="text-slate-600">Gestión completa de pacientes del consultorio</p>
     </div>
 
     <!-- Estadísticas -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" *ngIf="statistics">
-      <div class="bg-white p-6 rounded-2xl shadow-lg border border-blue-100 text-center">
-        <mat-icon class="text-4xl text-blue-600 mb-3">people</mat-icon>
-        <div class="text-3xl font-bold text-blue-900 mb-2">{{ statistics.totalPatients }}</div>
-        <div class="text-blue-600">Total Pacientes</div>
+      <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-blue-600 text-sm font-medium">Total Pacientes</p>
+            <p class="text-2xl font-bold text-blue-900">{{ statistics.totalPatients }}</p>
+          </div>
+          <mat-icon class="text-blue-500 text-3xl">people</mat-icon>
+        </div>
       </div>
 
-      <div class="bg-white p-6 rounded-2xl shadow-lg border border-green-100 text-center">
-        <mat-icon class="text-4xl text-green-600 mb-3">favorite</mat-icon>
-        <div class="text-3xl font-bold text-green-900 mb-2">{{ statistics.totalPatients }}</div>
-        <div class="text-green-600">Pacientes Activos</div>
+      <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-green-600 text-sm font-medium">Pacientes Activos</p>
+            <p class="text-2xl font-bold text-green-900">{{ statistics.totalPatients }}</p>
+          </div>
+          <mat-icon class="text-green-500 text-3xl">favorite</mat-icon>
+        </div>
       </div>
 
-      <div class="bg-white p-6 rounded-2xl shadow-lg border border-purple-100 text-center">
-        <mat-icon class="text-4xl text-purple-600 mb-3">person_add</mat-icon>
-        <div class="text-3xl font-bold text-purple-900 mb-2">{{ recentPatients.length }}</div>
-        <div class="text-purple-600">Nuevos Recientes</div>
+      <div class="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-500">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-purple-600 text-sm font-medium">Nuevos Recientes</p>
+            <p class="text-2xl font-bold text-purple-900">{{ recentPatients.length }}</p>
+          </div>
+          <mat-icon class="text-purple-500 text-3xl">person_add</mat-icon>
+        </div>
       </div>
 
-      <div class="bg-white p-6 rounded-2xl shadow-lg border border-orange-100 text-center">
-        <mat-icon class="text-4xl text-orange-600 mb-3">schedule</mat-icon>
-        <div class="text-3xl font-bold text-orange-900 mb-2">0</div>
-        <div class="text-orange-600">Citas Hoy</div>
+      <div class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-orange-600 text-sm font-medium">Citas Hoy</p>
+            <p class="text-2xl font-bold text-orange-900">0</p>
+          </div>
+          <mat-icon class="text-orange-500 text-3xl">schedule</mat-icon>
+        </div>
       </div>
     </div>
 
     <!-- Loading para estadísticas -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" *ngIf="!statistics && isLoading">
-      <div class="bg-white p-6 rounded-2xl shadow-lg border border-blue-100 text-center">
+      <div
+        class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500 flex items-center justify-center"
+      >
         <mat-spinner diameter="40"></mat-spinner>
       </div>
-      <div class="bg-white p-6 rounded-2xl shadow-lg border border-green-100 text-center">
+      <div
+        class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500 flex items-center justify-center"
+      >
         <mat-spinner diameter="40"></mat-spinner>
       </div>
-      <div class="bg-white p-6 rounded-2xl shadow-lg border border-purple-100 text-center">
+      <div
+        class="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-500 flex items-center justify-center"
+      >
         <mat-spinner diameter="40"></mat-spinner>
       </div>
-      <div class="bg-white p-6 rounded-2xl shadow-lg border border-orange-100 text-center">
+      <div
+        class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500 flex items-center justify-center"
+      >
         <mat-spinner diameter="40"></mat-spinner>
       </div>
     </div>
 
     <!-- Acciones Rápidas -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <div class="bg-white p-6 rounded-2xl shadow-lg border border-blue-100 text-center">
-        <mat-icon class="text-5xl text-blue-600 mb-4">person_add</mat-icon>
-        <h3 class="text-xl font-bold text-blue-900 mb-3">Nuevo Paciente</h3>
-        <p class="text-blue-600 mb-4">Registrar un nuevo paciente en el sistema</p>
-        <button
-          mat-raised-button
-          color="primary"
-          (click)="navigateToNewPatient()"
-          class="w-full rounded-xl"
-        >
-          <mat-icon>add</mat-icon>
-          Agregar Paciente
-        </button>
-      </div>
+      <button
+        type="button"
+        (click)="navigateToNewPatient()"
+        class="bg-white p-6 rounded-xl border-0 shadow-md hover:shadow-lg transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
+      >
+        <mat-icon class="text-5xl text-blue-500 mb-4">person_add</mat-icon>
+        <h3 class="text-xl font-bold text-slate-900 mb-2">Nuevo Paciente</h3>
+        <p class="text-slate-600 text-sm">Registrar un nuevo paciente en el sistema</p>
+      </button>
 
-      <div class="bg-white p-6 rounded-2xl shadow-lg border border-green-100 text-center">
-        <mat-icon class="text-5xl text-green-600 mb-4">list</mat-icon>
-        <h3 class="text-xl font-bold text-green-900 mb-3">Lista de Pacientes</h3>
-        <p class="text-green-600 mb-4">Ver y gestionar todos los pacientes</p>
-        <button
-          mat-raised-button
-          color="accent"
-          (click)="navigateToPatients()"
-          class="w-full rounded-xl"
-        >
-          <mat-icon>view_list</mat-icon>
-          Ver Lista
-        </button>
-      </div>
+      <button
+        type="button"
+        (click)="navigateToPatients()"
+        class="bg-white p-6 rounded-xl border-0 shadow-md hover:shadow-lg transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-200 focus-visible:ring-offset-1"
+      >
+        <mat-icon class="text-5xl text-green-500 mb-4">list</mat-icon>
+        <h3 class="text-xl font-bold text-slate-900 mb-2">Lista de Pacientes</h3>
+        <p class="text-slate-600 text-sm">Ver y gestionar todos los pacientes</p>
+      </button>
 
-      <div class="bg-white p-6 rounded-2xl shadow-lg border border-purple-100 text-center">
-        <mat-icon class="text-5xl text-purple-600 mb-4">search</mat-icon>
-        <h3 class="text-xl font-bold text-purple-900 mb-3">Buscar Paciente</h3>
-        <p class="text-purple-600 mb-4">Buscar paciente por nombre o ID</p>
-        <button mat-raised-button color="warn" class="w-full rounded-xl" (click)="openSearch()">
-          <mat-icon>search</mat-icon>
-          Buscar
-        </button>
-      </div>
+      <button
+        type="button"
+        (click)="openSearch()"
+        class="bg-white p-6 rounded-xl border-0 shadow-md hover:shadow-lg transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 focus-visible:ring-offset-1"
+      >
+        <mat-icon class="text-5xl text-purple-500 mb-4">search</mat-icon>
+        <h3 class="text-xl font-bold text-slate-900 mb-2">Buscar Paciente</h3>
+        <p class="text-slate-600 text-sm">Buscar paciente por nombre o ID</p>
+      </button>
     </div>
 
     <!-- Pacientes Recientes -->
-    <div class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100">
-      <h2 class="text-2xl font-bold text-blue-900 mb-6">Pacientes Recientes</h2>
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+      <div class="p-6 border-b border-slate-200">
+        <h2 class="text-xl font-bold text-slate-900">Pacientes Recientes</h2>
+      </div>
 
       <div class="overflow-x-auto" *ngIf="recentPatients.length > 0">
-        <table mat-table [dataSource]="recentPatients" class="w-full">
+        <table mat-table [dataSource]="recentPatients" class="w-full bg-transparent">
           <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef class="text-blue-900 font-semibold">Nombre</th>
-            <td mat-cell *matCellDef="let patient">{{ getPatientFullName(patient) }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="age">
-            <th mat-header-cell *matHeaderCellDef class="text-blue-900 font-semibold">Edad</th>
-            <td mat-cell *matCellDef="let patient">{{ getPatientAge(patient) }} años</td>
-          </ng-container>
-
-          <ng-container matColumnDef="createdAt">
-            <th mat-header-cell *matHeaderCellDef class="text-blue-900 font-semibold">
-              Fecha de Registro
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-blue-600 !text-[18px]">person</mat-icon>
+                Nombre
+              </div>
             </th>
-            <td mat-cell *matCellDef="let patient">{{ patient.createdAt | date: 'short' }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="text-blue-900 font-semibold">Acciones</th>
-            <td mat-cell *matCellDef="let patient">
-              <button mat-icon-button color="primary" [routerLink]="['edit', patient.id]">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button mat-icon-button color="accent" (click)="viewPatient(patient)">
-                <mat-icon>visibility</mat-icon>
-              </button>
+            <td mat-cell *matCellDef="let patient" class="p-4 text-slate-900">
+              {{ getPatientFullName(patient) }}
             </td>
           </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="['name', 'age', 'createdAt', 'actions']"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['name', 'age', 'createdAt', 'actions']"></tr>
+          <ng-container matColumnDef="age">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-blue-600 !text-[18px]">cake</mat-icon>
+                Edad
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let patient" class="p-4 text-slate-600">
+              {{ getPatientAge(patient) }} años
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="createdAt">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-blue-600 !text-[18px]">schedule</mat-icon>
+                Fecha de Registro
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let patient" class="p-4 text-slate-600">
+              {{ patient.createdAt | date: 'short' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-blue-600 !text-[18px]">settings</mat-icon>
+                Acciones
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let patient" class="p-4">
+              <div class="flex gap-2 items-center">
+                <button
+                  mat-icon-button
+                  class="w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-200"
+                  (click)="viewPatient(patient)"
+                  matTooltip="Ver detalles"
+                >
+                  <mat-icon class="!text-[20px] leading-none">visibility</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  class="w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-amber-200"
+                  [routerLink]="['edit', patient.id]"
+                  matTooltip="Editar"
+                >
+                  <mat-icon class="!text-[20px] leading-none">edit</mat-icon>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr
+            mat-header-row
+            *matHeaderRowDef="['name', 'age', 'createdAt', 'actions']"
+            class="border-b-2 border-slate-200"
+          ></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: ['name', 'age', 'createdAt', 'actions']"
+            class="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+          ></tr>
         </table>
       </div>
 
-      <div *ngIf="recentPatients.length === 0" class="text-center py-8">
-        <mat-icon class="text-6xl text-gray-400 mb-4">people_outline</mat-icon>
-        <p class="text-gray-500">No hay pacientes registrados aún</p>
-        <button mat-raised-button color="primary" (click)="navigateToNewPatient()" class="mt-4">
-          <mat-icon>add</mat-icon>
+      <div *ngIf="recentPatients.length === 0" class="text-center py-12 px-6">
+        <mat-icon class="text-6xl text-slate-400 mb-4">people_outline</mat-icon>
+        <p class="text-slate-500 mb-4">No hay pacientes registrados aún</p>
+        <button
+          type="button"
+          (click)="navigateToNewPatient()"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+        >
+          <mat-icon class="!text-[20px] leading-none">add</mat-icon>
           Agregar Primer Paciente
         </button>
       </div>

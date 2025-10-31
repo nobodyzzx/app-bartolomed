@@ -18,6 +18,7 @@ export class PatientListComponent implements OnInit {
   displayedColumns: string[] = ['documentNumber', 'name', 'age', 'gender', 'phone', 'actions']
   dataSource: MatTableDataSource<Patient>
   isLoading = false
+  searchTerm: string = ''
 
   @ViewChild(MatPaginator) paginator!: MatPaginator
   @ViewChild(MatSort) sort!: MatSort
@@ -38,6 +39,7 @@ export class PatientListComponent implements OnInit {
     this.route.queryParamMap.subscribe(params => {
       const q = (params.get('q') || '').trim()
       if (q) {
+        this.searchTerm = q
         this.searchPatients(q)
       } else {
         this.loadPatients()
