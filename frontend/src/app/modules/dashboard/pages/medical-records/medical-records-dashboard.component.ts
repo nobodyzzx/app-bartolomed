@@ -1,11 +1,13 @@
 import { Location } from '@angular/common'
-import { Component, OnInit, ViewChild } from '@angular/core'
+import { Component, OnInit, ViewChild, inject } from '@angular/core'
 import { MatDialog } from '@angular/material/dialog'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
 import { Router } from '@angular/router'
 import Swal from 'sweetalert2'
+import { AuthStatus } from '../../../auth/interfaces/auth-status.enum'
+import { AuthService as AppAuthService } from '../../../auth/services/auth.service'
 import { MedicalRecord, MedicalRecordFilters, RecordStatus, RecordType } from './interfaces'
 import { MedicalRecordsService } from './services/medical-records.service'
 
@@ -52,10 +54,14 @@ export class MedicalRecordsDashboardComponent implements OnInit {
     private router: Router,
     private location: Location,
   ) {}
+  private appAuth = inject(AppAuthService)
 
   ngOnInit(): void {
-    this.loadMedicalRecords()
-    this.loadStats()
+    // Evitar llamadas al backend en modo DEMO (cuando no hay autenticación real)
+    if (this.isAuthenticated()) {
+      this.loadMedicalRecords()
+      this.loadStats()
+    }
   }
 
   ngAfterViewInit(): void {
@@ -64,6 +70,7 @@ export class MedicalRecordsDashboardComponent implements OnInit {
   }
 
   loadMedicalRecords(): void {
+    if (!this.isAuthenticated()) return
     this.loading = true
     this.medicalRecordsService.getMedicalRecords(this.filters).subscribe({
       next: response => {
@@ -79,6 +86,7 @@ export class MedicalRecordsDashboardComponent implements OnInit {
   }
 
   loadStats(): void {
+    if (!this.isAuthenticated()) return
     this.medicalRecordsService.getMedicalRecordsStats().subscribe({
       next: stats => {
         this.stats = stats
@@ -125,7 +133,7 @@ export class MedicalRecordsDashboardComponent implements OnInit {
 
   clearFilters(): void {
     this.filters = {}
-    this.loadMedicalRecords()
+    if (this.isAuthenticated()) this.loadMedicalRecords()
   }
 
   createNewRecord(): void {
@@ -141,6 +149,15 @@ export class MedicalRecordsDashboardComponent implements OnInit {
   }
 
   deleteRecord(record: MedicalRecord): void {
+    if (!this.isAuthenticated()) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Modo demo',
+        text: 'Para eliminar expedientes, primero inicia sesión con un usuario válido.',
+        confirmButtonColor: '#2563eb',
+      })
+      return
+    }
     Swal.fire({
       title: '¿Eliminar expediente?',
       html: `¿Está seguro de que desea eliminar este expediente médico?<br><br>
@@ -186,6 +203,7 @@ export class MedicalRecordsDashboardComponent implements OnInit {
   completeRecord(record: MedicalRecord): void {
     // Actualizar el estado del expediente a 'completed'
     const updateData = { status: 'completed' as any }
+    if (!this.isAuthenticated()) return
     this.medicalRecordsService.updateMedicalRecord(record.id!, updateData).subscribe({
       next: () => {
         this.loadMedicalRecords()
@@ -199,6 +217,7 @@ export class MedicalRecordsDashboardComponent implements OnInit {
   reviewRecord(record: MedicalRecord): void {
     // Actualizar el estado del expediente a 'reviewed'
     const updateData = { status: 'reviewed' as any }
+    if (!this.isAuthenticated()) return
     this.medicalRecordsService.updateMedicalRecord(record.id!, updateData).subscribe({
       next: () => {
         this.loadMedicalRecords()
@@ -285,5 +304,17 @@ export class MedicalRecordsDashboardComponent implements OnInit {
       default:
         return 'description'
     }
+  }
+  private isAuthenticated(): boolean {
+    try {
+      return this.appAuth.authStatus() === AuthStatus.authenticated
+    } catch {
+      return false
+    }
+  }
+
+  // Exponer a la plantilla si estamos en modo demo (sin autenticación real)
+  get isDemo(): boolean {
+    return !this.isAuthenticated()
   }
 }

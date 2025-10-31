@@ -1,5 +1,10 @@
 import { NgModule } from '@angular/core'
 import { RouterModule, Routes } from '@angular/router'
+import { Permission } from '@core/enums/permission.enum'
+import { UserRoles } from '@core/enums/user-roles.enum'
+import { permissionsGuard } from '@core/guards/permissions.guard'
+import { roleGuard } from '@core/guards/role.guard'
+import { rolesSyncGuard } from '@core/guards/roles-sync.guard'
 
 import { PlaceholderComponent } from '../../shared/components/placeholder/placeholder.component'
 import { authGuard } from '../auth/guards'
@@ -11,19 +16,47 @@ const routes: Routes = [
   {
     path: '',
     component: DashboardLayoutComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, rolesSyncGuard],
     children: [
       {
         path: 'home',
         component: MainDashboardComponent,
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [
+            UserRoles.RECEPTIONIST,
+            UserRoles.PHARMACIST,
+            UserRoles.NURSE,
+            UserRoles.DOCTOR,
+            UserRoles.ADMIN,
+            UserRoles.SUPER_ADMIN,
+          ],
+          requiredPermissions: [],
+        },
       },
       {
         path: 'users',
         loadChildren: () => import('./pages/users/users.module').then(m => m.UsersModule),
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+          requiredPermissions: [Permission.UsersManage],
+        },
       },
       {
         path: 'patients',
         loadChildren: () => import('./pages/patients/patients.module').then(m => m.PatientsModule),
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [
+            UserRoles.RECEPTIONIST,
+            UserRoles.NURSE,
+            UserRoles.DOCTOR,
+            UserRoles.ADMIN,
+            UserRoles.SUPER_ADMIN,
+          ],
+          requiredPermissions: [Permission.PatientsRead],
+        },
       },
       // Rutas médicas
       {
@@ -32,23 +65,59 @@ const routes: Routes = [
           import('./pages/medical-records/medical-records.module').then(
             m => m.MedicalRecordsModule,
           ),
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [UserRoles.DOCTOR, UserRoles.NURSE, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+          requiredPermissions: [Permission.RecordsRead],
+        },
       },
       {
         path: 'appointments',
         component: PlaceholderComponent,
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [
+            UserRoles.RECEPTIONIST,
+            UserRoles.DOCTOR,
+            UserRoles.NURSE,
+            UserRoles.ADMIN,
+            UserRoles.SUPER_ADMIN,
+          ],
+          requiredPermissions: [Permission.AppointmentsRead],
+        },
       },
       {
         path: 'prescriptions',
         component: PlaceholderComponent,
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [
+            UserRoles.DOCTOR,
+            UserRoles.PHARMACIST,
+            UserRoles.ADMIN,
+            UserRoles.SUPER_ADMIN,
+          ],
+          requiredPermissions: [Permission.PrescriptionsRead],
+        },
       },
       {
         path: 'billing',
         component: PlaceholderComponent,
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+          requiredPermissions: [Permission.BillingRead],
+        },
       },
       // Rutas de farmacia
       {
         path: 'pharmacy',
         loadChildren: () => import('./pages/pharmacy/pharmacy.module').then(m => m.PharmacyModule),
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+          requiredPermissions: [Permission.PharmacyInventoryManage],
+        },
       },
       // Rutas legacy de farmacia (redirect a nuevas rutas)
       {
@@ -75,6 +144,20 @@ const routes: Routes = [
       {
         path: 'reports',
         loadChildren: () => import('./pages/reports/reports.module').then(m => m.ReportsModule),
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [
+            UserRoles.DOCTOR,
+            UserRoles.PHARMACIST,
+            UserRoles.ADMIN,
+            UserRoles.SUPER_ADMIN,
+          ],
+          requiredPermissions: [
+            Permission.ReportsMedical,
+            Permission.ReportsFinancial,
+            Permission.ReportsStock,
+          ],
+        },
       },
       // Rutas legacy de reportes (redirect a nuevas rutas)
       {
@@ -97,6 +180,11 @@ const routes: Routes = [
         path: 'assets-control',
         loadChildren: () =>
           import('./pages/assets-control/assets-control.module').then(m => m.AssetsControlModule),
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+          requiredPermissions: [Permission.AssetsManage],
+        },
       },
       // Rutas legacy de activos (redirect a nuevas rutas)
       {
@@ -123,38 +211,71 @@ const routes: Routes = [
       {
         path: 'config',
         component: PlaceholderComponent,
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+          requiredPermissions: [Permission.SettingsManage],
+        },
       },
       {
         path: 'audit',
         component: PlaceholderComponent,
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+          requiredPermissions: [Permission.AuditRead],
+        },
       },
       {
         path: 'backup',
         component: PlaceholderComponent,
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+          requiredPermissions: [Permission.BackupManage],
+        },
       },
       {
         path: 'clinics',
         loadChildren: () => import('./pages/clinics/clinics.module').then(m => m.ClinicsModule),
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [UserRoles.SUPER_ADMIN],
+          requiredPermissions: [Permission.ClinicsManage],
+        },
       },
       {
         path: 'roles',
         component: RolesManagementComponent,
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [UserRoles.SUPER_ADMIN],
+          requiredPermissions: [Permission.RolesManage],
+        },
       },
       {
         path: 'system-params',
         component: PlaceholderComponent,
+        canActivate: [roleGuard],
+        data: { allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN] },
       },
       {
         path: 'notifications-config',
         component: PlaceholderComponent,
+        canActivate: [roleGuard],
+        data: { allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN] },
       },
       {
         path: 'document-templates',
         component: PlaceholderComponent,
+        canActivate: [roleGuard],
+        data: { allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN] },
       },
       {
         path: 'api-integration',
         component: PlaceholderComponent,
+        canActivate: [roleGuard],
+        data: { allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN] },
       },
       {
         path: '',

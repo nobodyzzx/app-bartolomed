@@ -7,4 +7,5 @@ export interface LoginResponse {
   token: string
   refreshToken?: string
   rememberMe?: boolean
+  permissions?: string[]
 }

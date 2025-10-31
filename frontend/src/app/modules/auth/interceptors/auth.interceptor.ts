@@ -21,7 +21,8 @@ export class AuthInterceptor implements HttpInterceptor {
 
     return next.handle(authReq).pipe(
       catchError((error: HttpErrorResponse) => {
-        if ((error.status === 401 || error.status === 403) && !isRefreshing) {
+        // Intentar refresh SOLO en 401 (no en 403). Un 403 no es un problema de token.
+        if (error.status === 401 && !isRefreshing) {
           isRefreshing = true
           return this.auth.refreshAccessToken().pipe(
             switchMap(success => {
@@ -43,6 +44,7 @@ export class AuthInterceptor implements HttpInterceptor {
             }),
           )
         }
+        // Para 403 y otros códigos, no forzar logout aquí; propagar el error al consumidor
         return throwError(() => error)
       }),
     )

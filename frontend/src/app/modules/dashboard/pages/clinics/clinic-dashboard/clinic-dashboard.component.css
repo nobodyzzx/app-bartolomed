@@ -294,8 +294,6 @@
     margin-top: 0.5rem;
   }
 }
-  margin-top: 20px;
-}
 
 .no-data {
   text-align: center;
@@ -335,7 +333,7 @@
 
 .clinic-item:hover {
   background-color: #f5f5f5;
-  border-color: #2196F3;
+  border-color: #2196f3;
   transform: translateX(4px);
 }
 
@@ -391,23 +389,23 @@
   .clinic-dashboard {
     padding: 16px;
   }
-  
+
   .dashboard-header {
     flex-direction: column;
     gap: 16px;
     align-items: flex-start;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .clinic-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .clinic-status {
     align-self: flex-end;
   }

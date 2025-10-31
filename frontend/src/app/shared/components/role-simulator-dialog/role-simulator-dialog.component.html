@@ -1,0 +1,91 @@
+<div class="role-simulator-dialog">
+  <h2 mat-dialog-title class="text-2xl font-bold text-blue-900 mb-4">
+    <mat-icon class="align-middle mr-2">admin_panel_settings</mat-icon>
+    Simulador de Roles (DEMO)
+  </h2>
+
+  <mat-dialog-content class="min-w-[500px]">
+    <!-- Presets rápidos -->
+    <div class="mb-6">
+      <h3 class="text-sm font-semibold text-gray-700 mb-3">Combinaciones comunes:</h3>
+      <div class="flex flex-wrap gap-2">
+        <button
+          mat-stroked-button
+          color="primary"
+          (click)="selectPreset('doctor-pharma')"
+          class="text-xs"
+        >
+          <mat-icon class="text-sm">local_hospital</mat-icon>
+          Doctor + Farmacia
+        </button>
+        <button
+          mat-stroked-button
+          color="primary"
+          (click)="selectPreset('doctor-reception')"
+          class="text-xs"
+        >
+          <mat-icon class="text-sm">person_add</mat-icon>
+          Doctor + Recepción
+        </button>
+        <button
+          mat-stroked-button
+          color="primary"
+          (click)="selectPreset('full-medical')"
+          class="text-xs"
+        >
+          <mat-icon class="text-sm">groups</mat-icon>
+          Equipo Médico Completo
+        </button>
+      </div>
+    </div>
+
+    <mat-divider class="my-4"></mat-divider>
+
+    <!-- Selección manual -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-700 mb-3">O selecciona roles individuales:</h3>
+      <div class="grid grid-cols-2 gap-3">
+        <mat-card
+          *ngFor="let role of roleOptions"
+          class="cursor-pointer transition-all hover:shadow-md"
+          [class.bg-blue-50]="role.selected"
+          [class.border-2]="role.selected"
+          [class.border-blue-500]="role.selected"
+          (click)="toggleRole(role)"
+        >
+          <mat-card-content class="flex items-center p-3">
+            <mat-checkbox
+              [checked]="role.selected"
+              (click)="$event.stopPropagation()"
+              (change)="toggleRole(role)"
+              color="primary"
+              class="mr-3"
+            ></mat-checkbox>
+            <mat-icon [color]="role.selected ? 'primary' : ''" class="mr-2">{{
+              role.icon
+            }}</mat-icon>
+            <span class="text-sm font-medium" [class.text-blue-900]="role.selected">{{
+              role.label
+            }}</span>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Resumen de selección -->
+    <div *ngIf="hasSelection" class="mt-4 p-3 bg-blue-50 rounded-lg">
+      <div class="flex items-center text-sm text-blue-900">
+        <mat-icon class="text-lg mr-2">info</mat-icon>
+        <span class="font-medium">{{ selectedRoles.length }} rol(es) seleccionado(s)</span>
+      </div>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="px-6 pb-4">
+    <button mat-button (click)="onCancel()" class="mr-2">Cancelar</button>
+    <button mat-raised-button color="primary" (click)="onApply()" [disabled]="!hasSelection">
+      <mat-icon class="mr-1">check_circle</mat-icon>
+      Aplicar Roles
+    </button>
+  </mat-dialog-actions>
+</div>

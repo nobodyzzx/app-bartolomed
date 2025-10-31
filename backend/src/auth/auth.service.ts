@@ -12,6 +12,7 @@ import { LoginUserDto, RefreshTokenDto } from './dto';
 import { GodBootstrapDto } from './dto/god-bootstrap.dto';
 import { LoginResponse } from './interfaces';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { permissionsForRoles } from './permissions/role-permissions.map';
 
 @Injectable()
 export class AuthService {
@@ -67,6 +68,7 @@ export class AuthService {
       user: safeUser,
       token,
       refreshToken,
+      permissions: permissionsForRoles(safeUser.roles),
     };
   }
 
@@ -74,6 +76,7 @@ export class AuthService {
     return {
       user,
       token: this.getJwtToken({ id: user.id }),
+      permissions: permissionsForRoles(user.roles),
     };
   }
 
@@ -115,6 +118,7 @@ export class AuthService {
         user: safeUser,
         token: newAccessToken,
         refreshToken: newRefreshToken,
+        permissions: permissionsForRoles(safeUser.roles),
       };
     } catch {
       throw new UnauthorizedException('No se pudo refrescar el token');
