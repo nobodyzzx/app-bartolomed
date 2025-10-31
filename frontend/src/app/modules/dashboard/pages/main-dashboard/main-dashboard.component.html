@@ -1,162 +1,296 @@
-<div class="main-dashboard-container">
-  <div class="main-dashboard-content">
+<div class="main-dashboard-container min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Alerta de Permisos Insuficientes -->
+    <div
+      *ngIf="permissionError"
+      class="mb-10 p-6 bg-red-50 border-l-4 border-red-500 rounded-xl shadow-md hover:shadow-lg transition-shadow flex items-start gap-4"
+    >
+      <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+        <mat-icon class="!text-[24px] text-red-600">warning</mat-icon>
+      </div>
+      <div class="flex-1">
+        <h3 class="text-lg font-bold text-red-900 mb-2">Acceso Denegado</h3>
+        <p class="text-red-700 text-sm leading-relaxed mb-2">{{ permissionError }}</p>
+        <p class="text-xs text-red-600/80">
+          Contacta con el administrador si necesitas acceso a ese módulo.
+        </p>
+      </div>
+    </div>
+
     <!-- Encabezado del Dashboard -->
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-blue-900 mb-4">Dashboard Principal</h1>
-      <div class="w-24 h-1 bg-blue-600 mx-auto rounded-full mb-4"></div>
-      <p class="text-lg text-blue-600">Centro de control del sistema médico - Vista general</p>
+    <div class="mb-10">
+      <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2">Dashboard Principal</h1>
+      <p class="text-slate-600">Centro de control del sistema médico - Vista general</p>
     </div>
 
     <!-- Métricas Principales -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
       <!-- Total Pacientes -->
-      <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg">
+      <div
+        class="bg-blue-50 p-4 rounded-xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-blue-100 text-sm font-medium">Total Pacientes</p>
-            <p class="text-3xl font-bold">{{stats.totalPatients}}</p>
-            <p class="text-blue-100 text-xs mt-1">
-              Registrados en el sistema
-            </p>
+            <p class="text-blue-600 text-sm font-semibold">Total Pacientes</p>
+            <p class="text-3xl font-bold text-blue-900 mt-2">{{ stats.totalPatients }}</p>
+            <p class="text-xs text-blue-600/60 mt-1">Registrados en el sistema</p>
           </div>
-          <mat-icon class="text-blue-200">people</mat-icon>
+          <mat-icon class="text-blue-500 !text-[40px] !w-10 !h-10">people</mat-icon>
         </div>
       </div>
 
-      <!-- Citas Hoy -->
-      <div class="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg">
+      <!-- Citas Programadas -->
+      <div
+        class="bg-green-50 p-4 rounded-xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-green-100 text-sm font-medium">Citas Programadas</p>
-            <p class="text-3xl font-bold">{{stats.totalAppointments}}</p>
-            <p class="text-green-100 text-xs mt-1">
-              Este mes
-            </p>
+            <p class="text-green-600 text-sm font-semibold">Citas Programadas</p>
+            <p class="text-3xl font-bold text-green-900 mt-2">{{ stats.totalAppointments }}</p>
+            <p class="text-xs text-green-600/60 mt-1">Este mes</p>
           </div>
-          <mat-icon class="text-green-200">calendar_today</mat-icon>
+          <mat-icon class="text-green-500 !text-[40px] !w-10 !h-10">calendar_today</mat-icon>
         </div>
       </div>
 
-      <!-- Total Doctores -->
-      <div class="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg">
+      <!-- Doctores Activos -->
+      <div
+        class="bg-purple-50 p-4 rounded-xl border-l-4 border-purple-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-purple-100 text-sm font-medium">Doctores Activos</p>
-            <p class="text-3xl font-bold">{{stats.totalDoctors}}</p>
-            <p class="text-purple-100 text-xs mt-1">
-              Personal médico
-            </p>
+            <p class="text-purple-600 text-sm font-semibold">Doctores Activos</p>
+            <p class="text-3xl font-bold text-purple-900 mt-2">{{ stats.totalDoctors }}</p>
+            <p class="text-xs text-purple-600/60 mt-1">Personal médico</p>
           </div>
-          <mat-icon class="text-purple-200">medical_services</mat-icon>
+          <mat-icon class="text-purple-500 !text-[40px] !w-10 !h-10">medical_services</mat-icon>
         </div>
       </div>
 
       <!-- Ingresos del Mes -->
-      <div class="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-2xl text-white shadow-lg">
+      <div
+        class="bg-orange-50 p-4 rounded-xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-orange-100 text-sm font-medium">Ingresos del Mes</p>
-            <p class="text-3xl font-bold">${{stats.monthlyRevenue | number}}</p>
-            <p class="text-orange-100 text-xs mt-1">
-              Facturación mensual
+            <p class="text-orange-600 text-sm font-semibold">Ingresos del Mes</p>
+            <p class="text-3xl font-bold text-orange-900 mt-2">
+              ${{ stats.monthlyRevenue | number }}
             </p>
+            <p class="text-xs text-orange-600/60 mt-1">Facturación mensual</p>
           </div>
-          <mat-icon class="text-orange-200">attach_money</mat-icon>
+          <mat-icon class="text-orange-500 !text-[40px] !w-10 !h-10">attach_money</mat-icon>
         </div>
       </div>
     </div>
 
     <!-- Sección de contenido principal -->
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-      
       <!-- Citas Recientes -->
-      <div class="bg-white p-6 rounded-2xl shadow-lg">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-bold text-blue-900">Citas Recientes</h2>
-          <button mat-button color="primary" routerLink="/dashboard/appointments">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center justify-between p-6 border-b border-slate-200">
+          <h2 class="text-xl font-bold text-slate-900">Citas Recientes</h2>
+          <button
+            type="button"
+            routerLink="/dashboard/appointments"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          >
             Ver todas
           </button>
         </div>
-        
-        <div class="table-container">
-          <table mat-table [dataSource]="recentAppointments" class="w-full">
+
+        <div class="overflow-x-auto">
+          <table mat-table [dataSource]="recentAppointments" class="w-full bg-transparent">
             <!-- Columna Paciente -->
             <ng-container matColumnDef="patient">
-              <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Paciente</th>
-              <td mat-cell *matCellDef="let appointment">{{appointment.patientName}}</td>
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+              >
+                Paciente
+              </th>
+              <td mat-cell *matCellDef="let appointment" class="p-4 text-slate-900">
+                {{ appointment.patientName }}
+              </td>
             </ng-container>
 
             <!-- Columna Doctor -->
             <ng-container matColumnDef="doctor">
-              <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Doctor</th>
-              <td mat-cell *matCellDef="let appointment">{{appointment.doctorName}}</td>
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+              >
+                Doctor
+              </th>
+              <td mat-cell *matCellDef="let appointment" class="p-4 text-slate-600">
+                {{ appointment.doctorName }}
+              </td>
             </ng-container>
 
             <!-- Columna Hora -->
             <ng-container matColumnDef="time">
-              <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Hora</th>
-              <td mat-cell *matCellDef="let appointment">{{appointment.time}}</td>
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+              >
+                Hora
+              </th>
+              <td mat-cell *matCellDef="let appointment" class="p-4 text-slate-600">
+                {{ appointment.time }}
+              </td>
             </ng-container>
 
             <!-- Columna Tipo -->
             <ng-container matColumnDef="type">
-              <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Tipo</th>
-              <td mat-cell *matCellDef="let appointment">{{appointment.type}}</td>
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+              >
+                Tipo
+              </th>
+              <td mat-cell *matCellDef="let appointment" class="p-4 text-slate-600">
+                {{ appointment.type }}
+              </td>
             </ng-container>
 
             <!-- Columna Estado -->
             <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Estado</th>
-              <td mat-cell *matCellDef="let appointment">
-                <mat-chip [color]="getStatusColor(appointment.status)">
-                  {{getStatusText(appointment.status)}}
-                </mat-chip>
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+              >
+                Estado
+              </th>
+              <td mat-cell *matCellDef="let appointment" class="p-4">
+                <span
+                  class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
+                  [ngClass]="
+                    appointment.status === 'confirmed'
+                      ? 'bg-green-100 text-green-800 border-green-200'
+                      : appointment.status === 'pending'
+                        ? 'bg-orange-100 text-orange-800 border-orange-200'
+                        : 'bg-red-100 text-red-800 border-red-200'
+                  "
+                >
+                  <span
+                    class="w-2 h-2 rounded-full"
+                    [ngClass]="
+                      appointment.status === 'confirmed'
+                        ? 'bg-green-500'
+                        : appointment.status === 'pending'
+                          ? 'bg-orange-500'
+                          : 'bg-red-500'
+                    "
+                  ></span>
+                  {{ getStatusText(appointment.status) }}
+                </span>
               </td>
             </ng-container>
 
             <!-- Columna Acciones -->
             <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Acciones</th>
-              <td mat-cell *matCellDef="let appointment">
-                <div class="table-actions">
-                  <button mat-icon-button (click)="viewAppointmentDetails(appointment)" matTooltip="Ver detalles">
-                    <mat-icon>visibility</mat-icon>
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+              >
+                Acciones
+              </th>
+              <td mat-cell *matCellDef="let appointment" class="p-4">
+                <div class="flex gap-2 items-center">
+                  <button
+                    mat-icon-button
+                    class="w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-200"
+                    (click)="viewAppointmentDetails(appointment)"
+                    matTooltip="Ver detalles"
+                  >
+                    <mat-icon class="!text-[20px] leading-none">visibility</mat-icon>
                   </button>
-                  <button mat-icon-button (click)="editAppointment(appointment)" matTooltip="Editar">
-                    <mat-icon>edit</mat-icon>
+                  <button
+                    mat-icon-button
+                    class="w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-amber-200"
+                    (click)="editAppointment(appointment)"
+                    matTooltip="Editar"
+                  >
+                    <mat-icon class="!text-[20px] leading-none">edit</mat-icon>
                   </button>
                 </div>
               </td>
             </ng-container>
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            <tr
+              mat-header-row
+              *matHeaderRowDef="displayedColumns"
+              class="border-b-2 border-slate-200"
+            ></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns"
+              class="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+            ></tr>
           </table>
         </div>
       </div>
 
       <!-- Alertas de Stock -->
-      <div class="bg-white p-6 rounded-2xl shadow-lg">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-bold text-blue-900">Alertas de Stock</h2>
-          <button mat-button color="warn" routerLink="/dashboard/pharmacy-inventory">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center justify-between p-6 border-b border-slate-200">
+          <h2 class="text-xl font-bold text-slate-900">Alertas de Stock</h2>
+          <button
+            type="button"
+            routerLink="/dashboard/pharmacy-inventory"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-200 focus-visible:ring-offset-1 transition-all border-0"
+          >
             Ver inventario
           </button>
         </div>
-        
-        <div class="space-y-4">
-          <div *ngFor="let alert of stockAlerts" class="p-4 bg-red-50 border-l-4 border-red-400 rounded-lg">
-            <div class="flex justify-between items-start">
-              <div>
-                <h3 class="font-semibold text-red-800">{{alert.medication}}</h3>
-                <p class="text-sm text-red-600">{{alert.category}}</p>
-                <p class="text-sm text-red-700 mt-1">
-                  Stock actual: <span class="font-bold">{{alert.currentStock}}</span> 
-                  / Mínimo: <span class="font-bold">{{alert.minimumStock}}</span>
-                </p>
+
+        <div class="p-6 space-y-4">
+          <div
+            *ngFor="let alert of stockAlerts"
+            class="p-5 bg-red-50 border-l-4 border-red-500 rounded-xl shadow-md hover:shadow-lg transition-shadow"
+          >
+            <div class="flex justify-between items-start gap-4">
+              <div class="flex items-start gap-4 flex-1">
+                <div
+                  class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0"
+                >
+                  <mat-icon class="!text-[24px] text-red-600">inventory_2</mat-icon>
+                </div>
+                <div class="flex-1">
+                  <h3 class="font-bold text-red-900 text-base">{{ alert.medication }}</h3>
+                  <p class="text-sm text-red-700 mt-1">{{ alert.category }}</p>
+                  <div class="mt-3 flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-red-600/80 font-medium">Stock actual:</span>
+                      <span
+                        class="px-2.5 py-1 bg-red-100 text-red-900 text-sm font-bold rounded-full"
+                        >{{ alert.currentStock }}</span
+                      >
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-red-600/80 font-medium">Mínimo:</span>
+                      <span
+                        class="px-2.5 py-1 bg-red-200 text-red-900 text-sm font-bold rounded-full"
+                        >{{ alert.minimumStock }}</span
+                      >
+                    </div>
+                  </div>
+                </div>
               </div>
-              <button mat-mini-fab color="warn" (click)="restockMedication(alert)" matTooltip="Reabastecer">
-                <mat-icon>add</mat-icon>
+              <button
+                mat-icon-button
+                class="w-11 h-11 bg-white text-red-600 hover:bg-red-600 hover:text-white rounded-full shadow-md hover:shadow-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-300"
+                (click)="restockMedication(alert)"
+                matTooltip="Reabastecer medicamento"
+                aria-label="Reabastecer medicamento"
+              >
+                <mat-icon class="!text-[22px] leading-none">add_circle</mat-icon>
               </button>
             </div>
           </div>
@@ -165,93 +299,188 @@
     </div>
 
     <!-- Pacientes Recientes -->
-    <div class="bg-white p-6 rounded-2xl shadow-lg">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-blue-900">Pacientes Recientes</h2>
-        <button mat-button color="primary" routerLink="/dashboard/patients">
-          Ver todos los pacientes
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+      <div class="flex items-center justify-between p-6 border-b border-slate-200">
+        <h2 class="text-xl font-bold text-slate-900">Pacientes Recientes</h2>
+        <button
+          type="button"
+          routerLink="/dashboard/patients"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+        >
+          Ver todos
         </button>
       </div>
-      
-      <div class="table-container">
-        <table mat-table [dataSource]="recentPatients" class="w-full">
+
+      <div class="overflow-x-auto">
+        <table mat-table [dataSource]="recentPatients" class="w-full bg-transparent">
           <!-- Columna Nombre -->
           <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Nombre</th>
-            <td mat-cell *matCellDef="let patient">{{patient.name}}</td>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              Nombre
+            </th>
+            <td mat-cell *matCellDef="let patient" class="p-4 text-slate-900">
+              {{ patient.name }}
+            </td>
           </ng-container>
 
           <!-- Columna Edad -->
           <ng-container matColumnDef="age">
-            <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Edad</th>
-            <td mat-cell *matCellDef="let patient">{{patient.age}} años</td>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              Edad
+            </th>
+            <td mat-cell *matCellDef="let patient" class="p-4 text-slate-600">
+              {{ patient.age }} años
+            </td>
           </ng-container>
 
           <!-- Columna Última Visita -->
           <ng-container matColumnDef="lastVisit">
-            <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Última Visita</th>
-            <td mat-cell *matCellDef="let patient">{{patient.lastVisit | date:'short'}}</td>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              Última Visita
+            </th>
+            <td mat-cell *matCellDef="let patient" class="p-4 text-slate-600">
+              {{ patient.lastVisit | date: 'short' }}
+            </td>
           </ng-container>
 
           <!-- Columna Próxima Cita -->
           <ng-container matColumnDef="nextAppointment">
-            <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Próxima Cita</th>
-            <td mat-cell *matCellDef="let patient">
-              {{patient.nextAppointment ? (patient.nextAppointment | date:'short') : 'No programada'}}
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              Próxima Cita
+            </th>
+            <td mat-cell *matCellDef="let patient" class="p-4 text-slate-600">
+              {{
+                patient.nextAppointment
+                  ? (patient.nextAppointment | date: 'short')
+                  : 'No programada'
+              }}
             </td>
           </ng-container>
 
           <!-- Columna Estado -->
           <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Estado</th>
-            <td mat-cell *matCellDef="let patient">
-              <mat-chip [color]="getStatusColor(patient.status)">
-                {{getStatusText(patient.status)}}
-              </mat-chip>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              Estado
+            </th>
+            <td mat-cell *matCellDef="let patient" class="p-4">
+              <span
+                class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
+                [ngClass]="
+                  patient.status === 'active'
+                    ? 'bg-green-100 text-green-800 border-green-200'
+                    : 'bg-slate-100 text-slate-800 border-slate-200'
+                "
+              >
+                <span
+                  class="w-2 h-2 rounded-full"
+                  [ngClass]="patient.status === 'active' ? 'bg-green-500' : 'bg-slate-500'"
+                ></span>
+                {{ getStatusText(patient.status) }}
+              </span>
             </td>
           </ng-container>
 
           <!-- Columna Acciones -->
           <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Acciones</th>
-            <td mat-cell *matCellDef="let patient">
-              <div class="table-actions">
-                <button mat-icon-button (click)="viewPatientDetails(patient)" matTooltip="Ver perfil">
-                  <mat-icon>person</mat-icon>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              Acciones
+            </th>
+            <td mat-cell *matCellDef="let patient" class="p-4">
+              <div class="flex gap-2 items-center">
+                <button
+                  mat-icon-button
+                  class="w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-200"
+                  (click)="viewPatientDetails(patient)"
+                  matTooltip="Ver perfil"
+                >
+                  <mat-icon class="!text-[20px] leading-none">person</mat-icon>
                 </button>
-                <button mat-icon-button (click)="scheduleAppointment(patient)" matTooltip="Programar cita">
-                  <mat-icon>event_available</mat-icon>
+                <button
+                  mat-icon-button
+                  class="w-9 h-9 text-green-600 hover:bg-green-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-green-200"
+                  (click)="scheduleAppointment(patient)"
+                  matTooltip="Programar cita"
+                >
+                  <mat-icon class="!text-[20px] leading-none">event_available</mat-icon>
                 </button>
               </div>
             </td>
           </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="patientColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: patientColumns;"></tr>
+          <tr
+            mat-header-row
+            *matHeaderRowDef="patientColumns"
+            class="border-b-2 border-slate-200"
+          ></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: patientColumns"
+            class="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+          ></tr>
         </table>
       </div>
     </div>
 
     <!-- Acciones Rápidas -->
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <button mat-raised-button color="primary" routerLink="/dashboard/patients/new" class="quick-action-button">
-        <mat-icon>person_add</mat-icon>
-        <div>Registrar Paciente</div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <button
+        type="button"
+        routerLink="/dashboard/patients/new"
+        class="inline-flex flex-col items-center justify-center gap-3 p-6 rounded-xl font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <mat-icon class="text-4xl !text-[36px]">person_add</mat-icon>
+        <div class="text-base font-semibold">Registrar Paciente</div>
       </button>
-      
-      <button mat-raised-button color="accent" routerLink="/dashboard/appointments/new" class="quick-action-button">
-        <mat-icon>event_available</mat-icon>
-        <div>Nueva Cita</div>
+
+      <button
+        type="button"
+        routerLink="/dashboard/appointments/new"
+        class="inline-flex flex-col items-center justify-center gap-3 p-6 rounded-xl font-medium bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-200 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <mat-icon class="text-4xl !text-[36px]">event_available</mat-icon>
+        <div class="text-base font-semibold">Nueva Cita</div>
       </button>
-      
-      <button mat-raised-button color="warn" routerLink="/dashboard/pharmacy/inventory" class="quick-action-button">
-        <mat-icon>inventory</mat-icon>
-        <div>Inventario</div>
+
+      <button
+        type="button"
+        routerLink="/dashboard/pharmacy/inventory"
+        class="inline-flex flex-col items-center justify-center gap-3 p-6 rounded-xl font-medium bg-purple-50 text-purple-600 hover:bg-purple-100 hover:text-purple-700 shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <mat-icon class="text-4xl !text-[36px]">inventory</mat-icon>
+        <div class="text-base font-semibold">Inventario</div>
       </button>
-      
-      <button mat-raised-button routerLink="/dashboard/medical-records" class="quick-action-button">
-        <mat-icon>folder_shared</mat-icon>
-        <div>Expedientes Médicos</div>
+
+      <button
+        type="button"
+        routerLink="/dashboard/medical-records"
+        class="inline-flex flex-col items-center justify-center gap-3 p-6 rounded-xl font-medium bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-200 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <mat-icon class="text-4xl !text-[36px]">folder_shared</mat-icon>
+        <div class="text-base font-semibold">Expedientes Médicos</div>
       </button>
     </div>
   </div>

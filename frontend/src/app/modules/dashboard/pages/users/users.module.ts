@@ -1,16 +1,23 @@
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common'
+import { NgModule } from '@angular/core'
 
-import { UsersRoutingModule } from './users.routing.module';
-import { UserRegisterComponent } from './register/register.component';
-import { ReactiveFormsModule } from '@angular/forms';
-import { MaterialModule } from '../../../../material/material.module';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { UserListComponent } from './user-list/user-list.component';
-import { UserManagementComponent } from './user-management/user-management.component';
+import { HttpClientModule } from '@angular/common/http'
+import { FormsModule, ReactiveFormsModule } from '@angular/forms'
+import { MaterialModule } from '../../../../material/material.module'
+import { UserRegisterComponent } from './register/register.component'
+import { UserListComponent } from './user-list/user-list.component'
+import { UserManagementComponent } from './user-management/user-management.component'
+import { UsersRoutingModule } from './users.routing.module'
 
 @NgModule({
   declarations: [UserRegisterComponent, UserListComponent, UserManagementComponent],
-  imports: [CommonModule, UsersRoutingModule, ReactiveFormsModule, MaterialModule, HttpClientModule],
+  imports: [
+    CommonModule,
+    UsersRoutingModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MaterialModule,
+    HttpClientModule,
+  ],
 })
 export class UsersModule {}

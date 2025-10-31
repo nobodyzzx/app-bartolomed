@@ -19,6 +19,9 @@ export class UserListComponent implements OnInit {
   displayedColumns: string[] = ['fullName', 'phone', 'roles', 'startDate', 'isActive', 'actions']
   dataSource: MatTableDataSource<User>
   users: User[] = []
+  allUsers: User[] = []
+  searchTerm: string = ''
+  filterStatus: 'all' | 'active' | 'inactive' = 'all'
 
   @ViewChild(MatPaginator) paginator!: MatPaginator
 
@@ -27,6 +30,7 @@ export class UserListComponent implements OnInit {
     private router: Router,
   ) {
     this.dataSource = new MatTableDataSource<User>([])
+    this.dataSource.filterPredicate = this.createFilter()
   }
 
   ngOnInit(): void {
@@ -40,13 +44,72 @@ export class UserListComponent implements OnInit {
   loadUsers(): void {
     this.usersService.findAll().subscribe({
       next: users => {
-        this.dataSource.data = users
+        this.allUsers = users
+        this.users = users
+        this.applyFilters()
       },
       error: error => {
         console.error('Error loading users:', error)
         Swal.fire('Error', 'No se pudieron cargar los usuarios', 'error')
       },
     })
+  }
+
+  // Navegación
+  navigateToDashboard(): void {
+    this.router.navigate(['/dashboard/users'])
+  }
+
+  navigateToNew(): void {
+    this.router.navigate(['/dashboard/users/register'])
+  }
+
+  // Filtros
+  setFilterStatus(status: 'all' | 'active' | 'inactive'): void {
+    this.filterStatus = status
+    this.applyFilters()
+  }
+
+  applyFilter(): void {
+    this.applyFilters()
+  }
+
+  private applyFilters(): void {
+    let filtered = [...this.allUsers]
+
+    // Filtrar por estado
+    if (this.filterStatus === 'active') {
+      filtered = filtered.filter(user => user.isActive)
+    } else if (this.filterStatus === 'inactive') {
+      filtered = filtered.filter(user => !user.isActive)
+    }
+
+    // Filtrar por búsqueda
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase().trim()
+      filtered = filtered.filter(user => {
+        const fullName =
+          `${user.personalInfo?.firstName} ${user.personalInfo?.lastName}`.toLowerCase()
+        const email = user.email?.toLowerCase() || ''
+        return fullName.includes(term) || email.includes(term)
+      })
+    }
+
+    this.dataSource.data = filtered
+  }
+
+  private createFilter(): (data: User, filter: string) => boolean {
+    return (data: User, filter: string): boolean => {
+      return true // El filtro se maneja manualmente en applyFilters
+    }
+  }
+
+  getActiveUsersCount(): number {
+    return this.allUsers.filter(user => user.isActive).length
+  }
+
+  getInactiveUsersCount(): number {
+    return this.allUsers.filter(user => !user.isActive).length
   }
 
   formatDate(date: Date | undefined): string {

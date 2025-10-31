@@ -244,7 +244,7 @@ export class ClinicFormComponent implements OnInit {
       error: error => {
         this.errorService.handleError(error)
         this.isLoading = false
-        this.router.navigate(['/dashboard/clinics'])
+        this.router.navigate(['/dashboard/clinics/list'])
       },
     })
   }
@@ -274,7 +274,7 @@ export class ClinicFormComponent implements OnInit {
               timer: 2000,
               showConfirmButton: false,
             }).then(() => {
-              this.router.navigate(['/dashboard/clinics'])
+              this.router.navigate(['/dashboard/clinics/list'])
             })
           },
           error: error => {
@@ -329,7 +329,7 @@ export class ClinicFormComponent implements OnInit {
                 }
               },
             }).then(() => {
-              this.router.navigate(['/dashboard/clinics'])
+              this.router.navigate(['/dashboard/clinics/list'])
             })
           },
           error: error => {
@@ -351,7 +351,7 @@ export class ClinicFormComponent implements OnInit {
   }
 
   onCancel() {
-    this.router.navigate(['/dashboard/clinics'])
+    this.router.navigate(['/dashboard/clinics/list'])
   }
 
   getErrorMessage(fieldName: string): string {
