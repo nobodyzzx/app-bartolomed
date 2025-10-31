@@ -1,155 +1,203 @@
-<div class="medical-records-dashboard">
-  <!-- Encabezado -->
-  <div class="header-section">
-    <div class="flex justify-between items-center mb-6">
-      <div>
-        <h1 class="text-3xl font-bold text-blue-900">Expedientes Médicos</h1>
-        <p class="text-gray-600 mt-2">Gestión completa de historiales clínicos</p>
-      </div>
-      <button 
-        mat-raised-button 
-        color="primary" 
-        (click)="createNewRecord()"
-        class="flex items-center gap-2"
-      >
-        <mat-icon>add</mat-icon>
-        Nuevo Expediente
+<div class="medical-records-dashboard-container">
+  <div class="medical-records-dashboard-content">
+    <!-- Botón Volver -->
+    <div class="mb-4 flex items-center">
+      <button mat-stroked-button color="primary" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+        Volver
       </button>
     </div>
 
-    <!-- Estadísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-blue-600 text-sm font-medium">Total Expedientes</p>
-            <p class="text-2xl font-bold text-blue-900">{{stats.total}}</p>
-          </div>
-          <mat-icon class="text-blue-500 text-3xl">folder_shared</mat-icon>
-        </div>
-      </div>
-      
-      <div class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-orange-600 text-sm font-medium">Borradores</p>
-            <p class="text-2xl font-bold text-orange-900">{{stats.drafts}}</p>
-          </div>
-          <mat-icon class="text-orange-500 text-3xl">edit_note</mat-icon>
-        </div>
-      </div>
-      
-      <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-green-600 text-sm font-medium">Completados</p>
-            <p class="text-2xl font-bold text-green-900">{{stats.completed}}</p>
-          </div>
-          <mat-icon class="text-green-500 text-3xl">check_circle</mat-icon>
-        </div>
-      </div>
-      
-      <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-500">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-red-600 text-sm font-medium">Emergencias</p>
-            <p class="text-2xl font-bold text-red-900">{{stats.emergencies}}</p>
-          </div>
-          <mat-icon class="text-red-500 text-3xl">emergency</mat-icon>
-        </div>
-      </div>
+    <!-- Encabezado -->
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold text-blue-900 mb-4">Expedientes Médicos</h1>
+      <div class="w-24 h-1 bg-blue-600 mx-auto rounded-full mb-4"></div>
+      <p class="text-lg text-blue-600">Gestión completa de historiales clínicos</p>
     </div>
-  </div>
 
-  <!-- Filtros y Búsqueda -->
-  <mat-card class="mb-6">
-    <mat-card-header>
-      <mat-card-title>Filtros de Búsqueda</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
-        <!-- Búsqueda general -->
-        <mat-form-field class="md:col-span-2">
-          <mat-label>Buscar expedientes...</mat-label>
-          <input matInput (keyup)="applyFilter($event)" placeholder="Nombre del paciente, diagnóstico...">
+    <!-- Estadísticas (estilo como dashboard/clinics) -->
+    <div class="stats-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <!-- Total Expedientes -->
+      <mat-card
+        class="stat-card cursor-pointer transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border border-blue-100"
+        (click)="showAllRecords()"
+      >
+        <mat-card-content class="p-6">
+          <div class="stat-content flex items-center gap-4">
+            <div
+              class="stat-icon total w-16 h-16 rounded-xl flex items-center justify-center shadow-lg"
+            >
+              <mat-icon class="text-white text-3xl">folder_shared</mat-icon>
+            </div>
+            <div class="stat-info flex-1">
+              <h3 class="text-3xl font-bold text-blue-900 m-0">{{ stats.total }}</h3>
+              <p class="text-blue-600 text-sm mt-1 m-0">Total Expedientes</p>
+            </div>
+            <mat-icon class="text-blue-300 text-2xl">arrow_forward</mat-icon>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Borradores -->
+      <mat-card
+        class="stat-card cursor-pointer transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border border-orange-100"
+        (click)="showDrafts()"
+      >
+        <mat-card-content class="p-6">
+          <div class="stat-content flex items-center gap-4">
+            <div
+              class="stat-icon drafts w-16 h-16 rounded-xl flex items-center justify-center shadow-lg"
+            >
+              <mat-icon class="text-white text-3xl">edit_note</mat-icon>
+            </div>
+            <div class="stat-info flex-1">
+              <h3 class="text-3xl font-bold text-orange-900 m-0">{{ stats.drafts }}</h3>
+              <p class="text-orange-600 text-sm mt-1 m-0">Borradores</p>
+            </div>
+            <mat-icon class="text-orange-300 text-2xl">arrow_forward</mat-icon>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Completados -->
+      <mat-card
+        class="stat-card cursor-pointer transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border border-green-100"
+        (click)="showCompleted()"
+      >
+        <mat-card-content class="p-6">
+          <div class="stat-content flex items-center gap-4">
+            <div
+              class="stat-icon completed w-16 h-16 rounded-xl flex items-center justify-center shadow-lg"
+            >
+              <mat-icon class="text-white text-3xl">check_circle</mat-icon>
+            </div>
+            <div class="stat-info flex-1">
+              <h3 class="text-3xl font-bold text-green-900 m-0">{{ stats.completed }}</h3>
+              <p class="text-green-600 text-sm mt-1 m-0">Completados</p>
+            </div>
+            <mat-icon class="text-green-300 text-2xl">arrow_forward</mat-icon>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Emergencias -->
+      <mat-card
+        class="stat-card cursor-pointer transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border border-red-100"
+        (click)="showEmergencies()"
+      >
+        <mat-card-content class="p-6">
+          <div class="stat-content flex items-center gap-4">
+            <div
+              class="stat-icon emergencies w-16 h-16 rounded-xl flex items-center justify-center shadow-lg"
+            >
+              <mat-icon class="text-white text-3xl">emergency</mat-icon>
+            </div>
+            <div class="stat-info flex-1">
+              <h3 class="text-3xl font-bold text-red-900 m-0">{{ stats.emergencies }}</h3>
+              <p class="text-red-600 text-sm mt-1 m-0">Emergencias</p>
+            </div>
+            <mat-icon class="text-red-300 text-2xl">arrow_forward</mat-icon>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Búsqueda y Acciones -->
+    <div class="bg-white p-6 rounded-2xl shadow-lg border border-blue-100 mb-6">
+      <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <mat-form-field appearance="outline" class="w-full md:w-96">
+          <mat-label>Buscar expedientes</mat-label>
+          <input matInput (keyup)="applyFilter($event)" placeholder="Paciente, diagnóstico..." />
           <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
 
-        <!-- Filtro por tipo -->
-        <mat-form-field>
-          <mat-label>Tipo de Registro</mat-label>
-          <mat-select [(value)]="filters.type">
-            <mat-option>Todos los tipos</mat-option>
-            <mat-option *ngFor="let type of recordTypes" [value]="type">
-              {{getTypeText(type)}}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <!-- Filtro por estado -->
-        <mat-form-field>
-          <mat-label>Estado</mat-label>
-          <mat-select [(value)]="filters.status">
-            <mat-option>Todos los estados</mat-option>
-            <mat-option *ngFor="let status of recordStatuses" [value]="status">
-              {{getStatusText(status)}}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <!-- Botones -->
-        <div class="flex gap-2 items-center">
-          <button mat-raised-button color="primary" (click)="applyFilters()">Aplicar</button>
-          <button mat-button (click)="clearFilters()">Limpiar</button>
+        <div class="flex gap-3">
+          <button mat-flat-button color="primary" routerLink="new">
+            <mat-icon>add</mat-icon>
+            Nuevo Expediente
+          </button>
+          <button mat-stroked-button color="accent">
+            <mat-icon>download</mat-icon>
+            Exportar
+          </button>
         </div>
       </div>
-      
-      <!-- Filtros adicionales -->
-      <mat-expansion-panel class="mb-4">
-        <mat-expansion-panel-header>
-          <mat-panel-title>Filtros Avanzados</mat-panel-title>
-        </mat-expansion-panel-header>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
-          <mat-form-field>
+
+      <!-- Filtros Avanzados (Expansión) -->
+      <div class="mt-4" *ngIf="false">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo de Registro</mat-label>
+            <mat-select [(value)]="filters.type">
+              <mat-option>Todos los tipos</mat-option>
+              <mat-option *ngFor="let type of recordTypes" [value]="type">
+                {{ getTypeText(type) }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Estado</mat-label>
+            <mat-select [(value)]="filters.status">
+              <mat-option>Todos los estados</mat-option>
+              <mat-option *ngFor="let status of recordStatuses" [value]="status">
+                {{ getStatusText(status) }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
             <mat-label>Fecha desde</mat-label>
-            <input matInput [matDatepicker]="startPicker" [(ngModel)]="filters.startDate">
+            <input matInput [matDatepicker]="startPicker" [(ngModel)]="filters.startDate" />
             <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
             <mat-datepicker #startPicker></mat-datepicker>
           </mat-form-field>
 
-          <mat-form-field>
+          <mat-form-field appearance="outline">
             <mat-label>Fecha hasta</mat-label>
-            <input matInput [matDatepicker]="endPicker" [(ngModel)]="filters.endDate">
+            <input matInput [matDatepicker]="endPicker" [(ngModel)]="filters.endDate" />
             <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
             <mat-datepicker #endPicker></mat-datepicker>
           </mat-form-field>
-
-          <mat-checkbox [(ngModel)]="filters.isEmergency" class="self-center">
-            Solo emergencias
-          </mat-checkbox>
         </div>
-      </mat-expansion-panel>
-    </mat-card-content>
-  </mat-card>
 
-  <!-- Tabla de Expedientes -->
-  <mat-card>
-    <mat-card-header>
-      <mat-card-title>Lista de Expedientes Médicos</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <div class="overflow-auto">
+        <div class="flex gap-2 mt-4">
+          <button mat-flat-button color="primary" (click)="applyFilters()">
+            <mat-icon>filter_list</mat-icon>
+            Aplicar Filtros
+          </button>
+          <button mat-stroked-button (click)="clearFilters()">
+            <mat-icon>clear</mat-icon>
+            Limpiar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de Expedientes -->
+    <div class="bg-white rounded-2xl shadow-lg border border-blue-100 overflow-hidden">
+      <div class="overflow-x-auto">
         <table mat-table [dataSource]="dataSource" matSort class="w-full">
-          
           <!-- Columna Fecha -->
           <ng-container matColumnDef="date">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha</th>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              class="bg-blue-50 text-blue-900 font-semibold"
+            >
+              Fecha
+            </th>
             <td mat-cell *matCellDef="let record">
               <div class="flex flex-col">
-                <span class="font-medium">{{record.createdAt | date:'short'}}</span>
-                <span class="text-sm text-gray-500" *ngIf="record.isEmergency">
-                  <mat-icon class="text-red-500 text-sm">emergency</mat-icon>
+                <span class="font-medium text-blue-900">{{
+                  record.createdAt | date: 'short'
+                }}</span>
+                <span
+                  class="text-xs text-red-600 font-semibold flex items-center gap-1"
+                  *ngIf="record.isEmergency"
+                >
+                  <mat-icon class="text-sm">emergency</mat-icon>
                   EMERGENCIA
                 </span>
               </div>
@@ -158,50 +206,71 @@
 
           <!-- Columna Paciente -->
           <ng-container matColumnDef="patient">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Paciente</th>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              class="bg-blue-50 text-blue-900 font-semibold"
+            >
+              Paciente
+            </th>
             <td mat-cell *matCellDef="let record">
-              <div class="flex flex-col">
-                <span class="font-medium">
-                  {{record.patient?.firstName}} {{record.patient?.lastName}}
-                </span>
-                <span class="text-sm text-gray-500">
-                  {{record.patient?.documentNumber}}
-                </span>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <mat-icon class="text-blue-600">person</mat-icon>
+                </div>
+                <div>
+                  <div class="font-medium text-blue-900">
+                    {{ record.patient?.firstName }} {{ record.patient?.lastName }}
+                  </div>
+                  <div class="text-sm text-blue-600">{{ record.patient?.documentNumber }}</div>
+                </div>
               </div>
             </td>
           </ng-container>
 
           <!-- Columna Tipo -->
           <ng-container matColumnDef="type">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              class="bg-blue-50 text-blue-900 font-semibold"
+            >
+              Tipo
+            </th>
             <td mat-cell *matCellDef="let record">
               <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600">{{getRecordIcon(record.type)}}</mat-icon>
-                <span>{{getTypeText(record.type)}}</span>
+                <mat-icon class="text-blue-600">{{ getRecordIcon(record.type) }}</mat-icon>
+                <span class="text-blue-700">{{ getTypeText(record.type) }}</span>
               </div>
             </td>
           </ng-container>
 
           <!-- Columna Motivo de Consulta -->
           <ng-container matColumnDef="chiefComplaint">
-            <th mat-header-cell *matHeaderCellDef>Motivo de Consulta</th>
+            <th mat-header-cell *matHeaderCellDef class="bg-blue-50 text-blue-900 font-semibold">
+              Motivo de Consulta
+            </th>
             <td mat-cell *matCellDef="let record">
-              <span class="max-w-xs truncate block" [title]="record.chiefComplaint">
-                {{record.chiefComplaint}}
+              <span class="max-w-xs truncate block text-blue-700" [title]="record.chiefComplaint">
+                {{ record.chiefComplaint }}
               </span>
             </td>
           </ng-container>
 
           <!-- Columna Doctor -->
           <ng-container matColumnDef="doctor">
-            <th mat-header-cell *matHeaderCellDef>Doctor</th>
+            <th mat-header-cell *matHeaderCellDef class="bg-blue-50 text-blue-900 font-semibold">
+              Doctor
+            </th>
             <td mat-cell *matCellDef="let record">
               <div class="flex flex-col">
-                <span class="font-medium">
-                  Dr. {{record.doctor?.firstName}} {{record.doctor?.lastName}}
+                <span class="font-medium text-blue-900">
+                  Dr. {{ record.doctor?.firstName }} {{ record.doctor?.lastName }}
                 </span>
-                <span class="text-sm text-gray-500" *ngIf="record.doctor?.specialization">
-                  {{record.doctor?.specialization}}
+                <span class="text-sm text-blue-600" *ngIf="record.doctor?.specialization">
+                  {{ record.doctor?.specialization }}
                 </span>
               </div>
             </td>
@@ -209,107 +278,114 @@
 
           <!-- Columna Estado -->
           <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              class="bg-blue-50 text-blue-900 font-semibold"
+            >
+              Estado
+            </th>
             <td mat-cell *matCellDef="let record">
-              <mat-chip [color]="getStatusColor(record.status)">
-                {{getStatusText(record.status)}}
-              </mat-chip>
+              <span
+                class="px-3 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1"
+                [ngClass]="{
+                  'bg-orange-100 text-orange-800': record.status === 'draft',
+                  'bg-green-100 text-green-800': record.status === 'completed',
+                  'bg-blue-100 text-blue-800': record.status === 'reviewed',
+                  'bg-gray-100 text-gray-800': record.status === 'archived',
+                }"
+              >
+                <span
+                  class="w-2 h-2 rounded-full"
+                  [ngClass]="{
+                    'bg-orange-500': record.status === 'draft',
+                    'bg-green-500': record.status === 'completed',
+                    'bg-blue-500': record.status === 'reviewed',
+                    'bg-gray-500': record.status === 'archived',
+                  }"
+                ></span>
+                {{ getStatusText(record.status) }}
+              </span>
             </td>
           </ng-container>
 
           <!-- Columna Acciones -->
           <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef>Acciones</th>
+            <th mat-header-cell *matHeaderCellDef class="bg-blue-50 text-blue-900 font-semibold">
+              Acciones
+            </th>
             <td mat-cell *matCellDef="let record">
               <div class="flex gap-1">
-                <button 
-                  mat-icon-button 
-                  color="primary" 
+                <button
+                  mat-icon-button
+                  color="primary"
                   (click)="viewRecord(record)"
                   matTooltip="Ver expediente"
                 >
                   <mat-icon>visibility</mat-icon>
                 </button>
-                
-                <button 
-                  mat-icon-button 
-                  color="accent" 
+
+                <button
+                  mat-icon-button
+                  color="accent"
                   (click)="editRecord(record)"
                   matTooltip="Editar expediente"
                   [disabled]="record.status === 'archived'"
                 >
                   <mat-icon>edit</mat-icon>
                 </button>
-                
-                <button 
-                  mat-icon-button 
-                  color="primary" 
-                  (click)="exportRecord(record)"
-                  matTooltip="Exportar PDF"
-                >
-                  <mat-icon>download</mat-icon>
-                </button>
 
-                <!-- Menú de acciones adicionales -->
-                <button mat-icon-button [matMenuTriggerFor]="actionMenu" matTooltip="Más acciones">
-                  <mat-icon>more_vert</mat-icon>
+                <button
+                  mat-icon-button
+                  color="warn"
+                  (click)="deleteRecord(record)"
+                  matTooltip="Eliminar"
+                >
+                  <mat-icon>delete</mat-icon>
                 </button>
-                <mat-menu #actionMenu="matMenu">
-                  <button 
-                    mat-menu-item 
-                    (click)="completeRecord(record)"
-                    [disabled]="record.status !== 'draft'"
-                  >
-                    <mat-icon>check_circle</mat-icon>
-                    <span>Marcar como Completado</span>
-                  </button>
-                  <button 
-                    mat-menu-item 
-                    (click)="reviewRecord(record)"
-                    [disabled]="record.status !== 'completed'"
-                  >
-                    <mat-icon>rate_review</mat-icon>
-                    <span>Marcar como Revisado</span>
-                  </button>
-                  <mat-divider></mat-divider>
-                  <button 
-                    mat-menu-item 
-                    (click)="deleteRecord(record)"
-                    class="text-red-600"
-                  >
-                    <mat-icon>delete</mat-icon>
-                    <span>Eliminar</span>
-                  </button>
-                </mat-menu>
               </div>
             </td>
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-gray-50"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            class="hover:bg-blue-50 transition-colors"
+          ></tr>
         </table>
+      </div>
 
-        <!-- Indicador de carga -->
-        <div *ngIf="loading" class="flex justify-center items-center py-8">
-          <mat-spinner diameter="50"></mat-spinner>
-        </div>
+      <!-- Indicador de carga -->
+      <div *ngIf="loading" class="flex justify-center items-center py-12">
+        <mat-spinner diameter="50"></mat-spinner>
+      </div>
 
-        <!-- Mensaje cuando no hay datos -->
-        <div *ngIf="!loading && dataSource.data.length === 0" class="text-center py-8">
-          <mat-icon class="text-gray-400 text-6xl mb-4">folder_open</mat-icon>
-          <p class="text-gray-500 text-lg">No se encontraron expedientes médicos</p>
-          <button mat-raised-button color="primary" (click)="createNewRecord()" class="mt-4">
-            Crear primer expediente
-          </button>
-        </div>
+      <!-- Mensaje cuando no hay datos -->
+      <div *ngIf="!loading && dataSource.data.length === 0" class="text-center py-12">
+        <mat-icon class="text-6xl text-gray-400 mb-4">folder_open</mat-icon>
+        <p class="text-gray-500 text-lg mb-4">No se encontraron expedientes médicos</p>
+        <button mat-flat-button color="primary" (click)="createNewRecord()">
+          <mat-icon>add</mat-icon>
+          Crear primer expediente
+        </button>
       </div>
 
       <!-- Paginador -->
-      <mat-paginator 
-        [pageSizeOptions]="[10, 25, 50, 100]" 
+      <mat-paginator
+        [pageSizeOptions]="[10, 25, 50, 100]"
         showFirstLastButtons
         aria-label="Seleccionar página de expedientes"
+        class="border-t border-blue-100"
       ></mat-paginator>
-    </mat-card-content>
-  </mat-card>
+    </div>
+
+    <!-- Contador de resultados -->
+    <div class="mt-6 text-center text-blue-600" *ngIf="!loading">
+      <p *ngIf="dataSource.data.length > 0">
+        Mostrando {{ dataSource.data.length }} expedientes en total
+      </p>
+    </div>
+  </div>
 </div>
