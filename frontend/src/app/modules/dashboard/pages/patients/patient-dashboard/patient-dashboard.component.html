@@ -11,22 +11,22 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" *ngIf="statistics">
       <div class="bg-white p-6 rounded-2xl shadow-lg border border-blue-100 text-center">
         <mat-icon class="text-4xl text-blue-600 mb-3">people</mat-icon>
-        <div class="text-3xl font-bold text-blue-900 mb-2">{{statistics.totalPatients}}</div>
+        <div class="text-3xl font-bold text-blue-900 mb-2">{{ statistics.totalPatients }}</div>
         <div class="text-blue-600">Total Pacientes</div>
       </div>
-      
+
       <div class="bg-white p-6 rounded-2xl shadow-lg border border-green-100 text-center">
         <mat-icon class="text-4xl text-green-600 mb-3">favorite</mat-icon>
-        <div class="text-3xl font-bold text-green-900 mb-2">{{statistics.totalPatients}}</div>
+        <div class="text-3xl font-bold text-green-900 mb-2">{{ statistics.totalPatients }}</div>
         <div class="text-green-600">Pacientes Activos</div>
       </div>
-      
+
       <div class="bg-white p-6 rounded-2xl shadow-lg border border-purple-100 text-center">
         <mat-icon class="text-4xl text-purple-600 mb-3">person_add</mat-icon>
-        <div class="text-3xl font-bold text-purple-900 mb-2">{{recentPatients.length}}</div>
+        <div class="text-3xl font-bold text-purple-900 mb-2">{{ recentPatients.length }}</div>
         <div class="text-purple-600">Nuevos Recientes</div>
       </div>
-      
+
       <div class="bg-white p-6 rounded-2xl shadow-lg border border-orange-100 text-center">
         <mat-icon class="text-4xl text-orange-600 mb-3">schedule</mat-icon>
         <div class="text-3xl font-bold text-orange-900 mb-2">0</div>
@@ -56,7 +56,12 @@
         <mat-icon class="text-5xl text-blue-600 mb-4">person_add</mat-icon>
         <h3 class="text-xl font-bold text-blue-900 mb-3">Nuevo Paciente</h3>
         <p class="text-blue-600 mb-4">Registrar un nuevo paciente en el sistema</p>
-        <button mat-raised-button color="primary" (click)="navigateToNewPatient()" class="w-full rounded-xl">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="navigateToNewPatient()"
+          class="w-full rounded-xl"
+        >
           <mat-icon>add</mat-icon>
           Agregar Paciente
         </button>
@@ -66,7 +71,12 @@
         <mat-icon class="text-5xl text-green-600 mb-4">list</mat-icon>
         <h3 class="text-xl font-bold text-green-900 mb-3">Lista de Pacientes</h3>
         <p class="text-green-600 mb-4">Ver y gestionar todos los pacientes</p>
-        <button mat-raised-button color="accent" (click)="navigateToPatients()" class="w-full rounded-xl">
+        <button
+          mat-raised-button
+          color="accent"
+          (click)="navigateToPatients()"
+          class="w-full rounded-xl"
+        >
           <mat-icon>view_list</mat-icon>
           Ver Lista
         </button>
@@ -76,7 +86,7 @@
         <mat-icon class="text-5xl text-purple-600 mb-4">search</mat-icon>
         <h3 class="text-xl font-bold text-purple-900 mb-3">Buscar Paciente</h3>
         <p class="text-purple-600 mb-4">Buscar paciente por nombre o ID</p>
-        <button mat-raised-button color="warn" class="w-full rounded-xl">
+        <button mat-raised-button color="warn" class="w-full rounded-xl" (click)="openSearch()">
           <mat-icon>search</mat-icon>
           Buscar
         </button>
@@ -86,22 +96,24 @@
     <!-- Pacientes Recientes -->
     <div class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100">
       <h2 class="text-2xl font-bold text-blue-900 mb-6">Pacientes Recientes</h2>
-      
+
       <div class="overflow-x-auto" *ngIf="recentPatients.length > 0">
         <table mat-table [dataSource]="recentPatients" class="w-full">
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef class="text-blue-900 font-semibold">Nombre</th>
-            <td mat-cell *matCellDef="let patient">{{getPatientFullName(patient)}}</td>
+            <td mat-cell *matCellDef="let patient">{{ getPatientFullName(patient) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="age">
             <th mat-header-cell *matHeaderCellDef class="text-blue-900 font-semibold">Edad</th>
-            <td mat-cell *matCellDef="let patient">{{getPatientAge(patient)}} años</td>
+            <td mat-cell *matCellDef="let patient">{{ getPatientAge(patient) }} años</td>
           </ng-container>
 
           <ng-container matColumnDef="createdAt">
-            <th mat-header-cell *matHeaderCellDef class="text-blue-900 font-semibold">Fecha de Registro</th>
-            <td mat-cell *matCellDef="let patient">{{patient.createdAt | date:'short'}}</td>
+            <th mat-header-cell *matHeaderCellDef class="text-blue-900 font-semibold">
+              Fecha de Registro
+            </th>
+            <td mat-cell *matCellDef="let patient">{{ patient.createdAt | date: 'short' }}</td>
           </ng-container>
 
           <ng-container matColumnDef="actions">
@@ -120,7 +132,7 @@
           <tr mat-row *matRowDef="let row; columns: ['name', 'age', 'createdAt', 'actions']"></tr>
         </table>
       </div>
-      
+
       <div *ngIf="recentPatients.length === 0" class="text-center py-8">
         <mat-icon class="text-6xl text-gray-400 mb-4">people_outline</mat-icon>
         <p class="text-gray-500">No hay pacientes registrados aún</p>

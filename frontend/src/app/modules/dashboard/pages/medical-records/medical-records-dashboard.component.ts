@@ -1,236 +1,289 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { MatTableDataSource } from '@angular/material/table';
-import { MatPaginator } from '@angular/material/paginator';
-import { MatSort } from '@angular/material/sort';
-import { MatDialog } from '@angular/material/dialog';
-import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
-import { MedicalRecord, RecordType, RecordStatus, MedicalRecordFilters } from './interfaces';
-import { MedicalRecordsService } from './services/medical-records.service';
+import { Location } from '@angular/common'
+import { Component, OnInit, ViewChild } from '@angular/core'
+import { MatDialog } from '@angular/material/dialog'
+import { MatPaginator } from '@angular/material/paginator'
+import { MatSort } from '@angular/material/sort'
+import { MatTableDataSource } from '@angular/material/table'
+import { Router } from '@angular/router'
+import Swal from 'sweetalert2'
+import { MedicalRecord, MedicalRecordFilters, RecordStatus, RecordType } from './interfaces'
+import { MedicalRecordsService } from './services/medical-records.service'
 
 @Component({
   selector: 'app-medical-records-dashboard',
   templateUrl: './medical-records-dashboard.component.html',
-  styleUrls: ['./medical-records-dashboard.component.css']
+  styleUrls: ['./medical-records-dashboard.component.css'],
 })
 export class MedicalRecordsDashboardComponent implements OnInit {
   displayedColumns: string[] = [
-    'date', 
-    'patient', 
-    'type', 
-    'chiefComplaint', 
-    'doctor', 
-    'status', 
-    'actions'
-  ];
-  
-  dataSource = new MatTableDataSource<MedicalRecord>([]);
-  totalRecords = 0;
-  
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
+    'date',
+    'patient',
+    'type',
+    'chiefComplaint',
+    'doctor',
+    'status',
+    'actions',
+  ]
+
+  dataSource = new MatTableDataSource<MedicalRecord>([])
+  totalRecords = 0
+
+  @ViewChild(MatPaginator) paginator!: MatPaginator
+  @ViewChild(MatSort) sort!: MatSort
 
   // Filtros
-  filters: MedicalRecordFilters = {};
-  recordTypes = Object.values(RecordType);
-  recordStatuses = Object.values(RecordStatus);
+  filters: MedicalRecordFilters = {}
+  recordTypes = Object.values(RecordType)
+  recordStatuses = Object.values(RecordStatus)
 
   // Estadísticas
   stats = {
     total: 0,
     drafts: 0,
     completed: 0,
-    emergencies: 0
-  };
+    emergencies: 0,
+  }
 
-  loading = false;
+  loading = false
 
   constructor(
     private medicalRecordsService: MedicalRecordsService,
     private dialog: MatDialog,
-    private router: Router
+    private router: Router,
+    private location: Location,
   ) {}
 
   ngOnInit(): void {
-    this.loadMedicalRecords();
-    this.loadStats();
+    this.loadMedicalRecords()
+    this.loadStats()
   }
 
   ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
+    this.dataSource.paginator = this.paginator
+    this.dataSource.sort = this.sort
   }
 
   loadMedicalRecords(): void {
-    this.loading = true;
+    this.loading = true
     this.medicalRecordsService.getMedicalRecords(this.filters).subscribe({
-      next: (response) => {
-        this.dataSource.data = response.data;
-        this.totalRecords = response.total;
-        this.loading = false;
+      next: response => {
+        this.dataSource.data = response.data
+        this.totalRecords = response.total
+        this.loading = false
       },
       error: (error: any) => {
-        console.error('Error cargando expedientes:', error);
-        this.loading = false;
-      }
-    });
+        console.error('Error cargando expedientes:', error)
+        this.loading = false
+      },
+    })
   }
 
   loadStats(): void {
     this.medicalRecordsService.getMedicalRecordsStats().subscribe({
-      next: (stats) => {
-        this.stats = stats;
+      next: stats => {
+        this.stats = stats
       },
-      error: (error) => {
-        console.error('Error cargando estadísticas:', error);
-      }
-    });
+      error: error => {
+        console.error('Error cargando estadísticas:', error)
+      },
+    })
+  }
+
+  // Acciones de tarjetas de estadísticas
+  showAllRecords(): void {
+    this.filters = {}
+    this.loadMedicalRecords()
+  }
+
+  showDrafts(): void {
+    this.filters = { ...this.filters, status: RecordStatus.DRAFT }
+    this.loadMedicalRecords()
+  }
+
+  showCompleted(): void {
+    this.filters = { ...this.filters, status: RecordStatus.COMPLETED }
+    this.loadMedicalRecords()
+  }
+
+  showEmergencies(): void {
+    this.filters = { ...this.filters, isEmergency: true }
+    this.loadMedicalRecords()
   }
 
   applyFilter(event: Event): void {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
+    const filterValue = (event.target as HTMLInputElement).value
+    this.dataSource.filter = filterValue.trim().toLowerCase()
 
     if (this.dataSource.paginator) {
-      this.dataSource.paginator.firstPage();
+      this.dataSource.paginator.firstPage()
     }
   }
 
   applyFilters(): void {
-    this.loadMedicalRecords();
+    this.loadMedicalRecords()
   }
 
   clearFilters(): void {
-    this.filters = {};
-    this.loadMedicalRecords();
+    this.filters = {}
+    this.loadMedicalRecords()
   }
 
   createNewRecord(): void {
-    this.router.navigate(['/dashboard/medical-records/new']);
+    this.router.navigate(['/dashboard/medical-records/new'])
   }
 
   viewRecord(record: MedicalRecord): void {
-    this.router.navigate(['/dashboard/medical-records', record.id]);
+    this.router.navigate(['/dashboard/medical-records', record.id])
   }
 
   editRecord(record: MedicalRecord): void {
-    this.router.navigate(['/dashboard/medical-records', record.id, 'edit']);
+    this.router.navigate(['/dashboard/medical-records', record.id, 'edit'])
   }
 
   deleteRecord(record: MedicalRecord): void {
-    if (confirm('¿Está seguro de que desea eliminar este expediente médico?')) {
-      this.medicalRecordsService.deleteMedicalRecord(record.id!).subscribe({
-        next: () => {
-          this.loadMedicalRecords();
-        },
-        error: (error) => {
-          console.error('Error eliminando expediente:', error);
-        }
-      });
-    }
+    Swal.fire({
+      title: '¿Eliminar expediente?',
+      html: `¿Está seguro de que desea eliminar este expediente médico?<br><br>
+             <strong>Paciente:</strong> ${record.patient?.firstName} ${record.patient?.lastName}<br>
+             <strong>Tipo:</strong> ${this.getTypeText(record.type)}`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+    }).then(result => {
+      if (result.isConfirmed) {
+        this.medicalRecordsService.deleteMedicalRecord(record.id!).subscribe({
+          next: () => {
+            Swal.fire({
+              icon: 'success',
+              title: '¡Eliminado!',
+              text: 'El expediente médico ha sido eliminado.',
+              confirmButtonColor: '#2563eb',
+            })
+            this.loadMedicalRecords()
+            this.loadStats()
+          },
+          error: error => {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'No se pudo eliminar el expediente médico.',
+              confirmButtonColor: '#dc2626',
+            })
+            console.error('Error eliminando expediente:', error)
+          },
+        })
+      }
+    })
+  }
+
+  goBack(): void {
+    this.location.back()
   }
 
   completeRecord(record: MedicalRecord): void {
     // Actualizar el estado del expediente a 'completed'
-    const updateData = { status: 'completed' as any };
+    const updateData = { status: 'completed' as any }
     this.medicalRecordsService.updateMedicalRecord(record.id!, updateData).subscribe({
       next: () => {
-        this.loadMedicalRecords();
+        this.loadMedicalRecords()
       },
       error: (error: any) => {
-        console.error('Error completando expediente:', error);
-      }
-    });
+        console.error('Error completando expediente:', error)
+      },
+    })
   }
 
   reviewRecord(record: MedicalRecord): void {
     // Actualizar el estado del expediente a 'reviewed'
-    const updateData = { status: 'reviewed' as any };
+    const updateData = { status: 'reviewed' as any }
     this.medicalRecordsService.updateMedicalRecord(record.id!, updateData).subscribe({
       next: () => {
-        this.loadMedicalRecords();
+        this.loadMedicalRecords()
       },
       error: (error: any) => {
-        console.error('Error revisando expediente:', error);
-      }
-    });
+        console.error('Error revisando expediente:', error)
+      },
+    })
   }
 
   exportRecord(record: MedicalRecord): void {
     // Por ahora, mostrar un mensaje indicando que la funcionalidad estará disponible próximamente
-    console.log('Exportar expediente - funcionalidad en desarrollo');
+    console.log('Exportar expediente - funcionalidad en desarrollo')
     // TODO: Implementar exportación cuando esté disponible en el backend
   }
 
   getStatusColor(status: RecordStatus): string {
     switch (status) {
       case RecordStatus.DRAFT:
-        return 'warn';
+        return 'warn'
       case RecordStatus.COMPLETED:
-        return 'primary';
+        return 'primary'
       case RecordStatus.REVIEWED:
-        return 'accent';
+        return 'accent'
       case RecordStatus.ARCHIVED:
-        return 'basic';
+        return 'basic'
       default:
-        return 'basic';
+        return 'basic'
     }
   }
 
   getStatusText(status: RecordStatus): string {
     switch (status) {
       case RecordStatus.DRAFT:
-        return 'Borrador';
+        return 'Borrador'
       case RecordStatus.COMPLETED:
-        return 'Completado';
+        return 'Completado'
       case RecordStatus.REVIEWED:
-        return 'Revisado';
+        return 'Revisado'
       case RecordStatus.ARCHIVED:
-        return 'Archivado';
+        return 'Archivado'
       default:
-        return status;
+        return status
     }
   }
 
   getTypeText(type: RecordType): string {
     switch (type) {
       case RecordType.CONSULTATION:
-        return 'Consulta';
+        return 'Consulta'
       case RecordType.EMERGENCY:
-        return 'Emergencia';
+        return 'Emergencia'
       case RecordType.SURGERY:
-        return 'Cirugía';
+        return 'Cirugía'
       case RecordType.FOLLOW_UP:
-        return 'Seguimiento';
+        return 'Seguimiento'
       case RecordType.LABORATORY:
-        return 'Laboratorio';
+        return 'Laboratorio'
       case RecordType.IMAGING:
-        return 'Imagenología';
+        return 'Imagenología'
       case RecordType.OTHER:
-        return 'Otro';
+        return 'Otro'
       default:
-        return type;
+        return type
     }
   }
 
   getRecordIcon(type: RecordType): string {
     switch (type) {
       case RecordType.CONSULTATION:
-        return 'assignment';
+        return 'assignment'
       case RecordType.EMERGENCY:
-        return 'emergency';
+        return 'emergency'
       case RecordType.SURGERY:
-        return 'healing';
+        return 'healing'
       case RecordType.FOLLOW_UP:
-        return 'update';
+        return 'update'
       case RecordType.LABORATORY:
-        return 'biotech';
+        return 'biotech'
       case RecordType.IMAGING:
-        return 'camera_alt';
+        return 'camera_alt'
       case RecordType.OTHER:
-        return 'description';
+        return 'description'
       default:
-        return 'description';
+        return 'description'
     }
   }
 }

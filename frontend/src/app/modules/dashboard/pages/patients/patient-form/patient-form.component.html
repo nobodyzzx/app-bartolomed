@@ -1,4 +1,10 @@
 <div class="patient-form-container">
+  <div class="top-actions">
+    <button mat-stroked-button color="primary" (click)="cancel()">
+      <mat-icon>arrow_back</mat-icon>
+      Volver a Pacientes
+    </button>
+  </div>
   <div class="form-header">
     <h1 class="form-title">
       <mat-icon>person_add</mat-icon>
@@ -7,19 +13,38 @@
     <p class="form-subtitle">Complete toda la información del paciente</p>
   </div>
 
+  <!-- Barra de progreso visual -->
+  <div class="progress-bar-container">
+    <div class="progress-bar-header">
+      <span class="progress-text">Progreso del formulario</span>
+      <span class="progress-percentage">{{ getStepProgress() | number: '1.0-0' }}%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" [style.width.%]="getStepProgress()"></div>
+    </div>
+  </div>
+
   <div class="stepper-container">
     <mat-stepper #stepper orientation="horizontal" [linear]="true">
-      
       <!-- Paso 1: Información Personal -->
-      <mat-step [stepControl]="personalInfoForm" label="Información Personal">
+      <mat-step [stepControl]="personalInfoForm">
+        <ng-template matStepLabel>
+          <div class="step-label-content">
+            <mat-icon>person</mat-icon>
+            <span>Personal</span>
+          </div>
+        </ng-template>
         <form [formGroup]="personalInfoForm">
           <div class="step-content">
-            <h3>Datos Personales del Paciente</h3>
-            
+            <div class="step-header">
+              <mat-icon class="step-icon">person</mat-icon>
+              <h3>Datos Personales del Paciente</h3>
+            </div>
+
             <div class="form-grid">
               <mat-form-field appearance="outline">
                 <mat-label>Nombres</mat-label>
-                <input matInput formControlName="firstName" placeholder="Ingrese nombres">
+                <input matInput formControlName="firstName" placeholder="Ingrese nombres" />
                 <mat-error *ngIf="personalInfoForm.get('firstName')?.hasError('required')">
                   Los nombres son requeridos
                 </mat-error>
@@ -30,7 +55,7 @@
 
               <mat-form-field appearance="outline">
                 <mat-label>Apellidos</mat-label>
-                <input matInput formControlName="lastName" placeholder="Ingrese apellidos">
+                <input matInput formControlName="lastName" placeholder="Ingrese apellidos" />
                 <mat-error *ngIf="personalInfoForm.get('lastName')?.hasError('required')">
                   Los apellidos son requeridos
                 </mat-error>
@@ -50,7 +75,11 @@
 
               <mat-form-field appearance="outline">
                 <mat-label>Número de Documento</mat-label>
-                <input matInput formControlName="documentNumber" placeholder="Ingrese número de documento">
+                <input
+                  matInput
+                  formControlName="documentNumber"
+                  placeholder="Ingrese número de documento"
+                />
                 <mat-error *ngIf="personalInfoForm.get('documentNumber')?.hasError('required')">
                   El número de documento es requerido
                 </mat-error>
@@ -61,7 +90,7 @@
 
               <mat-form-field appearance="outline">
                 <mat-label>Fecha de Nacimiento</mat-label>
-                <input matInput [matDatepicker]="picker" formControlName="birthDate">
+                <input matInput [matDatepicker]="picker" formControlName="birthDate" />
                 <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
                 <mat-datepicker #picker></mat-datepicker>
                 <mat-error *ngIf="personalInfoForm.get('birthDate')?.hasError('required')">
@@ -92,13 +121,17 @@
 
               <mat-form-field appearance="outline">
                 <mat-label>Ocupación</mat-label>
-                <input matInput formControlName="occupation" placeholder="Ingrese ocupación">
+                <input matInput formControlName="occupation" placeholder="Ingrese ocupación" />
               </mat-form-field>
             </div>
 
             <div class="step-actions">
-              <button mat-raised-button color="primary" matStepperNext 
-                      [disabled]="!personalInfoForm.valid">
+              <button
+                mat-flat-button
+                color="primary"
+                matStepperNext
+                [disabled]="!personalInfoForm.valid"
+              >
                 Siguiente
                 <mat-icon>keyboard_arrow_right</mat-icon>
               </button>
@@ -108,15 +141,29 @@
       </mat-step>
 
       <!-- Paso 2: Información de Contacto -->
-      <mat-step [stepControl]="contactInfoForm" label="Contacto">
+      <mat-step [stepControl]="contactInfoForm">
+        <ng-template matStepLabel>
+          <div class="step-label-content">
+            <mat-icon>contact_mail</mat-icon>
+            <span>Contacto</span>
+          </div>
+        </ng-template>
         <form [formGroup]="contactInfoForm">
           <div class="step-content">
-            <h3>Información de Contacto</h3>
-            
+            <div class="step-header">
+              <mat-icon class="step-icon">contact_mail</mat-icon>
+              <h3>Información de Contacto</h3>
+            </div>
+
             <div class="form-grid">
               <mat-form-field appearance="outline">
                 <mat-label>Email</mat-label>
-                <input matInput type="email" formControlName="email" placeholder="correo@email.com">
+                <input
+                  matInput
+                  type="email"
+                  formControlName="email"
+                  placeholder="correo@email.com"
+                />
                 <mat-icon matPrefix>email</mat-icon>
                 <mat-error *ngIf="contactInfoForm.get('email')?.hasError('email')">
                   Ingrese un email válido
@@ -125,35 +172,39 @@
 
               <mat-form-field appearance="outline">
                 <mat-label>Teléfono</mat-label>
-                <input matInput formControlName="phone" placeholder="+591-xxxxxxxx">
+                <input matInput formControlName="phone" placeholder="+591-xxxxxxxx" />
                 <mat-icon matPrefix>phone</mat-icon>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Dirección</mat-label>
-                <textarea matInput formControlName="address" rows="2" 
-                         placeholder="Dirección completa"></textarea>
+                <textarea
+                  matInput
+                  formControlName="address"
+                  rows="2"
+                  placeholder="Dirección completa"
+                ></textarea>
                 <mat-icon matPrefix>location_on</mat-icon>
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>Ciudad</mat-label>
-                <input matInput formControlName="city" placeholder="Ciudad">
+                <input matInput formControlName="city" placeholder="Ciudad" />
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>Estado/Departamento</mat-label>
-                <input matInput formControlName="state" placeholder="Estado">
+                <input matInput formControlName="state" placeholder="Estado" />
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>Código Postal</mat-label>
-                <input matInput formControlName="zipCode" placeholder="Código postal">
+                <input matInput formControlName="zipCode" placeholder="Código postal" />
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>País</mat-label>
-                <input matInput formControlName="country" placeholder="País">
+                <input matInput formControlName="country" placeholder="País" />
               </mat-form-field>
             </div>
 
@@ -162,7 +213,7 @@
                 <mat-icon>keyboard_arrow_left</mat-icon>
                 Anterior
               </button>
-              <button mat-raised-button color="primary" matStepperNext>
+              <button mat-flat-button color="primary" matStepperNext>
                 Siguiente
                 <mat-icon>keyboard_arrow_right</mat-icon>
               </button>
@@ -172,11 +223,20 @@
       </mat-step>
 
       <!-- Paso 3: Información Médica -->
-      <mat-step [stepControl]="medicalInfoForm" label="Información Médica">
+      <mat-step [stepControl]="medicalInfoForm">
+        <ng-template matStepLabel>
+          <div class="step-label-content">
+            <mat-icon>medical_services</mat-icon>
+            <span>Médica</span>
+          </div>
+        </ng-template>
         <form [formGroup]="medicalInfoForm">
           <div class="step-content">
-            <h3>Información Médica</h3>
-            
+            <div class="step-header">
+              <mat-icon class="step-icon">medical_services</mat-icon>
+              <h3>Información Médica</h3>
+            </div>
+
             <div class="form-grid">
               <mat-form-field appearance="outline">
                 <mat-label>Tipo de Sangre</mat-label>
@@ -190,26 +250,42 @@
 
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Alergias</mat-label>
-                <textarea matInput formControlName="allergies" rows="2" 
-                         placeholder="Describa alergias conocidas"></textarea>
+                <textarea
+                  matInput
+                  formControlName="allergies"
+                  rows="2"
+                  placeholder="Describa alergias conocidas"
+                ></textarea>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Medicamentos Actuales</mat-label>
-                <textarea matInput formControlName="medications" rows="2" 
-                         placeholder="Medicamentos que toma actualmente"></textarea>
+                <textarea
+                  matInput
+                  formControlName="medications"
+                  rows="2"
+                  placeholder="Medicamentos que toma actualmente"
+                ></textarea>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Historial Médico</mat-label>
-                <textarea matInput formControlName="medicalHistory" rows="3" 
-                         placeholder="Antecedentes médicos relevantes"></textarea>
+                <textarea
+                  matInput
+                  formControlName="medicalHistory"
+                  rows="3"
+                  placeholder="Antecedentes médicos relevantes"
+                ></textarea>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Notas Adicionales</mat-label>
-                <textarea matInput formControlName="notes" rows="2" 
-                         placeholder="Notas adicionales sobre el paciente"></textarea>
+                <textarea
+                  matInput
+                  formControlName="notes"
+                  rows="2"
+                  placeholder="Notas adicionales sobre el paciente"
+                ></textarea>
               </mat-form-field>
             </div>
 
@@ -218,7 +294,7 @@
                 <mat-icon>keyboard_arrow_left</mat-icon>
                 Anterior
               </button>
-              <button mat-raised-button color="primary" matStepperNext>
+              <button mat-flat-button color="primary" matStepperNext>
                 Siguiente
                 <mat-icon>keyboard_arrow_right</mat-icon>
               </button>
@@ -228,30 +304,48 @@
       </mat-step>
 
       <!-- Paso 4: Contacto de Emergencia -->
-      <mat-step [stepControl]="emergencyContactForm" label="Contacto de Emergencia">
+      <mat-step [stepControl]="emergencyContactForm">
+        <ng-template matStepLabel>
+          <div class="step-label-content">
+            <mat-icon>contact_emergency</mat-icon>
+            <span>Emergencia</span>
+          </div>
+        </ng-template>
         <form [formGroup]="emergencyContactForm">
           <div class="step-content">
-            <h3>Contacto de Emergencia</h3>
-            
+            <div class="step-header">
+              <mat-icon class="step-icon">contact_emergency</mat-icon>
+              <h3>Contacto de Emergencia</h3>
+            </div>
+
             <div class="form-grid">
               <mat-form-field appearance="outline">
                 <mat-label>Nombre Completo</mat-label>
-                <input matInput formControlName="emergencyContactName" 
-                       placeholder="Nombre del contacto de emergencia">
+                <input
+                  matInput
+                  formControlName="emergencyContactName"
+                  placeholder="Nombre del contacto de emergencia"
+                />
                 <mat-icon matPrefix>contact_emergency</mat-icon>
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>Teléfono</mat-label>
-                <input matInput formControlName="emergencyContactPhone" 
-                       placeholder="+591-xxxxxxxx">
+                <input
+                  matInput
+                  formControlName="emergencyContactPhone"
+                  placeholder="+591-xxxxxxxx"
+                />
                 <mat-icon matPrefix>phone</mat-icon>
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>Relación</mat-label>
-                <input matInput formControlName="emergencyContactRelationship" 
-                       placeholder="Ej: Esposo/a, Hijo/a, Hermano/a">
+                <input
+                  matInput
+                  formControlName="emergencyContactRelationship"
+                  placeholder="Ej: Esposo/a, Hijo/a, Hermano/a"
+                />
                 <mat-icon matPrefix>family_restroom</mat-icon>
               </mat-form-field>
             </div>
@@ -271,32 +365,46 @@
       </mat-step>
 
       <!-- Paso 5: Información de Seguro -->
-      <mat-step [stepControl]="insuranceForm" label="Seguro Médico">
+      <mat-step [stepControl]="insuranceForm">
+        <ng-template matStepLabel>
+          <div class="step-label-content">
+            <mat-icon>health_and_safety</mat-icon>
+            <span>Seguro</span>
+          </div>
+        </ng-template>
         <form [formGroup]="insuranceForm">
           <div class="step-content">
-            <h3>Información de Seguro</h3>
-            
+            <div class="step-header">
+              <mat-icon class="step-icon">health_and_safety</mat-icon>
+              <h3>Información de Seguro</h3>
+            </div>
+
             <div class="form-grid">
               <mat-form-field appearance="outline">
                 <mat-label>Proveedor de Seguro</mat-label>
-                <input matInput formControlName="insuranceProvider" 
-                       placeholder="Nombre del seguro médico">
+                <input
+                  matInput
+                  formControlName="insuranceProvider"
+                  placeholder="Nombre del seguro médico"
+                />
                 <mat-icon matPrefix>health_and_safety</mat-icon>
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>Número de Póliza</mat-label>
-                <input matInput formControlName="insuranceNumber" 
-                       placeholder="Número de la póliza de seguro">
+                <input
+                  matInput
+                  formControlName="insuranceNumber"
+                  placeholder="Número de la póliza de seguro"
+                />
                 <mat-icon matPrefix>badge</mat-icon>
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>Clínica</mat-label>
                 <mat-select formControlName="clinicId">
-                  <mat-option value="1">Clínica San Pablo</mat-option>
-                  <mat-option value="2">Hospital General</mat-option>
-                  <mat-option value="3">Centro Médico Norte</mat-option>
+                  <mat-option *ngIf="isClinicsLoading" disabled>Cargando clínicas...</mat-option>
+                  <mat-option *ngFor="let c of clinics" [value]="c.id">{{ c.name }}</mat-option>
                 </mat-select>
                 <mat-error *ngIf="insuranceForm.get('clinicId')?.hasError('required')">
                   Debe seleccionar una clínica
@@ -309,8 +417,12 @@
                 <mat-icon>keyboard_arrow_left</mat-icon>
                 Anterior
               </button>
-              <button mat-raised-button color="primary" matStepperNext 
-                      [disabled]="!insuranceForm.valid">
+              <button
+                mat-flat-button
+                color="primary"
+                matStepperNext
+                [disabled]="!insuranceForm.valid"
+              >
                 Revisar
                 <mat-icon>keyboard_arrow_right</mat-icon>
               </button>
@@ -320,16 +432,34 @@
       </mat-step>
 
       <!-- Paso Final: Resumen -->
-      <mat-step label="Confirmar">
+      <mat-step>
+        <ng-template matStepLabel>
+          <div class="step-label-content">
+            <mat-icon>check_circle</mat-icon>
+            <span>Confirmar</span>
+          </div>
+        </ng-template>
         <div class="step-content">
-          <h3>Resumen del Paciente</h3>
-          
+          <div class="step-header">
+            <mat-icon class="step-icon">check_circle</mat-icon>
+            <h3>Resumen del Paciente</h3>
+          </div>
+
           <div class="summary-card">
             <div class="summary-section">
               <h4><mat-icon>person</mat-icon> Información Personal</h4>
-              <p><strong>Nombre:</strong> {{ personalInfoForm.get('firstName')?.value }} {{ personalInfoForm.get('lastName')?.value }}</p>
-              <p><strong>Documento:</strong> {{ personalInfoForm.get('documentType')?.value }} - {{ personalInfoForm.get('documentNumber')?.value }}</p>
-              <p><strong>Fecha de Nacimiento:</strong> {{ personalInfoForm.get('birthDate')?.value | date:'dd/MM/yyyy' }}</p>
+              <p>
+                <strong>Nombre:</strong> {{ personalInfoForm.get('firstName')?.value }}
+                {{ personalInfoForm.get('lastName')?.value }}
+              </p>
+              <p>
+                <strong>Documento:</strong> {{ personalInfoForm.get('documentType')?.value }} -
+                {{ personalInfoForm.get('documentNumber')?.value }}
+              </p>
+              <p>
+                <strong>Fecha de Nacimiento:</strong>
+                {{ personalInfoForm.get('birthDate')?.value | date: 'dd/MM/yyyy' }}
+              </p>
             </div>
 
             <div class="summary-section">
@@ -337,20 +467,38 @@
               <p><strong>Email:</strong> {{ contactInfoForm.get('email')?.value }}</p>
               <p><strong>Teléfono:</strong> {{ contactInfoForm.get('phone')?.value }}</p>
               <p><strong>Dirección:</strong> {{ contactInfoForm.get('address')?.value }}</p>
-              <p><strong>Ciudad:</strong> {{ contactInfoForm.get('city')?.value }}, {{ contactInfoForm.get('state')?.value }}</p>
+              <p>
+                <strong>Ciudad:</strong> {{ contactInfoForm.get('city')?.value }},
+                {{ contactInfoForm.get('state')?.value }}
+              </p>
             </div>
 
             <div class="summary-section">
               <h4><mat-icon>medical_services</mat-icon> Información Médica</h4>
-              <p><strong>Alergias:</strong> {{ medicalInfoForm.get('allergies')?.value || 'Ninguna' }}</p>
-              <p><strong>Medicamentos:</strong> {{ medicalInfoForm.get('medications')?.value || 'Ninguno' }}</p>
+              <p>
+                <strong>Alergias:</strong>
+                {{ medicalInfoForm.get('allergies')?.value || 'Ninguna' }}
+              </p>
+              <p>
+                <strong>Medicamentos:</strong>
+                {{ medicalInfoForm.get('medications')?.value || 'Ninguno' }}
+              </p>
             </div>
 
             <div class="summary-section">
               <h4><mat-icon>contact_emergency</mat-icon> Contacto de Emergencia</h4>
-              <p><strong>Nombre:</strong> {{ emergencyContactForm.get('emergencyContactName')?.value }}</p>
-              <p><strong>Teléfono:</strong> {{ emergencyContactForm.get('emergencyContactPhone')?.value }}</p>
-              <p><strong>Relación:</strong> {{ emergencyContactForm.get('emergencyContactRelationship')?.value }}</p>
+              <p>
+                <strong>Nombre:</strong>
+                {{ emergencyContactForm.get('emergencyContactName')?.value }}
+              </p>
+              <p>
+                <strong>Teléfono:</strong>
+                {{ emergencyContactForm.get('emergencyContactPhone')?.value }}
+              </p>
+              <p>
+                <strong>Relación:</strong>
+                {{ emergencyContactForm.get('emergencyContactRelationship')?.value }}
+              </p>
             </div>
 
             <div class="summary-section">
@@ -365,15 +513,24 @@
               <mat-icon>keyboard_arrow_left</mat-icon>
               Anterior
             </button>
-            
-            <button mat-stroked-button type="button" (click)="saveDraft()" 
-                    [disabled]="isSaving" class="draft-button">
+
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="saveDraft()"
+              [disabled]="isSaving"
+              class="draft-button"
+            >
               <mat-icon>save</mat-icon>
               Guardar Borrador
             </button>
 
-            <button mat-raised-button color="primary" (click)="onSubmit()" 
-                    [disabled]="!isAllFormsValid() || isSaving">
+            <button
+              mat-flat-button
+              color="primary"
+              (click)="onSubmit()"
+              [disabled]="!isAllFormsValid() || isSaving"
+            >
               <mat-spinner *ngIf="isSaving" diameter="20"></mat-spinner>
               <mat-icon *ngIf="!isSaving">{{ isEditMode ? 'save' : 'person_add' }}</mat-icon>
               {{ isEditMode ? 'Actualizar Paciente' : 'Crear Paciente' }}
@@ -381,7 +538,6 @@
           </div>
         </div>
       </mat-step>
-
     </mat-stepper>
   </div>
 
