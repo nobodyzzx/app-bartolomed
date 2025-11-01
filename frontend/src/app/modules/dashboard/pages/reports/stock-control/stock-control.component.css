@@ -40,14 +40,16 @@
   padding: 20px;
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-left: 4px solid #3498db;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .metric-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .metric-card.warning {
@@ -170,7 +172,8 @@
   color: #666;
 }
 
-.no-data mat-icon {
+.no-data mat-icon,
+.no-data .material-symbols-outlined {
   font-size: 64px;
   width: 64px;
   height: 64px;
@@ -284,33 +287,33 @@ mat-option mat-icon {
   .stock-control-container {
     padding: 15px;
   }
-  
+
   .metrics-grid {
     grid-template-columns: 1fr;
     gap: 15px;
   }
-  
+
   .metric-card {
     padding: 15px;
   }
-  
+
   .metric-value {
     font-size: 1.5rem;
   }
-  
+
   .date-range {
     grid-template-columns: 1fr;
     gap: 15px;
   }
-  
+
   .title-area h2 {
     font-size: 1.5rem;
   }
-  
+
   .form-actions {
     justify-content: center;
   }
-  
+
   .reports-table {
     min-width: 700px;
   }
@@ -322,17 +325,17 @@ mat-option mat-icon {
     text-align: center;
     gap: 10px;
   }
-  
+
   .action-buttons {
     flex-direction: column;
     gap: 2px;
   }
-  
+
   .action-buttons button {
     width: 32px;
     height: 32px;
   }
-  
+
   .metric-value {
     font-size: 1.3rem;
   }

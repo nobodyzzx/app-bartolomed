@@ -1,0 +1,73 @@
+<div class="bg-white rounded-xl shadow-md overflow-hidden">
+  <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="material-symbols-outlined msz-20 text-slate-600">list_alt</span>
+      <h3 class="text-slate-800 font-semibold">Recetas recientes</h3>
+    </div>
+    <a
+      routerLink="../new"
+      class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-600 text-white shadow hover:bg-blue-700"
+    >
+      <span class="material-symbols-outlined msz-18">add</span>
+      Nueva receta
+    </a>
+  </div>
+  <div class="overflow-x-auto">
+    <div *ngIf="loading" class="p-6 flex items-center justify-center">
+      <mat-progress-spinner diameter="36" mode="indeterminate"></mat-progress-spinner>
+    </div>
+    <table *ngIf="!loading" class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-slate-500">
+        <tr>
+          <th class="text-left font-medium px-6 py-3">ID</th>
+          <th class="text-left font-medium px-6 py-3">Fecha</th>
+          <th class="text-left font-medium px-6 py-3">Paciente</th>
+          <th class="text-left font-medium px-6 py-3">Médico</th>
+          <th class="text-left font-medium px-6 py-3">Estado</th>
+          <th class="px-6 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let rx of items" class="border-t border-slate-100 hover:bg-slate-50">
+          <td class="px-6 py-3 font-medium text-slate-700">{{ rx.id }}</td>
+          <td class="px-6 py-3">{{ rx.date }}</td>
+          <td class="px-6 py-3">{{ rx.patient }}</td>
+          <td class="px-6 py-3">{{ rx.doctor }}</td>
+          <td class="px-6 py-3">
+            <span
+              class="px-2 py-0.5 rounded-full text-xs font-medium"
+              [ngClass]="statusBadge(rx.status)"
+            >
+              {{ rx.status }}
+            </span>
+          </td>
+          <td class="px-6 py-3">
+            <a
+              [routerLink]="['../edit', rx.id]"
+              class="inline-flex items-center gap-1 text-blue-600 hover:underline"
+            >
+              <span class="material-symbols-outlined msz-18">edit</span>
+              Editar
+            </a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div *ngIf="!loading" class="flex items-center justify-between px-6 py-3 bg-slate-50">
+      <div class="text-sm text-slate-500">Mostrando {{ items.length }} de {{ total }}</div>
+      <div class="flex items-center gap-2">
+        <button class="px-3 py-1 rounded-md bg-slate-100" (click)="prev()" [disabled]="page === 1">
+          Anterior
+        </button>
+        <div class="text-sm text-slate-600">Página {{ page }}</div>
+        <button
+          class="px-3 py-1 rounded-md bg-slate-100"
+          (click)="next()"
+          [disabled]="page * pageSize >= total"
+        >
+          Siguiente
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

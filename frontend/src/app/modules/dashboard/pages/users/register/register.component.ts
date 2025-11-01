@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core'
 import { FormControl, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
+import { AlertService } from '@core/services/alert.service'
 import { of } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import Swal from 'sweetalert2'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
 import { SidenavService } from '../../../../../shared/components/services/sidenav.services'
 import { Role, RolesService } from '../../../services/roles.service'
@@ -104,6 +104,7 @@ export class UserRegisterComponent implements OnInit {
     private route: ActivatedRoute,
     private errorService: ErrorService,
     private sidenavService: SidenavService,
+    private alert: AlertService,
   ) {}
 
   ngOnInit() {
@@ -229,15 +230,11 @@ export class UserRegisterComponent implements OnInit {
 
       this.usersService.updateUser(updateData).subscribe({
         next: () => {
-          Swal.fire({
-            icon: 'success',
-            title: 'Usuario actualizado',
-            text: 'El usuario ha sido actualizado correctamente',
-            timer: 2000,
-            showConfirmButton: false,
-          }).then(() => {
-            this.router.navigate(['/dashboard/users/list'])
-          })
+          this.alert
+            .success('Usuario actualizado', 'El usuario ha sido actualizado correctamente')
+            .then(() => {
+              this.router.navigate(['/dashboard/users/list'])
+            })
         },
         error: error => {
           this.errorService.handleError(error)
@@ -247,42 +244,11 @@ export class UserRegisterComponent implements OnInit {
       // Modo crear
       this.usersService.createUser(userData).subscribe({
         next: response => {
-          Swal.fire({
-            icon: 'success',
-            title: 'Usuario creado',
-            html: `<div style="
-                font-size: 16px; 
-                color: #333; 
-                text-align: center;
-                padding: 10px;
-            ">El usuario ha sido registrado correctamente.</div>`,
-            showConfirmButton: false,
-            timer: 2000,
-            background: 'rgba(255, 255, 255, 0.95)',
-            showClass: {
-              popup: 'animate__animated animate__fadeInUp animate__faster',
-            },
-            hideClass: {
-              popup: 'animate__animated animate__fadeOutDown animate__faster',
-            },
-            didOpen: () => {
-              const popup = document.querySelector('.swal2-popup') as HTMLElement
-              if (popup) {
-                popup.style.borderRadius = '12px'
-                popup.style.padding = '20px'
-                popup.style.boxShadow = '0px 4px 15px rgba(0, 0, 0, 0.2)'
-              }
-
-              const title = document.querySelector('.swal2-title') as HTMLElement
-              if (title) {
-                title.style.fontSize = '20px'
-                title.style.fontWeight = 'bold'
-                title.style.color = '#198754' // Verde éxito
-              }
-            },
-          }).then(() => {
-            this.router.navigate(['/dashboard/users/list'])
-          })
+          this.alert
+            .success('Usuario creado', 'El usuario ha sido registrado correctamente.')
+            .then(() => {
+              this.router.navigate(['/dashboard/users/list'])
+            })
         },
         error: error => {
           this.errorService.handleError(error)

@@ -2,7 +2,7 @@
   <div class="header-section">
     <div class="title-area">
       <h2>
-        <mat-icon>inventory</mat-icon>
+        <span class="material-symbols-outlined">inventory</span>
         Control de Stock
       </h2>
       <p>Gestión y análisis detallado del inventario</p>
@@ -13,7 +13,7 @@
   <div class="stock-metrics" *ngIf="stockReports.length > 0">
     <div class="metrics-grid">
       <div class="metric-card">
-        <mat-icon class="metric-icon inventory">inventory_2</mat-icon>
+        <span class="material-symbols-outlined metric-icon inventory">inventory_2</span>
         <div class="metric-content">
           <h3>Total Productos</h3>
           <p class="metric-value">450</p>
@@ -21,7 +21,7 @@
         </div>
       </div>
       <div class="metric-card warning">
-        <mat-icon class="metric-icon warning">warning</mat-icon>
+        <span class="material-symbols-outlined metric-icon warning">warning</span>
         <div class="metric-content">
           <h3>Stock Bajo</h3>
           <p class="metric-value">15</p>
@@ -29,7 +29,7 @@
         </div>
       </div>
       <div class="metric-card expired">
-        <mat-icon class="metric-icon expired">schedule</mat-icon>
+        <span class="material-symbols-outlined metric-icon expired">schedule</span>
         <div class="metric-content">
           <h3>Por Vencer</h3>
           <p class="metric-value">8</p>
@@ -37,7 +37,7 @@
         </div>
       </div>
       <div class="metric-card value">
-        <mat-icon class="metric-icon value">attach_money</mat-icon>
+        <span class="material-symbols-outlined metric-icon value">attach_money</span>
         <div class="metric-content">
           <h3>Valor Total</h3>
           <p class="metric-value">$125,000</p>
@@ -72,7 +72,12 @@
         <div class="form-row">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Título del Reporte</mat-label>
-            <input matInput formControlName="title" placeholder="Ej: Inventario General Enero 2024" required>
+            <input
+              matInput
+              formControlName="title"
+              placeholder="Ej: Inventario General Enero 2024"
+              required
+            />
             <mat-error *ngIf="generateForm.get('title')?.hasError('required')">
               El título es requerido
             </mat-error>
@@ -82,15 +87,19 @@
         <div class="form-row">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Descripción</mat-label>
-            <textarea matInput formControlName="description" rows="3" 
-                      placeholder="Descripción detallada del reporte de stock..."></textarea>
+            <textarea
+              matInput
+              formControlName="description"
+              rows="3"
+              placeholder="Descripción detallada del reporte de stock..."
+            ></textarea>
           </mat-form-field>
         </div>
 
         <div class="form-row date-range">
           <mat-form-field appearance="outline">
             <mat-label>Fecha de Inicio (Opcional)</mat-label>
-            <input matInput [matDatepicker]="startPicker" formControlName="startDate">
+            <input matInput [matDatepicker]="startPicker" formControlName="startDate" />
             <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
             <mat-datepicker #startPicker></mat-datepicker>
             <mat-hint>Para reportes de movimientos</mat-hint>
@@ -98,7 +107,7 @@
 
           <mat-form-field appearance="outline">
             <mat-label>Fecha de Fin (Opcional)</mat-label>
-            <input matInput [matDatepicker]="endPicker" formControlName="endDate">
+            <input matInput [matDatepicker]="endPicker" formControlName="endDate" />
             <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
             <mat-datepicker #endPicker></mat-datepicker>
             <mat-hint>Para reportes de movimientos</mat-hint>
@@ -106,8 +115,12 @@
         </div>
 
         <div class="form-actions">
-          <button mat-raised-button color="primary" type="submit" 
-                  [disabled]="generateForm.invalid || loading">
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            [disabled]="generateForm.invalid || loading"
+          >
             <mat-icon>inventory_2</mat-icon>
             <span *ngIf="!loading">Generar Reporte</span>
             <span *ngIf="loading">Generando...</span>
@@ -129,7 +142,7 @@
       </div>
 
       <div *ngIf="!loading && stockReports.length === 0" class="no-data">
-        <mat-icon>inventory_2</mat-icon>
+        <span class="material-symbols-outlined">inventory_2</span>
         <p>No hay reportes de stock generados</p>
         <small>Use el formulario superior para generar su primer reporte</small>
       </div>
@@ -163,7 +176,7 @@
           <!-- Fecha -->
           <ng-container matColumnDef="date">
             <th mat-header-cell *matHeaderCellDef>Fecha</th>
-            <td mat-cell *matCellDef="let report">{{ report.date | date:'short' }}</td>
+            <td mat-cell *matCellDef="let report">{{ report.date | date: 'short' }}</td>
           </ng-container>
 
           <!-- Total Productos -->
@@ -172,10 +185,18 @@
             <td mat-cell *matCellDef="let report">
               <span class="product-count">{{ report.totalProducts || 'N/A' }}</span>
               <div class="stock-indicators" *ngIf="report.lowStockItems || report.expiringItems">
-                <mat-icon class="warning-icon" *ngIf="report.lowStockItems" matTooltip="Items con stock bajo">
+                <mat-icon
+                  class="warning-icon"
+                  *ngIf="report.lowStockItems"
+                  matTooltip="Items con stock bajo"
+                >
                   warning
                 </mat-icon>
-                <mat-icon class="expired-icon" *ngIf="report.expiringItems" matTooltip="Items por vencer">
+                <mat-icon
+                  class="expired-icon"
+                  *ngIf="report.expiringItems"
+                  matTooltip="Items por vencer"
+                >
                   schedule
                 </mat-icon>
               </div>
@@ -207,16 +228,23 @@
             <th mat-header-cell *matHeaderCellDef>Acciones</th>
             <td mat-cell *matCellDef="let report">
               <div class="action-buttons">
-                <button mat-icon-button (click)="downloadReport(report)" 
-                        matTooltip="Descargar PDF">
+                <button mat-icon-button (click)="downloadReport(report)" matTooltip="Descargar PDF">
                   <mat-icon>download</mat-icon>
                 </button>
-                <button mat-icon-button (click)="exportToExcel(report)" 
-                        matTooltip="Exportar a Excel" color="accent">
+                <button
+                  mat-icon-button
+                  (click)="exportToExcel(report)"
+                  matTooltip="Exportar a Excel"
+                  color="accent"
+                >
                   <mat-icon>table_chart</mat-icon>
                 </button>
-                <button mat-icon-button (click)="deleteReport(report)" 
-                        matTooltip="Eliminar" color="warn">
+                <button
+                  mat-icon-button
+                  (click)="deleteReport(report)"
+                  matTooltip="Eliminar"
+                  color="warn"
+                >
                   <mat-icon>delete</mat-icon>
                 </button>
               </div>
@@ -224,7 +252,7 @@
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
         </table>
       </div>
     </mat-card-content>

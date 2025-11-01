@@ -10,7 +10,7 @@
           matTooltip="Volver"
           aria-label="Volver"
         >
-          <mat-icon class="!text-[20px] leading-none">arrow_back</mat-icon>
+          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
         </button>
         <div class="text-left">
           <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Lista de Pacientes</h1>
@@ -23,7 +23,7 @@
         class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
         aria-label="Crear nuevo paciente"
       >
-        <mat-icon class="!text-[20px] leading-none">person_add</mat-icon>
+        <span class="material-symbols-outlined msz-20 leading-none">person_add</span>
         Nuevo Paciente
       </button>
     </div>
@@ -39,7 +39,9 @@
             placeholder="Nombre, teléfono, email..."
             class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
           />
-          <mat-icon class="absolute right-3 top-2.5 text-blue-400">search</mat-icon>
+          <span class="material-symbols-outlined absolute right-3 top-2.5 text-blue-400"
+            >search</span
+          >
         </div>
       </div>
 
@@ -49,7 +51,7 @@
         [disabled]="!searchTerm?.trim()"
         class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
       >
-        <mat-icon class="!text-[18px]">search</mat-icon>
+        <span class="material-symbols-outlined msz-18">search</span>
         Buscar
       </button>
 
@@ -59,7 +61,7 @@
         type="button"
         class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
       >
-        <mat-icon class="!text-[18px]">download</mat-icon>
+        <span class="material-symbols-outlined msz-18">download</span>
         Exportar
       </button>
     </div>
@@ -77,7 +79,7 @@
               class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
               <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600 !text-[18px]">badge</mat-icon>
+                <span class="material-symbols-outlined text-blue-600 msz-18">badge</span>
                 Documento
               </div>
             </th>
@@ -95,7 +97,7 @@
               class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
               <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600 !text-[18px]">person</mat-icon>
+                <span class="material-symbols-outlined text-blue-600 msz-18">person</span>
                 Nombre Completo
               </div>
             </th>
@@ -104,7 +106,7 @@
                 <div
                   class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0"
                 >
-                  <mat-icon class="text-blue-600 !text-[20px]">person</mat-icon>
+                  <span class="material-symbols-outlined text-blue-600 msz-20">person</span>
                 </div>
                 <div>
                   <div class="font-medium text-slate-900">{{ getPatientFullName(patient) }}</div>
@@ -125,7 +127,7 @@
               class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
               <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600 !text-[18px]">cake</mat-icon>
+                <span class="material-symbols-outlined text-blue-600 msz-18">cake</span>
                 Edad
               </div>
             </th>
@@ -143,7 +145,7 @@
               class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
               <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600 !text-[18px]">wc</mat-icon>
+                <span class="material-symbols-outlined text-blue-600 msz-18">wc</span>
                 Género
               </div>
             </th>
@@ -179,7 +181,7 @@
               class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
               <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600 !text-[18px]">phone</mat-icon>
+                <span class="material-symbols-outlined text-blue-600 msz-18">phone</span>
                 Teléfono
               </div>
             </th>
@@ -198,7 +200,7 @@
               class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
               <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600 !text-[18px]">settings</mat-icon>
+                <span class="material-symbols-outlined text-blue-600 msz-18">settings</span>
                 Acciones
               </div>
             </th>
@@ -210,7 +212,7 @@
                   (click)="viewPatient(patient)"
                   matTooltip="Ver detalles"
                 >
-                  <mat-icon class="!text-[20px] leading-none">visibility</mat-icon>
+                  <span class="material-symbols-outlined msz-20 leading-none">visibility</span>
                 </button>
                 <button
                   mat-icon-button
@@ -218,7 +220,7 @@
                   (click)="editPatient(patient)"
                   matTooltip="Editar"
                 >
-                  <mat-icon class="!text-[20px] leading-none">edit</mat-icon>
+                  <span class="material-symbols-outlined msz-20 leading-none">edit</span>
                 </button>
                 <button
                   mat-icon-button
@@ -226,7 +228,7 @@
                   (click)="deletePatient(patient)"
                   matTooltip="Eliminar"
                 >
-                  <mat-icon class="!text-[20px] leading-none">delete</mat-icon>
+                  <span class="material-symbols-outlined msz-20 leading-none">delete</span>
                 </button>
               </div>
             </td>
@@ -261,7 +263,7 @@
         Mostrando {{ dataSource.data.length }} pacientes en total
       </p>
       <div *ngIf="dataSource.data.length === 0" class="py-8">
-        <mat-icon class="text-6xl text-slate-400 mb-4">people_outline</mat-icon>
+        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4">group</span>
         <p class="text-slate-500">No se encontraron pacientes</p>
       </div>
     </div>

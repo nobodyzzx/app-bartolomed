@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
-import Swal from 'sweetalert2'
+import { AlertService } from '../../../../../core/services/alert.service'
 import { Clinic } from '../../clinics/interfaces/clinic.interface'
 import { ClinicsService } from '../../clinics/services'
 import { BloodType, CreatePatientDto, Gender, MaritalStatus, Patient } from '../interfaces'
@@ -67,6 +67,7 @@ export class PatientFormComponent implements OnInit {
     private route: ActivatedRoute,
     private patientsService: PatientsService,
     private clinicsService: ClinicsService,
+    private alert: AlertService,
   ) {
     this.initializeForms()
   }
@@ -138,16 +139,16 @@ export class PatientFormComponent implements OnInit {
   }
 
   private loadClinics(): void {
-    this.isClinicsLoading = true
     // Cargar solo clínicas activas para el selector
     this.clinicsService
       .findAll(true)
       .pipe(
         catchError(err => {
           console.error('Error al cargar clínicas:', err)
-          Swal.fire({
-            title: 'Error al Cargar Clínicas',
-            html: `
+          this.alert
+            .fire({
+              title: 'Error al Cargar Clínicas',
+              html: `
               <div style="text-align: center; padding: 10px;">
                 <p>No se pudieron cargar las clínicas disponibles.</p>
                 <p style="color: #64748b; font-size: 0.9em; margin-top: 10px;">
@@ -155,17 +156,16 @@ export class PatientFormComponent implements OnInit {
                 </p>
               </div>
             `,
-            icon: 'error',
-            confirmButtonColor: '#2563eb',
-            confirmButtonText: 'Reintentar',
-            showCancelButton: true,
-            cancelButtonText: 'Continuar sin clínicas',
-            cancelButtonColor: '#64748b',
-          }).then(result => {
-            if (result.isConfirmed) {
-              this.loadClinics()
-            }
-          })
+              icon: 'error',
+              confirmButtonText: 'Reintentar',
+              showCancelButton: true,
+              cancelButtonText: 'Continuar sin clínicas',
+            })
+            .then((result: any) => {
+              if (result.isConfirmed) {
+                this.loadClinics()
+              }
+            })
           return of([] as Clinic[])
         }),
       )
@@ -175,11 +175,10 @@ export class PatientFormComponent implements OnInit {
 
         // Mostrar advertencia si no hay clínicas
         if (this.clinics.length === 0 && !this.isEditMode) {
-          Swal.fire({
+          this.alert.fire({
             title: 'Sin Clínicas Activas',
             text: 'No hay clínicas activas disponibles. Por favor, contacte al administrador.',
             icon: 'warning',
-            confirmButtonColor: '#2563eb',
             confirmButtonText: 'Entendido',
           })
         }
@@ -206,25 +205,27 @@ export class PatientFormComponent implements OnInit {
           console.error('Error al cargar paciente:', error)
 
           if (error.status === 404) {
-            Swal.fire({
-              title: 'Paciente No Encontrado',
-              text: 'El paciente que intenta editar no existe o ha sido eliminado.',
-              icon: 'error',
-              confirmButtonColor: '#2563eb',
-              confirmButtonText: 'Ir a Lista',
-            }).then(() => {
-              this.router.navigate(['/dashboard/patients'])
-            })
+            this.alert
+              .fire({
+                title: 'Paciente No Encontrado',
+                text: 'El paciente que intenta editar no existe o ha sido eliminado.',
+                icon: 'error',
+                confirmButtonText: 'Ir a Lista',
+              })
+              .then(() => {
+                this.router.navigate(['/dashboard/patients'])
+              })
           } else {
-            Swal.fire({
-              title: 'Error al Cargar Paciente',
-              text: 'No se pudo cargar la información del paciente. Por favor, intente nuevamente.',
-              icon: 'error',
-              confirmButtonColor: '#2563eb',
-              confirmButtonText: 'Volver',
-            }).then(() => {
-              this.router.navigate(['/dashboard/patients'])
-            })
+            this.alert
+              .fire({
+                title: 'Error al Cargar Paciente',
+                text: 'No se pudo cargar la información del paciente. Por favor, intente nuevamente.',
+                icon: 'error',
+                confirmButtonText: 'Volver',
+              })
+              .then(() => {
+                this.router.navigate(['/dashboard/patients'])
+              })
           }
           return of(null)
         }),
@@ -325,30 +326,30 @@ export class PatientFormComponent implements OnInit {
     this.patientsService.createPatient(patientData).subscribe({
       next: patient => {
         this.isSaving = false
-        Swal.fire({
-          title: '¡Paciente Creado!',
-          html: `
+        this.alert
+          .fire({
+            title: '¡Paciente Creado!',
+            html: `
             <div style="text-align: left; padding: 10px;">
               <p><strong>Nombre:</strong> ${patient.firstName} ${patient.lastName}</p>
               <p><strong>Documento:</strong> ${patient.documentNumber}</p>
               <p style="color: #059669; margin-top: 15px;">✓ El paciente ha sido registrado exitosamente en el sistema</p>
             </div>
           `,
-          icon: 'success',
-          confirmButtonColor: '#2563eb',
-          confirmButtonText: 'Ir a Lista de Pacientes',
-          showCancelButton: true,
-          cancelButtonText: 'Crear Otro',
-          cancelButtonColor: '#64748b',
-          reverseButtons: true,
-        }).then(result => {
-          if (result.isConfirmed) {
-            this.router.navigate(['/dashboard/patients'])
-          } else {
-            // Resetear formulario para crear otro paciente
-            this.initializeForms()
-          }
-        })
+            icon: 'success',
+            confirmButtonText: 'Ir a Lista de Pacientes',
+            showCancelButton: true,
+            cancelButtonText: 'Crear Otro',
+            reverseButtons: true,
+          })
+          .then((result: any) => {
+            if (result.isConfirmed) {
+              this.router.navigate(['/dashboard/patients'])
+            } else {
+              // Resetear formulario para crear otro paciente
+              this.initializeForms()
+            }
+          })
       },
       error: error => {
         this.isSaving = false
@@ -361,17 +362,18 @@ export class PatientFormComponent implements OnInit {
     this.patientsService.updatePatient(this.patientId!, patientData).subscribe({
       next: patient => {
         this.isSaving = false
-        Swal.fire({
-          title: '¡Paciente Actualizado!',
-          text: 'Los datos del paciente han sido actualizados correctamente',
-          icon: 'success',
-          confirmButtonColor: '#2563eb',
-          confirmButtonText: 'Aceptar',
-          timer: 3000,
-          timerProgressBar: true,
-        }).then(() => {
-          this.router.navigate(['/dashboard/patients'])
-        })
+        this.alert
+          .fire({
+            title: '¡Paciente Actualizado!',
+            text: 'Los datos del paciente han sido actualizados correctamente',
+            icon: 'success',
+            confirmButtonText: 'Aceptar',
+            timer: 3000,
+            timerProgressBar: true,
+          })
+          .then(() => {
+            this.router.navigate(['/dashboard/patients'])
+          })
       },
       error: error => {
         this.isSaving = false
@@ -385,9 +387,10 @@ export class PatientFormComponent implements OnInit {
 
     // Error de paciente duplicado (409 Conflict)
     if (error.status === 409 || error.error?.message?.includes('already exists')) {
-      Swal.fire({
-        title: '⚠️ Paciente Ya Registrado',
-        html: `
+      this.alert
+        .fire({
+          title: '⚠️ Paciente Ya Registrado',
+          html: `
           <div style="text-align: left; padding: 15px;">
             <p style="margin-bottom: 15px;">Ya existe un paciente registrado con el documento:</p>
             <div style="background: #fef3c7; padding: 12px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 15px;">
@@ -396,31 +399,29 @@ export class PatientFormComponent implements OnInit {
             <p style="color: #64748b; font-size: 0.9em;">Por favor, verifique el número de documento o busque al paciente existente.</p>
           </div>
         `,
-        icon: 'warning',
-        confirmButtonColor: '#2563eb',
-        confirmButtonText: 'Buscar Paciente',
-        showCancelButton: true,
-        cancelButtonText: 'Revisar Documento',
-        cancelButtonColor: '#64748b',
-        reverseButtons: true,
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Navegar a la lista con búsqueda del documento
-          this.router.navigate(['/dashboard/patients/list'], {
-            queryParams: { search: patientData.documentNumber },
-          })
-        }
-      })
+          icon: 'warning',
+          confirmButtonText: 'Buscar Paciente',
+          showCancelButton: true,
+          cancelButtonText: 'Revisar Documento',
+          reverseButtons: true,
+        })
+        .then(result => {
+          if (result.isConfirmed) {
+            // Navegar a la lista con búsqueda del documento
+            this.router.navigate(['/dashboard/patients/list'], {
+              queryParams: { search: patientData.documentNumber },
+            })
+          }
+        })
       return
     }
 
     // Error de clínica no encontrada (404)
     if (error.status === 404 && error.error?.message?.includes('Clinic not found')) {
-      Swal.fire({
+      this.alert.fire({
         title: 'Clínica No Encontrada',
         text: 'La clínica seleccionada no existe. Por favor, seleccione otra clínica.',
         icon: 'error',
-        confirmButtonColor: '#2563eb',
         confirmButtonText: 'Entendido',
       })
       return
@@ -429,7 +430,7 @@ export class PatientFormComponent implements OnInit {
     // Error de validación (400 Bad Request)
     if (error.status === 400) {
       const validationErrors = this.extractValidationErrors(error)
-      Swal.fire({
+      this.alert.fire({
         title: 'Datos Inválidos',
         html: `
           <div style="text-align: left; padding: 10px;">
@@ -440,7 +441,6 @@ export class PatientFormComponent implements OnInit {
           </div>
         `,
         icon: 'error',
-        confirmButtonColor: '#2563eb',
         confirmButtonText: 'Corregir',
       })
       return
@@ -448,11 +448,10 @@ export class PatientFormComponent implements OnInit {
 
     // Error de autorización (401/403)
     if (error.status === 401 || error.status === 403) {
-      Swal.fire({
+      this.alert.fire({
         title: 'Sin Autorización',
         text: 'No tiene permisos para realizar esta acción.',
         icon: 'error',
-        confirmButtonColor: '#2563eb',
         confirmButtonText: 'Entendido',
       })
       return
@@ -460,41 +459,40 @@ export class PatientFormComponent implements OnInit {
 
     // Error de servidor (500)
     if (error.status >= 500) {
-      Swal.fire({
-        title: 'Error del Servidor',
-        html: `
+      this.alert
+        .fire({
+          title: 'Error del Servidor',
+          html: `
           <div style="text-align: center; padding: 10px;">
             <p>Ocurrió un error en el servidor. Por favor, intente nuevamente.</p>
             <p style="color: #64748b; font-size: 0.9em; margin-top: 10px;">Si el problema persiste, contacte al administrador.</p>
           </div>
         `,
-        icon: 'error',
-        confirmButtonColor: '#2563eb',
-        confirmButtonText: 'Reintentar',
-        showCancelButton: true,
-        cancelButtonText: 'Cancelar',
-        cancelButtonColor: '#64748b',
-      }).then(result => {
-        if (result.isConfirmed) {
-          this.isSaving = true
-          if (this.isEditMode) {
-            this.updatePatient(patientData)
-          } else {
-            this.createPatient(patientData)
+          icon: 'error',
+          confirmButtonText: 'Reintentar',
+          showCancelButton: true,
+          cancelButtonText: 'Cancelar',
+        })
+        .then((result: any) => {
+          if (result.isConfirmed) {
+            this.isSaving = true
+            if (this.isEditMode) {
+              this.updatePatient(patientData)
+            } else {
+              this.createPatient(patientData)
+            }
           }
-        }
-      })
+        })
       return
     }
 
     // Error genérico
-    Swal.fire({
+    this.alert.fire({
       title: 'Error al Guardar',
       text:
         error.error?.message ||
         'Ocurrió un error al guardar el paciente. Por favor, intente nuevamente.',
       icon: 'error',
-      confirmButtonColor: '#2563eb',
       confirmButtonText: 'Entendido',
     })
   }
@@ -519,25 +517,25 @@ export class PatientFormComponent implements OnInit {
 
   saveDraft(): void {
     if (this.personalInfoForm.valid) {
-      Swal.fire({
-        title: 'Guardar Borrador',
-        text: 'Se guardará el paciente solo con la información personal básica. ¿Desea continuar?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#2563eb',
-        cancelButtonColor: '#64748b',
-        confirmButtonText: 'Sí, guardar',
-        cancelButtonText: 'Cancelar',
-        reverseButtons: true,
-      }).then(result => {
-        if (result.isConfirmed) {
-          this.isSaving = true
-          const patientData = this.createPatientDto()
-          this.createPatient(patientData)
-        }
-      })
+      this.alert
+        .fire({
+          title: 'Guardar Borrador',
+          text: 'Se guardará el paciente solo con la información personal básica. ¿Desea continuar?',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'Sí, guardar',
+          cancelButtonText: 'Cancelar',
+          reverseButtons: true,
+        })
+        .then((result: any) => {
+          if (result.isConfirmed) {
+            this.isSaving = true
+            const patientData = this.createPatientDto()
+            this.createPatient(patientData)
+          }
+        })
     } else {
-      Swal.fire({
+      this.alert.fire({
         title: 'Información Incompleta',
         html: `
           <div style="text-align: left; padding: 10px;">
@@ -552,36 +550,34 @@ export class PatientFormComponent implements OnInit {
           </div>
         `,
         icon: 'warning',
-        confirmButtonColor: '#2563eb',
         confirmButtonText: 'Completar Datos',
       })
     }
   }
 
   cancel(): void {
-    Swal.fire({
-      title: '¿Estás seguro?',
-      text: 'Los cambios no guardados se perderán',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#2563eb',
-      cancelButtonColor: '#64748b',
-      confirmButtonText: 'Sí, salir',
-      cancelButtonText: 'Cancelar',
-      reverseButtons: true,
-    }).then(result => {
-      if (result.isConfirmed) {
-        this.router.navigate(['/dashboard/patients'])
-      }
-    })
+    this.alert
+      .fire({
+        title: '¿Estás seguro?',
+        text: 'Los cambios no guardados se perderán',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, salir',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+      })
+      .then((result: any) => {
+        if (result.isConfirmed) {
+          this.router.navigate(['/dashboard/patients'])
+        }
+      })
   }
 
   private showSuccess(message: string): void {
-    Swal.fire({
+    this.alert.fire({
       title: '¡Éxito!',
       text: message,
       icon: 'success',
-      confirmButtonColor: '#2563eb',
       confirmButtonText: 'Aceptar',
       timer: 3000,
       timerProgressBar: true,
@@ -589,11 +585,10 @@ export class PatientFormComponent implements OnInit {
   }
 
   private showError(message: string): void {
-    Swal.fire({
+    this.alert.fire({
       title: 'Error',
       text: message,
       icon: 'error',
-      confirmButtonColor: '#2563eb',
       confirmButtonText: 'Entendido',
     })
   }

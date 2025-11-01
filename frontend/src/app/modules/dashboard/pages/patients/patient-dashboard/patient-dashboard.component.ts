@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core'
 import { Router } from '@angular/router'
-import Swal from 'sweetalert2'
+import { AlertService } from '@core/services/alert.service'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
 import { Patient, PatientStatistics } from '../interfaces'
 import { PatientsService } from '../services'
@@ -19,6 +19,7 @@ export class PatientDashboardComponent implements OnInit {
     private patientsService: PatientsService,
     private router: Router,
     private errorService: ErrorService,
+    private alert: AlertService,
   ) {}
 
   ngOnInit(): void {
@@ -84,25 +85,27 @@ export class PatientDashboardComponent implements OnInit {
   }
 
   openSearch() {
-    Swal.fire({
-      title: 'Buscar Paciente',
-      input: 'text',
-      inputLabel: 'Nombre, documento, email o teléfono',
-      inputPlaceholder: 'Escribe para buscar...',
-      showCancelButton: true,
-      confirmButtonText: 'Buscar',
-      cancelButtonText: 'Cancelar',
-      inputValidator: value => {
-        if (!value || !value.trim()) {
-          return 'Por favor, escribe un término de búsqueda'
+    this.alert
+      .fire({
+        title: 'Buscar Paciente',
+        input: 'text',
+        inputLabel: 'Nombre, documento, email o teléfono',
+        inputPlaceholder: 'Escribe para buscar...',
+        showCancelButton: true,
+        confirmButtonText: 'Buscar',
+        cancelButtonText: 'Cancelar',
+        inputValidator: (value: any): string | null => {
+          if (!value || !value.trim()) {
+            return 'Por favor, escribe un término de búsqueda'
+          }
+          return null
+        },
+      })
+      .then(result => {
+        if (result.isConfirmed && result.value) {
+          const term = (result.value as string).trim()
+          this.router.navigate(['/dashboard/patients/list'], { queryParams: { q: term } })
         }
-        return null
-      },
-    }).then(result => {
-      if (result.isConfirmed && result.value) {
-        const term = (result.value as string).trim()
-        this.router.navigate(['/dashboard/patients/list'], { queryParams: { q: term } })
-      }
-    })
+      })
   }
 }

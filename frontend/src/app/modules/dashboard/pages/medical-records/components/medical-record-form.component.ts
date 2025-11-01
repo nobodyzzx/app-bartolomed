@@ -2,8 +2,8 @@ import { Location } from '@angular/common'
 import { Component, OnInit } from '@angular/core'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
+import { AlertService } from '@core/services/alert.service'
 import { Observable, of } from 'rxjs'
-import Swal from 'sweetalert2'
 import { User } from '../../../../auth/interfaces/user.interface'
 import { Patient } from '../../patients/interfaces'
 import { PatientsService } from '../../patients/services/patients.service'
@@ -59,6 +59,7 @@ export class MedicalRecordFormComponent implements OnInit {
     private medicalRecordsService: MedicalRecordsService,
     private patientsService: PatientsService,
     private usersService: UsersService,
+    private alert: AlertService,
   ) {
     this.initializeForms()
   }
@@ -340,15 +341,16 @@ export class MedicalRecordFormComponent implements OnInit {
         if (this.consentForm.valid && this.selectedFile) {
           this.createConsentForm(record.id!)
         } else {
-          Swal.fire({
-            icon: 'success',
-            title: '¡Expediente creado!',
-            text: 'El expediente médico ha sido creado exitosamente.',
-            confirmButtonText: 'Aceptar',
-            confirmButtonColor: '#2563eb',
-          }).then(() => {
-            this.router.navigate(['/dashboard/medical-records'])
-          })
+          this.alert
+            .fire({
+              icon: 'success',
+              title: '¡Expediente creado!',
+              text: 'El expediente médico ha sido creado exitosamente.',
+              confirmButtonText: 'Aceptar',
+            })
+            .then(() => {
+              this.router.navigate(['/dashboard/medical-records'])
+            })
         }
       },
       error: error => {
@@ -361,15 +363,16 @@ export class MedicalRecordFormComponent implements OnInit {
   private updateMedicalRecord(medicalRecord: CreateMedicalRecordDto): void {
     this.medicalRecordsService.updateMedicalRecord(this.recordId!, medicalRecord).subscribe({
       next: record => {
-        Swal.fire({
-          icon: 'success',
-          title: '¡Expediente actualizado!',
-          text: 'El expediente médico ha sido actualizado exitosamente.',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#2563eb',
-        }).then(() => {
-          this.router.navigate(['/dashboard/medical-records'])
-        })
+        this.alert
+          .fire({
+            icon: 'success',
+            title: '¡Expediente actualizado!',
+            text: 'El expediente médico ha sido actualizado exitosamente.',
+            confirmButtonText: 'Aceptar',
+          })
+          .then(() => {
+            this.router.navigate(['/dashboard/medical-records'])
+          })
         this.isSaving = false
       },
       error: error => {
@@ -423,66 +426,67 @@ export class MedicalRecordFormComponent implements OnInit {
   }
 
   saveDraft(): void {
-    Swal.fire({
-      title: '¿Guardar borrador?',
-      text: 'Se guardará el expediente médico en estado borrador con la información actual.',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, guardar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#2563eb',
-    }).then(result => {
-      if (result.isConfirmed) {
-        if (this.patientInfoForm.valid) {
-          this.isSaving = true
-          const medicalRecord = this.createMedicalRecordDto()
+    this.alert
+      .fire({
+        title: '¿Guardar borrador?',
+        text: 'Se guardará el expediente médico en estado borrador con la información actual.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, guardar',
+        cancelButtonText: 'Cancelar',
+      })
+      .then(result => {
+        if (result.isConfirmed) {
+          if (this.patientInfoForm.valid) {
+            this.isSaving = true
+            const medicalRecord = this.createMedicalRecordDto()
 
-          this.medicalRecordsService.createMedicalRecord(medicalRecord).subscribe({
-            next: record => {
-              Swal.fire({
-                icon: 'success',
-                title: '¡Borrador guardado!',
-                text: 'El expediente médico ha sido guardado como borrador.',
-                confirmButtonText: 'Aceptar',
-                confirmButtonColor: '#2563eb',
-              }).then(() => {
-                this.router.navigate(['/dashboard/medical-records'])
-              })
-              this.isSaving = false
-            },
-            error: error => {
-              this.showError('Error al guardar el borrador')
-              this.isSaving = false
-            },
-          })
-        } else {
-          Swal.fire({
-            icon: 'warning',
-            title: 'Información incompleta',
-            text: 'Debe completar al menos la información básica del paciente',
-            confirmButtonText: 'Entendido',
-            confirmButtonColor: '#f59e0b',
-          })
+            this.medicalRecordsService.createMedicalRecord(medicalRecord).subscribe({
+              next: record => {
+                this.alert
+                  .fire({
+                    icon: 'success',
+                    title: '¡Borrador guardado!',
+                    text: 'El expediente médico ha sido guardado como borrador.',
+                    confirmButtonText: 'Aceptar',
+                  })
+                  .then(() => {
+                    this.router.navigate(['/dashboard/medical-records'])
+                  })
+                this.isSaving = false
+              },
+              error: error => {
+                this.showError('Error al guardar el borrador')
+                this.isSaving = false
+              },
+            })
+          } else {
+            this.alert.fire({
+              icon: 'warning',
+              title: 'Información incompleta',
+              text: 'Debe completar al menos la información básica del paciente',
+              confirmButtonText: 'Entendido',
+            })
+          }
         }
-      }
-    })
+      })
   }
 
   cancel(): void {
-    Swal.fire({
-      title: '¿Descartar cambios?',
-      text: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, salir',
-      cancelButtonText: 'Continuar editando',
-      confirmButtonColor: '#dc2626',
-      cancelButtonColor: '#2563eb',
-    }).then(result => {
-      if (result.isConfirmed) {
-        this.router.navigate(['/dashboard/medical-records'])
-      }
-    })
+    this.alert
+      .fire({
+        title: '¿Descartar cambios?',
+        text: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, salir',
+        cancelButtonText: 'Continuar editando',
+      })
+      .then(result => {
+        if (result.isConfirmed) {
+          this.router.navigate(['/dashboard/medical-records'])
+        }
+      })
   }
 
   goBack(): void {
@@ -504,22 +508,20 @@ export class MedicalRecordFormComponent implements OnInit {
   }
 
   private showSuccess(message: string): void {
-    Swal.fire({
+    this.alert.fire({
       icon: 'success',
       title: '¡Éxito!',
       text: message,
       confirmButtonText: 'Aceptar',
-      confirmButtonColor: '#2563eb',
     })
   }
 
   private showError(message: string): void {
-    Swal.fire({
+    this.alert.fire({
       icon: 'error',
       title: 'Error',
       text: message,
       confirmButtonText: 'Aceptar',
-      confirmButtonColor: '#dc2626',
     })
   }
 }

@@ -4,7 +4,7 @@ import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
 import { ActivatedRoute, Router } from '@angular/router'
-import Swal from 'sweetalert2'
+import { AlertService } from '@core/services/alert.service'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
 import { Patient } from '../interfaces'
 import { PatientsService } from '../services'
@@ -31,6 +31,7 @@ export class PatientListComponent implements OnInit {
     private errorService: ErrorService,
     private location: Location,
     private route: ActivatedRoute,
+    private alert: AlertService,
   ) {
     this.dataSource = new MatTableDataSource(this.patients)
   }
@@ -128,27 +129,27 @@ export class PatientListComponent implements OnInit {
   }
 
   deletePatient(patient: Patient) {
-    Swal.fire({
-      title: '¿Estás seguro?',
-      text: `¿Deseas eliminar al paciente ${this.getPatientFullName(patient)}?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-    }).then(result => {
-      if (result.isConfirmed) {
-        this.patientsService.removePatient(patient.id).subscribe({
-          next: () => {
-            Swal.fire('Eliminado', 'El paciente ha sido eliminado.', 'success')
-            this.loadPatients()
-          },
-          error: error => {
-            this.errorService.handleError(error)
-          },
-        })
-      }
-    })
+    this.alert
+      .fire({
+        title: '¿Estás seguro?',
+        text: `¿Deseas eliminar al paciente ${this.getPatientFullName(patient)}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+      })
+      .then(result => {
+        if (result.isConfirmed) {
+          this.patientsService.removePatient(patient.id).subscribe({
+            next: () => {
+              this.alert.success('Eliminado', 'El paciente ha sido eliminado.')
+              this.loadPatients()
+            },
+            error: error => {
+              this.errorService.handleError(error)
+            },
+          })
+        }
+      })
   }
 }

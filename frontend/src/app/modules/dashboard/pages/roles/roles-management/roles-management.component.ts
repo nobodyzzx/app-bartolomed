@@ -17,7 +17,7 @@ import { MatPaginatorModule } from '@angular/material/paginator'
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
 import { MatTableModule } from '@angular/material/table'
 import { MatTooltipModule } from '@angular/material/tooltip'
-import Swal from 'sweetalert2'
+import { AlertService } from '@core/services/alert.service'
 import { NotificationService } from '../../../../../shared/services/notification.service'
 import { Role, RolesService } from '../../../services/roles.service'
 
@@ -40,252 +40,281 @@ import { Role, RolesService } from '../../../services/roles.service'
     MatTooltipModule,
   ],
   template: `
-    <div
-      class="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100 relative overflow-hidden p-8"
-    >
-      <div class="absolute inset-0 overflow-hidden pointer-events-none">
-        <div
-          class="absolute top-0 right-0 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"
-        ></div>
-        <div
-          class="absolute top-0 left-0 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"
-        ></div>
-        <div
-          class="absolute bottom-0 left-1/2 w-96 h-96 bg-slate-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"
-        ></div>
-      </div>
-
-      <div class="relative z-10 roles-management-container">
-        <div class="mb-8 text-center">
-          <h1 class="text-4xl font-bold text-blue-900 mb-2">Gestión de Roles</h1>
-          <div class="w-20 h-1 bg-blue-600 mx-auto rounded-full mb-3"></div>
-          <p class="text-blue-600">Crea y administra los roles del sistema</p>
-        </div>
-
-        <div class="flex justify-end mb-6">
+    <div class="min-h-screen bg-slate-50 p-8">
+      <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-10">
+          <div>
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Gestión de Roles</h1>
+            <p class="text-slate-600">Administra los roles y permisos del sistema</p>
+          </div>
           <button
-            mat-flat-button
+            mat-raised-button
             color="primary"
             (click)="openForm()"
-            class="h-12 px-6 font-medium"
+            class="rounded-full h-10 px-5"
           >
-            <mat-icon class="mr-2">add</mat-icon>
-            Nuevo Rol
+            <span class="flex items-center gap-2">
+              <mat-icon class="!text-[18px]">add</mat-icon>
+              Nuevo Rol
+            </span>
           </button>
         </div>
 
-        <mat-card
-          *ngIf="isFormVisible"
-          class="mb-8 p-6 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-lg"
-        >
-          <mat-card-title class="mb-4 text-blue-900">{{
-            editingRoleId ? 'Editar Rol' : 'Crear Rol'
-          }}</mat-card-title>
+        <!-- Formulario -->
+        <div *ngIf="isFormVisible" class="bg-white rounded-xl shadow-md p-6 mb-8">
+          <div class="flex items-center gap-3 mb-6">
+            <div
+              class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
+            >
+              <mat-icon class="!text-[20px]">verified_user</mat-icon>
+            </div>
+            <h3 class="text-xl font-semibold text-slate-900 m-0">
+              {{ editingRoleId ? 'Editar Rol' : 'Crear Rol' }}
+            </h3>
+          </div>
+
           <form [formGroup]="roleForm" (ngSubmit)="saveRole()" class="grid grid-cols-1 gap-4">
-            <mat-form-field class="w-full">
-              <mat-label>Nombre del Rol</mat-label>
-              <input matInput formControlName="name" required />
-            </mat-form-field>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre del Rol</mat-label>
+                <input matInput formControlName="name" placeholder="Ej: Administrador" />
+                <mat-icon matSuffix>badge</mat-icon>
+                <mat-error *ngIf="roleForm.get('name')?.hasError('required')">
+                  El nombre es obligatorio
+                </mat-error>
+                <mat-error *ngIf="roleForm.get('name')?.hasError('minlength')">
+                  Mínimo 2 caracteres
+                </mat-error>
+              </mat-form-field>
 
-            <mat-form-field class="w-full">
-              <mat-label>Descripción</mat-label>
-              <textarea matInput formControlName="description" rows="3"></textarea>
-            </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Descripción</mat-label>
+                <input matInput formControlName="description" placeholder="Descripción del rol" />
+                <mat-icon matSuffix>description</mat-icon>
+              </mat-form-field>
+            </div>
 
-            <mat-form-field class="w-full">
+            <mat-form-field appearance="outline">
               <mat-label>Permisos (separados por coma)</mat-label>
               <textarea
                 matInput
                 formControlName="permissions"
                 rows="3"
-                placeholder="crear, editar, eliminar"
+                placeholder="crear, editar, eliminar, ver"
               ></textarea>
+              <mat-icon matSuffix>lock</mat-icon>
             </mat-form-field>
 
-            <div class="flex gap-2">
+            <div class="flex justify-end gap-4 pt-2">
               <button
-                mat-flat-button
+                mat-stroked-button
+                type="button"
+                (click)="cancel()"
+                class="rounded-full h-10 px-5 bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100"
+              >
+                Cancelar
+              </button>
+              <button
+                mat-raised-button
                 color="primary"
                 type="submit"
                 [disabled]="roleForm.invalid"
-                class="h-12 px-6 font-medium"
+                class="rounded-full h-10 px-5"
               >
-                Guardar
-              </button>
-              <button mat-stroked-button type="button" (click)="cancel()" class="h-12 px-6">
-                Cancelar
+                <span class="flex items-center gap-2">
+                  <mat-icon class="!text-[18px]">save</mat-icon>
+                  Guardar
+                </span>
               </button>
             </div>
           </form>
-        </mat-card>
+        </div>
 
-        <mat-card class="p-0 rounded-2xl shadow-lg backdrop-blur-sm border border-blue-100">
-          <div *ngIf="isLoading" class="flex justify-center p-6">
+        <!-- Tabla de Roles -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+          <div class="p-6 border-b border-slate-200">
+            <h2 class="text-xl font-bold text-slate-900">Roles del Sistema</h2>
+          </div>
+
+          <div *ngIf="isLoading" class="flex justify-center p-12">
             <mat-spinner diameter="50"></mat-spinner>
           </div>
 
-          <table mat-table [dataSource]="roles" *ngIf="!isLoading" class="w-full">
-            <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef>Nombre</th>
-              <td mat-cell *matCellDef="let role">
-                <div class="flex items-center gap-3">
-                  <div class="avatar-circle"><mat-icon>verified_user</mat-icon></div>
-                  <div>
-                    <div class="text-blue-900 font-medium">{{ role.name }}</div>
-                    <small class="text-gray-600 block" *ngIf="role.description">{{
-                      role.description
-                    }}</small>
+          <div class="overflow-x-auto" *ngIf="!isLoading">
+            <table mat-table [dataSource]="roles" class="w-full bg-transparent">
+              <!-- Columna Nombre -->
+              <ng-container matColumnDef="name">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+                >
+                  <div class="flex items-center gap-2">
+                    <mat-icon class="text-blue-600 !text-[18px]">verified_user</mat-icon>
+                    Rol
                   </div>
-                </div>
-              </td>
-            </ng-container>
+                </th>
+                <td mat-cell *matCellDef="let role" class="p-4">
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0"
+                    >
+                      <mat-icon class="text-blue-600 !text-[20px]">verified_user</mat-icon>
+                    </div>
+                    <div>
+                      <div class="font-medium text-slate-900">{{ role.name }}</div>
+                      <div class="text-sm text-slate-600" *ngIf="role.description">
+                        {{ role.description }}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
 
-            <ng-container matColumnDef="description">
-              <th mat-header-cell *matHeaderCellDef>Descripción</th>
-              <td mat-cell *matCellDef="let role">{{ role.description || '-' }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef>Estado</th>
-              <td mat-cell *matCellDef="let role">
-                <span
-                  class="status-badge"
-                  [ngClass]="role.isActive ? 'status-active-badge' : 'status-inactive-badge'"
+              <!-- Columna Permisos -->
+              <ng-container matColumnDef="permissions">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
                 >
+                  <div class="flex items-center gap-2">
+                    <mat-icon class="text-blue-600 !text-[18px]">lock</mat-icon>
+                    Permisos
+                  </div>
+                </th>
+                <td mat-cell *matCellDef="let role" class="p-4">
+                  <div class="flex flex-wrap gap-2">
+                    <span
+                      *ngFor="let permission of role.permissions?.slice(0, 3)"
+                      class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                    >
+                      {{ permission }}
+                    </span>
+                    <span
+                      *ngIf="role.permissions?.length > 3"
+                      class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800"
+                    >
+                      +{{ role.permissions.length - 3 }} más
+                    </span>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Columna Estado -->
+              <ng-container matColumnDef="status">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+                >
+                  <div class="flex items-center gap-2">
+                    <mat-icon class="text-blue-600 !text-[18px]">toggle_on</mat-icon>
+                    Estado
+                  </div>
+                </th>
+                <td mat-cell *matCellDef="let role" class="p-4">
                   <span
-                    class="status-dot"
-                    [ngClass]="role.isActive ? 'dot-active' : 'dot-inactive'"
-                  ></span>
-                  {{ role.isActive ? 'Activo' : 'Inactivo' }}
-                </span>
-              </td>
-            </ng-container>
+                    class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
+                    [ngClass]="
+                      role.isActive
+                        ? 'bg-green-100 text-green-800 border-green-200'
+                        : 'bg-red-100 text-red-800 border-red-200'
+                    "
+                  >
+                    <span
+                      class="w-2 h-2 rounded-full"
+                      [ngClass]="role.isActive ? 'bg-green-500' : 'bg-red-500'"
+                    ></span>
+                    {{ role.isActive ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+              </ng-container>
 
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef>Acciones</th>
-              <td mat-cell *matCellDef="let role" class="flex gap-2">
-                <button
-                  mat-icon-button
-                  (click)="editRole(role)"
-                  class="text-blue-600 hover:bg-blue-100 rounded-lg"
-                  matTooltip="Editar"
+              <!-- Columna Acciones -->
+              <ng-container matColumnDef="actions">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
                 >
-                  <mat-icon>edit</mat-icon>
-                </button>
-                <button
-                  mat-icon-button
-                  (click)="deleteRole(role)"
-                  class="text-red-600 hover:bg-red-100 rounded-lg"
-                  matTooltip="Eliminar"
-                >
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </td>
-            </ng-container>
+                  <div class="flex items-center gap-2">
+                    <mat-icon class="text-blue-600 !text-[18px]">settings</mat-icon>
+                    Acciones
+                  </div>
+                </th>
+                <td mat-cell *matCellDef="let role" class="p-4">
+                  <div class="flex gap-2 items-center">
+                    <button
+                      mat-icon-button
+                      (click)="editRole(role)"
+                      class="w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-amber-200"
+                      matTooltip="Editar rol"
+                      aria-label="Editar rol"
+                    >
+                      <mat-icon class="!text-[20px] leading-none">edit</mat-icon>
+                    </button>
+                    <button
+                      mat-icon-button
+                      (click)="deleteRole(role)"
+                      class="w-9 h-9 text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-200"
+                      matTooltip="Eliminar rol"
+                      aria-label="Eliminar rol"
+                    >
+                      <mat-icon class="!text-[20px] leading-none">delete</mat-icon>
+                    </button>
+                  </div>
+                </td>
+              </ng-container>
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr
-              mat-row
-              *matRowDef="let row; columns: displayedColumns"
-              class="hover:bg-blue-50 transition-all duration-200"
-            ></tr>
-          </table>
-        </mat-card>
+              <tr
+                mat-header-row
+                *matHeaderRowDef="displayedColumns"
+                class="border-b-2 border-slate-200"
+              ></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: displayedColumns"
+                class="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+              ></tr>
+            </table>
+          </div>
+
+          <!-- Estado vacío -->
+          <div *ngIf="!isLoading && roles.length === 0" class="text-center py-12 px-6">
+            <mat-icon class="text-6xl text-slate-400 mb-4">verified_user</mat-icon>
+            <p class="text-slate-500 mb-4">No hay roles registrados aún</p>
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="openForm()"
+              class="rounded-full h-10 px-5"
+            >
+              <span class="flex items-center gap-2">
+                <mat-icon class="!text-[18px]">add</mat-icon>
+                Crear Primer Rol
+              </span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   `,
-  styles: [
-    `
-      .roles-management-container {
-        max-width: 1200px;
-        margin: 0 auto;
-      }
-      table {
-        width: 100%;
-      }
-      :host ::ng-deep th.mat-mdc-header-cell {
-        background-color: #2563eb;
-        color: #fff;
-        font-weight: 600;
-      }
-      .avatar-circle {
-        width: 36px;
-        height: 36px;
-        border-radius: 9999px;
-        background-color: #e6f0ff;
-        color: #2563eb;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .avatar-circle .mat-icon {
-        font-size: 20px;
-        width: 20px;
-        height: 20px;
-      }
-      .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 10px;
-        border-radius: 9999px;
-        font-weight: 500;
-        font-size: 12px;
-      }
-      .status-active-badge {
-        background-color: #e8f5e9;
-        color: #2e7d32;
-      }
-      .status-inactive-badge {
-        background-color: #ffebee;
-        color: #c62828;
-      }
-      .status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-      }
-      .dot-active {
-        background-color: #2e7d32;
-      }
-      .dot-inactive {
-        background-color: #e53935;
-      }
-      @keyframes blob {
-        0%,
-        100% {
-          transform: translate(0, 0) scale(1);
-        }
-        33% {
-          transform: translate(30px, -50px) scale(1.1);
-        }
-        66% {
-          transform: translate(-20px, 20px) scale(0.9);
-        }
-      }
-      .animate-blob {
-        animation: blob 7s infinite;
-      }
-      .animation-delay-2000 {
-        animation-delay: 2s;
-      }
-      .animation-delay-4000 {
-        animation-delay: 4s;
-      }
-    `,
-  ],
+  styles: [],
 })
 export class RolesManagementComponent implements OnInit {
   private rolesService = inject(RolesService)
   private notificationService = inject(NotificationService)
   private fb = inject(FormBuilder)
+  private alert = inject(AlertService)
 
   roles: Role[] = []
   isLoading = false
   isFormVisible = false
   editingRoleId: string | null = null
 
-  displayedColumns = ['name', 'description', 'status', 'actions']
+  displayedColumns = ['name', 'permissions', 'status', 'actions']
 
   roleForm: FormGroup = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -372,27 +401,28 @@ export class RolesManagementComponent implements OnInit {
   }
 
   deleteRole(role: Role): void {
-    Swal.fire({
-      title: '¿Eliminar rol?',
-      text: `¿Estás seguro de que deseas eliminar el rol "${role.name}"?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#d33',
-    }).then(result => {
-      if (result.isConfirmed) {
-        this.rolesService.delete(role.id).subscribe({
-          next: () => {
-            this.notificationService.success('Rol eliminado')
-            this.loadRoles()
-          },
-          error: () => {
-            this.notificationService.error('Error al eliminar rol')
-          },
-        })
-      }
-    })
+    this.alert
+      .fire({
+        title: '¿Eliminar rol?',
+        text: `¿Estás seguro de que deseas eliminar el rol "${role.name}"?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+      })
+      .then(result => {
+        if (result.isConfirmed) {
+          this.rolesService.delete(role.id).subscribe({
+            next: () => {
+              this.notificationService.success('Rol eliminado')
+              this.loadRoles()
+            },
+            error: () => {
+              this.notificationService.error('Error al eliminar rol')
+            },
+          })
+        }
+      })
   }
 
   cancel(): void {

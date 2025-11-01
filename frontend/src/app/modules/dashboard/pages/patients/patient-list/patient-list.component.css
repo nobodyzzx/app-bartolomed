@@ -19,7 +19,8 @@
 }
 
 /* Iconos en botones de la tabla */
-.mat-table .mat-icon {
+.mat-table .mat-icon,
+.mat-table .material-symbols-outlined {
   font-size: 1.25rem !important;
   width: 1.25rem !important;
   height: 1.25rem !important;
@@ -43,7 +44,8 @@
   justify-content: center !important;
 }
 
-.mat-icon-button .mat-icon {
+.mat-icon-button .mat-icon,
+.mat-icon-button .material-symbols-outlined {
   font-size: 1.5rem !important;
   width: 1.5rem !important;
   height: 1.5rem !important;
@@ -60,15 +62,17 @@
   .patient-list-container {
     padding: 1rem;
   }
-  
+
   /* Iconos más pequeños en móviles */
-  .mat-icon {
+  .mat-icon,
+  .material-symbols-outlined {
     font-size: 1.25rem !important;
     width: 1.25rem !important;
     height: 1.25rem !important;
   }
-  
-  .mat-table .mat-icon {
+
+  .mat-table .mat-icon,
+  .mat-table .material-symbols-outlined {
     font-size: 1rem !important;
     width: 1rem !important;
     height: 1rem !important;

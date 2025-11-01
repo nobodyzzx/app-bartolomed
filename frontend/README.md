@@ -2,6 +2,14 @@
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.5.
 
+## Guía de Diseño de UI
+
+Para mantener coherencia visual y de interacción, consulta la guía de diseño en:
+
+- ../docs/GUIA-DISENO-UI.md
+
+Nota: Este proyecto se ejecuta continuamente en Docker. No necesitas iniciar ni detener servicios manualmente; tras cambios visuales, revisa directamente en el navegador.
+
 ## Development server
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.

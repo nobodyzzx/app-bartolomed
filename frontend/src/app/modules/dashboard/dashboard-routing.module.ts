@@ -6,7 +6,6 @@ import { permissionsGuard } from '@core/guards/permissions.guard'
 import { roleGuard } from '@core/guards/role.guard'
 import { rolesSyncGuard } from '@core/guards/roles-sync.guard'
 
-import { PlaceholderComponent } from '../../shared/components/placeholder/placeholder.component'
 import { authGuard } from '../auth/guards'
 import { DashboardLayoutComponent } from './layouts/dashboard-layout/dashboard-layout.component'
 import { MainDashboardComponent } from './pages/main-dashboard/main-dashboard.component'
@@ -73,7 +72,8 @@ const routes: Routes = [
       },
       {
         path: 'appointments',
-        component: PlaceholderComponent,
+        loadChildren: () =>
+          import('./pages/appointments/appointments.module').then(m => m.AppointmentsModule),
         canActivate: [permissionsGuard, roleGuard],
         data: {
           allowedRoles: [
@@ -88,7 +88,8 @@ const routes: Routes = [
       },
       {
         path: 'prescriptions',
-        component: PlaceholderComponent,
+        loadChildren: () =>
+          import('./pages/prescriptions/prescriptions.module').then(m => m.PrescriptionsModule),
         canActivate: [permissionsGuard, roleGuard],
         data: {
           allowedRoles: [
@@ -102,7 +103,7 @@ const routes: Routes = [
       },
       {
         path: 'billing',
-        component: PlaceholderComponent,
+        loadChildren: () => import('./pages/billing/billing.module').then(m => m.BillingModule),
         canActivate: [permissionsGuard, roleGuard],
         data: {
           allowedRoles: [UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
@@ -210,7 +211,7 @@ const routes: Routes = [
       // Rutas para funcionalidades administrativas
       {
         path: 'config',
-        component: PlaceholderComponent,
+        loadChildren: () => import('./pages/config/config.module').then(m => m.ConfigModule),
         canActivate: [permissionsGuard, roleGuard],
         data: {
           allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
@@ -219,7 +220,7 @@ const routes: Routes = [
       },
       {
         path: 'audit',
-        component: PlaceholderComponent,
+        loadChildren: () => import('./pages/audit/audit.module').then(m => m.AuditModule),
         canActivate: [permissionsGuard, roleGuard],
         data: {
           allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
@@ -228,7 +229,7 @@ const routes: Routes = [
       },
       {
         path: 'backup',
-        component: PlaceholderComponent,
+        loadChildren: () => import('./pages/backup/backup.module').then(m => m.BackupModule),
         canActivate: [permissionsGuard, roleGuard],
         data: {
           allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
@@ -255,25 +256,35 @@ const routes: Routes = [
       },
       {
         path: 'system-params',
-        component: PlaceholderComponent,
+        loadChildren: () =>
+          import('./pages/system-params/system-params.module').then(m => m.SystemParamsModule),
         canActivate: [roleGuard],
         data: { allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN] },
       },
       {
         path: 'notifications-config',
-        component: PlaceholderComponent,
+        loadChildren: () =>
+          import('./pages/notifications-config/notifications-config.module').then(
+            m => m.NotificationsConfigModule,
+          ),
         canActivate: [roleGuard],
         data: { allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN] },
       },
       {
         path: 'document-templates',
-        component: PlaceholderComponent,
+        loadChildren: () =>
+          import('./pages/document-templates/document-templates.module').then(
+            m => m.DocumentTemplatesModule,
+          ),
         canActivate: [roleGuard],
         data: { allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN] },
       },
       {
         path: 'api-integration',
-        component: PlaceholderComponent,
+        loadChildren: () =>
+          import('./pages/api-integration/api-integration.module').then(
+            m => m.ApiIntegrationModule,
+          ),
         canActivate: [roleGuard],
         data: { allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN] },
       },

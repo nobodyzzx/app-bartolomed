@@ -42,13 +42,13 @@
             <div
               class="stat-icon total w-16 h-16 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg"
             >
-              <mat-icon class="text-white text-3xl">business</mat-icon>
+              <span class="material-symbols-outlined text-white text-3xl">business</span>
             </div>
             <div class="stat-info flex-1">
               <h3 class="text-3xl font-bold text-blue-900">{{ statistics.totalClinics }}</h3>
               <p class="text-blue-600 text-sm mt-1">Total de Clínicas</p>
             </div>
-            <mat-icon class="text-blue-300 text-2xl">arrow_forward</mat-icon>
+            <span class="material-symbols-outlined text-blue-300 text-2xl">arrow_forward</span>
           </div>
         </mat-card-content>
       </mat-card>
@@ -63,13 +63,13 @@
             <div
               class="stat-icon active w-16 h-16 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg"
             >
-              <mat-icon class="text-white text-3xl">check_circle</mat-icon>
+              <span class="material-symbols-outlined text-white text-3xl">check_circle</span>
             </div>
             <div class="stat-info flex-1">
               <h3 class="text-3xl font-bold text-green-900">{{ statistics.activeClinics }}</h3>
               <p class="text-green-600 text-sm mt-1">Clínicas Activas</p>
             </div>
-            <mat-icon class="text-green-300 text-2xl">arrow_forward</mat-icon>
+            <span class="material-symbols-outlined text-green-300 text-2xl">arrow_forward</span>
           </div>
         </mat-card-content>
       </mat-card>
@@ -84,13 +84,13 @@
             <div
               class="stat-icon inactive w-16 h-16 rounded-xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center shadow-lg"
             >
-              <mat-icon class="text-white text-3xl">cancel</mat-icon>
+              <span class="material-symbols-outlined text-white text-3xl">cancel</span>
             </div>
             <div class="stat-info flex-1">
               <h3 class="text-3xl font-bold text-red-900">{{ statistics.inactiveClinics }}</h3>
               <p class="text-red-600 text-sm mt-1">Clínicas Inactivas</p>
             </div>
-            <mat-icon class="text-red-300 text-2xl">arrow_forward</mat-icon>
+            <span class="material-symbols-outlined text-red-300 text-2xl">arrow_forward</span>
           </div>
         </mat-card-content>
       </mat-card>
@@ -105,13 +105,13 @@
             <div
               class="stat-icon users w-16 h-16 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg"
             >
-              <mat-icon class="text-white text-3xl">group</mat-icon>
+              <span class="material-symbols-outlined text-white text-3xl">group</span>
             </div>
             <div class="stat-info flex-1">
               <h3 class="text-3xl font-bold text-purple-900">{{ statistics.totalUsers }}</h3>
               <p class="text-purple-600 text-sm mt-1">Usuarios Asignados</p>
             </div>
-            <mat-icon class="text-purple-300 text-2xl">arrow_forward</mat-icon>
+            <span class="material-symbols-outlined text-purple-300 text-2xl">arrow_forward</span>
           </div>
         </mat-card-content>
       </mat-card>
@@ -128,7 +128,7 @@
 
       <mat-card-content class="p-6">
         <div *ngIf="recentClinics.length === 0" class="no-data text-center py-12">
-          <mat-icon class="text-6xl text-gray-300 mb-4">business</mat-icon>
+          <span class="material-symbols-outlined text-6xl text-gray-300 mb-4">business</span>
           <p class="text-gray-500 text-lg">No hay clínicas registradas</p>
           <button mat-stroked-button color="primary" (click)="navigateToNewClinic()" class="mt-4">
             Registrar Primera Clínica
@@ -145,12 +145,12 @@
               <div class="clinic-info flex-1">
                 <h4 class="text-lg font-semibold text-gray-900 mb-2">{{ clinic.name }}</h4>
                 <p class="clinic-address text-gray-600 text-sm mb-2 flex items-center gap-2">
-                  <mat-icon
-                    class="text-gray-400"
+                  <span
+                    class="material-symbols-outlined text-gray-400"
                     [style.font-size]="'18px'"
                     [style.width]="'18px'"
                     [style.height]="'18px'"
-                    >location_on</mat-icon
+                    >location_on</span
                   >
                   {{ clinic.address }}
                   <span
@@ -166,21 +166,21 @@
                   </span>
                 </p>
                 <p class="clinic-contact text-gray-600 text-sm flex items-center gap-2">
-                  <mat-icon
-                    class="text-gray-400"
+                  <span
+                    class="material-symbols-outlined text-gray-400"
                     [style.font-size]="'18px'"
                     [style.width]="'18px'"
                     [style.height]="'18px'"
-                    >phone</mat-icon
+                    >phone</span
                   >
                   {{ clinic.phone }}
                   <span *ngIf="clinic.email" class="email ml-4 flex items-center gap-1">
-                    <mat-icon
-                      class="text-gray-400"
+                    <span
+                      class="material-symbols-outlined text-gray-400"
                       [style.font-size]="'18px'"
                       [style.width]="'18px'"
                       [style.height]="'18px'"
-                      >email</mat-icon
+                      >email</span
                     >
                     {{ clinic.email }}
                   </span>
@@ -209,7 +209,7 @@
           *ngIf="recentClinics.length > 0"
           class="w-full"
         >
-          <mat-icon>list</mat-icon>
+          <span class="material-symbols-outlined">list</span>
           Ver Todas las Clínicas
         </button>
       </mat-card-actions>

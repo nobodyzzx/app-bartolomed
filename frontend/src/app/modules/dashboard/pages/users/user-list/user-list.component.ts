@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatTableDataSource } from '@angular/material/table'
 import { Router } from '@angular/router'
-import Swal from 'sweetalert2'
+import { AlertService } from '@core/services/alert.service'
 import { User } from '../../../../auth/interfaces'
 import { ProfessionalRoles } from '../../../interfaces/professionalRoles.enum'
 import { UsersService } from '../users.service'
@@ -28,6 +28,7 @@ export class UserListComponent implements OnInit {
   constructor(
     private usersService: UsersService,
     private router: Router,
+    private alert: AlertService,
   ) {
     this.dataSource = new MatTableDataSource<User>([])
     this.dataSource.filterPredicate = this.createFilter()
@@ -50,7 +51,7 @@ export class UserListComponent implements OnInit {
       },
       error: error => {
         console.error('Error loading users:', error)
-        Swal.fire('Error', 'No se pudieron cargar los usuarios', 'error')
+        this.alert.error('Error', 'No se pudieron cargar los usuarios')
       },
     })
   }
@@ -332,17 +333,12 @@ export class UserListComponent implements OnInit {
     `
 
     // Mostrar modal con SweetAlert2
-    Swal.fire({
+    this.alert.fire({
       title: '',
       html: modalHTML,
       width: '600px',
       confirmButtonText: 'Cerrar',
-      confirmButtonColor: '#3085d6',
-      customClass: {
-        container: 'user-details-modal',
-        popup: 'rounded-lg',
-        confirmButton: 'rounded-md',
-      },
+      customClass: { container: 'user-details-modal' },
       didOpen: () => {
         // Añadir funcionalidad a las pestañas
         const tabs = document.querySelectorAll('.tab')
@@ -371,9 +367,10 @@ export class UserListComponent implements OnInit {
 
   editRoles(user: User): void {
     // Mostrar modal de edición de roles
-    Swal.fire({
-      title: `Editar roles de ${user.personalInfo?.firstName} ${user.personalInfo?.lastName}`,
-      html: `
+    this.alert
+      .fire({
+        title: `Editar roles de ${user.personalInfo?.firstName} ${user.personalInfo?.lastName}`,
+        html: `
         <div style="text-align: left;">
           <p style="margin-bottom: 1rem;"><strong>Email:</strong> ${user.email}</p>
           <p style="margin-bottom: 1rem;"><strong>Roles actuales:</strong></p>
@@ -383,47 +380,44 @@ export class UserListComponent implements OnInit {
           <p style="margin-bottom: 0.5rem;"><strong>Para editar los roles, navega a la sección de edición de usuario.</strong></p>
         </div>
       `,
-      confirmButtonText: 'Editar usuario',
-      cancelButtonText: 'Cerrar',
-      showCancelButton: true,
-    }).then(result => {
-      if (result.isConfirmed) {
-        this.editUser(user)
-      }
-    })
+        confirmButtonText: 'Editar usuario',
+        cancelButtonText: 'Cerrar',
+        showCancelButton: true,
+      })
+      .then(result => {
+        if (result.isConfirmed) {
+          this.editUser(user)
+        }
+      })
   }
 
   deleteUser(user: User): void {
-    Swal.fire({
-      title: '¿Estás seguro?',
-      text: `¿Deseas eliminar al usuario ${user.personalInfo?.firstName} ${user.personalInfo?.lastName}?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      reverseButtons: true,
-    }).then(result => {
-      if (result.isConfirmed) {
-        this.usersService.deleteUser(user.id).subscribe({
-          next: () => {
-            this.loadUsers()
-            Swal.fire({
-              title: 'Usuario eliminado',
-              text: 'El usuario ha sido eliminado correctamente',
-              icon: 'success',
-              timer: 2000,
-              showConfirmButton: false,
-            })
-          },
-          error: error => {
-            console.error('Error eliminando usuario:', error)
-            Swal.fire('Error', 'No se pudo eliminar el usuario', 'error')
-          },
-        })
-      }
-    })
+    this.alert
+      .fire({
+        title: '¿Estás seguro?',
+        text: `¿Deseas eliminar al usuario ${user.personalInfo?.firstName} ${user.personalInfo?.lastName}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+      })
+      .then(result => {
+        if (result.isConfirmed) {
+          this.usersService.deleteUser(user.id).subscribe({
+            next: () => {
+              this.loadUsers()
+              this.alert
+                .success('Usuario eliminado', 'El usuario ha sido eliminado correctamente')
+                .then()
+            },
+            error: error => {
+              console.error('Error eliminando usuario:', error)
+              this.alert.error('Error', 'No se pudo eliminar el usuario')
+            },
+          })
+        }
+      })
   }
 
   getStatusClass(isActive: boolean): string {

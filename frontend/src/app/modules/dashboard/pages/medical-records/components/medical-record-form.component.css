@@ -82,7 +82,8 @@
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
-.step-icon-badge mat-icon {
+.step-icon-badge mat-icon,
+.step-icon-badge .material-symbols-outlined {
   font-size: 24px;
   width: 24px;
   height: 24px;
@@ -279,11 +280,11 @@
     flex-direction: column;
     text-align: center;
   }
-  
+
   .step-actions {
     flex-direction: column;
   }
-  
+
   .step-actions > * {
     width: 100%;
   }

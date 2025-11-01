@@ -2,7 +2,7 @@
   <div class="header-section">
     <div class="title-area">
       <h2>
-        <mat-icon>assignment</mat-icon>
+        <span class="material-symbols-outlined">assignment</span>
         Reportes Médicos
       </h2>
       <p>Genere y administre reportes médicos detallados</p>
@@ -33,7 +33,12 @@
         <div class="form-row">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Título del Reporte</mat-label>
-            <input matInput formControlName="title" placeholder="Ej: Reporte de Consultas Enero 2024" required>
+            <input
+              matInput
+              formControlName="title"
+              placeholder="Ej: Reporte de Consultas Enero 2024"
+              required
+            />
             <mat-error *ngIf="generateForm.get('title')?.hasError('required')">
               El título es requerido
             </mat-error>
@@ -43,15 +48,19 @@
         <div class="form-row">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Descripción</mat-label>
-            <textarea matInput formControlName="description" rows="3" 
-                      placeholder="Descripción detallada del reporte..."></textarea>
+            <textarea
+              matInput
+              formControlName="description"
+              rows="3"
+              placeholder="Descripción detallada del reporte..."
+            ></textarea>
           </mat-form-field>
         </div>
 
         <div class="form-row date-range">
           <mat-form-field appearance="outline">
             <mat-label>Fecha de Inicio</mat-label>
-            <input matInput [matDatepicker]="startPicker" formControlName="startDate" required>
+            <input matInput [matDatepicker]="startPicker" formControlName="startDate" required />
             <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
             <mat-datepicker #startPicker></mat-datepicker>
             <mat-error *ngIf="generateForm.get('startDate')?.hasError('required')">
@@ -61,7 +70,7 @@
 
           <mat-form-field appearance="outline">
             <mat-label>Fecha de Fin</mat-label>
-            <input matInput [matDatepicker]="endPicker" formControlName="endDate" required>
+            <input matInput [matDatepicker]="endPicker" formControlName="endDate" required />
             <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
             <mat-datepicker #endPicker></mat-datepicker>
             <mat-error *ngIf="generateForm.get('endDate')?.hasError('required')">
@@ -71,8 +80,12 @@
         </div>
 
         <div class="form-actions">
-          <button mat-raised-button color="primary" type="submit" 
-                  [disabled]="generateForm.invalid || loading">
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            [disabled]="generateForm.invalid || loading"
+          >
             <mat-icon>description</mat-icon>
             <span *ngIf="!loading">Generar Reporte</span>
             <span *ngIf="loading">Generando...</span>
@@ -94,7 +107,7 @@
       </div>
 
       <div *ngIf="!loading && medicalReports.length === 0" class="no-data">
-        <mat-icon>assignment_late</mat-icon>
+        <span class="material-symbols-outlined">assignment_late</span>
         <p>No hay reportes médicos generados</p>
         <small>Use el formulario superior para generar su primer reporte</small>
       </div>
@@ -125,7 +138,7 @@
           <!-- Fecha -->
           <ng-container matColumnDef="date">
             <th mat-header-cell *matHeaderCellDef>Fecha</th>
-            <td mat-cell *matCellDef="let report">{{ report.date | date:'short' }}</td>
+            <td mat-cell *matCellDef="let report">{{ report.date | date: 'short' }}</td>
           </ng-container>
 
           <!-- Pacientes -->
@@ -153,12 +166,15 @@
             <th mat-header-cell *matHeaderCellDef>Acciones</th>
             <td mat-cell *matCellDef="let report">
               <div class="action-buttons">
-                <button mat-icon-button (click)="downloadReport(report)" 
-                        matTooltip="Descargar PDF">
+                <button mat-icon-button (click)="downloadReport(report)" matTooltip="Descargar PDF">
                   <mat-icon>download</mat-icon>
                 </button>
-                <button mat-icon-button (click)="deleteReport(report)" 
-                        matTooltip="Eliminar" color="warn">
+                <button
+                  mat-icon-button
+                  (click)="deleteReport(report)"
+                  matTooltip="Eliminar"
+                  color="warn"
+                >
                   <mat-icon>delete</mat-icon>
                 </button>
               </div>
@@ -166,7 +182,7 @@
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
         </table>
       </div>
     </mat-card-content>

@@ -9,7 +9,7 @@
           matTooltip="Volver"
           aria-label="Volver"
         >
-          <mat-icon class="!text-[20px] leading-none">arrow_back</mat-icon>
+          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
         </button>
         <div class="text-left">
           <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Facturación</h1>
@@ -22,7 +22,7 @@
         class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
         aria-label="Crear nueva factura"
       >
-        <mat-icon class="!text-[20px] leading-none">add</mat-icon>
+        <span class="material-symbols-outlined msz-20 leading-none">add</span>
         Nueva Factura
       </button>
     </div>
@@ -38,7 +38,9 @@
             <p class="text-3xl font-bold text-blue-900 mt-2">{{ stats.totalInvoices }}</p>
             <p class="text-xs text-blue-600/60 mt-1">Facturas generadas</p>
           </div>
-          <mat-icon class="text-blue-500 !text-[40px] !w-10 !h-10">description</mat-icon>
+          <span class="material-symbols-outlined text-blue-500 msz-40 !w-10 !h-10"
+            >description</span
+          >
         </div>
       </div>
 
@@ -51,7 +53,9 @@
             <p class="text-3xl font-bold text-green-900 mt-2">{{ stats.paidInvoices }}</p>
             <p class="text-xs text-green-600/60 mt-1">Cobros completados</p>
           </div>
-          <mat-icon class="text-green-500 !text-[40px] !w-10 !h-10">check_circle</mat-icon>
+          <span class="material-symbols-outlined text-green-500 msz-40 !w-10 !h-10"
+            >check_circle</span
+          >
         </div>
       </div>
 
@@ -64,7 +68,7 @@
             <p class="text-3xl font-bold text-orange-900 mt-2">{{ stats.pendingInvoices }}</p>
             <p class="text-xs text-orange-600/60 mt-1">Esperando pago</p>
           </div>
-          <mat-icon class="text-orange-500 !text-[40px] !w-10 !h-10">pending</mat-icon>
+          <span class="material-symbols-outlined text-orange-500 msz-40 !w-10 !h-10">pending</span>
         </div>
       </div>
 
@@ -77,7 +81,7 @@
             <p class="text-3xl font-bold text-red-900 mt-2">{{ stats.overdueInvoices }}</p>
             <p class="text-xs text-red-600/60 mt-1">Requieren seguimiento</p>
           </div>
-          <mat-icon class="text-red-500 !text-[40px] !w-10 !h-10">warning</mat-icon>
+          <span class="material-symbols-outlined text-red-500 msz-40 !w-10 !h-10">warning</span>
         </div>
       </div>
     </div>
@@ -93,7 +97,9 @@
             <p class="text-4xl font-bold mt-2">${{ stats.totalRevenue | number: '1.2-2' }}</p>
             <p class="text-xs text-green-100/80 mt-1">Monto total cobrado</p>
           </div>
-          <mat-icon class="text-green-200 !text-[48px] !w-12 !h-12">trending_up</mat-icon>
+          <span class="material-symbols-outlined text-green-200 msz-48 !w-12 !h-12"
+            >trending_up</span
+          >
         </div>
       </div>
 
@@ -106,7 +112,7 @@
             <p class="text-4xl font-bold mt-2">${{ stats.pendingAmount | number: '1.2-2' }}</p>
             <p class="text-xs text-orange-100/80 mt-1">Por cobrar</p>
           </div>
-          <mat-icon class="text-orange-200 !text-[48px] !w-12 !h-12">schedule</mat-icon>
+          <span class="material-symbols-outlined text-orange-200 msz-48 !w-12 !h-12">schedule</span>
         </div>
       </div>
     </div>
@@ -121,7 +127,9 @@
             placeholder="ID, paciente, estado..."
             class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
           />
-          <mat-icon class="absolute right-3 top-2.5 text-blue-400">search</mat-icon>
+          <span class="material-symbols-outlined msz-18 absolute right-3 top-2.5 text-blue-400"
+            >search</span
+          >
         </div>
       </div>
 
@@ -129,8 +137,9 @@
         type="button"
         (keyup.enter)="applyFilter($event)"
         class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+        aria-label="Buscar"
       >
-        <mat-icon class="!text-[18px]">search</mat-icon>
+        <span class="material-symbols-outlined msz-18">search</span>
         Buscar
       </button>
 
@@ -139,8 +148,9 @@
       <button
         type="button"
         class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+        aria-label="Exportar facturas"
       >
-        <mat-icon class="!text-[18px]">download</mat-icon>
+        <span class="material-symbols-outlined msz-18">download</span>
         Exportar
       </button>
     </div>
@@ -157,7 +167,9 @@
             class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
           >
             <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px] text-slate-600">confirmation_number</mat-icon>
+              <span class="material-symbols-outlined msz-18 text-slate-600"
+                >confirmation_number</span
+              >
               ID Factura
             </div>
           </th>
@@ -179,7 +191,7 @@
             class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
           >
             <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px] text-slate-600">person</mat-icon>
+              <span class="material-symbols-outlined msz-18 text-slate-600">person</span>
               Paciente
             </div>
           </th>
@@ -188,7 +200,7 @@
               <div
                 class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0"
               >
-                <mat-icon class="!text-[20px] text-blue-600">person</mat-icon>
+                <span class="material-symbols-outlined msz-20 text-blue-600">person</span>
               </div>
               <div>
                 <div class="font-medium text-slate-900">{{ invoice.patientName }}</div>
@@ -207,7 +219,7 @@
             class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
           >
             <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px] text-slate-600">calendar_today</mat-icon>
+              <span class="material-symbols-outlined msz-18 text-slate-600">calendar_today</span>
               Fecha
             </div>
           </th>
@@ -229,7 +241,7 @@
             class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
           >
             <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px] text-slate-600">attach_money</mat-icon>
+              <span class="material-symbols-outlined msz-18 text-slate-600">attach_money</span>
               Total
             </div>
           </th>
@@ -250,7 +262,7 @@
             class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
           >
             <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px] text-slate-600">flag</mat-icon>
+              <span class="material-symbols-outlined msz-18 text-slate-600">flag</span>
               Estado
             </div>
           </th>
@@ -290,7 +302,7 @@
             class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
           >
             <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px] text-slate-600">event</mat-icon>
+              <span class="material-symbols-outlined msz-18 text-slate-600">event</span>
               Vencimiento
             </div>
           </th>
@@ -314,7 +326,7 @@
             class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
           >
             <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px] text-slate-600">settings</mat-icon>
+              <span class="material-symbols-outlined msz-18 text-slate-600">settings</span>
               Acciones
             </div>
           </th>
@@ -327,7 +339,7 @@
                 matTooltip="Ver detalle de la factura"
                 aria-label="Ver detalle de la factura"
               >
-                <mat-icon class="!text-[20px] leading-none">visibility</mat-icon>
+                <span class="material-symbols-outlined msz-20 leading-none">visibility</span>
               </button>
               <button
                 mat-icon-button
@@ -336,7 +348,7 @@
                 matTooltip="Imprimir factura"
                 aria-label="Imprimir factura"
               >
-                <mat-icon class="!text-[20px] leading-none">print</mat-icon>
+                <span class="material-symbols-outlined msz-20 leading-none">print</span>
               </button>
               <button
                 mat-icon-button
@@ -346,7 +358,7 @@
                 matTooltip="Marcar como pagada"
                 aria-label="Marcar como pagada"
               >
-                <mat-icon class="!text-[20px] leading-none">payment</mat-icon>
+                <span class="material-symbols-outlined msz-20 leading-none">payment</span>
               </button>
               <button
                 mat-icon-button
@@ -356,7 +368,7 @@
                 matTooltip="Enviar recordatorio"
                 aria-label="Enviar recordatorio"
               >
-                <mat-icon class="!text-[20px] leading-none">email</mat-icon>
+                <span class="material-symbols-outlined msz-20 leading-none">email</span>
               </button>
               <button
                 mat-icon-button
@@ -366,7 +378,7 @@
                 matTooltip="Cancelar factura"
                 aria-label="Cancelar factura"
               >
-                <mat-icon class="!text-[20px] leading-none">cancel</mat-icon>
+                <span class="material-symbols-outlined msz-20 leading-none">cancel</span>
               </button>
             </div>
           </td>

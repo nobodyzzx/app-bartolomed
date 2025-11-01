@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
-import Swal from 'sweetalert2'
+import { AlertService } from '@core/services/alert.service'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
 import { SidenavService } from '../../../../../shared/components/services/sidenav.services'
 import { CreateClinicDto, UpdateClinicDto } from '../interfaces'
@@ -167,6 +167,7 @@ export class ClinicFormComponent implements OnInit {
     private route: ActivatedRoute,
     private errorService: ErrorService,
     private sidenavService: SidenavService,
+    private alert: AlertService,
   ) {
     this.clinicForm = this.createForm()
   }
@@ -267,15 +268,11 @@ export class ClinicFormComponent implements OnInit {
         this.clinicsService.updateClinic(this.currentClinicId, updateDto).subscribe({
           next: () => {
             this.isLoading = false
-            Swal.fire({
-              icon: 'success',
-              title: 'Clínica actualizada',
-              text: 'La clínica ha sido actualizada correctamente',
-              timer: 2000,
-              showConfirmButton: false,
-            }).then(() => {
-              this.router.navigate(['/dashboard/clinics/list'])
-            })
+            this.alert
+              .success('Clínica actualizada', 'La clínica ha sido actualizada correctamente')
+              .then(() => {
+                this.router.navigate(['/dashboard/clinics/list'])
+              })
           },
           error: error => {
             this.errorService.handleError(error)
@@ -295,42 +292,11 @@ export class ClinicFormComponent implements OnInit {
         this.clinicsService.createClinic(createDto).subscribe({
           next: () => {
             this.isLoading = false
-            Swal.fire({
-              icon: 'success',
-              title: 'Clínica creada',
-              html: `<div style="
-                  font-size: 16px; 
-                  color: #333; 
-                  text-align: center;
-                  padding: 10px;
-              ">La clínica ha sido registrada correctamente.</div>`,
-              showConfirmButton: false,
-              timer: 2000,
-              background: 'rgba(255, 255, 255, 0.95)',
-              showClass: {
-                popup: 'animate__animated animate__fadeInUp animate__faster',
-              },
-              hideClass: {
-                popup: 'animate__animated animate__fadeOutDown animate__faster',
-              },
-              didOpen: () => {
-                const popup = document.querySelector('.swal2-popup') as HTMLElement
-                if (popup) {
-                  popup.style.borderRadius = '12px'
-                  popup.style.padding = '20px'
-                  popup.style.boxShadow = '0px 4px 15px rgba(0, 0, 0, 0.2)'
-                }
-
-                const title = document.querySelector('.swal2-title') as HTMLElement
-                if (title) {
-                  title.style.fontSize = '20px'
-                  title.style.fontWeight = 'bold'
-                  title.style.color = '#198754'
-                }
-              },
-            }).then(() => {
-              this.router.navigate(['/dashboard/clinics/list'])
-            })
+            this.alert
+              .success('Clínica creada', 'La clínica ha sido registrada correctamente.')
+              .then(() => {
+                this.router.navigate(['/dashboard/clinics/list'])
+              })
           },
           error: error => {
             this.errorService.handleError(error)
