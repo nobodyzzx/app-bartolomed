@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core'
 import { FormControl, FormGroup, Validators } from '@angular/forms'
-import { Router, ActivatedRoute } from '@angular/router'
-import Swal from 'sweetalert2'
+import { ActivatedRoute, Router } from '@angular/router'
+import { AlertService } from '@core/services/alert.service'
 import { ErrorService } from '../../../../shared/components/services/error.service'
 import { SidenavService } from '../../../../shared/components/services/sidenav.services'
 
@@ -71,10 +71,13 @@ export class AppointmentFormComponent implements OnInit {
     private route: ActivatedRoute,
     private errorService: ErrorService,
     private sidenavService: SidenavService,
+    private alert: AlertService,
   ) {}
 
   ngOnInit() {
-    this.sidenavService.isExpanded$.subscribe((isExpanded: boolean) => (this.isExpanded = isExpanded))
+    this.sidenavService.isExpanded$.subscribe(
+      (isExpanded: boolean) => (this.isExpanded = isExpanded),
+    )
 
     // Obtener parámetros de la URL
     this.route.paramMap.subscribe(params => {
@@ -85,12 +88,12 @@ export class AppointmentFormComponent implements OnInit {
       this.route.queryParams.subscribe(queryParams => {
         if (queryParams['patientId']) {
           this.appointmentForm.patchValue({
-            patientId: queryParams['patientId']
+            patientId: queryParams['patientId'],
           })
         }
         if (queryParams['doctorId']) {
           this.appointmentForm.patchValue({
-            doctorId: queryParams['doctorId']
+            doctorId: queryParams['doctorId'],
           })
         }
       })
@@ -127,27 +130,17 @@ export class AppointmentFormComponent implements OnInit {
     if (this.isEditMode && this.appointmentId) {
       // Modo edición
       console.log('Actualizando cita:', submitData)
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'Cita actualizada',
-        text: 'La cita ha sido actualizada correctamente',
-        timer: 2000,
-        showConfirmButton: false,
-      }).then(() => {
-        this.router.navigate(['/dashboard/appointments/list'])
-      })
+
+      this.alert
+        .success('Cita actualizada', 'La cita ha sido actualizada correctamente')
+        .then(() => {
+          this.router.navigate(['/dashboard/appointments/list'])
+        })
     } else {
       // Modo crear
       console.log('Creando cita:', submitData)
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'Cita programada',
-        text: 'La cita ha sido programada correctamente',
-        timer: 2000,
-        showConfirmButton: false,
-      }).then(() => {
+
+      this.alert.success('Cita programada', 'La cita ha sido programada correctamente').then(() => {
         this.router.navigate(['/dashboard/appointments/list'])
       })
     }

@@ -4,7 +4,7 @@ import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
 import { ActivatedRoute, Router } from '@angular/router'
-import Swal from 'sweetalert2'
+import { AlertService } from '@core/services/alert.service'
 import { ConfirmDialogComponent } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
 import { SidenavService } from '../../../../../shared/components/services/sidenav.services'
@@ -35,6 +35,7 @@ export class ClinicListComponent implements OnInit {
     private dialog: MatDialog,
     private errorService: ErrorService,
     private sidenavService: SidenavService,
+    private alert: AlertService,
   ) {}
 
   ngOnInit(): void {
@@ -139,13 +140,12 @@ export class ClinicListComponent implements OnInit {
 
         request.subscribe({
           next: () => {
-            Swal.fire({
-              icon: 'success',
-              title: `Clínica ${clinic.isActive ? 'desactivada' : 'activada'}`,
-              text: `La clínica ha sido ${clinic.isActive ? 'desactivada' : 'activada'} correctamente`,
-              timer: 2000,
-              showConfirmButton: false,
-            })
+            this.alert
+              .success(
+                `Clínica ${clinic.isActive ? 'desactivada' : 'activada'}`,
+                `La clínica ha sido ${clinic.isActive ? 'desactivada' : 'activada'} correctamente`,
+              )
+              .then()
             this.loadClinics()
           },
           error: error => {
@@ -172,13 +172,9 @@ export class ClinicListComponent implements OnInit {
       if (result) {
         this.clinicsService.delete(clinic.id).subscribe({
           next: () => {
-            Swal.fire({
-              icon: 'success',
-              title: 'Clínica eliminada',
-              text: 'La clínica ha sido eliminada correctamente',
-              timer: 2000,
-              showConfirmButton: false,
-            })
+            this.alert
+              .success('Clínica eliminada', 'La clínica ha sido eliminada correctamente')
+              .then()
             this.loadClinics()
           },
           error: (error: any) => {

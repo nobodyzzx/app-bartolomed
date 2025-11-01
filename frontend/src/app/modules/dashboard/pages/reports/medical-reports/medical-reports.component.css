@@ -85,7 +85,8 @@
   color: #666;
 }
 
-.no-data mat-icon {
+.no-data mat-icon,
+.no-data .material-symbols-outlined {
   font-size: 64px;
   width: 64px;
   height: 64px;
@@ -152,20 +153,20 @@ mat-chip-list mat-chip {
   .medical-reports-container {
     padding: 15px;
   }
-  
+
   .date-range {
     grid-template-columns: 1fr;
     gap: 15px;
   }
-  
+
   .title-area h2 {
     font-size: 1.5rem;
   }
-  
+
   .form-actions {
     justify-content: center;
   }
-  
+
   .reports-table {
     min-width: 600px;
   }
@@ -176,7 +177,7 @@ mat-chip-list mat-chip {
     flex-direction: column;
     gap: 2px;
   }
-  
+
   .action-buttons button {
     width: 32px;
     height: 32px;

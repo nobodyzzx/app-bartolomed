@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core'
-import { MatTableDataSource } from '@angular/material/table'
-import { ActivatedRoute } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 
 interface DashboardStats {
   totalPatients: number
@@ -48,17 +47,21 @@ export class MainDashboardComponent implements OnInit {
     monthlyRevenue: 0,
   }
 
-  recentAppointments = new MatTableDataSource<RecentAppointment>([])
+  recentAppointments: RecentAppointment[] = []
   stockAlerts: StockAlert[] = []
-  recentPatients = new MatTableDataSource<RecentPatient>([])
+  recentPatients: RecentPatient[] = []
 
+  // columnas visibles (referencia para mantener estructura, ya no se usan en plantilla Material)
   displayedColumns: string[] = ['patient', 'doctor', 'time', 'type', 'status', 'actions']
   stockColumns: string[] = ['medication', 'current', 'minimum', 'category', 'actions']
   patientColumns: string[] = ['name', 'age', 'lastVisit', 'nextAppointment', 'status', 'actions']
 
   permissionError: string | null = null
 
-  constructor(private route: ActivatedRoute) {}
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
     // Verificar si hay error de permisos en los query params
@@ -86,7 +89,7 @@ export class MainDashboardComponent implements OnInit {
       monthlyRevenue: 125670,
     }
 
-    this.recentAppointments.data = [
+    this.recentAppointments = [
       {
         id: 1,
         patientName: 'María García',
@@ -153,7 +156,7 @@ export class MainDashboardComponent implements OnInit {
       },
     ]
 
-    this.recentPatients.data = [
+    this.recentPatients = [
       {
         id: 1,
         name: 'Ana Morales',
@@ -186,6 +189,30 @@ export class MainDashboardComponent implements OnInit {
         status: 'active',
       },
     ]
+  }
+
+  formatCurrency(value: number): string {
+    try {
+      return new Intl.NumberFormat('es-BO', { minimumFractionDigits: 0 }).format(value)
+    } catch {
+      return String(value)
+    }
+  }
+
+  goToPatientsList(): void {
+    this.router.navigate(['/dashboard/patients/list'])
+  }
+
+  goToAppointmentsList(): void {
+    this.router.navigate(['/dashboard/appointments/list'])
+  }
+
+  goToUsersList(): void {
+    this.router.navigate(['/dashboard/users/list'])
+  }
+
+  goToReports(): void {
+    this.router.navigate(['/dashboard/reports'])
   }
 
   getStatusColor(status: string): string {

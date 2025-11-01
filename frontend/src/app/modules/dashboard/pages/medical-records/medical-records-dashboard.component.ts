@@ -5,7 +5,7 @@ import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
 import { Router } from '@angular/router'
-import Swal from 'sweetalert2'
+import { AlertService } from '@core/services/alert.service'
 import { AuthStatus } from '../../../auth/interfaces/auth-status.enum'
 import { AuthService as AppAuthService } from '../../../auth/services/auth.service'
 import { MedicalRecord, MedicalRecordFilters, RecordStatus, RecordType } from './interfaces'
@@ -55,6 +55,7 @@ export class MedicalRecordsDashboardComponent implements OnInit {
     private location: Location,
   ) {}
   private appAuth = inject(AppAuthService)
+  private alert = inject(AlertService)
 
   ngOnInit(): void {
     // Evitar llamadas al backend en modo DEMO (cuando no hay autenticación real)
@@ -150,50 +151,47 @@ export class MedicalRecordsDashboardComponent implements OnInit {
 
   deleteRecord(record: MedicalRecord): void {
     if (!this.isAuthenticated()) {
-      Swal.fire({
+      this.alert.fire({
         icon: 'info',
         title: 'Modo demo',
         text: 'Para eliminar expedientes, primero inicia sesión con un usuario válido.',
-        confirmButtonColor: '#2563eb',
       })
       return
     }
-    Swal.fire({
-      title: '¿Eliminar expediente?',
-      html: `¿Está seguro de que desea eliminar este expediente médico?<br><br>
+    this.alert
+      .fire({
+        title: '¿Eliminar expediente?',
+        html: `¿Está seguro de que desea eliminar este expediente médico?<br><br>
              <strong>Paciente:</strong> ${record.patient?.firstName} ${record.patient?.lastName}<br>
              <strong>Tipo:</strong> ${this.getTypeText(record.type)}`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#dc2626',
-      cancelButtonColor: '#6b7280',
-    }).then(result => {
-      if (result.isConfirmed) {
-        this.medicalRecordsService.deleteMedicalRecord(record.id!).subscribe({
-          next: () => {
-            Swal.fire({
-              icon: 'success',
-              title: '¡Eliminado!',
-              text: 'El expediente médico ha sido eliminado.',
-              confirmButtonColor: '#2563eb',
-            })
-            this.loadMedicalRecords()
-            this.loadStats()
-          },
-          error: error => {
-            Swal.fire({
-              icon: 'error',
-              title: 'Error',
-              text: 'No se pudo eliminar el expediente médico.',
-              confirmButtonColor: '#dc2626',
-            })
-            console.error('Error eliminando expediente:', error)
-          },
-        })
-      }
-    })
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+      })
+      .then(result => {
+        if (result.isConfirmed) {
+          this.medicalRecordsService.deleteMedicalRecord(record.id!).subscribe({
+            next: () => {
+              this.alert.fire({
+                icon: 'success',
+                title: '¡Eliminado!',
+                text: 'El expediente médico ha sido eliminado.',
+              })
+              this.loadMedicalRecords()
+              this.loadStats()
+            },
+            error: error => {
+              this.alert.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo eliminar el expediente médico.',
+              })
+              console.error('Error eliminando expediente:', error)
+            },
+          })
+        }
+      })
   }
 
   goBack(): void {

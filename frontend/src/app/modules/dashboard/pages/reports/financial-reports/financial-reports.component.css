@@ -85,7 +85,8 @@
   color: #666;
 }
 
-.no-data mat-icon {
+.no-data mat-icon,
+.no-data .material-symbols-outlined {
   font-size: 64px;
   width: 64px;
   height: 64px;
@@ -177,7 +178,8 @@
   border-left: 4px solid #3498db;
 }
 
-.summary-item mat-icon {
+.summary-item mat-icon,
+.summary-item .material-symbols-outlined {
   font-size: 32px;
   width: 32px;
   height: 32px;
@@ -218,33 +220,33 @@ mat-chip-list mat-chip {
   .financial-reports-container {
     padding: 15px;
   }
-  
+
   .date-range {
     grid-template-columns: 1fr;
     gap: 15px;
   }
-  
+
   .title-area h2 {
     font-size: 1.5rem;
   }
-  
+
   .form-actions {
     justify-content: center;
   }
-  
+
   .reports-table {
     min-width: 700px;
   }
-  
+
   .summary-grid {
     grid-template-columns: 1fr;
     gap: 15px;
   }
-  
+
   .summary-item {
     padding: 15px;
   }
-  
+
   .summary-content p {
     font-size: 1.3rem;
   }
@@ -255,12 +257,12 @@ mat-chip-list mat-chip {
     flex-direction: column;
     gap: 2px;
   }
-  
+
   .action-buttons button {
     width: 32px;
     height: 32px;
   }
-  
+
   .summary-item {
     flex-direction: column;
     text-align: center;

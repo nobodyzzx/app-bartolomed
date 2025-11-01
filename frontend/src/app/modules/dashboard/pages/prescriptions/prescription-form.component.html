@@ -1,0 +1,66 @@
+<div class="bg-white rounded-xl shadow-md p-6">
+  <div class="flex items-center gap-2 mb-4">
+    <span class="material-symbols-outlined msz-20">edit_note</span>
+    <h3 class="text-lg font-semibold text-slate-800">Nueva receta</h3>
+  </div>
+  <form [formGroup]="form" (ngSubmit)="submit()" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm text-slate-600 mb-1">Paciente</label>
+      <input
+        type="text"
+        class="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-200"
+        formControlName="patientId"
+        placeholder="ID o nombre de paciente"
+      />
+    </div>
+    <div>
+      <label class="block text-sm text-slate-600 mb-1">Médico</label>
+      <input
+        type="text"
+        class="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-200"
+        formControlName="doctorId"
+        placeholder="ID o nombre de médico"
+      />
+    </div>
+    <div>
+      <label class="block text-sm text-slate-600 mb-1">Fecha</label>
+      <input
+        type="date"
+        class="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-200"
+        formControlName="date"
+      />
+    </div>
+    <div class="md:col-span-2">
+      <label class="block text-sm text-slate-600 mb-1">Medicamentos</label>
+      <textarea
+        rows="3"
+        class="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-200"
+        formControlName="medications"
+        placeholder="Detalle de medicamentos, dosis e instrucciones"
+      ></textarea>
+    </div>
+    <div class="md:col-span-2">
+      <label class="block text-sm text-slate-600 mb-1">Notas</label>
+      <textarea
+        rows="2"
+        class="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-200"
+        formControlName="notes"
+        placeholder="Notas adicionales"
+      ></textarea>
+    </div>
+    <div class="md:col-span-2 flex justify-end gap-2 pt-2">
+      <a
+        routerLink="../list"
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
+        >Cancelar</a
+      >
+      <button
+        type="submit"
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-600 text-white shadow hover:bg-blue-700"
+      >
+        <span class="material-symbols-outlined msz-18">save</span>
+        Guardar
+      </button>
+    </div>
+  </form>
+</div>

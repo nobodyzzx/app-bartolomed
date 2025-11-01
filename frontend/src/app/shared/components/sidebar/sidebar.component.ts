@@ -3,9 +3,9 @@ import { Component, computed, inject } from '@angular/core'
 import { Permission } from '@core/enums/permission.enum'
 import { UserRoles } from '@core/enums/user-roles.enum'
 import { MenuItem } from '@core/interfaces/menu-item.interface'
+import { AlertService } from '@core/services/alert.service'
 import { AuthService } from '@core/services/auth.service'
 import { SidebarService } from '@core/services/sidebar.service'
-import Swal from 'sweetalert2'
 import { AuthStatus } from '../../../../app/modules/auth/interfaces/auth-status.enum'
 import { AuthService as AppAuthService } from '../../../../app/modules/auth/services/auth.service'
 
@@ -18,6 +18,7 @@ export class SidebarComponent {
   private sidebarService = inject(SidebarService)
   private authService = inject(AuthService)
   private appAuth = inject(AppAuthService)
+  private alert = inject(AlertService)
 
   public isExpanded = this.sidebarService.isExpanded
   private allMenuItems = this.sidebarService.menuItems
@@ -87,11 +88,10 @@ export class SidebarComponent {
   }
 
   onDemoClick(): void {
-    Swal.fire({
+    this.alert.fire({
       icon: 'info',
       title: 'Modo demo',
       text: 'Para acceder a esta sección inicia sesión con un usuario válido.',
-      confirmButtonColor: '#2563eb',
     })
   }
 }

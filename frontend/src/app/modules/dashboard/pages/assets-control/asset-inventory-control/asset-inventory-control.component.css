@@ -19,6 +19,13 @@
   justify-content: center;
 }
 
+.page-title .material-symbols-outlined {
+  font-size: 2rem;
+  width: 2rem;
+  height: 2rem;
+  color: #3498db;
+}
+
 /* Métricas Dashboard */
 .metrics-dashboard {
   margin-bottom: 30px;
@@ -37,7 +44,7 @@
   padding: 20px;
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-left: 4px solid #3498db;
   transition: transform 0.2s ease;
 }
@@ -62,22 +69,26 @@
   border-left-color: #9b59b6;
 }
 
-.metric-card mat-icon {
+.metric-card mat-icon,
+.metric-card .material-symbols-outlined {
   font-size: 32px;
   width: 32px;
   height: 32px;
   color: #3498db;
 }
 
-.metric-card.success mat-icon {
+.metric-card.success mat-icon,
+.metric-card.success .material-symbols-outlined {
   color: #27ae60;
 }
 
-.metric-card.warning mat-icon {
+.metric-card.warning mat-icon,
+.metric-card.warning .material-symbols-outlined {
   color: #f39c12;
 }
 
-.metric-card.info mat-icon {
+.metric-card.info mat-icon,
+.metric-card.info .material-symbols-outlined {
   color: #9b59b6;
 }
 
@@ -122,7 +133,8 @@
   color: #666;
 }
 
-.no-data mat-icon {
+.no-data mat-icon,
+.no-data .material-symbols-outlined {
   font-size: 64px;
   width: 64px;
   height: 64px;
@@ -194,19 +206,19 @@ mat-chip-list mat-chip {
   .asset-inventory-container {
     padding: 15px;
   }
-  
+
   .page-title {
     font-size: 1.6rem;
   }
-  
+
   .metrics-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .inventory-table {
     min-width: 700px;
   }
-  
+
   .metric-card {
     padding: 15px;
   }

@@ -9,7 +9,7 @@
           <div
             class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0"
           >
-            <mat-icon class="!text-[24px] text-amber-600">info</mat-icon>
+            <span class="material-symbols-outlined msz-24 text-amber-600">info</span>
           </div>
           <div class="flex-1">
             <h3 class="font-bold text-amber-900 text-lg mb-2">Modo DEMO activo</h3>
@@ -32,7 +32,7 @@
           matTooltip="Volver"
           aria-label="Volver"
         >
-          <mat-icon class="!text-[20px] leading-none">arrow_back</mat-icon>
+          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
         </button>
         <div class="text-left">
           <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Expedientes Médicos</h1>
@@ -48,7 +48,7 @@
         [matTooltipDisabled]="!isDemo"
         aria-label="Crear nuevo expediente"
       >
-        <mat-icon class="!text-[20px] leading-none">add</mat-icon>
+        <span class="material-symbols-outlined msz-20 leading-none">add</span>
         Nuevo Expediente
       </button>
     </div>
@@ -66,7 +66,9 @@
             <p class="text-3xl font-bold text-blue-900 mt-2">{{ stats.total }}</p>
             <p class="text-xs text-blue-600/60 mt-1">Registros en el sistema</p>
           </div>
-          <mat-icon class="text-blue-500 !text-[40px] !w-10 !h-10">folder_shared</mat-icon>
+          <span class="material-symbols-outlined text-blue-500 msz-40 !w-10 !h-10"
+            >folder_shared</span
+          >
         </div>
       </div>
 
@@ -81,7 +83,9 @@
             <p class="text-3xl font-bold text-orange-900 mt-2">{{ stats.drafts }}</p>
             <p class="text-xs text-orange-600/60 mt-1">Pendientes de completar</p>
           </div>
-          <mat-icon class="text-orange-500 !text-[40px] !w-10 !h-10">edit_note</mat-icon>
+          <span class="material-symbols-outlined text-orange-500 msz-40 !w-10 !h-10"
+            >edit_note</span
+          >
         </div>
       </div>
 
@@ -96,7 +100,9 @@
             <p class="text-3xl font-bold text-green-900 mt-2">{{ stats.completed }}</p>
             <p class="text-xs text-green-600/60 mt-1">Expedientes finalizados</p>
           </div>
-          <mat-icon class="text-green-500 !text-[40px] !w-10 !h-10">check_circle</mat-icon>
+          <span class="material-symbols-outlined text-green-500 msz-40 !w-10 !h-10"
+            >check_circle</span
+          >
         </div>
       </div>
 
@@ -111,7 +117,7 @@
             <p class="text-3xl font-bold text-red-900 mt-2">{{ stats.emergencies }}</p>
             <p class="text-xs text-red-600/60 mt-1">Atención prioritaria</p>
           </div>
-          <mat-icon class="text-red-500 !text-[40px] !w-10 !h-10">emergency</mat-icon>
+          <span class="material-symbols-outlined text-red-500 msz-40 !w-10 !h-10">emergency</span>
         </div>
       </div>
     </div>
@@ -126,7 +132,9 @@
             placeholder="Paciente, diagnóstico, doctor..."
             class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
           />
-          <mat-icon class="absolute right-3 top-2.5 text-blue-400">search</mat-icon>
+          <span class="material-symbols-outlined absolute right-3 top-2.5 text-blue-400"
+            >search</span
+          >
         </div>
       </div>
 
@@ -134,7 +142,7 @@
         type="button"
         class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
       >
-        <mat-icon class="!text-[18px]">search</mat-icon>
+        <span class="material-symbols-outlined msz-18">search</span>
         Buscar
       </button>
 
@@ -147,7 +155,7 @@
         matTooltip="Inicia sesión para exportar"
         [matTooltipDisabled]="!isDemo"
       >
-        <mat-icon class="!text-[18px]">download</mat-icon>
+        <span class="material-symbols-outlined msz-18">download</span>
         Exportar
       </button>
     </div>
@@ -165,7 +173,7 @@
               class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
               <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600 !text-[18px]">schedule</mat-icon>
+                <span class="material-symbols-outlined text-blue-600 msz-18">schedule</span>
                 Fecha
               </div>
             </th>
@@ -178,7 +186,7 @@
                   class="text-xs text-red-600 font-semibold flex items-center gap-1 mt-1"
                   *ngIf="record.isEmergency"
                 >
-                  <mat-icon class="!text-[14px]">emergency</mat-icon>
+                  <span class="material-symbols-outlined msz-14">emergency</span>
                   EMERGENCIA
                 </span>
               </div>
@@ -194,7 +202,7 @@
               class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
               <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600 !text-[18px]">person</mat-icon>
+                <span class="material-symbols-outlined text-blue-600 msz-18">person</span>
                 Paciente
               </div>
             </th>
@@ -203,7 +211,7 @@
                 <div
                   class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0"
                 >
-                  <mat-icon class="text-blue-600 !text-[20px]">person</mat-icon>
+                  <span class="material-symbols-outlined text-blue-600 msz-20">person</span>
                 </div>
                 <div>
                   <div class="font-medium text-slate-900">
@@ -224,15 +232,15 @@
               class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
               <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600 !text-[18px]">category</mat-icon>
+                <span class="material-symbols-outlined text-blue-600 msz-18">category</span>
                 Tipo
               </div>
             </th>
             <td mat-cell *matCellDef="let record" class="p-4">
               <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600 !text-[18px]">{{
+                <span class="material-symbols-outlined text-blue-600 msz-18">{{
                   getRecordIcon(record.type)
-                }}</mat-icon>
+                }}</span>
                 <span class="text-slate-600">{{ getTypeText(record.type) }}</span>
               </div>
             </td>
@@ -246,7 +254,7 @@
               class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
               <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600 !text-[18px]">description</mat-icon>
+                <span class="material-symbols-outlined text-blue-600 msz-18">description</span>
                 Motivo de Consulta
               </div>
             </th>
@@ -265,7 +273,7 @@
               class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
               <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600 !text-[18px]">medical_services</mat-icon>
+                <span class="material-symbols-outlined text-blue-600 msz-18">medical_services</span>
                 Doctor
               </div>
             </th>
@@ -290,7 +298,7 @@
               class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
               <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600 !text-[18px]">flag</mat-icon>
+                <span class="material-symbols-outlined text-blue-600 msz-18">flag</span>
                 Estado
               </div>
             </th>
@@ -326,7 +334,7 @@
               class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
               <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600 !text-[18px]">settings</mat-icon>
+                <span class="material-symbols-outlined text-blue-600 msz-18">settings</span>
                 Acciones
               </div>
             </th>
@@ -339,7 +347,7 @@
                   matTooltip="Ver expediente"
                   aria-label="Ver expediente"
                 >
-                  <mat-icon class="!text-[20px] leading-none">visibility</mat-icon>
+                  <span class="material-symbols-outlined msz-20 leading-none">visibility</span>
                 </button>
 
                 <button
@@ -350,7 +358,7 @@
                   aria-label="Editar expediente"
                   [disabled]="record.status === 'archived' || isDemo"
                 >
-                  <mat-icon class="!text-[20px] leading-none">edit</mat-icon>
+                  <span class="material-symbols-outlined msz-20 leading-none">edit</span>
                 </button>
 
                 <button
@@ -361,7 +369,7 @@
                   aria-label="Eliminar expediente"
                   [disabled]="isDemo"
                 >
-                  <mat-icon class="!text-[20px] leading-none">delete</mat-icon>
+                  <span class="material-symbols-outlined msz-20 leading-none">delete</span>
                 </button>
               </div>
             </td>
@@ -387,14 +395,14 @@
 
       <!-- Mensaje cuando no hay datos -->
       <div *ngIf="!loading && dataSource.data.length === 0" class="text-center py-12 px-6">
-        <mat-icon class="text-6xl text-slate-400 mb-4">folder_open</mat-icon>
+        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4">folder_open</span>
         <p class="text-slate-500 text-lg mb-4">No se encontraron expedientes médicos</p>
         <button
           type="button"
           (click)="createNewRecord()"
           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
         >
-          <mat-icon class="!text-[20px] leading-none">add</mat-icon>
+          <span class="material-symbols-outlined msz-20 leading-none">add</span>
           Crear primer expediente
         </button>
       </div>

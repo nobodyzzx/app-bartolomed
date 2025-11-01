@@ -1,233 +1,304 @@
-<div class="asset-reports-container">
-  <mat-card class="main-content-card">
-    <mat-card-header>
-      <div class="page-title">
-        <mat-icon>assessment</mat-icon>
-        <span>Reportes de Activos</span>
+<div class="min-h-screen bg-slate-50 p-6">
+  <div class="max-w-7xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <button
+          type="button"
+          routerLink="/dashboard"
+          class="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md hover:shadow-lg hover:bg-slate-50 transition-all border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+        >
+          <span class="material-symbols-outlined msz-20 text-slate-600">arrow_back</span>
+        </button>
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">Reportes de Activos</h1>
+          <p class="text-sm text-slate-500">Genere y descargue reportes de activos</p>
+        </div>
       </div>
-    </mat-card-header>
+    </div>
 
-    <!-- Generación de Reportes -->
-    <mat-card class="report-generator">
-      <mat-card-title>
-        <mat-icon>add_circle</mat-icon>
-        Generar Nuevo Reporte
-      </mat-card-title>
-      
-      <mat-card-content>
-        <form [formGroup]="reportsForm" (ngSubmit)="generateReport()">
-          <div class="form-grid">
-            <mat-form-field appearance="outline">
-              <mat-label>Tipo de Reporte</mat-label>
-              <mat-select formControlName="reportType">
-                <mat-option *ngFor="let type of reportTypes" [value]="type">
-                  {{ getReportTypeDisplay(type) }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Desde</mat-label>
-              <input matInput type="date" formControlName="dateFrom">
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Hasta</mat-label>
-              <input matInput type="date" formControlName="dateTo">
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Estado</mat-label>
-              <mat-select formControlName="status">
-                <mat-option value="">Todos</mat-option>
-                <mat-option *ngFor="let status of assetStatuses" [value]="status">
-                  {{ getStatusDisplay(status) }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Formato</mat-label>
-              <mat-select formControlName="format">
-                <mat-option value="PDF">PDF</mat-option>
-                <mat-option value="EXCEL">Excel</mat-option>
-                <mat-option value="CSV">CSV</mat-option>
-              </mat-select>
-            </mat-form-field>
+    <!-- Generar reporte -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+      <div
+        class="bg-gradient-to-r from-purple-50 to-violet-50 px-6 py-4 border-b border-purple-100"
+      >
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center">
+            <span class="material-symbols-outlined msz-24 text-white">add_circle</span>
           </div>
-
-          <div class="form-actions">
-            <button mat-raised-button color="primary" type="submit" [disabled]="loading">
-              <mat-icon>description</mat-icon>
-              Generar Reporte
-            </button>
-            <button mat-button type="button" (click)="resetForm()">
-              <mat-icon>refresh</mat-icon>
-              Limpiar
-            </button>
+          <div>
+            <h2 class="text-lg font-semibold text-slate-800">Generar Nuevo Reporte</h2>
+            <p class="text-sm text-slate-600">Configure los parámetros para generar un reporte</p>
           </div>
-        </form>
-      </mat-card-content>
-    </mat-card>
+        </div>
+      </div>
+
+      <form [formGroup]="reportsForm" (ngSubmit)="generateReport()" class="p-6 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Tipo de Reporte</mat-label>
+            <mat-select formControlName="reportType">
+              <mat-option *ngFor="let type of reportTypes" [value]="type">{{
+                getReportTypeDisplay(type)
+              }}</mat-option>
+            </mat-select>
+            <span matSuffix class="material-symbols-outlined msz-20 text-slate-400">category</span>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Desde</mat-label>
+            <input matInput type="date" formControlName="dateFrom" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Hasta</mat-label>
+            <input matInput type="date" formControlName="dateTo" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Estado</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let status of assetStatuses" [value]="status">
+                {{ getStatusDisplay(status) }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Formato</mat-label>
+            <mat-select formControlName="format">
+              <mat-option value="PDF">PDF</mat-option>
+              <mat-option value="EXCEL">Excel</mat-option>
+              <mat-option value="CSV">CSV</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button
+            type="button"
+            (click)="resetForm()"
+            class="px-5 py-2.5 rounded-full font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 border-0"
+          >
+            Limpiar
+          </button>
+          <button
+            type="submit"
+            [disabled]="loading"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-purple-600 text-white hover:bg-purple-700 shadow-md hover:shadow-lg disabled:opacity-50 border-0"
+          >
+            <span class="material-symbols-outlined msz-20">description</span>
+            Generar Reporte
+          </button>
+        </div>
+      </form>
+    </div>
 
     <!-- Lista de Reportes -->
-    <mat-card class="reports-list">
-      <mat-card-title>
-        <mat-icon>folder</mat-icon>
-        Reportes Generados
-      </mat-card-title>
-
-      <mat-card-content>
-        <div *ngIf="loading" class="loading-container">
-          <mat-spinner diameter="50"></mat-spinner>
-          <p>Cargando reportes...</p>
-        </div>
-
-        <div *ngIf="!loading && reports.length === 0" class="no-data">
-          <mat-icon>description</mat-icon>
-          <h3>No hay reportes disponibles</h3>
-          <p>Genere su primer reporte utilizando el formulario de arriba.</p>
-        </div>
-
-        <div *ngIf="!loading && reports.length > 0" class="table-container">
-          <table mat-table [dataSource]="reports" class="reports-table">
-            <!-- Título -->
-            <ng-container matColumnDef="title">
-              <th mat-header-cell *matHeaderCellDef>Título</th>
-              <td mat-cell *matCellDef="let report">
-                <div class="report-info">
-                  <strong>{{ report.title }}</strong>
-                  <small *ngIf="report.description">{{ report.description }}</small>
-                </div>
-              </td>
-            </ng-container>
-
-            <!-- Tipo -->
-            <ng-container matColumnDef="type">
-              <th mat-header-cell *matHeaderCellDef>Tipo</th>
-              <td mat-cell *matCellDef="let report">
-                <mat-chip-list>
-                  <mat-chip color="primary" selected>
-                    {{ getReportTypeDisplay(report.type) }}
-                  </mat-chip>
-                </mat-chip-list>
-              </td>
-            </ng-container>
-
-            <!-- Descripción -->
-            <ng-container matColumnDef="description">
-              <th mat-header-cell *matHeaderCellDef>Descripción</th>
-              <td mat-cell *matCellDef="let report">
-                <span [title]="report.description">
-                  {{ report.description || 'Sin descripción' }}
-                </span>
-              </td>
-            </ng-container>
-
-            <!-- Fecha -->
-            <ng-container matColumnDef="date">
-              <th mat-header-cell *matHeaderCellDef>Fecha</th>
-              <td mat-cell *matCellDef="let report">
-                <div class="date-info">
-                  <strong>{{ report.date | date:'dd/MM/yyyy' }}</strong>
-                  <small>{{ report.date | date:'HH:mm' }}</small>
-                </div>
-              </td>
-            </ng-container>
-
-            <!-- Estado -->
-            <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef>Estado</th>
-              <td mat-cell *matCellDef="let report">
-                <mat-chip-list>
-                  <mat-chip 
-                    [color]="report.status === 'Completado' ? 'accent' : 
-                            report.status === 'Fallido' ? 'warn' : 'primary'"
-                    selected>
-                    {{ report.status }}
-                  </mat-chip>
-                </mat-chip-list>
-              </td>
-            </ng-container>
-
-            <!-- Acciones -->
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef>Acciones</th>
-              <td mat-cell *matCellDef="let report">
-                <div class="action-buttons">
-                  <button 
-                    mat-icon-button 
-                    color="primary" 
-                    (click)="viewReport(report)"
-                    matTooltip="Ver reporte">
-                    <mat-icon>visibility</mat-icon>
-                  </button>
-                  
-                  <button 
-                    mat-icon-button 
-                    color="accent" 
-                    (click)="downloadReport(report)"
-                    matTooltip="Descargar"
-                    [disabled]="report.status !== 'Completado'">
-                    <mat-icon>download</mat-icon>
-                  </button>
-                  
-                  <button 
-                    mat-icon-button 
-                    color="warn" 
-                    (click)="deleteReport(report)"
-                    matTooltip="Eliminar">
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                </div>
-              </td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-          </table>
-        </div>
-      </mat-card-content>
-    </mat-card>
-  </mat-card>
-</div>
-
-<!-- Modal para ver reporte -->
-<div *ngIf="selectedReport" class="report-modal-overlay" (click)="selectedReport = null">
-  <mat-card class="report-modal" (click)="$event.stopPropagation()">
-    <mat-card-header>
-      <mat-card-title>{{ selectedReport.title }}</mat-card-title>
-      <button mat-icon-button (click)="selectedReport = null" class="close-button">
-        <mat-icon>close</mat-icon>
-      </button>
-    </mat-card-header>
-    
-    <mat-card-content>
-      <div class="report-details">
-        <div class="detail-item">
-          <strong>Tipo:</strong> {{ getReportTypeDisplay(selectedReport.type) }}
-        </div>
-        <div class="detail-item">
-          <strong>Fecha:</strong> {{ selectedReport.date | date:'dd/MM/yyyy HH:mm' }}
-        </div>
-        <div class="detail-item">
-          <strong>Estado:</strong> {{ selectedReport.status }}
-        </div>
-        <div class="detail-item" *ngIf="selectedReport.description">
-          <strong>Descripción:</strong> {{ selectedReport.description }}
-        </div>
-        <div class="detail-item" *ngIf="selectedReport.generatedBy">
-          <strong>Generado por:</strong> {{ selectedReport.generatedBy }}
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 bg-slate-100">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined msz-18 text-slate-600">folder</span>
+          <h3 class="text-lg font-semibold text-slate-800">Reportes Generados</h3>
         </div>
       </div>
-    </mat-card-content>
-    
-    <mat-card-actions>
-      <button mat-raised-button color="primary" (click)="downloadReport(selectedReport)">
-        <mat-icon>download</mat-icon>
-        Descargar
-      </button>
-      <button mat-button (click)="selectedReport = null">Cerrar</button>
-    </mat-card-actions>
-  </mat-card>
+
+      <div *ngIf="loading" class="flex flex-col items-center justify-center py-12 px-6">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p class="mt-4 text-slate-500">Cargando reportes...</p>
+      </div>
+
+      <div *ngIf="!loading && reports.length > 0" class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-100 border-b border-slate-200">
+            <tr>
+              <th class="px-6 py-3 text-left">
+                <div
+                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
+                >
+                  <span class="material-symbols-outlined msz-18">title</span>
+                  Título
+                </div>
+              </th>
+              <th class="px-6 py-3 text-left">
+                <div
+                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
+                >
+                  <span class="material-symbols-outlined msz-18">category</span>
+                  Tipo
+                </div>
+              </th>
+              <th class="px-6 py-3 text-left">
+                <div
+                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
+                >
+                  <span class="material-symbols-outlined msz-18">description</span>
+                  Descripción
+                </div>
+              </th>
+              <th class="px-6 py-3 text-left">
+                <div
+                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
+                >
+                  <span class="material-symbols-outlined msz-18">event</span>
+                  Fecha
+                </div>
+              </th>
+              <th class="px-6 py-3 text-left">
+                <div
+                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
+                >
+                  <span class="material-symbols-outlined msz-18">info</span>
+                  Estado
+                </div>
+              </th>
+              <th class="px-6 py-3 text-center">
+                <div
+                  class="flex items-center justify-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
+                >
+                  <span class="material-symbols-outlined msz-18">settings</span>
+                  Acciones
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr *ngFor="let report of reports" class="hover:bg-slate-50 transition-colors">
+              <td class="px-6 py-4">
+                <p class="text-sm font-medium text-slate-800">{{ report.title }}</p>
+                <p class="text-xs text-slate-500" *ngIf="report.description">
+                  {{ report.description }}
+                </p>
+              </td>
+              <td class="px-6 py-4">
+                <span
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
+                  >{{ getReportTypeDisplay(report.type) }}</span
+                >
+              </td>
+              <td class="px-6 py-4">
+                <span class="text-sm text-slate-700" [title]="report.description">{{
+                  report.description || 'Sin descripción'
+                }}</span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="text-sm text-slate-700">
+                  <div class="font-medium">{{ report.date | date: 'dd/MM/yyyy' }}</div>
+                  <div class="text-xs text-slate-500">{{ report.date | date: 'HH:mm' }}</div>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <span
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="{
+                    'bg-green-100 text-green-700': report.status === 'Completado',
+                    'bg-red-100 text-red-700': report.status === 'Fallido',
+                    'bg-slate-100 text-slate-700':
+                      report.status !== 'Completado' && report.status !== 'Fallido',
+                  }"
+                >
+                  <span
+                    class="w-1.5 h-1.5 rounded-full"
+                    [ngClass]="{
+                      'bg-green-600': report.status === 'Completado',
+                      'bg-red-600': report.status === 'Fallido',
+                      'bg-slate-600': report.status !== 'Completado' && report.status !== 'Fallido',
+                    }"
+                  ></span>
+                  {{ report.status }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center justify-center gap-1">
+                  <button
+                    type="button"
+                    (click)="viewReport(report)"
+                    class="p-2 rounded-full hover:bg-blue-50 text-blue-600 hover:text-blue-700 transition-colors"
+                    title="Ver reporte"
+                  >
+                    <span class="material-symbols-outlined msz-20">visibility</span>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="downloadReport(report)"
+                    [disabled]="report.status !== 'Completado'"
+                    class="p-2 rounded-full hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 transition-colors disabled:opacity-50"
+                    title="Descargar"
+                  >
+                    <span class="material-symbols-outlined msz-20">download</span>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="deleteReport(report)"
+                    class="p-2 rounded-full hover:bg-red-50 text-red-600 hover:text-red-700 transition-colors"
+                    title="Eliminar"
+                  >
+                    <span class="material-symbols-outlined msz-20">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!loading && reports.length === 0" class="text-center py-12 px-6">
+        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4">description</span>
+        <h3 class="text-slate-700 font-medium mb-1">No hay reportes disponibles</h3>
+        <p class="text-slate-500">Genere su primer reporte utilizando el formulario de arriba.</p>
+      </div>
+    </div>
+
+    <!-- Modal simple -->
+    <div
+      *ngIf="selectedReport"
+      class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+      (click)="selectedReport = null"
+    >
+      <div
+        class="bg-white rounded-xl shadow-2xl w-full max-w-lg"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+          <h4 class="text-lg font-semibold text-slate-800">{{ selectedReport.title }}</h4>
+          <button
+            type="button"
+            (click)="selectedReport = null"
+            class="p-2 rounded-full hover:bg-slate-100"
+          >
+            <span class="material-symbols-outlined msz-20">close</span>
+          </button>
+        </div>
+        <div class="px-6 py-4 space-y-2 text-sm text-slate-700">
+          <div><strong>Tipo:</strong> {{ getReportTypeDisplay(selectedReport.type) }}</div>
+          <div><strong>Fecha:</strong> {{ selectedReport.date | date: 'dd/MM/yyyy HH:mm' }}</div>
+          <div><strong>Estado:</strong> {{ selectedReport.status }}</div>
+          <div *ngIf="selectedReport.description">
+            <strong>Descripción:</strong> {{ selectedReport.description }}
+          </div>
+          <div *ngIf="selectedReport.generatedBy">
+            <strong>Generado por:</strong> {{ selectedReport.generatedBy }}
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-200">
+          <button
+            type="button"
+            (click)="downloadReport(selectedReport!)"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700"
+          >
+            <span class="material-symbols-outlined msz-20">download</span>
+            Descargar
+          </button>
+          <button
+            type="button"
+            (click)="selectedReport = null"
+            class="px-4 py-2 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

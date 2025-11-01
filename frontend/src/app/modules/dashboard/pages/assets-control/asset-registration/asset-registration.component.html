@@ -1,177 +1,244 @@
-<div class="asset-registration-container">
-  <div class="main-content-card">
-    <div class="page-header">
-      <h1 class="page-title">
-        <mat-icon>add_box</mat-icon>
-        Registro de Activos
-      </h1>
-      <p class="page-description">Registre nuevos activos y gestione el inventario institucional</p>
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
+        <button
+          type="button"
+          routerLink="/dashboard/assets-control"
+          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          matTooltip="Volver"
+          aria-label="Volver"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
+        </button>
+        <div class="text-left">
+          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Registro de Activos</h1>
+          <p class="text-slate-600">Registre y gestione los activos del sistema</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        (click)="toggleForm()"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <span class="material-symbols-outlined msz-18">{{ showForm ? 'close' : 'add' }}</span>
+        {{ showForm ? 'Cancelar' : 'Nuevo Activo' }}
+      </button>
     </div>
 
     <!-- Formulario de Registro -->
-    <mat-card class="registration-form-card">
-      <mat-card-header>
-        <mat-card-title>Registrar Nuevo Activo</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <form [formGroup]="registrationForm" (ngSubmit)="onRegisterAsset()">
-          <!-- Información Básica -->
-          <div class="form-section">
-            <h3>Información Básica</h3>
-            <div class="form-grid">
-              <mat-form-field appearance="outline">
-                <mat-label>Nombre del Activo</mat-label>
-                <input matInput formControlName="name" placeholder="Ej: Máquina de Rayos X" required>
-                <mat-error *ngIf="registrationForm.get('name')?.hasError('required')">
-                  El nombre es requerido
-                </mat-error>
-                <mat-error *ngIf="registrationForm.get('name')?.hasError('minlength')">
-                  El nombre debe tener al menos 3 caracteres
-                </mat-error>
-              </mat-form-field>
+    <div *ngIf="showForm" class="bg-white rounded-xl shadow-md p-6 mb-8">
+      <div class="flex items-center gap-3 mb-6">
+        <div
+          class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
+        >
+          <span class="material-symbols-outlined msz-20">add_box</span>
+        </div>
+        <h3 class="text-xl font-semibold text-slate-900 m-0">Registrar Nuevo Activo</h3>
+      </div>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Tipo de Activo</mat-label>
-                <mat-select formControlName="type" required>
-                  <mat-option *ngFor="let type of assetTypes" [value]="type">
-                    {{ type }}
-                  </mat-option>
-                </mat-select>
-                <mat-error *ngIf="registrationForm.get('type')?.hasError('required')">
-                  El tipo es requerido
-                </mat-error>
-              </mat-form-field>
+      <form [formGroup]="registrationForm" (ngSubmit)="onRegisterAsset()">
+        <!-- Información Básica -->
+        <div class="mb-6">
+          <h4 class="text-sm font-semibold text-slate-700 mb-4 uppercase tracking-wide">
+            Información Básica
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre del Activo</mat-label>
+              <input matInput formControlName="name" placeholder="Ej: Máquina de Rayos X" />
+              <mat-icon matSuffix>label</mat-icon>
+              <mat-error *ngIf="registrationForm.get('name')?.hasError('required')">
+                El nombre es requerido
+              </mat-error>
+              <mat-error *ngIf="registrationForm.get('name')?.hasError('minlength')">
+                Mínimo 3 caracteres
+              </mat-error>
+            </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Fabricante</mat-label>
-                <input matInput formControlName="manufacturer" placeholder="Ej: Siemens" required>
-                <mat-error *ngIf="registrationForm.get('manufacturer')?.hasError('required')">
-                  El fabricante es requerido
-                </mat-error>
-              </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo de Activo</mat-label>
+              <mat-select formControlName="type">
+                <mat-option *ngFor="let type of assetTypes" [value]="type">
+                  {{ type }}
+                </mat-option>
+              </mat-select>
+              <mat-icon matSuffix>category</mat-icon>
+              <mat-error *ngIf="registrationForm.get('type')?.hasError('required')">
+                El tipo es requerido
+              </mat-error>
+            </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Modelo</mat-label>
-                <input matInput formControlName="model" placeholder="Ej: MULTIX Fusion">
-              </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Fabricante</mat-label>
+              <input matInput formControlName="manufacturer" placeholder="Ej: Siemens" />
+              <mat-icon matSuffix>business</mat-icon>
+              <mat-error *ngIf="registrationForm.get('manufacturer')?.hasError('required')">
+                El fabricante es requerido
+              </mat-error>
+            </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Número de Serie</mat-label>
-                <input matInput formControlName="serialNumber" placeholder="Ej: SX-2024-001" required>
-                <mat-error *ngIf="registrationForm.get('serialNumber')?.hasError('required')">
-                  El número de serie es requerido
-                </mat-error>
-              </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Modelo</mat-label>
+              <input matInput formControlName="model" placeholder="Ej: MULTIX Fusion" />
+              <mat-icon matSuffix>inventory_2</mat-icon>
+            </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Estado</mat-label>
-                <mat-select formControlName="status" required>
-                  <mat-option *ngFor="let status of assetStatuses" [value]="status">
-                    {{ status }}
-                  </mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
+            <mat-form-field appearance="outline">
+              <mat-label>Número de Serie</mat-label>
+              <input matInput formControlName="serialNumber" placeholder="Ej: SX-2024-001" />
+              <mat-icon matSuffix>tag</mat-icon>
+              <mat-error *ngIf="registrationForm.get('serialNumber')?.hasError('required')">
+                El número de serie es requerido
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Estado</mat-label>
+              <mat-select formControlName="status">
+                <mat-option *ngFor="let status of assetStatuses" [value]="status">
+                  {{ status }}
+                </mat-option>
+              </mat-select>
+              <mat-icon matSuffix>toggle_on</mat-icon>
+            </mat-form-field>
           </div>
+        </div>
 
-          <!-- Información de Compra -->
-          <div class="form-section">
-            <h3>Información de Compra</h3>
-            <div class="form-grid">
-              <mat-form-field appearance="outline">
-                <mat-label>Fecha de Compra</mat-label>
-                <input matInput [matDatepicker]="purchasePicker" formControlName="purchaseDate" required>
-                <mat-datepicker-toggle matSuffix [for]="purchasePicker"></mat-datepicker-toggle>
-                <mat-datepicker #purchasePicker></mat-datepicker>
-                <mat-error *ngIf="registrationForm.get('purchaseDate')?.hasError('required')">
-                  La fecha de compra es requerida
-                </mat-error>
-              </mat-form-field>
+        <!-- Información de Compra -->
+        <div class="mb-6">
+          <h4 class="text-sm font-semibold text-slate-700 mb-4 uppercase tracking-wide">
+            Información de Compra
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha de Compra</mat-label>
+              <input matInput [matDatepicker]="purchasePicker" formControlName="purchaseDate" />
+              <mat-datepicker-toggle matIconSuffix [for]="purchasePicker"></mat-datepicker-toggle>
+              <mat-datepicker #purchasePicker></mat-datepicker>
+              <mat-error *ngIf="registrationForm.get('purchaseDate')?.hasError('required')">
+                La fecha es requerida
+              </mat-error>
+            </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Precio de Compra</mat-label>
-                <input matInput type="number" formControlName="purchasePrice" placeholder="0.00">
-                <span matPrefix>$&nbsp;</span>
-                <mat-error *ngIf="registrationForm.get('purchasePrice')?.hasError('min')">
-                  El precio debe ser mayor a 0
-                </mat-error>
-              </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Precio de Compra</mat-label>
+              <input matInput type="number" formControlName="purchasePrice" placeholder="0.00" />
+              <span matPrefix>$&nbsp;</span>
+              <mat-error *ngIf="registrationForm.get('purchasePrice')?.hasError('min')">
+                El precio debe ser mayor a 0
+              </mat-error>
+            </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Vencimiento de Garantía</mat-label>
-                <input matInput [matDatepicker]="warrantyPicker" formControlName="warrantyExpiration">
-                <mat-datepicker-toggle matSuffix [for]="warrantyPicker"></mat-datepicker-toggle>
-                <mat-datepicker #warrantyPicker></mat-datepicker>
-              </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Expiración de Garantía</mat-label>
+              <input
+                matInput
+                [matDatepicker]="warrantyPicker"
+                formControlName="warrantyExpiration"
+              />
+              <mat-datepicker-toggle matIconSuffix [for]="warrantyPicker"></mat-datepicker-toggle>
+              <mat-datepicker #warrantyPicker></mat-datepicker>
+            </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Proveedor</mat-label>
-                <input matInput formControlName="supplier" placeholder="Nombre del proveedor">
-              </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Proveedor</mat-label>
+              <input matInput formControlName="supplier" placeholder="Nombre del proveedor" />
+              <mat-icon matSuffix>local_shipping</mat-icon>
+            </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Número de Factura</mat-label>
-                <input matInput formControlName="invoiceNumber" placeholder="FAC-001">
-              </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Número de Factura</mat-label>
+              <input matInput formControlName="invoiceNumber" placeholder="Ej: INV-2024-001" />
+              <mat-icon matSuffix>receipt</mat-icon>
+            </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Ubicación</mat-label>
-                <mat-select formControlName="location">
-                  <mat-option *ngFor="let location of locations" [value]="location">
-                    {{ location }}
-                  </mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
+            <mat-form-field appearance="outline">
+              <mat-label>Ubicación</mat-label>
+              <mat-select formControlName="location">
+                <mat-option *ngFor="let location of locations" [value]="location">
+                  {{ location }}
+                </mat-option>
+              </mat-select>
+              <mat-icon matSuffix>location_on</mat-icon>
+            </mat-form-field>
           </div>
+        </div>
 
-          <!-- Descripción y Notas -->
-          <div class="form-section">
-            <h3>Información Adicional</h3>
-            <div class="form-grid full-width">
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Descripción</mat-label>
-                <textarea matInput formControlName="description" rows="3" 
-                          placeholder="Descripción detallada del activo..."></textarea>
-              </mat-form-field>
+        <!-- Descripción y Notas -->
+        <div class="mb-6">
+          <h4 class="text-sm font-semibold text-slate-700 mb-4 uppercase tracking-wide">
+            Información Adicional
+          </h4>
+          <div class="grid grid-cols-1 gap-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Descripción</mat-label>
+              <textarea
+                matInput
+                formControlName="description"
+                rows="3"
+                placeholder="Descripción detallada del activo..."
+              ></textarea>
+              <mat-icon matSuffix>description</mat-icon>
+            </mat-form-field>
 
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Notas</mat-label>
-                <textarea matInput formControlName="notes" rows="2" 
-                          placeholder="Notas adicionales..."></textarea>
-              </mat-form-field>
-            </div>
+            <mat-form-field appearance="outline">
+              <mat-label>Notas Adicionales</mat-label>
+              <textarea
+                matInput
+                formControlName="notes"
+                rows="2"
+                placeholder="Notas y observaciones..."
+              ></textarea>
+              <mat-icon matSuffix>note</mat-icon>
+            </mat-form-field>
           </div>
+        </div>
 
-          <div class="form-actions">
-            <button mat-button type="button" (click)="registrationForm.reset()">
-              Limpiar
-            </button>
-            <button mat-raised-button color="primary" type="submit" 
-                    [disabled]="registrationForm.invalid || loading">
-              <mat-icon>save</mat-icon>
-              <span *ngIf="!loading">Registrar Activo</span>
-              <span *ngIf="loading">Registrando...</span>
-            </button>
-          </div>
-        </form>
-      </mat-card-content>
-    </mat-card>
-
-    <!-- Lista de Activos -->
-    <mat-card class="assets-list-card">
-      <mat-card-header>
-        <mat-card-title>Activos Registrados</mat-card-title>
-        <div class="header-actions">
-          <button mat-icon-button (click)="toggleFilters()" matTooltip="Filtros">
-            <mat-icon>filter_list</mat-icon>
+        <!-- Botones -->
+        <div class="flex justify-end gap-4 pt-4">
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="toggleForm()"
+            class="rounded-full h-10 px-5 bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100"
+          >
+            Cancelar
+          </button>
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            [disabled]="registrationForm.invalid || loading"
+            class="rounded-full h-10 px-5"
+          >
+            <span class="flex items-center gap-2">
+              <mat-icon class="!text-[18px]">save</mat-icon>
+              Registrar Activo
+            </span>
           </button>
         </div>
-      </mat-card-header>
-      
+      </form>
+    </div>
+
+    <!-- Tabla de Activos -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+      <div class="p-6 border-b border-slate-200 flex items-center justify-between">
+        <h2 class="text-xl font-bold text-slate-900">Activos Registrados</h2>
+        <button
+          type="button"
+          (click)="showFilters = !showFilters"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+        >
+          <span class="material-symbols-outlined msz-18">filter_list</span>
+          Filtros
+        </button>
+      </div>
+
       <!-- Filtros -->
-      <div class="filters-section" *ngIf="showFilters">
-        <form [formGroup]="filterForm" class="filters-form">
+      <div *ngIf="showFilters" class="p-6 border-b border-slate-200 bg-slate-50">
+        <form [formGroup]="filterForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <mat-form-field appearance="outline">
             <mat-label>Estado</mat-label>
             <mat-select formControlName="status">
@@ -193,105 +260,241 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Ubicación</mat-label>
-            <mat-select formControlName="location">
-              <mat-option value="">Todas</mat-option>
-              <mat-option *ngFor="let location of locations" [value]="location">
-                {{ location }}
+            <mat-label>Fabricante</mat-label>
+            <mat-select formControlName="manufacturer">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let mfr of manufacturers" [value]="mfr">
+                {{ mfr }}
               </mat-option>
             </mat-select>
           </mat-form-field>
 
-          <div class="filter-actions">
-            <button mat-button (click)="onClearFilters()">Limpiar</button>
-            <button mat-raised-button color="accent" (click)="onApplyFilters()">
-              Aplicar Filtros
+          <div class="flex items-end gap-2">
+            <button
+              mat-raised-button
+              color="primary"
+              type="button"
+              (click)="applyFilters()"
+              class="rounded-full h-10 px-4 flex-1"
+            >
+              Aplicar
+            </button>
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="clearFilters()"
+              class="rounded-full h-10 px-4"
+            >
+              Limpiar
             </button>
           </div>
         </form>
       </div>
 
-      <mat-card-content>
-        <div *ngIf="loading" class="loading-container">
-          <mat-spinner diameter="40"></mat-spinner>
-          <p>Cargando activos...</p>
-        </div>
+      <div *ngIf="loading" class="flex justify-center p-12">
+        <mat-spinner diameter="50"></mat-spinner>
+      </div>
 
-        <div *ngIf="!loading && assets.length === 0" class="no-data">
-          <mat-icon>add_box</mat-icon>
-          <p>No hay activos registrados</p>
-          <small>Use el formulario superior para registrar el primer activo</small>
-        </div>
-
-        <div *ngIf="!loading && assets.length > 0" class="table-container">
-          <table mat-table [dataSource]="assets" class="assets-table">
-            <!-- Nombre -->
-            <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef>Nombre</th>
-              <td mat-cell *matCellDef="let asset">
-                <div class="asset-name">
-                  <strong>{{ asset.name }}</strong>
-                  <small *ngIf="asset.model">{{ asset.model }}</small>
+      <div class="overflow-x-auto" *ngIf="!loading">
+        <table mat-table [dataSource]="assets" class="w-full bg-transparent">
+          <!-- Columna Nombre -->
+          <ng-container matColumnDef="name">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600 msz-18">inventory_2</span>
+                Activo
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let asset" class="p-4">
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0"
+                >
+                  <span class="material-symbols-outlined text-blue-600 msz-20">inventory_2</span>
                 </div>
-              </td>
-            </ng-container>
-
-            <!-- Tipo -->
-            <ng-container matColumnDef="type">
-              <th mat-header-cell *matHeaderCellDef>Tipo</th>
-              <td mat-cell *matCellDef="let asset">{{ asset.type }}</td>
-            </ng-container>
-
-            <!-- Fabricante -->
-            <ng-container matColumnDef="manufacturer">
-              <th mat-header-cell *matHeaderCellDef>Fabricante</th>
-              <td mat-cell *matCellDef="let asset">{{ asset.manufacturer }}</td>
-            </ng-container>
-
-            <!-- Fecha de Compra -->
-            <ng-container matColumnDef="purchaseDate">
-              <th mat-header-cell *matHeaderCellDef>Fecha de Compra</th>
-              <td mat-cell *matCellDef="let asset">{{ asset.purchaseDate | date:'short' }}</td>
-            </ng-container>
-
-            <!-- Estado -->
-            <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef>Estado</th>
-              <td mat-cell *matCellDef="let asset">
-                <mat-chip-list>
-                  <mat-chip [color]="getStatusColor(asset.status)" selected>
-                    {{ getStatusText(asset.status) }}
-                  </mat-chip>
-                </mat-chip-list>
-              </td>
-            </ng-container>
-
-            <!-- Ubicación -->
-            <ng-container matColumnDef="location">
-              <th mat-header-cell *matHeaderCellDef>Ubicación</th>
-              <td mat-cell *matCellDef="let asset">{{ asset.location || 'No asignada' }}</td>
-            </ng-container>
-
-            <!-- Acciones -->
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef>Acciones</th>
-              <td mat-cell *matCellDef="let asset">
-                <div class="action-buttons">
-                  <button mat-icon-button (click)="editAsset(asset)" matTooltip="Editar">
-                    <mat-icon>edit</mat-icon>
-                  </button>
-                  <button mat-icon-button (click)="deleteAsset(asset)" matTooltip="Eliminar" color="warn">
-                    <mat-icon>delete</mat-icon>
-                  </button>
+                <div>
+                  <div class="font-medium text-slate-900">{{ asset.name }}</div>
+                  <div class="text-sm text-slate-600">{{ asset.serialNumber }}</div>
                 </div>
-              </td>
-            </ng-container>
+              </div>
+            </td>
+          </ng-container>
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-          </table>
-        </div>
-      </mat-card-content>
-    </mat-card>
+          <!-- Columna Tipo -->
+          <ng-container matColumnDef="type">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600 msz-18">category</span>
+                Tipo
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let asset" class="p-4 text-slate-600">{{ asset.type }}</td>
+          </ng-container>
+
+          <!-- Columna Fabricante -->
+          <ng-container matColumnDef="manufacturer">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600 msz-18">business</span>
+                Fabricante
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let asset" class="p-4 text-slate-600">
+              {{ asset.manufacturer }}
+            </td>
+          </ng-container>
+
+          <!-- Columna Fecha Compra -->
+          <ng-container matColumnDef="purchaseDate">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600 msz-18">calendar_today</span>
+                Fecha Compra
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let asset" class="p-4 text-slate-600">
+              {{ asset.purchaseDate | date: 'short' }}
+            </td>
+          </ng-container>
+
+          <!-- Columna Estado -->
+          <ng-container matColumnDef="status">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600 msz-18">toggle_on</span>
+                Estado
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let asset" class="p-4">
+              <span
+                class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
+                [ngClass]="{
+                  'bg-green-100 text-green-800 border-green-200': asset.status === 'ACTIVE',
+                  'bg-orange-100 text-orange-800 border-orange-200': asset.status === 'MAINTENANCE',
+                  'bg-red-100 text-red-800 border-red-200': asset.status === 'INACTIVE',
+                }"
+              >
+                <span
+                  class="w-2 h-2 rounded-full"
+                  [ngClass]="{
+                    'bg-green-500': asset.status === 'ACTIVE',
+                    'bg-orange-500': asset.status === 'MAINTENANCE',
+                    'bg-red-500': asset.status === 'INACTIVE',
+                  }"
+                ></span>
+                {{ asset.status }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Columna Ubicación -->
+          <ng-container matColumnDef="location">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600 msz-18">location_on</span>
+                Ubicación
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let asset" class="p-4 text-slate-600">
+              {{ asset.location || 'N/A' }}
+            </td>
+          </ng-container>
+
+          <!-- Columna Acciones -->
+          <ng-container matColumnDef="actions">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600 msz-18">settings</span>
+                Acciones
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let asset" class="p-4">
+              <div class="flex gap-2 items-center">
+                <button
+                  mat-icon-button
+                  (click)="viewAsset(asset)"
+                  class="w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-200"
+                  matTooltip="Ver detalles"
+                  aria-label="Ver detalles"
+                >
+                  <span class="material-symbols-outlined msz-20 leading-none">visibility</span>
+                </button>
+                <button
+                  mat-icon-button
+                  (click)="editAsset(asset)"
+                  class="w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-amber-200"
+                  matTooltip="Editar"
+                  aria-label="Editar"
+                >
+                  <span class="material-symbols-outlined msz-20 leading-none">edit</span>
+                </button>
+                <button
+                  mat-icon-button
+                  (click)="deleteAsset(asset)"
+                  class="w-9 h-9 text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-200"
+                  matTooltip="Eliminar"
+                  aria-label="Eliminar"
+                >
+                  <span class="material-symbols-outlined msz-20 leading-none">delete</span>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr
+            mat-header-row
+            *matHeaderRowDef="displayedColumns"
+            class="border-b-2 border-slate-200"
+          ></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            class="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+          ></tr>
+        </table>
+      </div>
+
+      <!-- Estado vacío -->
+      <div *ngIf="!loading && assets.length === 0" class="text-center py-12 px-6">
+        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4">inventory_2</span>
+        <p class="text-slate-500 mb-4">No hay activos registrados aún</p>
+        <button
+          type="button"
+          (click)="toggleForm()"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">add</span>
+          Registrar Primer Activo
+        </button>
+      </div>
+    </div>
   </div>
 </div>

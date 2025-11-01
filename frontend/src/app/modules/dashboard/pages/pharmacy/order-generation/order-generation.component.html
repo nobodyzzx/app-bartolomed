@@ -9,7 +9,7 @@
           matTooltip="Volver"
           aria-label="Volver"
         >
-          <mat-icon class="!text-[20px] leading-none">arrow_back</mat-icon>
+          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
         </button>
         <div class="text-left">
           <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">
@@ -24,7 +24,7 @@
         class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
         aria-label="Crear nuevo pedido"
       >
-        <mat-icon class="!text-[20px] leading-none">add</mat-icon>
+        <span class="material-symbols-outlined msz-20 leading-none">add</span>
         Nuevo Pedido
       </button>
     </div>
@@ -40,7 +40,9 @@
             <p class="text-3xl font-bold text-blue-900 mt-2">{{ stats.totalOrders }}</p>
             <p class="text-xs text-blue-600/60 mt-1">Pedidos registrados</p>
           </div>
-          <mat-icon class="text-blue-500 !text-[40px] !w-10 !h-10">receipt_long</mat-icon>
+          <span class="material-symbols-outlined text-blue-500 msz-40 !w-10 !h-10"
+            >receipt_long</span
+          >
         </div>
       </div>
 
@@ -53,7 +55,7 @@
             <p class="text-3xl font-bold text-orange-900 mt-2">{{ stats.pendingOrders }}</p>
             <p class="text-xs text-orange-600/60 mt-1">Esperando aprobación</p>
           </div>
-          <mat-icon class="text-orange-500 !text-[40px] !w-10 !h-10">pending</mat-icon>
+          <span class="material-symbols-outlined text-orange-500 msz-40 !w-10 !h-10">pending</span>
         </div>
       </div>
 
@@ -66,7 +68,9 @@
             <p class="text-3xl font-bold text-green-900 mt-2">{{ stats.approvedOrders }}</p>
             <p class="text-xs text-green-600/60 mt-1">Listos para procesar</p>
           </div>
-          <mat-icon class="text-green-500 !text-[40px] !w-10 !h-10">check_circle</mat-icon>
+          <span class="material-symbols-outlined text-green-500 msz-40 !w-10 !h-10"
+            >check_circle</span
+          >
         </div>
       </div>
 
@@ -81,7 +85,9 @@
             </p>
             <p class="text-xs text-purple-600/60 mt-1">En pedidos activos</p>
           </div>
-          <mat-icon class="text-purple-500 !text-[40px] !w-10 !h-10">attach_money</mat-icon>
+          <span class="material-symbols-outlined text-purple-500 msz-40 !w-10 !h-10"
+            >attach_money</span
+          >
         </div>
       </div>
     </div>
@@ -96,7 +102,9 @@
             placeholder="ID, proveedor, estado..."
             class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
           />
-          <mat-icon class="absolute right-3 top-2.5 text-blue-400">search</mat-icon>
+          <span class="material-symbols-outlined msz-18 absolute right-3 top-2.5 text-blue-400"
+            >search</span
+          >
         </div>
       </div>
 
@@ -104,8 +112,9 @@
         type="button"
         (keyup.enter)="applyFilter($event)"
         class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+        aria-label="Buscar"
       >
-        <mat-icon class="!text-[18px]">search</mat-icon>
+        <span class="material-symbols-outlined msz-18">search</span>
         Buscar
       </button>
 
@@ -114,8 +123,9 @@
       <button
         type="button"
         class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+        aria-label="Exportar pedidos"
       >
-        <mat-icon class="!text-[18px]">download</mat-icon>
+        <span class="material-symbols-outlined msz-18">download</span>
         Exportar
       </button>
     </div>
@@ -132,7 +142,9 @@
             class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
           >
             <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px] text-slate-600">confirmation_number</mat-icon>
+              <span class="material-symbols-outlined msz-18 text-slate-600"
+                >confirmation_number</span
+              >
               ID Pedido
             </div>
           </th>
@@ -154,7 +166,7 @@
             class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
           >
             <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px] text-slate-600">business</mat-icon>
+              <span class="material-symbols-outlined msz-18 text-slate-600">business</span>
               Proveedor
             </div>
           </th>
@@ -175,7 +187,7 @@
             class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
           >
             <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px] text-slate-600">calendar_today</mat-icon>
+              <span class="material-symbols-outlined msz-18 text-slate-600">calendar_today</span>
               Fecha
             </div>
           </th>
@@ -196,7 +208,7 @@
             class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
           >
             <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px] text-slate-600">flag</mat-icon>
+              <span class="material-symbols-outlined msz-18 text-slate-600">flag</span>
               Estado
             </div>
           </th>
@@ -234,7 +246,7 @@
             class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
           >
             <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px] text-slate-600">attach_money</mat-icon>
+              <span class="material-symbols-outlined msz-18 text-slate-600">attach_money</span>
               Total
             </div>
           </th>
@@ -255,7 +267,7 @@
             class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
           >
             <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px] text-slate-600">settings</mat-icon>
+              <span class="material-symbols-outlined msz-18 text-slate-600">settings</span>
               Acciones
             </div>
           </th>
@@ -268,7 +280,7 @@
                 matTooltip="Ver detalle del pedido"
                 aria-label="Ver detalle del pedido"
               >
-                <mat-icon class="!text-[20px] leading-none">visibility</mat-icon>
+                <span class="material-symbols-outlined msz-20 leading-none">visibility</span>
               </button>
               <button
                 mat-icon-button
@@ -278,7 +290,7 @@
                 matTooltip="Editar pedido"
                 aria-label="Editar pedido"
               >
-                <mat-icon class="!text-[20px] leading-none">edit</mat-icon>
+                <span class="material-symbols-outlined msz-20 leading-none">edit</span>
               </button>
               <button
                 mat-icon-button
@@ -288,7 +300,7 @@
                 matTooltip="Aprobar pedido"
                 aria-label="Aprobar pedido"
               >
-                <mat-icon class="!text-[20px] leading-none">check_circle</mat-icon>
+                <span class="material-symbols-outlined msz-20 leading-none">check_circle</span>
               </button>
               <button
                 mat-icon-button
@@ -298,7 +310,7 @@
                 matTooltip="Cancelar pedido"
                 aria-label="Cancelar pedido"
               >
-                <mat-icon class="!text-[20px] leading-none">cancel</mat-icon>
+                <span class="material-symbols-outlined msz-20 leading-none">cancel</span>
               </button>
             </div>
           </td>

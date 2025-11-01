@@ -1,34 +1,51 @@
-<div class="medical-record-form-container">
-  <div class="medical-record-form-content">
-    <!-- Botón Volver -->
-    <div class="top-actions">
-      <button mat-stroked-button color="primary" (click)="goBack()" class="back-button">
-        <mat-icon>arrow_back</mat-icon>
-        Volver
-      </button>
-    </div>
-
-    <!-- Encabezado -->
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-blue-900 mb-4">
-        {{ isEditMode ? 'Editar Expediente Médico' : 'Nuevo Expediente Médico' }}
-      </h1>
-      <div class="w-24 h-1 bg-blue-600 mx-auto rounded-full mb-4"></div>
-      <p class="text-lg text-blue-600">
-        {{
-          isEditMode
-            ? 'Modificar información del expediente médico'
-            : 'Crear nuevo expediente médico paso a paso'
-        }}
-      </p>
-    </div>
-
-    <!-- Barra de Progreso -->
-    <div class="progress-container" *ngIf="!isLoading">
-      <div class="progress-bar">
-        <div class="progress-fill" [style.width.%]="getStepProgress()"></div>
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
+    <div class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
+        <button
+          type="button"
+          (click)="goBack()"
+          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          matTooltip="Volver"
+          aria-label="Volver"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
+        </button>
+        <div class="text-left">
+          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">
+            {{ isEditMode ? 'Editar Expediente Médico' : 'Nuevo Expediente Médico' }}
+          </h1>
+          <p class="text-slate-600">{{ isEditMode ? 'Modificar' : 'Crear' }} expediente clínico</p>
+        </div>
       </div>
-      <div class="progress-text">{{ getStepProgress() }}% Completado</div>
+      <div>
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="cancel()"
+          [disabled]="isSaving"
+          class="rounded-full h-10 px-4 bg-red-50 text-red-600 border-red-200 hover:bg-red-100 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:ring-offset-1"
+          matTooltip="Cancelar"
+          aria-label="Cancelar"
+        >
+          <span class="material-symbols-outlined">cancel</span>
+          Cancelar
+        </button>
+      </div>
+    </div>
+
+    <!-- Progreso -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8" *ngIf="!isLoading">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-slate-700 font-medium">Progreso del formulario</span>
+        <span class="text-slate-900 font-semibold">{{ getStepProgress() | number: '1.0-0' }}%</span>
+      </div>
+      <div class="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+        <div
+          class="h-2 bg-blue-600 rounded-full transition-all"
+          [style.width.%]="getStepProgress()"
+        ></div>
+      </div>
     </div>
 
     <!-- Loading Indicator -->
@@ -43,7 +60,7 @@
         <ng-template matStepLabel>
           <div class="step-label">
             <div class="step-icon-badge">
-              <mat-icon>person</mat-icon>
+              <span class="material-symbols-outlined">person</span>
             </div>
             <div class="step-text">
               <div class="step-title">Información</div>
@@ -52,17 +69,19 @@
           </div>
         </ng-template>
 
-        <div class="step-header">
-          <mat-icon class="step-header-icon">person</mat-icon>
-          <div class="step-header-content">
-            <h2 class="step-header-title">Información del Paciente y Consulta</h2>
-            <p class="step-header-description">Datos básicos del paciente y motivo de consulta</p>
-          </div>
-        </div>
-
         <form [formGroup]="patientInfoForm">
           <div class="step-content">
-            <div class="form-card">
+            <div class="form-card bg-white rounded-xl shadow-md p-6 mb-6">
+              <div class="flex items-center gap-3 mb-6">
+                <div
+                  class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
+                >
+                  <span class="material-symbols-outlined msz-20">person</span>
+                </div>
+                <h3 class="text-xl font-semibold text-slate-900 m-0">
+                  Información del Paciente y Consulta
+                </h3>
+              </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Selección de Paciente -->
                 <mat-form-field appearance="outline">
@@ -152,16 +171,16 @@
             </div>
           </div>
 
-          <div class="step-actions">
-            <button mat-stroked-button (click)="cancel()" type="button">Cancelar</button>
+          <div class="flex items-center justify-end mt-6">
             <button
               mat-flat-button
               color="primary"
               matStepperNext
               [disabled]="patientInfoForm.invalid"
+              class="rounded-full h-10 px-5 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
             >
               Siguiente
-              <mat-icon>arrow_forward</mat-icon>
+              <span class="material-symbols-outlined">keyboard_arrow_right</span>
             </button>
           </div>
         </form>
@@ -172,7 +191,7 @@
         <ng-template matStepLabel>
           <div class="step-label">
             <div class="step-icon-badge">
-              <mat-icon>history</mat-icon>
+              <span class="material-symbols-outlined">history</span>
             </div>
             <div class="step-text">
               <div class="step-title">Historia</div>
@@ -181,17 +200,19 @@
           </div>
         </ng-template>
 
-        <div class="step-header">
-          <mat-icon class="step-header-icon">history</mat-icon>
-          <div class="step-header-content">
-            <h2 class="step-header-title">Historia Médica del Paciente</h2>
-            <p class="step-header-description">Antecedentes y evolución de la enfermedad</p>
-          </div>
-        </div>
-
         <form [formGroup]="medicalHistoryForm">
           <div class="step-content">
-            <div class="form-card">
+            <div class="form-card bg-white rounded-xl shadow-md p-6 mb-6">
+              <div class="flex items-center gap-3 mb-6">
+                <div
+                  class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
+                >
+                  <span class="material-symbols-outlined msz-20">history</span>
+                </div>
+                <h3 class="text-xl font-semibold text-slate-900 m-0">
+                  Historia Médica del Paciente
+                </h3>
+              </div>
               <div class="grid grid-cols-1 gap-6">
                 <!-- Historia de la Enfermedad Actual -->
                 <mat-form-field appearance="outline">
@@ -299,19 +320,34 @@
             </div>
           </div>
 
-          <div class="step-actions">
-            <button mat-stroked-button matStepperPrevious>
-              <mat-icon>arrow_back</mat-icon>
+          <div class="flex items-center justify-between mt-6">
+            <button
+              mat-stroked-button
+              matStepperPrevious
+              class="rounded-full h-10 px-4 bg-white text-slate-700 border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1"
+            >
+              <span class="material-symbols-outlined">keyboard_arrow_left</span>
               Anterior
             </button>
             <div class="flex gap-2">
-              <button mat-stroked-button (click)="saveDraft()" type="button" color="accent">
-                <mat-icon>save</mat-icon>
+              <button
+                mat-stroked-button
+                (click)="saveDraft()"
+                type="button"
+                color="accent"
+                class="rounded-full h-10 px-4 bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1"
+              >
+                <span class="material-symbols-outlined">save</span>
                 Guardar Borrador
               </button>
-              <button mat-flat-button color="primary" matStepperNext>
+              <button
+                mat-flat-button
+                color="primary"
+                matStepperNext
+                class="rounded-full h-10 px-5 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
+              >
                 Siguiente
-                <mat-icon>arrow_forward</mat-icon>
+                <span class="material-symbols-outlined">keyboard_arrow_right</span>
               </button>
             </div>
           </div>
@@ -321,11 +357,15 @@
       <!-- Paso 3: Signos Vitales -->
       <mat-step [stepControl]="vitalSignsForm" label="Signos Vitales">
         <form [formGroup]="vitalSignsForm">
-          <div class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 mb-6">
-            <h2 class="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-3">
-              <mat-icon class="text-blue-600">monitor_heart</mat-icon>
-              Signos Vitales
-            </h2>
+          <div class="form-card bg-white rounded-xl shadow-md p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+              <div
+                class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
+              >
+                <span class="material-symbols-outlined msz-20">monitor_heart</span>
+              </div>
+              <h3 class="text-xl font-semibold text-slate-900 m-0">Signos Vitales</h3>
+            </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
               <!-- Temperatura -->
@@ -460,19 +500,34 @@
             </div>
           </div>
 
-          <div class="step-actions">
-            <button mat-stroked-button matStepperPrevious>
-              <mat-icon>arrow_back</mat-icon>
+          <div class="flex items-center justify-between mt-6">
+            <button
+              mat-stroked-button
+              matStepperPrevious
+              class="rounded-full h-10 px-4 bg-white text-slate-700 border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1"
+            >
+              <span class="material-symbols-outlined">keyboard_arrow_left</span>
               Anterior
             </button>
             <div class="flex gap-2">
-              <button mat-stroked-button (click)="saveDraft()" type="button" color="accent">
-                <mat-icon>save</mat-icon>
+              <button
+                mat-stroked-button
+                (click)="saveDraft()"
+                type="button"
+                color="accent"
+                class="rounded-full h-10 px-4 bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1"
+              >
+                <span class="material-symbols-outlined">save</span>
                 Guardar Borrador
               </button>
-              <button mat-flat-button color="primary" matStepperNext>
+              <button
+                mat-flat-button
+                color="primary"
+                matStepperNext
+                class="rounded-full h-10 px-5 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
+              >
                 Siguiente
-                <mat-icon>arrow_forward</mat-icon>
+                <span class="material-symbols-outlined">keyboard_arrow_right</span>
               </button>
             </div>
           </div>
@@ -482,11 +537,15 @@
       <!-- Paso 4: Examen Físico -->
       <mat-step [stepControl]="physicalExamForm" label="Examen Físico">
         <form [formGroup]="physicalExamForm">
-          <div class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 mb-6">
-            <h2 class="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-3">
-              <mat-icon class="text-blue-600">healing</mat-icon>
-              Examen Físico
-            </h2>
+          <div class="form-card bg-white rounded-xl shadow-md p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+              <div
+                class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
+              >
+                <span class="material-symbols-outlined msz-20">healing</span>
+              </div>
+              <h3 class="text-xl font-semibold text-slate-900 m-0">Examen Físico</h3>
+            </div>
 
             <div class="grid grid-cols-1 gap-6">
               <!-- Examen Físico General -->
@@ -615,19 +674,34 @@
             </div>
           </div>
 
-          <div class="step-actions">
-            <button mat-stroked-button matStepperPrevious>
-              <mat-icon>arrow_back</mat-icon>
+          <div class="flex items-center justify-between mt-6">
+            <button
+              mat-stroked-button
+              matStepperPrevious
+              class="rounded-full h-10 px-4 bg-white text-slate-700 border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1"
+            >
+              <span class="material-symbols-outlined">keyboard_arrow_left</span>
               Anterior
             </button>
             <div class="flex gap-2">
-              <button mat-stroked-button (click)="saveDraft()" type="button" color="accent">
-                <mat-icon>save</mat-icon>
+              <button
+                mat-stroked-button
+                (click)="saveDraft()"
+                type="button"
+                color="accent"
+                class="rounded-full h-10 px-4 bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1"
+              >
+                <span class="material-symbols-outlined">save</span>
                 Guardar Borrador
               </button>
-              <button mat-flat-button color="primary" matStepperNext>
+              <button
+                mat-flat-button
+                color="primary"
+                matStepperNext
+                class="rounded-full h-10 px-5 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
+              >
                 Siguiente
-                <mat-icon>arrow_forward</mat-icon>
+                <span class="material-symbols-outlined">keyboard_arrow_right</span>
               </button>
             </div>
           </div>
@@ -637,11 +711,17 @@
       <!-- Paso 5: Evaluación y Plan -->
       <mat-step [stepControl]="assessmentForm" label="Evaluación y Plan">
         <form [formGroup]="assessmentForm">
-          <div class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 mb-6">
-            <h2 class="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-3">
-              <mat-icon class="text-blue-600">assessment</mat-icon>
-              Evaluación y Plan de Tratamiento
-            </h2>
+          <div class="form-card bg-white rounded-xl shadow-md p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+              <div
+                class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
+              >
+                <span class="material-symbols-outlined msz-20">analytics</span>
+              </div>
+              <h3 class="text-xl font-semibold text-slate-900 m-0">
+                Evaluación y Plan de Tratamiento
+              </h3>
+            </div>
 
             <div class="grid grid-cols-1 gap-6">
               <!-- Evaluación Clínica -->
@@ -768,19 +848,34 @@
             </div>
           </div>
 
-          <div class="step-actions">
-            <button mat-stroked-button matStepperPrevious>
-              <mat-icon>arrow_back</mat-icon>
+          <div class="flex items-center justify-between mt-6">
+            <button
+              mat-stroked-button
+              matStepperPrevious
+              class="rounded-full h-10 px-4 bg-white text-slate-700 border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1"
+            >
+              <span class="material-symbols-outlined">keyboard_arrow_left</span>
               Anterior
             </button>
             <div class="flex gap-2">
-              <button mat-stroked-button (click)="saveDraft()" type="button" color="accent">
-                <mat-icon>save</mat-icon>
+              <button
+                mat-stroked-button
+                (click)="saveDraft()"
+                type="button"
+                color="accent"
+                class="rounded-full h-10 px-4 bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1"
+              >
+                <span class="material-symbols-outlined">save</span>
                 Guardar Borrador
               </button>
-              <button mat-flat-button color="primary" matStepperNext>
+              <button
+                mat-flat-button
+                color="primary"
+                matStepperNext
+                class="rounded-full h-10 px-5 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
+              >
                 Siguiente
-                <mat-icon>arrow_forward</mat-icon>
+                <span class="material-symbols-outlined">keyboard_arrow_right</span>
               </button>
             </div>
           </div>
@@ -790,11 +885,17 @@
       <!-- Paso 6: Formulario de Consentimiento -->
       <mat-step [stepControl]="consentForm" label="Formulario de Consentimiento">
         <form [formGroup]="consentForm">
-          <div class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 mb-6">
-            <h2 class="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-3">
-              <mat-icon class="text-blue-600">gavel</mat-icon>
-              Formulario de Consentimiento Informado
-            </h2>
+          <div class="form-card bg-white rounded-xl shadow-md p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+              <div
+                class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
+              >
+                <span class="material-symbols-outlined msz-20">gavel</span>
+              </div>
+              <h3 class="text-xl font-semibold text-slate-900 m-0">
+                Formulario de Consentimiento Informado
+              </h3>
+            </div>
 
             <div class="grid grid-cols-1 gap-6">
               <!-- Tipo de Consentimiento -->
@@ -844,7 +945,9 @@
               <div
                 class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors"
               >
-                <mat-icon class="text-6xl text-gray-400 mb-4">cloud_upload</mat-icon>
+                <span class="material-symbols-outlined text-6xl text-gray-400 mb-4"
+                  >cloud_upload</span
+                >
                 <h3 class="text-lg font-medium text-gray-900 mb-2">
                   Subir Documento de Consentimiento
                 </h3>
@@ -861,7 +964,7 @@
                 />
 
                 <button mat-flat-button color="primary" type="button" (click)="fileInput.click()">
-                  <mat-icon>attach_file</mat-icon>
+                  <span class="material-symbols-outlined">attach_file</span>
                   Seleccionar Archivo
                 </button>
 
@@ -871,7 +974,7 @@
                   class="mt-4 p-4 bg-green-50 rounded-lg border border-green-200"
                 >
                   <div class="flex items-center justify-center gap-2">
-                    <mat-icon class="text-green-600">check_circle</mat-icon>
+                    <span class="material-symbols-outlined text-green-600">check_circle</span>
                     <span class="text-green-800 font-medium">{{ selectedFile.name }}</span>
                     <span class="text-green-600 text-sm"
                       >({{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB)</span
@@ -911,14 +1014,24 @@
             </div>
           </div>
 
-          <div class="step-actions">
-            <button mat-stroked-button matStepperPrevious>
-              <mat-icon>arrow_back</mat-icon>
+          <div class="flex items-center justify-between mt-6">
+            <button
+              mat-stroked-button
+              matStepperPrevious
+              class="rounded-full h-10 px-4 bg-white text-slate-700 border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1"
+            >
+              <span class="material-symbols-outlined">keyboard_arrow_left</span>
               Anterior
             </button>
             <div class="flex gap-4">
-              <button mat-stroked-button (click)="saveDraft()" type="button" color="accent">
-                <mat-icon>save</mat-icon>
+              <button
+                mat-stroked-button
+                (click)="saveDraft()"
+                type="button"
+                color="accent"
+                class="rounded-full h-10 px-4 bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1"
+              >
+                <span class="material-symbols-outlined">save</span>
                 Guardar Borrador
               </button>
               <button
@@ -927,8 +1040,9 @@
                 (click)="onSubmit()"
                 [disabled]="isSaving"
                 type="button"
+                class="rounded-full h-10 px-5 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
               >
-                <mat-icon>save</mat-icon>
+                <span class="material-symbols-outlined">save</span>
                 {{
                   isSaving
                     ? 'Guardando...'
@@ -945,8 +1059,8 @@
 
     <!-- Botones de Acción Flotantes -->
     <div class="fixed bottom-6 right-6 flex flex-col gap-3" *ngIf="!isLoading">
-      <button mat-fab color="warn" (click)="cancel()" matTooltip="Cancelar">
-        <mat-icon>close</mat-icon>
+      <button mat-fab color="warn" (click)="cancel()" matTooltip="Cancelar" aria-label="Cancelar">
+        <span class="material-symbols-outlined">close</span>
       </button>
 
       <button
@@ -954,9 +1068,10 @@
         color="accent"
         (click)="saveDraft()"
         matTooltip="Guardar Borrador"
+        aria-label="Guardar borrador"
         [disabled]="isSaving"
       >
-        <mat-icon>save</mat-icon>
+        <span class="material-symbols-outlined">save</span>
       </button>
     </div>
   </div>

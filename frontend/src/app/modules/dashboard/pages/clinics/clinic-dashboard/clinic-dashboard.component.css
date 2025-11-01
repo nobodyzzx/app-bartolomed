@@ -186,7 +186,9 @@
 }
 
 .clinic-address mat-icon,
-.clinic-contact mat-icon {
+.clinic-contact mat-icon,
+.clinic-address .material-symbols-outlined,
+.clinic-contact .material-symbols-outlined {
   font-size: 18px;
   width: 18px;
   height: 18px;
@@ -226,7 +228,8 @@
   color: #6b7280;
 }
 
-.no-data mat-icon {
+.no-data mat-icon,
+.no-data .material-symbols-outlined {
   font-size: 3rem;
   width: 3rem;
   height: 3rem;
@@ -352,7 +355,8 @@
   gap: 6px;
 }
 
-.clinic-info mat-icon {
+.clinic-info mat-icon,
+.clinic-info .material-symbols-outlined {
   font-size: 16px;
   width: 16px;
   height: 16px;
