@@ -1,11 +1,11 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
+  Entity,
   JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Patient } from '../../patients/entities/patient.entity';
 import { User } from '../../users/entities/user.entity';
@@ -159,6 +159,11 @@ export class MedicalRecord {
 
   @Column('boolean', { default: true })
   isActive: boolean;
+
+  // Relación con registro médico previo (para seguimientos)
+  @ManyToOne(() => MedicalRecord, { nullable: true })
+  @JoinColumn({ name: 'related_record_id' })
+  relatedRecord: MedicalRecord;
 
   @ManyToOne(() => Patient, { eager: true })
   @JoinColumn({ name: 'patient_id' })

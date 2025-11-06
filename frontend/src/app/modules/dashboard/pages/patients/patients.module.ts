@@ -5,6 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { RouterModule } from '@angular/router'
 
 import { MaterialModule } from '../../../../material/material.module'
+import { SharedModule } from '../../../../shared/shared.module'
 import { PatientDashboardComponent } from './patient-dashboard/patient-dashboard.component'
 import { PatientFormComponent } from './patient-form/patient-form.component'
 import { PatientListComponent } from './patient-list/patient-list.component'
@@ -19,6 +20,7 @@ import { PatientsRoutingModule } from './patients-routing.module'
     RouterModule,
     HttpClientModule,
     MaterialModule,
+    SharedModule,
     PatientsRoutingModule,
   ],
   exports: [PatientFormComponent, PatientListComponent, PatientDashboardComponent],

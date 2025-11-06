@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 import { AlertService } from '../../../../../core/services/alert.service'
+import { ClinicContextService } from '../../../../clinics/services/clinic-context.service'
 import { Clinic } from '../../clinics/interfaces/clinic.interface'
 import { ClinicsService } from '../../clinics/services'
 import { BloodType, CreatePatientDto, Gender, MaritalStatus, Patient } from '../interfaces'
@@ -18,7 +19,6 @@ export class PatientFormComponent implements OnInit {
   // Stepper form groups
   personalInfoForm!: FormGroup
   contactInfoForm!: FormGroup
-  medicalInfoForm!: FormGroup
   emergencyContactForm!: FormGroup
   insuranceForm!: FormGroup
 
@@ -34,6 +34,9 @@ export class PatientFormComponent implements OnInit {
   // Clinics for select
   clinics: Clinic[] = []
   isClinicsLoading = false
+
+  // Contexto de clínica (si existe, bloquea selector)
+  public readonly ctxClinicId: string | null = null
 
   // Options for dropdowns
   protected readonly genderOptions = [
@@ -67,8 +70,11 @@ export class PatientFormComponent implements OnInit {
     private route: ActivatedRoute,
     private patientsService: PatientsService,
     private clinicsService: ClinicsService,
+    private clinicCtx: ClinicContextService,
     private alert: AlertService,
   ) {
+    // fijar contexto si existe
+    this.ctxClinicId = this.clinicCtx?.clinicId ?? null
     this.initializeForms()
   }
 
@@ -79,11 +85,10 @@ export class PatientFormComponent implements OnInit {
 
   getStepProgress(): number {
     let completedSteps = 0
-    const totalSteps = 5
+    const totalSteps = 4
 
     if (this.personalInfoForm.valid) completedSteps++
     if (this.contactInfoForm.valid) completedSteps++
-    if (this.medicalInfoForm.valid) completedSteps++
     if (this.emergencyContactForm.valid) completedSteps++
     if (this.insuranceForm.valid) completedSteps++
 
@@ -93,48 +98,49 @@ export class PatientFormComponent implements OnInit {
   private initializeForms(): void {
     // Paso 1: Información Personal
     this.personalInfoForm = this.fb.group({
-      firstName: ['María', [Validators.required, Validators.minLength(2)]],
-      lastName: ['González', [Validators.required, Validators.minLength(2)]],
-      documentNumber: ['12345678', [Validators.required, Validators.minLength(5)]],
+      firstName: ['', [Validators.required, Validators.minLength(2)]],
+      lastName: ['', [Validators.required, Validators.minLength(2)]],
+      documentNumber: [
+        '',
+        [
+          Validators.required,
+          Validators.minLength(5),
+          Validators.pattern(/^[A-Za-z0-9\-\.]{5,20}$/),
+        ],
+      ],
       documentType: ['CI'],
-      birthDate: [new Date('1985-03-15'), Validators.required],
-      gender: [Gender.FEMALE, Validators.required],
-      maritalStatus: [MaritalStatus.SINGLE],
-      occupation: ['Profesora'],
+      birthDate: [null, Validators.required],
+      gender: [null, Validators.required],
+      bloodType: [null],
+      maritalStatus: [null],
+      occupation: [''],
     })
 
     // Paso 2: Información de Contacto
     this.contactInfoForm = this.fb.group({
-      email: ['maria.gonzalez@email.com', [Validators.email]],
-      phone: ['+591-70123456'],
-      address: ['Av. América #123, Zona Central'],
-      city: ['La Paz'],
-      state: ['La Paz'],
-      zipCode: ['00000'],
-      country: ['Bolivia'],
+      email: ['', [Validators.email]],
+      phone: ['', [Validators.pattern(/^\+?[0-9\-\s]{7,15}$/)]],
+      address: [''],
+      city: [''],
+      state: [''],
+      zipCode: [''],
+      country: [''],
     })
 
-    // Paso 3: Información Médica
-    this.medicalInfoForm = this.fb.group({
-      bloodType: [BloodType.O_POSITIVE],
-      allergies: ['Alergia a la penicilina'],
-      medications: ['Ninguno actualmente'],
-      medicalHistory: ['Hipertensión arterial controlada'],
-      notes: ['Paciente colaboradora, sin antecedentes quirúrgicos relevantes'],
-    })
+    // Información médica se gestionará en Expedientes Médicos (no en el alta del paciente)
 
     // Paso 4: Contacto de Emergencia
     this.emergencyContactForm = this.fb.group({
-      emergencyContactName: ['Pedro González'],
-      emergencyContactPhone: ['+591-70654321'],
-      emergencyContactRelationship: ['Esposo'],
+      emergencyContactName: [''],
+      emergencyContactPhone: ['', [Validators.pattern(/^\+?[0-9\-\s]{7,15}$/)]],
+      emergencyContactRelationship: [''],
     })
 
     // Paso 5: Información de Seguro
     this.insuranceForm = this.fb.group({
-      insuranceProvider: ['Caja Nacional de Salud'],
-      insuranceNumber: ['CNS-123456789'],
-      clinicId: [null, Validators.required],
+      insuranceProvider: [''],
+      insuranceNumber: [''],
+      clinicId: [this.clinicCtx.clinicId, Validators.required],
     })
   }
 
@@ -181,6 +187,23 @@ export class PatientFormComponent implements OnInit {
             icon: 'warning',
             confirmButtonText: 'Entendido',
           })
+        }
+
+        // Prefijar clínica si hay contexto y existe en la lista
+        const ctxId = this.clinicCtx.clinicId
+        if (ctxId && this.clinics.some(c => c.id === ctxId)) {
+          this.insuranceForm.patchValue({ clinicId: ctxId })
+        } else if (ctxId && !this.clinics.some(c => c.id === ctxId)) {
+          // Si el contexto apunta a una clínica que aún no está cargada (o filtrada), cargarla y agregarla
+          this.clinicsService
+            .findOne(ctxId)
+            .pipe(catchError(() => of(null as Clinic | null)))
+            .subscribe(c => {
+              if (c) {
+                this.clinics = [...this.clinics, c]
+                this.insuranceForm.patchValue({ clinicId: ctxId })
+              }
+            })
         }
       })
   }
@@ -246,6 +269,7 @@ export class PatientFormComponent implements OnInit {
       documentType: patient.documentType,
       birthDate: patient.birthDate,
       gender: patient.gender,
+      bloodType: patient.bloodType,
       maritalStatus: patient.maritalStatus,
       occupation: patient.occupation,
     })
@@ -260,13 +284,7 @@ export class PatientFormComponent implements OnInit {
       country: patient.country,
     })
 
-    this.medicalInfoForm.patchValue({
-      bloodType: patient.bloodType,
-      allergies: patient.allergies,
-      medications: patient.medications,
-      medicalHistory: patient.medicalHistory,
-      notes: patient.notes,
-    })
+    // Información médica se completará en el expediente (omitida en alta)
 
     this.emergencyContactForm.patchValue({
       emergencyContactName: patient.emergencyContactName,
@@ -297,6 +315,67 @@ export class PatientFormComponent implements OnInit {
     }
   }
 
+  // Utilidad: calcular edad para mostrar junto a la fecha de nacimiento
+  getAge(): number | null {
+    const bd = this.personalInfoForm.get('birthDate')?.value
+    if (!bd) return null
+    const birthDate = new Date(bd)
+    const today = new Date()
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const m = today.getMonth() - birthDate.getMonth()
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--
+    return age
+  }
+
+  searchByDocument(): void {
+    const doc = this.personalInfoForm.get('documentNumber')?.value
+    if (!doc || String(doc).length < 5) {
+      this.alert.fire({
+        title: 'Documento insuficiente',
+        text: 'Ingrese al menos 5 caracteres para buscar.',
+        icon: 'warning',
+        confirmButtonText: 'Entendido',
+      })
+      return
+    }
+
+    this.patientsService
+      .findByDocument(doc)
+      .pipe(catchError(() => of(null as Patient | null)))
+      .subscribe(p => {
+        if (p && p.id) {
+          this.alert
+            .fire({
+              title: 'Paciente ya existe',
+              html: `<div style="text-align:left">Se encontró un paciente con ese documento:<br><strong>${p.firstName} ${p.lastName}</strong></div>`,
+              icon: 'info',
+              confirmButtonText: 'Abrir para editar',
+              showCancelButton: true,
+              cancelButtonText: 'Seguir creando',
+            })
+            .then((res: any) => {
+              if (res.isConfirmed) {
+                this.router.navigate(['/dashboard/patients/edit', p.id])
+              }
+            })
+        } else {
+          this.alert.fire({
+            title: 'No encontrado',
+            text: 'No existe un paciente con ese documento. Puede continuar con el registro.',
+            icon: 'success',
+            confirmButtonText: 'Continuar',
+          })
+        }
+      })
+  }
+
+  getSelectedClinicName(): string | null {
+    const id = this.insuranceForm.get('clinicId')?.value
+    if (!id) return null
+    const c = this.clinics.find(x => x.id === id)
+    return c ? c.name : null
+  }
+
   isAllFormsValid(): boolean {
     return (
       this.personalInfoForm.valid &&
@@ -309,14 +388,14 @@ export class PatientFormComponent implements OnInit {
   private createPatientDto(): CreatePatientDto {
     const personalData = this.personalInfoForm.value
     const contactData = this.contactInfoForm.value
-    const medicalData = this.medicalInfoForm.value
+    // Sin información médica en este flujo; se completará en Expedientes Médicos
     const emergencyData = this.emergencyContactForm.value
     const insuranceData = this.insuranceForm.value
 
     return {
       ...personalData,
       ...contactData,
-      ...medicalData,
+      // info médica omitida
       ...emergencyData,
       ...insuranceData,
     }
@@ -333,17 +412,25 @@ export class PatientFormComponent implements OnInit {
             <div style="text-align: left; padding: 10px;">
               <p><strong>Nombre:</strong> ${patient.firstName} ${patient.lastName}</p>
               <p><strong>Documento:</strong> ${patient.documentNumber}</p>
-              <p style="color: #059669; margin-top: 15px;">✓ El paciente ha sido registrado exitosamente en el sistema</p>
+              <div style="background:#eff6ff; color:#1d4ed8; padding:12px; border-radius:10px; margin-top:12px; border:1px solid #bfdbfe;">
+                <span style="font-weight:600;">Siguiente paso:</span> Completa el <strong>Expediente Médico</strong> del paciente.
+              </div>
             </div>
           `,
             icon: 'success',
-            confirmButtonText: 'Ir a Lista de Pacientes',
+            confirmButtonText: 'Crear Expediente Médico',
+            showDenyButton: true,
+            denyButtonText: 'Ir a Lista',
             showCancelButton: true,
             cancelButtonText: 'Crear Otro',
             reverseButtons: true,
           })
           .then((result: any) => {
             if (result.isConfirmed) {
+              this.router.navigate(['/dashboard/medical-records/new'], {
+                queryParams: { patientId: patient.id },
+              })
+            } else if (result.isDenied) {
               this.router.navigate(['/dashboard/patients'])
             } else {
               // Resetear formulario para crear otro paciente
@@ -597,7 +684,6 @@ export class PatientFormComponent implements OnInit {
     const field =
       this.personalInfoForm.get(fieldName) ||
       this.contactInfoForm.get(fieldName) ||
-      this.medicalInfoForm.get(fieldName) ||
       this.emergencyContactForm.get(fieldName) ||
       this.insuranceForm.get(fieldName)
 

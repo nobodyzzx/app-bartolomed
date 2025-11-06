@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString, IsUUID, IsNumber, IsDateString, IsBoolean, Min, Max } from 'class-validator';
+import { IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 import { RecordType } from '../entities/medical-record.entity';
 
 export class CreateMedicalRecordDto {
@@ -166,4 +166,8 @@ export class CreateMedicalRecordDto {
 
   @IsUUID()
   doctorId: string;
+
+  @IsOptional()
+  @IsUUID()
+  relatedRecordId?: string; // Para seguimientos, referencia a la consulta original
 }

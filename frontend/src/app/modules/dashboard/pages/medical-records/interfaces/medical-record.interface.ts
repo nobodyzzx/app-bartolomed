@@ -16,150 +16,168 @@ export enum RecordStatus {
 }
 
 export interface VitalSigns {
-  temperature?: number;
-  systolicBP?: number;
-  diastolicBP?: number;
-  heartRate?: number;
-  respiratoryRate?: number;
-  oxygenSaturation?: number;
-  weight?: number;
-  height?: number;
-  bmi?: number;
+  temperature?: number
+  systolicBP?: number
+  diastolicBP?: number
+  heartRate?: number
+  respiratoryRate?: number
+  oxygenSaturation?: number
+  weight?: number
+  height?: number
+  bmi?: number
 }
 
 export interface PhysicalExam {
-  generalAppearance?: string;
-  heent?: string; // Head, Eyes, Ears, Nose, Throat
-  cardiovascular?: string;
-  respiratory?: string;
-  abdominal?: string;
-  neurological?: string;
-  musculoskeletal?: string;
-  skin?: string;
+  generalAppearance?: string
+  heent?: string // Head, Eyes, Ears, Nose, Throat
+  cardiovascular?: string
+  respiratory?: string
+  abdominal?: string
+  neurological?: string
+  musculoskeletal?: string
+  skin?: string
 }
 
 export interface MedicalRecord {
-  id?: string;
-  type: RecordType;
-  status: RecordStatus;
-  
+  id?: string
+  type: RecordType
+  status: RecordStatus
+
   // Historia clínica
-  chiefComplaint: string;
-  historyOfPresentIllness?: string;
-  pastMedicalHistory?: string;
-  medications?: string;
-  allergies?: string;
-  socialHistory?: string;
-  familyHistory?: string;
-  reviewOfSystems?: string;
-  
-  // Signos vitales
-  vitalSigns?: VitalSigns;
-  
+  chiefComplaint: string
+  historyOfPresentIllness?: string
+  pastMedicalHistory?: string
+  medications?: string
+  allergies?: string
+  socialHistory?: string
+  familyHistory?: string
+  reviewOfSystems?: string
+
+  // Signos vitales (pueden venir como objeto o directamente en el record)
+  vitalSigns?: VitalSigns
+  temperature?: number
+  systolicBP?: number
+  diastolicBP?: number
+  heartRate?: number
+  respiratoryRate?: number
+  oxygenSaturation?: number
+  weight?: number
+  height?: number
+  bmi?: number
+
   // Examen físico
-  physicalExamination?: string;
-  physicalExam?: PhysicalExam;
-  
+  physicalExamination?: string
+  physicalExam?: PhysicalExam
+  generalAppearance?: string
+  heent?: string
+  cardiovascular?: string
+  respiratory?: string
+  abdominal?: string
+  neurological?: string
+  musculoskeletal?: string
+  skin?: string
+
   // Evaluación y Plan
-  assessment?: string;
-  plan?: string;
-  diagnosis?: string;
-  differentialDiagnosis?: string;
-  treatmentPlan?: string;
-  followUpInstructions?: string;
-  patientEducation?: string;
-  notes?: string;
-  followUpDate?: Date;
-  
+  assessment?: string
+  plan?: string
+  diagnosis?: string
+  differentialDiagnosis?: string
+  treatmentPlan?: string
+  followUpInstructions?: string
+  patientEducation?: string
+  notes?: string
+  followUpDate?: Date
+
   // Metadatos
-  isEmergency?: boolean;
-  isActive?: boolean;
-  patientId?: string;
-  doctorId?: string;
-  createdBy?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-  
+  isEmergency?: boolean
+  isActive?: boolean
+  patientId?: string
+  doctorId?: string
+  createdBy?: string
+  createdAt?: Date
+  updatedAt?: Date
+
   // Información del paciente y doctor (para mostrar)
   patient?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    documentNumber: string;
-  };
+    id: string
+    firstName: string
+    lastName: string
+    documentNumber: string
+  }
   doctor?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    specialization?: string;
-  };
+    id: string
+    firstName: string
+    lastName: string
+    specialization?: string
+  }
 }
 
 export interface CreateMedicalRecordDto {
-  type: RecordType;
-  chiefComplaint: string;
-  historyOfPresentIllness?: string;
-  pastMedicalHistory?: string;
-  medications?: string;
-  allergies?: string;
-  socialHistory?: string;
-  familyHistory?: string;
-  reviewOfSystems?: string;
-  
+  type: RecordType
+  chiefComplaint: string
+  historyOfPresentIllness?: string
+  pastMedicalHistory?: string
+  medications?: string
+  allergies?: string
+  socialHistory?: string
+  familyHistory?: string
+  reviewOfSystems?: string
+
   // Signos vitales
-  temperature?: number;
-  systolicBP?: number;
-  diastolicBP?: number;
-  heartRate?: number;
-  respiratoryRate?: number;
-  oxygenSaturation?: number;
-  weight?: number;
-  height?: number;
-  
+  temperature?: number
+  systolicBP?: number
+  diastolicBP?: number
+  heartRate?: number
+  respiratoryRate?: number
+  oxygenSaturation?: number
+  weight?: number
+  height?: number
+
   // Examen físico
-  physicalExamination?: string;
-  generalAppearance?: string;
-  heent?: string;
-  cardiovascular?: string;
-  respiratory?: string;
-  abdominal?: string;
-  neurological?: string;
-  musculoskeletal?: string;
-  skin?: string;
-  
+  physicalExamination?: string
+  generalAppearance?: string
+  heent?: string
+  cardiovascular?: string
+  respiratory?: string
+  abdominal?: string
+  neurological?: string
+  musculoskeletal?: string
+  skin?: string
+
   // Evaluación y Plan
-  assessment?: string;
-  plan?: string;
-  diagnosis?: string;
-  differentialDiagnosis?: string;
-  treatmentPlan?: string;
-  followUpInstructions?: string;
-  patientEducation?: string;
-  notes?: string;
-  followUpDate?: Date;
-  
-  isEmergency?: boolean;
-  patientId: string;
-  doctorId: string;
+  assessment?: string
+  plan?: string
+  diagnosis?: string
+  differentialDiagnosis?: string
+  treatmentPlan?: string
+  followUpInstructions?: string
+  patientEducation?: string
+  notes?: string
+  followUpDate?: Date
+
+  isEmergency?: boolean
+  patientId: string
+  doctorId: string
+  relatedRecordId?: string // Para seguimientos
 }
 
 export interface UpdateMedicalRecordDto extends Partial<CreateMedicalRecordDto> {
-  status?: RecordStatus;
+  status?: RecordStatus
 }
 
 export interface ConsentForm {
-  id?: string;
-  medicalRecordId: string;
-  patientId: string;
-  doctorId: string;
-  consentType: ConsentType;
-  description: string;
-  signedAt?: Date;
-  signedBy?: string;
-  documentPath?: string;
-  isActive: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
+  id?: string
+  medicalRecordId: string
+  patientId: string
+  doctorId: string
+  consentType: ConsentType
+  description: string
+  signedAt?: Date
+  signedBy?: string
+  documentPath?: string
+  isActive: boolean
+  createdAt?: Date
+  updatedAt?: Date
 }
 
 export enum ConsentType {
@@ -174,21 +192,21 @@ export enum ConsentType {
 }
 
 export interface CreateConsentDto {
-  medicalRecordId: string;
-  patientId: string;
-  doctorId: string;
-  consentType: ConsentType;
-  description: string;
-  signedBy?: string;
+  medicalRecordId: string
+  patientId: string
+  doctorId: string
+  consentType: ConsentType
+  description: string
+  signedBy?: string
 }
 
 export interface MedicalRecordFilters {
-  patientId?: string;
-  doctorId?: string;
-  type?: RecordType;
-  status?: RecordStatus;
-  startDate?: Date;
-  endDate?: Date;
-  isEmergency?: boolean;
-  search?: string;
+  patientId?: string
+  doctorId?: string
+  type?: RecordType
+  status?: RecordStatus
+  startDate?: Date
+  endDate?: Date
+  isEmergency?: boolean
+  search?: string
 }

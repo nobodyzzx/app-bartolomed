@@ -3,11 +3,16 @@ import { CUSTOM_ELEMENTS_SCHEMA, NgModule, NO_ERRORS_SCHEMA } from '@angular/cor
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { MaterialModule } from '../../../../material/material.module'
 import { MedicalRecordFormComponent } from './components/medical-record-form.component'
+import { PatientMedicalHistoryComponent } from './components/patient-medical-history.component'
 import { MedicalRecordsDashboardComponent } from './medical-records-dashboard.component'
 import { MedicalRecordsRoutingModule } from './medical-records-routing.module'
 
 @NgModule({
-  declarations: [MedicalRecordsDashboardComponent, MedicalRecordFormComponent],
+  declarations: [
+    MedicalRecordsDashboardComponent,
+    MedicalRecordFormComponent,
+    PatientMedicalHistoryComponent,
+  ],
   imports: [
     CommonModule,
     ReactiveFormsModule,

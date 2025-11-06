@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http'
 import { Injectable } from '@angular/core'
 import { Observable } from 'rxjs'
+import { tap } from 'rxjs/operators'
 import { environment } from '../../../../../environments/environments'
 import {
   ConsentForm,
@@ -35,7 +36,24 @@ export class MedicalRecordsService {
       })
     }
 
-    return this.http.get<{ data: MedicalRecord[]; total: number }>(this.apiUrl, { params })
+    return this.http.get<{ data: MedicalRecord[]; total: number }>(this.apiUrl, { params }).pipe(
+      tap(response => {
+        console.log('[MedicalRecordsService] Expedientes recibidos:', response.data.length)
+        if (response.data.length > 0) {
+          console.log('[MedicalRecordsService] Primer expediente:', response.data[0])
+          console.log(
+            '[MedicalRecordsService] Patient del primer expediente:',
+            response.data[0].patient,
+          )
+          console.log(
+            '[MedicalRecordsService] Doctor del primer expediente:',
+            response.data[0].doctor,
+          )
+          // Guardar temporalmente para debug
+          ;(window as any).lastMedicalRecord = response.data[0]
+        }
+      }),
+    )
   }
 
   getMedicalRecordById(id: string): Observable<MedicalRecord> {
@@ -43,7 +61,13 @@ export class MedicalRecordsService {
   }
 
   getMedicalRecordsByPatient(patientId: string): Observable<MedicalRecord[]> {
-    return this.http.get<MedicalRecord[]>(`${this.apiUrl}/patient/${patientId}`)
+    console.log('[MedicalRecordsService] Solicitando expedientes para paciente:', patientId)
+    return this.http.get<MedicalRecord[]>(`${this.apiUrl}/patient/${patientId}`).pipe(
+      tap(
+        response => console.log('[MedicalRecordsService] Respuesta exitosa:', response),
+        error => console.error('[MedicalRecordsService] Error en petición:', error),
+      ),
+    )
   }
 
   getMedicalRecordsByDoctor(doctorId: string): Observable<MedicalRecord[]> {
