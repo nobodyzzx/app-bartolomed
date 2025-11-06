@@ -11,7 +11,7 @@ export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
 
   @Post()
-  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.RECEPTIONIST)
+  @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.RECEPTIONIST)
   create(@Body() createPatientDto: CreatePatientDto, @GetUser() user: User) {
     return this.patientsService.create(createPatientDto, user);
   }
@@ -43,13 +43,13 @@ export class PatientsController {
   }
 
   @Patch(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.RECEPTIONIST)
+  @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.RECEPTIONIST)
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updatePatientDto: UpdatePatientDto) {
     return this.patientsService.update(id, updatePatientDto);
   }
 
   @Delete(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR)
+  @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN, ValidRoles.DOCTOR)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.patientsService.remove(id);
   }

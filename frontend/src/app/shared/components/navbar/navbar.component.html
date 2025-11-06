@@ -24,7 +24,139 @@
     </div>
 
     <!-- Right Section: User Info and Actions -->
-    <div class="flex items-center space-x-4">
+    <div class="flex items-center space-x-2">
+      <!-- Clinic Selector - Estilo minimalista integrado -->
+      <button
+        mat-button
+        [matMenuTriggerFor]="clinicMenu"
+        class="clinic-selector-button !text-blue-900 !bg-transparent hover:!bg-blue-200 !transition-colors !normal-case !px-3 !py-2"
+        [disabled]="isClinicsLoading || hasNoClinics()"
+      >
+        <span class="flex items-center gap-2">
+          <span class="material-symbols-outlined msz-20">apartment</span>
+          <span class="text-sm font-semibold max-w-[180px] truncate">{{
+            getSelectedClinicName()
+          }}</span>
+          <span class="material-symbols-outlined msz-18">expand_more</span>
+        </span>
+      </button>
+
+      <mat-menu #clinicMenu="matMenu" class="clinic-menu" xPosition="before">
+        <!-- Search input -->
+        <div
+          class="px-4 py-3 border-b border-slate-200 bg-slate-50"
+          (click)="$event.stopPropagation()"
+        >
+          <div
+            class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-slate-300"
+          >
+            <span class="material-symbols-outlined msz-18 text-slate-400">search</span>
+            <input
+              type="text"
+              placeholder="Buscar clínica..."
+              class="flex-1 text-sm outline-none border-none bg-transparent"
+              [(ngModel)]="clinicSearchTerm"
+              (ngModelChange)="onClinicSearchChange($event)"
+            />
+          </div>
+        </div>
+
+        <!-- Options -->
+        <!-- Opción SUPER_ADMIN: Ver todas las clínicas -->
+        <button
+          *ngIf="isSuperAdmin()"
+          mat-menu-item
+          (click)="onClinicChange(null)"
+          class="!min-h-[48px] hover:!bg-blue-50 !transition-colors"
+          [class.!bg-blue-100]="!selectedClinicId"
+        >
+          <span class="flex items-center gap-2">
+            <span
+              class="material-symbols-outlined msz-20"
+              [class.text-blue-600]="!selectedClinicId"
+              [class.text-slate-500]="selectedClinicId"
+            >
+              domain
+            </span>
+            <span
+              class="text-sm font-medium"
+              [class.text-blue-900]="!selectedClinicId"
+              [class.text-slate-700]="selectedClinicId"
+            >
+              Todas las clínicas
+            </span>
+            <span
+              *ngIf="!selectedClinicId"
+              class="material-symbols-outlined msz-18 text-blue-600 ml-auto"
+            >
+              check_circle
+            </span>
+          </span>
+        </button>
+
+        <!-- Opción para otros roles: Sin clínica -->
+        <button
+          *ngIf="!isSuperAdmin()"
+          mat-menu-item
+          (click)="onClinicChange(null)"
+          class="!min-h-[48px] hover:!bg-blue-50 !transition-colors"
+        >
+          <span class="flex items-center gap-2 text-slate-500">
+            <span class="material-symbols-outlined msz-20">close</span>
+            <span class="text-sm">Sin clínica</span>
+          </span>
+        </button>
+
+        <mat-divider class="!my-1"></mat-divider>
+
+        <button
+          mat-menu-item
+          *ngFor="let clinic of filteredClinics"
+          (click)="onClinicChange(clinic.id)"
+          class="!min-h-[56px] hover:!bg-blue-50 !transition-colors"
+          [class.!bg-blue-100]="clinic.id === selectedClinicId"
+        >
+          <div class="flex items-start gap-3 py-1">
+            <span
+              class="material-symbols-outlined msz-20 mt-0.5"
+              [class.text-blue-600]="clinic.id === selectedClinicId"
+              [class.text-slate-400]="clinic.id !== selectedClinicId"
+            >
+              apartment
+            </span>
+            <div class="flex flex-col flex-1 min-w-0">
+              <span
+                class="text-sm font-medium truncate"
+                [class.text-blue-900]="clinic.id === selectedClinicId"
+                [class.text-slate-900]="clinic.id !== selectedClinicId"
+              >
+                {{ clinic.name }}
+              </span>
+              <span class="text-xs text-slate-500 truncate">{{ clinic.address }}</span>
+            </div>
+            <span
+              *ngIf="clinic.id === selectedClinicId"
+              class="material-symbols-outlined msz-18 text-blue-600"
+            >
+              check_circle
+            </span>
+          </div>
+        </button>
+
+        <!-- No results message -->
+        <div
+          *ngIf="filteredClinics.length === 0 && clinicSearchTerm"
+          class="px-4 py-3 text-center text-slate-400 italic text-sm"
+        >
+          No se encontraron clínicas
+        </div>
+
+        <!-- No clinics available message -->
+        <div *ngIf="hasNoClinics()" class="px-4 py-3 text-center text-amber-600 text-sm">
+          No hay clínicas disponibles
+        </div>
+      </mat-menu>
+
       <!-- User Information -->
       <div class="flex items-center space-x-2 text-blue-800">
         <div class="flex flex-col text-right">

@@ -1,32 +1,32 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  Query,
-  UseInterceptors,
-  UploadedFile,
-  ParseUUIDPipe,
-  HttpStatus,
+  Get,
   HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { MedicalRecordsService, MedicalRecordFilters, PaginationOptions } from './medical-records.service';
+import { Auth } from '../auth/decorators';
+import { ValidRoles } from '../auth/interfaces';
 import {
-  CreateMedicalRecordDto,
-  UpdateMedicalRecordDto,
   CreateConsentFormDto,
+  CreateMedicalRecordDto,
   UpdateConsentFormDto,
+  UpdateMedicalRecordDto,
   UploadConsentDocumentDto,
 } from './dto';
 import { ConsentStatus } from './entities';
-import { Auth } from '../auth/decorators';
-import { ValidRoles } from '../auth/interfaces';
+import { MedicalRecordFilters, MedicalRecordsService, PaginationOptions } from './medical-records.service';
 
 @Controller('medical-records')
 @Auth()
@@ -76,6 +76,16 @@ export class MedicalRecordsController {
   @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
   getStats() {
     return this.medicalRecordsService.getStats();
+  }
+
+  @Get('patient/:patientId')
+  getMedicalRecordsByPatient(@Param('patientId', ParseUUIDPipe) patientId: string) {
+    return this.medicalRecordsService.getMedicalRecordsByPatient(patientId);
+  }
+
+  @Get('doctor/:doctorId')
+  getMedicalRecordsByDoctor(@Param('doctorId', ParseUUIDPipe) doctorId: string) {
+    return this.medicalRecordsService.getMedicalRecordsByDoctor(doctorId);
   }
 
   @Get(':id')

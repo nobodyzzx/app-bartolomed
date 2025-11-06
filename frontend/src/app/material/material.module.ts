@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core'
 
 // Solo importar los módulos que realmente se usan
+import { MatAutocompleteModule } from '@angular/material/autocomplete'
 import { MatButtonModule } from '@angular/material/button'
 import { MatCardModule } from '@angular/material/card'
 import { MatCheckboxModule } from '@angular/material/checkbox'
@@ -32,6 +33,7 @@ import { MatTooltipModule } from '@angular/material/tooltip'
 
 @NgModule({
   imports: [
+    MatAutocompleteModule,
     MatButtonModule,
     MatCardModule,
     MatCheckboxModule,
@@ -59,9 +61,10 @@ import { MatTooltipModule } from '@angular/material/tooltip'
     MatTableModule,
     MatTabsModule,
     MatToolbarModule,
-    MatTooltipModule
+    MatTooltipModule,
   ],
   exports: [
+    MatAutocompleteModule,
     MatButtonModule,
     MatCardModule,
     MatCheckboxModule,
@@ -89,10 +92,8 @@ import { MatTooltipModule } from '@angular/material/tooltip'
     MatTableModule,
     MatTabsModule,
     MatToolbarModule,
-    MatTooltipModule
+    MatTooltipModule,
   ],
-  providers: [
-    { provide: MAT_DATE_LOCALE, useValue: 'es-BO' }
-  ]
+  providers: [{ provide: MAT_DATE_LOCALE, useValue: 'es-BO' }],
 })
-export class MaterialModule { }
+export class MaterialModule {}

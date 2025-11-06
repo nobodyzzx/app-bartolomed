@@ -208,6 +208,22 @@
               <div class="flex gap-2 items-center">
                 <button
                   mat-icon-button
+                  class="w-9 h-9 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-purple-200"
+                  (click)="viewMedicalHistory(patient)"
+                  matTooltip="Ver historial médico"
+                >
+                  <span class="material-symbols-outlined msz-20 leading-none">history</span>
+                </button>
+                <button
+                  mat-icon-button
+                  class="w-9 h-9 text-green-600 hover:bg-green-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-green-200"
+                  (click)="createMedicalRecord(patient)"
+                  matTooltip="Crear Expediente Médico"
+                >
+                  <span class="material-symbols-outlined msz-20 leading-none">note_add</span>
+                </button>
+                <button
+                  mat-icon-button
                   class="w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-200"
                   (click)="viewPatient(patient)"
                   matTooltip="Ver detalles"

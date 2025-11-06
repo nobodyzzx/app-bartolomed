@@ -198,6 +198,10 @@ export class MedicalRecordsDashboardComponent implements OnInit {
     this.location.back()
   }
 
+  viewPatientHistory(patientId: string): void {
+    this.router.navigate(['/dashboard/medical-records/patient', patientId, 'history'])
+  }
+
   completeRecord(record: MedicalRecord): void {
     // Actualizar el estado del expediente a 'completed'
     const updateData = { status: 'completed' as any }

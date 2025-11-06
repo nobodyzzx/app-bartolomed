@@ -152,4 +152,14 @@ export class PatientListComponent implements OnInit {
         }
       })
   }
+
+  createMedicalRecord(patient: Patient) {
+    this.router.navigate(['/dashboard/medical-records/new'], {
+      queryParams: { patientId: patient.id },
+    })
+  }
+
+  viewMedicalHistory(patient: Patient) {
+    this.router.navigate(['/dashboard/medical-records/patient', patient.id, 'history'])
+  }
 }

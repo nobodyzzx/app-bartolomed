@@ -1,14 +1,14 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
-import { MedicalRecord, ConsentForm, ConsentStatus } from './entities';
+import { Between, Repository } from 'typeorm';
 import {
-  CreateMedicalRecordDto,
-  UpdateMedicalRecordDto,
   CreateConsentFormDto,
+  CreateMedicalRecordDto,
   UpdateConsentFormDto,
+  UpdateMedicalRecordDto,
   UploadConsentDocumentDto,
 } from './dto';
+import { ConsentForm, ConsentStatus, MedicalRecord, RecordStatus } from './entities';
 
 export interface MedicalRecordFilters {
   search?: string;
@@ -47,12 +47,48 @@ export class MedicalRecordsService {
   async create(createMedicalRecordDto: CreateMedicalRecordDto): Promise<MedicalRecord> {
     const medicalRecord = this.medicalRecordRepository.create(createMedicalRecordDto);
 
+    // CRÍTICO: Asignar manualmente las relaciones patient y doctor
+    // TypeORM no mapea automáticamente patientId/doctorId a las relaciones
+    if (createMedicalRecordDto.patientId) {
+      medicalRecord.patient = { id: createMedicalRecordDto.patientId } as any;
+    }
+
+    if (createMedicalRecordDto.doctorId) {
+      medicalRecord.doctor = { id: createMedicalRecordDto.doctorId } as any;
+    }
+
+    // Si hay un relatedRecordId, establecer la relación
+    if (createMedicalRecordDto.relatedRecordId) {
+      const relatedRecord = await this.medicalRecordRepository.findOne({
+        where: { id: createMedicalRecordDto.relatedRecordId },
+      });
+
+      if (!relatedRecord) {
+        throw new NotFoundException(
+          `Registro médico relacionado con ID ${createMedicalRecordDto.relatedRecordId} no encontrado`,
+        );
+      }
+
+      medicalRecord.relatedRecord = relatedRecord;
+    }
+
+    // Los seguimientos se marcan automáticamente como completados
+    if (medicalRecord.type === 'follow_up') {
+      medicalRecord.status = RecordStatus.COMPLETED;
+    }
+
     // Calcular BMI si se proporcionan peso y altura
     if (medicalRecord.weight && medicalRecord.height) {
       medicalRecord.bmi = medicalRecord.calculateBMI();
     }
 
-    return await this.medicalRecordRepository.save(medicalRecord);
+    const savedRecord = await this.medicalRecordRepository.save(medicalRecord);
+
+    // Recargar con relaciones para devolver datos completos
+    return await this.medicalRecordRepository.findOne({
+      where: { id: savedRecord.id },
+      relations: ['patient', 'doctor', 'doctor.personalInfo', 'doctor.professionalInfo', 'relatedRecord'],
+    });
   }
 
   async findAll(
@@ -66,6 +102,8 @@ export class MedicalRecordsService {
       .createQueryBuilder('medicalRecord')
       .leftJoinAndSelect('medicalRecord.patient', 'patient')
       .leftJoinAndSelect('medicalRecord.doctor', 'doctor')
+      .leftJoinAndSelect('doctor.personalInfo', 'doctorPersonalInfo')
+      .leftJoinAndSelect('doctor.professionalInfo', 'doctorProfessionalInfo')
       .where('medicalRecord.isActive = :isActive', { isActive: true });
 
     // Aplicar filtros
@@ -107,6 +145,17 @@ export class MedicalRecordsService {
 
     const [data, total] = await queryBuilder.getManyAndCount();
 
+    // Log para debug: verificar si las relaciones se están cargando
+    console.log('[MedicalRecordsService] Registros encontrados:', data.length);
+    if (data.length > 0) {
+      const firstRecord = data[0];
+      console.log('[MedicalRecordsService] Primer registro ID:', firstRecord.id);
+      console.log('[MedicalRecordsService] Patient completo:', firstRecord.patient);
+      console.log('[MedicalRecordsService] Doctor completo:', firstRecord.doctor);
+      console.log('[MedicalRecordsService] Patient ID en columna:', (firstRecord as any).patient_id);
+      console.log('[MedicalRecordsService] Doctor ID en columna:', (firstRecord as any).doctor_id);
+    }
+
     return { data, total };
   }
 
@@ -121,6 +170,22 @@ export class MedicalRecordsService {
     }
 
     return medicalRecord;
+  }
+
+  async getMedicalRecordsByPatient(patientId: string): Promise<MedicalRecord[]> {
+    return await this.medicalRecordRepository.find({
+      where: { patient: { id: patientId }, isActive: true },
+      relations: ['patient', 'doctor', 'createdBy'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async getMedicalRecordsByDoctor(doctorId: string): Promise<MedicalRecord[]> {
+    return await this.medicalRecordRepository.find({
+      where: { doctor: { id: doctorId }, isActive: true },
+      relations: ['patient', 'doctor', 'createdBy'],
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async update(id: string, updateMedicalRecordDto: UpdateMedicalRecordDto): Promise<MedicalRecord> {

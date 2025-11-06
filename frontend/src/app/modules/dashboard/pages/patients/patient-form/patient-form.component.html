@@ -110,12 +110,27 @@
                     formControlName="documentNumber"
                     placeholder="Ingrese número de documento"
                   />
+                  <button
+                    mat-icon-button
+                    matSuffix
+                    type="button"
+                    (click)="searchByDocument()"
+                    [disabled]="!personalInfoForm.get('documentNumber')?.valid"
+                    matTooltip="Buscar paciente por documento"
+                    aria-label="Buscar por documento"
+                  >
+                    <mat-icon>search</mat-icon>
+                  </button>
                   <mat-error *ngIf="personalInfoForm.get('documentNumber')?.hasError('required')">
                     El número de documento es requerido
                   </mat-error>
                   <mat-error *ngIf="personalInfoForm.get('documentNumber')?.hasError('minlength')">
                     Mínimo 5 caracteres
                   </mat-error>
+                  <mat-error *ngIf="personalInfoForm.get('documentNumber')?.hasError('pattern')">
+                    Formato inválido. Solo letras, números, guiones y puntos (5-20 caracteres)
+                  </mat-error>
+                  <mat-hint>Ej: 12345678, ABC123-9, LP.123456</mat-hint>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
@@ -126,6 +141,7 @@
                   <mat-error *ngIf="personalInfoForm.get('birthDate')?.hasError('required')">
                     La fecha de nacimiento es requerida
                   </mat-error>
+                  <mat-hint *ngIf="getAge() !== null">Edad: {{ getAge() }} años</mat-hint>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
@@ -138,6 +154,16 @@
                   <mat-error *ngIf="personalInfoForm.get('gender')?.hasError('required')">
                     El género es requerido
                   </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Grupo Sanguíneo</mat-label>
+                  <mat-select formControlName="bloodType">
+                    <mat-option [value]="null">No especificado</mat-option>
+                    <mat-option *ngFor="let option of bloodTypeOptions" [value]="option.value">
+                      {{ option.label }}
+                    </mat-option>
+                  </mat-select>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
@@ -207,8 +233,16 @@
 
                 <mat-form-field appearance="outline">
                   <mat-label>Teléfono</mat-label>
-                  <input matInput formControlName="phone" placeholder="+591-xxxxxxxx" />
+                  <input
+                    matInput
+                    formControlName="phone"
+                    placeholder="+591-xxxxxxxx"
+                    appPhoneMask
+                  />
                   <mat-icon matPrefix>phone</mat-icon>
+                  <mat-error *ngIf="contactInfoForm.get('phone')?.hasError('pattern')">
+                    Formato inválido. Ej: +591-70123456
+                  </mat-error>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="md:col-span-2">
@@ -266,106 +300,16 @@
           </form>
         </mat-step>
 
-        <!-- Paso 3: Información Médica -->
-        <mat-step [stepControl]="medicalInfoForm" [state]="'number'">
-          <ng-template matStepLabel>
-            <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px]">medical_services</mat-icon>
-              <span>Médica</span>
-            </div>
-          </ng-template>
-          <form [formGroup]="medicalInfoForm">
-            <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-              <div class="flex items-center gap-3 mb-6">
-                <div
-                  class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
-                >
-                  <mat-icon class="!text-[20px]">medical_services</mat-icon>
-                </div>
-                <h3 class="text-xl font-semibold text-slate-900 m-0">Información Médica</h3>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <mat-form-field appearance="outline">
-                  <mat-label>Tipo de Sangre</mat-label>
-                  <mat-select formControlName="bloodType">
-                    <mat-option *ngFor="let option of bloodTypeOptions" [value]="option.value">
-                      {{ option.label }}
-                    </mat-option>
-                  </mat-select>
-                  <mat-icon matPrefix>bloodtype</mat-icon>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="md:col-span-2">
-                  <mat-label>Alergias</mat-label>
-                  <textarea
-                    matInput
-                    formControlName="allergies"
-                    rows="2"
-                    placeholder="Describa alergias conocidas"
-                  ></textarea>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="md:col-span-2">
-                  <mat-label>Medicamentos Actuales</mat-label>
-                  <textarea
-                    matInput
-                    formControlName="medications"
-                    rows="2"
-                    placeholder="Medicamentos que toma actualmente"
-                  ></textarea>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="md:col-span-2">
-                  <mat-label>Historial Médico</mat-label>
-                  <textarea
-                    matInput
-                    formControlName="medicalHistory"
-                    rows="3"
-                    placeholder="Antecedentes médicos relevantes"
-                  ></textarea>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="md:col-span-2">
-                  <mat-label>Notas Adicionales</mat-label>
-                  <textarea
-                    matInput
-                    formControlName="notes"
-                    rows="2"
-                    placeholder="Notas adicionales sobre el paciente"
-                  ></textarea>
-                </mat-form-field>
-              </div>
-
-              <div class="flex items-center justify-between mt-6">
-                <button
-                  mat-stroked-button
-                  matStepperPrevious
-                  class="rounded-full h-10 px-4 bg-white text-slate-700 border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1"
-                >
-                  <mat-icon>keyboard_arrow_left</mat-icon>
-                  Anterior
-                </button>
-                <button
-                  mat-flat-button
-                  color="primary"
-                  matStepperNext
-                  class="rounded-full h-10 px-5 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
-                >
-                  Siguiente
-                  <mat-icon>keyboard_arrow_right</mat-icon>
-                </button>
-              </div>
-            </div>
-          </form>
-        </mat-step>
-
         <!-- Paso 4: Contacto de Emergencia -->
         <mat-step [stepControl]="emergencyContactForm" [state]="'number'">
           <ng-template matStepLabel>
             <div class="flex items-center gap-2">
               <mat-icon class="!text-[18px]">contact_emergency</mat-icon>
               <span>Emergencia</span>
+              <span
+                class="ml-2 text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200"
+                >Opcional</span
+              >
             </div>
           </ng-template>
           <form [formGroup]="emergencyContactForm">
@@ -396,8 +340,14 @@
                     matInput
                     formControlName="emergencyContactPhone"
                     placeholder="+591-xxxxxxxx"
+                    appPhoneMask
                   />
                   <mat-icon matPrefix>phone</mat-icon>
+                  <mat-error
+                    *ngIf="emergencyContactForm.get('emergencyContactPhone')?.hasError('pattern')"
+                  >
+                    Formato inválido. Ej: +591-70654321
+                  </mat-error>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
@@ -440,6 +390,10 @@
             <div class="flex items-center gap-2">
               <mat-icon class="!text-[18px]">health_and_safety</mat-icon>
               <span>Seguro</span>
+              <span
+                class="ml-2 text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200"
+                >Opcional</span
+              >
             </div>
           </ng-template>
           <form [formGroup]="insuranceForm">
@@ -476,13 +430,17 @@
 
                 <mat-form-field appearance="outline">
                   <mat-label>Clínica</mat-label>
-                  <mat-select formControlName="clinicId">
+                  <mat-select formControlName="clinicId" [disabled]="!!ctxClinicId">
+                    <mat-select-trigger>
+                      {{ getSelectedClinicName() || 'Seleccione una clínica' }}
+                    </mat-select-trigger>
                     <mat-option *ngIf="isClinicsLoading" disabled>Cargando clínicas...</mat-option>
                     <mat-option *ngFor="let c of clinics" [value]="c.id">{{ c.name }}</mat-option>
                   </mat-select>
                   <mat-error *ngIf="insuranceForm.get('clinicId')?.hasError('required')">
                     Debe seleccionar una clínica
                   </mat-error>
+                  <mat-hint *ngIf="ctxClinicId">Usando clínica del contexto</mat-hint>
                 </mat-form-field>
               </div>
 
@@ -562,20 +520,6 @@
 
               <div class="bg-slate-50 rounded-lg p-4">
                 <h4 class="font-semibold text-slate-800 flex items-center gap-2 mb-2">
-                  <mat-icon class="!text-[18px]">medical_services</mat-icon> Información Médica
-                </h4>
-                <p>
-                  <strong>Alergias:</strong>
-                  {{ medicalInfoForm.get('allergies')?.value || 'Ninguna' }}
-                </p>
-                <p>
-                  <strong>Medicamentos:</strong>
-                  {{ medicalInfoForm.get('medications')?.value || 'Ninguno' }}
-                </p>
-              </div>
-
-              <div class="bg-slate-50 rounded-lg p-4">
-                <h4 class="font-semibold text-slate-800 flex items-center gap-2 mb-2">
                   <mat-icon class="!text-[18px]">contact_emergency</mat-icon> Contacto de Emergencia
                 </h4>
                 <p>
@@ -600,6 +544,10 @@
                   <strong>Proveedor:</strong> {{ insuranceForm.get('insuranceProvider')?.value }}
                 </p>
                 <p><strong>Número:</strong> {{ insuranceForm.get('insuranceNumber')?.value }}</p>
+                <p>
+                  <strong>Clínica:</strong>
+                  {{ getSelectedClinicName() || '—' }}
+                </p>
               </div>
             </div>
 
