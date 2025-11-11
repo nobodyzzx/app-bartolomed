@@ -250,6 +250,8 @@ https://bartolomed.tecnocondor.dev/auth/login
 
 ## 🐛 Solución de Problemas en Producción
 
+**📚 Para problemas de despliegue en Dokploy, consulta:** [`docs/TROUBLESHOOTING-DOKPLOY.md`](docs/TROUBLESHOOTING-DOKPLOY.md)
+
 ### Error: "Invalid or missing god-mode token"
 
 **Causa:** El token no coincide o no está configurado en Dokploy
