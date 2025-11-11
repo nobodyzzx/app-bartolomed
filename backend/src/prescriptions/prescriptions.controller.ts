@@ -3,6 +3,7 @@ import { Auth, GetUser } from '../auth/decorators';
 import { ValidRoles } from '../auth/interfaces';
 import { User } from '../users/entities/user.entity';
 import { CreatePrescriptionDto, UpdatePrescriptionDto } from './dto';
+import { PrescriptionStatus } from './entities/prescription.entity';
 import { PrescriptionsService } from './prescriptions.service';
 
 @Controller('prescriptions')
@@ -26,6 +27,8 @@ export class PrescriptionsController {
     return this.prescriptionsService.findAll(p, ps, filter);
   }
 
+  // QR endpoint removed — QR generation was removed from the project by request.
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.prescriptionsService.findOne(id);
@@ -35,5 +38,17 @@ export class PrescriptionsController {
   @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updateDto: UpdatePrescriptionDto) {
     return this.prescriptionsService.update(id, updateDto);
+  }
+
+  @Patch(':id/status')
+  @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
+  setStatus(@Param('id', ParseUUIDPipe) id: string, @Body('status') status: PrescriptionStatus) {
+    return this.prescriptionsService.setStatus(id, status);
+  }
+
+  @Post(':id/refill')
+  @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
+  refill(@Param('id', ParseUUIDPipe) id: string) {
+    return this.prescriptionsService.refill(id);
   }
 }

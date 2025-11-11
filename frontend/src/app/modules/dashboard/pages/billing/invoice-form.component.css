@@ -1,0 +1,19 @@
+/* Estilos específicos mínimos – se privilegia Tailwind */
+.msz-24 {
+  font-size: 24px;
+}
+.msz-20 {
+  font-size: 20px;
+}
+
+/* Compactar altura de form fields numéricos en esta pantalla sin afectar global */
+:host ::ng-deep mat-form-field.h-fit .mat-mdc-text-field-wrapper {
+  height: 56px; /* altura estándar de input Material */
+}
+:host ::ng-deep mat-form-field.h-fit .mat-mdc-form-field-infix {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+:host ::ng-deep mat-form-field.h-fit .mdc-notched-outline__notch {
+  padding-left: 0;
+}

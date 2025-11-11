@@ -5,6 +5,7 @@ import { AppointmentsModule } from './appointments/appointments.module';
 import { Appointment } from './appointments/entities/appointment.entity';
 import { Asset, MaintenanceRecord } from './assets/entities/asset.entity';
 import { AuthModule } from './auth/auth.module';
+import { BillingModule } from './billing/billing.module';
 import { Invoice, InvoiceItem, Payment } from './billing/entities/billing.entity';
 import { ClinicsModule } from './clinics/clinics.module';
 import { Clinic } from './clinics/entities';
@@ -78,8 +79,8 @@ import { UsersModule } from './users/users.module';
     MedicalRecordsModule,
     ReportsModule,
     PharmacyModule,
-    // Prescriptions module
     PrescriptionsModule,
+    BillingModule,
     RolesModule,
     SeedModule,
   ],

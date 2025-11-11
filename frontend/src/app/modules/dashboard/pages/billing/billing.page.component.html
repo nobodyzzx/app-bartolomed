@@ -1,27 +1,307 @@
-<div class="min-h-screen bg-slate-50 p-6">
-  <div class="max-w-7xl mx-auto space-y-6">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <button
-          type="button"
-          routerLink="/dashboard"
-          class="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md hover:shadow-lg hover:bg-slate-50 transition-all border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
-        >
-          <span class="material-symbols-outlined msz-20 text-slate-600">arrow_back</span>
-        </button>
-        <div>
-          <h1 class="text-2xl font-bold text-slate-800">Facturación</h1>
-          <p class="text-sm text-slate-500">Cobros, pagos y estados</p>
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Encabezado -->
+    <div class="mb-10">
+      <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Panel de Facturación</h1>
+      <p class="text-slate-600">Gestión completa de facturas y pagos</p>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" *ngIf="statistics">
+      <div class="bg-blue-50 p-6 rounded-lg border-l-4 border-blue-500">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-blue-600 text-sm font-medium">Total Facturas</p>
+            <p class="text-2xl font-bold text-blue-900">{{ statistics.totalInvoices }}</p>
+          </div>
+          <span class="material-symbols-outlined text-blue-500 text-4xl">receipt_long</span>
+        </div>
+      </div>
+
+      <div class="bg-green-50 p-6 rounded-lg border-l-4 border-green-500">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-green-600 text-sm font-medium">Ingresos Totales</p>
+            <p class="text-2xl font-bold text-green-900">
+              {{ formatCurrency(statistics.totalRevenue) }}
+            </p>
+          </div>
+          <span class="material-symbols-outlined text-green-500 text-4xl">payments</span>
+        </div>
+      </div>
+
+      <div class="bg-orange-50 p-6 rounded-lg border-l-4 border-orange-500">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-orange-600 text-sm font-medium">Por Cobrar</p>
+            <p class="text-2xl font-bold text-orange-900">
+              {{ formatCurrency(statistics.pendingRevenue) }}
+            </p>
+          </div>
+          <span class="material-symbols-outlined text-orange-500 text-4xl">schedule</span>
         </div>
       </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow-md p-6 text-slate-600">
-      <div class="flex items-center gap-2 mb-2">
-        <span class="material-symbols-outlined msz-20">receipt_long</span>
-        <h2 class="text-lg font-semibold text-slate-800">Resumen</h2>
+    <!-- Segunda fila de estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" *ngIf="statistics">
+      <div class="bg-white p-4 rounded-lg border-l-4 border-green-400">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-green-700 text-sm font-medium">Pagadas</p>
+            <p class="text-xl font-bold text-green-900">{{ statistics.paid }}</p>
+          </div>
+          <span class="material-symbols-outlined text-green-400 text-3xl">check_circle</span>
+        </div>
       </div>
-      <p>Panel de facturas, pagos y balances. (Placeholder)</p>
+
+      <div class="bg-white p-4 rounded-lg border-l-4 border-yellow-400">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-yellow-700 text-sm font-medium">Pendientes</p>
+            <p class="text-xl font-bold text-yellow-900">{{ statistics.pending }}</p>
+          </div>
+          <span class="material-symbols-outlined text-yellow-400 text-3xl">pending</span>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-lg border-l-4 border-red-400">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-red-700 text-sm font-medium">Vencidas</p>
+            <p class="text-xl font-bold text-red-900">{{ statistics.overdue }}</p>
+          </div>
+          <span class="material-symbols-outlined text-red-400 text-3xl">error</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading para estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" *ngIf="!statistics && isLoading">
+      <div
+        class="bg-blue-50 p-6 rounded-lg border-l-4 border-blue-500 flex items-center justify-center"
+      >
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
+      <div
+        class="bg-green-50 p-6 rounded-lg border-l-4 border-green-500 flex items-center justify-center"
+      >
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
+      <div
+        class="bg-orange-50 p-6 rounded-lg border-l-4 border-orange-500 flex items-center justify-center"
+      >
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <button
+        type="button"
+        (click)="navigateToNewInvoice()"
+        class="bg-white p-6 rounded-xl border-0 shadow-md hover:shadow-lg transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
+      >
+        <span class="material-symbols-outlined text-5xl text-blue-500 mb-4">add_circle</span>
+        <h3 class="text-xl font-bold text-slate-900 mb-2">Nueva Factura</h3>
+        <p class="text-slate-600 text-sm">Crear una nueva factura</p>
+      </button>
+
+      <button
+        type="button"
+        (click)="navigateToInvoicesList()"
+        class="bg-white p-6 rounded-xl border-0 shadow-md hover:shadow-lg transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-200 focus-visible:ring-offset-1"
+      >
+        <span class="material-symbols-outlined text-5xl text-green-500 mb-4">list</span>
+        <h3 class="text-xl font-bold text-slate-900 mb-2">Lista de Facturas</h3>
+        <p class="text-slate-600 text-sm">Ver todas las facturas</p>
+      </button>
+
+      <button
+        type="button"
+        (click)="openSearch()"
+        class="bg-white p-6 rounded-xl border-0 shadow-md hover:shadow-lg transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 focus-visible:ring-offset-1"
+      >
+        <span class="material-symbols-outlined text-5xl text-purple-500 mb-4">search</span>
+        <h3 class="text-xl font-bold text-slate-900 mb-2">Buscar Factura</h3>
+        <p class="text-slate-600 text-sm">Buscar por número o paciente</p>
+      </button>
+
+      <button
+        type="button"
+        (click)="viewReports()"
+        class="bg-white p-6 rounded-xl border-0 shadow-md hover:shadow-lg transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-200 focus-visible:ring-offset-1"
+      >
+        <span class="material-symbols-outlined text-5xl text-orange-500 mb-4">assessment</span>
+        <h3 class="text-xl font-bold text-slate-900 mb-2">Reportes</h3>
+        <p class="text-slate-600 text-sm">Ver reportes financieros</p>
+      </button>
+    </div>
+
+    <!-- Facturas Recientes -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+      <div class="p-6 border-b border-slate-200">
+        <h2 class="text-xl font-bold text-slate-900">Facturas Recientes</h2>
+      </div>
+
+      <div class="overflow-x-auto" *ngIf="recentInvoices.length > 0">
+        <table mat-table [dataSource]="recentInvoices" class="w-full bg-transparent">
+          <ng-container matColumnDef="number">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600 msz-18">tag</span>
+                Número
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let invoice" class="p-4 text-slate-900 font-medium">
+              {{ invoice.invoiceNumber }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="patient">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600 msz-18">person</span>
+                Paciente
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let invoice" class="p-4 text-slate-900">
+              {{ getPatientName(invoice) }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="date">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600 msz-18">calendar_today</span>
+                Fecha
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let invoice" class="p-4 text-slate-600">
+              {{ formatDate(invoice.issueDate) }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="amount">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-right"
+            >
+              <div class="flex items-center gap-2 justify-end">
+                <span class="material-symbols-outlined text-blue-600 msz-18">euro</span>
+                Monto
+              </div>
+            </th>
+            <td
+              mat-cell
+              *matCellDef="let invoice"
+              class="p-4 text-slate-900 font-semibold text-right"
+            >
+              {{ formatCurrency(invoice.totalAmount) }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600 msz-18">info</span>
+                Estado
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let invoice" class="p-4">
+              <span
+                class="px-3 py-1 rounded-full text-xs font-medium"
+                [ngClass]="getStatusClass(invoice.status)"
+              >
+                {{ getStatusLabel(invoice.status) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-center"
+            >
+              Acciones
+            </th>
+            <td mat-cell *matCellDef="let invoice" class="p-4 text-center">
+              <button
+                type="button"
+                (click)="viewInvoice(invoice)"
+                class="w-9 h-9 rounded-full bg-blue-50 hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 inline-flex items-center justify-center transition-colors"
+                aria-label="Ver factura"
+              >
+                <span class="material-symbols-outlined text-blue-600 msz-20">visibility</span>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            class="hover:bg-slate-50 cursor-pointer transition-colors"
+            (click)="viewInvoice(row)"
+          ></tr>
+        </table>
+      </div>
+
+      <!-- Estado Vacío -->
+      <div
+        *ngIf="recentInvoices.length === 0 && !isLoading"
+        class="p-12 text-center text-slate-500"
+      >
+        <span class="material-symbols-outlined text-6xl mb-4 text-slate-300">receipt_long</span>
+        <p class="text-lg font-medium mb-2">No hay facturas registradas</p>
+        <p class="text-sm mb-4">El módulo de facturación está en desarrollo</p>
+        <button
+          type="button"
+          (click)="navigateToNewInvoice()"
+          class="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-2"
+        >
+          Crear primera factura
+        </button>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="isLoading && recentInvoices.length === 0" class="p-12 text-center">
+        <mat-spinner diameter="50" class="mx-auto"></mat-spinner>
+        <p class="text-slate-600 mt-4">Cargando facturas...</p>
+      </div>
+    </div>
+
+    <!-- Nota de desarrollo -->
+    <div class="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-outlined text-blue-500 msz-24">info</span>
+        <div>
+          <h3 class="font-semibold text-blue-900 mb-1">Módulo en Desarrollo</h3>
+          <p class="text-sm text-blue-800">
+            El módulo de facturación está actualmente en desarrollo. La interfaz está lista y
+            esperando la implementación del backend. Todas las funcionalidades estarán disponibles
+            próximamente.
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 </div>

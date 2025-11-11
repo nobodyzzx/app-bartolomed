@@ -1,0 +1,111 @@
+<div class="min-h-screen bg-slate-50 p-6" *ngIf="prescription as p">
+  <div class="max-w-4xl mx-auto">
+    <header class="mb-6 flex items-center gap-4">
+      <button
+        (click)="goBack()"
+        class="w-9 h-9 rounded-full hover:bg-slate-100 grid place-items-center"
+      >
+        <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <h1 class="text-3xl font-bold text-slate-900">Receta {{ p.prescriptionNumber }}</h1>
+    </header>
+
+    <div class="bg-white rounded-xl shadow-md p-6">
+      <div class="flex items-start justify-between mb-4">
+        <div>
+          <div class="text-sm text-slate-500">Paciente</div>
+          <div class="text-lg font-semibold text-slate-800">
+            {{ p.patient?.firstName }} {{ p.patient?.lastName }}
+          </div>
+          <div class="text-xs text-slate-500">CI: {{ p.patient?.documentNumber }}</div>
+        </div>
+        <div class="text-right">
+          <span
+            class="px-3 py-1.5 rounded-full text-xs font-semibold"
+            [ngClass]="getStatusBadgeClass(p.status)"
+          >
+            {{ p.status | uppercase }}
+          </span>
+          <div class="text-xs text-slate-400 mt-2">
+            Vence: {{ p.expiryDate | date: 'dd/MM/yyyy' }}
+          </div>
+          <div *ngIf="!isExpired(p.expiryDate)" class="text-xs text-amber-600 mt-1">
+            Quedan {{ getDaysUntilExpiry(p.expiryDate) }} días
+          </div>
+          <div *ngIf="isExpired(p.expiryDate)" class="text-xs text-red-600 mt-1">Vencida</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div class="flex items-center gap-2 text-slate-600">
+          <span class="material-symbols-outlined msz-18 text-slate-400">calendar_today</span>
+          <span>Emitida: {{ p.prescriptionDate | date: 'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="flex items-center gap-2 text-slate-600">
+          <span class="material-symbols-outlined msz-18 text-slate-400">stethoscope</span>
+          <span>Médico: {{ p.doctor?.personalInfo?.firstName || p.doctor?.email }}</span>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <h3 class="text-lg font-semibold text-slate-800 mb-2">Medicamentos</h3>
+        <div class="divide-y divide-slate-100">
+          <div *ngFor="let it of p.items" class="py-3">
+            <div class="font-medium text-slate-800">{{ it.medicationName }} {{ it.strength }}</div>
+            <div class="text-sm text-slate-600">
+              {{ it.dosage }} • {{ it.frequency }} • {{ it.quantity }}
+            </div>
+            <div class="text-xs text-slate-500" *ngIf="it.route || it.duration || it.instructions">
+              <span *ngIf="it.route">Vía: {{ it.route }}</span>
+              <span *ngIf="it.duration"> • {{ it.duration }} días</span>
+              <span *ngIf="it.instructions"> • {{ it.instructions }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="p.diagnosis" class="mt-4">
+        <h3 class="text-lg font-semibold text-slate-800 mb-1">Diagnóstico</h3>
+        <p class="text-sm text-slate-700">{{ p.diagnosis }}</p>
+      </div>
+
+      <div class="mt-6 flex flex-wrap gap-2 justify-end">
+        <button
+          (click)="changeStatus('dispensed')"
+          *ngIf="p.status === 'active' && !isExpired(p.expiryDate)"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200"
+        >
+          <span class="material-symbols-outlined msz-18">local_pharmacy</span> Dispensar
+        </button>
+        <button
+          (click)="changeStatus('completed')"
+          *ngIf="p.status === 'active' && !isExpired(p.expiryDate)"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+        >
+          <span class="material-symbols-outlined msz-18">done_all</span> Completar
+        </button>
+        <button
+          (click)="changeStatus('cancelled')"
+          *ngIf="p.status !== 'cancelled' && !isExpired(p.expiryDate)"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-100 text-red-700 hover:bg-red-200"
+        >
+          <span class="material-symbols-outlined msz-18">cancel</span> Cancelar
+        </button>
+        <button
+          (click)="doRefill()"
+          *ngIf="canRefill(p)"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200"
+        >
+          <span class="material-symbols-outlined msz-18">autorenew</span> Resurtir
+        </button>
+        <button
+          (click)="print()"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800 text-white hover:bg-black"
+        >
+          <span class="material-symbols-outlined msz-18">print</span> Imprimir
+        </button>
+        <!-- Verification / QR functionality removed -->
+      </div>
+    </div>
+  </div>
+</div>

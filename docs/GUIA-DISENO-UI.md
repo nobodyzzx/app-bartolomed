@@ -66,9 +66,195 @@ Esta guía documenta patrones visuales y de interacción para el frontend (Angul
 
 ## Botones
 
-- Botones de acción principales: `mat-raised-button` + clases utilitarias (ej. `rounded-xl`).
-- Botones tipo “píldora”: `rounded-full`, `gap-2`, icono a la izquierda.
-- Icon-only: usar `mat-icon-button` o contenedor `w-9 h-9 rounded-full hover:bg-gray-100` con Material Symbols.
+### Botones Principales (Patrón Unificado)
+
+**Botón de acción principal** - Fondo azul claro con hover:
+
+```html
+<button
+  class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+>
+  <span class="material-symbols-outlined msz-20 leading-none">add</span>
+  Nuevo Registro
+</button>
+```
+
+**Botón secundario** - Fondo gris claro:
+
+```html
+<button
+  class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+>
+  <span class="material-symbols-outlined msz-18">download</span>
+  Exportar
+</button>
+```
+
+**Botón de búsqueda** - Con estado disabled:
+
+```html
+<button
+  [disabled]="!searchTerm?.trim()"
+  class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
+>
+  <span class="material-symbols-outlined msz-18">search</span>
+  Buscar
+</button>
+```
+
+**Botón de volver/navegación** - Circular con icono:
+
+```html
+<button
+  class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+  aria-label="Volver"
+>
+  <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
+</button>
+```
+
+**Reglas importantes:**
+
+- Siempre usar `rounded-full` para botones
+- Altura estándar: `h-11` o `py-2.5` para botones normales, `w-11 h-11` para circulares
+- Padding horizontal: `px-5` para botones con texto
+- Iconos: `msz-18` o `msz-20` con `leading-none` para centrado perfecto
+- Estado de foco: `focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1`
+- Siempre `border-0` para eliminar bordes por defecto
+- Transiciones: `transition-all` para efectos suaves
+- Usar `inline-flex items-center gap-2` para alinear icono + texto
+
+### Campos de Búsqueda (Patrón Unificado)
+
+**Input de búsqueda** - Fondo azul claro con icono:
+
+```html
+<div class="relative">
+  <input
+    type="text"
+    [(ngModel)]="searchTerm"
+    (keyup.enter)="onSearch()"
+    placeholder="Nombre, teléfono, email..."
+    class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
+  />
+  <span class="material-symbols-outlined absolute right-3 top-2.5 text-blue-400"
+    >search</span
+  >
+</div>
+```
+
+**Select desplegable** - Con icono chevron:
+
+```html
+<div class="relative">
+  <select
+    [(ngModel)]="selectedOption"
+    (change)="onChange()"
+    class="h-11 rounded-full bg-blue-50 px-5 pr-10 text-slate-900 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 transition border-0 appearance-none cursor-pointer font-medium"
+  >
+    <option *ngFor="let option of options" [value]="option.value">
+      {{ option.label }}
+    </option>
+  </select>
+  <span
+    class="material-symbols-outlined absolute right-3 top-2.5 text-blue-400 pointer-events-none"
+  >
+    expand_more
+  </span>
+</div>
+```
+
+**Reglas importantes:**
+
+- Fondo: `bg-blue-50` por defecto
+- Altura fija: `h-11` para consistencia
+- Bordes redondeados: `rounded-full`
+- Padding: `px-5` para texto, `pr-12` o `pr-10` cuando hay icono
+- Placeholder: `placeholder-blue-400/70` para color suave
+- Hover: `hover:bg-blue-100 hover:shadow-lg`
+- Focus: `focus:bg-white focus:ring-2 focus:ring-blue-200`
+- Iconos: posicionados con `absolute right-3 top-2.5`
+- Siempre `border-0` para eliminar bordes por defecto
+- Select: usar `appearance-none` y agregar icono manualmente
+
+### Header Unificado de Página
+
+```html
+<div class="flex items-center justify-between mb-10">
+  <div class="flex items-center gap-4">
+    <button
+      class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+      aria-label="Volver"
+    >
+      <span class="material-symbols-outlined msz-20 leading-none"
+        >arrow_back</span
+      >
+    </button>
+    <div class="text-left">
+      <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">
+        Título de Página
+      </h1>
+      <p class="text-slate-600">Descripción breve de la sección</p>
+    </div>
+  </div>
+  <button
+    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+  >
+    <span class="material-symbols-outlined msz-20 leading-none">add</span>
+    Acción Principal
+  </button>
+</div>
+```
+
+### Barra de Búsqueda y Filtros
+
+```html
+<div class="flex items-center gap-4 mb-6">
+  <!-- Campo de búsqueda -->
+  <div class="flex-1 max-w-2xl">
+    <div class="relative">
+      <input
+        type="text"
+        placeholder="Buscar..."
+        class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
+      />
+      <span
+        class="material-symbols-outlined absolute right-3 top-2.5 text-blue-400"
+        >search</span
+      >
+    </div>
+  </div>
+
+  <!-- Botón buscar -->
+  <button
+    class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+  >
+    <span class="material-symbols-outlined msz-18">search</span>
+    Buscar
+  </button>
+
+  <!-- Select de filtro -->
+  <div class="relative">
+    <select
+      class="h-11 rounded-full bg-blue-50 px-5 pr-10 text-slate-900 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 transition border-0 appearance-none cursor-pointer font-medium"
+    >
+      <option>Todos</option>
+    </select>
+    <span
+      class="material-symbols-outlined absolute right-3 top-2.5 text-blue-400 pointer-events-none"
+      >expand_more</span
+    >
+  </div>
+
+  <!-- Botón secundario -->
+  <button
+    class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+  >
+    <span class="material-symbols-outlined msz-18">download</span>
+    Exportar
+  </button>
+</div>
+```
 
 ## Formularios
 

@@ -1,66 +1,589 @@
-<div class="bg-white rounded-xl shadow-md p-6">
-  <div class="flex items-center gap-2 mb-4">
-    <span class="material-symbols-outlined msz-20">edit_note</span>
-    <h3 class="text-lg font-semibold text-slate-800">Nueva receta</h3>
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
+        <button
+          type="button"
+          (click)="router.navigate(['../list'], { relativeTo: route })"
+          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          aria-label="Volver"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
+        </button>
+        <div class="text-left">
+          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">
+            {{ isEdit() ? 'Editar Receta' : 'Nueva Receta' }}
+          </h1>
+          <p class="text-slate-600">Complete la información de la prescripción médica</p>
+        </div>
+      </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
+      <!-- Información Principal -->
+      <div class="bg-white rounded-xl shadow-md p-6">
+        <div class="flex items-center gap-3 mb-6">
+          <div
+            class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
+          >
+            <span class="material-symbols-outlined msz-20">receipt_long</span>
+          </div>
+          <h3 class="text-xl font-semibold text-slate-900 m-0">Información Principal</h3>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Clínica -->
+          <mat-form-field appearance="outline">
+            <mat-label>Clínica</mat-label>
+            <mat-select formControlName="clinicId">
+              <mat-option value="" disabled>Selecciona una clínica</mat-option>
+              <mat-option *ngFor="let c of clinics" [value]="c.id">{{ c.name }}</mat-option>
+            </mat-select>
+            <mat-icon matSuffix>business</mat-icon>
+            <mat-error *ngIf="form.get('clinicId')?.hasError('required')">
+              La clínica es requerida
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Número de Receta -->
+          <mat-form-field appearance="outline">
+            <mat-label>N° de Receta</mat-label>
+            <input matInput formControlName="prescriptionNumber" placeholder="RX-XXXXXX" />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="autoGenerateNumber()"
+              matTooltip="Generar automáticamente"
+            >
+              <mat-icon>refresh</mat-icon>
+            </button>
+            <mat-error *ngIf="form.get('prescriptionNumber')?.hasError('required')">
+              Número requerido
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Paciente con Autocomplete -->
+          <div class="relative">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Paciente</mat-label>
+              <input
+                matInput
+                [value]="patientFilter"
+                (input)="onPatientFilter($any($event.target).value)"
+                (focus)="showPatientDropdown = true"
+                placeholder="Busca por nombre o documento"
+                autocomplete="off"
+              />
+              <mat-icon matSuffix>person</mat-icon>
+              <mat-error *ngIf="form.get('patientId')?.hasError('required')">
+                El paciente es requerido
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Chip del paciente seleccionado -->
+            <div *ngIf="selectedPatient && !showPatientDropdown" class="absolute top-2 left-3 z-10">
+              <div
+                class="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm"
+              >
+                <span class="material-symbols-outlined msz-16">person</span>
+                <span class="font-medium"
+                  >{{ selectedPatient.firstName }} {{ selectedPatient.lastName }}</span
+                >
+                <button
+                  type="button"
+                  (click)="clearPatient(); $event.stopPropagation()"
+                  class="hover:bg-blue-100 rounded-full p-0.5"
+                >
+                  <span class="material-symbols-outlined msz-16">close</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Dropdown de pacientes -->
+            <ul
+              *ngIf="showPatientDropdown && (filteredPatients.length > 0 || patientFilter)"
+              role="listbox"
+              aria-label="Lista de pacientes"
+              class="absolute z-30 bg-white border border-slate-200 rounded-lg mt-1 w-full max-h-60 overflow-auto shadow-xl"
+            >
+              <li
+                *ngIf="filteredPatients.length === 0 && patientFilter"
+                class="px-4 py-3 text-sm text-slate-500"
+              >
+                Sin resultados
+              </li>
+              <li
+                *ngFor="let p of filteredPatients"
+                (click)="selectPatient(p)"
+                (keydown.enter)="selectPatient(p)"
+                role="option"
+                tabindex="0"
+                [attr.aria-selected]="form.get('patientId')?.value === p.id"
+                class="px-4 py-3 hover:bg-blue-50 cursor-pointer focus:outline-none focus:bg-blue-50 transition-colors"
+                [class.bg-blue-50]="form.get('patientId')?.value === p.id"
+              >
+                <div class="font-medium text-slate-900">{{ p.firstName }} {{ p.lastName }}</div>
+                <div class="text-xs text-slate-500 mt-0.5">
+                  <span class="material-symbols-outlined msz-12 align-middle">badge</span>
+                  {{ p.documentNumber || 'Sin documento' }}
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Médico con Autocomplete -->
+          <div class="relative">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Médico</mat-label>
+              <input
+                matInput
+                [value]="doctorFilter"
+                (input)="onDoctorFilter($any($event.target).value)"
+                (focus)="showDoctorDropdown = true"
+                placeholder="Busca por nombre o email"
+                autocomplete="off"
+              />
+              <mat-icon matSuffix>medical_information</mat-icon>
+              <mat-error *ngIf="form.get('doctorId')?.hasError('required')">
+                El médico es requerido
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Chip del médico seleccionado -->
+            <div *ngIf="selectedDoctor && !showDoctorDropdown" class="absolute top-2 left-3 z-10">
+              <div
+                class="inline-flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm"
+              >
+                <span class="material-symbols-outlined msz-16">medical_information</span>
+                <span class="font-medium">{{ getDoctorName(selectedDoctor) }}</span>
+                <button
+                  type="button"
+                  (click)="clearDoctor(); $event.stopPropagation()"
+                  class="hover:bg-green-100 rounded-full p-0.5"
+                >
+                  <span class="material-symbols-outlined msz-16">close</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Dropdown de médicos -->
+            <ul
+              *ngIf="showDoctorDropdown && (filteredDoctors.length > 0 || doctorFilter)"
+              role="listbox"
+              aria-label="Lista de médicos"
+              class="absolute z-30 bg-white border border-slate-200 rounded-lg mt-1 w-full max-h-60 overflow-auto shadow-xl"
+            >
+              <li
+                *ngIf="filteredDoctors.length === 0 && doctorFilter"
+                class="px-4 py-3 text-sm text-slate-500"
+              >
+                Sin resultados
+              </li>
+              <li
+                *ngFor="let d of filteredDoctors"
+                (click)="selectDoctor(d)"
+                (keydown.enter)="selectDoctor(d)"
+                role="option"
+                tabindex="0"
+                [attr.aria-selected]="form.get('doctorId')?.value === d.id"
+                class="px-4 py-3 hover:bg-green-50 cursor-pointer focus:outline-none focus:bg-green-50 transition-colors"
+                [class.bg-green-50]="form.get('doctorId')?.value === d.id"
+              >
+                <div class="font-medium text-slate-900">{{ getDoctorName(d) }}</div>
+                <div class="text-xs text-slate-500 mt-0.5">
+                  <span class="material-symbols-outlined msz-12 align-middle">email</span>
+                  {{ d.email }}
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Fechas -->
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de Emisión</mat-label>
+            <input
+              matInput
+              [matDatepicker]="prescriptionDatePicker"
+              formControlName="prescriptionDate"
+            />
+            <mat-datepicker-toggle
+              matIconSuffix
+              [for]="prescriptionDatePicker"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #prescriptionDatePicker></mat-datepicker>
+            <mat-error *ngIf="form.get('prescriptionDate')?.hasError('required')">
+              Fecha requerida
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de Expiración</mat-label>
+            <input matInput [matDatepicker]="expiryDatePicker" formControlName="expiryDate" />
+            <mat-datepicker-toggle matIconSuffix [for]="expiryDatePicker"></mat-datepicker-toggle>
+            <mat-datepicker #expiryDatePicker></mat-datepicker>
+            <mat-error *ngIf="form.get('expiryDate')?.hasError('required')">
+              Fecha requerida
+            </mat-error>
+            <mat-error *ngIf="form.errors?.['dateOrder']">
+              La fecha de expiración no puede ser anterior a la de emisión
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Medicamentos -->
+      <div class="bg-white rounded-xl shadow-md p-6">
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center shadow-sm"
+            >
+              <span class="material-symbols-outlined msz-20">medication</span>
+            </div>
+            <div>
+              <h3 class="text-xl font-semibold text-slate-900 m-0">Medicamentos</h3>
+              <p class="text-xs text-slate-500 mt-0.5">
+                {{ items.length }} medicamento(s) recetado(s)
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            (click)="addItem()"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          >
+            <span class="material-symbols-outlined msz-20 leading-none">add</span>
+            Agregar Medicamento
+          </button>
+        </div>
+
+        <div class="space-y-6" *ngIf="items.length > 0">
+          <div
+            *ngFor="let it of items.controls; let i = index"
+            class="relative border-2 border-slate-200 rounded-xl p-6 bg-gradient-to-br from-slate-50 to-white hover:border-blue-200 transition-colors"
+          >
+            <!-- Número del medicamento y botón eliminar -->
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <div
+                  class="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-sm"
+                >
+                  {{ i + 1 }}
+                </div>
+                <span class="font-semibold text-slate-700">Medicamento #{{ i + 1 }}</span>
+              </div>
+              <button
+                type="button"
+                (click)="removeItem(i)"
+                class="w-9 h-9 inline-flex items-center justify-center rounded-full bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:ring-offset-1 transition-all border-0"
+                matTooltip="Eliminar medicamento"
+              >
+                <span class="material-symbols-outlined msz-18">delete</span>
+              </button>
+            </div>
+
+            <div [formGroup]="it" class="space-y-4">
+              <!-- Fila 1: Medicamento y Concentración -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <mat-form-field appearance="outline" class="md:col-span-2">
+                  <mat-label>Nombre del Medicamento</mat-label>
+                  <input matInput formControlName="medicationName" placeholder="Ej: Paracetamol" />
+                  <mat-icon matSuffix>medication</mat-icon>
+                  <mat-error *ngIf="it.get('medicationName')?.hasError('required')">
+                    El nombre es requerido
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Concentración</mat-label>
+                  <input matInput formControlName="strength" placeholder="Ej: 500 mg" />
+                  <mat-icon matSuffix>science</mat-icon>
+                  <mat-error *ngIf="it.get('strength')?.hasError('required')">
+                    Requerido
+                  </mat-error>
+                </mat-form-field>
+              </div>
+
+              <!-- Fila 2: Forma, Cantidad y Vía -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <mat-form-field appearance="outline">
+                  <mat-label>Forma Farmacéutica</mat-label>
+                  <mat-select formControlName="dosageForm">
+                    <mat-option value="tableta">Tableta</mat-option>
+                    <mat-option value="cápsula">Cápsula</mat-option>
+                    <mat-option value="jarabe">Jarabe</mat-option>
+                    <mat-option value="suspensión">Suspensión</mat-option>
+                    <mat-option value="inyectable">Inyectable</mat-option>
+                    <mat-option value="crema">Crema</mat-option>
+                    <mat-option value="ungüento">Ungüento</mat-option>
+                    <mat-option value="gotas">Gotas</mat-option>
+                    <mat-option value="supositorio">Supositorio</mat-option>
+                  </mat-select>
+                  <mat-icon matSuffix>pill</mat-icon>
+                  <mat-error *ngIf="it.get('dosageForm')?.hasError('required')">
+                    Requerido
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Cantidad</mat-label>
+                  <input
+                    matInput
+                    formControlName="quantity"
+                    type="number"
+                    placeholder="10"
+                    min="1"
+                  />
+                  <mat-icon matSuffix>tag</mat-icon>
+                  <mat-error *ngIf="it.get('quantity')?.hasError('required')">
+                    Requerido
+                  </mat-error>
+                  <mat-error *ngIf="it.get('quantity')?.hasError('pattern')">
+                    Debe ser un número entero
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Vía de Administración</mat-label>
+                  <mat-select formControlName="route">
+                    <mat-option value="oral">Oral</mat-option>
+                    <mat-option value="sublingual">Sublingual</mat-option>
+                    <mat-option value="intravenosa">Intravenosa</mat-option>
+                    <mat-option value="intramuscular">Intramuscular</mat-option>
+                    <mat-option value="subcutánea">Subcutánea</mat-option>
+                    <mat-option value="tópica">Tópica</mat-option>
+                    <mat-option value="oftálmica">Oftálmica</mat-option>
+                    <mat-option value="ótica">Ótica</mat-option>
+                    <mat-option value="nasal">Nasal</mat-option>
+                    <mat-option value="rectal">Rectal</mat-option>
+                  </mat-select>
+                  <mat-icon matSuffix>route</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <!-- Fila 3: Dosis, Frecuencia y Duración -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <mat-form-field appearance="outline">
+                  <mat-label>Dosis</mat-label>
+                  <input matInput formControlName="dosage" placeholder="Ej: 1 tableta" />
+                  <mat-icon matSuffix>local_pharmacy</mat-icon>
+                  <mat-error *ngIf="it.get('dosage')?.hasError('required')"> Requerido </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Frecuencia</mat-label>
+                  <mat-select formControlName="frequency">
+                    <mat-option value="cada 4 horas">Cada 4 horas</mat-option>
+                    <mat-option value="cada 6 horas">Cada 6 horas</mat-option>
+                    <mat-option value="cada 8 horas">Cada 8 horas</mat-option>
+                    <mat-option value="cada 12 horas">Cada 12 horas</mat-option>
+                    <mat-option value="cada 24 horas">Cada 24 horas</mat-option>
+                    <mat-option value="1 vez al día">1 vez al día</mat-option>
+                    <mat-option value="2 veces al día">2 veces al día</mat-option>
+                    <mat-option value="3 veces al día">3 veces al día</mat-option>
+                    <mat-option value="según sea necesario">Según sea necesario</mat-option>
+                  </mat-select>
+                  <mat-icon matSuffix>schedule</mat-icon>
+                  <mat-error *ngIf="it.get('frequency')?.hasError('required')">
+                    Requerido
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Duración (días)</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="duration"
+                    min="1"
+                    placeholder="7"
+                  />
+                  <mat-icon matSuffix>event_available</mat-icon>
+                  <mat-error *ngIf="it.get('duration')?.hasError('min')">
+                    Debe ser mayor a 0
+                  </mat-error>
+                  <mat-error *ngIf="it.get('duration')?.errors?.['durationExceedsExpiry']">
+                    Excede días hasta expiración (máx.
+                    {{ it.get('duration')?.errors?.['durationExceedsExpiry']?.maxDays }} días)
+                  </mat-error>
+                </mat-form-field>
+              </div>
+
+              <!-- Fila 4: Instrucciones especiales -->
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Instrucciones Especiales</mat-label>
+                <textarea
+                  matInput
+                  formControlName="instructions"
+                  rows="2"
+                  placeholder="Ej: Tomar con alimentos, antes de dormir, etc."
+                ></textarea>
+                <mat-icon matSuffix>notes</mat-icon>
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mensaje cuando no hay medicamentos -->
+        <div *ngIf="items.length === 0" class="text-center py-12">
+          <div
+            class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center"
+          >
+            <span class="material-symbols-outlined msz-32 text-slate-400">medication</span>
+          </div>
+          <p class="text-slate-500 mb-4">No hay medicamentos agregados</p>
+          <button
+            type="button"
+            (click)="addItem()"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg"
+          >
+            <span class="material-symbols-outlined msz-20">add</span>
+            Agregar Primer Medicamento
+          </button>
+        </div>
+      </div>
+
+      <!-- Notas -->
+      <div class="bg-white rounded-xl shadow-md p-6">
+        <div class="flex items-center gap-3 mb-6">
+          <div
+            class="w-10 h-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center shadow-sm"
+          >
+            <span class="material-symbols-outlined msz-20">note_add</span>
+          </div>
+          <div>
+            <h3 class="text-xl font-semibold text-slate-900 m-0">Notas Adicionales</h3>
+            <p class="text-xs text-slate-500 mt-0.5">
+              Observaciones o indicaciones especiales (opcional)
+            </p>
+          </div>
+        </div>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Notas e Indicaciones</mat-label>
+          <textarea
+            matInput
+            formControlName="notes"
+            rows="4"
+            placeholder="Ej: Alergias conocidas, precauciones especiales, recomendaciones para el paciente..."
+          ></textarea>
+          <mat-icon matSuffix>description</mat-icon>
+          <mat-hint>Información adicional que el médico considere relevante</mat-hint>
+        </mat-form-field>
+      </div>
+
+      <!-- Resumen de validación -->
+      <div
+        *ngIf="form.invalid && (form.dirty || form.touched)"
+        class="bg-amber-50 border-2 border-amber-200 rounded-xl p-6"
+      >
+        <div class="flex items-start gap-3">
+          <div
+            class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0"
+          >
+            <span class="material-symbols-outlined msz-20">warning</span>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-amber-900 mb-2">Formulario incompleto</h3>
+            <p class="text-sm text-amber-800 mb-3">Por favor, complete los siguientes campos:</p>
+            <ul class="space-y-1 text-sm text-amber-700">
+              <li
+                *ngIf="form.get('clinicId')?.invalid && form.get('clinicId')?.touched"
+                class="flex items-center gap-2"
+              >
+                <span class="material-symbols-outlined msz-16">arrow_right</span>
+                Clínica es requerida
+              </li>
+              <li
+                *ngIf="
+                  form.get('prescriptionNumber')?.invalid && form.get('prescriptionNumber')?.touched
+                "
+                class="flex items-center gap-2"
+              >
+                <span class="material-symbols-outlined msz-16">arrow_right</span>
+                Número de receta es requerido
+              </li>
+              <li
+                *ngIf="form.get('patientId')?.invalid && form.get('patientId')?.touched"
+                class="flex items-center gap-2"
+              >
+                <span class="material-symbols-outlined msz-16">arrow_right</span>
+                Paciente es requerido
+              </li>
+              <li
+                *ngIf="form.get('doctorId')?.invalid && form.get('doctorId')?.touched"
+                class="flex items-center gap-2"
+              >
+                <span class="material-symbols-outlined msz-16">arrow_right</span>
+                Médico es requerido
+              </li>
+              <li
+                *ngIf="
+                  form.get('prescriptionDate')?.invalid && form.get('prescriptionDate')?.touched
+                "
+                class="flex items-center gap-2"
+              >
+                <span class="material-symbols-outlined msz-16">arrow_right</span>
+                Fecha de emisión es requerida
+              </li>
+              <li
+                *ngIf="form.get('expiryDate')?.invalid && form.get('expiryDate')?.touched"
+                class="flex items-center gap-2"
+              >
+                <span class="material-symbols-outlined msz-16">arrow_right</span>
+                Fecha de expiración es requerida
+              </li>
+              <li *ngIf="form.errors?.['dateOrder']" class="flex items-center gap-2">
+                <span class="material-symbols-outlined msz-16">arrow_right</span>
+                La fecha de expiración no puede ser anterior a la de emisión
+              </li>
+              <li *ngIf="items.length === 0" class="flex items-center gap-2">
+                <span class="material-symbols-outlined msz-16">arrow_right</span>
+                Debe agregar al menos un medicamento
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="flex flex-col sm:flex-row justify-between items-center gap-4 pt-2">
+        <div class="text-sm text-slate-600">
+          <span class="font-medium">{{ items.length }}</span> medicamento(s) •
+          <span *ngIf="form.valid" class="text-green-600 font-medium">
+            <span class="material-symbols-outlined msz-14 align-middle">check_circle</span>
+            Listo para guardar
+          </span>
+          <span *ngIf="form.invalid" class="text-amber-600 font-medium">
+            <span class="material-symbols-outlined msz-14 align-middle">error</span>
+            Formulario incompleto
+          </span>
+        </div>
+
+        <div class="flex gap-3">
+          <button
+            type="button"
+            (click)="router.navigate(['../list'], { relativeTo: route })"
+            class="inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+          >
+            <span class="material-symbols-outlined msz-18">cancel</span>
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            [disabled]="loading || form.invalid"
+            class="inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
+            [class.animate-pulse]="loading"
+          >
+            <span class="material-symbols-outlined msz-18">{{
+              loading ? 'hourglass_empty' : 'save'
+            }}</span>
+            {{ loading ? 'Guardando...' : isEdit() ? 'Actualizar Receta' : 'Guardar Receta' }}
+          </button>
+        </div>
+      </div>
+    </form>
   </div>
-  <form [formGroup]="form" (ngSubmit)="submit()" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div>
-      <label class="block text-sm text-slate-600 mb-1">Paciente</label>
-      <input
-        type="text"
-        class="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-200"
-        formControlName="patientId"
-        placeholder="ID o nombre de paciente"
-      />
-    </div>
-    <div>
-      <label class="block text-sm text-slate-600 mb-1">Médico</label>
-      <input
-        type="text"
-        class="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-200"
-        formControlName="doctorId"
-        placeholder="ID o nombre de médico"
-      />
-    </div>
-    <div>
-      <label class="block text-sm text-slate-600 mb-1">Fecha</label>
-      <input
-        type="date"
-        class="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-200"
-        formControlName="date"
-      />
-    </div>
-    <div class="md:col-span-2">
-      <label class="block text-sm text-slate-600 mb-1">Medicamentos</label>
-      <textarea
-        rows="3"
-        class="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-200"
-        formControlName="medications"
-        placeholder="Detalle de medicamentos, dosis e instrucciones"
-      ></textarea>
-    </div>
-    <div class="md:col-span-2">
-      <label class="block text-sm text-slate-600 mb-1">Notas</label>
-      <textarea
-        rows="2"
-        class="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-200"
-        formControlName="notes"
-        placeholder="Notas adicionales"
-      ></textarea>
-    </div>
-    <div class="md:col-span-2 flex justify-end gap-2 pt-2">
-      <a
-        routerLink="../list"
-        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
-        >Cancelar</a
-      >
-      <button
-        type="submit"
-        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-600 text-white shadow hover:bg-blue-700"
-      >
-        <span class="material-symbols-outlined msz-18">save</span>
-        Guardar
-      </button>
-    </div>
-  </form>
 </div>

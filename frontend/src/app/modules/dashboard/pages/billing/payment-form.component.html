@@ -1,0 +1,160 @@
+<div class="min-h-screen bg-slate-50" *ngIf="!loading; else loadingTpl">
+  <div class="max-w-4xl mx-auto p-6">
+    <header class="mb-6 flex items-center gap-4">
+      <button (click)="cancel()" class="w-9 h-9 rounded-full hover:bg-slate-100">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <h1 class="text-3xl font-bold text-slate-900">Registrar Pago</h1>
+    </header>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
+      <!-- Datos principales -->
+      <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="material-symbols-outlined msz-24 text-blue-600">payments</span>
+          <h2 class="text-xl font-semibold text-slate-800">Datos del Pago</h2>
+        </div>
+        <div class="grid md:grid-cols-2 gap-6">
+          <mat-form-field appearance="outline">
+            <mat-label>Número de Pago</mat-label>
+            <input matInput formControlName="paymentNumber" placeholder="AUTOGENERADO" />
+            <mat-icon matSuffix>confirmation_number</mat-icon>
+            <mat-error *ngIf="form.get('paymentNumber')?.hasError('required')">Requerido</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de Pago</mat-label>
+            <input matInput [matDatepicker]="pickerDate" formControlName="paymentDate" />
+            <mat-datepicker-toggle matSuffix [for]="pickerDate"></mat-datepicker-toggle>
+            <mat-datepicker #pickerDate></mat-datepicker>
+            <mat-error *ngIf="form.get('paymentDate')?.invalid">Fecha inválida</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Paciente</mat-label>
+            <mat-select formControlName="patientId">
+              <mat-option *ngFor="let p of patients" [value]="p.id">
+                {{ p.firstName }} {{ p.lastName }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="form.get('patientId')?.invalid">Seleccione paciente</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Clínica</mat-label>
+            <mat-select formControlName="clinicId">
+              <mat-option *ngFor="let c of clinics" [value]="c.id">{{ c.name }}</mat-option>
+            </mat-select>
+            <mat-error *ngIf="form.get('clinicId')?.invalid">Seleccione clínica</mat-error>
+          </mat-form-field>
+        </div>
+      </section>
+
+      <!-- Asociar factura -->
+      <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="material-symbols-outlined msz-24 text-purple-600">receipt_long</span>
+          <h2 class="text-xl font-semibold text-slate-800">Factura Asociada</h2>
+        </div>
+        <div class="grid md:grid-cols-2 gap-6">
+          <mat-form-field appearance="outline">
+            <mat-label>ID Factura</mat-label>
+            <input matInput formControlName="invoiceId" [value]="invoice?.id" />
+            <mat-icon matSuffix>receipt_long</mat-icon>
+            <mat-error *ngIf="form.get('invoiceId')?.invalid">Requerido</mat-error>
+          </mat-form-field>
+
+          <div class="flex flex-col justify-center" *ngIf="invoice">
+            <div class="text-sm text-slate-600">
+              Factura: <span class="font-medium">{{ invoice.invoiceNumber }}</span>
+            </div>
+            <div class="text-sm text-slate-600">
+              Total: <span class="font-semibold">{{ invoice.total | currency: 'USD' }}</span>
+            </div>
+            <div class="text-sm text-slate-600">
+              Estado:
+              <span class="px-2 py-0.5 rounded-full text-xs bg-slate-100">{{
+                invoice.status
+              }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Monto y método -->
+      <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="material-symbols-outlined msz-24 text-emerald-600"
+            >account_balance_wallet</span
+          >
+          <h2 class="text-xl font-semibold text-slate-800">Detalle de Pago</h2>
+        </div>
+        <div class="grid md:grid-cols-2 gap-6">
+          <mat-form-field appearance="outline">
+            <mat-label>Monto</mat-label>
+            <input matInput type="number" formControlName="amount" />
+            <mat-icon matSuffix>payments</mat-icon>
+            <mat-error *ngIf="form.get('amount')?.hasError('required')">Requerido</mat-error>
+            <mat-error *ngIf="form.get('amount')?.hasError('min')">Debe ser mayor a 0</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Método</mat-label>
+            <mat-select formControlName="method">
+              <mat-option *ngFor="let m of paymentMethods" [value]="m.value">
+                <span class="material-symbols-outlined text-base align-middle mr-2">{{
+                  m.icon
+                }}</span>
+                {{ m.label }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="form.get('method')?.invalid">Seleccione método</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Referencia / Código transacción</mat-label>
+            <input matInput formControlName="reference" />
+            <mat-icon matSuffix>link</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="md:col-span-2">
+            <mat-label>Notas</mat-label>
+            <textarea matInput rows="3" formControlName="notes"></textarea>
+            <mat-icon matSuffix>notes</mat-icon>
+            <mat-error *ngIf="form.get('notes')?.hasError('maxlength')"
+              >Máximo 500 caracteres</mat-error
+            >
+          </mat-form-field>
+        </div>
+      </section>
+
+      <!-- Acciones -->
+      <section class="flex items-center justify-end gap-3">
+        <button
+          type="button"
+          (click)="cancel()"
+          class="inline-flex items-center gap-2 rounded-full h-11 px-6 bg-slate-100 text-slate-700 hover:bg-slate-200"
+        >
+          <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          [disabled]="submitting || form.invalid"
+          class="inline-flex items-center gap-2 rounded-full h-11 px-6 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+        >
+          <span class="material-symbols-outlined text-[20px]">save</span>
+          {{ submitting ? 'Guardando...' : 'Guardar Pago' }}
+        </button>
+      </section>
+    </form>
+  </div>
+</div>
+
+<ng-template #loadingTpl>
+  <div class="p-10 flex items-center justify-center">
+    <span class="material-symbols-outlined animate-spin text-4xl text-slate-500"
+      >progress_activity</span
+    >
+  </div>
+</ng-template>
