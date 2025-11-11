@@ -73,10 +73,6 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
   // Vital signs ranges for tooltips
   vitalSignsRanges = VITAL_SIGNS_RANGES
 
-  // File handling
-  selectedFile: File | null = null
-  filePreview: string | null = null
-
   // Loading states
   isLoading = false
   isSaving = false
@@ -642,24 +638,6 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
     // Nota: syncPatientSearchText y syncDoctorSearchText se llaman después en loadMedicalRecord
   }
 
-  onFileSelected(event: any): void {
-    const file = event.target.files[0]
-    if (file) {
-      this.selectedFile = file
-
-      // Crear preview para archivos de imagen
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader()
-        reader.onload = e => {
-          this.filePreview = e.target?.result as string
-        }
-        reader.readAsDataURL(file)
-      } else {
-        this.filePreview = null
-      }
-    }
-  }
-
   getTypeText(type: RecordType): string {
     const types = {
       [RecordType.CONSULTATION]: 'Consulta',
@@ -806,7 +784,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
   private createMedicalRecord(medicalRecord: CreateMedicalRecordDto): void {
     this.medicalRecordsService.createMedicalRecord(medicalRecord).subscribe({
       next: record => {
-        if (this.consentForm.valid && this.selectedFile) {
+        if (this.consentForm.valid) {
           this.createConsentForm(record.id!)
         } else {
           this.alert
@@ -865,36 +843,24 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
 
     this.medicalRecordsService.createConsentForm(consent).subscribe({
       next: consentRecord => {
-        if (this.selectedFile) {
-          this.uploadConsentFile(consentRecord.id!)
-        } else {
-          this.clearDraft()
-          this.router.navigate(['/dashboard/medical-records'])
-          this.isSaving = false
-        }
+        this.alert
+          .fire({
+            icon: 'success',
+            title: '¡Expediente y consentimiento creados!',
+            text: 'El expediente médico y el consentimiento han sido creados exitosamente.',
+            confirmButtonText: 'Aceptar',
+          })
+          .then(() => {
+            this.clearDraft()
+            this.router.navigate(['/dashboard/medical-records'])
+          })
+        this.isSaving = false
       },
       error: error => {
         this.showError('Error al crear el formulario de consentimiento')
         this.isSaving = false
       },
     })
-  }
-
-  private uploadConsentFile(consentId: string): void {
-    if (this.selectedFile) {
-      this.medicalRecordsService.uploadSignedConsent(consentId, this.selectedFile).subscribe({
-        next: () => {
-          this.showSuccess('Archivo de consentimiento subido exitosamente')
-          this.clearDraft()
-          this.router.navigate(['/dashboard/medical-records'])
-          this.isSaving = false
-        },
-        error: error => {
-          this.showError('Error al subir el archivo de consentimiento')
-          this.isSaving = false
-        },
-      })
-    }
   }
 
   saveDraft(): void {
@@ -964,18 +930,6 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.location.back()
-  }
-
-  getStepProgress(): number {
-    let completed = 0
-    const totalSteps = 4 // Reducido de 6 a 4 pasos
-
-    if (this.patientInfoForm.valid) completed++
-    if (this.clinicalDataForm.valid) completed++
-    if (this.evaluationForm.valid) completed++
-    if (this.consentForm.valid) completed++
-
-    return Math.round((completed / totalSteps) * 100)
   }
 
   // Métodos auxiliares para validación de signos vitales

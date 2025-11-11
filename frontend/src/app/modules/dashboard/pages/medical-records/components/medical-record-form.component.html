@@ -111,20 +111,6 @@
       </div>
     </div>
 
-    <!-- Progreso -->
-    <div class="bg-white rounded-xl shadow-md p-6 mb-8" *ngIf="!isLoading">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-slate-700 font-medium">Progreso del formulario</span>
-        <span class="text-slate-900 font-semibold">{{ getStepProgress() | number: '1.0-0' }}%</span>
-      </div>
-      <div class="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-        <div
-          class="h-2 bg-blue-600 rounded-full transition-all"
-          [style.width.%]="getStepProgress()"
-        ></div>
-      </div>
-    </div>
-
     <!-- Alerta de Modo Seguimiento -->
     <div
       *ngIf="isFollowUpMode && originalConsultation"
@@ -1686,101 +1672,7 @@
                   según corresponda.
                 </mat-hint>
               </mat-form-field>
-
-              <!-- Subida de Archivo Mejorada -->
-              <div
-                class="border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200"
-                [ngClass]="
-                  selectedFile
-                    ? 'border-green-400 bg-green-50'
-                    : 'border-slate-300 bg-slate-50 hover:border-blue-400 hover:bg-blue-50'
-                "
-              >
-                <div class="flex flex-col items-center">
-                  <!-- Icono -->
-                  <div
-                    class="w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-all"
-                    [ngClass]="selectedFile ? 'bg-green-100' : 'bg-slate-100'"
-                  >
-                    <span
-                      class="material-symbols-outlined text-5xl transition-colors"
-                      [ngClass]="selectedFile ? 'text-green-600' : 'text-slate-400'"
-                    >
-                      {{ selectedFile ? 'check_circle' : 'cloud_upload' }}
-                    </span>
-                  </div>
-
-                  <!-- Título y descripción -->
-                  <h3
-                    class="text-lg font-semibold mb-2 transition-colors"
-                    [ngClass]="selectedFile ? 'text-green-900' : 'text-slate-900'"
-                  >
-                    {{ selectedFile ? 'Documento Adjuntado' : 'Subir Documento de Consentimiento' }}
-                  </h3>
-                  <p
-                    class="text-sm mb-4 transition-colors"
-                    [ngClass]="selectedFile ? 'text-green-700' : 'text-slate-600'"
-                  >
-                    {{
-                      selectedFile
-                        ? selectedFile.name
-                        : 'Seleccione el archivo firmado del consentimiento informado'
-                    }}
-                  </p>
-
-                  <!-- Input oculto -->
-                  <input
-                    type="file"
-                    #fileInput
-                    (change)="onFileSelected($event)"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    class="hidden"
-                  />
-
-                  <!-- Botón -->
-                  <button
-                    mat-flat-button
-                    [color]="selectedFile ? 'accent' : 'primary'"
-                    type="button"
-                    (click)="fileInput.click()"
-                    class="rounded-full px-6 py-2 shadow-md hover:shadow-lg transition-all"
-                  >
-                    <span class="flex items-center gap-2">
-                      <span class="material-symbols-outlined msz-20">{{
-                        selectedFile ? 'sync' : 'attach_file'
-                      }}</span>
-                      <span>{{ selectedFile ? 'Cambiar Archivo' : 'Seleccionar Archivo' }}</span>
-                    </span>
-                  </button>
-
-                  <!-- Información del archivo -->
-                  <div
-                    *ngIf="selectedFile"
-                    class="mt-4 flex items-center gap-2 text-sm text-green-700"
-                  >
-                    <span class="material-symbols-outlined msz-18">folder_open</span>
-                    <span>{{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB</span>
-                    <span class="mx-2">•</span>
-                    <span>PDF, JPG o PNG</span>
-                  </div>
-
-                  <!-- Preview de imagen -->
-                  <div *ngIf="filePreview" class="mt-4">
-                    <img
-                      [src]="filePreview"
-                      alt="Preview"
-                      class="max-w-xs max-h-48 mx-auto rounded-xl shadow-lg border-2 border-green-200"
-                    />
-                    />
-                  </div>
-                </div>
-              </div>
             </div>
-
-            <!-- Ejemplos para Consentimiento -->
-
-            <!-- Ayuda contextual mínima -->
-            <!-- (Se eliminan ejemplos extensos para evitar redundancia) -->
           </div>
 
           <div class="flex items-center justify-between mt-6">
