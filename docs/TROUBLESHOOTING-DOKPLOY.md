@@ -22,6 +22,24 @@ El backend no se compiló correctamente durante la construcción de la imagen Do
 
 ### Solución
 
+#### 0. Verificar construcción localmente ANTES de Dokploy
+
+**IMPORTANTE:** Ejecuta este script localmente para confirmar que el build funciona:
+
+```bash
+# Desde la raíz del proyecto
+./scripts/verify-backend-build.sh
+```
+
+Este script:
+
+- Construye la imagen localmente
+- Verifica que `dist/main.js` exista
+- Prueba que el contenedor arranque
+- Te mostrará errores específicos si algo falla
+
+**Solo continúa a Dokploy si este script tiene éxito.**
+
 #### 1. Limpiar caché de Docker en Dokploy
 
 En Dokploy, fuerza una reconstrucción completa:
@@ -33,30 +51,54 @@ En Dokploy, fuerza una reconstrucción completa:
 
 #### 2. Verificar Dockerfile del Backend
 
-El archivo `/docker/backend.Dockerfile` debe tener esta estructura en la etapa de construcción:
+El archivo `/docker/backend.Dockerfile` debe tener esta estructura:
+
+**Etapa de construcción:**
 
 ```dockerfile
-# Etapa de construcción
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 
-# ✅ IMPORTANTE: Instalar TODAS las dependencias (incluyendo devDependencies)
+# ✅ Instalar TODAS las dependencias
 RUN npm ci && npm cache clean --force
 
-RUN npm install -g @nestjs/cli
 COPY . .
 
-# ✅ Esto debe generar la carpeta dist/
+# ✅ Compilar aplicación
 RUN npm run build
+
+# ✅ Verificar que dist existe
+RUN ls -la /app/dist && echo "Build successful"
 ```
 
-**NO hacer:**
+**Etapa de producción:**
 
 ```dockerfile
-# ❌ INCORRECTO - No instala devDependencies necesarias para construir
-RUN npm ci --only=production
+FROM node:20-alpine AS production
+# ... setup ...
+WORKDIR /app
+COPY package*.json ./
+
+# ✅ Solo dependencias de producción
+RUN npm ci --only=production && npm cache clean --force
+
+# ✅ Copiar dist Y node_modules desde builder
+COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
+
+# ✅ Verificar main.js
+RUN ls -la /app/dist/ && test -f /app/dist/main.js
+
+# ... resto del setup ...
+CMD ["dumb-init", "node", "dist/main"]
 ```
+
+**Cambios críticos aplicados:**
+
+- ✅ Copiar `node_modules` desde builder (contiene TypeScript compilado)
+- ✅ Verificación explícita de `dist/main.js`
+- ✅ tsconfig.json corregido (sin coma final, con include/exclude)
 
 #### 3. Verificar logs de construcción en Dokploy
 
