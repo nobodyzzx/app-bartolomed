@@ -12,14 +12,14 @@ COPY package*.json ./
 # Instala TODAS las dependencias (incluyendo devDependencies para construir)
 RUN npm ci && npm cache clean --force
 
-# Instala NestJS CLI globalmente
-RUN npm install -g @nestjs/cli
-
 # Copia el resto de los archivos del proyecto
 COPY . .
 
 # Compila la aplicación
 RUN npm run build
+
+# Verificar que dist existe
+RUN ls -la /app/dist && echo "Build successful - dist folder exists"
 
 # Etapa de desarrollo
 FROM node:20-alpine AS development
@@ -52,6 +52,10 @@ RUN npm ci --only=production && npm cache clean --force
 
 # Copia la aplicación compilada desde la etapa de construcción
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
+
+# Verificar que dist/main.js existe
+RUN ls -la /app/dist/ && test -f /app/dist/main.js && echo "main.js found"
 
 # Crea el directorio de uploads con permisos para el usuario nestjs
 RUN mkdir -p /app/uploads/consent-forms && \
