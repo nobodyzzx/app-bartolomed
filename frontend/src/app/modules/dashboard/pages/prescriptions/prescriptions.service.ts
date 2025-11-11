@@ -8,9 +8,14 @@ import { ErrorService } from '../../../../shared/components/services/error.servi
 
 export interface PrescriptionItemDto {
   medicationName: string
-  strength?: string
-  quantity?: string
-  dosage?: string
+  strength: string
+  dosageForm: string
+  quantity: string
+  dosage: string
+  frequency: string
+  route?: string
+  duration?: number
+  instructions?: string
 }
 
 export interface PrescriptionDto {
@@ -70,6 +75,24 @@ export class PrescriptionsService {
 
   update(id: string, payload: Partial<PrescriptionDto>) {
     return this.http.patch(`${this.base}/prescriptions/${id}`, payload).pipe(
+      catchError(err => {
+        this.errorService.handleError(err)
+        return throwError(() => err)
+      }),
+    )
+  }
+
+  setStatus(id: string, status: string) {
+    return this.http.patch(`${this.base}/prescriptions/${id}/status`, { status }).pipe(
+      catchError(err => {
+        this.errorService.handleError(err)
+        return throwError(() => err)
+      }),
+    )
+  }
+
+  refill(id: string) {
+    return this.http.post(`${this.base}/prescriptions/${id}/refill`, {}).pipe(
       catchError(err => {
         this.errorService.handleError(err)
         return throwError(() => err)

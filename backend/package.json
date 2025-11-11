@@ -17,7 +17,13 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "seed:all": "ts-node -r tsconfig-paths/register backend/scripts/seed-runner.ts",
+    "seed:clinics": "ts-node -r tsconfig-paths/register backend/src/seed/00-clinics.seed.ts",
+    "seed:users": "ts-node -r tsconfig-paths/register backend/src/seed/01-users.seed.ts",
+    "seed:patients": "ts-node -r tsconfig-paths/register backend/src/seed/02-patients.seed.ts",
+    "seed:doctors": "ts-node -r tsconfig-paths/register backend/src/seed/03-doctors.seed.ts",
+    "seed:appointments": "ts-node -r tsconfig-paths/register backend/src/seed/04-appointments.seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

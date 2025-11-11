@@ -1,0 +1,238 @@
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-5xl mx-auto">
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
+        <button
+          type="button"
+          (click)="goBack()"
+          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          matTooltip="Volver"
+          aria-label="Volver"
+        >
+          <mat-icon class="!text-[20px] leading-none">arrow_back</mat-icon>
+        </button>
+        <div class="text-left">
+          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">
+            {{ isEdit ? 'Editar Factura' : 'Nueva Factura' }}
+          </h1>
+          <p class="text-slate-600">Registra cobros con detalle de servicios</p>
+        </div>
+      </div>
+      <div>
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="goBack()"
+          [disabled]="loading"
+          class="rounded-full h-10 px-4 bg-red-50 text-red-600 border-red-200 hover:bg-red-100 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:ring-offset-1"
+          matTooltip="Cancelar"
+          aria-label="Cancelar"
+        >
+          <mat-icon>cancel</mat-icon>
+          Cancelar
+        </button>
+      </div>
+    </header>
+
+    <!-- Form Card -->
+    <form
+      class="bg-white rounded-xl shadow-md p-6 grid gap-6"
+      [formGroup]="form"
+      (ngSubmit)="submit()"
+    >
+      <!-- Datos principales -->
+      <section>
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+            <span class="material-symbols-outlined text-blue-500">receipt_long</span>
+          </div>
+          <div>
+            <h2 class="text-lg font-semibold text-slate-900">Datos de la factura</h2>
+            <p class="text-sm text-slate-600">Información general</p>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-4">
+          <mat-form-field appearance="outline">
+            <mat-label>Número de factura</mat-label>
+            <input matInput formControlName="invoiceNumber" />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="generateInvoiceNumber()"
+              aria-label="Generar número"
+              matTooltip="Generar número"
+            >
+              <mat-icon class="!text-[20px]">auto_awesome</mat-icon>
+            </button>
+            <mat-error *ngIf="form.get('invoiceNumber')?.hasError('required')">Requerido</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Paciente</mat-label>
+            <mat-select formControlName="patientId">
+              <mat-option *ngFor="let p of patients" [value]="p.id"
+                >{{ p.firstName }} {{ p.lastName }}</mat-option
+              >
+            </mat-select>
+            <mat-error *ngIf="form.get('patientId')?.hasError('required')">Requerido</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Clínica</mat-label>
+            <mat-select formControlName="clinicId">
+              <mat-option *ngFor="let c of clinics" [value]="c.id">{{ c.name }}</mat-option>
+            </mat-select>
+            <mat-error *ngIf="form.get('clinicId')?.hasError('required')">Requerido</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-4">
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de emisión</mat-label>
+            <input matInput [matDatepicker]="issuePicker" formControlName="issueDate" />
+            <mat-datepicker-toggle matIconSuffix [for]="issuePicker"></mat-datepicker-toggle>
+            <mat-datepicker #issuePicker></mat-datepicker>
+            <mat-error *ngIf="form.get('issueDate')?.hasError('required')">Requerido</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de vencimiento</mat-label>
+            <input matInput [matDatepicker]="duePicker" formControlName="dueDate" />
+            <mat-datepicker-toggle matIconSuffix [for]="duePicker"></mat-datepicker-toggle>
+            <mat-datepicker #duePicker></mat-datepicker>
+            <mat-error *ngIf="form.get('dueDate')?.hasError('required')">Requerido</mat-error>
+          </mat-form-field>
+        </div>
+      </section>
+
+      <!-- Ítems -->
+      <section>
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
+              <span class="material-symbols-outlined text-emerald-500">list_alt</span>
+            </div>
+            <div>
+              <h2 class="text-lg font-semibold text-slate-900">Servicios / Ítems</h2>
+              <p class="text-sm text-slate-600">Agrega los conceptos de cobro</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            (click)="addItem()"
+            class="px-3 py-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 inline-flex items-center gap-2"
+          >
+            <span class="material-symbols-outlined msz-20 leading-none">add</span>
+            Agregar ítem
+          </button>
+        </div>
+
+        <div class="grid gap-4">
+          <div
+            class="grid md:grid-cols-12 gap-3 items-center"
+            *ngFor="let item of items.controls; let i = index"
+            [formGroup]="item"
+          >
+            <mat-form-field class="md:col-span-5" appearance="outline">
+              <mat-label>Descripción</mat-label>
+              <input matInput formControlName="description" />
+              <mat-error *ngIf="item.get('description')?.invalid">Requerido</mat-error>
+            </mat-form-field>
+            <mat-form-field class="md:col-span-2" appearance="outline">
+              <mat-label>Cantidad</mat-label>
+              <input matInput type="number" min="1" formControlName="quantity" />
+              <mat-error *ngIf="item.get('quantity')?.invalid">Cantidad inválida</mat-error>
+            </mat-form-field>
+            <mat-form-field class="md:col-span-2" appearance="outline">
+              <mat-label>Precio unitario</mat-label>
+              <input matInput type="number" min="0" step="0.01" formControlName="unitPrice" />
+              <mat-error *ngIf="item.get('unitPrice')?.invalid">Precio inválido</mat-error>
+            </mat-form-field>
+            <mat-form-field class="md:col-span-2" appearance="outline">
+              <mat-label>Categoría</mat-label>
+              <input matInput formControlName="category" />
+            </mat-form-field>
+            <button
+              type="button"
+              (click)="removeItem(i)"
+              class="md:col-span-1 w-10 h-10 rounded-full bg-red-50 hover:bg-red-100 text-red-600 inline-flex items-center justify-center"
+            >
+              <span class="material-symbols-outlined msz-20 leading-none">delete</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Totales -->
+      <section class="grid md:grid-cols-2 gap-6">
+        <div class="grid md:grid-cols-3 gap-4">
+          <mat-form-field appearance="outline" class="h-fit">
+            <mat-label>% Descuento</mat-label>
+            <input matInput class="!leading-none" type="number" min="0" step="0.01" formControlName="discountRate" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="h-fit">
+            <mat-label>Monto Descuento</mat-label>
+            <input matInput class="!leading-none" type="number" min="0" step="0.01" formControlName="discountAmount" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="h-fit">
+            <mat-label>% Impuesto</mat-label>
+            <input matInput class="!leading-none" type="number" min="0" step="0.01" formControlName="taxRate" />
+          </mat-form-field>
+        </div>
+
+        <div class="bg-slate-50 rounded-lg p-4">
+          <div class="flex justify-between py-1 text-slate-700">
+            <span>Subtotal</span><span>{{ subtotal | number: '1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between py-1 text-slate-700">
+            <span>Descuento</span><span>- {{ discountAmountCalc | number: '1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between py-1 text-slate-700">
+            <span>Impuesto</span><span>{{ taxAmount | number: '1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between py-2 text-lg font-semibold text-slate-900 border-t mt-2">
+            <span>Total</span><span>{{ total | number: '1.2-2' }}</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Notas -->
+      <section class="grid md:grid-cols-2 gap-4">
+        <mat-form-field appearance="outline">
+          <mat-label>Notas</mat-label>
+          <textarea matInput rows="3" formControlName="notes"></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Términos</mat-label>
+          <textarea matInput rows="3" formControlName="terms"></textarea>
+        </mat-form-field>
+      </section>
+
+      <!-- Actions -->
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="goBack()"
+          class="rounded-full h-11 px-5 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 border-0"
+        >
+          <mat-icon class="!text-[20px]">arrow_back</mat-icon>
+          Cancelar
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          [disabled]="loading || form.invalid"
+          class="rounded-full h-11 px-5 inline-flex items-center gap-2 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
+        >
+          <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
+          <span>{{ isEdit ? 'Guardar cambios' : 'Crear factura' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
