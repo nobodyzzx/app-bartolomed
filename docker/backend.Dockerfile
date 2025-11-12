@@ -1,7 +1,7 @@
 # Multi-stage build para optimizar la imagen de producción
 
 # Etapa de construcción
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 # Establece el directorio de trabajo
 WORKDIR /app
@@ -22,7 +22,7 @@ RUN npm run build
 RUN ls -la /app/dist && echo "Build successful - dist folder exists"
 
 # Etapa de desarrollo
-FROM node:20-alpine AS development
+FROM node:20-slim AS development
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
@@ -32,14 +32,16 @@ EXPOSE 3000
 CMD ["npm", "run", "start:dev"]
 
 # Etapa de producción
-FROM node:20-alpine AS production
+FROM node:20-slim AS production
 
-# Instala dumb-init para manejo de señales y wget para health checks
-RUN apk add --no-cache dumb-init wget
+# Instala dumb-init para manejo de señales y wget para health checks (usar apt en vez de apk)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends dumb-init wget ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 # Crear usuario no-root para seguridad
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nestjs -u 1001
+RUN groupadd -g 1001 nodejs || true
+RUN useradd -u 1001 -r -g nodejs -s /usr/sbin/nologin nestjs || true
 
 # Establece el directorio de trabajo
 WORKDIR /app
