@@ -1,0 +1,278 @@
+<div class="min-h-screen bg-slate-50 p-6">
+  <div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <header class="mb-6 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <button
+          (click)="goBack()"
+          class="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors"
+          type="button"
+        >
+          <span class="material-symbols-outlined text-slate-700">arrow_back</span>
+        </button>
+        <div>
+          <h1 class="text-3xl font-bold text-slate-900">
+            Venta #{{ sale()?.saleNumber || '...' }}
+          </h1>
+          <p class="text-slate-600 text-sm" *ngIf="sale()">
+            {{ sale()!.createdAt | date: 'medium' }}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2" *ngIf="sale() as s">
+        <button
+          (click)="printReceipt()"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors"
+          type="button"
+        >
+          <span class="material-symbols-outlined text-lg">print</span>
+          Imprimir
+        </button>
+        <button
+          *ngIf="s.status === 'pending'"
+          (click)="completeSale()"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition-colors"
+          type="button"
+        >
+          <span class="material-symbols-outlined text-lg">check_circle</span>
+          Completar
+        </button>
+        <button
+          *ngIf="s.status === 'pending'"
+          (click)="cancelSale()"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition-colors"
+          type="button"
+        >
+          <span class="material-symbols-outlined text-lg">cancel</span>
+          Cancelar
+        </button>
+      </div>
+    </header>
+
+    <!-- Loading State -->
+    <div *ngIf="loading()" class="flex items-center justify-center py-16">
+      <div class="text-center">
+        <div
+          class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+        ></div>
+        <p class="mt-4 text-slate-600">Cargando venta...</p>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div *ngIf="!loading() && sale() as s" class="grid gap-6">
+      <!-- Status Badge & Basic Info -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-semibold text-slate-900">Información de la Venta</h2>
+          <span
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
+            [ngClass]="{
+              'bg-green-100 text-green-800': s.status === 'completed',
+              'bg-orange-100 text-orange-800': s.status === 'pending',
+              'bg-red-100 text-red-800': s.status === 'cancelled',
+              'bg-purple-100 text-purple-800': s.status === 'refunded',
+            }"
+          >
+            <span class="material-symbols-outlined text-base">
+              {{
+                s.status === 'completed'
+                  ? 'check_circle'
+                  : s.status === 'pending'
+                    ? 'pending'
+                    : s.status === 'cancelled'
+                      ? 'cancel'
+                      : 'info'
+              }}
+            </span>
+            {{
+              s.status === 'completed'
+                ? 'Completada'
+                : s.status === 'pending'
+                  ? 'Pendiente'
+                  : s.status === 'cancelled'
+                    ? 'Cancelada'
+                    : 'Reembolsada'
+            }}
+          </span>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-x-8 gap-y-4">
+          <div>
+            <p class="text-sm text-slate-500 mb-1">Número de Venta</p>
+            <p class="text-base font-medium text-slate-900">{{ s.saleNumber }}</p>
+          </div>
+          <div>
+            <p class="text-sm text-slate-500 mb-1">Fecha</p>
+            <p class="text-base font-medium text-slate-900">{{ s.createdAt | date: 'medium' }}</p>
+          </div>
+          <div>
+            <p class="text-sm text-slate-500 mb-1">Paciente</p>
+            <p class="text-base font-medium text-slate-900">
+              {{ s.patientId || 'Cliente general' }}
+            </p>
+          </div>
+          <div>
+            <p class="text-sm text-slate-500 mb-1">Método de Pago</p>
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-slate-700 text-lg">
+                {{
+                  s.paymentMethod === 'cash'
+                    ? 'payments'
+                    : s.paymentMethod === 'card'
+                      ? 'credit_card'
+                      : 'account_balance'
+                }}
+              </span>
+              <span class="text-base font-medium text-slate-900 capitalize">
+                {{
+                  s.paymentMethod === 'cash'
+                    ? 'Efectivo'
+                    : s.paymentMethod === 'card'
+                      ? 'Tarjeta'
+                      : 'Transferencia'
+                }}
+              </span>
+            </div>
+          </div>
+          <div *ngIf="s.prescriptionNumber">
+            <p class="text-sm text-slate-500 mb-1">Número de Receta</p>
+            <p class="text-base font-medium text-slate-900">{{ s.prescriptionNumber }}</p>
+          </div>
+          <div *ngIf="s.notes">
+            <p class="text-sm text-slate-500 mb-1">Notas</p>
+            <p class="text-base text-slate-700">{{ s.notes }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200">
+          <h2 class="text-xl font-semibold text-slate-900">Productos Vendidos</h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200">
+            <thead class="bg-slate-50">
+              <tr>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
+                >
+                  Producto
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
+                >
+                  Lote
+                </th>
+                <th
+                  class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider"
+                >
+                  Cantidad
+                </th>
+                <th
+                  class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider"
+                >
+                  Precio Unit.
+                </th>
+                <th
+                  class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider"
+                >
+                  Descuento
+                </th>
+                <th
+                  class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider"
+                >
+                  Subtotal
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-slate-200">
+              <tr *ngFor="let item of s.items" class="hover:bg-slate-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-slate-900">
+                    {{ item.medicationStock?.medication?.name || 'Producto' }}
+                  </div>
+                  <div class="text-xs text-slate-500" *ngIf="item.expiryDate">
+                    Vence: {{ item.expiryDate | date: 'shortDate' }}
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                  {{ item.batchNumber || item.medicationStock?.batchNumber || '—' }}
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right font-medium"
+                >
+                  {{ item.quantity }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 text-right">
+                  {{ item.unitPrice | currency: 'USD' : 'symbol' : '1.2-2' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 text-right">
+                  <span *ngIf="item.discountPercent">{{ item.discountPercent }}%</span>
+                  <span *ngIf="!item.discountPercent && item.discountAmount">
+                    {{ item.discountAmount | currency: 'USD' : 'symbol' : '1.2-2' }}
+                  </span>
+                  <span *ngIf="!item.discountPercent && !item.discountAmount">—</span>
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right font-semibold"
+                >
+                  {{ item.subtotal | currency: 'USD' : 'symbol' : '1.2-2' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Totals Summary -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <h2 class="text-xl font-semibold text-slate-900 mb-4">Resumen de Totales</h2>
+        <div class="max-w-md ml-auto space-y-3">
+          <div class="flex justify-between text-slate-700">
+            <span>Subtotal:</span>
+            <span class="font-medium">{{ s.subtotal | currency: 'USD' : 'symbol' : '1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between text-slate-700" *ngIf="s.discountAmount">
+            <span>Descuento:</span>
+            <span class="font-medium text-red-600">
+              -{{ s.discountAmount | currency: 'USD' : 'symbol' : '1.2-2' }}
+            </span>
+          </div>
+          <div class="flex justify-between text-slate-700" *ngIf="s.taxAmount">
+            <span>Impuestos ({{ (s.taxRate || 0) * 100 }}%):</span>
+            <span class="font-medium">{{
+              s.taxAmount | currency: 'USD' : 'symbol' : '1.2-2'
+            }}</span>
+          </div>
+          <div class="border-t border-slate-200 pt-3">
+            <div class="flex justify-between text-lg font-semibold text-slate-900">
+              <span>Total:</span>
+              <span>{{ s.totalAmount | currency: 'USD' : 'symbol' : '1.2-2' }}</span>
+            </div>
+          </div>
+          <div class="flex justify-between text-slate-700">
+            <span>Monto Pagado:</span>
+            <span class="font-medium">{{
+              s.amountPaid | currency: 'USD' : 'symbol' : '1.2-2'
+            }}</span>
+          </div>
+          <div class="flex justify-between text-slate-700" *ngIf="s.changeAmount">
+            <span>Cambio:</span>
+            <span class="font-medium text-green-600">
+              {{ s.changeAmount | currency: 'USD' : 'symbol' : '1.2-2' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading() && !sale()" class="text-center py-16">
+      <span class="material-symbols-outlined text-6xl text-slate-300 mb-4">receipt_long</span>
+      <p class="text-slate-500 text-lg">No se encontró la venta</p>
+    </div>
+  </div>
+</div>

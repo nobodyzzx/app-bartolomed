@@ -1,0 +1,250 @@
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-6xl mx-auto">
+    @if (loading()) {
+      <div class="flex justify-center items-center py-20">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    } @else if (order()) {
+      <!-- Header -->
+      <header class="mb-8">
+        <div class="flex items-center gap-4 mb-4">
+          <button
+            (click)="goBack()"
+            class="w-9 h-9 rounded-full hover:bg-slate-100 transition-colors flex items-center justify-center"
+          >
+            <span class="material-symbols-outlined text-slate-600">arrow_back</span>
+          </button>
+          <div class="flex-1">
+            <h1 class="text-3xl font-bold text-slate-900">Recibir Productos</h1>
+            <p class="text-slate-600">Orden {{ order()!.orderNumber }}</p>
+          </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="bg-white rounded-lg border border-slate-200 p-4">
+            <div class="text-sm text-slate-600 mb-1">Total ítems</div>
+            <div class="text-2xl font-bold text-slate-900">{{ items.length }}</div>
+          </div>
+          <div class="bg-blue-50 rounded-lg border border-blue-200 p-4">
+            <div class="text-sm text-blue-700 mb-1">Recibiendo ahora</div>
+            <div class="text-2xl font-bold text-blue-700">{{ getTotalReceiving() }}</div>
+          </div>
+          <div class="bg-green-50 rounded-lg border border-green-200 p-4">
+            <div class="text-sm text-green-700 mb-1">Completos</div>
+            <div class="text-2xl font-bold text-green-700">{{ getItemsFullyReceived() }}</div>
+          </div>
+          <div class="bg-amber-50 rounded-lg border border-amber-200 p-4">
+            <div class="text-sm text-amber-700 mb-1">Parciales</div>
+            <div class="text-2xl font-bold text-amber-700">{{ getItemsPartiallyReceived() }}</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Form -->
+      <form [formGroup]="receiveForm" (ngSubmit)="submit()">
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-lg border border-slate-200 p-4 mb-6">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-medium text-slate-700">Acciones rápidas:</h3>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                (click)="receiveAll()"
+                class="inline-flex items-center gap-2 px-4 h-9 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-colors text-sm"
+              >
+                <span class="material-symbols-outlined text-lg">check_circle</span>
+                Recibir Todo
+              </button>
+              <button
+                type="button"
+                (click)="clearAll()"
+                class="inline-flex items-center gap-2 px-4 h-9 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-colors text-sm"
+              >
+                <span class="material-symbols-outlined text-lg">clear</span>
+                Limpiar Todo
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Items List -->
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden mb-6">
+          <div class="p-6 border-b border-slate-200">
+            <h2 class="text-lg font-semibold text-slate-900">Productos a Recibir</h2>
+          </div>
+          <div class="divide-y divide-slate-200" formArrayName="items">
+            @for (item of items.controls; track $index; let i = $index) {
+              <div class="p-6" [formGroupName]="i">
+                <div class="grid grid-cols-12 gap-4 items-start">
+                  <!-- Product Info -->
+                  <div class="col-span-12 md:col-span-5">
+                    <div class="text-sm font-medium text-slate-900">
+                      {{ getItemFormGroup(i).get('productName')?.value }}
+                    </div>
+                    <div class="mt-2 flex items-center gap-4 text-xs text-slate-500">
+                      <span>Ordenado: {{ getItemFormGroup(i).get('orderedQuantity')?.value }}</span>
+                      <span
+                        >Previo: {{ getItemFormGroup(i).get('previouslyReceived')?.value }}</span
+                      >
+                      <span class="font-medium text-amber-600">
+                        Pendiente: {{ getRemainingQuantity(i) }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Receiving Quantity -->
+                  <div class="col-span-12 md:col-span-3">
+                    <label class="block text-xs font-medium text-slate-700 mb-2"
+                      >Recibiendo Ahora</label
+                    >
+                    <input
+                      type="number"
+                      formControlName="receivingQuantity"
+                      min="0"
+                      [max]="getRemainingQuantity(i)"
+                      class="w-full h-10 px-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      [class.border-red-300]="
+                        getItemFormGroup(i).get('receivingQuantity')?.invalid &&
+                        getItemFormGroup(i).get('receivingQuantity')?.touched
+                      "
+                    />
+                    @if (
+                      getItemFormGroup(i).get('receivingQuantity')?.invalid &&
+                      getItemFormGroup(i).get('receivingQuantity')?.touched
+                    ) {
+                      <div class="text-xs text-red-600 mt-1">
+                        Cantidad inválida (máx: {{ getRemainingQuantity(i) }})
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Progress -->
+                  <div class="col-span-12 md:col-span-4">
+                    <label class="block text-xs font-medium text-slate-700 mb-2">Progreso</label>
+                    <div class="flex items-center gap-3">
+                      <div class="flex-1 bg-slate-200 rounded-full h-2 overflow-hidden">
+                        <div
+                          class="h-full transition-all duration-300"
+                          [ngClass]="
+                            getProgressPercentage(i) >= 100
+                              ? 'bg-green-600'
+                              : getProgressPercentage(i) > 0
+                                ? 'bg-blue-600'
+                                : 'bg-slate-300'
+                          "
+                          [style.width.%]="getProgressPercentage(i)"
+                        ></div>
+                      </div>
+                      <div class="text-xs font-medium text-slate-700 min-w-[60px] text-right">
+                        {{ getNewTotal(i) }} /
+                        {{ getItemFormGroup(i).get('orderedQuantity')?.value }}
+                      </div>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-1">
+                      {{ getProgressPercentage(i) | number: '1.0-0' }}%
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Batch & Expiry -->
+                <div class="mt-4 grid grid-cols-12 gap-4">
+                  <div class="col-span-12 md:col-span-6">
+                    <label class="block text-xs font-medium text-slate-700 mb-2"
+                      >Lote (opcional)</label
+                    >
+                    <input
+                      type="text"
+                      formControlName="batchNumber"
+                      placeholder="Ej: LOTE-ABC-123"
+                      class="w-full h-9 px-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <div class="col-span-12 md:col-span-6">
+                    <label class="block text-xs font-medium text-slate-700 mb-2"
+                      >Vencimiento (opcional)</label
+                    >
+                    <input
+                      type="date"
+                      formControlName="expiryDate"
+                      class="w-full h-9 px-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                </div>
+
+                <!-- Notes for this item -->
+                <div class="mt-4">
+                  <label class="block text-xs font-medium text-slate-700 mb-2"
+                    >Notas del producto</label
+                  >
+                  <input
+                    type="text"
+                    formControlName="notes"
+                    placeholder="Ej: Caja dañada, lote específico..."
+                    class="w-full h-9 px-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- General Notes -->
+        <div class="bg-white rounded-lg border border-slate-200 p-6 mb-6">
+          <label class="block text-sm font-medium text-slate-700 mb-3"
+            >Notas generales de recepción</label
+          >
+          <textarea
+            formControlName="notes"
+            rows="3"
+            placeholder="Observaciones generales sobre la recepción..."
+            class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+          ></textarea>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="bg-white rounded-lg border border-slate-200 p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              @if (isFullyReceived()) {
+                <div class="flex items-center gap-2 text-green-700">
+                  <span class="material-symbols-outlined">check_circle</span>
+                  <span class="font-medium">Todos los productos serán marcados como recibidos</span>
+                </div>
+              } @else if (getTotalReceiving() > 0) {
+                <div class="flex items-center gap-2 text-amber-700">
+                  <span class="material-symbols-outlined">info</span>
+                  <span class="font-medium">Recepción parcial: quedarán productos pendientes</span>
+                </div>
+              }
+            </div>
+            <div class="flex gap-3">
+              <button
+                type="button"
+                (click)="goBack()"
+                class="px-6 h-11 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-colors font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                [disabled]="loading() || receiveForm.invalid || getTotalReceiving() === 0"
+                class="px-6 h-11 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                @if (loading()) {
+                  <div
+                    class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"
+                  ></div>
+                  <span>Procesando...</span>
+                } @else {
+                  <span class="material-symbols-outlined">inventory_2</span>
+                  <span>Confirmar Recepción</span>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    }
+  </div>
+</div>

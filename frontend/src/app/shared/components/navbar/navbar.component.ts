@@ -85,6 +85,15 @@ export class NavbarComponent implements OnInit {
         if (this.clinics.length === 0 && !this.isSuperAdmin()) {
           console.warn('No hay clínicas disponibles para este usuario')
         }
+
+        // 🔄 AUTOSELECCIÓN: Si el usuario solo tiene UNA clínica y no ha seleccionado ninguna
+        if (!this.selectedClinicId && this.clinics.length === 1) {
+          const singleClinic = this.clinics[0]
+          console.log(`[Autoselección] Usuario tiene solo una clínica: "${singleClinic.name}"`)
+          this.selectedClinicId = singleClinic.id
+          this.clinicCtx.setClinic(singleClinic.id)
+          console.log(`[Autoselección] Clínica "${singleClinic.name}" seleccionada automáticamente`)
+        }
       },
       error: () => {
         this.clinics = []

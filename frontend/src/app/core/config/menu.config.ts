@@ -66,9 +66,15 @@ export const MENU_ITEMS: MenuItem[] = [
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
       {
-        label: 'Generación de Pedidos',
+        label: 'Proveedores',
+        icon: 'local_shipping',
+        route: '/dashboard/pharmacy/suppliers',
+        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
+      },
+      {
+        label: 'Órdenes de Compra',
         icon: 'shopping_cart',
-        route: '/dashboard/pharmacy/order-generation',
+        route: '/dashboard/pharmacy/purchase-orders',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
       {

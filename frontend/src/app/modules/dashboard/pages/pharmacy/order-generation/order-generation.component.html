@@ -5,8 +5,8 @@
       <div class="flex items-center gap-4">
         <button
           type="button"
+          (click)="goBack()"
           class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          matTooltip="Volver"
           aria-label="Volver"
         >
           <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
@@ -92,13 +92,14 @@
       </div>
     </div>
 
-    <!-- Búsqueda y Acciones -->
+    <!-- Búsqueda y Filtros -->
     <div class="flex items-center gap-4 mb-6">
+      <!-- Campo de búsqueda -->
       <div class="flex-1 max-w-2xl">
         <div class="relative">
           <input
             type="text"
-            (keyup)="applyFilter($event)"
+            (keyup)="applyTextFilter($event)"
             placeholder="ID, proveedor, estado..."
             class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
           />
@@ -108,18 +109,46 @@
         </div>
       </div>
 
-      <button
-        type="button"
-        (keyup.enter)="applyFilter($event)"
-        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-        aria-label="Buscar"
-      >
-        <span class="material-symbols-outlined msz-18">search</span>
-        Buscar
-      </button>
+      <!-- Filtro de Estado -->
+      <div class="relative">
+        <select
+          [value]="statusFilter()"
+          (change)="changeStatusFilter($any($event.target).value)"
+          class="h-11 rounded-full bg-blue-50 px-5 pr-10 text-slate-900 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 transition border-0 appearance-none cursor-pointer font-medium"
+        >
+          <option value="all">Todos los estados</option>
+          <option value="draft">Borrador</option>
+          <option value="pending">Pendiente</option>
+          <option value="approved">Aprobado</option>
+          <option value="sent">Enviado</option>
+          <option value="partially_received">Parcialmente recibido</option>
+          <option value="received">Recibido</option>
+          <option value="delivered">Entregado</option>
+          <option value="cancelled">Cancelado</option>
+        </select>
+        <span
+          class="material-symbols-outlined msz-18 absolute right-3 top-2.5 text-blue-400 pointer-events-none"
+          >expand_more</span
+        >
+      </div>
 
-      <div class="flex-1"></div>
+      <!-- Filtro de Proveedor -->
+      <div class="relative">
+        <select
+          [value]="supplierFilter()"
+          (change)="changeSupplierFilter($any($event.target).value)"
+          class="h-11 rounded-full bg-blue-50 px-5 pr-10 text-slate-900 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 transition border-0 appearance-none cursor-pointer font-medium min-w-[200px]"
+        >
+          <option value="all">Todos los proveedores</option>
+          <option *ngFor="let s of suppliers" [value]="s.id">{{ s.name }}</option>
+        </select>
+        <span
+          class="material-symbols-outlined msz-18 absolute right-3 top-2.5 text-blue-400 pointer-events-none"
+          >expand_more</span
+        >
+      </div>
 
+      <!-- Botón Exportar -->
       <button
         type="button"
         class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
@@ -131,207 +160,396 @@
     </div>
 
     <!-- Tabla de Pedidos -->
-    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-      <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
-        <!-- Columna ID -->
-        <ng-container matColumnDef="id">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            mat-sort-header
-            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
-          >
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined msz-18 text-slate-600"
-                >confirmation_number</span
-              >
-              ID Pedido
-            </div>
-          </th>
-          <td
-            mat-cell
-            *matCellDef="let order"
-            class="!p-4 !border-b !border-slate-100 text-blue-700 font-medium"
-          >
-            {{ order.id }}
-          </td>
-        </ng-container>
-
-        <!-- Columna Proveedor -->
-        <ng-container matColumnDef="supplier">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            mat-sort-header
-            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
-          >
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined msz-18 text-slate-600">business</span>
-              Proveedor
-            </div>
-          </th>
-          <td mat-cell *matCellDef="let order" class="!p-4 !border-b !border-slate-100">
-            <div>
-              <div class="font-medium text-slate-900">{{ order.supplierName }}</div>
-              <div class="text-xs text-slate-500">ID: {{ order.supplierId }}</div>
-            </div>
-          </td>
-        </ng-container>
-
-        <!-- Columna Fecha -->
-        <ng-container matColumnDef="date">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            mat-sort-header
-            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
-          >
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined msz-18 text-slate-600">calendar_today</span>
-              Fecha
-            </div>
-          </th>
-          <td
-            mat-cell
-            *matCellDef="let order"
-            class="!p-4 !border-b !border-slate-100 text-slate-700"
-          >
-            {{ order.date | date: 'dd/MM/yyyy' }}
-          </td>
-        </ng-container>
-
-        <!-- Columna Estado -->
-        <ng-container matColumnDef="status">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
-          >
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined msz-18 text-slate-600">flag</span>
-              Estado
-            </div>
-          </th>
-          <td mat-cell *matCellDef="let order" class="!p-4 !border-b !border-slate-100">
-            <span
-              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border"
-              [ngClass]="{
-                'bg-orange-50 text-orange-700 border-orange-200': order.status === 'pending',
-                'bg-green-50 text-green-700 border-green-200': order.status === 'approved',
-                'bg-blue-50 text-blue-700 border-blue-200': order.status === 'delivered',
-                'bg-red-50 text-red-700 border-red-200': order.status === 'cancelled',
-              }"
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+      <div class="overflow-x-auto">
+        <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
+          <!-- Columna Pedido -->
+          <ng-container matColumnDef="orderNumber">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
             >
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600 msz-18"
+                  >confirmation_number</span
+                >
+                Pedido
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let order" class="p-4">
+              <div class="text-sm font-medium text-blue-700">
+                {{ order.orderNumber || order.id }}
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Columna Proveedor -->
+          <ng-container matColumnDef="supplier">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600 msz-18">business</span>
+                Proveedor
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let order" class="p-4">
+              <div>
+                <div class="text-sm font-medium text-slate-900">
+                  {{ order.supplier?.name || '-' }}
+                </div>
+                <div class="text-xs text-slate-500">ID: {{ order.supplierId }}</div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Columna Fecha -->
+          <ng-container matColumnDef="orderDate">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600 msz-18">calendar_today</span>
+                Fecha
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let order" class="p-4">
+              <div class="text-sm text-slate-700">
+                {{ order.orderDate | date: 'dd/MM/yyyy' }}
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Columna Estado -->
+          <ng-container matColumnDef="status">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600 msz-18">flag</span>
+                Estado
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let order" class="p-4">
               <span
-                class="w-1.5 h-1.5 rounded-full"
+                class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
                 [ngClass]="{
-                  'bg-orange-600': order.status === 'pending',
-                  'bg-green-600': order.status === 'approved',
-                  'bg-blue-600': order.status === 'delivered',
-                  'bg-red-600': order.status === 'cancelled',
+                  'bg-gray-100 text-gray-800 border-gray-200': order.status === 'draft',
+                  'bg-orange-100 text-orange-800 border-orange-200': order.status === 'pending',
+                  'bg-green-100 text-green-800 border-green-200': order.status === 'approved',
+                  'bg-blue-100 text-blue-800 border-blue-200': order.status === 'sent',
+                  'bg-purple-100 text-purple-800 border-purple-200':
+                    order.status === 'partially_received',
+                  'bg-cyan-100 text-cyan-800 border-cyan-200': order.status === 'received',
+                  'bg-teal-100 text-teal-800 border-teal-200': order.status === 'delivered',
+                  'bg-red-100 text-red-800 border-red-200': order.status === 'cancelled',
                 }"
               >
+                <span
+                  class="w-2 h-2 rounded-full"
+                  [ngClass]="{
+                    'bg-gray-500': order.status === 'draft',
+                    'bg-orange-500': order.status === 'pending',
+                    'bg-green-500': order.status === 'approved',
+                    'bg-blue-500': order.status === 'sent',
+                    'bg-purple-500': order.status === 'partially_received',
+                    'bg-cyan-500': order.status === 'received',
+                    'bg-teal-500': order.status === 'delivered',
+                    'bg-red-500': order.status === 'cancelled',
+                  }"
+                ></span>
+                {{ getStatusLabel(order.status || 'pending') }}
               </span>
-              {{ getStatusLabel(order.status || 'pending') }}
-            </span>
-          </td>
-        </ng-container>
+            </td>
+          </ng-container>
 
-        <!-- Columna Total -->
-        <ng-container matColumnDef="total">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            mat-sort-header
-            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
-          >
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined msz-18 text-slate-600">attach_money</span>
-              Total
-            </div>
-          </th>
-          <td
-            mat-cell
-            *matCellDef="let order"
-            class="!p-4 !border-b !border-slate-100 text-green-700 font-semibold"
-          >
-            ${{ order.total | number: '1.2-2' }}
-          </td>
-        </ng-container>
+          <!-- Columna Total -->
+          <ng-container matColumnDef="totalAmount">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-right"
+            >
+              <div class="flex items-center justify-end gap-2">
+                <span class="material-symbols-outlined text-blue-600 msz-18">attach_money</span>
+                Total
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let order" class="p-4 text-right">
+              <div class="text-sm font-semibold text-green-700">
+                ${{ order.totalAmount | number: '1.2-2' }}
+              </div>
+            </td>
+          </ng-container>
 
-        <!-- Columna Acciones -->
-        <ng-container matColumnDef="actions">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
-          >
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined msz-18 text-slate-600">settings</span>
-              Acciones
-            </div>
-          </th>
-          <td mat-cell *matCellDef="let order" class="!p-4 !border-b !border-slate-100">
-            <div class="flex items-center gap-1">
-              <button
-                mat-icon-button
-                class="w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-200"
-                (click)="viewOrder(order)"
-                matTooltip="Ver detalle del pedido"
-                aria-label="Ver detalle del pedido"
-              >
-                <span class="material-symbols-outlined msz-20 leading-none">visibility</span>
-              </button>
-              <button
-                mat-icon-button
-                class="w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-amber-200"
-                (click)="editOrder(order)"
-                [disabled]="order.status === 'delivered' || order.status === 'cancelled'"
-                matTooltip="Editar pedido"
-                aria-label="Editar pedido"
-              >
-                <span class="material-symbols-outlined msz-20 leading-none">edit</span>
-              </button>
-              <button
-                mat-icon-button
-                class="w-9 h-9 text-green-600 hover:bg-green-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-green-200"
-                (click)="approveOrder(order)"
-                [disabled]="order.status !== 'pending'"
-                matTooltip="Aprobar pedido"
-                aria-label="Aprobar pedido"
-              >
-                <span class="material-symbols-outlined msz-20 leading-none">check_circle</span>
-              </button>
-              <button
-                mat-icon-button
-                class="w-9 h-9 text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-200"
-                (click)="cancelOrder(order)"
-                [disabled]="order.status === 'delivered' || order.status === 'cancelled'"
-                matTooltip="Cancelar pedido"
-                aria-label="Cancelar pedido"
-              >
-                <span class="material-symbols-outlined msz-20 leading-none">cancel</span>
-              </button>
-            </div>
-          </td>
-        </ng-container>
+          <!-- Columna Acciones -->
+          <ng-container matColumnDef="actions">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
+            >
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600 msz-18">settings</span>
+                Acciones
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let order" class="p-4">
+              <div class="flex gap-2 items-center">
+                <button
+                  mat-icon-button
+                  class="w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-200"
+                  (click)="viewOrder(order)"
+                  matTooltip="Ver detalle del pedido"
+                  aria-label="Ver detalle del pedido"
+                >
+                  <span class="material-symbols-outlined msz-20 leading-none">visibility</span>
+                </button>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="hover:bg-transparent"></tr>
-        <tr
-          mat-row
-          *matRowDef="let row; columns: displayedColumns"
-          class="hover:bg-slate-50 transition-colors"
-        ></tr>
-      </table>
+                <button
+                  mat-icon-button
+                  class="w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-amber-200"
+                  (click)="editOrder(order)"
+                  [disabled]="order.status === 'delivered' || order.status === 'cancelled'"
+                  matTooltip="Editar pedido"
+                  aria-label="Editar pedido"
+                >
+                  <span class="material-symbols-outlined msz-20 leading-none">edit</span>
+                </button>
+
+                <button
+                  mat-icon-button
+                  class="w-9 h-9 text-green-600 hover:bg-green-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-green-200"
+                  (click)="approveOrder(order)"
+                  [disabled]="order.status !== 'pending'"
+                  matTooltip="Aprobar pedido"
+                  aria-label="Aprobar pedido"
+                >
+                  <span class="material-symbols-outlined msz-20 leading-none">check_circle</span>
+                </button>
+
+                <button
+                  mat-icon-button
+                  class="w-9 h-9 text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-200"
+                  (click)="cancelOrder(order)"
+                  [disabled]="order.status === 'delivered' || order.status === 'cancelled'"
+                  matTooltip="Cancelar pedido"
+                  aria-label="Cancelar pedido"
+                >
+                  <span class="material-symbols-outlined msz-20 leading-none">cancel</span>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr
+            mat-header-row
+            *matHeaderRowDef="displayedColumns"
+            class="border-b-2 border-slate-200"
+          ></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            class="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+          ></tr>
+        </table>
+      </div>
+
+      <!-- Mensaje cuando no hay datos -->
+      <div *ngIf="dataSource.data.length === 0" class="text-center py-12 px-6">
+        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4">shopping_cart</span>
+        <p class="text-slate-500 text-lg mb-4">No se encontraron pedidos</p>
+        <button
+          type="button"
+          (click)="createNewOrder()"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">add</span>
+          Crear primer pedido
+        </button>
+      </div>
 
       <!-- Paginador -->
-      <div class="border-t border-slate-100">
-        <mat-paginator
-          [pageSizeOptions]="[10, 25, 50, 100]"
-          showFirstLastButtons
-          aria-label="Seleccionar página de pedidos"
-        ></mat-paginator>
-      </div>
+      <mat-paginator
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        showFirstLastButtons
+        aria-label="Seleccionar página de pedidos"
+        class="bg-slate-50 border-t border-slate-200"
+      ></mat-paginator>
+    </div>
+
+    <!-- Contador de resultados -->
+    <div class="mt-6 text-center text-slate-600">
+      <p *ngIf="dataSource.data.length > 0" class="text-sm">
+        Mostrando {{ dataSource.data.length }} pedidos en total
+      </p>
     </div>
   </div>
 </div>
+
+<!-- Modal crear orden (multi-ítem) -->
+<pharmacy-ui-modal
+  [open]="createOpen()"
+  (closed)="createOpen.set(false)"
+  (submitted)="submitCreate()"
+  [loading]="creating()"
+  [title]="'Nueva orden de compra'"
+  [size]="'xl'"
+  [confirmText]="'Crear orden'"
+  [cancelText]="'Cancelar'"
+>
+  <div class="grid gap-6">
+    <!-- Encabezado de la orden -->
+    <div class="grid md:grid-cols-2 gap-4">
+      <!-- Proveedor -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-2">
+          Proveedor <span class="text-red-500">*</span>
+        </label>
+        <div class="relative">
+          <select
+            [ngModel]="newSupplierId()"
+            (ngModelChange)="newSupplierId.set($event)"
+            class="w-full h-11 rounded-full bg-slate-50 px-5 pr-10 text-slate-900 shadow-sm hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 transition border border-slate-200 appearance-none cursor-pointer font-medium"
+          >
+            <option value="">Seleccione proveedor</option>
+            <option *ngFor="let s of suppliers" [value]="s.id">{{ s.name }}</option>
+          </select>
+          <span
+            class="material-symbols-outlined msz-18 absolute right-3 top-2.5 text-slate-400 pointer-events-none"
+            >expand_more</span
+          >
+        </div>
+      </div>
+
+      <!-- Fecha de entrega -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-2">Entrega estimada</label>
+        <mat-form-field appearance="outline" class="w-full !bg-transparent">
+          <input
+            matInput
+            [matDatepicker]="pickerExpected"
+            [ngModel]="newExpectedDate()"
+            (dateChange)="newExpectedDate.set($event.value)"
+            placeholder="Seleccione fecha"
+          />
+          <mat-datepicker-toggle matIconSuffix [for]="pickerExpected"></mat-datepicker-toggle>
+          <mat-datepicker #pickerExpected></mat-datepicker>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Ítems del pedido -->
+    <div class="grid gap-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-slate-900">Ítems del pedido</h3>
+        <button
+          type="button"
+          (click)="addItem()"
+          class="inline-flex items-center gap-2 h-10 px-4 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 border-0 transition-all"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none">add</span>
+          Agregar ítem
+        </button>
+      </div>
+
+      <!-- Encabezados de columnas -->
+      <div class="grid grid-cols-12 gap-3 text-xs font-medium text-slate-500 px-2">
+        <div class="col-span-5">Producto/Referencia</div>
+        <div class="col-span-2">Cantidad</div>
+        <div class="col-span-2">Costo unitario</div>
+        <div class="col-span-2">Subtotal</div>
+        <div class="col-span-1 text-right">Acciones</div>
+      </div>
+
+      <!-- Filas de ítems -->
+      <div class="space-y-2">
+        <div
+          *ngFor="let it of items(); let i = index"
+          class="grid grid-cols-12 gap-3 items-center border-2 border-slate-200 rounded-xl p-4 bg-gradient-to-br from-slate-50 to-white hover:border-blue-200 transition-colors"
+        >
+          <!-- Producto -->
+          <div class="col-span-5">
+            <input
+              type="text"
+              [ngModel]="it.productName"
+              (ngModelChange)="updateItem(i, 'productName', $event)"
+              placeholder="Ej. Paracetamol 500mg"
+              class="w-full h-10 rounded-lg bg-white px-4 text-slate-900 placeholder-slate-400 shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-blue-200 transition border border-slate-200"
+            />
+          </div>
+
+          <!-- Cantidad -->
+          <div class="col-span-2">
+            <input
+              type="number"
+              min="1"
+              [ngModel]="it.quantity"
+              (ngModelChange)="updateItem(i, 'quantity', +$event)"
+              placeholder="0"
+              class="w-full h-10 rounded-lg bg-white px-4 text-slate-900 placeholder-slate-400 shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-blue-200 transition border border-slate-200"
+            />
+          </div>
+
+          <!-- Costo unitario -->
+          <div class="col-span-2">
+            <div class="relative">
+              <span class="absolute left-3 top-2 text-slate-500 text-sm">$</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                [ngModel]="it.unitPrice"
+                (ngModelChange)="updateItem(i, 'unitPrice', +$event)"
+                placeholder="0.00"
+                class="w-full h-10 rounded-lg bg-white pl-7 pr-4 text-slate-900 placeholder-slate-400 shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-blue-200 transition border border-slate-200"
+              />
+            </div>
+          </div>
+
+          <!-- Subtotal -->
+          <div class="col-span-2">
+            <div
+              class="h-10 rounded-lg bg-slate-100 px-4 flex items-center text-sm font-semibold text-slate-900 border border-slate-200"
+            >
+              ${{ (it.quantity || 0) * (it.unitPrice || 0) | number: '1.2-2' }}
+            </div>
+          </div>
+
+          <!-- Eliminar -->
+          <div class="col-span-1 flex justify-end">
+            <button
+              type="button"
+              class="w-9 h-9 inline-flex items-center justify-center rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 border-0 disabled:opacity-40 disabled:cursor-not-allowed"
+              (click)="removeItem(i)"
+              [disabled]="items().length <= 1"
+              aria-label="Eliminar ítem"
+            >
+              <span class="material-symbols-outlined msz-18 leading-none">delete</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Totales -->
+    <div class="flex items-center justify-end gap-6 pt-4 border-t border-slate-200">
+      <div class="text-right">
+        <div class="text-sm text-slate-500 mb-1">Total de la orden</div>
+        <div class="text-3xl font-bold text-slate-900">${{ total() | number: '1.2-2' }}</div>
+      </div>
+    </div>
+  </div>
+</pharmacy-ui-modal>

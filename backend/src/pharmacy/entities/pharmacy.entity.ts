@@ -1,17 +1,17 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  OneToMany,
-  JoinColumn,
   BeforeInsert,
   BeforeUpdate,
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
 import { Clinic } from '../../clinics/entities/clinic.entity';
+import { User } from '../../users/entities/user.entity';
 
 export enum MedicationCategory {
   ANALGESIC = 'analgesic',
@@ -183,6 +183,11 @@ export class MedicationStock {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  // Virtual property for clinicId (for frontend compatibility)
+  get clinicId(): string | undefined {
+    return this.clinic?.id;
+  }
 
   // Helper methods
   isExpired(): boolean {

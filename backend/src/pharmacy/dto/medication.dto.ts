@@ -1,5 +1,4 @@
-import { Type } from 'class-transformer';
-import { IsDecimal, IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { MedicationCategory, StorageCondition } from '../entities/pharmacy.entity';
 
 export class CreateMedicationDto {
@@ -158,17 +157,17 @@ export class CreateMedicationStockDto {
   @Min(1)
   quantity: number;
 
-  @IsDecimal({ decimal_digits: '2' })
+  @IsNumber()
   unitCost: number;
 
-  @IsDecimal({ decimal_digits: '2' })
+  @IsNumber()
   sellingPrice: number;
 
-  @Type(() => Date)
-  expiryDate: Date;
+  @IsString()
+  expiryDate: string;
 
-  @Type(() => Date)
-  receivedDate: Date;
+  @IsString()
+  receivedDate: string;
 
   @IsOptional()
   @IsString()
@@ -194,16 +193,16 @@ export class UpdateMedicationStockDto {
   quantity?: number;
 
   @IsOptional()
-  @IsDecimal({ decimal_digits: '2' })
+  @IsNumber()
   unitCost?: number;
 
   @IsOptional()
-  @IsDecimal({ decimal_digits: '2' })
+  @IsNumber()
   sellingPrice?: number;
 
   @IsOptional()
-  @Type(() => Date)
-  expiryDate?: Date;
+  @IsString()
+  expiryDate?: string;
 
   @IsOptional()
   @IsString()
@@ -216,4 +215,24 @@ export class UpdateMedicationStockDto {
 
   @IsOptional()
   isActive?: boolean;
+}
+
+export class TransferStockDto {
+  @IsString()
+  sourceStockId: string;
+
+  @IsString()
+  toClinicId: string;
+
+  @IsNumber()
+  @Min(1)
+  quantity: number;
+
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @IsOptional()
+  @IsString()
+  note?: string;
 }

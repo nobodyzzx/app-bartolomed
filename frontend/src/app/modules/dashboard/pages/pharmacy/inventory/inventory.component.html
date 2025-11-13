@@ -7,7 +7,6 @@
           type="button"
           (click)="goBack()"
           class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          matTooltip="Volver"
           aria-label="Volver"
         >
           <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
@@ -19,15 +18,53 @@
           <p class="text-slate-600">Gestión y control de medicamentos e insumos</p>
         </div>
       </div>
-      <button
-        type="button"
-        (click)="addProduct()"
-        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-        aria-label="Crear nuevo producto"
-      >
-        <span class="material-symbols-outlined msz-20 leading-none">add</span>
-        Nuevo Producto
-      </button>
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          (click)="goToMedications()"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-purple-50 text-purple-600 hover:bg-purple-100 hover:text-purple-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 focus-visible:ring-offset-1 transition-all border-0"
+          aria-label="Ver catálogo de medicamentos"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">library_books</span>
+          Catálogo
+        </button>
+        <button
+          type="button"
+          routerLink="/dashboard/pharmacy/inventory/transfer"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:ring-offset-1 transition-all border-0"
+          aria-label="Transferir stock entre clínicas"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">local_shipping</span>
+          Transferir
+        </button>
+        <button
+          type="button"
+          (click)="openImportModal()"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+          aria-label="Importar listado"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">upload_file</span>
+          Importar
+        </button>
+        <button
+          type="button"
+          (click)="createMedication()"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-200 focus-visible:ring-offset-1 transition-all border-0"
+          aria-label="Crear nuevo medicamento"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">medication</span>
+          Crear Medicamento
+        </button>
+        <button
+          type="button"
+          (click)="addProduct()"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          aria-label="Agregar stock"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">add</span>
+          Agregar Stock
+        </button>
+      </div>
     </div>
 
     <!-- Estadísticas -->
@@ -46,7 +83,6 @@
           >
         </div>
       </div>
-
       <div
         class="bg-orange-50 p-4 rounded-xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
       >
@@ -59,7 +95,6 @@
           <span class="material-symbols-outlined text-orange-500 msz-40 !w-10 !h-10">warning</span>
         </div>
       </div>
-
       <div
         class="bg-red-50 p-4 rounded-xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
       >
@@ -72,7 +107,6 @@
           <span class="material-symbols-outlined text-red-500 msz-40 !w-10 !h-10">schedule</span>
         </div>
       </div>
-
       <div
         class="bg-green-50 p-4 rounded-xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
       >
@@ -93,13 +127,12 @@
 
     <!-- Contenido Principal -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
-      <!-- Barra de Búsqueda y Filtros -->
       <div class="flex items-center gap-4 mb-6">
         <div class="flex-1 max-w-2xl">
           <div class="relative">
             <input
               type="text"
-              [(ngModel)]="searchTerm"
+              [(ngModel)]="searchTermRaw"
               (input)="applyFilterManual()"
               placeholder="Nombre, marca, categoría..."
               class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
@@ -109,20 +142,17 @@
             >
           </div>
         </div>
-
         <button
           type="button"
           (click)="applyFilterManual()"
-          [disabled]="!searchTerm?.trim()"
+          [disabled]="!searchTermRaw?.trim()"
           class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
           aria-label="Buscar"
         >
           <span class="material-symbols-outlined msz-18">search</span>
           Buscar
         </button>
-
         <div class="flex-1"></div>
-
         <button
           type="button"
           class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
@@ -134,216 +164,238 @@
       </div>
     </div>
 
-    <!-- Tabla de Productos -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="overflow-x-auto">
-        <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
-          <!-- Columna ID -->
-          <ng-container matColumnDef="id">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              mat-sort-header
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">tag</span>
-                ID
-              </div>
-            </th>
-            <td mat-cell *matCellDef="let product" class="p-4 text-blue-700 font-medium">
-              {{ product.id }}
-            </td>
-          </ng-container>
-
-          <!-- Columna Nombre -->
-          <ng-container matColumnDef="name">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              mat-sort-header
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">medication</span>
-                Producto
-              </div>
-            </th>
-            <td mat-cell *matCellDef="let product" class="p-4">
-              <div class="flex flex-col">
-                <span class="font-medium text-slate-900">{{ product.name }}</span>
-                <span class="text-xs text-slate-500">{{ product.category }}</span>
-              </div>
-            </td>
-          </ng-container>
-
-          <!-- Columna Marca -->
-          <ng-container matColumnDef="brand">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              mat-sort-header
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">business</span>
+        <table class="min-w-full divide-y divide-slate-200">
+          <thead class="bg-slate-50">
+            <tr>
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+              >
+                Lote
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+              >
+                Medicamento
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+              >
                 Marca
-              </div>
-            </th>
-            <td mat-cell *matCellDef="let product" class="p-4 text-slate-600">
-              {{ product.brand }}
-            </td>
-          </ng-container>
-
-          <!-- Columna Stock -->
-          <ng-container matColumnDef="stock">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              mat-sort-header
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">inventory_2</span>
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+              >
                 Stock
-              </div>
-            </th>
-            <td mat-cell *matCellDef="let product" class="p-4">
-              <span
-                class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium"
-                [ngClass]="
-                  isLowStock(product)
-                    ? 'bg-red-100 text-red-800 border border-red-200'
-                    : 'bg-green-100 text-green-800 border border-green-200'
-                "
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
               >
-                <span
-                  class="w-2 h-2 rounded-full"
-                  [ngClass]="isLowStock(product) ? 'bg-red-500' : 'bg-green-500'"
-                ></span>
-                {{ product.stock }} unidades
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Columna Precio -->
-          <ng-container matColumnDef="price">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              mat-sort-header
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">attach_money</span>
-                Precio
-              </div>
-            </th>
-            <td mat-cell *matCellDef="let product" class="p-4 text-green-700 font-semibold">
-              ${{ product.price | number: '1.2-2' }}
-            </td>
-          </ng-container>
-
-          <!-- Columna Fecha de Vencimiento -->
-          <ng-container matColumnDef="expirationDate">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              mat-sort-header
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">schedule</span>
+                Precio Venta
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+              >
                 Vencimiento
-              </div>
-            </th>
-            <td mat-cell *matCellDef="let product" class="p-4">
-              <span
-                class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium"
-                [ngClass]="
-                  isExpiring(product)
-                    ? 'bg-orange-100 text-orange-800 border border-orange-200'
-                    : 'bg-slate-100 text-slate-700 border border-slate-200'
-                "
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
               >
-                {{ product.expirationDate | date: 'dd/MM/yyyy' }}
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Columna Ubicación -->
-          <ng-container matColumnDef="location">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">place</span>
                 Ubicación
-              </div>
-            </th>
-            <td mat-cell *matCellDef="let product" class="p-4 text-slate-600">
-              {{ product.location }}
-            </td>
-          </ng-container>
-
-          <!-- Columna Acciones -->
-          <ng-container matColumnDef="actions">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">settings</span>
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+              >
+                Estado
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+              >
                 Acciones
-              </div>
-            </th>
-            <td mat-cell *matCellDef="let product" class="p-4">
-              <div class="flex gap-2 items-center">
-                <button
-                  mat-icon-button
-                  class="w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-amber-200"
-                  (click)="editProduct(product)"
-                  matTooltip="Editar producto"
-                  aria-label="Editar producto"
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-slate-100">
+            <tr
+              *ngFor="let product of filteredProducts; trackBy: trackById"
+              class="hover:bg-slate-50"
+            >
+              <td class="px-4 py-3 text-blue-700 font-medium text-xs">{{ product.batchNumber }}</td>
+              <td class="px-4 py-3">
+                <div class="flex flex-col">
+                  <span class="font-medium text-slate-900">{{
+                    product.medication?.name || 'Sin nombre'
+                  }}</span>
+                  <span class="text-xs text-slate-500"
+                    >{{ product.medication?.strength }} - {{ product.medication?.dosageForm }}</span
+                  >
+                </div>
+              </td>
+              <td class="px-4 py-3 text-slate-600">{{ product.medication?.brandName || '-' }}</td>
+              <td class="px-4 py-3">
+                <span
+                  class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
+                  [ngClass]="
+                    isLowStock(product)
+                      ? 'bg-red-50 text-red-700 border-red-200'
+                      : 'bg-green-50 text-green-700 border-green-200'
+                  "
                 >
-                  <span class="material-symbols-outlined msz-20 leading-none">edit</span>
-                </button>
-                <button
-                  mat-icon-button
-                  class="w-9 h-9 text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-200"
-                  (click)="deleteProduct(product)"
-                  matTooltip="Eliminar producto"
-                  aria-label="Eliminar producto"
+                  <span
+                    class="w-2 h-2 rounded-full"
+                    [ngClass]="isLowStock(product) ? 'bg-red-500' : 'bg-green-500'"
+                  ></span>
+                  {{ product.quantity }} unidades
+                </span>
+              </td>
+              <td class="px-4 py-3 text-green-700 font-semibold">
+                ${{ product.sellingPrice | number: '1.2-2' }}
+              </td>
+              <td class="px-4 py-3">
+                <span
+                  class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
+                  [ngClass]="
+                    isExpiring(product)
+                      ? 'bg-orange-50 text-orange-700 border-orange-200'
+                      : 'bg-slate-50 text-slate-700 border-slate-200'
+                  "
                 >
-                  <span class="material-symbols-outlined msz-20 leading-none">delete</span>
-                </button>
-              </div>
-            </td>
-          </ng-container>
-
-          <tr
-            mat-header-row
-            *matHeaderRowDef="displayedColumns"
-            class="border-b-2 border-slate-200"
-          ></tr>
-          <tr
-            mat-row
-            *matRowDef="let row; columns: displayedColumns"
-            class="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-          ></tr>
+                  {{ product.expiryDate | date: 'dd/MM/yyyy' }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-slate-600">{{ product.location || '-' }}</td>
+              <td class="px-4 py-3">
+                <span
+                  class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
+                  [ngClass]="productStatus(product).classes"
+                >
+                  <span class="w-2 h-2 rounded-full" [ngClass]="productStatus(product).dot"></span>
+                  {{ productStatus(product).label }}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex gap-2 items-center">
+                  <button
+                    type="button"
+                    class="w-9 h-9 inline-flex items-center justify-center text-amber-600 hover:bg-amber-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-amber-200"
+                    (click)="editProduct(product)"
+                    aria-label="Editar producto"
+                  >
+                    <span class="material-symbols-outlined msz-20 leading-none">edit</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="w-9 h-9 inline-flex items-center justify-center text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-200"
+                    (click)="deleteProduct(product)"
+                    aria-label="Eliminar producto"
+                  >
+                    <span class="material-symbols-outlined msz-20 leading-none">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <ng-container *ngIf="loading(); else dataRows">
+              <tr *ngFor="let _ of [1, 2, 3, 4, 5, 6]" class="animate-pulse">
+                <td class="px-4 py-3"><div class="h-3 w-20 bg-slate-200 rounded"></div></td>
+                <td class="px-4 py-3"><div class="h-3 w-40 bg-slate-200 rounded"></div></td>
+                <td class="px-4 py-3"><div class="h-3 w-32 bg-slate-200 rounded"></div></td>
+                <td class="px-4 py-3"><div class="h-6 w-24 bg-slate-200 rounded-full"></div></td>
+                <td class="px-4 py-3"><div class="h-3 w-16 bg-slate-200 rounded"></div></td>
+                <td class="px-4 py-3"><div class="h-6 w-28 bg-slate-200 rounded-full"></div></td>
+                <td class="px-4 py-3"><div class="h-3 w-24 bg-slate-200 rounded"></div></td>
+                <td class="px-4 py-3"><div class="h-6 w-28 bg-slate-200 rounded-full"></div></td>
+                <td class="px-4 py-3"><div class="h-6 w-20 bg-slate-200 rounded"></div></td>
+              </tr>
+            </ng-container>
+            <ng-template #dataRows>
+              <tr *ngIf="filteredProducts.length === 0">
+                <td colspan="9" class="px-4 py-10 text-center text-slate-500">
+                  <div class="flex flex-col items-center gap-2">
+                    <span class="material-symbols-outlined text-3xl text-slate-400"
+                      >inventory_2</span
+                    >
+                    <span>No hay productos que coincidan con la búsqueda</span>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+          </tbody>
         </table>
       </div>
-
-      <!-- Paginador -->
-      <mat-paginator
-        [pageSizeOptions]="[10, 25, 50, 100]"
-        showFirstLastButtons
-        aria-label="Seleccionar página de productos"
-        class="bg-slate-50 border-t border-slate-200"
-      ></mat-paginator>
     </div>
   </div>
 </div>
+
+<!-- Modal: Importar desde CSV (carga y vista previa) -->
+<pharmacy-ui-modal
+  [open]="importOpen()"
+  (closed)="importOpen.set(false)"
+  (submitted)="confirmImportPreview()"
+  [loading]="importLoading()"
+  [title]="'Importar listado'"
+  [size]="'xl'"
+  [confirmText]="'Confirmar'"
+  [cancelText]="'Cancelar'"
+>
+  <div class="space-y-6">
+    <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+      <p class="text-sm text-slate-700 mb-3">
+        Selecciona un archivo <strong>.csv</strong> (separado por coma o punto y coma).
+      </p>
+      <input
+        type="file"
+        accept=".csv"
+        (change)="onFileSelected($event)"
+        class="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+      />
+      <div *ngIf="importFileName()" class="mt-3 text-xs text-slate-600 flex items-center gap-2">
+        <span class="material-symbols-outlined msz-18 text-blue-500">description</span>
+        {{ importFileName() }}
+      </div>
+    </div>
+
+    <div *ngIf="importRows.length" class="border rounded-lg overflow-hidden">
+      <div class="overflow-auto max-h-72 custom-scroll">
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-100 sticky top-0">
+            <tr>
+              <th
+                *ngFor="let h of importHeaders"
+                class="px-3 py-2 text-left font-semibold text-slate-600 border-b"
+              >
+                {{ h }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of importRows; let i = index" class="odd:bg-white even:bg-slate-50">
+              <td
+                *ngFor="let h of importHeaders"
+                class="px-3 py-1 border-b border-slate-200 align-top"
+              >
+                {{ r[h] }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="px-3 py-2 bg-slate-50 text-xs text-slate-500 border-t flex justify-between">
+        <span>{{ importRows.length }} filas</span>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100"
+          (click)="resetImport()"
+        >
+          <span class="material-symbols-outlined msz-18">delete</span>
+          Limpiar
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="!importRows.length" class="text-center py-10 text-slate-400">
+      <span class="material-symbols-outlined text-5xl mb-3">upload_file</span>
+      <p class="text-sm">Aún no hay datos cargados</p>
+    </div>
+  </div>
+</pharmacy-ui-modal>

@@ -1,0 +1,533 @@
+<div class="min-h-screen bg-slate-50">
+  <div class="max-w-7xl mx-auto p-6">
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
+        <button
+          type="button"
+          (click)="goBack()"
+          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          matTooltip="Volver"
+          aria-label="Volver"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
+        </button>
+        <div class="text-left">
+          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Nueva Venta</h1>
+          <p class="text-slate-600">Registrar venta y dispensación de medicamentos</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Loading State -->
+    @if (loadingStocks()) {
+      <div class="flex justify-center items-center py-20">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-3 border-blue-600"></div>
+      </div>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
+        <!-- Add Product Card -->
+        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <fieldset class="border border-blue-200 rounded-lg p-4 bg-blue-50/30">
+            <legend class="px-2 text-sm font-semibold text-blue-900">
+              ➕ Agregar producto a la venta
+            </legend>
+
+            <!-- Campo de selección con búsqueda directa -->
+            <div class="mb-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Producto / Medicamento</mat-label>
+                <mat-icon matIconPrefix>medication</mat-icon>
+                <input
+                  type="text"
+                  matInput
+                  [matAutocomplete]="auto"
+                  [formControl]="form.get('tempStockId')"
+                  placeholder="Buscar medicamento por nombre, lote o ingrediente"
+                  (input)="searchTerm.set($any($event.target).value)"
+                />
+                <mat-autocomplete
+                  #auto="matAutocomplete"
+                  (optionSelected)="form.get('tempStockId').setValue($event.option.value)"
+                >
+                  <mat-option *ngFor="let stock of filteredStocks()" [value]="stock.id">
+                    {{ getStockDisplay(stock) }}
+                  </mat-option>
+                </mat-autocomplete>
+                <mat-hint>Buscar y seleccionar medicamento</mat-hint>
+              </mat-form-field>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+              <!-- El campo de selección ya está arriba con búsqueda -->
+
+              <!-- Quantity -->
+              <div class="md:col-span-2">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Cantidad</mat-label>
+                  <mat-icon matIconPrefix>inventory</mat-icon>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="tempQuantity"
+                    placeholder="1"
+                    min="1"
+                  />
+                  @if (selectedStock()) {
+                    <mat-hint>Máx: {{ selectedStock()!.availableQuantity || 0 }}</mat-hint>
+                  }
+                </mat-form-field>
+              </div>
+
+              <!-- Unit Price -->
+              <div class="md:col-span-2">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Precio Unit.</mat-label>
+                  <mat-icon matIconPrefix>attach_money</mat-icon>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="tempUnitPrice"
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
+                </mat-form-field>
+              </div>
+
+              <!--
+              <!-- Discount -->
+              <!-- <div class="md:col-span-2">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Desc. %</mat-label>
+                  <mat-icon matIconPrefix>percent</mat-icon>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="tempDiscountPercent"
+                    placeholder="0"
+                    min="0"
+                    max="100"
+                  />
+                </mat-form-field>
+              </div> -->
+
+              <!-- Add Button -->
+              <div class="md:col-span-1 flex items-start pt-1">
+                <button
+                  type="button"
+                  (click)="addItem()"
+                  class="w-full h-14 rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors flex items-center justify-center shadow-sm"
+                  [disabled]="!form.get('tempStockId')?.value"
+                >
+                  <span class="material-symbols-outlined">add_circle</span>
+                </button>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        <!-- Items Table -->
+        @if (saleItems().length > 0) {
+          <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+            <h3 class="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <span class="material-symbols-outlined text-blue-600">shopping_cart</span>
+              Productos en la venta ({{ saleItems().length }})
+            </h3>
+
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="border-b-2 border-slate-200">
+                    <th class="text-left py-3 px-2 text-sm font-semibold text-slate-700">
+                      Producto
+                    </th>
+                    <th class="text-left py-3 px-2 text-sm font-semibold text-slate-700">Lote</th>
+                    <th class="text-right py-3 px-2 text-sm font-semibold text-slate-700">Cant.</th>
+                    <th class="text-right py-3 px-2 text-sm font-semibold text-slate-700">
+                      Precio
+                    </th>
+                    <th class="text-right py-3 px-2 text-sm font-semibold text-slate-700">
+                      Desc. %
+                    </th>
+                    <th class="text-right py-3 px-2 text-sm font-semibold text-slate-700">
+                      Subtotal
+                    </th>
+                    <th class="w-20"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of saleItems(); track $index; let i = $index) {
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                      <td class="py-3 px-2">
+                        <div class="font-medium text-slate-900">
+                          {{ item.medicationStock.medication?.name || 'N/A' }}
+                        </div>
+                        <div class="text-xs text-slate-500">
+                          {{ item.medicationStock.medication?.activeIngredient }}
+                        </div>
+                      </td>
+                      <td class="py-3 px-2 text-sm text-slate-600">
+                        {{ item.medicationStock.batchNumber }}
+                      </td>
+                      <td class="py-3 px-2 text-right text-sm text-slate-900 font-medium">
+                        {{ item.quantity }}
+                      </td>
+                      <td class="py-3 px-2 text-right text-sm text-slate-900">
+                        ${{ item.unitPrice | number: '1.2-2' }}
+                      </td>
+                      <td class="py-3 px-2 text-right text-sm text-slate-600">
+                        {{ item.discountPercent }}%
+                      </td>
+                      <td class="py-3 px-2 text-right text-sm text-slate-900 font-semibold">
+                        ${{ item.subtotal | number: '1.2-2' }}
+                      </td>
+                      <td class="py-3 px-2 text-center">
+                        <button
+                          type="button"
+                          (click)="removeItem(i)"
+                          class="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
+                          matTooltip="Eliminar"
+                        >
+                          <span class="material-symbols-outlined text-xl">delete</span>
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+        <!-- Sale Details -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Left Column: Patient & Payment -->
+          <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+            <fieldset class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+              <legend class="px-2 text-sm font-semibold text-slate-700">Información general</legend>
+
+              <div class="space-y-4">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Paciente (opcional)</mat-label>
+                  <mat-icon matIconPrefix>person</mat-icon>
+                  <input
+                    type="text"
+                    matInput
+                    [matAutocomplete]="autoPatient"
+                    [formControl]="form.get('patientId')"
+                    #patientInput
+                    placeholder="Buscar paciente por nombre o documento"
+                    (input)="onPatientInput($any($event.target).value)"
+                  />
+                  <button
+                    matSuffix
+                    mat-icon-button
+                    type="button"
+                    class="text-slate-500 hover:text-slate-700"
+                    (click)="clearPatient()"
+                    [disabled]="!form.get('patientId')?.value"
+                    aria-label="Limpiar paciente"
+                  >
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                  <mat-autocomplete
+                    #autoPatient="matAutocomplete"
+                    [displayWith]="patientDisplayWith"
+                    (optionSelected)="onPatientSelected($event.option.value)"
+                  >
+                    <mat-option [value]="''"> Venta genérica (sin paciente) </mat-option>
+                    <mat-option *ngFor="let p of patientOptions()" [value]="p.id">
+                      {{ p.firstName }} {{ p.lastName }} — {{ p.documentNumber }}
+                    </mat-option>
+                    <mat-option *ngIf="patientSearchLoading()" disabled> Buscando... </mat-option>
+                    <mat-option
+                      *ngIf="
+                        !patientSearchLoading() &&
+                        patientOptions().length === 0 &&
+                        patientSearchTerm().length >= 2
+                      "
+                      disabled
+                    >
+                      Sin resultados
+                    </mat-option>
+                  </mat-autocomplete>
+                  <mat-hint>Dejar vacío para venta genérica</mat-hint>
+                </mat-form-field>
+
+                @if (loadingPatients()) {
+                  <div class="text-sm text-slate-600 flex items-center gap-2">
+                    <span class="material-symbols-outlined">hourglass_top</span>
+                    Cargando paciente...
+                  </div>
+                } @else if (selectedPatientName()) {
+                  <div class="flex items-center">
+                    <div
+                      class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200"
+                    >
+                      <span class="material-symbols-outlined text-base">person</span>
+                      <span class="text-sm font-medium">{{ selectedPatientName() }}</span>
+                      <button
+                        type="button"
+                        (click)="clearPatient()"
+                        class="rounded-full hover:bg-slate-200 w-6 h-6 grid place-items-center text-slate-600"
+                        matTooltip="Quitar paciente"
+                        aria-label="Quitar paciente"
+                      >
+                        <span class="material-symbols-outlined text-sm">close</span>
+                      </button>
+                    </div>
+                  </div>
+                }
+
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>N° Receta (opcional)</mat-label>
+                  <mat-icon matIconPrefix>receipt_long</mat-icon>
+                  <input
+                    matInput
+                    formControlName="prescriptionNumber"
+                    placeholder="Número de receta médica"
+                  />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Notas (opcional)</mat-label>
+                  <mat-icon matIconPrefix>notes</mat-icon>
+                  <textarea
+                    matInput
+                    formControlName="notes"
+                    placeholder="Observaciones sobre la venta..."
+                    rows="2"
+                    cdkTextareaAutosize
+                    cdkAutosizeMinRows="2"
+                    cdkAutosizeMaxRows="4"
+                  ></textarea>
+                </mat-form-field>
+              </div>
+            </fieldset>
+
+            <fieldset class="border border-purple-200 rounded-lg p-4 bg-purple-50/30">
+              <legend class="px-2 text-sm font-semibold text-purple-900">Recetas del paciente</legend>
+
+              @if (form.get('patientId')?.value) {
+                @if (loadingPrescriptions()) {
+                  <div class="text-sm text-slate-600 flex items-center gap-2">
+                    <span class="material-symbols-outlined">hourglass_top</span>
+                    Cargando recetas...
+                  </div>
+                } @else {
+                  @if (prescriptions().length === 0) {
+                    <div class="text-sm text-slate-600">No hay recetas para este paciente.</div>
+                  } @else {
+                    <div class="space-y-3">
+                      @for (pr of prescriptions(); track pr.id) {
+                        <div class="p-3 bg-white border border-slate-200 rounded-lg">
+                          <div class="flex items-start justify-between gap-3">
+                            <div>
+                              <div class="text-sm font-semibold text-slate-900">
+                                Receta {{ pr.prescriptionNumber || pr.id }}
+                              </div>
+                              <div class="text-xs text-slate-500">
+                                {{ pr.prescriptionDate | date: 'yyyy-MM-dd' }} · {{ pr.status || 'Activa' }}
+                              </div>
+                              <div class="mt-1 text-xs text-slate-600">
+                                Items: {{ pr.items?.length || 0 }}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              class="px-3 h-9 rounded-md bg-purple-600 hover:bg-purple-700 text-white text-sm transition-colors"
+                              (click)="applyPrescription(pr)"
+                            >
+                              Cargar a venta
+                            </button>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                }
+              } @else {
+                <div class="text-sm text-slate-600">Seleccione un paciente para ver recetas.</div>
+              }
+            </fieldset>
+
+            <fieldset class="border border-green-200 rounded-lg p-4 bg-green-50/30">
+              <legend class="px-2 text-sm font-semibold text-green-900">Pago</legend>
+
+              <div class="space-y-4">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Método de pago</mat-label>
+                  <mat-icon matIconPrefix>payment</mat-icon>
+                  <mat-select formControlName="paymentMethod" required>
+                    @for (method of paymentMethods; track method.value) {
+                      <mat-option [value]="method.value">
+                        <span class="flex items-center gap-2">
+                          <span class="material-symbols-outlined text-lg">{{ method.icon }}</span>
+                          {{ method.label }}
+                        </span>
+                      </mat-option>
+                    }
+                  </mat-select>
+                  <mat-error>Seleccione un método de pago</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Monto pagado</mat-label>
+                  <mat-icon matIconPrefix>attach_money</mat-icon>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="amountPaid"
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                  <mat-hint>Total a pagar: ${{ totalAmount() | number: '1.2-2' }}</mat-hint>
+                  <mat-error>El monto pagado es requerido</mat-error>
+                </mat-form-field>
+
+                @if (changeAmount() > 0) {
+                  <div
+                    class="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2"
+                  >
+                    <span class="material-symbols-outlined text-amber-700">info</span>
+                    <span class="text-sm text-amber-900">
+                      <strong>Cambio:</strong> ${{ changeAmount() | number: '1.2-2' }}
+                    </span>
+                  </div>
+                }
+              </div>
+            </fieldset>
+          </div>
+
+          <!-- Right Column: Totals Summary -->
+          <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+            <fieldset class="border border-blue-200 rounded-lg p-4 bg-blue-50/30 h-full">
+              <legend class="px-2 text-sm font-semibold text-blue-900">
+                💰 Resumen de totales
+              </legend>
+
+              <div class="space-y-4">
+                <div class="flex items-center justify-between py-2">
+                  <span class="text-slate-700">Subtotal:</span>
+                  <span class="text-lg font-semibold text-slate-900">
+                    ${{ subtotal() | number: '1.2-2' }}
+                  </span>
+                </div>
+
+                <!--
+                <div class="flex items-center justify-between py-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-slate-700">Descuento:</span>
+                    <mat-form-field appearance="outline" class="w-32" subscriptSizing="dynamic">
+                      <input
+                        matInput
+                        type="number"
+                        formControlName="discountAmount"
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                      />
+                    </mat-form-field>
+                  </div>
+                  <span class="text-lg font-semibold text-red-600">
+                    -${{ discountAmount() | number: '1.2-2' }}
+                  </span>
+                </div>
+                -->
+
+                <!--
+                <div class="flex items-center justify-between py-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-slate-700">Impuesto:</span>
+                    <mat-form-field appearance="outline" class="w-24" subscriptSizing="dynamic">
+                      <input
+                        matInput
+                        type="number"
+                        formControlName="taxRate"
+                        placeholder="0.13"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                      />
+                    </mat-form-field>
+                  </div>
+                  <span class="text-lg font-semibold text-slate-900">
+                    ${{ taxAmount() | number: '1.2-2' }}
+                  </span>
+                </div>
+                -->
+
+                <div class="border-t-2 border-blue-300 my-3"></div>
+
+                <div class="flex items-center justify-between py-2">
+                  <span class="text-xl font-bold text-blue-900">TOTAL:</span>
+                  <span class="text-2xl font-bold text-blue-600">
+                    ${{ totalAmount() | number: '1.2-2' }}
+                  </span>
+                </div>
+
+                <!-- Cambio Section -->
+                @if (changeAmount() > 0) {
+                  <div class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-green-600">payments</span>
+                        <span class="text-green-900 font-semibold">Cambio a devolver:</span>
+                      </div>
+                      <span class="text-2xl font-bold text-green-600">
+                        ${{ changeAmount() | number: '1.2-2' }}
+                      </span>
+                    </div>
+                  </div>
+                }
+
+                <div class="pt-4 space-y-2 text-sm text-slate-600">
+                  <div class="flex justify-between">
+                    <span>Items:</span>
+                    <span class="font-medium">{{ saleItems().length }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>Unidades totales:</span>
+                    <span class="font-medium">
+                      {{ totalUnits() }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-end gap-3 pt-4">
+          <button
+            type="button"
+            (click)="goBack()"
+            class="px-6 h-11 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-colors flex items-center gap-2 font-medium"
+          >
+            <span class="material-symbols-outlined">close</span>
+            <span>Cancelar</span>
+          </button>
+          <button
+            type="submit"
+            [disabled]="loading() || saleItems().length === 0"
+            class="px-6 h-11 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          >
+            @if (loading()) {
+              <div
+                class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"
+              ></div>
+              <span>Procesando...</span>
+            } @else {
+              <span class="material-symbols-outlined">point_of_sale</span>
+              <span>Registrar Venta</span>
+            }
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</div>

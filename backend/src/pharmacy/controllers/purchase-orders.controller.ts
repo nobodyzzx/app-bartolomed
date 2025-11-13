@@ -1,20 +1,31 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Auth, GetUser } from '../../auth/decorators';
+import { ValidRoles } from '../../auth/interfaces';
+import { User } from '../../users/entities/user.entity';
 import {
   CreatePurchaseOrderDto,
+  ReceivePurchaseOrderDto,
   UpdatePurchaseOrderDto,
   UpdatePurchaseOrderStatusDto,
 } from '../dto/purchase-order.dto';
+import { Medication } from '../entities/pharmacy.entity';
 import { PurchaseOrderStatus } from '../entities/purchase-order.entity';
 import { PurchaseOrdersService } from '../services/purchase-orders.service';
 
-@Controller('purchase-orders')
+@Controller('pharmacy/purchase-orders')
 export class PurchaseOrdersController {
-  constructor(private readonly purchaseOrdersService: PurchaseOrdersService) {}
+  constructor(
+    private readonly purchaseOrdersService: PurchaseOrdersService,
+    @InjectRepository(Medication)
+    private readonly medicationRepository: Repository<Medication>,
+  ) {}
 
   @Post()
-  create(@Body() createPurchaseOrderDto: CreatePurchaseOrderDto, @Request() req: any) {
-    const createdById = req.user?.sub || 'system';
-    return this.purchaseOrdersService.create(createPurchaseOrderDto, createdById);
+  @Auth(ValidRoles.PHARMACIST, ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
+  create(@Body() createPurchaseOrderDto: CreatePurchaseOrderDto, @GetUser() user: User) {
+    return this.purchaseOrdersService.create(createPurchaseOrderDto, user.id);
   }
 
   @Get()
@@ -34,18 +45,40 @@ export class PurchaseOrdersController {
   }
 
   @Patch(':id')
+  @Auth(ValidRoles.PHARMACIST, ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
   update(@Param('id') id: string, @Body() updatePurchaseOrderDto: UpdatePurchaseOrderDto) {
     return this.purchaseOrdersService.update(id, updatePurchaseOrderDto);
   }
 
   @Patch(':id/status')
-  updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdatePurchaseOrderStatusDto, @Request() req: any) {
-    const approvedById = req.user?.sub;
-    return this.purchaseOrdersService.updateStatus(id, updateStatusDto, approvedById);
+  @Auth(ValidRoles.PHARMACIST, ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
+  updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdatePurchaseOrderStatusDto, @GetUser() user: User) {
+    return this.purchaseOrdersService.updateStatus(id, updateStatusDto, user.id);
+  }
+
+  @Post(':id/receive')
+  @Auth(ValidRoles.PHARMACIST, ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
+  receive(@Param('id') id: string, @Body() dto: ReceivePurchaseOrderDto) {
+    return this.purchaseOrdersService.receive(id, dto);
   }
 
   @Delete(':id')
+  @Auth(ValidRoles.PHARMACIST, ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
   remove(@Param('id') id: string) {
     return this.purchaseOrdersService.remove(id);
+  }
+
+  @Post('maintenance/backfill-medication-ids')
+  @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN)
+  async backfillMedicationIds() {
+    const meds = await this.medicationRepository.find({
+      select: ['id', 'name', 'brandName', 'code'],
+      where: { isActive: true },
+    });
+    const result = await this.purchaseOrdersService.backfillMedicationIds(meds);
+    return {
+      message: 'Backfill ejecutado',
+      ...result,
+    };
   }
 }

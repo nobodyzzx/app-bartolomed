@@ -3,6 +3,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import {
   CreateMedicationDto,
   CreateMedicationStockDto,
+  TransferStockDto,
   UpdateMedicationDto,
   UpdateMedicationStockDto,
 } from '../dto/medication.dto';
@@ -88,5 +89,10 @@ export class InventoryController {
   @Post('stock/:id/consume')
   consumeStock(@Param('id') id: string, @Body('quantity') quantity: number) {
     return this.inventoryService.consumeStock(id, quantity);
+  }
+
+  @Post('stock/transfer')
+  transferStock(@Body() dto: TransferStockDto) {
+    return this.inventoryService.transferStock(dto);
   }
 }

@@ -90,6 +90,13 @@ export const MENU_ITEMS: MenuItem[] = [
     allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
     children: [
       {
+        label: 'Catálogo de Medicamentos',
+        icon: 'medication',
+        route: '/dashboard/pharmacy/medications',
+        allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+        requiredPermissions: [Permission.PharmacyInventoryManage],
+      },
+      {
         label: 'Inventario',
         icon: 'inventory',
         route: '/dashboard/pharmacy/inventory',
@@ -97,9 +104,16 @@ export const MENU_ITEMS: MenuItem[] = [
         requiredPermissions: [Permission.PharmacyInventoryManage],
       },
       {
-        label: 'Generación de Pedidos',
+        label: 'Proveedores',
+        icon: 'local_shipping',
+        route: '/dashboard/pharmacy/suppliers',
+        allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+        requiredPermissions: [Permission.PharmacyInventoryManage],
+      },
+      {
+        label: 'Órdenes de Compra',
         icon: 'shopping_cart',
-        route: '/dashboard/pharmacy/order-generation',
+        route: '/dashboard/pharmacy/purchase-orders',
         allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
         requiredPermissions: [Permission.PharmacyInventoryManage],
       },

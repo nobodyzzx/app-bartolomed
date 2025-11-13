@@ -1,0 +1,154 @@
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-5xl mx-auto">
+    <header class="mb-8 flex items-center gap-4">
+      <button
+        type="button"
+        (click)="goBack()"
+        class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm transition-all"
+        aria-label="Volver"
+      >
+        <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <div>
+        <h1 class="text-3xl font-bold text-slate-900">
+          {{ isEditMode ? 'Editar Proveedor' : 'Nuevo Proveedor' }}
+        </h1>
+        <p class="text-slate-600">
+          {{ isEditMode ? 'Modifica los datos del proveedor' : 'Registra un nuevo proveedor' }}
+        </p>
+      </div>
+    </header>
+
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+      <form [formGroup]="supplierForm" (ngSubmit)="onSubmit()" class="space-y-6">
+        <fieldset class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+          <legend class="px-2 text-sm font-semibold text-slate-700">Información Fiscal</legend>
+          <div class="grid gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Nombre comercial *</mat-label>
+              <input matInput formControlName="nombreComercial" />
+              <mat-error *ngIf="supplierForm.get('nombreComercial')?.hasError('required')"
+                >Requerido</mat-error
+              >
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Razón social *</mat-label>
+              <input matInput formControlName="razonSocial" />
+              <mat-error *ngIf="supplierForm.get('razonSocial')?.hasError('required')"
+                >Requerido</mat-error
+              >
+            </mat-form-field>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>ID Tributario *</mat-label>
+                <input matInput formControlName="idTributario" />
+                <mat-error *ngIf="supplierForm.get('idTributario')?.hasError('required')"
+                  >Requerido</mat-error
+                >
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Tipo de proveedor *</mat-label>
+                <mat-select formControlName="tipoProveedor">
+                  <mat-option value="medicamentos">Medicamentos</mat-option>
+                  <mat-option value="insumos">Insumos</mat-option>
+                  <mat-option value="servicios">Servicios</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="border border-slate-200 rounded-lg p-4 bg-blue-50/30">
+          <legend class="px-2 text-sm font-semibold text-slate-700">Contacto</legend>
+          <div class="grid gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Persona de contacto *</mat-label>
+              <input matInput formControlName="contactPerson" />
+              <mat-error *ngIf="supplierForm.get('contactPerson')?.hasError('required')"
+                >Requerido</mat-error
+              >
+            </mat-form-field>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Email *</mat-label>
+                <input matInput type="email" formControlName="email" />
+                <mat-error *ngIf="supplierForm.get('email')?.hasError('required')"
+                  >Requerido</mat-error
+                >
+                <mat-error *ngIf="supplierForm.get('email')?.hasError('email')"
+                  >Email inválido</mat-error
+                >
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Teléfono</mat-label>
+                <input matInput formControlName="phone" />
+              </mat-form-field>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="border border-slate-200 rounded-lg p-4 bg-green-50/30">
+          <legend class="px-2 text-sm font-semibold text-slate-700">Ubicación</legend>
+          <div class="grid gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>País *</mat-label>
+                <mat-select formControlName="country">
+                  <mat-option *ngFor="let c of countries" [value]="c.code">{{ c.name }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Estado *</mat-label>
+                <mat-select formControlName="state">
+                  <mat-option *ngFor="let st of availableStates()" [value]="st">{{
+                    st
+                  }}</mat-option>
+                </mat-select>
+                <mat-hint *ngIf="!availableStates().length">Selecciona país primero</mat-hint>
+              </mat-form-field>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Ciudad</mat-label>
+                <input matInput formControlName="city" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Código postal</mat-label>
+                <input matInput formControlName="postalCode" />
+              </mat-form-field>
+            </div>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Dirección</mat-label>
+              <input matInput formControlName="address" />
+            </mat-form-field>
+          </div>
+        </fieldset>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Notas</mat-label>
+          <textarea matInput formControlName="notes" rows="3"></textarea>
+        </mat-form-field>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t">
+          <button
+            type="button"
+            (click)="cancel()"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm transition-all"
+          >
+            <span class="material-symbols-outlined">close</span>
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            [disabled]="loading() || supplierForm.invalid"
+            class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            <span class="material-symbols-outlined" *ngIf="!loading()">save</span>
+            <span class="material-symbols-outlined animate-spin" *ngIf="loading()">refresh</span>
+            {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

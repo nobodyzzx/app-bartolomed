@@ -1,0 +1,189 @@
+import { HttpClient, HttpParams } from '@angular/common/http'
+import { Injectable } from '@angular/core'
+import { AlertService } from '@core/services/alert.service'
+import { Observable, throwError } from 'rxjs'
+import { catchError, tap } from 'rxjs/operators'
+import { environment } from '../../../../../environments/environments'
+import { ErrorService } from '../../../../../shared/components/services/error.service'
+import {
+  MedicationStock,
+  Medication,
+  CreateMedicationStockDto,
+  UpdateMedicationStockDto,
+} from '../interfaces/pharmacy.interfaces'
+
+@Injectable({
+  providedIn: 'root',
+})
+export class InventoryService {
+  private readonly baseUrl = `${environment.baseUrl}/pharmacy/inventory`
+
+  constructor(
+    private http: HttpClient,
+    private errorService: ErrorService,
+    private alertService: AlertService,
+  ) {}
+
+  /**
+   * Obtiene todos los productos del inventario para una clínica
+   */
+  getProducts(clinicId: string): Observable<MedicationStock[]> {
+    const params = new HttpParams().set('clinicId', clinicId)
+    return this.http.get<MedicationStock[]>(`${this.baseUrl}/stock`, { params }).pipe(
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
+  }
+
+  /**
+   * Obtiene un stock específico por ID
+   */
+  getProductById(id: string): Observable<MedicationStock> {
+    return this.http.get<MedicationStock>(`${this.baseUrl}/stock/${id}`).pipe(
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
+  }
+
+  /**
+   * Obtiene productos con stock bajo
+   */
+  getLowStockProducts(clinicId: string): Observable<MedicationStock[]> {
+    const params = new HttpParams().set('clinicId', clinicId)
+    return this.http.get<MedicationStock[]>(`${this.baseUrl}/stock/low-stock`, { params }).pipe(
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
+  }
+
+  /**
+   * Obtiene productos próximos a vencer
+   */
+  getExpiringProducts(clinicId: string, days: number = 30): Observable<MedicationStock[]> {
+    const params = new HttpParams().set('clinicId', clinicId).set('days', days.toString())
+    return this.http.get<MedicationStock[]>(`${this.baseUrl}/stock/expiring`, { params }).pipe(
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
+  }
+
+    /**
+     * Crea un nuevo registro de stock
+     */
+    addProduct(dto: CreateMedicationStockDto): Observable<MedicationStock> {
+      return this.http.post<MedicationStock>(`${this.baseUrl}/stock`, dto).pipe(
+        tap(() => this.alertService.success('Éxito', 'Stock agregado correctamente')),
+        catchError(error => {
+          this.errorService.handleError(error)
+          return throwError(() => error)
+        }),
+      )
+    }
+
+    /**
+     * Actualiza un registro de stock existente
+     */
+    updateProduct(id: string, dto: UpdateMedicationStockDto): Observable<MedicationStock> {
+      return this.http.patch<MedicationStock>(`${this.baseUrl}/stock/${id}`, dto).pipe(
+        tap(() => this.alertService.success('Éxito', 'Stock actualizado correctamente')),
+        catchError(error => {
+          this.errorService.handleError(error)
+          return throwError(() => error)
+        }),
+      )
+    }
+
+    /**
+     * Elimina (desactiva) un registro de stock
+     */
+    deleteProduct(id: string): Observable<boolean> {
+      return this.http.delete<void>(`${this.baseUrl}/stock/${id}`).pipe(
+        tap(() => this.alertService.success('Éxito', 'Stock eliminado correctamente')),
+          catchError(error => {
+            this.errorService.handleError(error)
+            return throwError(() => error)
+          }),
+        ).pipe(
+          catchError(() => throwError(() => false)),
+        ) as Observable<boolean>
+      }
+
+      /**
+       * Elimina (desactiva) un registro de stock - alternativa con map
+       */
+      deleteProductAlt(id: string): Observable<boolean> {
+        return this.http.delete<void>(`${this.baseUrl}/stock/${id}`).pipe(
+          tap(() => this.alertService.success('Éxito', 'Stock eliminado correctamente')),
+          catchError(error => {
+            this.errorService.handleError(error)
+            return throwError(() => error)
+          }),
+        ).pipe(
+          catchError(() => throwError(() => false)),
+        ) as Observable<boolean>
+      }
+        catchError(error => {
+          this.errorService.handleError(error)
+          return throwError(() => false)
+        }),
+      )
+    }
+
+    /**
+     * Reserva una cantidad de un stock (para ventas/dispensación)
+     */
+    reserveStock(id: string, quantity: number): Observable<MedicationStock> {
+      return this.http.post<MedicationStock>(`${this.baseUrl}/stock/${id}/reserve`, { quantity }).pipe(
+        tap(() => this.alertService.success('Éxito', 'Stock reservado correctamente')),
+        catchError(error => {
+          this.errorService.handleError(error)
+          return throwError(() => error)
+        }),
+      )
+    }
+
+    /**
+     * Obtiene todos los medicamentos registrados
+     */
+    getMedications(): Observable<Medication[]> {
+      return this.http.get<Medication[]>(`${this.baseUrl}/medications`).pipe(
+        catchError(error => {
+          this.errorService.handleError(error)
+          return throwError(() => error)
+        }),
+      )
+    }
+
+    /**
+     * Busca medicamentos por término de búsqueda
+     */
+    searchMedications(term: string): Observable<Medication[]> {
+      const params = new HttpParams().set('term', term)
+      return this.http.get<Medication[]>(`${this.baseUrl}/medications/search`, { params }).pipe(
+        catchError(error => {
+          this.errorService.handleError(error)
+          return throwError(() => error)
+        }),
+      )
+    }
+
+    /**
+     * Obtiene un medicamento específico por ID
+     */
+    getMedicationById(id: string): Observable<Medication> {
+      return this.http.get<Medication>(`${this.baseUrl}/medications/${id}`).pipe(
+        catchError(error => {
+          this.errorService.handleError(error)
+          return throwError(() => error)
+        }),
+      )
+    }
+}

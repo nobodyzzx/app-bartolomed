@@ -1,0 +1,143 @@
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <header class="mb-8 flex items-center gap-4">
+      <button
+        type="button"
+        (click)="goBack()"
+        class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 shadow-sm hover:shadow transition-all"
+        aria-label="Volver"
+      >
+        <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <div>
+        <h1 class="text-3xl font-bold text-slate-900">
+          {{ isEditMode ? 'Editar Medicamento' : 'Nuevo Medicamento' }}
+        </h1>
+        <p class="text-slate-600">
+          {{
+            isEditMode
+              ? 'Modifica los datos del medicamento'
+              : 'Registra un nuevo medicamento en el inventario'
+          }}
+        </p>
+      </div>
+    </header>
+
+    <!-- Formulario -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+      <form [formGroup]="medicationForm" (ngSubmit)="onSubmit()" class="space-y-6">
+        <!-- Código (auto-generado) -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Código *</mat-label>
+          <input matInput formControlName="code" readonly />
+          <mat-hint>Generado automáticamente</mat-hint>
+        </mat-form-field>
+
+        <!-- Nombre Comercial y Principio Activo -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Nombre comercial *</mat-label>
+            <input matInput formControlName="nombreComercial" placeholder="Ej: Tafirol 500" />
+            <mat-error *ngIf="medicationForm.get('nombreComercial')?.hasError('required')">
+              El nombre comercial es requerido
+            </mat-error>
+            <mat-error *ngIf="medicationForm.get('nombreComercial')?.hasError('minlength')">
+              Mínimo 2 caracteres
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Principio activo *</mat-label>
+            <input matInput formControlName="principioActivo" placeholder="Ej: Paracetamol" />
+            <mat-error *ngIf="medicationForm.get('principioActivo')?.hasError('required')">
+              El principio activo es requerido
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Concentración -->
+        <fieldset class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+          <legend class="px-2 text-sm font-semibold text-slate-700">Concentración</legend>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Valor *</mat-label>
+              <input
+                matInput
+                type="number"
+                min="0"
+                step="0.01"
+                formControlName="concentracionValor"
+                placeholder="Ej: 500"
+              />
+              <mat-error *ngIf="medicationForm.get('concentracionValor')?.hasError('required')">
+                Requerido
+              </mat-error>
+              <mat-error *ngIf="medicationForm.get('concentracionValor')?.hasError('min')">
+                Debe ser mayor a 0
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Unidad *</mat-label>
+              <mat-select formControlName="concentracionUnidad">
+                <mat-option *ngFor="let u of concentrationUnits" [value]="u">{{ u }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </fieldset>
+
+        <!-- Forma Farmacéutica y Vía de Administración -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Forma farmacéutica *</mat-label>
+            <mat-select formControlName="formaFarmaceutica">
+              <mat-option *ngFor="let f of dosageForms" [value]="f">{{ f }}</mat-option>
+            </mat-select>
+            <mat-error *ngIf="medicationForm.get('formaFarmaceutica')?.hasError('required')">
+              Requerido
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Vía de administración *</mat-label>
+            <mat-select formControlName="viaAdministracion">
+              <mat-option *ngFor="let v of administrationRoutes" [value]="v">{{ v }}</mat-option>
+            </mat-select>
+            <mat-error *ngIf="medicationForm.get('viaAdministracion')?.hasError('required')">
+              Requerido
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Laboratorio -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Laboratorio</mat-label>
+          <input matInput formControlName="laboratorio" placeholder="Ej: ACME Labs" />
+          <mat-hint>Opcional</mat-hint>
+        </mat-form-field>
+
+        <!-- Botones de acción -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <button
+            type="button"
+            (click)="cancel()"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm hover:shadow transition-all"
+          >
+            <span class="material-symbols-outlined">close</span>
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            [disabled]="loading || medicationForm.invalid"
+            class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            <span class="material-symbols-outlined" *ngIf="!loading">save</span>
+            <span class="material-symbols-outlined animate-spin" *ngIf="loading">refresh</span>
+            {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
