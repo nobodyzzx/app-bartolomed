@@ -134,35 +134,6 @@ export const MENU_ITEMS: MenuItem[] = [
     ],
   },
   {
-    label: 'Reportes',
-    icon: 'analytics',
-    route: '/reports',
-    allowedRoles: [UserRoles.DOCTOR, UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-    children: [
-      {
-        label: 'Informes Médicos',
-        icon: 'medical_services',
-        route: '/dashboard/reports/medical-reports',
-        allowedRoles: [UserRoles.DOCTOR, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-        requiredPermissions: [Permission.ReportsMedical],
-      },
-      {
-        label: 'Reportes Financieros',
-        icon: 'attach_money',
-        route: '/dashboard/reports/financial-reports',
-        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-        requiredPermissions: [Permission.ReportsFinancial],
-      },
-      {
-        label: 'Control de Stock',
-        icon: 'inventory_2',
-        route: '/dashboard/reports/stock-control',
-        allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-        requiredPermissions: [Permission.ReportsStock],
-      },
-    ],
-  },
-  {
     label: 'Control de Activos',
     icon: 'inventory',
     route: '/assets',
@@ -198,6 +169,36 @@ export const MENU_ITEMS: MenuItem[] = [
       },
     ],
   },
+  {
+    label: 'Reportes',
+    icon: 'analytics',
+    route: '/reports',
+    allowedRoles: [UserRoles.DOCTOR, UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+    children: [
+      {
+        label: 'Informes Médicos',
+        icon: 'medical_services',
+        route: '/dashboard/reports/medical-reports',
+        allowedRoles: [UserRoles.DOCTOR, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+        requiredPermissions: [Permission.ReportsMedical],
+      },
+      {
+        label: 'Reportes Financieros',
+        icon: 'attach_money',
+        route: '/dashboard/reports/financial-reports',
+        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+        requiredPermissions: [Permission.ReportsFinancial],
+      },
+      {
+        label: 'Control de Stock',
+        icon: 'inventory_2',
+        route: '/dashboard/reports/stock-control',
+        allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+        requiredPermissions: [Permission.ReportsStock],
+      },
+    ],
+  },
+
   {
     label: 'Tareas Administrativas',
     icon: 'admin_panel_settings',
