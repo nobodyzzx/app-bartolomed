@@ -1,7 +1,7 @@
+import { Location } from '@angular/common'
 import { Component, OnInit } from '@angular/core'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
-import { ErrorService } from '../../../../shared/components/services/error.service'
 import { BillingService } from './billing.service'
 
 interface BillingStatistics {
@@ -31,6 +31,7 @@ interface RecentInvoice {
   styleUrls: ['./billing.page.component.css'],
 })
 export class BillingPageComponent implements OnInit {
+  searchTerm = ''
   statistics: BillingStatistics | null = null
   recentInvoices: RecentInvoice[] = []
   isLoading = false
@@ -40,7 +41,7 @@ export class BillingPageComponent implements OnInit {
     private router: Router,
     private alert: AlertService,
     private billingService: BillingService,
-    private errorService: ErrorService,
+    private location: Location,
   ) {}
 
   ngOnInit(): void {
@@ -57,7 +58,7 @@ export class BillingPageComponent implements OnInit {
         this.isLoading = false
       },
       error: error => {
-        this.errorService.handleError(error)
+        this.alert.error('Error al cargar estadísticas', error?.message || 'Inténtalo de nuevo')
         this.isLoading = false
         // Inicializar con valores vacíos en caso de error
         this.statistics = {
@@ -78,7 +79,10 @@ export class BillingPageComponent implements OnInit {
         this.recentInvoices = invoices.slice(0, 5)
       },
       error: error => {
-        this.errorService.handleError(error)
+        this.alert.error(
+          'Error al cargar facturas recientes',
+          error?.message || 'Inténtalo de nuevo',
+        )
         this.recentInvoices = []
       },
     })
@@ -139,13 +143,18 @@ export class BillingPageComponent implements OnInit {
     this.router.navigate(['/dashboard/billing/invoices', invoice.id, 'edit'])
   }
 
-  openSearch(): void {
-    // Placeholder: podría abrir modal de búsqueda; por ahora redirige a creación
-    this.router.navigate(['/dashboard/billing/invoices/new'])
+  goBack(): void {
+    this.location.back()
   }
 
-  viewReports(): void {
-    // Futuro: componente de reportes; temporalmente navega al dashboard
-    this.router.navigate(['/dashboard/billing'])
+  performSearch(): void {
+    const term = this.searchTerm?.trim()
+    if (!term) return
+    // Futuro: filtrar facturas; por ahora navega a lista con query param
+    this.alert.fire({
+      icon: 'info',
+      title: 'Búsqueda',
+      text: `Buscando: "${term}". Funcionalidad en desarrollo.`,
+    })
   }
 }

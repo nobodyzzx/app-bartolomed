@@ -1,4 +1,5 @@
 import { Component, computed, OnInit, signal } from '@angular/core'
+import { Location } from '@angular/common'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { Medication } from '../interfaces/pharmacy.interfaces'
@@ -27,6 +28,7 @@ export class MedicationsComponent implements OnInit {
     private inventoryService: InventoryService,
     private alert: AlertService,
     public router: Router,
+    private location: Location,
   ) {}
 
   ngOnInit(): void {
@@ -96,6 +98,10 @@ export class MedicationsComponent implements OnInit {
       other: 'Otro',
     }
     return labels[category] || category
+  }
+
+  goBack(): void {
+    this.location.back()
   }
 
   trackById(_: number, item: Medication): string {

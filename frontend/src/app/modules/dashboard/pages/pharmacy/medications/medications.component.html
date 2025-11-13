@@ -1,61 +1,54 @@
 <div class="min-h-screen bg-slate-50 p-8">
   <div class="max-w-7xl mx-auto">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
+    <div class="flex items-center justify-between mb-10">
       <div class="flex items-center gap-4">
         <button
           type="button"
-          (click)="router.navigate(['/dashboard/pharmacy'])"
-          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg transition-all"
+          (click)="goBack()"
+          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          matTooltip="Volver"
           aria-label="Volver"
         >
-          <span class="material-symbols-outlined">arrow_back</span>
+          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
         </button>
-        <div>
-          <h1 class="text-3xl font-bold text-slate-900">Catálogo de Medicamentos</h1>
+        <div class="text-left">
+          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Medicamentos</h1>
           <p class="text-slate-600">Gestión del maestro de medicamentos</p>
         </div>
       </div>
       <button
         type="button"
         (click)="newMedication()"
-        class="inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all"
+        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+        aria-label="Crear nuevo medicamento"
       >
-        <span class="material-symbols-outlined">add</span>
+        <span class="material-symbols-outlined msz-20 leading-none">add</span>
         Nuevo Medicamento
       </button>
     </div>
 
-    <!-- Buscador -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-      <div class="relative">
-        <span
-          class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-        >
-          search
-        </span>
-        <input
-          type="text"
-          [ngModel]="search()"
-          (ngModelChange)="search.set($event)"
-          placeholder="Buscar por nombre, código, fabricante..."
-          class="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
+    <!-- Barra de búsqueda -->
+    <div class="flex items-center gap-4 mb-8">
+      <div class="flex-1 max-w-2xl">
+        <div class="relative">
+          <input
+            type="text"
+            [ngModel]="search()"
+            (ngModelChange)="search.set($event)"
+            placeholder="Nombre, código, fabricante..."
+            class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
+          />
+          <span class="material-symbols-outlined absolute right-3 top-2.5 text-blue-400">search</span>
+        </div>
       </div>
-      <div class="mt-4 flex items-center justify-between text-sm text-slate-600">
-        <span>
-          {{ filtered().length }} medicamento{{ filtered().length !== 1 ? 's' : '' }}
-          {{
-            search()
-              ? 'encontrado' + (filtered().length !== 1 ? 's' : '')
-              : 'registrado' + (filtered().length !== 1 ? 's' : '')
-          }}
-        </span>
+      <div class="text-sm text-slate-600">
+        {{ filtered().length }} medicamento{{ filtered().length !== 1 ? 's' : '' }}
       </div>
     </div>
 
     <!-- Tabla de Medicamentos -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
       <table class="w-full">
         <thead class="bg-slate-50 border-b border-slate-200">
           <tr>

@@ -1,7 +1,7 @@
+import { Location } from '@angular/common'
 import { Component, OnInit } from '@angular/core'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
-import { ErrorService } from '../../../../../shared/components/services/error.service'
 import { Patient, PatientStatistics } from '../interfaces'
 import { PatientsService } from '../services'
 
@@ -11,6 +11,7 @@ import { PatientsService } from '../services'
   styleUrl: './patient-dashboard.component.css',
 })
 export class PatientDashboardComponent implements OnInit {
+  searchTerm = ''
   statistics: PatientStatistics | null = null
   recentPatients: Patient[] = []
   isLoading = false
@@ -18,8 +19,8 @@ export class PatientDashboardComponent implements OnInit {
   constructor(
     private patientsService: PatientsService,
     private router: Router,
-    private errorService: ErrorService,
     private alert: AlertService,
+    private location: Location,
   ) {}
 
   ngOnInit(): void {
@@ -35,7 +36,7 @@ export class PatientDashboardComponent implements OnInit {
         this.isLoading = false
       },
       error: error => {
-        this.errorService.handleError(error)
+        this.alert.error('Error al cargar estadísticas', error?.message || 'Inténtalo de nuevo')
         this.isLoading = false
       },
     })
@@ -50,7 +51,10 @@ export class PatientDashboardComponent implements OnInit {
           .slice(0, 5)
       },
       error: error => {
-        this.errorService.handleError(error)
+        this.alert.error(
+          'Error al cargar pacientes recientes',
+          error?.message || 'Inténtalo de nuevo',
+        )
       },
     })
   }
@@ -84,28 +88,13 @@ export class PatientDashboardComponent implements OnInit {
     this.router.navigate(['/dashboard/patients/view', patient.id])
   }
 
-  openSearch() {
-    this.alert
-      .fire({
-        title: 'Buscar Paciente',
-        input: 'text',
-        inputLabel: 'Nombre, documento, email o teléfono',
-        inputPlaceholder: 'Escribe para buscar...',
-        showCancelButton: true,
-        confirmButtonText: 'Buscar',
-        cancelButtonText: 'Cancelar',
-        inputValidator: (value: any): string | null => {
-          if (!value || !value.trim()) {
-            return 'Por favor, escribe un término de búsqueda'
-          }
-          return null
-        },
-      })
-      .then(result => {
-        if (result.isConfirmed && result.value) {
-          const term = (result.value as string).trim()
-          this.router.navigate(['/dashboard/patients/list'], { queryParams: { q: term } })
-        }
-      })
+  goToListSearch() {
+    const term = this.searchTerm?.trim()
+    if (!term) return
+    this.router.navigate(['/dashboard/patients/list'], { queryParams: { q: term } })
+  }
+
+  goBack() {
+    this.location.back()
   }
 }

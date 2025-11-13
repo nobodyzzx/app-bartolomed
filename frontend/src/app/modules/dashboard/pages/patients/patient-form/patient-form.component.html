@@ -34,20 +34,6 @@
       </div>
     </div>
 
-    <!-- Progreso -->
-    <div class="bg-white rounded-xl shadow-md p-6 mb-8">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-slate-700 font-medium">Progreso del formulario</span>
-        <span class="text-slate-900 font-semibold">{{ getStepProgress() | number: '1.0-0' }}%</span>
-      </div>
-      <div class="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-        <div
-          class="h-2 bg-blue-600 rounded-full transition-all"
-          [style.width.%]="getStepProgress()"
-        ></div>
-      </div>
-    </div>
-
     <div class="">
       <mat-stepper #stepper orientation="horizontal" [linear]="true">
         <!-- Paso 1: Información Personal -->

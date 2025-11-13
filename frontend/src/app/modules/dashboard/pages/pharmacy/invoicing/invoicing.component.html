@@ -1,10 +1,11 @@
-<div class="min-h-screen bg-slate-50 p-8">
+<div class="min-h-screen bg-slate-50 p-6">
   <div class="max-w-7xl mx-auto">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-10">
+    <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-4">
         <button
           type="button"
+          routerLink="/dashboard/pharmacy"
           class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
           matTooltip="Volver"
           aria-label="Volver"
@@ -12,44 +13,56 @@
           <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
         </button>
         <div class="text-left">
-          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Facturación</h1>
-          <p class="text-slate-600">Gestión de facturas y cobros</p>
+          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Ventas de Farmacia</h1>
+          <p class="text-slate-600">
+            Visualización de ventas pagadas derivadas de recetas dispensadas
+          </p>
         </div>
       </div>
-      <button
-        type="button"
-        (click)="createNewInvoice()"
-        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-        aria-label="Crear nueva factura"
-      >
-        <span class="material-symbols-outlined msz-20 leading-none">add</span>
-        Nueva Factura
-      </button>
+      <!-- Botón de nueva factura eliminado en modo solo visualización -->
     </div>
 
-    <!-- Estadísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    <!-- Aviso modo solo visualización -->
+    <div class="mb-8">
+      <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-xl shadow-sm">
+        <div class="flex items-start gap-3 text-amber-800 text-sm">
+          <span class="material-symbols-outlined msz-24 text-amber-600">info</span>
+          <p class="m-0 leading-relaxed">
+            <span class="font-semibold">Modo solo visualización:</span> Por el momento la plataforma
+            no genera facturas. Aquí se reflejan las ventas provenientes de
+            <span class="font-semibold">recetas dispensadas</span>. Las acciones de creación o
+            modificación de facturas están deshabilitadas temporalmente.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estadísticas (simplificadas a ventas pagadas) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
+      <!-- Total Ventas -->
       <div
         class="bg-blue-50 p-4 rounded-xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+        (click)="filterByStatus(null)"
       >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-blue-600 text-sm font-semibold">Total Facturas</p>
+            <p class="text-blue-600 text-sm font-semibold">Total Ventas</p>
             <p class="text-3xl font-bold text-blue-900 mt-2">{{ stats.totalInvoices }}</p>
-            <p class="text-xs text-blue-600/60 mt-1">Facturas generadas</p>
+            <p class="text-xs text-blue-600/60 mt-1">Ventas registradas</p>
           </div>
           <span class="material-symbols-outlined text-blue-500 msz-40 !w-10 !h-10"
             >description</span
           >
         </div>
       </div>
-
+      <!-- Ventas Pagadas -->
       <div
         class="bg-green-50 p-4 rounded-xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+        (click)="selectedStatus = InvoiceStatus.PAID; applyFilters()"
       >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-green-600 text-sm font-semibold">Pagadas</p>
+            <p class="text-green-600 text-sm font-semibold">Ventas Pagadas</p>
             <p class="text-3xl font-bold text-green-900 mt-2">{{ stats.paidInvoices }}</p>
             <p class="text-xs text-green-600/60 mt-1">Cobros completados</p>
           </div>
@@ -58,36 +71,10 @@
           >
         </div>
       </div>
-
-      <div
-        class="bg-orange-50 p-4 rounded-xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-orange-600 text-sm font-semibold">Pendientes</p>
-            <p class="text-3xl font-bold text-orange-900 mt-2">{{ stats.pendingInvoices }}</p>
-            <p class="text-xs text-orange-600/60 mt-1">Esperando pago</p>
-          </div>
-          <span class="material-symbols-outlined text-orange-500 msz-40 !w-10 !h-10">pending</span>
-        </div>
-      </div>
-
-      <div
-        class="bg-red-50 p-4 rounded-xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-red-600 text-sm font-semibold">Vencidas</p>
-            <p class="text-3xl font-bold text-red-900 mt-2">{{ stats.overdueInvoices }}</p>
-            <p class="text-xs text-red-600/60 mt-1">Requieren seguimiento</p>
-          </div>
-          <span class="material-symbols-outlined text-red-500 msz-40 !w-10 !h-10">warning</span>
-        </div>
-      </div>
     </div>
 
     <!-- Resumen Financiero -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
       <div
         class="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-xl text-white shadow-lg hover:shadow-xl transition-shadow"
       >
@@ -117,49 +104,102 @@
       </div>
     </div>
 
-    <!-- Búsqueda y Acciones -->
-    <div class="flex items-center gap-4 mb-6">
-      <div class="flex-1 max-w-2xl">
-        <div class="relative">
-          <input
-            type="text"
-            (keyup)="applyFilter($event)"
-            placeholder="ID, paciente, estado..."
-            class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
-          />
-          <span class="material-symbols-outlined msz-18 absolute right-3 top-2.5 text-blue-400"
-            >search</span
-          >
+    <!-- Filtros y Búsqueda -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <!-- Búsqueda -->
+        <div class="md:col-span-2">
+          <div class="relative">
+            <input
+              type="text"
+              (keyup)="applyFilter($event)"
+              placeholder="Buscar por ID, paciente, venta..."
+              class="w-full h-11 rounded-full bg-slate-50 px-5 pr-12 text-slate-900 placeholder-slate-400/70 shadow-sm hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:bg-white transition border border-slate-200"
+            />
+            <span class="material-symbols-outlined msz-18 absolute right-4 top-2.5 text-slate-400"
+              >search</span
+            >
+          </div>
         </div>
+
+        <!-- Filtro por Estado -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Estado</mat-label>
+          <mat-select [(value)]="selectedStatus" (selectionChange)="onStatusFilterChange()">
+            <mat-option [value]="null">Todos los estados</mat-option>
+            <mat-option value="paid">Pagadas</mat-option>
+            <mat-option value="pending">Pendientes</mat-option>
+            <mat-option value="overdue">Vencidas</mat-option>
+            <mat-option value="cancelled">Canceladas</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Filtro Método de Pago -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Método de Pago</mat-label>
+          <mat-select [(value)]="selectedPaymentMethod" (selectionChange)="onPaymentMethodChange()">
+            <mat-option [value]="null">Todos</mat-option>
+            <mat-option value="cash">Efectivo</mat-option>
+            <mat-option value="card">Tarjeta</mat-option>
+            <mat-option value="transfer">Transferencia</mat-option>
+            <mat-option value="insurance">Seguro</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Filtro por Fecha -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Rango de Fechas</mat-label>
+          <mat-date-range-input [rangePicker]="picker">
+            <input
+              matStartDate
+              placeholder="Inicio"
+              [(ngModel)]="startDate"
+              (dateChange)="onDateFilterChange()"
+            />
+            <input
+              matEndDate
+              placeholder="Fin"
+              [(ngModel)]="endDate"
+              (dateChange)="onDateFilterChange()"
+            />
+          </mat-date-range-input>
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-date-range-picker #picker></mat-date-range-picker>
+        </mat-form-field>
       </div>
 
-      <button
-        type="button"
-        (keyup.enter)="applyFilter($event)"
-        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-        aria-label="Buscar"
-      >
-        <span class="material-symbols-outlined msz-18">search</span>
-        Buscar
-      </button>
-
-      <div class="flex-1"></div>
-
-      <button
-        type="button"
-        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
-        aria-label="Exportar facturas"
-      >
-        <span class="material-symbols-outlined msz-18">download</span>
-        Exportar
-      </button>
+      <!-- Acciones de filtros -->
+      <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
+        <div class="text-sm text-slate-600">
+          <span class="font-semibold text-slate-900">{{ dataSource.filteredData.length }}</span>
+          ventas encontradas
+        </div>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            (click)="clearFilters()"
+            class="inline-flex items-center gap-2 px-4 h-9 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 transition-all border-0 text-sm"
+          >
+            <span class="material-symbols-outlined msz-16">filter_alt_off</span>
+            Limpiar Filtros
+          </button>
+          <button
+            type="button"
+            (click)="exportToExcel()"
+            class="inline-flex items-center gap-2 px-4 h-9 rounded-full font-medium bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 transition-all border-0 text-sm"
+          >
+            <span class="material-symbols-outlined msz-16">download</span>
+            Exportar
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- Tabla de Facturas -->
+    <!-- Tabla de Ventas -->
     <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
       <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
-        <!-- Columna ID -->
-        <ng-container matColumnDef="id">
+        <!-- Columna Número Venta -->
+        <ng-container matColumnDef="saleNumber">
           <th
             mat-header-cell
             *matHeaderCellDef
@@ -167,18 +207,16 @@
             class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
           >
             <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined msz-18 text-slate-600"
-                >confirmation_number</span
-              >
-              ID Factura
+              <span class="material-symbols-outlined msz-18 text-slate-600">receipt_long</span>
+              Nº Venta
             </div>
           </th>
           <td
             mat-cell
-            *matCellDef="let invoice"
-            class="!p-4 !border-b !border-slate-100 text-blue-700 font-medium"
+            *matCellDef="let sale"
+            class="!p-4 !border-b !border-slate-100 text-blue-700 font-medium tracking-tight"
           >
-            {{ invoice.id }}
+            {{ sale.saleNumber }}
           </td>
         </ng-container>
 
@@ -293,94 +331,28 @@
           </td>
         </ng-container>
 
-        <!-- Columna Fecha de Vencimiento -->
-        <ng-container matColumnDef="dueDate">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            mat-sort-header
-            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
-          >
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined msz-18 text-slate-600">event</span>
-              Vencimiento
-            </div>
-          </th>
-          <td mat-cell *matCellDef="let invoice" class="!p-4 !border-b !border-slate-100">
-            <div
-              [ngClass]="{
-                'text-slate-700': !isOverdue(invoice),
-                'text-red-600 font-semibold': isOverdue(invoice),
-              }"
-            >
-              {{ invoice.dueDate | date: 'dd/MM/yyyy' }}
-            </div>
-          </td>
-        </ng-container>
+        <!-- Columna Fecha de Vencimiento eliminada -->
 
-        <!-- Columna Acciones -->
-        <ng-container matColumnDef="actions">
+        <!-- Columna de acciones eliminada en modo solo visualización -->
+
+        <!-- Nueva columna Método de Pago -->
+        <ng-container matColumnDef="paymentMethod">
           <th
             mat-header-cell
             *matHeaderCellDef
             class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
           >
             <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined msz-18 text-slate-600">settings</span>
-              Acciones
+              <span class="material-symbols-outlined msz-18 text-slate-600">payments</span>
+              Método
             </div>
           </th>
-          <td mat-cell *matCellDef="let invoice" class="!p-4 !border-b !border-slate-100">
-            <div class="flex items-center gap-1">
-              <button
-                mat-icon-button
-                class="w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-200"
-                (click)="viewInvoiceDetails(invoice)"
-                matTooltip="Ver detalle de la factura"
-                aria-label="Ver detalle de la factura"
-              >
-                <span class="material-symbols-outlined msz-20 leading-none">visibility</span>
-              </button>
-              <button
-                mat-icon-button
-                class="w-9 h-9 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-purple-200"
-                (click)="printInvoice(invoice)"
-                matTooltip="Imprimir factura"
-                aria-label="Imprimir factura"
-              >
-                <span class="material-symbols-outlined msz-20 leading-none">print</span>
-              </button>
-              <button
-                mat-icon-button
-                class="w-9 h-9 text-green-600 hover:bg-green-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-green-200"
-                (click)="markAsPaid(invoice)"
-                [disabled]="invoice.status === 'paid' || invoice.status === 'cancelled'"
-                matTooltip="Marcar como pagada"
-                aria-label="Marcar como pagada"
-              >
-                <span class="material-symbols-outlined msz-20 leading-none">payment</span>
-              </button>
-              <button
-                mat-icon-button
-                class="w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-amber-200"
-                (click)="sendReminder(invoice)"
-                [disabled]="invoice.status === 'paid' || invoice.status === 'cancelled'"
-                matTooltip="Enviar recordatorio"
-                aria-label="Enviar recordatorio"
-              >
-                <span class="material-symbols-outlined msz-20 leading-none">email</span>
-              </button>
-              <button
-                mat-icon-button
-                class="w-9 h-9 text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-200"
-                (click)="cancelInvoice(invoice)"
-                [disabled]="invoice.status === 'paid' || invoice.status === 'cancelled'"
-                matTooltip="Cancelar factura"
-                aria-label="Cancelar factura"
-              >
-                <span class="material-symbols-outlined msz-20 leading-none">cancel</span>
-              </button>
-            </div>
+          <td
+            mat-cell
+            *matCellDef="let sale"
+            class="!p-4 !border-b !border-slate-100 text-slate-700 capitalize"
+          >
+            {{ sale.paymentMethod | lowercase }}
           </td>
         </ng-container>
 
@@ -397,7 +369,7 @@
         <mat-paginator
           [pageSizeOptions]="[10, 25, 50, 100]"
           showFirstLastButtons
-          aria-label="Seleccionar página de facturas"
+          aria-label="Seleccionar página de ventas"
         ></mat-paginator>
       </div>
     </div>

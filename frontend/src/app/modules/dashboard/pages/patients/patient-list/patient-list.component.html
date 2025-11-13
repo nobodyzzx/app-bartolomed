@@ -1,5 +1,5 @@
-<div class="patient-list-container">
-  <div class="patient-list-content">
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
     <!-- Header Unificado -->
     <div class="flex items-center justify-between mb-10">
       <div class="flex items-center gap-4">
@@ -34,9 +34,8 @@
         <div class="relative">
           <input
             type="text"
-            [(ngModel)]="searchTerm"
-            (keyup.enter)="searchPatients(searchTerm)"
-            placeholder="Nombre, teléfono, email..."
+            (keyup)="applyFilter($event)"
+            placeholder="Nombre, documento, teléfono, email..."
             class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
           />
           <span class="material-symbols-outlined absolute right-3 top-2.5 text-blue-400"
@@ -47,8 +46,6 @@
 
       <button
         type="button"
-        (click)="searchPatients(searchTerm)"
-        [disabled]="!searchTerm?.trim()"
         class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
       >
         <span class="material-symbols-outlined msz-18">search</span>
@@ -67,7 +64,7 @@
     </div>
 
     <!-- Tabla de Pacientes -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
       <div class="overflow-x-auto">
         <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
           <!-- Columna Documento -->

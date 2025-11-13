@@ -21,21 +21,28 @@ export class PharmacySalesController {
   @Get()
   findAll(
     @Query('status') status?: SaleStatus,
+    @Query('paymentMethod') paymentMethod?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    if (status) {
-      return this.pharmacySalesService.getSalesByStatus(status);
-    }
-    if (startDate && endDate) {
-      return this.pharmacySalesService.getSalesByDateRange(new Date(startDate), new Date(endDate));
-    }
-    return this.pharmacySalesService.findAll();
+    return this.pharmacySalesService.listWithFilters({
+      status,
+      paymentMethod,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+    });
   }
 
   @Get('daily-total/:date')
   getDailyTotal(@Param('date') date: string) {
     return this.pharmacySalesService.getDailySalesTotal(new Date(date));
+  }
+
+  @Get('summary')
+  getSummary(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
+    const start = startDate ? new Date(startDate) : undefined;
+    const end = endDate ? new Date(endDate) : undefined;
+    return this.pharmacySalesService.getSalesSummary(start, end);
   }
 
   @Get(':id')

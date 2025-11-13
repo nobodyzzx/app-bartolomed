@@ -124,21 +124,15 @@ export const MENU_ITEMS: MenuItem[] = [
     allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
     children: [
       {
-        label: 'Registro de Activos',
-        icon: 'add_circle',
-        route: '/dashboard/assets-control/registration',
+        label: 'Control de Inventario de Activos',
+        icon: 'inventory_2',
+        route: '/dashboard/assets-control/inventory',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
       {
         label: 'Mantenimiento de Activos',
         icon: 'build',
         route: '/dashboard/assets-control/maintenance',
-        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
-      },
-      {
-        label: 'Control de Inventario de Activos',
-        icon: 'inventory_2',
-        route: '/dashboard/assets-control/inventory',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
       {

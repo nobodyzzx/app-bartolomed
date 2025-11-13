@@ -7,6 +7,15 @@ import { environment } from '../../../../../environments/environments'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
 import { CreateSaleDto, Sale, SaleStatus } from '../interfaces/pharmacy.interfaces'
 
+export interface SalesSummary {
+  totalSales: number
+  completedSales: number
+  pendingSales: number
+  cancelledSales: number
+  totalRevenue: number
+  dateRange?: { startDate: string; endDate: string }
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -21,6 +30,46 @@ export class SalesDispensingService {
 
   getSales(): Observable<Sale[]> {
     return this.http.get<Sale[]>(this.apiUrl).pipe(
+      catchError(error => {
+        this.errorService.handleError(error)
+        throw error
+      }),
+    )
+  }
+
+  getCompletedSales(): Observable<Sale[]> {
+    return this.http.get<Sale[]>(`${this.apiUrl}?status=completed`).pipe(
+      catchError(error => {
+        this.errorService.handleError(error)
+        throw error
+      }),
+    )
+  }
+
+  getCompletedSalesFiltered(options: {
+    paymentMethod?: string
+    startDate?: Date
+    endDate?: Date
+  }): Observable<Sale[]> {
+    const params: string[] = ['status=completed']
+    if (options.paymentMethod) params.push(`paymentMethod=${options.paymentMethod}`)
+    if (options.startDate) params.push(`startDate=${options.startDate.toISOString()}`)
+    if (options.endDate) params.push(`endDate=${options.endDate.toISOString()}`)
+    const url = `${this.apiUrl}?${params.join('&')}`
+    return this.http.get<Sale[]>(url).pipe(
+      catchError(error => {
+        this.errorService.handleError(error)
+        throw error
+      }),
+    )
+  }
+
+  getSalesSummary(startDate?: Date, endDate?: Date): Observable<SalesSummary> {
+    const params: string[] = []
+    if (startDate) params.push(`startDate=${startDate.toISOString()}`)
+    if (endDate) params.push(`endDate=${endDate.toISOString()}`)
+    const url = `${this.apiUrl}/summary${params.length ? '?' + params.join('&') : ''}`
+    return this.http.get<SalesSummary>(url).pipe(
       catchError(error => {
         this.errorService.handleError(error)
         throw error

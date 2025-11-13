@@ -18,9 +18,22 @@
     </div>
 
     <!-- Encabezado del Dashboard -->
-    <div class="mb-10">
-      <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2">Dashboard Principal</h1>
-      <p class="text-slate-600">Centro de control del sistema médico - Vista general</p>
+    <div class="mb-10 flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2">Dashboard Principal</h1>
+        <p class="text-slate-600">Centro de control del sistema médico - Vista general</p>
+      </div>
+      <button
+        type="button"
+        (click)="refreshDashboard()"
+        [disabled]="loading"
+        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0"
+      >
+        <span class="material-symbols-outlined msz-20" [class.animate-spin]="loading">{{
+          loading ? 'sync' : 'refresh'
+        }}</span>
+        Actualizar
+      </button>
     </div>
 
     <!-- Métricas Principales -->
@@ -79,7 +92,7 @@
           <div>
             <p class="text-orange-600 text-sm font-semibold">Ingresos del Mes</p>
             <p class="text-3xl font-bold text-orange-900 mt-2">
-              ${{ formatCurrency(stats.monthlyRevenue) }}
+              {{ formatCurrency(stats.monthlyRevenue) }}
             </p>
             <p class="text-xs text-orange-600/60 mt-1">Facturación mensual</p>
           </div>
@@ -126,25 +139,12 @@
                 <td class="p-4 text-slate-600">{{ appointment.type }}</td>
                 <td class="p-4">
                   <span
-                    class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
-                    [ngClass]="
-                      appointment.status === 'confirmed'
-                        ? 'bg-green-100 text-green-800 border-green-200'
-                        : appointment.status === 'pending'
-                          ? 'bg-orange-100 text-orange-800 border-orange-200'
-                          : 'bg-red-100 text-red-800 border-red-200'
-                    "
+                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
+                    [ngClass]="getStatusClass(appointment.status)"
                   >
-                    <span
-                      class="w-2 h-2 rounded-full"
-                      [ngClass]="
-                        appointment.status === 'confirmed'
-                          ? 'bg-green-500'
-                          : appointment.status === 'pending'
-                            ? 'bg-orange-500'
-                            : 'bg-red-500'
-                      "
-                    ></span>
+                    <span class="material-symbols-outlined msz-14">{{
+                      getStatusIcon(appointment.status)
+                    }}</span>
                     {{ getStatusText(appointment.status) }}
                   </span>
                 </td>
@@ -279,17 +279,12 @@
               </td>
               <td class="p-4">
                 <span
-                  class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
-                  [ngClass]="
-                    patient.status === 'active'
-                      ? 'bg-green-100 text-green-800 border-green-200'
-                      : 'bg-slate-100 text-slate-800 border-slate-200'
-                  "
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="getStatusClass(patient.status)"
                 >
-                  <span
-                    class="w-2 h-2 rounded-full"
-                    [ngClass]="patient.status === 'active' ? 'bg-green-500' : 'bg-slate-500'"
-                  ></span>
+                  <span class="material-symbols-outlined msz-14">{{
+                    getStatusIcon(patient.status)
+                  }}</span>
                   {{ getStatusText(patient.status) }}
                 </span>
               </td>

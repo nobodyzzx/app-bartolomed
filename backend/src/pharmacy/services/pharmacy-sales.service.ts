@@ -103,10 +103,49 @@ export class PharmacySalesService {
   }
 
   async findAll(): Promise<PharmacySale[]> {
+    // Sólo regresamos ventas completadas en modo de sólo visualización de facturación
     return await this.pharmacySaleRepository.find({
+      where: { status: SaleStatus.COMPLETED },
       relations: ['items', 'soldBy'],
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async listWithFilters(options: {
+    status?: SaleStatus;
+    paymentMethod?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<PharmacySale[]> {
+    const qb = this.pharmacySaleRepository
+      .createQueryBuilder('sale')
+      .leftJoinAndSelect('sale.items', 'items')
+      .leftJoinAndSelect('sale.soldBy', 'soldBy')
+      .orderBy('sale.createdAt', 'DESC');
+
+    if (options.status) {
+      qb.andWhere('sale.status = :status', { status: options.status });
+    } else {
+      // modo lectura: por defecto sólo completadas
+      qb.andWhere('sale.status = :status', { status: SaleStatus.COMPLETED });
+    }
+
+    if (options.paymentMethod) {
+      qb.andWhere('sale.paymentMethod = :pm', { pm: options.paymentMethod });
+    }
+
+    if (options.startDate) {
+      const start = new Date(options.startDate);
+      start.setHours(0, 0, 0, 0);
+      qb.andWhere('sale.saleDate >= :start', { start });
+    }
+    if (options.endDate) {
+      const end = new Date(options.endDate);
+      end.setHours(23, 59, 59, 999);
+      qb.andWhere('sale.saleDate <= :end', { end });
+    }
+
+    return await qb.getMany();
   }
 
   async findOne(id: string): Promise<PharmacySale> {
@@ -306,6 +345,61 @@ export class PharmacySalesService {
       .getRawOne();
 
     return parseFloat(result.total) || 0;
+  }
+
+  async getSalesSummary(
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<{
+    totalSales: number;
+    completedSales: number;
+    pendingSales: number;
+    cancelledSales: number;
+    totalRevenue: number;
+    dateRange?: { startDate: Date; endDate: Date };
+  }> {
+    const qb = this.pharmacySaleRepository.createQueryBuilder('sale');
+
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      qb.andWhere('sale.saleDate >= :start', { start });
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      qb.andWhere('sale.saleDate <= :end', { end });
+    }
+
+    const sales = await qb.select(['sale.id', 'sale.status', 'sale.total']).getRawMany();
+
+    let totalSales = 0;
+    let completedSales = 0;
+    let pendingSales = 0;
+    let cancelledSales = 0;
+    let totalRevenue = 0;
+
+    for (const row of sales) {
+      totalSales++;
+      const status: SaleStatus = row.sale_status;
+      const total = parseFloat(row.sale_total) || 0;
+      switch (status) {
+        case SaleStatus.COMPLETED:
+          completedSales++;
+          totalRevenue += total;
+          break;
+        case SaleStatus.PENDING:
+          pendingSales++;
+          break;
+        case SaleStatus.CANCELLED:
+          cancelledSales++;
+          break;
+      }
+    }
+
+    const summary: any = { totalSales, completedSales, pendingSales, cancelledSales, totalRevenue };
+    if (startDate && endDate) summary.dateRange = { startDate, endDate };
+    return summary;
   }
 
   private async generateSaleNumber(): Promise<string> {

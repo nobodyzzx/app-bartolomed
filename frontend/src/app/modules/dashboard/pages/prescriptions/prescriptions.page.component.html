@@ -1,108 +1,69 @@
 <div class="min-h-screen bg-slate-50 p-8">
   <div class="max-w-7xl mx-auto">
     <!-- Encabezado -->
-    <div class="mb-10">
-      <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Panel de Prescripciones</h1>
-      <p class="text-slate-600">Gestión completa de recetas médicas</p>
-    </div>
-
-    <!-- Estadísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" *ngIf="statistics">
-      <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-blue-600 text-sm font-medium">Total Prescripciones</p>
-            <p class="text-2xl font-bold text-blue-900">{{ statistics.total }}</p>
-          </div>
-          <span class="material-symbols-outlined text-blue-500 text-3xl">description</span>
+    <div class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
+        <button
+          type="button"
+          (click)="goBack()"
+          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          matTooltip="Volver"
+          aria-label="Volver"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
+        </button>
+        <div class="text-left">
+          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Prescripciones</h1>
+          <p class="text-slate-600">Gestión completa de recetas médicas</p>
         </div>
       </div>
-
-      <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-green-600 text-sm font-medium">Activas</p>
-            <p class="text-2xl font-bold text-green-900">{{ statistics.active }}</p>
-          </div>
-          <span class="material-symbols-outlined text-green-500 text-3xl">check_circle</span>
-        </div>
-      </div>
-
-      <div class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-orange-600 text-sm font-medium">Por Vencer (30 días)</p>
-            <p class="text-2xl font-bold text-orange-900">{{ statistics.expiringSoon }}</p>
-          </div>
-          <span class="material-symbols-outlined text-orange-500 text-3xl">schedule</span>
-        </div>
-      </div>
-
-      <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-500">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-red-600 text-sm font-medium">Vencidas</p>
-            <p class="text-2xl font-bold text-red-900">{{ statistics.expired }}</p>
-          </div>
-          <span class="material-symbols-outlined text-red-500 text-3xl">error</span>
-        </div>
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          (click)="navigateToPrescriptionsList()"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+          aria-label="Ver lista de prescripciones"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">list</span>
+          Lista de Prescripciones
+        </button>
+        <button
+          type="button"
+          (click)="navigateToNewPrescription()"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          aria-label="Crear nueva prescripción"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">add</span>
+          Nueva Prescripción
+        </button>
       </div>
     </div>
 
-    <!-- Loading para estadísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" *ngIf="!statistics && isLoading">
-      <div
-        class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500 flex items-center justify-center"
-      >
-        <mat-spinner diameter="40"></mat-spinner>
+    <!-- Barra de búsqueda -->
+    <div class="flex items-center gap-4 mb-8">
+      <div class="flex-1 max-w-2xl">
+        <div class="relative">
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            (keyup.enter)="performSearch()"
+            placeholder="Número de prescripción, paciente..."
+            class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
+          />
+          <span class="material-symbols-outlined absolute right-3 top-2.5 text-blue-400"
+            >search</span
+          >
+        </div>
       </div>
-      <div
-        class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500 flex items-center justify-center"
-      >
-        <mat-spinner diameter="40"></mat-spinner>
-      </div>
-      <div
-        class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500 flex items-center justify-center"
-      >
-        <mat-spinner diameter="40"></mat-spinner>
-      </div>
-      <div
-        class="bg-red-50 p-4 rounded-lg border-l-4 border-red-500 flex items-center justify-center"
-      >
-        <mat-spinner diameter="40"></mat-spinner>
-      </div>
-    </div>
-
-    <!-- Acciones Rápidas -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <button
-        type="button"
-        (click)="navigateToNewPrescription()"
-        class="bg-white p-6 rounded-xl border-0 shadow-md hover:shadow-lg transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
-      >
-        <span class="material-symbols-outlined text-5xl text-blue-500 mb-4">add_circle</span>
-        <h3 class="text-xl font-bold text-slate-900 mb-2">Nueva Prescripción</h3>
-        <p class="text-slate-600 text-sm">Crear una nueva receta médica</p>
-      </button>
 
       <button
         type="button"
-        (click)="navigateToPrescriptionsList()"
-        class="bg-white p-6 rounded-xl border-0 shadow-md hover:shadow-lg transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-200 focus-visible:ring-offset-1"
+        (click)="performSearch()"
+        [disabled]="!searchTerm?.trim()"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
       >
-        <span class="material-symbols-outlined text-5xl text-green-500 mb-4">list</span>
-        <h3 class="text-xl font-bold text-slate-900 mb-2">Lista de Prescripciones</h3>
-        <p class="text-slate-600 text-sm">Ver y gestionar todas las prescripciones</p>
-      </button>
-
-      <button
-        type="button"
-        (click)="openSearch()"
-        class="bg-white p-6 rounded-xl border-0 shadow-md hover:shadow-lg transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 focus-visible:ring-offset-1"
-      >
-        <span class="material-symbols-outlined text-5xl text-purple-500 mb-4">search</span>
-        <h3 class="text-xl font-bold text-slate-900 mb-2">Buscar Prescripción</h3>
-        <p class="text-slate-600 text-sm">Buscar por número o nombre de paciente</p>
+        <span class="material-symbols-outlined msz-18">search</span>
+        Buscar
       </button>
     </div>
 

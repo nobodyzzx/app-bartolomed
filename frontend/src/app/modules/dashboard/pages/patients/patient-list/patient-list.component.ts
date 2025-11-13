@@ -5,7 +5,6 @@ import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
-import { ErrorService } from '../../../../../shared/components/services/error.service'
 import { Patient } from '../interfaces'
 import { PatientsService } from '../services'
 
@@ -28,7 +27,6 @@ export class PatientListComponent implements OnInit {
   constructor(
     private patientsService: PatientsService,
     private router: Router,
-    private errorService: ErrorService,
     private location: Location,
     private route: ActivatedRoute,
     private alert: AlertService,
@@ -62,7 +60,7 @@ export class PatientListComponent implements OnInit {
         this.isLoading = false
       },
       error: error => {
-        this.errorService.handleError(error)
+        this.alert.error('Error al cargar pacientes', error?.message || 'Inténtalo de nuevo')
         this.isLoading = false
       },
     })
@@ -86,7 +84,7 @@ export class PatientListComponent implements OnInit {
           this.isLoading = false
         },
         error: error => {
-          this.errorService.handleError(error)
+          this.alert.error('Error en la búsqueda', error?.message || 'Inténtalo de nuevo')
           this.isLoading = false
         },
       })
@@ -146,7 +144,7 @@ export class PatientListComponent implements OnInit {
               this.loadPatients()
             },
             error: error => {
-              this.errorService.handleError(error)
+              this.alert.error('No se pudo eliminar', error?.message || 'Inténtalo de nuevo')
             },
           })
         }

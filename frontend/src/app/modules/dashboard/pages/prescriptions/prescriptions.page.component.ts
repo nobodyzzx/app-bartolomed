@@ -1,7 +1,7 @@
+import { Location } from '@angular/common'
 import { Component, OnInit } from '@angular/core'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
-import { ErrorService } from '../../../../shared/components/services/error.service'
 import { PrescriptionsService } from './prescriptions.service'
 
 interface Prescription {
@@ -43,6 +43,7 @@ interface PrescriptionStatistics {
   templateUrl: './prescriptions.page.component.html',
 })
 export class PrescriptionsPageComponent implements OnInit {
+  searchTerm = ''
   statistics: PrescriptionStatistics | null = null
   recentPrescriptions: Prescription[] = []
   isLoading = false
@@ -59,8 +60,8 @@ export class PrescriptionsPageComponent implements OnInit {
   constructor(
     private prescriptionsService: PrescriptionsService,
     private router: Router,
-    private errorService: ErrorService,
     private alert: AlertService,
+    private location: Location,
   ) {}
 
   ngOnInit(): void {
@@ -105,7 +106,7 @@ export class PrescriptionsPageComponent implements OnInit {
       },
       error: error => {
         console.error('Error cargando prescripciones:', error)
-        this.errorService.handleError(error)
+        this.alert.error('Error al cargar prescripciones', error?.message || 'Inténtalo de nuevo')
         this.isLoading = false
         // Inicializar con valores vacíos en caso de error
         this.statistics = {
@@ -175,29 +176,15 @@ export class PrescriptionsPageComponent implements OnInit {
     this.router.navigate(['/dashboard/prescriptions/view', prescription.id])
   }
 
-  openSearch(): void {
-    this.alert
-      .fire({
-        title: 'Buscar Prescripción',
-        input: 'text',
-        inputLabel: 'Número de prescripción o nombre del paciente',
-        inputPlaceholder: 'Escribe para buscar...',
-        showCancelButton: true,
-        confirmButtonText: 'Buscar',
-        cancelButtonText: 'Cancelar',
-        inputValidator: (value: any): string | null => {
-          if (!value || !value.trim()) {
-            return 'Por favor, escribe un término de búsqueda'
-          }
-          return null
-        },
-      })
-      .then(result => {
-        if (result.isConfirmed && result.value) {
-          this.router.navigate(['/dashboard/prescriptions/list'], {
-            queryParams: { search: result.value },
-          })
-        }
-      })
+  goBack(): void {
+    this.location.back()
+  }
+
+  performSearch(): void {
+    const term = this.searchTerm?.trim()
+    if (!term) return
+    this.router.navigate(['/dashboard/prescriptions/list'], {
+      queryParams: { search: term },
+    })
   }
 }
