@@ -1,15 +1,15 @@
 import { Location } from '@angular/common'
-import { Component, computed, OnInit, signal, ViewChild, ElementRef } from '@angular/core'
+import { Component, computed, ElementRef, OnInit, signal, ViewChild } from '@angular/core'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { ClinicContextService } from '../../../../../clinics/services/clinic-context.service'
 import { Patient } from '../../../patients/interfaces/patient.interface'
 import { PatientsService } from '../../../patients/services/patients.service'
+import { PrescriptionsService } from '../../../prescriptions/prescriptions.service'
 import { CreateSaleDto, MedicationStock, PaymentMethod } from '../../interfaces/pharmacy.interfaces'
 import { InventoryService } from '../../services/inventory.service'
 import { SalesDispensingService } from '../../services/sales-dispensing.service'
-import { PrescriptionsService } from '../../../prescriptions/prescriptions.service'
 
 interface SaleItem {
   medicationStock: MedicationStock
@@ -272,9 +272,18 @@ export class NewSaleComponent implements OnInit {
     }
     const clinicId = this.clinicContext.clinicId || undefined
     this.loadingPrescriptions.set(true)
+    // Solo cargar recetas activas que no hayan expirado
     this.prescriptionsService.list(1, 50, { patientId, clinicId, status: 'active' }).subscribe({
       next: (response: any) => {
-        this.prescriptions.set(response?.items || [])
+        const items = response?.items || []
+        // Filtrar adicional: solo recetas no vencidas
+        const now = new Date()
+        const validPrescriptions = items.filter((p: PrescriptionListItem) => {
+          if (!p.expiryDate) return true
+          const expiry = new Date(p.expiryDate)
+          return expiry >= now
+        })
+        this.prescriptions.set(validPrescriptions)
         this.loadingPrescriptions.set(false)
       },
       error: () => {
@@ -285,12 +294,16 @@ export class NewSaleComponent implements OnInit {
   }
 
   applyPrescription(p: PrescriptionListItem): void {
-    if (!p || !p.items || p.items.length === 0) return
+    if (!p || !p.items || p.items.length === 0) {
+      this.alert.warning('Receta vacía', 'Esta receta no tiene ítems para cargar')
+      return
+    }
 
     this.form.patchValue({ prescriptionNumber: p.prescriptionNumber || '' })
 
     const missing: string[] = []
     const insufficient: string[] = []
+    const added: string[] = []
     let addedLines = 0
 
     for (const it of p.items) {
@@ -300,7 +313,11 @@ export class NewSaleComponent implements OnInit {
       let remaining = requested
 
       const candidates = this.stocks()
-        .filter(s => (s.medication?.name || '').trim().toLowerCase() === name && (s.availableQuantity || 0) > 0)
+        .filter(
+          s =>
+            (s.medication?.name || '').trim().toLowerCase() === name &&
+            (s.availableQuantity || 0) > 0,
+        )
         .sort((a, b) => {
           const da = a.expiryDate ? new Date(a.expiryDate).getTime() : Infinity
           const db = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity
@@ -308,7 +325,7 @@ export class NewSaleComponent implements OnInit {
         })
 
       if (candidates.length === 0) {
-        missing.push(`${it.medicationName} x${requested}`)
+        missing.push(`${it.medicationName} (${requested})`)
         continue
       }
 
@@ -319,22 +336,37 @@ export class NewSaleComponent implements OnInit {
         const take = Math.min(avail, remaining)
         this.addOrUpdateSaleItem(stock, take)
         remaining -= take
-        if (take > 0) addedLines += 1
+        if (take > 0) {
+          addedLines += 1
+          added.push(`${it.medicationName} (${take})`)
+        }
       }
 
       if (remaining > 0) {
-        insufficient.push(`${it.medicationName} faltan ${remaining}`)
+        insufficient.push(`${it.medicationName} (faltan ${remaining})`)
       }
     }
 
     if (addedLines > 0) {
-      this.alert.success('Receta aplicada', `Se agregaron ${addedLines} líneas a la venta`)
+      this.alert.success(
+        '✅ Receta aplicada',
+        `Se agregaron ${addedLines} líneas a la venta desde la receta ${p.prescriptionNumber || p.id}`,
+      )
+    } else {
+      this.alert.warning('Sin cambios', 'No se pudo agregar ningún producto de esta receta')
     }
+
     if (missing.length > 0 || insufficient.length > 0) {
       const msgParts = [] as string[]
-      if (missing.length > 0) msgParts.push(`No encontrados: ${missing.join(', ')}`)
-      if (insufficient.length > 0) msgParts.push(`Stock insuficiente: ${insufficient.join(', ')}`)
-      this.alert.warning('Aviso', msgParts.join(' • '))
+      if (missing.length > 0) msgParts.push(`❌ No encontrados: ${missing.join(', ')}`)
+      if (insufficient.length > 0)
+        msgParts.push(`⚠️ Stock insuficiente: ${insufficient.join(', ')}`)
+      this.alert.fire({
+        icon: 'warning',
+        title: 'Aviso de inventario',
+        html: `<div class="text-left text-sm">${msgParts.join('<br>')}</div>`,
+        confirmButtonText: 'Entendido',
+      })
     }
   }
 
@@ -359,14 +391,18 @@ export class NewSaleComponent implements OnInit {
           const discountAmount = (updatedQty * unitPrice * discountPercent) / 100
           const subtotal = updatedQty * unitPrice - discountAmount
           this.saleItems.update(items =>
-            items.map((it, i) => (i === existingIndex ? { ...it, quantity: updatedQty, subtotal } : it)),
+            items.map((it, i) =>
+              i === existingIndex ? { ...it, quantity: updatedQty, subtotal } : it,
+            ),
           )
         }
       } else {
         const discountAmount = (newQuantity * unitPrice * discountPercent) / 100
         const subtotal = newQuantity * unitPrice - discountAmount
         this.saleItems.update(items =>
-          items.map((it, i) => (i === existingIndex ? { ...it, quantity: newQuantity, subtotal } : it)),
+          items.map((it, i) =>
+            i === existingIndex ? { ...it, quantity: newQuantity, subtotal } : it,
+          ),
         )
       }
     } else {

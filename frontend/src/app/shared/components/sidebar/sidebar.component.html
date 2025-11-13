@@ -1,141 +1,188 @@
 <div
   class="fixed top-16 left-0 h-[calc(100vh-4rem)] bg-blue-50 flex flex-col z-40 transition-all duration-300 ease-in-out shadow-lg"
-  [ngClass]="{ 'w-96': isExpanded(), 'w-16': !isExpanded() }"
+  [ngClass]="{ 'w-72': isExpanded(), 'w-16': !isExpanded() }"
 >
   <div class="flex-1 overflow-y-auto pt-3">
-    <mat-accordion *ngIf="isExpanded()">
+    <!-- Modo expandido -->
+    <div *ngIf="isExpanded()" class="px-4 space-y-1">
       <ng-container *ngFor="let menuItem of filteredMenuItems()">
-        <div *ngIf="!menuItem.children || menuItem.children.length === 0" class="px-4 mb-2">
+        <!-- Items sin hijos -->
+        <div *ngIf="!menuItem.children || menuItem.children.length === 0">
           <ng-container *ngIf="!isDemo; else demoTopItem">
             <a
-              mat-list-item
               [routerLink]="menuItem.route"
               routerLinkActive="bg-blue-200"
-              class="hover:bg-blue-100 rounded-lg"
+              #rla="routerLinkActive"
+              class="flex items-start gap-3 w-full px-3 py-3 rounded-lg text-blue-900 hover:bg-blue-100 transition-colors no-underline"
+              [class.bg-blue-200]="rla.isActive"
             >
-              <div class="flex items-center gap-x-4">
-                <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
-                <span class="text-blue-900 font-normal">{{ menuItem.label }}</span>
-              </div>
+              <span
+                class="material-symbols-outlined text-blue-600 flex-shrink-0"
+                style="font-size: 24px"
+                >{{ menuItem.icon }}</span
+              >
+              <span class="font-normal leading-tight">{{ menuItem.label }}</span>
             </a>
           </ng-container>
           <ng-template #demoTopItem>
             <button
-              mat-list-item
+              type="button"
               (click)="onDemoClick()"
-              class="hover:bg-blue-100 rounded-lg opacity-75"
+              class="flex items-start gap-3 w-full px-3 py-3 rounded-lg text-blue-900 hover:bg-blue-100 transition-colors opacity-75"
               matTooltip="Inicia sesión para acceder"
             >
-              <div class="flex items-center gap-x-4">
-                <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
-                <span class="text-blue-900 font-normal">{{ menuItem.label }}</span>
-              </div>
+              <span
+                class="material-symbols-outlined text-blue-600 flex-shrink-0"
+                style="font-size: 24px"
+                >{{ menuItem.icon }}</span
+              >
+              <span class="font-normal leading-tight">{{ menuItem.label }}</span>
             </button>
           </ng-template>
         </div>
 
+        <!-- Items con hijos (expansion panel) -->
         <mat-expansion-panel
           *ngIf="menuItem.children && menuItem.children.length > 0"
-          class="bg-blue-50 shadow-none px-4"
+          class="!bg-blue-50 shadow-none mat-elevation-z0"
           hideToggle
         >
-          <mat-expansion-panel-header class="bg-blue-50 hover:bg-blue-100 rounded-full">
-            <mat-panel-title class="flex justify-start items-center gap-x-4">
-              <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
-              <span class="text-blue-900 font-normal">{{ menuItem.label }}</span>
+          <mat-expansion-panel-header
+            class="px-3 py-1 hover:bg-blue-100 rounded-full transition-colors !bg-blue-50"
+          >
+            <mat-panel-title class="flex items-start gap-3">
+              <span
+                class="material-symbols-outlined text-blue-600 flex-shrink-0"
+                style="font-size: 24px"
+                >{{ menuItem.icon }}</span
+              >
+              <span class="font-normal text-blue-900 leading-tight">{{ menuItem.label }}</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <mat-nav-list>
+          <div class="pl-6 pr-3 py-2 space-y-1 bg-blue-50">
             <ng-container *ngFor="let child of menuItem.children">
               <ng-container *ngIf="!isDemo; else demoChildItem">
                 <a
-                  mat-list-item
                   [routerLink]="child.route"
                   routerLinkActive="bg-blue-200"
-                  class="hover:bg-blue-100"
+                  #rlaChild="routerLinkActive"
+                  class="flex items-start gap-3 w-full px-3 py-2.5 rounded-lg text-blue-900 hover:bg-blue-100 transition-colors no-underline"
+                  [class.bg-blue-200]="rlaChild.isActive"
                 >
-                  <div class="flex items-center gap-x-4">
-                    <mat-icon color="primary">{{ child.icon }}</mat-icon>
-                    <span class="text-blue-900">{{ child.label }}</span>
-                  </div>
+                  <span
+                    class="material-symbols-outlined text-blue-600 flex-shrink-0"
+                    style="font-size: 24px"
+                    >{{ child.icon }}</span
+                  >
+                  <span class="leading-tight">{{ child.label }}</span>
                 </a>
               </ng-container>
               <ng-template #demoChildItem>
                 <button
-                  mat-list-item
+                  type="button"
                   (click)="onDemoClick()"
-                  class="hover:bg-blue-100 opacity-75"
+                  class="flex items-start gap-3 w-full px-3 py-2.5 rounded-lg text-blue-900 hover:bg-blue-100 transition-colors opacity-75"
                   matTooltip="Inicia sesión para acceder"
                 >
-                  <div class="flex items-center gap-x-4">
-                    <mat-icon color="primary">{{ child.icon }}</mat-icon>
-                    <span class="text-blue-900">{{ child.label }}</span>
-                  </div>
+                  <span
+                    class="material-symbols-outlined text-blue-600 flex-shrink-0"
+                    style="font-size: 24px"
+                    >{{ child.icon }}</span
+                  >
+                  <span class="leading-tight">{{ child.label }}</span>
                 </button>
               </ng-template>
             </ng-container>
-          </mat-nav-list>
+          </div>
         </mat-expansion-panel>
       </ng-container>
-    </mat-accordion>
+    </div>
 
-    <div *ngIf="!isExpanded()" class="px-2">
-      <div *ngFor="let menuItem of filteredMenuItems(); let i = index" class="mb-2">
+    <!-- Modo colapsado -->
+    <div *ngIf="!isExpanded()" class="px-2 space-y-2">
+      <div *ngFor="let menuItem of filteredMenuItems()">
+        <!-- Items sin hijos -->
         <div *ngIf="!menuItem.children || menuItem.children.length === 0">
           <ng-container *ngIf="!isDemo; else demoCompactItem">
             <a
-              mat-icon-button
               [routerLink]="menuItem.route"
               routerLinkActive="bg-blue-200"
+              #rlaCompact="routerLinkActive"
               [matTooltip]="menuItem.label"
               matTooltipPosition="right"
-              class="w-12 h-12 hover:bg-blue-100 transition-colors duration-200 rounded-full"
+              class="flex items-center justify-center w-12 h-12 text-blue-600 hover:bg-blue-100 transition-colors no-underline rounded-lg border-0"
+              [class.bg-blue-200]="rlaCompact.isActive"
             >
-              <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
+              <span class="material-symbols-outlined" style="font-size: 24px">{{
+                menuItem.icon
+              }}</span>
             </a>
           </ng-container>
           <ng-template #demoCompactItem>
             <button
-              mat-icon-button
+              type="button"
               (click)="onDemoClick()"
               [matTooltip]="menuItem.label + ' (requiere iniciar sesión)'"
               matTooltipPosition="right"
-              class="w-12 h-12 hover:bg-blue-100 transition-colors duration-200 rounded-full opacity-75"
+              class="flex items-center justify-center w-12 h-12 text-blue-600 hover:bg-blue-100 transition-colors opacity-75 rounded-lg border-0"
             >
-              <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
+              <span class="material-symbols-outlined" style="font-size: 24px">{{
+                menuItem.icon
+              }}</span>
             </button>
           </ng-template>
         </div>
 
+        <!-- Items con hijos (menú desplegable) -->
         <div *ngIf="menuItem.children && menuItem.children.length > 0">
           <button
-            mat-icon-button
+            type="button"
             [matMenuTriggerFor]="menu"
             [matTooltip]="menuItem.label"
             matTooltipPosition="right"
-            class="w-12 h-12 hover:bg-blue-100 transition-colors duration-200 rounded-full"
+            class="flex items-center justify-center w-12 h-12 text-blue-600 hover:bg-blue-100 transition-colors rounded-lg border-0"
           >
-            <mat-icon color="primary">{{ menuItem.icon }}</mat-icon>
+            <span class="material-symbols-outlined" style="font-size: 24px">{{
+              menuItem.icon
+            }}</span>
           </button>
 
-          <mat-menu #menu="matMenu" class="sidebar-menu" xPosition="after">
+          <mat-menu
+            #menu="matMenu"
+            xPosition="after"
+            [overlapTrigger]="false"
+            [panelClass]="'sidebar-menu-panel'"
+          >
             <ng-container *ngFor="let child of menuItem.children">
               <ng-container *ngIf="!isDemo; else demoMenuChild">
                 <a
                   mat-menu-item
                   [routerLink]="child.route"
                   routerLinkActive="bg-blue-200"
-                  class="hover:bg-blue-100"
+                  class="hover:bg-blue-100 no-underline flex items-start"
                 >
-                  <mat-icon color="primary">{{ child.icon }}</mat-icon>
-                  <span class="text-blue-900">{{ child.label }}</span>
+                  <span
+                    class="material-symbols-outlined text-blue-600 mr-2 flex-shrink-0"
+                    style="font-size: 24px"
+                    >{{ child.icon }}</span
+                  >
+                  <span class="text-blue-900 leading-tight">{{ child.label }}</span>
                 </a>
               </ng-container>
               <ng-template #demoMenuChild>
-                <button mat-menu-item (click)="onDemoClick()" class="opacity-75">
-                  <mat-icon color="primary">{{ child.icon }}</mat-icon>
-                  <span class="text-blue-900">{{ child.label }}</span>
+                <button
+                  mat-menu-item
+                  type="button"
+                  (click)="onDemoClick()"
+                  class="opacity-75 flex items-start"
+                >
+                  <span
+                    class="material-symbols-outlined text-blue-600 mr-2 flex-shrink-0"
+                    style="font-size: 24px"
+                    >{{ child.icon }}</span
+                  >
+                  <span class="text-blue-900 leading-tight">{{ child.label }}</span>
                 </button>
               </ng-template>
             </ng-container>
@@ -145,32 +192,39 @@
     </div>
   </div>
 
+  <!-- Footer con logout y branding -->
   <div class="mt-auto pb-4" [class.px-4]="isExpanded()" [class.px-2]="!isExpanded()">
+    <!-- Logout expandido -->
     <a
-      mat-list-item
       *ngIf="isExpanded()"
-      class="mb-4 hover:bg-red-50 transition-colors duración-200 group"
       (click)="onLogout()"
+      class="flex items-start gap-3 w-full px-3 py-3 mb-4 rounded-lg text-red-600 hover:bg-red-50 transition-colors cursor-pointer group no-underline"
     >
-      <div class="flex items-center gap-x-4">
-        <mat-icon class="text-red-600 group-hover:text-red-800">logout</mat-icon>
-        <span class="text-red-600 group-hover:text-red-800">Cerrar Sesión</span>
-      </div>
+      <span
+        class="material-symbols-outlined group-hover:text-red-800 flex-shrink-0"
+        style="font-size: 24px"
+        >logout</span
+      >
+      <span class="group-hover:text-red-800 leading-tight">Cerrar Sesión</span>
     </a>
 
+    <!-- Logout colapsado -->
     <button
       *ngIf="!isExpanded()"
-      mat-icon-button
+      type="button"
       [matTooltip]="'Cerrar Sesión'"
       matTooltipPosition="right"
-      class="w-12 h-12 hover:bg-red-50 transition-colors duration-200 group mb-4 rounded-full"
       (click)="onLogout()"
+      class="flex items-center justify-center w-12 h-12 mb-4 text-red-600 hover:bg-red-50 transition-colors group rounded-lg border-0"
     >
-      <mat-icon class="text-red-600 group-hover:text-red-800">logout</mat-icon>
+      <span class="material-symbols-outlined group-hover:text-red-800" style="font-size: 24px"
+        >logout</span
+      >
     </button>
 
-    <mat-divider class="my-2 text-blue-600"></mat-divider>
+    <mat-divider class="my-2"></mat-divider>
 
+    <!-- Branding -->
     <div class="text-center" *ngIf="isExpanded()">
       <span class="text-sm font-medium text-blue-600">PLATAFORMA DE GESTIÓN CLÍNICA</span>
     </div>

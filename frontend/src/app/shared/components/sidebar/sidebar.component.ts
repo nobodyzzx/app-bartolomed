@@ -75,6 +75,11 @@ export class SidebarComponent {
   }
 
   onLogout(): void {
+    // Cerrar sesión real (backend) y limpiar simulador de roles
+    try {
+      this.appAuth.logout()
+    } catch {}
+    // Asegurar limpieza de roles/permisos simulados para coherencia del UI
     this.authService.logout()
   }
 
