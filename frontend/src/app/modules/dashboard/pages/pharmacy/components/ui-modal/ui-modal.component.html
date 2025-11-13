@@ -1,0 +1,57 @@
+<div *ngIf="open" class="fixed inset-0 z-50 flex items-center justify-center">
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" (click)="close()"></div>
+
+  <!-- Dialog -->
+  <div
+    class="relative bg-white w-full rounded-2xl shadow-xl border border-slate-200 p-6 mx-4 max-h-[90vh] flex flex-col"
+    [ngClass]="widthClass"
+    role="dialog"
+    aria-modal="true"
+  >
+    <!-- Close button -->
+    <button
+      type="button"
+      class="absolute top-3 right-3 w-9 h-9 rounded-full inline-flex items-center justify-center bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:ring-offset-1 transition-all border-0"
+      (click)="close()"
+      aria-label="Cerrar"
+    >
+      <span class="material-symbols-outlined msz-20 leading-none">close</span>
+    </button>
+
+    <!-- Header -->
+    <header class="mb-4">
+      <h2 class="text-xl font-semibold text-slate-900">{{ title }}</h2>
+      <p *ngIf="subtitle" class="text-slate-600 mt-1">{{ subtitle }}</p>
+    </header>
+
+    <!-- Content -->
+    <section class="grid gap-4 overflow-y-auto pr-1 custom-scroll flex-1">
+      <ng-content></ng-content>
+    </section>
+
+    <!-- Footer -->
+    <footer *ngIf="showFooter" class="mt-6 flex items-center justify-end gap-3">
+      <button
+        type="button"
+        (click)="close()"
+        class="inline-flex items-center gap-2 h-11 px-5 rounded-full font-medium bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <span class="material-symbols-outlined msz-18">close</span>
+        {{ cancelText }}
+      </button>
+      <button
+        type="button"
+        (click)="submit()"
+        [disabled]="loading"
+        class="inline-flex items-center gap-2 h-11 px-5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
+      >
+        <span class="material-symbols-outlined msz-18" *ngIf="!loading">check</span>
+        <span class="material-symbols-outlined msz-18 animate-spin" *ngIf="loading"
+          >progress_activity</span
+        >
+        {{ confirmText }}
+      </button>
+    </footer>
+  </div>
+</div>

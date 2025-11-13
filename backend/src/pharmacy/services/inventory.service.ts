@@ -1,13 +1,15 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThanOrEqual, Like, Repository } from 'typeorm';
+import { Clinic } from '../../clinics/entities/clinic.entity';
 import {
   CreateMedicationDto,
   CreateMedicationStockDto,
+  TransferStockDto,
   UpdateMedicationDto,
   UpdateMedicationStockDto,
 } from '../dto/medication.dto';
-import { Medication, MedicationStock } from '../entities/pharmacy.entity';
+import { Medication, MedicationStock, MovementType, StockMovement } from '../entities/pharmacy.entity';
 
 @Injectable()
 export class InventoryService {
@@ -16,6 +18,10 @@ export class InventoryService {
     private medicationRepository: Repository<Medication>,
     @InjectRepository(MedicationStock)
     private stockRepository: Repository<MedicationStock>,
+    @InjectRepository(StockMovement)
+    private movementRepository: Repository<StockMovement>,
+    @InjectRepository(Clinic)
+    private clinicRepository: Repository<Clinic>,
   ) {}
 
   // Medication CRUD
@@ -79,7 +85,24 @@ export class InventoryService {
 
   // Stock Management
   async addStock(createStockDto: CreateMedicationStockDto): Promise<MedicationStock> {
+    console.log('[BACKEND] DTO recibido:', JSON.stringify(createStockDto, null, 2));
+    console.log('[BACKEND] Tipos:', {
+      quantity: typeof createStockDto.quantity,
+      unitCost: typeof createStockDto.unitCost,
+      sellingPrice: typeof createStockDto.sellingPrice,
+      minimumStock: typeof createStockDto.minimumStock,
+    });
+
     const medication = await this.findMedicationById(createStockDto.medicationId);
+
+    // Verificar que la clínica existe
+    const clinic = await this.clinicRepository.findOne({
+      where: { id: createStockDto.clinicId },
+    });
+
+    if (!clinic) {
+      throw new BadRequestException(`Clinic with id ${createStockDto.clinicId} not found`);
+    }
 
     const existingStock = await this.stockRepository.findOne({
       where: { batchNumber: createStockDto.batchNumber },
@@ -89,11 +112,36 @@ export class InventoryService {
       throw new BadRequestException('Stock with this batch number already exists');
     }
 
-    const stock = this.stockRepository.create({
-      ...createStockDto,
+    const stockData = {
+      batchNumber: createStockDto.batchNumber,
+      quantity: Number(createStockDto.quantity),
+      unitCost: Number(createStockDto.unitCost),
+      sellingPrice: Number(createStockDto.sellingPrice),
+      expiryDate: new Date(createStockDto.expiryDate),
+      receivedDate: new Date(createStockDto.receivedDate),
+      location: createStockDto.location || null,
+      minimumStock: createStockDto.minimumStock !== undefined ? Number(createStockDto.minimumStock) : 10,
+      supplierBatch: createStockDto.supplierBatch || null,
       medication,
-      availableQuantity: createStockDto.quantity,
-    });
+      clinic,
+      availableQuantity: Number(createStockDto.quantity),
+      reservedQuantity: 0,
+    };
+
+    console.log(
+      '[BACKEND] Stock data antes de crear:',
+      JSON.stringify(
+        {
+          ...stockData,
+          medication: { id: medication.id },
+          clinic: { id: clinic.id },
+        },
+        null,
+        2,
+      ),
+    );
+
+    const stock = this.stockRepository.create(stockData);
 
     return await this.stockRepository.save(stock);
   }
@@ -122,6 +170,10 @@ export class InventoryService {
     const stock = await this.findStockById(id);
 
     Object.assign(stock, updateStockDto);
+
+    if (updateStockDto.expiryDate) {
+      stock.expiryDate = new Date(updateStockDto.expiryDate);
+    }
 
     if (updateStockDto.quantity !== undefined) {
       stock.availableQuantity = updateStockDto.quantity - stock.reservedQuantity;
@@ -191,5 +243,84 @@ export class InventoryService {
     stock.quantity -= quantity;
 
     return await this.stockRepository.save(stock);
+  }
+
+  // Transfer stock between clinics
+  async transferStock(dto: TransferStockDto) {
+    const source = await this.findStockById(dto.sourceStockId);
+
+    if (!source.isActive) {
+      throw new BadRequestException('Source stock is inactive');
+    }
+
+    if (dto.quantity <= 0) {
+      throw new BadRequestException('Quantity must be greater than zero');
+    }
+
+    if (source.availableQuantity < dto.quantity) {
+      throw new BadRequestException('Insufficient available quantity to transfer');
+    }
+
+    const toClinic = await this.clinicRepository.findOne({ where: { id: dto.toClinicId } });
+    if (!toClinic) {
+      throw new BadRequestException(`Destination clinic with id ${dto.toClinicId} not found`);
+    }
+
+    // Decrease from source stock
+    source.quantity -= dto.quantity;
+    source.availableQuantity -= dto.quantity;
+    await this.stockRepository.save(source);
+
+    // Create destination stock (clone basic attributes)
+    const newBatchSuffix = `-T${Date.now()}`;
+    const destStock = this.stockRepository.create({
+      batchNumber: `${source.batchNumber}${newBatchSuffix}`,
+      quantity: dto.quantity,
+      reservedQuantity: 0,
+      availableQuantity: dto.quantity,
+      unitCost: Number(source.unitCost),
+      sellingPrice: Number(source.sellingPrice),
+      expiryDate: new Date(source.expiryDate),
+      receivedDate: new Date(),
+      supplierBatch: source.supplierBatch,
+      location: dto.location ?? null,
+      minimumStock: source.minimumStock,
+      medication: source.medication,
+      clinic: toClinic,
+      isActive: true,
+    });
+    const savedDest = await this.stockRepository.save(destStock);
+
+    // Record movements for audit trail
+    const now = new Date();
+    const outMovement = this.movementRepository.create({
+      type: MovementType.TRANSFER,
+      quantity: dto.quantity,
+      unitPrice: Number(source.unitCost),
+      reference: `to:${toClinic.id}`,
+      reason: 'transfer_out',
+      notes: dto.note ?? null,
+      movementDate: now,
+      stock: source,
+      isActive: true,
+    });
+    const inMovement = this.movementRepository.create({
+      type: MovementType.TRANSFER,
+      quantity: dto.quantity,
+      unitPrice: Number(source.unitCost),
+      reference: `from:${source.clinic.id}`,
+      reason: 'transfer_in',
+      notes: dto.note ?? null,
+      movementDate: now,
+      stock: savedDest,
+      isActive: true,
+    });
+    await this.movementRepository.save([outMovement, inMovement]);
+
+    return {
+      source,
+      destination: savedDest,
+      transferred: dto.quantity,
+    };
   }
 }

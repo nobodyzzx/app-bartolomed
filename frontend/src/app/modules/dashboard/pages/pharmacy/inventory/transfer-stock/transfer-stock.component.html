@@ -1,0 +1,198 @@
+<div class="min-h-screen bg-slate-50">
+  <div class="max-w-7xl mx-auto p-6">
+    <!-- Header -->
+    <header class="mb-6 flex items-center gap-4">
+      <button
+        (click)="goBack()"
+        class="w-11 h-11 rounded-full hover:bg-white/80 flex items-center justify-center transition-colors shadow-sm border border-slate-200"
+        type="button"
+      >
+        <span class="material-symbols-outlined text-slate-700">arrow_back</span>
+      </button>
+      <div>
+        <h1 class="text-3xl font-bold text-slate-900">Transferir Stock entre Clínicas</h1>
+        <p class="text-sm text-slate-600 mt-1">
+          Mueva inventario de esta clínica a otra clínica del sistema
+        </p>
+      </div>
+    </header>
+
+    <!-- Loading State -->
+    @if (loadingStocks() || loadingClinics()) {
+      <div class="flex justify-center items-center py-20">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-3 border-blue-600"></div>
+      </div>
+    } @else {
+      <!-- Transfer Form -->
+      <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
+        <!-- Selected Stock Summary Card -->
+        @if (selectedStock()) {
+          <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+            <fieldset class="border border-blue-200 rounded-lg p-4 bg-blue-50/30">
+              <legend class="px-2 text-sm font-semibold text-blue-900">
+                📦 Producto seleccionado
+              </legend>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="flex flex-col">
+                  <span class="text-slate-600 font-medium">Medicamento:</span>
+                  <span class="text-slate-900">{{
+                    selectedStock()!.medication?.name || 'N/A'
+                  }}</span>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-slate-600 font-medium">Lote:</span>
+                  <span class="text-slate-900">{{ selectedStock()!.batchNumber }}</span>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-slate-600 font-medium">Disponible:</span>
+                  <span class="text-green-700 font-semibold"
+                    >{{ selectedStock()!.availableQuantity || 0 }} unidades</span
+                  >
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-slate-600 font-medium">Vencimiento:</span>
+                  <span class="text-slate-900">{{ selectedStock()!.expiryDate || 'N/A' }}</span>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+        }
+
+        <!-- Main Transfer Form Card -->
+        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+          <!-- Stock Selection Section -->
+          <fieldset class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+            <legend class="px-2 text-sm font-semibold text-slate-700">
+              Origen de la transferencia
+            </legend>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Lote a transferir</mat-label>
+              <mat-icon matIconPrefix>inventory_2</mat-icon>
+              <mat-select formControlName="sourceStockId" required>
+                <mat-option value="">-- Seleccione un lote --</mat-option>
+                @for (stock of stocks(); track stock.id) {
+                  <mat-option [value]="stock.id">{{ getStockDisplay(stock) }}</mat-option>
+                }
+              </mat-select>
+              <mat-error>Debe seleccionar un lote de origen</mat-error>
+              @if (!currentClinicId() && !form.get('sourceStockId')?.hasError('required')) {
+                <mat-hint class="text-amber-700"
+                  >⚠️ No se detectó clínica actual. Seleccione manualmente el stock.</mat-hint
+                >
+              }
+            </mat-form-field>
+          </fieldset>
+
+          <!-- Destination Section -->
+          <fieldset class="border border-green-200 rounded-lg p-4 bg-green-50/30">
+            <legend class="px-2 text-sm font-semibold text-green-900">Destino</legend>
+
+            <div class="space-y-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Clínica destino</mat-label>
+                <mat-icon matIconPrefix>domain</mat-icon>
+                <mat-select formControlName="toClinicId" required>
+                  <mat-option value="">-- Seleccione clínica destino --</mat-option>
+                  @for (clinic of clinics(); track clinic.id) {
+                    <mat-option [value]="clinic.id">{{ clinic.name }}</mat-option>
+                  }
+                </mat-select>
+                <mat-error>Debe seleccionar una clínica de destino</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Ubicación en destino (opcional)</mat-label>
+                <mat-icon matIconPrefix>place</mat-icon>
+                <input
+                  matInput
+                  formControlName="location"
+                  placeholder="Ej: Estante A-2, Refrigerador 1"
+                />
+                <mat-hint>Indique dónde se almacenará en la clínica destino</mat-hint>
+              </mat-form-field>
+            </div>
+          </fieldset>
+
+          <!-- Transfer Details Section -->
+          <fieldset class="border border-blue-200 rounded-lg p-4 bg-blue-50/30">
+            <legend class="px-2 text-sm font-semibold text-blue-900">
+              Detalles de la transferencia
+            </legend>
+
+            <div class="space-y-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Cantidad a transferir</mat-label>
+                <mat-icon matIconPrefix>scale</mat-icon>
+                <input
+                  matInput
+                  type="number"
+                  formControlName="quantity"
+                  placeholder="Ingrese cantidad"
+                  min="1"
+                  required
+                />
+                <mat-hint
+                  >Máximo disponible:
+                  {{ selectedStock()?.availableQuantity || 0 }} unidades</mat-hint
+                >
+                @if (form.get('quantity')?.hasError('max')) {
+                  <mat-error
+                    >No puede exceder
+                    {{ selectedStock()?.availableQuantity || 0 }} unidades</mat-error
+                  >
+                } @else if (form.get('quantity')?.hasError('min')) {
+                  <mat-error>La cantidad mínima es 1</mat-error>
+                } @else if (form.get('quantity')?.hasError('required')) {
+                  <mat-error>La cantidad es requerida</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Nota / Comentario (opcional)</mat-label>
+                <mat-icon matIconPrefix>comment</mat-icon>
+                <textarea
+                  matInput
+                  formControlName="note"
+                  placeholder="Observaciones sobre la transferencia..."
+                  rows="3"
+                  cdkTextareaAutosize
+                  cdkAutosizeMinRows="3"
+                  cdkAutosizeMaxRows="6"
+                ></textarea>
+                <mat-hint>Agregue cualquier observación relevante</mat-hint>
+              </mat-form-field>
+            </div>
+          </fieldset>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end gap-3">
+          <button
+            type="button"
+            (click)="goBack()"
+            class="px-6 h-11 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-colors flex items-center gap-2 font-medium"
+          >
+            <span class="material-symbols-outlined">close</span>
+            <span>Cancelar</span>
+          </button>
+          <button
+            type="submit"
+            [disabled]="loading() || form.invalid"
+            class="px-6 h-11 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          >
+            @if (loading()) {
+              <div
+                class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"
+              ></div>
+              <span>Procesando...</span>
+            } @else {
+              <span class="material-symbols-outlined">local_shipping</span>
+              <span>Transferir Stock</span>
+            }
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</div>

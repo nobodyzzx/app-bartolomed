@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateSupplierDto, UpdateSupplierDto } from '../dto/supplier.dto';
-import { Supplier } from '../entities/purchase-order.entity';
+import { Supplier, SupplierStatus } from '../entities/supplier.entity';
 
 @Injectable()
 export class SuppliersService {
@@ -14,17 +14,35 @@ export class SuppliersService {
   async create(createSupplierDto: CreateSupplierDto): Promise<Supplier> {
     const code = await this.generateSupplierCode();
 
-    const supplier = this.supplierRepository.create({
-      ...createSupplierDto,
+    // Mapear nuevos campos a formato antiguo
+    const supplierData = {
       code,
-    });
+      name: createSupplierDto.nombreComercial || createSupplierDto.name || '',
+      tradeName: createSupplierDto.razonSocial,
+      taxId: createSupplierDto.idTributario || createSupplierDto.taxId,
+      contactPerson: createSupplierDto.contactPerson,
+      email: createSupplierDto.email,
+      phone: createSupplierDto.phone,
+      address: createSupplierDto.address,
+      city: createSupplierDto.city,
+      state: createSupplierDto.state,
+      country: createSupplierDto.country,
+      zipCode: createSupplierDto.postalCode,
+      notes: createSupplierDto.notes,
+      // Guardar tipo de proveedor en notes si existe (temporal)
+      ...(createSupplierDto.tipoProveedor && {
+        notes: `Tipo: ${createSupplierDto.tipoProveedor}${createSupplierDto.notes ? '. ' + createSupplierDto.notes : ''}`,
+      }),
+    };
+
+    const supplier = this.supplierRepository.create(supplierData);
 
     return await this.supplierRepository.save(supplier);
   }
 
   async findAll(): Promise<Supplier[]> {
     return await this.supplierRepository.find({
-      where: { isActive: true },
+      where: { status: SupplierStatus.ACTIVE },
       order: { name: 'ASC' },
     });
   }
@@ -32,7 +50,7 @@ export class SuppliersService {
   async findOne(id: string): Promise<Supplier> {
     const supplier = await this.supplierRepository.findOne({
       where: { id },
-      relations: ['orders'],
+      relations: ['purchaseOrders'],
     });
 
     if (!supplier) {
@@ -53,8 +71,8 @@ export class SuppliersService {
   async remove(id: string): Promise<void> {
     const supplier = await this.findOne(id);
 
-    // Soft delete by setting isActive to false
-    supplier.isActive = false;
+    // Soft delete: marcar como INACTIVE
+    supplier.status = SupplierStatus.INACTIVE;
     await this.supplierRepository.save(supplier);
   }
 
@@ -65,7 +83,7 @@ export class SuppliersService {
       throw new NotFoundException(`Supplier with ID ${id} not found`);
     }
 
-    supplier.isActive = true;
+    supplier.status = SupplierStatus.ACTIVE;
     return await this.supplierRepository.save(supplier);
   }
 

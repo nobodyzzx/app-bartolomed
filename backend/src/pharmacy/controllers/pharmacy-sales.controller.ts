@@ -1,15 +1,20 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CreatePharmacySaleDto, UpdatePharmacySaleDto, UpdatePharmacySaleStatusDto } from '../dto/pharmacy-sale.dto';
 import { SaleStatus } from '../entities/pharmacy-sale.entity';
 import { PharmacySalesService } from '../services/pharmacy-sales.service';
 
 @Controller('pharmacy-sales')
+@UseGuards(JwtAuthGuard)
 export class PharmacySalesController {
   constructor(private readonly pharmacySalesService: PharmacySalesService) {}
 
   @Post()
   create(@Body() createPharmacySaleDto: CreatePharmacySaleDto, @Request() req: any) {
-    const soldById = req.user?.sub || 'system';
+    const soldById = req.user?.id || req.user?.sub;
+    if (!soldById) {
+      throw new Error('User ID not found in request');
+    }
     return this.pharmacySalesService.create(createPharmacySaleDto, soldById);
   }
 

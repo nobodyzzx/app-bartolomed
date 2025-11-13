@@ -93,7 +93,7 @@ export class OrderGenerationService {
     // Create order items
     for (const itemDto of createOrderDto.items) {
       const item = this.purchaseOrderItemRepository.create({
-        orderId: savedOrder.id,
+        purchaseOrder: savedOrder,
         productName: itemDto.productName,
         productCode: itemDto.productCode,
         medicationId: itemDto.medicationId,

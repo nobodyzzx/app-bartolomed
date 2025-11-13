@@ -1,0 +1,516 @@
+<div class="min-h-screen bg-slate-50 p-8 print:bg-white print:p-4">
+  <div class="max-w-7xl mx-auto">
+    @if (loading()) {
+      <div class="flex justify-center items-center py-20">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    } @else if (order()) {
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-10 print:hidden">
+        <div class="flex items-center gap-4">
+          <button
+            type="button"
+            (click)="goBack()"
+            class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+            matTooltip="Volver"
+            aria-label="Volver"
+          >
+            <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
+          </button>
+          <div class="text-left">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">
+              {{ order()!.orderNumber }}
+            </h1>
+            <p class="text-slate-600">Detalle de orden de compra</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            (click)="printOrder()"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+            matTooltip="Imprimir orden"
+          >
+            <span class="material-symbols-outlined msz-18">print</span>
+            Imprimir
+          </button>
+          <button
+            type="button"
+            (click)="exportPDF()"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+            matTooltip="Exportar a PDF"
+          >
+            <span class="material-symbols-outlined msz-18">picture_as_pdf</span>
+            Exportar PDF
+          </button>
+          @if (canEdit()) {
+            <button
+              type="button"
+              (click)="editOrder()"
+              class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+              matTooltip="Editar orden"
+            >
+              <span class="material-symbols-outlined msz-20 leading-none">edit</span>
+              Editar
+            </button>
+          }
+          @if (canDelete()) {
+            <button
+              type="button"
+              (click)="deleteOrder()"
+              class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:ring-offset-1 transition-all border-0"
+              matTooltip="Eliminar orden"
+            >
+              <span class="material-symbols-outlined msz-20 leading-none">delete</span>
+              Eliminar
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 print:grid-cols-1">
+        <!-- Column 1: Order Info -->
+        <div class="lg:col-span-2 space-y-6 print:col-span-1">
+          <!-- Status & Actions Card -->
+          <div
+            class="bg-white rounded-xl border border-slate-200 p-6 shadow-md hover:shadow-lg transition-shadow print:shadow-none print:rounded-none print:p-4"
+          >
+            <div class="flex items-center justify-between mb-4 print:mb-2">
+              <div>
+                <h2 class="text-lg font-semibold text-slate-900 mb-1 print:text-base">
+                  Estado de la Orden
+                </h2>
+                <span
+                  class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                  [ngClass]="getStatusColor(order()!.status)"
+                >
+                  {{ getStatusLabel(order()!.status) }}
+                </span>
+              </div>
+              @if (canReceive()) {
+                <button
+                  (click)="openReceiveModal()"
+                  class="inline-flex items-center gap-2 px-4 h-10 rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors print:hidden"
+                >
+                  <span class="material-symbols-outlined text-lg">inventory_2</span>
+                  Recibir Productos
+                </button>
+              }
+            </div>
+
+            <!-- Available Status Changes -->
+            @if (getAvailableStatusChanges().length > 0) {
+              <div class="border-t border-slate-200 pt-4 mt-4 print:hidden">
+                <h3 class="text-sm font-medium text-slate-700 mb-3">Cambiar estado a:</h3>
+                <div class="flex flex-wrap gap-2">
+                  @for (status of getAvailableStatusChanges(); track status) {
+                    <button
+                      (click)="changeStatus(status)"
+                      class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors"
+                      [ngClass]="getStatusColor(status) + ' hover:opacity-80'"
+                    >
+                      {{ getStatusLabel(status) }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Items Table -->
+          <div
+            class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-md hover:shadow-lg transition-shadow print:shadow-none print:rounded-none"
+          >
+            <div class="p-6 border-b border-slate-200 print:p-4 print:border-b">
+              <h2 class="text-lg font-semibold text-slate-900 print:text-base">
+                Ítems de la Orden
+              </h2>
+              @if (order()!.items && order()!.items.length > 0) {
+                <p class="text-sm text-slate-600 mt-1 print:text-xs">
+                  {{ order()!.items.length }} producto(s) - Total unidades: {{ totalItems() }}
+                </p>
+              }
+            </div>
+            <div class="overflow-x-auto">
+              @if (!order()!.items || order()!.items.length === 0) {
+                <div class="p-12 text-center">
+                  <div
+                    class="w-20 h-20 mx-auto rounded-full bg-slate-100 flex items-center justify-center mb-4"
+                  >
+                    <span class="material-symbols-outlined text-slate-400 msz-40">inventory_2</span>
+                  </div>
+                  <p class="text-slate-600 text-lg font-medium mb-2">No hay ítems en esta orden</p>
+                  <p class="text-slate-500 text-sm mb-4">
+                    Esta orden fue creada sin productos. Edítala para agregar los medicamentos a
+                    solicitar.
+                  </p>
+                  @if (canEdit()) {
+                    <button
+                      (click)="editOrder()"
+                      class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+                    >
+                      <span class="material-symbols-outlined msz-20 leading-none">edit</span>
+                      Editar Orden
+                    </button>
+                  }
+                </div>
+              } @else {
+                <table class="min-w-full divide-y divide-slate-200">
+                  <thead class="bg-slate-50 print:bg-white">
+                    <tr>
+                      <th
+                        class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider print:px-2 print:py-1"
+                      >
+                        Producto
+                      </th>
+                      <th
+                        class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider print:px-2 print:py-1"
+                      >
+                        Cantidad
+                      </th>
+                      <th
+                        class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider print:px-2 print:py-1"
+                      >
+                        Precio Unit.
+                      </th>
+                      <th
+                        class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider print:px-2 print:py-1"
+                      >
+                        Subtotal
+                      </th>
+                      @if (
+                        order()!.status === PurchaseOrderStatus.PARTIALLY_RECEIVED ||
+                        order()!.status === PurchaseOrderStatus.RECEIVED ||
+                        order()!.status === PurchaseOrderStatus.DELIVERED
+                      ) {
+                        <th
+                          class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider print:px-2 print:py-1 print:hidden"
+                        >
+                          Recibido
+                        </th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-200">
+                    @for (item of order()!.items; track item.id || $index) {
+                      <tr class="print:text-sm">
+                        <td class="px-4 py-2 print:px-2 print:py-1">
+                          <div class="text-sm font-medium text-slate-900 print:text-xs">
+                            {{ item.productName }}
+                          </div>
+                          @if (item.medicationName && item.medicationName !== item.productName) {
+                            <div class="text-sm text-slate-500 print:text-xs">
+                              {{ item.medicationName }}
+                            </div>
+                          }
+                          @if (item.brand) {
+                            <div class="text-xs text-slate-400 print:text-[10px]">
+                              Marca: {{ item.brand }}
+                            </div>
+                          }
+                          @if (item.productCode) {
+                            <div class="text-xs text-slate-400 print:text-[10px]">
+                              Código: {{ item.productCode }}
+                            </div>
+                          }
+                          @if (item.notes) {
+                            <div class="text-xs text-slate-500 mt-1 print:text-[10px]">
+                              {{ item.notes }}
+                            </div>
+                          }
+                        </td>
+                        <td
+                          class="px-4 py-2 text-right text-sm text-slate-900 print:px-2 print:py-1 print:text-xs"
+                        >
+                          {{ item.quantity || 0 }}
+                        </td>
+                        <td
+                          class="px-4 py-2 text-right text-sm text-slate-900 print:px-2 print:py-1 print:text-xs"
+                        >
+                          ${{ item.unitPrice || 0 | number: '1.2-2' }}
+                        </td>
+                        <td
+                          class="px-4 py-2 text-right text-sm font-medium text-slate-900 print:px-2 print:py-1 print:text-xs"
+                        >
+                          ${{
+                            item.subtotal || item.quantity * item.unitPrice || 0 | number: '1.2-2'
+                          }}
+                        </td>
+                        @if (
+                          order()!.status === PurchaseOrderStatus.PARTIALLY_RECEIVED ||
+                          order()!.status === PurchaseOrderStatus.RECEIVED ||
+                          order()!.status === PurchaseOrderStatus.DELIVERED
+                        ) {
+                          <td class="px-6 py-4 text-right text-sm print:hidden">
+                            <span
+                              class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                              [ngClass]="
+                                (item.receivedQuantity || 0) >= item.quantity
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-amber-100 text-amber-700'
+                              "
+                            >
+                              {{ item.receivedQuantity || 0 }} / {{ item.quantity }}
+                            </span>
+                          </td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              }
+            </div>
+          </div>
+
+          <!-- Notes -->
+          @if (order()!.notes) {
+            <div
+              class="bg-white rounded-xl border border-slate-200 p-6 shadow-md hover:shadow-lg transition-shadow print:shadow-none print:rounded-none print:border-0 print:p-4"
+            >
+              <h2 class="text-lg font-semibold text-slate-900 mb-3 print:text-base">Notas</h2>
+              <p class="text-slate-700 whitespace-pre-wrap print:text-sm">{{ order()!.notes }}</p>
+            </div>
+          }
+        </div>
+
+        <!-- Column 2: Summary & Details -->
+        <div class="space-y-6">
+          <!-- Supplier Card -->
+          <div
+            class="bg-white rounded-xl border border-slate-200 p-6 shadow-md hover:shadow-lg transition-shadow print:shadow-none print:rounded-none print:p-4"
+          >
+            <h2 class="text-lg font-semibold text-slate-900 mb-4 print:text-sm print:mb-2">
+              Proveedor
+            </h2>
+            <div class="space-y-3 print:space-y-1">
+              <div>
+                <div class="text-sm font-medium text-slate-900 print:text-xs">
+                  {{ supplierDisplayName() }}
+                </div>
+                @if (order()!.supplier?.razonSocial) {
+                  <div class="text-xs text-slate-500 print:text-[10px]">
+                    {{ order()!.supplier!.razonSocial }}
+                  </div>
+                }
+              </div>
+              @if (order()!.supplier?.contactPerson) {
+                <div class="flex items-start gap-2 print:gap-1">
+                  <span
+                    class="material-symbols-outlined text-slate-400 text-lg print:text-xs print:hidden"
+                    >person</span
+                  >
+                  <span class="text-sm text-slate-700 print:text-[10px]">
+                    <span class="print:inline hidden">Contacto: </span
+                    >{{ order()!.supplier!.contactPerson }}
+                  </span>
+                </div>
+              }
+              @if (order()!.supplier?.email) {
+                <div class="flex items-start gap-2 print:gap-1">
+                  <span
+                    class="material-symbols-outlined text-slate-400 text-lg print:text-xs print:hidden"
+                    >email</span
+                  >
+                  <span class="text-sm text-slate-700 print:text-[10px]">
+                    {{ order()!.supplier!.email }}
+                  </span>
+                </div>
+              }
+              @if (order()!.supplier?.phone) {
+                <div class="flex items-start gap-2 print:gap-1">
+                  <span
+                    class="material-symbols-outlined text-slate-400 text-lg print:text-xs print:hidden"
+                    >phone</span
+                  >
+                  <span class="text-sm text-slate-700 print:text-[10px]">
+                    {{ order()!.supplier!.phone }}
+                  </span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Dates Card -->
+          <div
+            class="bg-white rounded-xl border border-slate-200 p-6 shadow-md hover:shadow-lg transition-shadow print:shadow-none print:rounded-none print:p-4"
+          >
+            <h2 class="text-lg font-semibold text-slate-900 mb-4 print:text-base print:mb-2">
+              Fechas
+            </h2>
+            <div class="space-y-3 print:space-y-1">
+              <div>
+                <div class="text-xs text-slate-500 mb-1 print:text-[10px] print:mb-0">
+                  Fecha de Orden
+                </div>
+                <div class="text-sm font-medium text-slate-900 print:text-xs">
+                  {{ order()!.orderDate | date: 'dd/MM/yyyy' }}
+                </div>
+              </div>
+              @if (order()!.expectedDeliveryDate) {
+                <div>
+                  <div class="text-xs text-slate-500 mb-1 print:text-[10px] print:mb-0">
+                    Entrega Esperada
+                  </div>
+                  <div class="text-sm font-medium text-slate-900 print:text-xs">
+                    {{ order()!.expectedDeliveryDate | date: 'dd/MM/yyyy' }}
+                  </div>
+                </div>
+              }
+              @if (order()!.actualDeliveryDate) {
+                <div>
+                  <div class="text-xs text-slate-500 mb-1 print:text-[10px] print:mb-0">
+                    Entrega Real
+                  </div>
+                  <div class="text-sm font-medium text-slate-900 print:text-xs">
+                    {{ order()!.actualDeliveryDate | date: 'dd/MM/yyyy' }}
+                  </div>
+                </div>
+              }
+              @if (order()!.createdAt) {
+                <div class="border-t border-slate-200 pt-3 print:pt-1 print:hidden">
+                  <div class="text-xs text-slate-500 mb-1 print:text-[10px] print:mb-0">Creado</div>
+                  <div class="text-sm text-slate-700 print:text-xs">
+                    {{ order()!.createdAt | date: 'dd/MM/yyyy HH:mm' }}
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Totals Card -->
+          <div
+            class="bg-white rounded-xl border border-slate-200 p-6 shadow-md hover:shadow-lg transition-shadow print:shadow-none print:rounded-none print:p-4"
+          >
+            <h2 class="text-lg font-semibold text-slate-900 mb-4 print:text-base print:mb-2">
+              Resumen
+            </h2>
+            <div class="space-y-3 print:space-y-1">
+              <div class="flex justify-between text-sm print:text-xs">
+                <span class="text-slate-600">Subtotal</span>
+                <span class="font-medium text-slate-900"
+                  >${{ order()!.subtotal || 0 | number: '1.2-2' }}</span
+                >
+              </div>
+              @if (order()!.taxRate && order()!.taxRate > 0) {
+                <div class="flex justify-between text-sm print:text-xs">
+                  <span class="text-slate-600">IVA ({{ (order()!.taxRate || 0) * 100 }}%)</span>
+                  <span class="font-medium text-slate-900"
+                    >${{ order()!.taxAmount || 0 | number: '1.2-2' }}</span
+                  >
+                </div>
+              }
+              @if (order()!.discountAmount && order()!.discountAmount > 0) {
+                <div class="flex justify-between text-sm text-green-600 print:text-xs">
+                  <span>Descuento</span>
+                  <span class="font-medium"
+                    >-${{ order()!.discountAmount || 0 | number: '1.2-2' }}</span
+                  >
+                </div>
+              }
+              @if (order()!.shippingCost && order()!.shippingCost > 0) {
+                <div class="flex justify-between text-sm print:text-xs">
+                  <span class="text-slate-600">Envío</span>
+                  <span class="font-medium text-slate-900"
+                    >${{ order()!.shippingCost || 0 | number: '1.2-2' }}</span
+                  >
+                </div>
+              }
+              <div
+                class="border-t border-slate-200 pt-3 flex justify-between print:pt-1 print:mt-1"
+              >
+                <span class="text-base font-semibold text-slate-900 print:text-xs">Total</span>
+                <span class="text-lg font-bold text-blue-600 print:text-sm"
+                  >${{ order()!.totalAmount || 0 | number: '1.2-2' }}</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Print Styles -->
+<style>
+  @media print {
+    body {
+      background: white;
+      margin: 0;
+      padding: 10mm;
+    }
+
+    /* Hide elements */
+    .print\:hidden {
+      display: none !important;
+    }
+
+    /* Show elements only in print */
+    .print\:inline {
+      display: inline !important;
+    }
+
+    /* Borders */
+    .print\:border {
+      border: 1px solid #cbd5e1 !important;
+    }
+
+    /* Spacing */
+    .print\:p-3 {
+      padding: 0.75rem !important;
+    }
+    .print\:px-3 {
+      padding-left: 0.75rem !important;
+      padding-right: 0.75rem !important;
+    }
+    .print\:py-2 {
+      padding-top: 0.5rem !important;
+      padding-bottom: 0.5rem !important;
+    }
+    .print\:py-1 {
+      padding-top: 0.25rem !important;
+      padding-bottom: 0.25rem !important;
+    }
+    .print\:mb-2 {
+      margin-bottom: 0.5rem !important;
+    }
+    .print\:mb-0 {
+      margin-bottom: 0 !important;
+    }
+    .print\:mt-1 {
+      margin-top: 0.25rem !important;
+    }
+    .print\:pt-1 {
+      padding-top: 0.25rem !important;
+    }
+    .print\:gap-1 {
+      gap: 0.25rem !important;
+    }
+
+    /* Space between utilities */
+    .print\:space-y-1 > * + * {
+      margin-top: 0.25rem !important;
+    }
+
+    /* Typography */
+    .print\:text-xs {
+      font-size: 0.75rem !important;
+      line-height: 1rem !important;
+    }
+    .print\:text-sm {
+      font-size: 0.875rem !important;
+      line-height: 1.25rem !important;
+    }
+    .print\:text-\[10px\] {
+      font-size: 10px !important;
+      line-height: 12px !important;
+    }
+
+    /* Page breaks */
+    .print\:break-inside-avoid {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+  }
+</style>

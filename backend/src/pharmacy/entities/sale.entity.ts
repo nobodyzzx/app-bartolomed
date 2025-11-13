@@ -83,13 +83,22 @@ export class PharmacySale {
   @JoinColumn({ name: 'patient_id' })
   patient: Patient;
 
-  @ManyToOne(() => Clinic)
+  @Column('uuid', { nullable: true })
+  patientId: string;
+
+  @ManyToOne(() => Clinic, { eager: true })
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic;
 
-  @ManyToOne(() => User)
+  @Column('uuid')
+  clinicId: string;
+
+  @ManyToOne(() => User, { eager: true })
   @JoinColumn({ name: 'sold_by' })
   soldBy: User;
+
+  @Column('uuid')
+  soldById: string;
 
   @OneToMany('PharmacySaleItem', 'sale', { cascade: true })
   items: any[];
@@ -131,9 +140,15 @@ export class PharmacySaleItem {
   @JoinColumn({ name: 'sale_id' })
   sale: PharmacySale;
 
+  @Column('uuid')
+  saleId: string;
+
   @ManyToOne('MedicationStock', { eager: true })
   @JoinColumn({ name: 'medication_stock_id' })
   medicationStock: any;
+
+  @Column('uuid')
+  medicationStockId: string;
 
   @CreateDateColumn()
   createdAt: Date;

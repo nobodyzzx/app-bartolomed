@@ -5,19 +5,7 @@ import { PaymentMethod, SaleStatus } from '../entities/pharmacy-sale.entity';
 export class CreatePharmacySaleItemDto {
   @IsNotEmpty()
   @IsString()
-  productName: string;
-
-  @IsOptional()
-  @IsString()
-  productCode?: string;
-
-  @IsOptional()
-  @IsString()
-  brand?: string;
-
-  @IsOptional()
-  @IsString()
-  batchNumber?: string;
+  medicationStockId: string;
 
   @IsNotEmpty()
   @IsNumber()
@@ -29,29 +17,25 @@ export class CreatePharmacySaleItemDto {
 
   @IsOptional()
   @IsNumber()
-  discount?: number;
+  discountPercent?: number;
 
   @IsOptional()
   @IsString()
-  instructions?: string;
+  batchNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  expiryDate?: string;
 }
 
 export class CreatePharmacySaleDto {
-  @IsNotEmpty()
-  @IsString()
-  patientName: string;
-
   @IsOptional()
   @IsString()
   patientId?: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  prescriptionNumber?: string;
-
-  @IsOptional()
-  @IsString()
-  doctorName?: string;
+  clinicId: string;
 
   @IsNotEmpty()
   @IsEnum(PaymentMethod)
@@ -59,15 +43,23 @@ export class CreatePharmacySaleDto {
 
   @IsOptional()
   @IsNumber()
-  discount?: number;
+  taxRate?: number;
 
   @IsOptional()
   @IsNumber()
-  amountPaid?: number;
+  discountAmount?: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  amountPaid: number;
 
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  prescriptionNumber?: string;
 
   @IsArray()
   @ValidateNested({ each: true })

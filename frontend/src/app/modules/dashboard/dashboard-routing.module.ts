@@ -116,7 +116,12 @@ const routes: Routes = [
         loadChildren: () => import('./pages/pharmacy/pharmacy.module').then(m => m.PharmacyModule),
         canActivate: [permissionsGuard, roleGuard],
         data: {
-          allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+          allowedRoles: [
+            UserRoles.PHARMACIST,
+            UserRoles.DOCTOR,
+            UserRoles.ADMIN,
+            UserRoles.SUPER_ADMIN,
+          ],
           requiredPermissions: [Permission.PharmacyInventoryManage],
         },
       },

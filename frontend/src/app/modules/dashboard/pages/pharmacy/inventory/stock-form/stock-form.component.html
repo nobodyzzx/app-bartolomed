@@ -1,0 +1,199 @@
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <header class="mb-8 flex items-center gap-4">
+      <button
+        type="button"
+        (click)="goBack()"
+        class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 shadow-sm hover:shadow transition-all"
+        aria-label="Volver"
+      >
+        <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <div>
+        <h1 class="text-3xl font-bold text-slate-900">
+          {{ isEditMode ? 'Editar Stock' : 'Nuevo Stock' }}
+        </h1>
+        <p class="text-slate-600">
+          {{ isEditMode ? 'Modifica el registro de stock' : 'Registra nuevo stock de medicamento' }}
+        </p>
+      </div>
+    </header>
+
+    <!-- Formulario -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+      <form [formGroup]="stockForm" (ngSubmit)="onSubmit()" class="space-y-6">
+        <!-- Selección de medicamento -->
+        <div class="flex items-end gap-3">
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>Medicamento *</mat-label>
+            <mat-select formControlName="medicationId">
+              <mat-option *ngFor="let m of medications()" [value]="m.id">
+                {{ m.name }} {{ m.brandName ? '– ' + m.brandName : '' }} [{{ m.code }}]
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="stockForm.get('medicationId')?.hasError('required')">
+              Seleccione un medicamento
+            </mat-error>
+          </mat-form-field>
+
+          <button
+            type="button"
+            (click)="goToMedicationsCatalog()"
+            class="inline-flex items-center gap-2 px-4 h-14 rounded-lg font-medium bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200 transition-all"
+            title="Ver catálogo completo"
+          >
+            <span class="material-symbols-outlined">library_books</span>
+            Catálogo
+          </button>
+
+          <button
+            type="button"
+            (click)="createNewMedication()"
+            class="inline-flex items-center gap-2 px-4 h-14 rounded-lg font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300 transition-all"
+          >
+            <span class="material-symbols-outlined">add</span>
+            Crear medicamento
+          </button>
+        </div>
+
+        <!-- Lote y Cantidad -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Número de lote *</mat-label>
+            <input matInput formControlName="batchNumber" placeholder="Ej: LOTE-2024-001" />
+            <mat-error *ngIf="stockForm.get('batchNumber')?.hasError('required')">
+              El lote es requerido
+            </mat-error>
+            <mat-error *ngIf="stockForm.get('batchNumber')?.hasError('minlength')">
+              Mínimo 3 caracteres
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Cantidad *</mat-label>
+            <input
+              matInput
+              type="number"
+              min="1"
+              formControlName="quantity"
+              placeholder="Ej: 100"
+            />
+            <mat-hint>Unidades</mat-hint>
+            <mat-error *ngIf="stockForm.get('quantity')?.hasError('required')">
+              La cantidad es requerida
+            </mat-error>
+            <mat-error *ngIf="stockForm.get('quantity')?.hasError('min')">
+              Debe ser al menos 1
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Costos -->
+        <fieldset class="border border-slate-200 rounded-lg p-4 bg-blue-50/30">
+          <legend class="px-2 text-sm font-semibold text-slate-700">Costos</legend>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Costo unitario *</mat-label>
+              <span matTextPrefix>$ &nbsp;</span>
+              <input
+                matInput
+                type="number"
+                min="0.01"
+                step="0.01"
+                formControlName="unitCost"
+                placeholder="0.00"
+              />
+              <mat-error *ngIf="stockForm.get('unitCost')?.hasError('required')">
+                El costo es requerido
+              </mat-error>
+              <mat-error *ngIf="stockForm.get('unitCost')?.hasError('min')">
+                Debe ser mayor a 0
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Precio de venta *</mat-label>
+              <span matTextPrefix>$ &nbsp;</span>
+              <input
+                matInput
+                type="number"
+                min="0.01"
+                step="0.01"
+                formControlName="sellingPrice"
+                placeholder="0.00"
+              />
+              <mat-error *ngIf="stockForm.get('sellingPrice')?.hasError('required')">
+                El precio es requerido
+              </mat-error>
+              <mat-error *ngIf="stockForm.get('sellingPrice')?.hasError('min')">
+                Debe ser mayor a 0
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </fieldset>
+
+        <!-- Fecha de vencimiento y Ubicación -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Fecha de vencimiento *</mat-label>
+            <input
+              matInput
+              [matDatepicker]="pickerExp"
+              formControlName="expiryDate"
+              placeholder="Seleccione fecha"
+            />
+            <mat-datepicker-toggle matIconSuffix [for]="pickerExp"></mat-datepicker-toggle>
+            <mat-datepicker #pickerExp></mat-datepicker>
+            <mat-error *ngIf="stockForm.get('expiryDate')?.hasError('required')">
+              La fecha de vencimiento es requerida
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Ubicación</mat-label>
+            <input matInput formControlName="location" placeholder="Ej: Estante A-3" />
+            <mat-hint>Opcional</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <!-- Stock mínimo -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Stock mínimo</mat-label>
+          <input
+            matInput
+            type="number"
+            min="0"
+            formControlName="minimumStock"
+            placeholder="Ej: 10"
+          />
+          <mat-hint>Cantidad mínima para alertas de stock bajo (opcional)</mat-hint>
+          <mat-error *ngIf="stockForm.get('minimumStock')?.hasError('min')">
+            No puede ser negativo
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Botones de acción -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <button
+            type="button"
+            (click)="cancel()"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm hover:shadow transition-all"
+          >
+            <span class="material-symbols-outlined">close</span>
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            [disabled]="loading() || stockForm.invalid"
+            class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            <span class="material-symbols-outlined" *ngIf="!loading()">save</span>
+            <span class="material-symbols-outlined animate-spin" *ngIf="loading()">refresh</span>
+            {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

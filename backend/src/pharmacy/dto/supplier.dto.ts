@@ -1,9 +1,37 @@
-import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+
+export enum SupplierType {
+  MEDICAMENTOS = 'medicamentos',
+  INSUMOS = 'insumos',
+  SERVICIOS = 'servicios',
+}
 
 export class CreateSupplierDto {
-  @IsNotEmpty()
+  // Nuevo formato
+  @IsOptional()
   @IsString()
-  name: string;
+  nombreComercial?: string;
+
+  @IsOptional()
+  @IsString()
+  razonSocial?: string;
+
+  @IsOptional()
+  @IsString()
+  idTributario?: string;
+
+  @IsOptional()
+  @IsEnum(SupplierType)
+  tipoProveedor?: SupplierType;
+
+  // Formato antiguo (para compatibilidad)
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  taxId?: string;
 
   @IsNotEmpty()
   @IsString()
@@ -36,10 +64,6 @@ export class CreateSupplierDto {
   @IsOptional()
   @IsString()
   postalCode?: string;
-
-  @IsOptional()
-  @IsString()
-  taxId?: string;
 
   @IsOptional()
   @IsString()
