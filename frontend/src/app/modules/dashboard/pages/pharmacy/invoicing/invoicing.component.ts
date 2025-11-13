@@ -1,9 +1,24 @@
-import { Component, OnInit, ViewChild } from '@angular/core'
+import { Location } from '@angular/common'
+import { Component, OnInit, ViewChild, inject } from '@angular/core'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
-import { Invoice, InvoiceStatus } from '../interfaces/pharmacy.interfaces'
-import { InvoicingService } from '../services/invoicing.service'
+import { Router } from '@angular/router'
+import { AlertService } from '@core/services/alert.service'
+import { InvoiceStatus, Sale } from '../interfaces/pharmacy.interfaces'
+import { SalesDispensingService, SalesSummary } from '../services/sales-dispensing.service'
+
+// Tipado de fila mostrada en la tabla (derivada de una venta)
+interface SaleRow {
+  saleNumber: string
+  id: string
+  saleId: string
+  patientName: string
+  date: string
+  paymentMethod: string
+  total: number
+  status: InvoiceStatus
+}
 
 @Component({
   selector: 'app-invoicing',
@@ -14,10 +29,20 @@ export class InvoicingComponent implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator
   @ViewChild(MatSort) sort!: MatSort
 
-  displayedColumns: string[] = ['id', 'patient', 'date', 'total', 'status', 'dueDate', 'actions']
-  dataSource = new MatTableDataSource<Invoice>()
+  displayedColumns: string[] = ['saleNumber', 'patient', 'date', 'paymentMethod', 'total', 'status']
+  dataSource = new MatTableDataSource<SaleRow>([])
 
-  invoices: Invoice[] = []
+  invoices: SaleRow[] = [] // objetos derivados de ventas
+  selectedPaymentMethod: string | null = null
+  loading = false
+
+  // Exponer enum para uso en template
+  InvoiceStatus = InvoiceStatus
+
+  // Filtros
+  selectedStatus: InvoiceStatus | null = null
+  startDate: Date | null = null
+  endDate: Date | null = null
 
   stats = {
     totalInvoices: 0,
@@ -28,10 +53,14 @@ export class InvoicingComponent implements OnInit {
     pendingAmount: 0,
   }
 
-  constructor(private invoicingService: InvoicingService) {}
+  private alert = inject(AlertService)
+  private router = inject(Router)
+  private location = inject(Location)
+
+  constructor(private salesService: SalesDispensingService) {}
 
   ngOnInit(): void {
-    this.loadInvoices()
+    this.loadPaidSales()
     this.loadStats()
   }
 
@@ -40,33 +69,61 @@ export class InvoicingComponent implements OnInit {
     this.dataSource.sort = this.sort
   }
 
-  loadInvoices(): void {
-    this.invoicingService.getInvoices().subscribe(invoices => {
-      this.invoices = invoices
-      this.dataSource.data = invoices
-      this.calculateStats()
-    })
+  loadPaidSales(): void {
+    this.loading = true
+    this.salesService
+      .getCompletedSalesFiltered({
+        paymentMethod: this.selectedPaymentMethod || undefined,
+        startDate: this.startDate || undefined,
+        endDate: this.endDate || undefined,
+      })
+      .subscribe({
+        next: (sales: Sale[]) => {
+          this.invoices = sales.map(
+            (s: Sale): SaleRow => ({
+              saleNumber: s.saleNumber,
+              id: s.id,
+              saleId: s.id,
+              patientName: (s as any).patient?.fullName || (s as any).patient?.name || 'Paciente',
+              date: (s as any).createdAt || new Date().toISOString(),
+              paymentMethod: (s as any).paymentMethod,
+              total: (s as any).totalAmount,
+              status: InvoiceStatus.PAID,
+            }),
+          )
+          this.dataSource.data = this.invoices
+          this.calculateStats()
+          this.loading = false
+        },
+        error: error => {
+          console.error('Error cargando ventas:', error)
+          this.loading = false
+        },
+      })
   }
 
   loadStats(): void {
-    this.invoicingService.getTotalRevenue().subscribe(revenue => {
-      this.stats.totalRevenue = revenue
-    })
-
-    this.invoicingService.getPendingAmount().subscribe(pending => {
-      this.stats.pendingAmount = pending
-    })
+    this.salesService
+      .getSalesSummary(this.startDate || undefined, this.endDate || undefined)
+      .subscribe({
+        next: (summary: SalesSummary) => {
+          this.stats.totalInvoices = summary.totalSales
+          this.stats.paidInvoices = summary.completedSales
+          this.stats.pendingInvoices = summary.pendingSales
+          this.stats.overdueInvoices = 0
+          this.stats.totalRevenue = summary.totalRevenue
+          this.stats.pendingAmount = 0 // pendiente real podría mapearse a ventas pending si se reintroducen
+        },
+        error: err => console.error('Error cargando resumen ventas', err),
+      })
   }
 
   calculateStats(): void {
     this.stats.totalInvoices = this.invoices.length
-    this.stats.paidInvoices = this.invoices.filter(i => i.status === InvoiceStatus.PAID).length
-    this.stats.pendingInvoices = this.invoices.filter(
-      i => i.status === InvoiceStatus.PENDING,
-    ).length
-    this.stats.overdueInvoices = this.invoices.filter(
-      i => i.status === InvoiceStatus.OVERDUE,
-    ).length
+    this.stats.paidInvoices = this.invoices.length
+    this.stats.pendingInvoices = 0
+    this.stats.overdueInvoices = 0
+    this.loadStats()
   }
 
   applyFilter(event: Event): void {
@@ -108,57 +165,102 @@ export class InvoicingComponent implements OnInit {
     }
   }
 
-  isOverdue(invoice: Invoice): boolean {
-    if (invoice.status === InvoiceStatus.PAID) return false
-    const today = new Date()
-    const dueDate = new Date(invoice.dueDate || invoice.issueDate)
-    return dueDate < today
+  isOverdue(_invoice: any): boolean {
+    return false
+  }
+  getDaysOverdue(_invoice: any): number {
+    return 0
   }
 
-  getDaysOverdue(invoice: Invoice): number {
-    if (!this.isOverdue(invoice)) return 0
-    const today = new Date()
-    const dueDate = new Date(invoice.dueDate || invoice.issueDate)
-    const diffTime = today.getTime() - dueDate.getTime()
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  // Modo solo visualización
+  viewInvoiceDetails(invoice: any): void {
+    // Navegación opcional deshabilitada; mantener sólo lectura.
+    // Si se desea activar detalle más adelante, descomentar la línea siguiente.
+    // this.router.navigate(['/dashboard/pharmacy/invoicing', invoice.id])
   }
 
-  viewInvoiceDetails(invoice: Invoice): void {
-    // TODO: Implementar vista de detalle de factura
+  goBack(): void {
+    this.location.back()
   }
 
-  markAsPaid(invoice: Invoice): void {
-    const today = new Date().toISOString().split('T')[0]
-    this.invoicingService
-      .updateInvoiceStatus(invoice.id, InvoiceStatus.PAID, today)
-      .subscribe(updatedInvoice => {
-        if (updatedInvoice) {
-          this.loadInvoices()
-          this.loadStats()
-        }
+  // Métodos de filtrado
+  onStatusFilterChange(): void {
+    this.applyFilters()
+  }
+
+  onDateFilterChange(): void {
+    this.loadPaidSales()
+    this.loadStats()
+  }
+
+  clearFilters(): void {
+    this.selectedStatus = null
+    this.selectedPaymentMethod = null
+    this.startDate = null
+    this.endDate = null
+    this.dataSource.filter = ''
+    this.loadPaidSales()
+    this.loadStats()
+  }
+
+  onPaymentMethodChange(): void {
+    this.loadPaidSales()
+    this.loadStats()
+  }
+
+  applyFilters(): void {
+    let filteredData = [...this.invoices]
+
+    // Filtro por estado
+    if (this.selectedStatus) {
+      filteredData = filteredData.filter(invoice => invoice.status === this.selectedStatus)
+    }
+
+    // Filtro por rango de fechas
+    const parseDate = (inv: any) => {
+      const raw = inv.date
+      return raw ? new Date(raw) : null
+    }
+    if (this.startDate) {
+      filteredData = filteredData.filter(inv => {
+        const d = parseDate(inv)
+        return d ? d >= this.startDate! : false
       })
-  }
-
-  cancelInvoice(invoice: Invoice): void {
-    this.invoicingService
-      .updateInvoiceStatus(invoice.id, InvoiceStatus.CANCELLED)
-      .subscribe(updatedInvoice => {
-        if (updatedInvoice) {
-          this.loadInvoices()
-          this.loadStats()
-        }
+    }
+    if (this.endDate) {
+      filteredData = filteredData.filter(inv => {
+        const d = parseDate(inv)
+        return d ? d <= this.endDate! : false
       })
+    }
+
+    this.dataSource.data = filteredData
   }
 
-  createNewInvoice(): void {
-    // TODO: Implementar creación de nueva factura
+  exportToExcel(): void {
+    const rows = [
+      ['Nro Venta', 'Paciente', 'Fecha', 'Método Pago', 'Total'],
+      ...this.invoices.map(i => [
+        i.saleNumber,
+        i.patientName,
+        new Date(i.date).toLocaleDateString(),
+        i.paymentMethod,
+        i.total,
+      ]),
+    ]
+    const csv = rows.map(r => r.map(v => '"' + (v ?? '') + '"').join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `ventas_${Date.now()}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    this.alert.success('Exportación', 'CSV generado')
   }
 
-  printInvoice(invoice: Invoice): void {
-    // TODO: Implementar impresión de factura
-  }
-
-  sendReminder(invoice: Invoice): void {
-    // TODO: Implementar envío de recordatorio
+  filterByStatus(status: InvoiceStatus | null): void {
+    this.selectedStatus = status
+    this.applyFilters()
   }
 }

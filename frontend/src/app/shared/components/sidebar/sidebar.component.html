@@ -4,7 +4,7 @@
 >
   <div class="flex-1 overflow-y-auto pt-3">
     <!-- Modo expandido -->
-    <div *ngIf="isExpanded()" class="px-4 space-y-1">
+    <div *ngIf="isExpanded()" class="space-y-1">
       <ng-container *ngFor="let menuItem of filteredMenuItems()">
         <!-- Items sin hijos -->
         <div *ngIf="!menuItem.children || menuItem.children.length === 0">
@@ -60,7 +60,7 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <div class="pl-6 pr-3 py-2 space-y-1 bg-blue-50">
+          <div class="pl-8 pr-4 py-2 space-y-1 bg-blue-50">
             <ng-container *ngFor="let child of menuItem.children">
               <ng-container *ngIf="!isDemo; else demoChildItem">
                 <a
@@ -193,7 +193,7 @@
   </div>
 
   <!-- Footer con logout y branding -->
-  <div class="mt-auto pb-4" [class.px-4]="isExpanded()" [class.px-2]="!isExpanded()">
+  <div class="mt-auto pb-4" [class.px-2]="!isExpanded()">
     <!-- Logout expandido -->
     <a
       *ngIf="isExpanded()"

@@ -394,12 +394,14 @@ export interface Invoice {
   saleId: string
   sale?: Sale
   issueDate: string
+  date?: string // Alias para issueDate
   dueDate?: string
   paymentDate?: string
   status: InvoiceStatus
   subtotal: number
   taxAmount: number
   totalAmount: number
+  total?: number // Alias para totalAmount
   amountPaid: number
   balanceDue: number
   patientName?: string

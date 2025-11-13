@@ -1,45 +1,120 @@
-<div class="min-h-screen bg-slate-50 p-6">
-  <div class="max-w-7xl mx-auto space-y-6">
+<div class="min-h-screen bg-slate-50">
+  <div class="max-w-7xl mx-auto p-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <header class="mb-6 flex items-center justify-between">
       <div class="flex items-center gap-4">
         <button
           type="button"
-          routerLink="/dashboard"
-          class="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md hover:shadow-lg hover:bg-slate-50 transition-all border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+          (click)="goBack()"
+          class="flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all border-0"
         >
-          <span class="material-symbols-outlined msz-20 text-slate-600">arrow_back</span>
+          <span class="material-symbols-outlined msz-20">arrow_back</span>
         </button>
         <div>
-          <h1 class="text-2xl font-bold text-slate-800">Mantenimiento de Activos</h1>
-          <p class="text-sm text-slate-500">Programa y gestiona el mantenimiento de los activos</p>
+          <h1 class="text-3xl font-bold text-slate-900">Mantenimiento de Activos</h1>
+          <p class="text-sm text-slate-600 mt-1">Programa y gestiona el mantenimiento de activos</p>
         </div>
       </div>
       <button
         type="button"
         (click)="toggleForm()"
-        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 transition-all border-0"
+        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium shadow-sm hover:shadow-md transition-all border-0"
         [ngClass]="
           showForm
-            ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-            : 'bg-green-600 text-white hover:bg-green-700 focus-visible:ring-green-200'
+            ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            : 'bg-green-600 text-white hover:bg-green-700'
         "
       >
-        <span class="material-symbols-outlined msz-20 leading-none">{{
-          showForm ? 'close' : 'add'
-        }}</span>
+        <span class="material-symbols-outlined msz-20">{{ showForm ? 'close' : 'add' }}</span>
         {{ showForm ? 'Cancelar' : 'Programar Mantenimiento' }}
       </button>
+    </header>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <!-- Total -->
+      <div
+        class="bg-white rounded-lg shadow-sm border-l-4 border-blue-500 p-4 hover:shadow-md transition-shadow"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-slate-600">Total</p>
+            <p class="text-2xl font-bold text-slate-900 mt-1">{{ totalRecords }}</p>
+          </div>
+          <span class="material-symbols-outlined msz-40 text-blue-500 leading-none"
+            >build_circle</span
+          >
+        </div>
+      </div>
+
+      <!-- Programado -->
+      <div
+        class="bg-white rounded-lg shadow-sm border-l-4 border-amber-500 p-4 hover:shadow-md transition-shadow cursor-pointer"
+        (click)="filterByStatus(maintenanceStatuses[0])"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-slate-600">Programado</p>
+            <p class="text-2xl font-bold text-slate-900 mt-1">{{ scheduledCount }}</p>
+          </div>
+          <span class="material-symbols-outlined msz-40 text-amber-500 leading-none">schedule</span>
+        </div>
+      </div>
+
+      <!-- En Progreso -->
+      <div
+        class="bg-white rounded-lg shadow-sm border-l-4 border-blue-500 p-4 hover:shadow-md transition-shadow cursor-pointer"
+        (click)="filterByStatus(maintenanceStatuses[1])"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-slate-600">En Progreso</p>
+            <p class="text-2xl font-bold text-slate-900 mt-1">{{ inProgressCount }}</p>
+          </div>
+          <span class="material-symbols-outlined msz-40 text-blue-500 leading-none">sync</span>
+        </div>
+      </div>
+
+      <!-- Completado -->
+      <div
+        class="bg-white rounded-lg shadow-sm border-l-4 border-green-500 p-4 hover:shadow-md transition-shadow cursor-pointer"
+        (click)="filterByStatus(maintenanceStatuses[2])"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-slate-600">Completado</p>
+            <p class="text-2xl font-bold text-slate-900 mt-1">{{ completedCount }}</p>
+          </div>
+          <span class="material-symbols-outlined msz-40 text-green-500 leading-none"
+            >check_circle</span
+          >
+        </div>
+      </div>
+
+      <!-- Costo Total -->
+      <div
+        class="bg-white rounded-lg shadow-sm border-l-4 border-purple-500 p-4 hover:shadow-md transition-shadow"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-slate-600">Costo Total</p>
+            <p class="text-2xl font-bold text-slate-900 mt-1">{{ formatCurrency(totalCost) }}</p>
+          </div>
+          <span class="material-symbols-outlined msz-40 text-purple-500 leading-none"
+            >attach_money</span
+          >
+        </div>
+      </div>
     </div>
 
-    <!-- Formulario de Programación (Collapsible) -->
-    <div *ngIf="showForm" class="bg-white rounded-xl shadow-md overflow-hidden">
+    <!-- Formulario (Collapsible) -->
+    <div *ngIf="showForm" class="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
       <div class="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-green-100">
         <div class="flex items-center gap-3">
-          <div class="flex items-center justify-center w-10 h-10 rounded-full bg-green-500">
-            <span class="material-symbols-outlined msz-24 text-white leading-none"
-              >build_circle</span
-            >
+          <div
+            class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0"
+          >
+            <span class="material-symbols-outlined msz-24 text-white">build_circle</span>
           </div>
           <div>
             <h2 class="text-lg font-semibold text-slate-800">Programar Nuevo Mantenimiento</h2>
@@ -48,168 +123,188 @@
         </div>
       </div>
 
-      <form
-        [formGroup]="maintenanceForm"
-        (ngSubmit)="onScheduleMaintenance()"
-        class="p-6 space-y-6"
-      >
-        <!-- Información del Activo -->
-        <div>
-          <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-            Información del Activo
-          </h4>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>ID del Activo</mat-label>
-              <input matInput formControlName="assetId" placeholder="Ej: ACT-001" required />
-              <span matSuffix class="material-symbols-outlined msz-20 text-slate-400">tag</span>
-            </mat-form-field>
+      <form [formGroup]="maintenanceForm" (ngSubmit)="onScheduleMaintenance()" class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <!-- ID del Activo -->
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>ID del Activo</mat-label>
+            <input matInput formControlName="assetId" placeholder="Ej: AST-001" />
+            <span matPrefix class="material-symbols-outlined msz-20 text-slate-400 mr-2">tag</span>
+            <mat-error *ngIf="maintenanceForm.get('assetId')?.hasError('required')">
+              El ID es requerido
+            </mat-error>
+            <mat-error *ngIf="maintenanceForm.get('assetId')?.hasError('minlength')">
+              Mínimo 3 caracteres
+            </mat-error>
+          </mat-form-field>
 
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Nombre del Activo</mat-label>
-              <input
-                matInput
-                formControlName="assetName"
-                placeholder="Nombre del equipo"
-                required
-              />
-              <span matSuffix class="material-symbols-outlined msz-20 text-slate-400"
-                >inventory_2</span
-              >
-            </mat-form-field>
-          </div>
+          <!-- Nombre del Activo -->
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Nombre del Activo</mat-label>
+            <input matInput formControlName="assetName" placeholder="Nombre del equipo" />
+            <span matPrefix class="material-symbols-outlined msz-20 text-slate-400 mr-2"
+              >inventory_2</span
+            >
+            <mat-error>El nombre es requerido (mín. 3 caracteres)</mat-error>
+          </mat-form-field>
+
+          <!-- Fecha de Mantenimiento -->
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Fecha de Mantenimiento</mat-label>
+            <input matInput [matDatepicker]="maintenancePicker" formControlName="maintenanceDate" />
+            <mat-datepicker-toggle matSuffix [for]="maintenancePicker"></mat-datepicker-toggle>
+            <mat-datepicker #maintenancePicker></mat-datepicker>
+            <mat-error>Seleccione una fecha</mat-error>
+          </mat-form-field>
+
+          <!-- Próximo Mantenimiento -->
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Próximo Mantenimiento (Opcional)</mat-label>
+            <input matInput [matDatepicker]="nextPicker" formControlName="nextMaintenanceDate" />
+            <mat-datepicker-toggle matSuffix [for]="nextPicker"></mat-datepicker-toggle>
+            <mat-datepicker #nextPicker></mat-datepicker>
+          </mat-form-field>
+
+          <!-- Tipo -->
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Tipo de Mantenimiento</mat-label>
+            <mat-select formControlName="type">
+              <mat-option *ngFor="let type of maintenanceTypes" [value]="type">
+                {{ type }}
+              </mat-option>
+            </mat-select>
+            <span matPrefix class="material-symbols-outlined msz-20 text-slate-400 mr-2"
+              >category</span
+            >
+            <mat-error>Seleccione un tipo</mat-error>
+          </mat-form-field>
+
+          <!-- Estado -->
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Estado</mat-label>
+            <mat-select formControlName="status">
+              <mat-option *ngFor="let status of maintenanceStatuses" [value]="status">
+                {{ status }}
+              </mat-option>
+            </mat-select>
+            <span matPrefix class="material-symbols-outlined msz-20 text-slate-400 mr-2"
+              >schedule</span
+            >
+          </mat-form-field>
+
+          <!-- Costo -->
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Costo Estimado</mat-label>
+            <input matInput type="number" formControlName="cost" placeholder="0.00" />
+            <span matPrefix class="text-slate-500 mr-1">$</span>
+            <mat-error>El costo debe ser mayor a 0</mat-error>
+          </mat-form-field>
+
+          <!-- Realizado por -->
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Realizado por</mat-label>
+            <input matInput formControlName="performedBy" placeholder="Nombre del técnico" />
+            <span matPrefix class="material-symbols-outlined msz-20 text-slate-400 mr-2"
+              >person</span
+            >
+          </mat-form-field>
         </div>
 
-        <!-- Información del Mantenimiento -->
-        <div>
-          <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-            Detalles del Mantenimiento
-          </h4>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Fecha de Mantenimiento</mat-label>
-              <input
-                matInput
-                [matDatepicker]="maintenancePicker"
-                formControlName="maintenanceDate"
-                required
-              />
-              <mat-datepicker-toggle matSuffix [for]="maintenancePicker"></mat-datepicker-toggle>
-              <mat-datepicker #maintenancePicker></mat-datepicker>
-            </mat-form-field>
+        <!-- Descripción -->
+        <mat-form-field appearance="outline" class="w-full mb-4">
+          <mat-label>Descripción</mat-label>
+          <textarea
+            matInput
+            formControlName="description"
+            rows="3"
+            placeholder="Descripción detallada del mantenimiento..."
+          ></textarea>
+          <span matPrefix class="material-symbols-outlined msz-20 text-slate-400 mr-2"
+            >description</span
+          >
+          <mat-error>La descripción es requerida (mín. 10 caracteres)</mat-error>
+        </mat-form-field>
 
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Tipo de Mantenimiento</mat-label>
-              <mat-select formControlName="type" required>
-                <mat-option *ngFor="let type of maintenanceTypes" [value]="type">
-                  {{ type }}
-                </mat-option>
-              </mat-select>
-              <span matSuffix class="material-symbols-outlined msz-20 text-slate-400"
-                >category</span
-              >
-            </mat-form-field>
+        <!-- Notas -->
+        <mat-form-field appearance="outline" class="w-full mb-6">
+          <mat-label>Notas Adicionales (Opcional)</mat-label>
+          <textarea
+            matInput
+            formControlName="notes"
+            rows="2"
+            placeholder="Notas o comentarios adicionales..."
+          ></textarea>
+          <span matPrefix class="material-symbols-outlined msz-20 text-slate-400 mr-2">notes</span>
+        </mat-form-field>
 
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Estado</mat-label>
-              <mat-select formControlName="status" required>
-                <mat-option *ngFor="let status of maintenanceStatuses" [value]="status">
-                  {{ status }}
-                </mat-option>
-              </mat-select>
-              <span matSuffix class="material-symbols-outlined msz-20 text-slate-400"
-                >schedule</span
-              >
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Costo Estimado</mat-label>
-              <input matInput type="number" formControlName="cost" placeholder="0.00" />
-              <span matPrefix class="text-slate-500">$&nbsp;</span>
-              <span matSuffix class="material-symbols-outlined msz-20 text-slate-400"
-                >attach_money</span
-              >
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Realizado por</mat-label>
-              <input matInput formControlName="performedBy" placeholder="Nombre del técnico" />
-              <span matSuffix class="material-symbols-outlined msz-20 text-slate-400">person</span>
-            </mat-form-field>
-          </div>
-
-          <div class="grid grid-cols-1 gap-4">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Descripción</mat-label>
-              <textarea
-                matInput
-                formControlName="description"
-                rows="3"
-                placeholder="Descripción detallada del mantenimiento..."
-                required
-              ></textarea>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Notas Adicionales</mat-label>
-              <textarea
-                matInput
-                formControlName="notes"
-                rows="2"
-                placeholder="Notas o comentarios adicionales..."
-              ></textarea>
-            </mat-form-field>
-          </div>
-        </div>
-
-        <!-- Botones de acción -->
-        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+        <!-- Botones -->
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-200">
           <button
             type="button"
-            (click)="maintenanceForm.reset()"
-            class="px-5 py-2.5 rounded-full font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
+            (click)="
+              maintenanceForm.reset();
+              maintenanceForm.patchValue({ status: maintenanceStatuses[0] })
+            "
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors border-0"
           >
+            <span class="material-symbols-outlined msz-18">restart_alt</span>
             Limpiar
           </button>
           <button
             type="submit"
-            [disabled]="maintenanceForm.invalid || loading"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-200 focus-visible:ring-offset-1"
+            [disabled]="maintenanceForm.invalid || saving"
+            class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-medium bg-green-600 text-white hover:bg-green-700 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0"
           >
-            <span class="material-symbols-outlined msz-20 leading-none">{{
-              loading ? 'hourglass_empty' : 'schedule'
+            <span class="material-symbols-outlined msz-20" [class.animate-spin]="saving">{{
+              saving ? 'sync' : 'schedule'
             }}</span>
-            {{ loading ? 'Programando...' : 'Programar Mantenimiento' }}
+            {{ saving ? 'Programando...' : 'Programar Mantenimiento' }}
           </button>
         </div>
       </form>
     </div>
 
     <!-- Tabla de Registros -->
-    <div class="bg-white rounded-xl shadow-md overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-200 bg-slate-100">
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div
+        class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between"
+      >
         <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined msz-18 text-slate-600">history</span>
+          <span class="material-symbols-outlined msz-20 text-slate-600">history</span>
           <h3 class="text-lg font-semibold text-slate-800">Registros de Mantenimiento</h3>
+          <span
+            class="ml-2 px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium"
+          >
+            {{ maintenanceRecords.length }}
+          </span>
         </div>
+        <button
+          type="button"
+          (click)="loadMaintenanceRecords()"
+          [disabled]="loading"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors border-0 disabled:opacity-50"
+        >
+          <span class="material-symbols-outlined msz-18" [class.animate-spin]="loading">sync</span>
+          Actualizar
+        </button>
       </div>
 
-      <!-- Loading State -->
-      <div *ngIf="loading" class="flex flex-col items-center justify-center py-12 px-6">
+      <!-- Loading -->
+      <div *ngIf="loading" class="flex flex-col items-center justify-center py-16 px-6">
         <mat-spinner diameter="40"></mat-spinner>
-        <p class="mt-4 text-slate-500">Cargando registros...</p>
+        <p class="mt-4 text-slate-500 font-medium">Cargando registros...</p>
       </div>
 
       <!-- Tabla -->
       <div *ngIf="!loading && maintenanceRecords.length > 0" class="overflow-x-auto">
         <table class="w-full">
-          <thead class="bg-slate-100 border-b border-slate-200">
+          <thead class="bg-slate-50 border-b border-slate-200">
             <tr>
               <th class="px-6 py-3 text-left">
                 <div
                   class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
                 >
-                  <span class="material-symbols-outlined msz-18">inventory_2</span>
+                  <span class="material-symbols-outlined msz-16">inventory_2</span>
                   Activo
                 </div>
               </th>
@@ -217,7 +312,7 @@
                 <div
                   class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
                 >
-                  <span class="material-symbols-outlined msz-18">category</span>
+                  <span class="material-symbols-outlined msz-16">category</span>
                   Tipo
                 </div>
               </th>
@@ -225,7 +320,7 @@
                 <div
                   class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
                 >
-                  <span class="material-symbols-outlined msz-18">event</span>
+                  <span class="material-symbols-outlined msz-16">event</span>
                   Fecha
                 </div>
               </th>
@@ -233,7 +328,7 @@
                 <div
                   class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
                 >
-                  <span class="material-symbols-outlined msz-18">info</span>
+                  <span class="material-symbols-outlined msz-16">info</span>
                   Estado
                 </div>
               </th>
@@ -241,7 +336,7 @@
                 <div
                   class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
                 >
-                  <span class="material-symbols-outlined msz-18">attach_money</span>
+                  <span class="material-symbols-outlined msz-16">attach_money</span>
                   Costo
                 </div>
               </th>
@@ -249,15 +344,15 @@
                 <div
                   class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
                 >
-                  <span class="material-symbols-outlined msz-18">person</span>
-                  Realizado por
+                  <span class="material-symbols-outlined msz-16">person</span>
+                  Técnico
                 </div>
               </th>
               <th class="px-6 py-3 text-center">
                 <div
                   class="flex items-center justify-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
                 >
-                  <span class="material-symbols-outlined msz-18">settings</span>
+                  <span class="material-symbols-outlined msz-16">settings</span>
                   Acciones
                 </div>
               </th>
@@ -270,13 +365,13 @@
             >
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
-                  <div class="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100">
-                    <span class="material-symbols-outlined msz-20 text-blue-600 leading-none"
-                      >inventory_2</span
-                    >
+                  <div
+                    class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0"
+                  >
+                    <span class="material-symbols-outlined msz-20 text-blue-600">inventory_2</span>
                   </div>
                   <div>
-                    <p class="text-sm font-medium text-slate-800">{{ record.assetName }}</p>
+                    <p class="text-sm font-medium text-slate-900">{{ record.assetName }}</p>
                     <p class="text-xs text-slate-500">ID: {{ record.assetId }}</p>
                   </div>
                 </div>
@@ -285,38 +380,46 @@
                 <span
                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700"
                 >
-                  <span class="material-symbols-outlined msz-14 leading-none">{{
+                  <span class="material-symbols-outlined msz-14">{{
                     getTypeIcon(record.type)
                   }}</span>
                   {{ record.type }}
                 </span>
               </td>
               <td class="px-6 py-4">
-                <p class="text-sm text-slate-700">{{ record.maintenanceDate | date: 'short' }}</p>
+                <div class="text-sm text-slate-700">
+                  <div class="font-medium">{{ record.maintenanceDate | date: 'dd/MM/yyyy' }}</div>
+                  <div class="text-xs text-slate-500">
+                    {{ record.maintenanceDate | date: 'HH:mm' }}
+                  </div>
+                </div>
               </td>
               <td class="px-6 py-4">
                 <span
-                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
-                  [ngClass]="{
-                    'bg-green-100 text-green-700': record.status === 'COMPLETED',
-                    'bg-blue-100 text-blue-700': record.status === 'IN_PROGRESS',
-                    'bg-yellow-100 text-yellow-700': record.status === 'SCHEDULED',
-                    'bg-slate-100 text-slate-700': record.status === 'CANCELLED',
-                    'bg-red-100 text-red-700': record.status === 'DELAYED',
-                  }"
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium cursor-pointer"
+                  [ngClass]="getStatusClass(record.status)"
+                  [matMenuTriggerFor]="statusMenu"
                 >
                   <span
-                    class="w-1.5 h-1.5 rounded-full"
-                    [ngClass]="{
-                      'bg-green-600': record.status === 'COMPLETED',
-                      'bg-blue-600': record.status === 'IN_PROGRESS',
-                      'bg-yellow-600': record.status === 'SCHEDULED',
-                      'bg-slate-600': record.status === 'CANCELLED',
-                      'bg-red-600': record.status === 'DELAYED',
-                    }"
-                  ></span>
+                    class="material-symbols-outlined msz-14"
+                    [class.animate-spin]="record.status === maintenanceStatuses[1]"
+                  >
+                    {{ getStatusIcon(record.status) }}
+                  </span>
                   {{ record.status }}
                 </span>
+                <mat-menu #statusMenu="matMenu">
+                  <button
+                    mat-menu-item
+                    *ngFor="let status of maintenanceStatuses"
+                    (click)="updateStatus(record, status)"
+                  >
+                    <span class="material-symbols-outlined msz-18 mr-2">{{
+                      getStatusIcon(status)
+                    }}</span>
+                    {{ status }}
+                  </button>
+                </mat-menu>
               </td>
               <td class="px-6 py-4">
                 <p class="text-sm font-medium text-slate-700">{{ formatCurrency(record.cost) }}</p>
@@ -329,10 +432,18 @@
                   <button
                     type="button"
                     (click)="viewRecord(record)"
-                    class="p-2 rounded-full hover:bg-blue-50 text-blue-600 hover:text-blue-700 transition-colors border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+                    class="p-2 rounded-full hover:bg-blue-50 text-blue-600 hover:text-blue-700 transition-colors border-0"
                     title="Ver detalles"
                   >
-                    <span class="material-symbols-outlined msz-20">visibility</span>
+                    <span class="material-symbols-outlined msz-18">visibility</span>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="deleteMaintenance(record)"
+                    class="p-2 rounded-full hover:bg-red-50 text-red-600 hover:text-red-700 transition-colors border-0"
+                    title="Eliminar"
+                  >
+                    <span class="material-symbols-outlined msz-18">delete</span>
                   </button>
                 </div>
               </td>
@@ -341,186 +452,172 @@
         </table>
       </div>
 
-      <!-- Estado vacío -->
-      <div *ngIf="!loading && maintenanceRecords.length === 0" class="text-center py-12 px-6">
-        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4">build_circle</span>
-        <p class="text-slate-500 mb-4">No hay registros de mantenimiento aún</p>
+      <!-- Empty State -->
+      <div *ngIf="!loading && maintenanceRecords.length === 0" class="text-center py-16 px-6">
+        <div
+          class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4"
+        >
+          <span class="material-symbols-outlined text-4xl text-slate-400">build_circle</span>
+        </div>
+        <h3 class="text-slate-900 font-semibold text-lg mb-2">No hay registros de mantenimiento</h3>
+        <p class="text-slate-500 mb-6">Comience programando el primer mantenimiento</p>
         <button
           type="button"
           (click)="toggleForm()"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-200 focus-visible:ring-offset-1 transition-all border-0"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-green-600 text-white hover:bg-green-700 transition-colors border-0"
         >
-          <span class="material-symbols-outlined msz-20 leading-none">add</span>
+          <span class="material-symbols-outlined msz-18">add</span>
           Programar Primer Mantenimiento
         </button>
       </div>
     </div>
-  </div>
-</div>
 
-<div class="bg-white rounded-xl shadow-md overflow-hidden">
-  <div class="px-6 py-4 border-b border-slate-200 bg-slate-100">
-    <div class="flex items-center gap-2">
-      <span class="material-symbols-outlined msz-18 text-slate-600">history</span>
-      <h3 class="text-lg font-semibold text-slate-800">Registros de Mantenimiento</h3>
-    </div>
-  </div>
-
-  <!-- Loading State -->
-  <div *ngIf="loading" class="flex flex-col items-center justify-center py-12 px-6">
-    <mat-spinner diameter="40"></mat-spinner>
-    <p class="mt-4 text-slate-500">Cargando registros...</p>
-  </div>
-
-  <!-- Tabla -->
-  <div *ngIf="!loading && maintenanceRecords.length > 0" class="overflow-x-auto">
-    <table class="w-full">
-      <thead class="bg-slate-100 border-b border-slate-200">
-        <tr>
-          <th class="px-6 py-3 text-left">
-            <div
-              class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-            >
-              <span class="material-symbols-outlined msz-18">inventory_2</span>
-              Activo
-            </div>
-          </th>
-          <th class="px-6 py-3 text-left">
-            <div
-              class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-            >
-              <span class="material-symbols-outlined msz-18">category</span>
-              Tipo
-            </div>
-          </th>
-          <th class="px-6 py-3 text-left">
-            <div
-              class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-            >
-              <span class="material-symbols-outlined msz-18">event</span>
-              Fecha
-            </div>
-          </th>
-          <th class="px-6 py-3 text-left">
-            <div
-              class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-            >
-              <span class="material-symbols-outlined msz-18">info</span>
-              Estado
-            </div>
-          </th>
-          <th class="px-6 py-3 text-left">
-            <div
-              class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-            >
-              <span class="material-symbols-outlined msz-18">attach_money</span>
-              Costo
-            </div>
-          </th>
-          <th class="px-6 py-3 text-left">
-            <div
-              class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-            >
-              <span class="material-symbols-outlined msz-18">person</span>
-              Realizado por
-            </div>
-          </th>
-          <th class="px-6 py-3 text-center">
-            <div
-              class="flex items-center justify-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-            >
-              <span class="material-symbols-outlined msz-18">settings</span>
-              Acciones
-            </div>
-          </th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-slate-100">
-        <tr *ngFor="let record of maintenanceRecords" class="hover:bg-slate-50 transition-colors">
-          <td class="px-6 py-4">
-            <div class="flex items-center gap-3">
-              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100">
-                <span class="material-symbols-outlined msz-20 text-blue-600 leading-none"
-                  >inventory_2</span
-                >
-              </div>
-              <div>
-                <p class="text-sm font-medium text-slate-800">{{ record.assetName }}</p>
-                <p class="text-xs text-slate-500">ID: {{ record.assetId }}</p>
-              </div>
-            </div>
-          </td>
-          <td class="px-6 py-4">
-            <span
-              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700"
-            >
-              <span class="material-symbols-outlined msz-14 leading-none">{{
-                getTypeIcon(record.type)
-              }}</span>
-              {{ record.type }}
-            </span>
-          </td>
-          <td class="px-6 py-4">
-            <p class="text-sm text-slate-700">{{ record.maintenanceDate | date: 'short' }}</p>
-          </td>
-          <td class="px-6 py-4">
-            <span
-              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
-              [ngClass]="{
-                'bg-green-100 text-green-700': record.status === 'COMPLETED',
-                'bg-blue-100 text-blue-700': record.status === 'IN_PROGRESS',
-                'bg-yellow-100 text-yellow-700': record.status === 'SCHEDULED',
-                'bg-slate-100 text-slate-700': record.status === 'CANCELLED',
-                'bg-red-100 text-red-700': record.status === 'DELAYED',
-              }"
-            >
-              <span
-                class="w-1.5 h-1.5 rounded-full"
-                [ngClass]="{
-                  'bg-green-600': record.status === 'COMPLETED',
-                  'bg-blue-600': record.status === 'IN_PROGRESS',
-                  'bg-yellow-600': record.status === 'SCHEDULED',
-                  'bg-slate-600': record.status === 'CANCELLED',
-                  'bg-red-600': record.status === 'DELAYED',
-                }"
-              ></span>
-              {{ record.status }}
-            </span>
-          </td>
-          <td class="px-6 py-4">
-            <p class="text-sm font-medium text-slate-700">{{ formatCurrency(record.cost) }}</p>
-          </td>
-          <td class="px-6 py-4">
-            <p class="text-sm text-slate-700">{{ record.performedBy || 'N/A' }}</p>
-          </td>
-          <td class="px-6 py-4">
-            <div class="flex items-center justify-center gap-1">
-              <button
-                type="button"
-                (click)="viewRecord(record)"
-                class="p-2 rounded-full hover:bg-blue-50 text-blue-600 hover:text-blue-700 transition-colors border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
-                title="Ver detalles"
-              >
-                <span class="material-symbols-outlined msz-20">visibility</span>
-              </button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Estado vacío -->
-  <div *ngIf="!loading && maintenanceRecords.length === 0" class="text-center py-12 px-6">
-    <span class="material-symbols-outlined text-6xl text-slate-400 mb-4">build_circle</span>
-    <p class="text-slate-500 mb-4">No hay registros de mantenimiento aún</p>
-    <button
-      type="button"
-      (click)="toggleForm()"
-      class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-200 focus-visible:ring-offset-1 transition-all border-0"
+    <!-- Modal de Detalles -->
+    <div
+      *ngIf="selectedRecord"
+      class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+      (click)="selectedRecord = null"
     >
-      <span class="material-symbols-outlined msz-20 leading-none">add</span>
-      Programar Primer Mantenimiento
-    </button>
+      <div
+        class="bg-white rounded-xl shadow-2xl w-full max-w-3xl animate-in fade-in zoom-in duration-200"
+        (click)="$event.stopPropagation()"
+      >
+        <!-- Header -->
+        <div
+          class="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-green-50 to-emerald-50"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+              <span class="material-symbols-outlined msz-24 text-white">{{
+                getTypeIcon(selectedRecord.type)
+              }}</span>
+            </div>
+            <div>
+              <h4 class="text-lg font-semibold text-slate-900">{{ selectedRecord.assetName }}</h4>
+              <p class="text-sm text-slate-600">Detalles del mantenimiento</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            (click)="selectedRecord = null"
+            class="p-2 rounded-full hover:bg-white/50 transition-colors border-0"
+          >
+            <span class="material-symbols-outlined msz-20 text-slate-600">close</span>
+          </button>
+        </div>
+
+        <!-- Body -->
+        <div class="px-6 py-5 space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
+                >ID del Activo</label
+              >
+              <p class="mt-1 text-sm font-medium text-slate-900">{{ selectedRecord.assetId }}</p>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
+                >Tipo de Mantenimiento</label
+              >
+              <p class="mt-1">
+                <span
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700"
+                >
+                  <span class="material-symbols-outlined msz-14">{{
+                    getTypeIcon(selectedRecord.type)
+                  }}</span>
+                  {{ selectedRecord.type }}
+                </span>
+              </p>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
+                >Fecha de Mantenimiento</label
+              >
+              <p class="mt-1 text-sm font-medium text-slate-900">
+                {{ selectedRecord.maintenanceDate | date: 'dd/MM/yyyy HH:mm' }}
+              </p>
+            </div>
+            <div *ngIf="selectedRecord.nextMaintenanceDate">
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
+                >Próximo Mantenimiento</label
+              >
+              <p class="mt-1 text-sm font-medium text-slate-900">
+                {{ selectedRecord.nextMaintenanceDate | date: 'dd/MM/yyyy' }}
+              </p>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
+                >Estado</label
+              >
+              <div class="mt-1">
+                <span
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="getStatusClass(selectedRecord.status)"
+                >
+                  <span class="material-symbols-outlined msz-14">{{
+                    getStatusIcon(selectedRecord.status)
+                  }}</span>
+                  {{ selectedRecord.status }}
+                </span>
+              </div>
+            </div>
+            <div *ngIf="selectedRecord.cost">
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
+                >Costo</label
+              >
+              <p class="mt-1 text-sm font-medium text-slate-900">
+                {{ formatCurrency(selectedRecord.cost) }}
+              </p>
+            </div>
+            <div *ngIf="selectedRecord.performedBy">
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
+                >Realizado Por</label
+              >
+              <p class="mt-1 text-sm font-medium text-slate-900">
+                {{ selectedRecord.performedBy }}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
+              >Descripción</label
+            >
+            <p class="mt-1 text-sm text-slate-700 leading-relaxed">
+              {{ selectedRecord.description }}
+            </p>
+          </div>
+
+          <div *ngIf="selectedRecord.notes">
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
+              >Notas Adicionales</label
+            >
+            <p class="mt-1 text-sm text-slate-700 leading-relaxed">{{ selectedRecord.notes }}</p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div
+          class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50"
+        >
+          <button
+            type="button"
+            (click)="selectedRecord = null"
+            class="px-5 py-2.5 rounded-full bg-white text-slate-700 hover:bg-slate-100 font-medium transition-colors border border-slate-200"
+          >
+            Cerrar
+          </button>
+          <button
+            type="button"
+            (click)="deleteMaintenance(selectedRecord!)"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-red-600 text-white hover:bg-red-700 font-medium transition-colors border-0"
+          >
+            <span class="material-symbols-outlined msz-18">delete</span>
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

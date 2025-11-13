@@ -1,36 +1,53 @@
 <div class="min-h-screen bg-slate-50 p-8">
   <div class="max-w-6xl mx-auto">
-    <header class="mb-8 flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold text-slate-900">Proveedores</h1>
-        <p class="text-slate-600">Gestión de proveedores de farmacia</p>
+    <header class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
+        <button
+          type="button"
+          (click)="goBack()"
+          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          matTooltip="Volver"
+          aria-label="Volver"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
+        </button>
+        <div class="text-left">
+          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Proveedores</h1>
+          <p class="text-slate-600">Gestión de proveedores de farmacia</p>
+        </div>
       </div>
       <button
+        type="button"
         (click)="newSupplier()"
-        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all"
+        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+        aria-label="Crear nuevo proveedor"
       >
-        <span class="material-symbols-outlined">add</span>
+        <span class="material-symbols-outlined msz-20 leading-none">add</span>
         Nuevo Proveedor
       </button>
     </header>
 
-    <div class="mb-6">
-      <div class="relative max-w-md">
-        <input
-          type="text"
-          [ngModel]="search()"
-          (ngModelChange)="search.set($event)"
-          placeholder="Buscar nombre, contacto, email..."
-          class="w-full h-11 rounded-full bg-white border border-slate-200 px-5 pr-12 text-slate-900 placeholder-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
-        />
-        <span class="material-symbols-outlined absolute right-4 top-2.5 text-slate-400"
-          >search</span
-        >
+    <!-- Barra de búsqueda -->
+    <div class="flex items-center gap-4 mb-8">
+      <div class="flex-1 max-w-2xl">
+        <div class="relative">
+          <input
+            type="text"
+            [ngModel]="search()"
+            (ngModelChange)="search.set($event)"
+            placeholder="Nombre, contacto, email..."
+            class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
+          />
+          <span class="material-symbols-outlined absolute right-3 top-2.5 text-blue-400">search</span>
+        </div>
+      </div>
+      <div class="text-sm text-slate-600">
+        {{ filtered().length }} proveedor{{ filtered().length !== 1 ? 'es' : '' }}
       </div>
     </div>
 
     <!-- Tabla -->
-    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
       <table class="min-w-full divide-y divide-slate-200">
         <thead class="bg-slate-50">
           <tr>

@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { Appointment } from './appointments/entities/appointment.entity';
+import { AssetsModule } from './assets/assets.module';
 import { Asset, MaintenanceRecord } from './assets/entities/asset.entity';
 import { AuthModule } from './auth/auth.module';
 import { BillingModule } from './billing/billing.module';
@@ -84,6 +85,7 @@ import { UsersModule } from './users/users.module';
     BillingModule,
     RolesModule,
     SeedModule,
+    AssetsModule,
   ],
 })
 export class AppModule {}

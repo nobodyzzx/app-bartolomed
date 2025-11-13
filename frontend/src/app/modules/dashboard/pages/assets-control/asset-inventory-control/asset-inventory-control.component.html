@@ -1,225 +1,316 @@
-<div class="min-h-screen bg-slate-50 p-6">
-  <div class="max-w-7xl mx-auto space-y-6">
-    <!-- Header -->
-    <div class="flex items-center justify-between">
+<div class="inventory-container min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header Unificado -->
+    <div class="flex items-center justify-between mb-10">
       <div class="flex items-center gap-4">
         <button
           type="button"
-          routerLink="/dashboard"
-          class="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md hover:shadow-lg hover:bg-slate-50 transition-all border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+          (click)="goBack()"
+          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          aria-label="Volver"
         >
-          <span class="material-symbols-outlined msz-20 text-slate-600">arrow_back</span>
+          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
         </button>
-        <div>
-          <h1 class="text-2xl font-bold text-slate-800">Control de Inventario de Activos</h1>
-          <p class="text-sm text-slate-500">Monitorea cantidades, estados y ubicaciones</p>
+        <div class="text-left">
+          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">
+            Inventario de Activos
+          </h1>
+          <p class="text-slate-600">Gestión y control de activos, equipamiento y bienes</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          (click)="exportToCSV()"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-purple-50 text-purple-600 hover:bg-purple-100 hover:text-purple-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 focus-visible:ring-offset-1 transition-all border-0"
+          aria-label="Exportar inventario"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">download</span>
+          Exportar
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:ring-offset-1 transition-all border-0"
+          aria-label="Transferir activos"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">local_shipping</span>
+          Transferir
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+          aria-label="Mantenimiento"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">build</span>
+          Mantenimiento
+        </button>
+        <button
+          type="button"
+          (click)="addAsset()"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          aria-label="Agregar activo"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">add</span>
+          Agregar Activo
+        </button>
+      </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      <div
+        class="bg-blue-50 p-4 rounded-xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-blue-600 text-sm font-semibold">Total Activos</p>
+            <p class="text-3xl font-bold text-blue-900 mt-2">{{ assets.length }}</p>
+            <p class="text-xs text-blue-600/60 mt-1">En inventario</p>
+          </div>
+          <span class="material-symbols-outlined text-blue-500 msz-40 !w-10 !h-10"
+            >inventory_2</span
+          >
+        </div>
+      </div>
+      <div
+        class="bg-green-50 p-4 rounded-xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-green-600 text-sm font-semibold">Activos</p>
+            <p class="text-3xl font-bold text-green-900 mt-2">
+              {{ getActiveCount() }}
+            </p>
+            <p class="text-xs text-green-600/60 mt-1">En operación</p>
+          </div>
+          <span class="material-symbols-outlined text-green-500 msz-40 !w-10 !h-10"
+            >check_circle</span
+          >
+        </div>
+      </div>
+      <div
+        class="bg-amber-50 p-4 rounded-xl border-l-4 border-amber-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-amber-600 text-sm font-semibold">Mantenimiento</p>
+            <p class="text-3xl font-bold text-amber-900 mt-2">
+              {{ getMaintenanceCount() }}
+            </p>
+            <p class="text-xs text-amber-600/60 mt-1">Requieren atención</p>
+          </div>
+          <span class="material-symbols-outlined text-amber-500 msz-40 !w-10 !h-10">build</span>
+        </div>
+      </div>
+      <div
+        class="bg-purple-50 p-4 rounded-xl border-l-4 border-purple-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-purple-600 text-sm font-semibold">Valor Total</p>
+            <p class="text-3xl font-bold text-purple-900 mt-2">
+              ${{ getTotalValue() | number: '1.2-2' }}
+            </p>
+            <p class="text-xs text-purple-600/60 mt-1">Valor del inventario</p>
+          </div>
+          <span class="material-symbols-outlined text-purple-500 msz-40 !w-10 !h-10"
+            >attach_money</span
+          >
         </div>
       </div>
     </div>
 
-    <!-- Tarjetas de Métricas -->
-    <div *ngIf="stats.totalAssets" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="flex items-center gap-3 p-4 bg-white rounded-xl shadow-md">
-        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-          <span class="material-symbols-outlined msz-20 text-blue-600">inventory</span>
-        </div>
-        <div>
-          <p class="text-xs uppercase text-slate-500">Total Activos</p>
-          <p class="text-lg font-semibold text-slate-800">{{ stats.totalAssets }}</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-3 p-4 bg-white rounded-xl shadow-md">
-        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-          <span class="material-symbols-outlined msz-20 text-green-600">check_circle</span>
-        </div>
-        <div>
-          <p class="text-xs uppercase text-slate-500">Activos Activos</p>
-          <p class="text-lg font-semibold text-slate-800">{{ stats.byStatus?.active || 0 }}</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-3 p-4 bg-white rounded-xl shadow-md">
-        <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-          <span class="material-symbols-outlined msz-20 text-amber-600">build</span>
-        </div>
-        <div>
-          <p class="text-xs uppercase text-slate-500">En Mantenimiento</p>
-          <p class="text-lg font-semibold text-slate-800">{{ stats.byStatus?.maintenance || 0 }}</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-3 p-4 bg-white rounded-xl shadow-md">
-        <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-          <span class="material-symbols-outlined msz-20 text-purple-600">location_on</span>
-        </div>
-        <div>
-          <p class="text-xs uppercase text-slate-500">Ubicaciones</p>
-          <p class="text-lg font-semibold text-slate-800">
-            {{ (stats.byDepartment | keyvalue)?.length || 0 }}
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tabla de Inventario -->
-    <div class="bg-white rounded-xl shadow-md overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-200 bg-slate-100">
-        <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined msz-18 text-slate-600">inventory_2</span>
-          <h3 class="text-lg font-semibold text-slate-800">Inventario de Activos</h3>
+    <!-- Contenido Principal -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+      <div class="flex items-center gap-4 mb-6">
+        <div class="flex-1 max-w-2xl">
+          <div class="relative">
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              (input)="applyFilter($event)"
+              placeholder="Nombre, tag, ubicación, tipo..."
+              class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
+            />
+            <span class="material-symbols-outlined msz-18 absolute right-3 top-2.5 text-blue-400"
+              >search</span
+            >
+          </div>
         </div>
       </div>
 
-      <div *ngIf="loading" class="flex flex-col items-center justify-center py-12 px-6">
-        <mat-spinner diameter="40"></mat-spinner>
-        <p class="mt-4 text-slate-500">Cargando inventario...</p>
-      </div>
+      <!-- Tabla de inventario -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <!-- Loader -->
+        <div *ngIf="isLoading" class="flex items-center justify-center py-12">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
 
-      <div *ngIf="!loading && inventory.length > 0" class="overflow-x-auto">
-        <table class="w-full">
-          <thead class="bg-slate-100 border-b border-slate-200">
-            <tr>
-              <th class="px-6 py-3 text-left">
-                <div
-                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-18">inventory_2</span>
-                  Activo
+        <!-- Estado vacío -->
+        <div
+          *ngIf="!isLoading && assets.length === 0"
+          class="flex flex-col items-center justify-center py-16 px-6"
+        >
+          <span class="material-symbols-outlined text-slate-300" style="font-size: 80px">
+            inventory_2
+          </span>
+          <h3 class="mt-4 text-lg font-semibold text-slate-700">No hay activos registrados</h3>
+          <p class="mt-1 text-slate-500">Comienza agregando tu primer activo al inventario</p>
+          <button
+            (click)="addAsset()"
+            class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-md transition-all border-0 cursor-pointer"
+            type="button"
+          >
+            <span class="material-symbols-outlined">add</span>
+            <span>Agregar Activo</span>
+          </button>
+        </div>
+
+        <!-- Tabla -->
+        <div *ngIf="!isLoading && assets.length > 0" class="overflow-x-auto">
+          <table mat-table [dataSource]="dataSource" matSort class="w-full">
+            <!-- Tag Column -->
+            <ng-container matColumnDef="assetTag">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="px-6 py-4 bg-slate-50">
+                <div class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase">
+                  <span class="material-symbols-outlined text-slate-500 msz-16">qr_code</span>
+                  Tag
                 </div>
               </th>
-              <th class="px-6 py-3 text-left">
-                <div
-                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-18">location_on</span>
-                  Ubicación
+              <td mat-cell *matCellDef="let asset" class="px-6 py-4">
+                <span class="font-mono text-sm text-slate-900">{{ asset.assetTag || 'N/A' }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Nombre Column -->
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="px-6 py-4 bg-slate-50">
+                <div class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase">
+                  <span class="material-symbols-outlined text-slate-500 msz-16">inventory_2</span>
+                  Nombre
                 </div>
               </th>
-              <th class="px-6 py-3 text-left">
-                <div
-                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-18">counter_1</span>
-                  Cantidad
+              <td mat-cell *matCellDef="let asset" class="px-6 py-4">
+                <div class="font-medium text-slate-900">{{ asset.name }}</div>
+              </td>
+            </ng-container>
+
+            <!-- Tipo Column -->
+            <ng-container matColumnDef="type">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="px-6 py-4 bg-slate-50">
+                <div class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase">
+                  <span class="material-symbols-outlined text-slate-500 msz-16">category</span>
+                  Tipo
                 </div>
               </th>
-              <th class="px-6 py-3 text-left">
-                <div
-                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-18">verified</span>
-                  Condición
+              <td mat-cell *matCellDef="let asset" class="px-6 py-4">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-slate-600 msz-18">{{
+                    getTypeIcon(asset.type)
+                  }}</span>
+                  <span class="text-sm text-slate-700">{{ asset.type }}</span>
                 </div>
-              </th>
-              <th class="px-6 py-3 text-left">
-                <div
-                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-18">info</span>
+              </td>
+            </ng-container>
+
+            <!-- Estado Column -->
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="px-6 py-4 bg-slate-50">
+                <div class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase">
+                  <span class="material-symbols-outlined text-slate-500 msz-16">info</span>
                   Estado
                 </div>
               </th>
-              <th class="px-6 py-3 text-left">
-                <div
-                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-18">event</span>
-                  Última Inspección
-                </div>
-              </th>
-              <th class="px-6 py-3 text-center">
-                <div
-                  class="flex items-center justify-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-18">settings</span>
-                  Acciones
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr *ngFor="let item of inventory" class="hover:bg-slate-50 transition-colors">
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                    <span class="material-symbols-outlined msz-20 text-blue-600">inventory_2</span>
-                  </div>
-                  <div>
-                    <p class="text-sm font-medium text-slate-800">{{ item.assetName }}</p>
-                    <p class="text-xs text-slate-500" *ngIf="item.responsiblePerson">
-                      Resp: {{ item.responsiblePerson }}
-                    </p>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4">
-                <p class="text-sm text-slate-700">{{ item.location }}</p>
-                <p class="text-xs text-slate-500" *ngIf="item.department">{{ item.department }}</p>
-              </td>
-              <td class="px-6 py-4">
-                <span
-                  class="inline-flex items-center justify-center w-10 h-7 rounded-full bg-slate-100 text-slate-700 text-sm font-medium"
-                  >{{ item.quantity }}</span
-                >
-              </td>
-              <td class="px-6 py-4">
-                <span
-                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700"
-                >
-                  {{ item.condition }}
-                </span>
-              </td>
-              <td class="px-6 py-4">
+              <td mat-cell *matCellDef="let asset" class="px-6 py-4">
                 <span
                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
-                  [ngClass]="{
-                    'bg-green-100 text-green-700': item.status === 'ACTIVE',
-                    'bg-amber-100 text-amber-700': item.status === 'MAINTENANCE',
-                    'bg-slate-100 text-slate-700': item.status === 'INACTIVE',
-                    'bg-red-100 text-red-700': item.status === 'RETIRED',
-                  }"
+                  [ngClass]="getStatusColor(asset.status)"
                 >
-                  <span
-                    class="w-1.5 h-1.5 rounded-full"
-                    [ngClass]="{
-                      'bg-green-600': item.status === 'ACTIVE',
-                      'bg-amber-600': item.status === 'MAINTENANCE',
-                      'bg-slate-600': item.status === 'INACTIVE',
-                      'bg-red-600': item.status === 'RETIRED',
-                    }"
-                  ></span>
-                  {{ item.status }}
+                  {{ asset.status }}
                 </span>
               </td>
-              <td class="px-6 py-4">
-                <p class="text-sm text-slate-700">
-                  {{ item.lastInspectionDate | date: 'short' || 'No registrada' }}
-                </p>
+            </ng-container>
+
+            <!-- Ubicación Column -->
+            <ng-container matColumnDef="location">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="px-6 py-4 bg-slate-50">
+                <div class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase">
+                  <span class="material-symbols-outlined text-slate-500 msz-16">location_on</span>
+                  Ubicación
+                </div>
+              </th>
+              <td mat-cell *matCellDef="let asset" class="px-6 py-4">
+                <span class="text-sm text-slate-700">{{
+                  asset.location || 'No especificada'
+                }}</span>
               </td>
-              <td class="px-6 py-4">
-                <div class="flex items-center justify-center gap-1">
+            </ng-container>
+
+            <!-- Valor Actual Column -->
+            <ng-container matColumnDef="currentValue">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="px-6 py-4 bg-slate-50">
+                <div class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase">
+                  <span class="material-symbols-outlined text-slate-500 msz-16">payments</span>
+                  Valor Actual
+                </div>
+              </th>
+              <td mat-cell *matCellDef="let asset" class="px-6 py-4">
+                <span class="font-medium text-slate-900">{{
+                  asset.currentValue || 0 | currency: 'USD'
+                }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Acciones Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef class="px-6 py-4 bg-slate-50">
+                <div class="text-xs font-semibold text-slate-700 uppercase">Acciones</div>
+              </th>
+              <td mat-cell *matCellDef="let asset" class="px-6 py-4">
+                <div class="flex items-center gap-2">
                   <button
+                    (click)="viewAsset(asset)"
+                    class="w-9 h-9 rounded-full bg-blue-50 hover:bg-blue-100 flex items-center justify-center border-0 cursor-pointer transition-colors"
                     type="button"
-                    class="p-2 rounded-full hover:bg-blue-50 text-blue-600 hover:text-blue-700 transition-colors"
-                    title="Inspeccionar"
+                    matTooltip="Ver detalles"
                   >
-                    <span class="material-symbols-outlined msz-20">search</span>
+                    <span class="material-symbols-outlined text-blue-600 msz-18">visibility</span>
                   </button>
                   <button
+                    (click)="editAsset(asset)"
+                    class="w-9 h-9 rounded-full bg-amber-50 hover:bg-amber-100 flex items-center justify-center border-0 cursor-pointer transition-colors"
                     type="button"
-                    class="p-2 rounded-full hover:bg-purple-50 text-purple-600 hover:text-purple-700 transition-colors"
-                    title="Mover ubicación"
+                    matTooltip="Editar"
                   >
-                    <span class="material-symbols-outlined msz-20">location_on</span>
+                    <span class="material-symbols-outlined text-amber-600 msz-18">edit</span>
+                  </button>
+                  <button
+                    (click)="deleteAsset(asset)"
+                    class="w-9 h-9 rounded-full bg-red-50 hover:bg-red-100 flex items-center justify-center border-0 cursor-pointer transition-colors"
+                    type="button"
+                    matTooltip="Eliminar"
+                  >
+                    <span class="material-symbols-outlined text-red-600 msz-18">delete</span>
                   </button>
                 </div>
               </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+            </ng-container>
 
-      <div *ngIf="!loading && inventory.length === 0" class="text-center py-12 px-6">
-        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4">inventory_2</span>
-        <p class="text-slate-500">No hay activos en el inventario</p>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns"
+              class="hover:bg-slate-50 transition-colors"
+            ></tr>
+          </table>
+
+          <!-- Paginador -->
+          <mat-paginator
+            [pageSizeOptions]="[10, 25, 50, 100]"
+            showFirstLastButtons
+            class="border-t border-slate-200 bg-slate-50"
+          ></mat-paginator>
+        </div>
       </div>
     </div>
   </div>

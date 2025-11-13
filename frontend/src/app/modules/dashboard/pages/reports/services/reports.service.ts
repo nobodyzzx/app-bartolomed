@@ -1,20 +1,20 @@
-import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http'
+import { Injectable } from '@angular/core'
+import { Observable, of } from 'rxjs'
+import { delay, map } from 'rxjs/operators'
 import {
-    FinancialReport,
-    GenerateReportParams,
-    MedicalReport,
-    ReportFilters,
-    StockReport
-} from '../interfaces/reports.interfaces';
+  FinancialReport,
+  GenerateReportParams,
+  MedicalReport,
+  ReportFilters,
+  StockReport,
+} from '../interfaces/reports.interfaces'
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ReportsService {
-  private apiUrl = '/api/reports';
+  private apiUrl = '/api/reports'
 
   constructor(private http: HttpClient) {}
 
@@ -33,14 +33,14 @@ export class ReportsService {
         consultationData: [
           { specialty: 'Medicina General', count: 80, averageDuration: 30 },
           { specialty: 'Pediatría', count: 45, averageDuration: 25 },
-          { specialty: 'Cardiología', count: 25, averageDuration: 45 }
+          { specialty: 'Cardiología', count: 25, averageDuration: 45 },
         ],
         period: {
           startDate: '2024-01-01',
-          endDate: '2024-01-31'
+          endDate: '2024-01-31',
         },
         createdBy: 'Dr. García',
-        createdAt: new Date('2024-01-31')
+        createdAt: new Date('2024-01-31'),
       },
       {
         id: '2',
@@ -54,18 +54,25 @@ export class ReportsService {
           { diagnosis: 'Hipertensión', count: 45, percentage: 15 },
           { diagnosis: 'Diabetes', count: 36, percentage: 12 },
           { diagnosis: 'Gripe', count: 60, percentage: 20 },
-          { diagnosis: 'Gastritis', count: 27, percentage: 9 }
+          { diagnosis: 'Gastritis', count: 27, percentage: 9 },
         ],
         period: {
           startDate: '2023-10-01',
-          endDate: '2023-12-31'
+          endDate: '2023-12-31',
         },
         createdBy: 'Dra. Martínez',
-        createdAt: new Date('2024-01-15')
-      }
-    ];
+        createdAt: new Date('2024-01-15'),
+      },
+    ]
 
-    return of(mockReports).pipe(delay(1000));
+    return of(mockReports).pipe(delay(1000))
+  }
+
+  getMedicalReportsByType(type: string): Observable<MedicalReport[]> {
+    return this.getMedicalReports().pipe(
+      delay(300),
+      map(reports => reports.filter(r => r.type === type)),
+    )
   }
 
   generateMedicalReport(params: GenerateReportParams): Observable<MedicalReport> {
@@ -80,11 +87,11 @@ export class ReportsService {
       createdAt: new Date(),
       period: {
         startDate: params.filters.startDate || '',
-        endDate: params.filters.endDate || ''
-      }
-    };
+        endDate: params.filters.endDate || '',
+      },
+    }
 
-    return of(newReport).pipe(delay(2000));
+    return of(newReport).pipe(delay(2000))
   }
 
   // Financial Reports
@@ -104,15 +111,15 @@ export class ReportsService {
         status: 'published',
         period: {
           startDate: '2024-01-01',
-          endDate: '2024-01-31'
+          endDate: '2024-01-31',
         },
         categories: [
           { category: 'Consultas', amount: 30000, percentage: 58 },
           { category: 'Medicamentos', amount: 15000, percentage: 29 },
-          { category: 'Procedimientos', amount: 7000, percentage: 13 }
+          { category: 'Procedimientos', amount: 7000, percentage: 13 },
         ],
         createdBy: 'Contador',
-        createdAt: new Date('2024-01-31')
+        createdAt: new Date('2024-01-31'),
       },
       {
         id: '2',
@@ -126,18 +133,18 @@ export class ReportsService {
         status: 'published',
         period: {
           startDate: '2024-01-01',
-          endDate: '2024-01-15'
+          endDate: '2024-01-15',
         },
         categories: [
           { category: 'Farmacia', amount: 18000, percentage: 64 },
-          { category: 'Consultorios', amount: 10000, percentage: 36 }
+          { category: 'Consultorios', amount: 10000, percentage: 36 },
         ],
         createdBy: 'Gerente de Ventas',
-        createdAt: new Date('2024-01-15')
-      }
-    ];
+        createdAt: new Date('2024-01-15'),
+      },
+    ]
 
-    return of(mockReports).pipe(delay(1000));
+    return of(mockReports).pipe(delay(1000))
   }
 
   generateFinancialReport(params: GenerateReportParams): Observable<FinancialReport> {
@@ -153,11 +160,18 @@ export class ReportsService {
       createdAt: new Date(),
       period: {
         startDate: params.filters.startDate || '',
-        endDate: params.filters.endDate || ''
-      }
-    };
+        endDate: params.filters.endDate || '',
+      },
+    }
 
-    return of(newReport).pipe(delay(2000));
+    return of(newReport).pipe(delay(2000))
+  }
+
+  getFinancialReportsByType(type: string): Observable<FinancialReport[]> {
+    return this.getFinancialReports().pipe(
+      delay(300),
+      map(reports => reports.filter(r => r.type === type)),
+    )
   }
 
   // Stock Reports
@@ -176,12 +190,28 @@ export class ReportsService {
         stockValue: 125000,
         status: 'published',
         movements: [
-          { productName: 'Paracetamol 500mg', movementType: 'entrada', quantity: 100, date: '2024-01-30' },
-          { productName: 'Ibuprofeno 400mg', movementType: 'salida', quantity: 50, date: '2024-01-29' },
-          { productName: 'Amoxicilina 500mg', movementType: 'ajuste', quantity: -5, date: '2024-01-28', reason: 'Vencimiento' }
+          {
+            productName: 'Paracetamol 500mg',
+            movementType: 'entrada',
+            quantity: 100,
+            date: '2024-01-30',
+          },
+          {
+            productName: 'Ibuprofeno 400mg',
+            movementType: 'salida',
+            quantity: 50,
+            date: '2024-01-29',
+          },
+          {
+            productName: 'Amoxicilina 500mg',
+            movementType: 'ajuste',
+            quantity: -5,
+            date: '2024-01-28',
+            reason: 'Vencimiento',
+          },
         ],
         createdBy: 'Farmaceuta',
-        createdAt: new Date('2024-01-31')
+        createdAt: new Date('2024-01-31'),
       },
       {
         id: '2',
@@ -194,15 +224,34 @@ export class ReportsService {
         stockValue: 8500,
         status: 'published',
         movements: [
-          { productName: 'Jarabe para la tos', movementType: 'salida', quantity: 12, date: '2024-01-24', reason: 'Próximo a vencer' },
-          { productName: 'Vitamina C', movementType: 'ajuste', quantity: -3, date: '2024-01-23', reason: 'Vencido' }
+          {
+            productName: 'Jarabe para la tos',
+            movementType: 'salida',
+            quantity: 12,
+            date: '2024-01-24',
+            reason: 'Próximo a vencer',
+          },
+          {
+            productName: 'Vitamina C',
+            movementType: 'ajuste',
+            quantity: -3,
+            date: '2024-01-23',
+            reason: 'Vencido',
+          },
         ],
         createdBy: 'Supervisor de Farmacia',
-        createdAt: new Date('2024-01-25')
-      }
-    ];
+        createdAt: new Date('2024-01-25'),
+      },
+    ]
 
-    return of(mockReports).pipe(delay(1000));
+    return of(mockReports).pipe(delay(1000))
+  }
+
+  getStockReportsByType(type: string): Observable<StockReport[]> {
+    return this.getStockReports().pipe(
+      delay(300),
+      map(reports => reports.filter(r => r.type === type)),
+    )
   }
 
   generateStockReport(params: GenerateReportParams): Observable<StockReport> {
@@ -214,24 +263,24 @@ export class ReportsService {
       description: params.description,
       status: 'generated',
       createdBy: 'Usuario Actual',
-      createdAt: new Date()
-    };
+      createdAt: new Date(),
+    }
 
-    return of(newReport).pipe(delay(2000));
+    return of(newReport).pipe(delay(2000))
   }
 
   // Métodos generales
   deleteReport(id: string): Observable<boolean> {
-    return of(true).pipe(delay(500));
+    return of(true).pipe(delay(500))
   }
 
   downloadReport(id: string, format: 'pdf' | 'excel' | 'csv'): Observable<Blob> {
     // Mock download - en producción retornaría el archivo real
-    const mockBlob = new Blob(['Mock report content'], { type: 'application/pdf' });
-    return of(mockBlob).pipe(delay(1500));
+    const mockBlob = new Blob(['Mock report content'], { type: 'application/pdf' })
+    return of(mockBlob).pipe(delay(1500))
   }
 
   exportReport(reportId: string, format: 'pdf' | 'excel' | 'csv'): Observable<boolean> {
-    return of(true).pipe(delay(2000));
+    return of(true).pipe(delay(2000))
   }
 }

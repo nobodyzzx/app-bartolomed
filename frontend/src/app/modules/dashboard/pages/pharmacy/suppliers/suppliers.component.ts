@@ -1,4 +1,5 @@
 import { Component, computed, OnInit, signal } from '@angular/core'
+import { Location } from '@angular/common'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { Supplier, SupplierType } from '../interfaces/pharmacy.interfaces'
@@ -27,6 +28,7 @@ export class SuppliersComponent implements OnInit {
     private suppliersService: SuppliersService,
     private alert: AlertService,
     private router: Router,
+    private location: Location,
   ) {}
 
   ngOnInit(): void {
@@ -86,6 +88,10 @@ export class SuppliersComponent implements OnInit {
       },
       error: () => this.loading.set(false),
     })
+  }
+
+  goBack(): void {
+    this.location.back()
   }
 
   trackById(_: number, item: Supplier) {

@@ -12,12 +12,14 @@ export class InvoicingService {
       invoiceNumber: 'FACT-001',
       saleId: 'VNT-001',
       issueDate: '2025-09-02',
+      date: '2025-09-02',
       dueDate: '2025-09-17',
       paymentDate: '2025-09-02',
       status: InvoiceStatus.PAID,
       subtotal: 14.1,
       taxAmount: 0,
       totalAmount: 14.1,
+      total: 14.1,
       amountPaid: 14.1,
       balanceDue: 0,
       patientName: 'Juan Pérez',
@@ -29,12 +31,14 @@ export class InvoicingService {
       invoiceNumber: 'FACT-002',
       saleId: 'VNT-002',
       issueDate: '2025-09-03',
+      date: '2025-09-03',
       dueDate: '2025-09-18',
       paymentDate: '2025-09-03',
       status: InvoiceStatus.PAID,
       subtotal: 5.75,
       taxAmount: 0,
       totalAmount: 5.75,
+      total: 5.75,
       amountPaid: 5.75,
       balanceDue: 0,
       patientName: 'María García',
@@ -46,11 +50,13 @@ export class InvoicingService {
       invoiceNumber: 'FACT-003',
       saleId: 'VNT-003',
       issueDate: '2025-09-03',
+      date: '2025-09-03',
       dueDate: '2025-09-18',
       status: InvoiceStatus.PENDING,
       subtotal: 10.9,
       taxAmount: 0,
       totalAmount: 10.9,
+      total: 10.9,
       amountPaid: 0,
       balanceDue: 10.9,
       patientName: 'Carlos Rodriguez',
@@ -62,12 +68,14 @@ export class InvoicingService {
       invoiceNumber: 'FACT-004',
       saleId: 'VNT-004',
       issueDate: '2025-09-01',
+      date: '2025-09-01',
       dueDate: '2025-09-16',
       paymentDate: '2025-09-01',
       status: InvoiceStatus.PAID,
       subtotal: 17.1,
       taxAmount: 0,
       totalAmount: 17.1,
+      total: 17.1,
       amountPaid: 17.1,
       balanceDue: 0,
       patientName: 'Ana López',
@@ -79,11 +87,13 @@ export class InvoicingService {
       invoiceNumber: 'FACT-005',
       saleId: 'VNT-005',
       issueDate: '2025-08-28',
+      date: '2025-08-28',
       dueDate: '2025-09-12',
       status: InvoiceStatus.OVERDUE,
       subtotal: 25.3,
       taxAmount: 0,
       totalAmount: 25.3,
+      total: 25.3,
       amountPaid: 0,
       balanceDue: 25.3,
       patientName: 'Pedro Martinez',
@@ -208,5 +218,14 @@ export class InvoicingService {
   private generateInvoiceNumber(): string {
     const invoiceNumber = this.invoices.length + 1
     return `FACT-${invoiceNumber.toString().padStart(3, '0')}`
+  }
+
+  updateInvoice(id: string, invoice: Partial<Invoice>): Observable<Invoice | null> {
+    const existingInvoice = this.invoices.find(i => i.id === id)
+    if (existingInvoice) {
+      Object.assign(existingInvoice, invoice)
+      return of(existingInvoice)
+    }
+    return of(null)
   }
 }
