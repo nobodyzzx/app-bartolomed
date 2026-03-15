@@ -1,0 +1,3 @@
+Codigo,Nombre_Legal,Nombre_Comercial,RUC_NIT,Persona_Contacto,Email,Telefono,Celular,Direccion,Ciudad,Provincia,Codigo_Postal,Pais,Sitio_Web,Dias_Credito,Descuento_Porcentaje,Estado,Notas
+PROV-001,Distribuidora Médica S.A.,DisMed,1234567890001,Juan Pérez,ventas@dismed.com,02-2345678,099-123-4567,Av. Principal 123,Quito,Pichincha,170150,Ecuador,www.dismed.com.ec,30,5.0,Activo,Proveedor principal de medicamentos
+PROV-002,Suministros Hospitalarios Ltda.,SumiHosp,0987654321001,María González,info@sumhosp.com,02-3456789,098-765-4321,Calle Secundaria 456,Guayaquil,Guayas,090150,Ecuador,www.sumhosp.com.ec,15,3.0,Activo,Proveedor de insumos médicos

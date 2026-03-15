@@ -281,7 +281,6 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
           patientId: this.preselectedPatientId,
         })
       } else if (patients.length > 0 && !this.isEditMode) {
-        // Pre-seleccionar el primer paciente para facilitar las pruebas
         this.patientInfoForm.patchValue({
           patientId: patients[0].id,
         })
@@ -320,7 +319,6 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
       })
       this.doctorsList = filteredDoctors
       if (filteredDoctors.length > 0 && !this.isEditMode) {
-        // Pre-seleccionar el primer doctor para facilitar las pruebas
         this.patientInfoForm.patchValue({
           doctorId: filteredDoctors[0].id,
         })

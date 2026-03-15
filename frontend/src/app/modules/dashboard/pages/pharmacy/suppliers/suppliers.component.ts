@@ -1,5 +1,5 @@
-import { Component, computed, OnInit, signal } from '@angular/core'
 import { Location } from '@angular/common'
+import { Component, computed, OnInit, signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { Supplier, SupplierType } from '../interfaces/pharmacy.interfaces'

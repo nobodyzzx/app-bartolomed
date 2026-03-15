@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { FilterAssetsDto } from './dto/filter-assets.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
+import { AssetMaintenance } from './entities/asset-maintenance.entity';
+import { AssetReport, ReportStatus } from './entities/asset-report.entity';
 import { Asset, AssetStatus } from './entities/asset.entity';
 
 @Injectable()
@@ -11,6 +13,10 @@ export class AssetsService {
   constructor(
     @InjectRepository(Asset)
     private readonly assetRepository: Repository<Asset>,
+    @InjectRepository(AssetMaintenance)
+    private readonly maintenanceRepository: Repository<AssetMaintenance>,
+    @InjectRepository(AssetReport)
+    private readonly reportRepository: Repository<AssetReport>,
   ) {}
 
   async create(createAssetDto: CreateAssetDto, userId: string, clinicId?: string): Promise<Asset> {
@@ -229,5 +235,110 @@ export class AssetsService {
       acc[asset.condition] = (acc[asset.condition] || 0) + 1;
       return acc;
     }, {});
+  }
+
+  // ==================== MAINTENANCE METHODS ====================
+  async findAllMaintenance(filters?: any): Promise<AssetMaintenance[]> {
+    return this.maintenanceRepository.find({
+      relations: ['asset', 'scheduledBy', 'completedBy'],
+      order: { scheduledDate: 'DESC' },
+    });
+  }
+
+  async findOneMaintenance(id: string): Promise<AssetMaintenance> {
+    const maintenance = await this.maintenanceRepository.findOne({
+      where: { id },
+      relations: ['asset', 'scheduledBy', 'completedBy'],
+    });
+
+    if (!maintenance) {
+      throw new NotFoundException(`Maintenance record with ID ${id} not found`);
+    }
+
+    return maintenance;
+  }
+
+  async createMaintenance(data: any, userId: string): Promise<AssetMaintenance> {
+    const maintenance = this.maintenanceRepository.create({
+      ...data,
+      scheduledById: userId,
+    });
+
+    const saved = await this.maintenanceRepository.save(maintenance);
+    return Array.isArray(saved) ? saved[0] : saved;
+  }
+
+  async updateMaintenance(id: string, data: any): Promise<AssetMaintenance> {
+    await this.maintenanceRepository.update(id, data);
+    return this.findOneMaintenance(id);
+  }
+
+  async deleteMaintenance(id: string): Promise<void> {
+    const result = await this.maintenanceRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Maintenance record with ID ${id} not found`);
+    }
+  }
+
+  async getMaintenanceStats(): Promise<any> {
+    const [records, total] = await this.maintenanceRepository.findAndCount();
+
+    return {
+      total,
+      scheduled: records.filter(r => r.status === 'Programado').length,
+      completed: records.filter(r => r.status === 'Completado').length,
+      inProgress: records.filter(r => r.status === 'En Progreso').length,
+      cancelled: records.filter(r => r.status === 'Cancelado').length,
+    };
+  }
+
+  // ==================== REPORTS METHODS ====================
+  async findAllReports(filters?: any): Promise<AssetReport[]> {
+    return this.reportRepository.find({
+      relations: ['generatedBy', 'clinic'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findOneReport(id: string): Promise<AssetReport> {
+    const report = await this.reportRepository.findOne({
+      where: { id },
+      relations: ['generatedBy', 'clinic'],
+    });
+
+    if (!report) {
+      throw new NotFoundException(`Report with ID ${id} not found`);
+    }
+
+    return report;
+  }
+
+  async generateReport(data: any, userId: string): Promise<AssetReport> {
+    const report = this.reportRepository.create({
+      ...data,
+      status: ReportStatus.PENDING,
+      generatedById: userId,
+    });
+
+    const saved = await this.reportRepository.save(report);
+    return Array.isArray(saved) ? saved[0] : saved;
+  }
+
+  async deleteReport(id: string): Promise<void> {
+    const result = await this.reportRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Report with ID ${id} not found`);
+    }
+  }
+
+  async getReportsStats(): Promise<any> {
+    const [reports, total] = await this.reportRepository.findAndCount();
+
+    return {
+      total,
+      pending: reports.filter(r => r.status === ReportStatus.PENDING).length,
+      completed: reports.filter(r => r.status === ReportStatus.COMPLETED).length,
+      failed: reports.filter(r => r.status === ReportStatus.FAILED).length,
+    };
   }
 }
