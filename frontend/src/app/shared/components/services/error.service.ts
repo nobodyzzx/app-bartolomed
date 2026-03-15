@@ -42,7 +42,6 @@ export class ErrorService {
   }
 
   handleError(error: any): void {
-    console.error('Error original:', error)
     const errorMessage = this.getErrorMessage(error)
     const errorTitle = this.getErrorTitle(error.status || 0)
 

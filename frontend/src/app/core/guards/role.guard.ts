@@ -20,7 +20,6 @@ export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   }
 
   // Si no tiene permisos, redirigir
-  console.warn('Acceso denegado. Se requieren roles:', allowedRoles)
   router.navigate(['/dashboard']) // Redirigir al home del dashboard
   return false
 }

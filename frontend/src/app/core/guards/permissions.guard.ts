@@ -10,25 +10,8 @@ export const permissionsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) =
   const required = (route.data['requiredPermissions'] as Permission[]) || []
   if (!required || required.length === 0) return true
 
-  const userPermissions = authService.currentPermissions()
-  const userRoles = authService.currentUserRoles()
-
-  console.log('[PermissionsGuard] Verificando acceso:', {
-    path: route.routeConfig?.path,
-    requiredPermissions: required,
-    userRoles,
-    userPermissions,
-    hasPermission: userPermissions.some(p => required.includes(p)),
-  })
-
   const ok = authService.hasAnyPermission(required)
   if (ok) return true
-
-  console.warn('[PermissionsGuard] ❌ Acceso denegado:', {
-    required,
-    userRoles,
-    userPermissions,
-  })
 
   // Navegar a home en lugar de dashboard para evitar loop
   router.navigate(['/dashboard/home'], {
