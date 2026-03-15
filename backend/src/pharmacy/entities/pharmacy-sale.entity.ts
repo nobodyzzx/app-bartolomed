@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { MedicationStock } from './pharmacy.entity';
 import { User } from '../../users/entities/user.entity';
 
 export enum SaleStatus {
@@ -108,6 +109,13 @@ export class PharmacySaleItem {
 
   @Column('uuid')
   saleId: string;
+
+  @ManyToOne(() => MedicationStock, { nullable: true, eager: false })
+  @JoinColumn({ name: 'medication_stock_id' })
+  medicationStock: MedicationStock;
+
+  @Column('uuid', { nullable: true })
+  medicationStockId: string;
 
   @Column('text')
   productName: string;
