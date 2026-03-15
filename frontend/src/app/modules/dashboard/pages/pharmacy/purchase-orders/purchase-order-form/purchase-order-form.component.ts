@@ -220,7 +220,6 @@ export class PurchaseOrderFormComponent implements OnInit {
           this.router.navigate(['/dashboard/pharmacy/purchase-orders'])
         },
         error: err => {
-          console.error('[ERROR]', err)
           const errorMsg = Array.isArray(err?.error?.message)
             ? err.error.message.join(', ')
             : err?.error?.message || 'No se pudo actualizar la orden'
@@ -235,7 +234,6 @@ export class PurchaseOrderFormComponent implements OnInit {
           this.router.navigate(['/dashboard/pharmacy/purchase-orders'])
         },
         error: err => {
-          console.error('[ERROR]', err)
           const errorMsg = Array.isArray(err?.error?.message)
             ? err.error.message.join(', ')
             : err?.error?.message || 'No se pudo crear la orden'

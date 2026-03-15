@@ -40,8 +40,7 @@ export class InvoiceDetailComponent implements OnInit {
         this.invoice = invoice
         this.isLoading = false
       },
-      error: (error: any) => {
-        console.error('Error cargando factura:', error)
+      error: () => {
         this.alert.error('Error', 'No se pudo cargar la factura')
         this.isLoading = false
       },
@@ -85,9 +84,7 @@ export class InvoiceDetailComponent implements OnInit {
               this.loadInvoice(this.invoiceId)
             }
           },
-          error: (error: any) => {
-            console.error('Error actualizando factura:', error)
-          },
+          error: () => {},
         })
     }
   }
