@@ -2,13 +2,13 @@ import { inject } from '@angular/core'
 import { CanActivateFn } from '@angular/router'
 import { AuthService as BackendAuthService } from '../../modules/auth/services/auth.service'
 import { UserRoles } from '../enums/user-roles.enum'
-import { AuthService as RoleAuthService } from '../services/auth.service'
+import { RoleStateService } from '../services/role-state.service'
 
-// Sincroniza los roles del usuario autenticado (backend) con el sistema de roles (core)
-// Útil tras refresh de token o recargas, para que el Sidebar/guards tenga roles sin depender del login explícito
+// Sincroniza los roles del usuario autenticado (backend) con el estado de roles de la UI.
+// Útil tras refresh de token o recargas, para que el Sidebar/guards tenga roles sin depender del login explícito.
 export const rolesSyncGuard: CanActivateFn = () => {
   const backendAuth = inject(BackendAuthService)
-  const roleAuth = inject(RoleAuthService)
+  const roleAuth = inject(RoleStateService)
 
   const currentCore = roleAuth.currentUserRoles()
   if (currentCore.length > 0) return true
@@ -16,8 +16,7 @@ export const rolesSyncGuard: CanActivateFn = () => {
   const backendRoles: string[] = backendAuth.currentUser()?.roles ?? []
   const mapped = mapBackendRolesToUserRoles(backendRoles)
   if (mapped.length > 0) {
-    // No navegar aquí; solo sincroniza el estado de roles para el resto de la navegación
-    roleAuth.loginAs(mapped)
+    roleAuth.syncRoles(mapped)
   }
   return true
 }
