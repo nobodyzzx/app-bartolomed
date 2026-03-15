@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreatePharmacySaleDto, UpdatePharmacySaleDto, UpdatePharmacySaleStatusDto } from '../dto/pharmacy-sale.dto';
 import { PharmacySale, PharmacySaleItem, SaleStatus } from '../entities/pharmacy-sale.entity';
-import { MedicationStock, StockMovement } from '../entities/pharmacy.entity';
+import { MedicationStock, MovementType, StockMovement } from '../entities/pharmacy.entity';
 import { InventoryService } from './inventory.service';
 
 @Injectable()
@@ -23,7 +23,8 @@ export class PharmacySalesService {
   async create(createPharmacySaleDto: CreatePharmacySaleDto, soldById: string): Promise<PharmacySale> {
     const saleNumber = await this.generateSaleNumber();
 
-    // Validate stock availability for all items
+    // Validate stock availability for all items and cache results
+    const stockCache = new Map<string, MedicationStock>();
     for (const itemDto of createPharmacySaleDto.items) {
       const stock = await this.medicationStockRepository.findOne({
         where: { id: itemDto.medicationStockId },
@@ -40,6 +41,8 @@ export class PharmacySalesService {
           `Insufficient stock for ${stock.medication?.name || 'product'}. Available: ${availableQty}, Requested: ${itemDto.quantity}`,
         );
       }
+
+      stockCache.set(itemDto.medicationStockId, stock);
     }
 
     // Calculate totals
@@ -86,16 +89,17 @@ export class PharmacySalesService {
     // Create sale items
     for (const itemDto of items) {
       const item = new PharmacySaleItem();
+      const stock = stockCache.get(itemDto.medicationStockId);
       item.sale = pharmacySale;
-      item.saleId = pharmacySale.id;
-      item.productName = 'Producto'; // Será actualizado con nombre real
+      item.saleId = savedSale.id;
+      item.medicationStockId = itemDto.medicationStockId;
+      item.productName = stock?.medication?.name || 'Producto';
+      item.batchNumber = itemDto.batchNumber || stock?.batchNumber;
       item.quantity = itemDto.quantity;
       item.unitPrice = itemDto.unitPrice;
       item.discount = itemDto.discountAmount || 0;
       item.subtotal = itemDto.totalPrice;
-      item.batchNumber = itemDto.batchNumber;
-      item.expiryDate = itemDto.expiryDate ? new Date(itemDto.expiryDate) : null;
-      item.saleId = savedSale.id;
+      item.expiryDate = itemDto.expiryDate ? new Date(itemDto.expiryDate) : stock?.expiryDate ?? null;
       await this.pharmacySaleItemRepository.save(item);
     }
 
@@ -229,58 +233,53 @@ export class PharmacySalesService {
     const previousStatus = pharmacySale.status;
     const newStatus = updateStatusDto.status;
 
-    // If completing a sale, reduce stock and create movement
+    // If completing a sale, reduce stock and register movements
     if (newStatus === SaleStatus.COMPLETED && previousStatus !== SaleStatus.COMPLETED) {
-      // TODO: Implementar reducción de stock cuando se agregue relación medicationStock a PharmacySaleItem
-      /*
-      // Load items with medication stock
       const saleWithItems = await this.pharmacySaleRepository.findOne({
         where: { id },
-        relations: ['items', 'items.medicationStock', 'items.medicationStock.medication'],
+        relations: ['items'],
       });
 
-      if (!saleWithItems || !saleWithItems.items) {
+      if (!saleWithItems?.items?.length) {
         throw new NotFoundException('Sale items not found');
       }
 
-      // Reduce stock and create movements for each item
       for (const item of saleWithItems.items) {
+        if (!item.medicationStockId) continue;
+
         const stock = await this.medicationStockRepository.findOne({
           where: { id: item.medicationStockId },
           relations: ['medication'],
         });
 
         if (!stock) {
-          throw new NotFoundException(`Stock with ID ${item.medicationStockId} not found`);
-        }
-
-        // Verify stock availability
-        const availableQty = (stock.quantity || 0) - (stock.reservedQuantity || 0);
-        if (availableQty < item.quantity) {
-          throw new BadRequestException(
-            `Insufficient stock for ${stock.medication?.name || 'product'}. Available: ${availableQty}, Required: ${item.quantity}`,
+          throw new NotFoundException(
+            `Stock with ID ${item.medicationStockId} not found for item ${item.productName}`,
           );
         }
 
-        // Reduce stock quantity
-        stock.quantity = (stock.quantity || 0) - item.quantity;
+        const availableQty = (stock.quantity || 0) - (stock.reservedQuantity || 0);
+        if (availableQty < item.quantity) {
+          throw new BadRequestException(
+            `Stock insuficiente para ${stock.medication?.name || item.productName}. Disponible: ${availableQty}, Requerido: ${item.quantity}`,
+          );
+        }
+
+        stock.quantity = stock.quantity - item.quantity;
         await this.medicationStockRepository.save(stock);
 
-        // Create stock movement for SALE
         const movement = new StockMovement();
         movement.stock = stock;
         movement.type = MovementType.SALE;
         movement.quantity = item.quantity;
         movement.unitPrice = item.unitPrice;
-        movement.totalAmount = item.quantity * item.unitPrice - ((item as any).discountAmount || 0);
+        movement.totalAmount = item.subtotal;
         movement.reference = pharmacySale.saleNumber;
         movement.reason = `Venta ${pharmacySale.saleNumber}`;
         movement.notes = pharmacySale.notes;
-        movement.processedBy = null; // Will be set by relation if needed
         movement.movementDate = new Date();
         await this.stockMovementRepository.save(movement);
       }
-      */
     }
 
     // Update sale status
