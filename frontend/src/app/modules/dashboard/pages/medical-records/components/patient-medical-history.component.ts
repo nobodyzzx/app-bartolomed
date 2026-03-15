@@ -93,24 +93,20 @@ export class PatientMedicalHistoryComponent implements OnInit, OnDestroy {
   private loadRecords() {
     this.isLoading = true
     this.cdr.markForCheck()
-    console.log('[PatientHistory] Cargando expedientes para paciente:', this.patientId)
 
     this.medicalRecordsService
       .getMedicalRecordsByPatient(this.patientId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: records => {
-          console.log('[PatientHistory] Expedientes recibidos:', records.length)
           // Ordenar por fecha descendente (más reciente primero)
           this.records = records.sort(
             (a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime(),
           )
           this.isLoading = false
           this.cdr.markForCheck()
-          console.log('[PatientHistory] Carga completada, isLoading = false')
         },
         error: error => {
-          console.error('[PatientHistory] Error cargando expedientes:', error)
           this.isLoading = false
           this.cdr.markForCheck()
           this.alert.fire({

@@ -272,7 +272,6 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
     // Cargar pacientes
     this.patients$ = this.patientsService.findAll()
     this.patients$.pipe(takeUntil(this.destroy$)).subscribe(patients => {
-      if (!environment.production) console.log('Pacientes cargados:', patients)
       this.patientsList = patients
 
       // Si hay un patientId preseleccionado del query param, usarlo
@@ -308,7 +307,6 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
     // Cargar doctores (usuarios con rol médico)
     this.doctors$ = this.usersService.getUsers()
     this.doctors$.pipe(takeUntil(this.destroy$)).subscribe(doctors => {
-      if (!environment.production) console.log('Doctores cargados:', doctors)
       // Filtrar solo los usuarios con rol de doctor (defensivo por si roles viene undefined)
       const filteredDoctors = doctors.filter(user => {
         const roles = Array.isArray((user as any).roles) ? ((user as any).roles as string[]) : []
@@ -426,7 +424,6 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: record => {
-          console.log('[MedicalRecordForm] Registro cargado:', record)
           this.populateForm(record)
           // Esperar a que las listas se carguen antes de sincronizar
           setTimeout(() => {
@@ -437,8 +434,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
           this.isLoading = false
           this.cdr.markForCheck()
         },
-        error: error => {
-          console.error('[MedicalRecordForm] Error cargando registro:', error)
+        error: () => {
           this.showError('Error al cargar el expediente médico')
           this.isLoading = false
           this.cdr.markForCheck()
@@ -447,8 +443,6 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
   }
 
   private handleFollowUpMode(relatedRecordId: string, type?: string): void {
-    console.log('[MedicalRecordForm] Modo seguimiento - Cargando consulta previa:', relatedRecordId)
-
     // Activar modo seguimiento
     this.isFollowUpMode = true
     this.relatedRecordId = relatedRecordId
@@ -458,8 +452,6 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: originalRecord => {
-          console.log('[MedicalRecordForm] Consulta original cargada:', originalRecord)
-
           // Guardar consulta original para referencia
           this.originalConsultation = originalRecord
 
@@ -549,8 +541,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
             this.cdr.markForCheck()
           }, 500)
         },
-        error: error => {
-          console.error('[MedicalRecordForm] Error cargando consulta original:', error)
+        error: () => {
           this.showError('No se pudo cargar la consulta original. Se creará una consulta nueva.')
 
           // Si falla, desactivar modo seguimiento y al menos establecer el tipo
@@ -563,13 +554,8 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
   }
 
   private populateForm(record: MedicalRecord): void {
-    console.log('[MedicalRecordForm] Poblando formulario con:', record)
-
-    // El backend devuelve patient y doctor como objetos completos
     const patientId = record.patient?.id || record.patientId
     const doctorId = record.doctor?.id || record.doctorId
-
-    console.log('[MedicalRecordForm] PatientId:', patientId, 'DoctorId:', doctorId)
 
     // Poblar formularios con datos existentes
     this.patientInfoForm.patchValue({
@@ -627,12 +613,6 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
       followUpDate: record.followUpDate,
     })
 
-    console.log(
-      '[MedicalRecordForm] Formulario poblado con patientId:',
-      this.patientInfoForm.get('patientId')?.value,
-      'doctorId:',
-      this.patientInfoForm.get('doctorId')?.value,
-    )
     // Nota: syncPatientSearchText y syncDoctorSearchText se llaman después en loadMedicalRecord
   }
 
@@ -711,10 +691,6 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
     if (!cleanDto.doctorId && patientData.doctorId) {
       cleanDto.doctorId = patientData.doctorId
     }
-
-    console.log('[MedicalRecordForm] DTO a enviar:', cleanDto)
-    console.log('[MedicalRecordForm] Modo seguimiento:', this.isFollowUpMode)
-    console.log('[MedicalRecordForm] Related Record ID:', this.relatedRecordId)
 
     return cleanDto
   }

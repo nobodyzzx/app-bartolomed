@@ -79,8 +79,7 @@ export class MedicalRecordsDashboardComponent implements OnInit {
         this.totalRecords = response.total
         this.loading = false
       },
-      error: (error: any) => {
-        console.error('Error cargando expedientes:', error)
+      error: () => {
         this.loading = false
       },
     })
@@ -92,9 +91,7 @@ export class MedicalRecordsDashboardComponent implements OnInit {
       next: stats => {
         this.stats = stats
       },
-      error: error => {
-        console.error('Error cargando estadísticas:', error)
-      },
+      error: () => {},
     })
   }
 
@@ -187,7 +184,6 @@ export class MedicalRecordsDashboardComponent implements OnInit {
                 title: 'Error',
                 text: 'No se pudo eliminar el expediente médico.',
               })
-              console.error('Error eliminando expediente:', error)
             },
           })
         }
@@ -210,9 +206,7 @@ export class MedicalRecordsDashboardComponent implements OnInit {
       next: () => {
         this.loadMedicalRecords()
       },
-      error: (error: any) => {
-        console.error('Error completando expediente:', error)
-      },
+      error: () => {},
     })
   }
 
@@ -224,15 +218,12 @@ export class MedicalRecordsDashboardComponent implements OnInit {
       next: () => {
         this.loadMedicalRecords()
       },
-      error: (error: any) => {
-        console.error('Error revisando expediente:', error)
-      },
+      error: () => {},
     })
   }
 
   exportRecord(record: MedicalRecord): void {
     // Por ahora, mostrar un mensaje indicando que la funcionalidad estará disponible próximamente
-    console.log('Exportar expediente - funcionalidad en desarrollo')
     // TODO: Implementar exportación cuando esté disponible en el backend
   }
 
