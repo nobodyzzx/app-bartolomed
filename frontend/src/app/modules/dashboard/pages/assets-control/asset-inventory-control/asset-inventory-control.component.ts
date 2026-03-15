@@ -58,8 +58,7 @@ export class AssetInventoryControlComponent implements OnInit {
         this.dataSource.data = assets
         this.isLoading = false
       },
-      error: error => {
-        console.error('Error loading assets:', error)
+      error: () => {
         this.isLoading = false
       },
     })
@@ -109,8 +108,7 @@ export class AssetInventoryControlComponent implements OnInit {
           this.alert.success('Eliminado', 'Activo eliminado correctamente')
           this.isLoading = false
         },
-        error: error => {
-          console.error('Error deleting asset:', error)
+        error: () => {
           this.isLoading = false
         },
       })

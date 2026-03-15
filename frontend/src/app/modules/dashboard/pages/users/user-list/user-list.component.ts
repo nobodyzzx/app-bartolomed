@@ -49,8 +49,7 @@ export class UserListComponent implements OnInit {
         this.users = users
         this.applyFilters()
       },
-      error: error => {
-        console.error('Error loading users:', error)
+      error: () => {
         this.alert.error('Error', 'No se pudieron cargar los usuarios')
       },
     })
@@ -411,8 +410,7 @@ export class UserListComponent implements OnInit {
                 .success('Usuario eliminado', 'El usuario ha sido eliminado correctamente')
                 .then()
             },
-            error: error => {
-              console.error('Error eliminando usuario:', error)
+            error: () => {
               this.alert.error('Error', 'No se pudo eliminar el usuario')
             },
           })

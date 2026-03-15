@@ -131,8 +131,7 @@ export class AssetsFormComponent implements OnInit {
         this.assetForm.patchValue(asset)
         this.isLoading = false
       },
-      error: error => {
-        console.error('Error loading asset:', error)
+      error: () => {
         this.isLoading = false
         this.goBack()
       },
@@ -158,8 +157,7 @@ export class AssetsFormComponent implements OnInit {
         this.isSubmitting = false
         this.router.navigate(['/dashboard/assets-control/list'])
       },
-      error: error => {
-        console.error('Error saving asset:', error)
+      error: () => {
         this.isSubmitting = false
       },
     })

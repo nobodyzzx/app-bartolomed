@@ -39,7 +39,6 @@ export class PatientsService {
     }
     return this.http.get<Patient[]>(this.baseUrl, { params, headers: this.getHeaders() }).pipe(
       catchError(error => {
-        console.warn('Backend no disponible, usando datos de ejemplo de pacientes')
         // Datos de ejemplo cuando el backend no está disponible
         const mockPatients: Patient[] = [
           {
