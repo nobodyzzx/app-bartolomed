@@ -162,12 +162,9 @@ export class NewSaleComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    console.log('🚀 Iniciando NewSaleComponent')
     const clinicId = this.clinicContext.clinicId
-    console.log('🏥 Clinic ID obtenido:', clinicId)
 
     if (!clinicId) {
-      console.error('❌ No hay clinic ID disponible')
       this.alert.warning(
         'Clínica no detectada',
         'No se puede crear una venta sin contexto de clínica',
@@ -176,7 +173,6 @@ export class NewSaleComponent implements OnInit {
       return
     }
 
-    console.log('📞 Llamando a loadStocks con clinicId:', clinicId)
     this.loadStocks(clinicId)
 
     // Update unit price when stock is selected
@@ -426,37 +422,16 @@ export class NewSaleComponent implements OnInit {
 
   loadStocks(clinicId: string): void {
     this.loadingStocks.set(true)
-    console.log('🔍 Cargando inventario para clínica:', clinicId)
     this.inventoryService.getAllStock(clinicId).subscribe({
       next: (stocks: MedicationStock[]) => {
-        console.log('📦 Stocks recibidos del servidor:', stocks.length, stocks)
-
-        // Log each stock to see what we have
-        stocks.forEach((s, i) => {
-          console.log(`  Stock ${i + 1}:`, {
-            id: s.id,
-            medication: s.medication?.name,
-            batch: s.batchNumber,
-            clinicId: s.clinicId || s.clinic?.id,
-            availableQty: s.availableQuantity,
-            matches: (s.clinicId || s.clinic?.id) === clinicId && (s.availableQuantity || 0) > 0,
-          })
-        })
-
         // Filter by clinic and only show stocks with available quantity
         const availableStocks = stocks.filter(
           s => (s.clinicId || s.clinic?.id) === clinicId && (s.availableQuantity || 0) > 0,
         )
-        console.log(
-          '✅ Stocks disponibles después del filtro:',
-          availableStocks.length,
-          availableStocks,
-        )
         this.stocks.set(availableStocks)
         this.loadingStocks.set(false)
       },
-      error: err => {
-        console.error('❌ Error al cargar inventario:', err)
+      error: () => {
         this.loadingStocks.set(false)
         this.alert.error('Error', 'No se pudo cargar el inventario')
       },

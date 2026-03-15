@@ -68,8 +68,7 @@ export class PurchaseOrderDetailComponent implements OnInit {
         this.order.set(order)
         this.loading.set(false)
       },
-      error: error => {
-        console.error('❌ Error cargando orden:', error)
+      error: () => {
         this.alertService.error('Error', 'No se pudo cargar la orden de compra')
         this.loading.set(false)
         this.order.set(null)

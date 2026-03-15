@@ -172,8 +172,6 @@ export class StockFormComponent implements OnInit {
           this.router.navigate(['/dashboard/pharmacy/inventory'])
         },
         error: err => {
-          console.error('[ERROR] Detalle del error:', err)
-          console.error('[ERROR] Error completo:', JSON.stringify(err, null, 2))
           const errorMsg = err?.error?.message || err?.message || 'No se pudo registrar el stock'
           this.alertService.error('Error', errorMsg)
           this.loading.set(false)

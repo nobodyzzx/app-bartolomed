@@ -237,8 +237,6 @@ export class SupplierFormComponent implements OnInit {
           this.router.navigate(['/dashboard/pharmacy/suppliers'])
         },
         error: err => {
-          console.error('[ERROR] Error al crear proveedor:', err)
-          console.error('[ERROR] Mensaje:', err?.error?.message)
           const errorMsg = Array.isArray(err?.error?.message)
             ? err.error.message.join(', ')
             : err?.error?.message || 'No se pudo crear el proveedor'

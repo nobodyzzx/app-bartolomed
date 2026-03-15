@@ -95,8 +95,7 @@ export class InvoicingComponent implements OnInit {
           this.calculateStats()
           this.loading = false
         },
-        error: error => {
-          console.error('Error cargando ventas:', error)
+        error: () => {
           this.loading = false
         },
       })
@@ -114,7 +113,7 @@ export class InvoicingComponent implements OnInit {
           this.stats.totalRevenue = summary.totalRevenue
           this.stats.pendingAmount = 0 // pendiente real podría mapearse a ventas pending si se reintroducen
         },
-        error: err => console.error('Error cargando resumen ventas', err),
+        error: () => {},
       })
   }
 
