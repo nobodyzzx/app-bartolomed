@@ -2,6 +2,8 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestj
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Auth, GetUser } from '../../auth/decorators';
+import { RequirePermissions } from '../../auth/permissions/permissions.decorator';
+import { Permission } from '../../auth/permissions/permissions.enum';
 import { ValidRoles } from '../../auth/interfaces';
 import { User } from '../../users/entities/user.entity';
 import {
@@ -15,6 +17,7 @@ import { PurchaseOrderStatus } from '../entities/purchase-order.entity';
 import { PurchaseOrdersService } from '../services/purchase-orders.service';
 
 @Controller('pharmacy/purchase-orders')
+@RequirePermissions(Permission.PharmacyInventoryManage)
 export class PurchaseOrdersController {
   constructor(
     private readonly purchaseOrdersService: PurchaseOrdersService,

@@ -1,11 +1,14 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { Auth } from '../../auth/decorators';
+import { RequirePermissions } from '../../auth/permissions/permissions.decorator';
+import { Permission } from '../../auth/permissions/permissions.enum';
 import { ValidRoles } from '../../auth/interfaces';
 import { CreateSupplierDto, UpdateSupplierDto } from '../dto/supplier.dto';
 import { SuppliersService } from '../services/suppliers.service';
 
 @Controller('pharmacy/suppliers')
 @Auth(ValidRoles.PHARMACIST, ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
+@RequirePermissions(Permission.PharmacyInventoryManage)
 export class SuppliersController {
   constructor(private readonly suppliersService: SuppliersService) {}
 

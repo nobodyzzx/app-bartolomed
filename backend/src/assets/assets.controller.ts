@@ -3,6 +3,8 @@ import { Request } from 'express';
 import { resolveClinicId } from '../auth/decorators/clinic-roles.decorator';
 import { Auth } from '../auth/decorators/auth.decorator';
 import { GetUser } from '../auth/decorators/get-user.decorator';
+import { RequirePermissions } from '../auth/permissions/permissions.decorator';
+import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
 import { User } from '../users/entities/user.entity';
 import { AssetsService } from './assets.service';
@@ -11,6 +13,8 @@ import { FilterAssetsDto } from './dto/filter-assets.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
 
 @Controller('assets')
+@Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
+@RequirePermissions(Permission.AssetsManage)
 export class AssetsController {
   constructor(private readonly assetsService: AssetsService) {}
 

@@ -1,5 +1,7 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { Auth, GetUser } from '../auth/decorators';
+import { RequirePermissions } from '../auth/permissions/permissions.decorator';
+import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
 import { User } from '../users/entities/user.entity';
 import { CreatePatientDto, UpdatePatientDto } from './dto';
@@ -7,6 +9,7 @@ import { PatientsService } from './services/patients.service';
 
 @Controller('patients')
 @Auth()
+@RequirePermissions(Permission.PatientsRead, Permission.PatientsWrite)
 export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
 

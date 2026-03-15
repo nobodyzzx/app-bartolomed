@@ -1,5 +1,7 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { Auth, GetUser } from '../auth/decorators';
+import { RequirePermissions } from '../auth/permissions/permissions.decorator';
+import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
 import { User } from '../users/entities/user.entity';
 import { BillingService } from './billing.service';
@@ -8,6 +10,7 @@ import { InvoiceStatus } from './entities/billing.entity';
 
 @Controller('billing')
 @Auth()
+@RequirePermissions(Permission.BillingRead, Permission.BillingManage)
 export class BillingController {
   constructor(private readonly billingService: BillingService) {}
 

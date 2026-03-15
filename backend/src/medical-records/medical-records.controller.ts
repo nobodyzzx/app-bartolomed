@@ -17,6 +17,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { Auth } from '../auth/decorators';
+import { RequirePermissions } from '../auth/permissions/permissions.decorator';
+import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
 import {
   CreateConsentFormDto,
@@ -30,6 +32,7 @@ import { MedicalRecordFilters, MedicalRecordsService, PaginationOptions } from '
 
 @Controller('medical-records')
 @Auth()
+@RequirePermissions(Permission.RecordsRead, Permission.RecordsWrite, Permission.RecordsWriteVitals)
 export class MedicalRecordsController {
   constructor(private readonly medicalRecordsService: MedicalRecordsService) {}
 

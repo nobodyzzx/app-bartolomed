@@ -1,5 +1,6 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
@@ -60,6 +61,20 @@ async function bootstrap() {
       skipUndefinedProperties: false,
     }),
   );
+
+  // Swagger — sólo en desarrollo
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Bartolomed API')
+      .setDescription('API clínica Bartolomed')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addApiKey({ type: 'apiKey', name: 'x-clinic-id', in: 'header' }, 'clinic-id')
+      .build()
+    const document = SwaggerModule.createDocument(app, config)
+    SwaggerModule.setup('api/docs', app, document)
+    logger.log(`Swagger docs available at http://localhost:3000/api/docs`)
+  }
 
   await app.listen(3000);
   logger.log(`Application listening on port 3000`);
