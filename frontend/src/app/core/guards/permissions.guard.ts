@@ -1,10 +1,10 @@
 import { inject } from '@angular/core'
 import { ActivatedRouteSnapshot, CanActivateFn, Router } from '@angular/router'
 import { Permission } from '../enums/permission.enum'
-import { AuthService } from '../services/auth.service'
+import { RoleStateService } from '../services/role-state.service'
 
 export const permissionsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
-  const authService = inject(AuthService)
+  const authService = inject(RoleStateService)
   const router = inject(Router)
 
   const required = (route.data['requiredPermissions'] as Permission[]) || []

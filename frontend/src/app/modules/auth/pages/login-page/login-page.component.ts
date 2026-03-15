@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { MatDialog } from '@angular/material/dialog'
 import { Router } from '@angular/router'
 import { UserRoles } from '@core/enums/user-roles.enum'
-import { AuthService as RoleAuthService } from '@core/services/auth.service'
+import { RoleStateService } from '@core/services/role-state.service'
 import { RoleSimulatorDialogComponent } from '../../../../shared/components/role-simulator-dialog/role-simulator-dialog.component'
 import { NotificationService } from '../../../../shared/services/notification.service'
 import { AuthService } from '../../services/auth.service'
@@ -17,7 +17,7 @@ export class LoginPageComponent {
   isLoading = false
   private fb = inject(FormBuilder)
   private authService = inject(AuthService)
-  private roleAuth = inject(RoleAuthService)
+  private roleAuth = inject(RoleStateService)
   private router = inject(Router)
   private notificationService = inject(NotificationService)
   private dialog = inject(MatDialog)
@@ -57,7 +57,7 @@ export class LoginPageComponent {
         const backendRoles: string[] = this.authService.currentUser()?.roles ?? []
         const mapped: UserRoles[] = this.mapBackendRolesToUserRoles(backendRoles)
         if (mapped.length > 0) {
-          this.roleAuth.loginAs(mapped)
+          this.roleAuth.syncRoles(mapped)
         }
         this.notificationService.success('¡Bienvenido! Inicio de sesión exitoso')
         this.router.navigateByUrl('/dashboard')

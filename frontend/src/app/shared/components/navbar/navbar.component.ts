@@ -2,7 +2,7 @@ import { Component, computed, inject, OnInit } from '@angular/core'
 import { MatDialog } from '@angular/material/dialog'
 
 import { UserRoles } from '@core/enums/user-roles.enum'
-import { AuthService as RoleAuthService } from '@core/services/auth.service'
+import { RoleStateService } from '@core/services/role-state.service'
 import { AuthService } from '../../../modules/auth/services/auth.service'
 import { ClinicContextService } from '../../../modules/clinics/services/clinic-context.service'
 import { Clinic } from '../../../modules/dashboard/pages/clinics/interfaces/clinic.interface'
@@ -17,7 +17,7 @@ import { SidenavService } from '../services/sidenav.services'
 })
 export class NavbarComponent implements OnInit {
   private authService = inject(AuthService)
-  private roleAuth = inject(RoleAuthService)
+  private roleAuth = inject(RoleStateService)
   private sidenavService = inject(SidenavService)
   private dialog = inject(MatDialog)
   private clinicCtx = inject(ClinicContextService)

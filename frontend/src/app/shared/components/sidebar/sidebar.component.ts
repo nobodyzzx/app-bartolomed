@@ -4,7 +4,7 @@ import { Permission } from '@core/enums/permission.enum'
 import { UserRoles } from '@core/enums/user-roles.enum'
 import { MenuItem } from '@core/interfaces/menu-item.interface'
 import { AlertService } from '@core/services/alert.service'
-import { AuthService } from '@core/services/auth.service'
+import { RoleStateService } from '@core/services/role-state.service'
 import { SidebarService } from '@core/services/sidebar.service'
 import { AuthStatus } from '../../../../app/modules/auth/interfaces/auth-status.enum'
 import { AuthService as AppAuthService } from '../../../../app/modules/auth/services/auth.service'
@@ -16,7 +16,7 @@ import { AuthService as AppAuthService } from '../../../../app/modules/auth/serv
 })
 export class SidebarComponent {
   private sidebarService = inject(SidebarService)
-  private authService = inject(AuthService)
+  private authService = inject(RoleStateService)
   private appAuth = inject(AppAuthService)
   private alert = inject(AlertService)
 
