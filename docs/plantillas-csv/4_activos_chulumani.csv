@@ -1,0 +1,169 @@
+Etiqueta,Nombre,Descripcion,Tipo,Categoria,Sub_Categoria,Fabricante,Modelo,Numero_Serie,Codigo_Barras,Estado,Condicion,Precio_Compra,Fecha_Compra,Proveedor,Numero_Factura,Info_Garantia,Vence_Garantia,Ubicacion,Sala,Edificio,Piso,Asignado_A,Vida_Util_Anos,Metodo_Depreciacion,Valor_Salvamento,Notas
+CHU-ACT-001,Ecografo color blanco,Ecografo color blanco marca Chaizon con cable negro,Equipo Medico,Diagnostico,,CHAIZON,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 2 (1+1)
+CHU-ACT-002,Escritorio porta ecografo,Escritorio porta ecografo color cafe de tres peldanos,Mobiliario,Oficina,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-003,Transductor intra vaginal,Transductor intra vaginal,Equipo Medico,Ecografia,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-004,Transductor convexo,Transductor convexo,Equipo Medico,Ecografia,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-005,Cables de transductores,Cables de transductores,Otro,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 2
+CHU-ACT-006,Estabilizador de electricidad,Estabilizador de electricidad,Otro,Electricidad,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-007,Cable de estabilizador,Cable negro de estabilizador,Otro,Electricidad,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 2
+CHU-ACT-008,Impresora blanca,Impresora color blanco,Computador,Impresion,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-009,Electrocardiografo,Electrocardiografo marca ZONCARE color blanco,Equipo Medico,Diagnostico,,ZONCARE,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-010,Cable electrocardiografo,Cable de electrocardiografo,Otro,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-011,Cable para sensores,Cable para sensores,Otro,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-012,Sensores pectorales adulto,Sensores pectorales de colores adulto,Equipo Medico,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 6
+CHU-ACT-013,Sensores miembros adulto,Sensores de miembros de colores adulto,Equipo Medico,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 4
+CHU-ACT-014,Sensores pectorales pediatricos,Sensores pectorales color azul pediatricos,Equipo Medico,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 6
+CHU-ACT-015,Sensores miembros pediatricos,Sensores de miembros color azul pediatricos,Equipo Medico,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 4
+CHU-ACT-016,Doppler fetal,Doppler fetal color rosado,Equipo Medico,Diagnostico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-017,Monitor LG,Monitor marca LG,Computador,Visualizacion,,LG,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-018,Monitor Master G,Monitor marca Master G,Computador,Visualizacion,,MASTER G,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-019,Escritorio cafe,Escritorio color cafe,Mobiliario,Oficina,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-020,Silla naranja,Silla color naranja,Mobiliario,Oficina,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-021,Gradilla,Gradilla,Equipo Medico,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-022,Camilla ginecologica,Camilla ginecologica color cafe oscuro,Mobiliario,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-023,Pierneras de camilla,Pierneras de camilla ginecologica,Equipo Medico,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 2
+CHU-ACT-024,Camilla de revision,Camilla de revision,Mobiliario,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-025,Lamparas cuello ganso,Lamparas cuello ganso,Equipo Medico,Iluminacion,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 2
+CHU-ACT-026,Taburetes girantes,Taburetes girantes color cafe oscuro,Mobiliario,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 2
+CHU-ACT-027,Biombos blancos,Biombos color blanco,Mobiliario,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 2
+CHU-ACT-028,Porta suero,Porta suero,Equipo Medico,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-029,Mesa de mayo,Mesa de mayo,Equipo Medico,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-030,Tambor acero mediano,Tambor acero mediano,Equipo Medico,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-031,Ligadura celeste,Ligadura color celeste,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-032,Balanza pediatrica,Balanza pediatrica color blanco,Equipo Medico,Diagnostico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-033,Bidon de agua celeste,Bidon de agua celeste,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 2
+CHU-ACT-034,Botella porta gel,Botella porta gel grande,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 2
+CHU-ACT-035,Porta colposcopio,Porta colposcopio acero con dos brazos,Equipo Medico,Colposcopia,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-036,Camara de colposcopio,Camara de colposcopio con tapa marca EDDAN,Equipo Medico,Colposcopia,,EDDAN,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-037,Cable de camara,Cable de camara,Otro,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-038,Laptop Toshiba,Laptop marca Toshiba,Computador,Computacion,,TOSHIBA,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-039,Cable de laptop,Cable de laptop color negro,Otro,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-040,Cables de colposcopio,Cables de colposcopio color negro,Otro,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 4
+CHU-ACT-041,Porta pico,Porta pico,Equipo Medico,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 2
+CHU-ACT-042,Tela grande celeste,Tela grande color celeste,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-043,Tela grande rosado,Tela grande color rosado,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-044,Tela para biombo,Tela para biombo,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 2
+CHU-ACT-045,Cauterizador,Cauterizador,Equipo Medico,Procedimientos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-046,Agujas de cauterizador,Agujas de cauterizador,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 43
+CHU-ACT-047,Regla 60 cm,Regla de 60 cm,Otro,Instrumentos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-048,Negatoscopio,Negatoscopio,Equipo Medico,Diagnostico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-049,Caja de guantes,Caja de guantes,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-050,Vaselina liquida,Vaselina liquida,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-051,Agua oxigenada,Agua oxigenada,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 2
+CHU-ACT-052,Povidona,Povidona,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Ecografia,,,,,,,Cantidad: 1
+CHU-ACT-053,Estante de fierro,Estante de fierro color cafe,Mobiliario,Oficina,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-054,Biombo banco,Biombo banco,Mobiliario,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-055,Mesa de mayo blanca,Mesa de mayo color blanco completo,Equipo Medico,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-056,Camilla de revision,Camilla de revision color cafe,Mobiliario,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-057,Silla toma de presion,Silla de toma de presion cafe,Mobiliario,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-058,Extintor rojo,Extintor rojo,Otro,Seguridad,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-059,Tambores acero inox,Tambores de acero inoxidable,Equipo Medico,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 4
+CHU-ACT-060,Botiquin primeros auxilios,Botiquin primeros auxilios,Otro,Seguridad,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-061,Charola aluminio,Charola aluminio,Equipo Medico,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-062,Estetoscopio,Estetoscopio,Equipo Medico,Diagnostico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 4
+CHU-ACT-063,Tensiometro,Tensiometro manual y digital,Equipo Medico,Diagnostico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 4 (2 manual y 2 digital)
+CHU-ACT-064,Vitrinas aluminio,Vitrinas aluminio cafe plomo,Mobiliario,Oficina,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 2
+CHU-ACT-065,Monitor de camaras,Monitor de camaras,Computador,Seguridad,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-066,Monitor camara grande,Monitor de camara grande,Computador,Seguridad,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-067,Branulas de todo calibre,Branulas de todo calibre,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 106
+CHU-ACT-068,Equipo para enemas,Equipo para enemas,Equipo Medico,Procedimientos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-069,Guantes esteriles,Guantes esteriles,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 19
+CHU-ACT-070,Nebulizador pequeno,Nebulizador celeste pequeno,Equipo Medico,Terapia,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-071,Mascarillas,Mascarillas,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 4
+CHU-ACT-072,Equipo de mascarillas,Equipo de mascarillas,Equipo Medico,Terapia,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 3
+CHU-ACT-073,Jeringas 3 ml,Caja abierta de jeringas 3 ml,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-074,Agujas 23g,Caja abierta de agujas 23 g 1 1/2,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 2
+CHU-ACT-075,Agujas 21g,Caja abierta de agujas 21 g 1 1/2,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 2
+CHU-ACT-076,Agujas 27g,Caja abierta de agujas 27 g 1 1/2,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 2
+CHU-ACT-077,Oximetro,Oximetro,Equipo Medico,Diagnostico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-078,Micropore,Micropore,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 7
+CHU-ACT-079,Nebulizador grande,Nebulizador grande celeste,Equipo Medico,Terapia,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-080,Valdez de guantes,Valdez de guantes abiertos,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 2
+CHU-ACT-081,Vendas elasticas,Vendas elasticas 20 cm,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 4
+CHU-ACT-082,Sondas vesicales,Sondas vesicales,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 5
+CHU-ACT-083,Termometro mercurio,Termometro de mercurio,Equipo Medico,Diagnostico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 2
+CHU-ACT-084,Cinta metrica,Cinta metrica,Otro,Instrumentos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-085,Balanza con tallimetro,Balanza mas tallimetro,Equipo Medico,Diagnostico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-086,Taburete verde,Taburete verde,Mobiliario,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala Enfermeria,,,,,,,Cantidad: 1
+CHU-ACT-087,Equipo de wifi,Equipo de wifi,Otro,Comunicaciones,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-088,Frasco con oximetro,Frasco de vidrio con oximetro verde,Equipo Medico,Diagnostico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 2 (1+1)
+CHU-ACT-089,Termometro digital,Termometro digital,Equipo Medico,Diagnostico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-090,Control,Control,Otro,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-091,Engrampadora,Engrampadora,Otro,Oficina,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 2
+CHU-ACT-092,Perforadora,Perforadora,Otro,Oficina,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-093,Candados grandes,Candados grandes,Otro,Seguridad,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 4
+CHU-ACT-094,Candados pequenos,Candados pequenos,Otro,Seguridad,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 2
+CHU-ACT-095,Aspiradoras,Aspiradoras,Otro,Limpieza,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 2
+CHU-ACT-096,Mascara grande,Mascara grande color celeste,Equipo Medico,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-097,Mascara transparente,Mascara transparente,Equipo Medico,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-098,Lentes transparentes,Lentes transparentes,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-099,Toner,Toner,Otro,Oficina,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-100,Cable plomo,Cable plomo,Otro,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-101,Escritorio cafe,Escritorio color cafe dos piezas,Mobiliario,Oficina,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 2
+CHU-ACT-102,Impresora Epson,Impresora Epson,Computador,Impresion,,EPSON,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-103,Cable blanco y negro,Cable blanco y negro,Otro,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 2
+CHU-ACT-104,Monitor,Monitor,Computador,Visualizacion,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-105,Cable de monitor,Cable negro de monitor,Otro,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-106,Teclado,Teclado,Computador,Computacion,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-107,Cable para teclado,Cable para teclado negro,Otro,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-108,Raton con cable,Raton con cable,Computador,Computacion,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 2 (1+1)
+CHU-ACT-109,Porta pico,Porta pico,Equipo Medico,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-110,Basurero negro,Basurero color negro,Otro,Limpieza,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-111,Caldera electrica,Caldera electrica,Equipo Medico,Procedimientos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-112,Grampas abiertas,Grampas abierta,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-113,Gestograma,Gestograma,Equipo Medico,Diagnostico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-114,Yurex,Yurex,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-115,Porta lapiz,Porta lapiz de madera,Otro,Oficina,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-116,Sillas cafes,Sillas cafes,Mobiliario,Oficina,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 2
+CHU-ACT-117,Sillon blanco con cafe,Sillon blanco con cafe,Mobiliario,Oficina,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-118,Florero con flores,Florero con flores,Otro,Decoracion,,,,,,Activo,Bueno,,,,,,,,Chulumani,Consultorio Medico 1,,,,,,,Cantidad: 1
+CHU-ACT-119,Basurero negro,Basurero color negro,Otro,Limpieza,,,,,,Activo,Bueno,,,,,,,,Chulumani,Bano,,,,,,,Cantidad: 1
+CHU-ACT-120,Jarra pequena,Jarra pequena cafe,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Bano,,,,,,,Cantidad: 1
+CHU-ACT-121,Escobas,Escobas,Otro,Limpieza,,,,,,Activo,Bueno,,,,,,,,Chulumani,Lavanderia,,,,,,,Cantidad: 2
+CHU-ACT-122,Goma,Goma,Otro,Limpieza,,,,,,Activo,Bueno,,,,,,,,Chulumani,Lavanderia,,,,,,,Cantidad: 1
+CHU-ACT-123,Basurero,Basurero,Otro,Limpieza,,,,,,Activo,Bueno,,,,,,,,Chulumani,Lavanderia,,,,,,,Cantidad: 1
+CHU-ACT-124,Toalla,Toalla,Otro,Limpieza,,,,,,Activo,Bueno,,,,,,,,Chulumani,Lavanderia,,,,,,,Cantidad: 1
+CHU-ACT-125,Sillon pequeno,Sillon pequeno,Mobiliario,Oficina,,,,,,Activo,Bueno,,,,,,,,Chulumani,Lavanderia,,,,,,,Cantidad: 1
+CHU-ACT-126,Lavandina,Lavandina,Otro,Limpieza,,,,,,Activo,Bueno,,,,,,,,Chulumani,Lavanderia,,,,,,,Cantidad: 3
+CHU-ACT-127,Limpia piso,Limpia piso,Otro,Limpieza,,,,,,Activo,Bueno,,,,,,,,Chulumani,Lavanderia,,,,,,,Cantidad: 3
+CHU-ACT-128,Ace,Ace,Otro,Limpieza,,,,,,Activo,Bueno,,,,,,,,Chulumani,Lavanderia,,,,,,,Cantidad: 1
+CHU-ACT-129,Jaboncillo,Jaboncillo,Otro,Limpieza,,,,,,Activo,Bueno,,,,,,,,Chulumani,Lavanderia,,,,,,,Cantidad: 1
+CHU-ACT-130,Virutilla,Virutilla,Otro,Limpieza,,,,,,Activo,Bueno,,,,,,,,Chulumani,Lavanderia,,,,,,,Cantidad: 1
+CHU-ACT-131,Esponja,Esponja,Otro,Limpieza,,,,,,Activo,Bueno,,,,,,,,Chulumani,Lavanderia,,,,,,,Cantidad: 1
+CHU-ACT-132,Pupinel blanco,Pupinel blanco con cable,Equipo Medico,Esterilizacion,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 2 (1+1)
+CHU-ACT-133,Centrifugadora,Centrifugadora con cable,Equipo Medico,Esterilizacion,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 2 (1+1)
+CHU-ACT-134,Mesa de mayo doble,Mesa de mayo de dos cuerpos con bandeja pequena,Equipo Medico,Esterilizacion,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 1
+CHU-ACT-135,Cable blanco,Cable blanco,Otro,Accesorios,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 1
+CHU-ACT-136,Basurero naranja,Basurero naranja,Otro,Limpieza,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 1
+CHU-ACT-137,Rinonera plastico,Rinonera plastico amarillo,Equipo Medico,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 1
+CHU-ACT-138,Caja equipo metal,Caja de equipo grande de metal con tapa,Equipo Medico,Esterilizacion,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 1
+CHU-ACT-139,Rinoneras,Rinoneras,Equipo Medico,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 3
+CHU-ACT-140,Rinonera redonda,Rinonera redonda,Equipo Medico,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 1
+CHU-ACT-141,Caja de curacion,Caja de curacion con tapa,Equipo Medico,Clinico,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 1
+CHU-ACT-142,Especulo L,Especulo L,Equipo Medico,Instrumental,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 1
+CHU-ACT-143,Especulo S,Especulo S,Equipo Medico,Instrumental,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 1
+CHU-ACT-144,Pinza diente de raton,Pinza diente de raton,Equipo Medico,Instrumental,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 2
+CHU-ACT-145,Pinza anatomica,Pinza anatomica,Equipo Medico,Instrumental,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 2
+CHU-ACT-146,Tijera mayo,Tijera mayo,Equipo Medico,Instrumental,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 2
+CHU-ACT-147,Pinza Kelly,Pinza Kelly,Equipo Medico,Instrumental,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 3
+CHU-ACT-148,Porta aguja,Porta aguja,Equipo Medico,Instrumental,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 6
+CHU-ACT-149,Mango de bisturi,Mango de bisturi,Equipo Medico,Instrumental,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 3
+CHU-ACT-150,Pinza punta fina,Pinza punta fina,Equipo Medico,Instrumental,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 1
+CHU-ACT-151,Pinza para campos,Pinza para campos,Equipo Medico,Instrumental,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 1
+CHU-ACT-152,Pinza aro,Pinza aro,Equipo Medico,Instrumental,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 1
+CHU-ACT-153,Cureta pequena,Cureta pequena larga,Equipo Medico,Instrumental,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 1
+CHU-ACT-154,Cureta ancha,Cureta ancha,Equipo Medico,Instrumental,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 2
+CHU-ACT-155,Corta una,Corta una,Equipo Medico,Instrumental,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 1
+CHU-ACT-156,Equipo retiro de unero,Equipo de retiro de unero,Equipo Medico,Instrumental,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 10
+CHU-ACT-157,Tubos celestes Chulumani,Tubos celestes Chulumani,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 34
+CHU-ACT-158,Tubos celestes Irupana,Tubos celestes Irupana,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 6
+CHU-ACT-159,Tubos rojos,Tubos rojos,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 8
+CHU-ACT-160,Tubos morados,Tubos morados,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 10
+CHU-ACT-161,Tubos amarillos,Tubos amarillos,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 4
+CHU-ACT-162,Prueba de embarazo,Prueba de embarazo,Otro,Insumos,,,,,,Activo,Bueno,,,,,,,,Chulumani,Esterilizacion,,,,,,,Cantidad: 1
+CHU-ACT-163,Sillones,Sillones,Mobiliario,Espera,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala de Espera,,,,,,,Cantidad: 5
+CHU-ACT-164,Mesa,Mesa,Mobiliario,Espera,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala de Espera,,,,,,,Cantidad: 1
+CHU-ACT-165,Timbre,Timbre,Otro,Seguridad,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala de Espera,,,,,,,Cantidad: 1
+CHU-ACT-166,Camara,Camara,Equipo Medico,Seguridad,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala de Espera,,,,,,,Cantidad: 1
+CHU-ACT-167,Sillones de madera,Sillones de madera,Mobiliario,Espera,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala de Espera,,,,,,,Cantidad: 2
+CHU-ACT-168,Manguera azul,Manguera azul,Otro,Mantenimiento,,,,,,Activo,Bueno,,,,,,,,Chulumani,Sala de Espera,,,,,,,Cantidad: 1

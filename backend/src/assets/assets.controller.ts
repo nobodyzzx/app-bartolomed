@@ -46,11 +46,76 @@ export class AssetsController {
     return this.assetsService.getUniqueValues(field);
   }
 
-  @Get(':id')
+  // ==================== MAINTENANCE ROUTES ====================
+  @Get('maintenance')
   @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.assetsService.findOne(id);
+  findAllMaintenance(@Query() filters?: any) {
+    return this.assetsService.findAllMaintenance(filters);
   }
+
+  @Get('maintenance/stats')
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
+  getMaintenanceStats() {
+    return this.assetsService.getMaintenanceStats();
+  }
+
+  @Post('maintenance')
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
+  createMaintenance(@Body() data: any, @GetUser() user: User) {
+    return this.assetsService.createMaintenance(data, user.id);
+  }
+
+  @Get('maintenance/:maintenanceId')
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
+  findOneMaintenance(@Param('maintenanceId', ParseUUIDPipe) id: string) {
+    return this.assetsService.findOneMaintenance(id);
+  }
+
+  @Patch('maintenance/:maintenanceId')
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
+  updateMaintenance(@Param('maintenanceId', ParseUUIDPipe) id: string, @Body() data: any) {
+    return this.assetsService.updateMaintenance(id, data);
+  }
+
+  @Delete('maintenance/:maintenanceId')
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
+  deleteMaintenance(@Param('maintenanceId', ParseUUIDPipe) id: string) {
+    return this.assetsService.deleteMaintenance(id);
+  }
+
+  // ==================== REPORTS ROUTES ====================
+  @Get('reports')
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR)
+  findAllReports(@Query() filters?: any) {
+    return this.assetsService.findAllReports(filters);
+  }
+
+  @Get('reports/stats')
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
+  getReportsStats() {
+    return this.assetsService.getReportsStats();
+  }
+
+  @Post('reports/generate')
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR)
+  generateReport(@Body() data: any, @GetUser() user: User) {
+    return this.assetsService.generateReport(data, user.id);
+  }
+
+  @Get('reports/:reportId')
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR)
+  findOneReport(@Param('reportId', ParseUUIDPipe) id: string) {
+    return this.assetsService.findOneReport(id);
+  }
+
+  @Delete('reports/:reportId')
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
+  deleteReport(@Param('reportId', ParseUUIDPipe) id: string) {
+    return this.assetsService.deleteReport(id);
+  }
+
+  // ==================== ASSET ROUTES (KEEP AT END) ====================
+  // IMPORTANTE: Rutas con :id deben ir AL FINAL para no capturar rutas específicas como /maintenance, /reports, /stats
 
   @Patch(':id')
   @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
@@ -62,5 +127,11 @@ export class AssetsController {
   @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.assetsService.remove(id);
+  }
+
+  @Get(':id')
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.assetsService.findOne(id);
   }
 }
