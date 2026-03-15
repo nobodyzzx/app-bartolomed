@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateRoleDto, UpdateRoleDto } from '../dto';
@@ -65,11 +65,13 @@ export class RolesService {
     return await this.roleRepository.findOne({ where: { name } });
   }
 
+  private readonly logger = new Logger(RolesService.name);
+
   private handleDBErrors(error: any): never {
     if (error.code === '23505') {
       throw new BadRequestException(error.detail.replace('Key ', ''));
     }
-    console.error(error);
+    this.logger.error(error.message, error.stack);
     throw new BadRequestException('Please check server logs');
   }
 }

@@ -132,7 +132,6 @@ export class AuthController {
     @GetUser('email') userEmail: string,
     @RawHeaders() rawHeaders: string[],
   ) {
-    console.log(request);
     return {
       ok: true,
       message: 'This is a private route',

@@ -145,17 +145,6 @@ export class MedicalRecordsService {
 
     const [data, total] = await queryBuilder.getManyAndCount();
 
-    // Log para debug: verificar si las relaciones se están cargando
-    console.log('[MedicalRecordsService] Registros encontrados:', data.length);
-    if (data.length > 0) {
-      const firstRecord = data[0];
-      console.log('[MedicalRecordsService] Primer registro ID:', firstRecord.id);
-      console.log('[MedicalRecordsService] Patient completo:', firstRecord.patient);
-      console.log('[MedicalRecordsService] Doctor completo:', firstRecord.doctor);
-      console.log('[MedicalRecordsService] Patient ID en columna:', (firstRecord as any).patient_id);
-      console.log('[MedicalRecordsService] Doctor ID en columna:', (firstRecord as any).doctor_id);
-    }
-
     return { data, total };
   }
 

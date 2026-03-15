@@ -329,8 +329,6 @@ export class PurchaseOrdersService {
           }
         } catch {
           // No bloquear la recepción completa por un error puntual de stock
-          // Se podría loggear a futuro
-          // console.error('Error creando stock para item', item.id, err?.message);
         }
       }
     }
