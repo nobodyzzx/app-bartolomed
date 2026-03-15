@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -174,9 +174,11 @@ export class AuthService {
     return { user: safeUser, token: this.getJwtToken({ id: user.id }) };
   }
 
+  private readonly logger = new Logger(AuthService.name);
+
   private handleDBError(error: any): never {
     if (error.code === '23505') throw new BadRequestException(error.detail);
-    console.log(error);
+    this.logger.error(error.message, error.stack);
     throw new InternalServerErrorException('Something went wrong');
   }
 }

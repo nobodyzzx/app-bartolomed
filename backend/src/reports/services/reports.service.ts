@@ -304,7 +304,6 @@ export class ReportsService {
     // Este reporte se implementaría cuando tengamos el repositorio de MedicationStock
     // Por ahora retornamos un placeholder
     // TODO: Implementar con filtros cuando esté disponible el repositorio de MedicationStock
-    console.log('Stock report filters:', filters);
     return {
       lowStockMedications: [],
       expiringMedications: [],

@@ -85,14 +85,6 @@ export class InventoryService {
 
   // Stock Management
   async addStock(createStockDto: CreateMedicationStockDto): Promise<MedicationStock> {
-    console.log('[BACKEND] DTO recibido:', JSON.stringify(createStockDto, null, 2));
-    console.log('[BACKEND] Tipos:', {
-      quantity: typeof createStockDto.quantity,
-      unitCost: typeof createStockDto.unitCost,
-      sellingPrice: typeof createStockDto.sellingPrice,
-      minimumStock: typeof createStockDto.minimumStock,
-    });
-
     const medication = await this.findMedicationById(createStockDto.medicationId);
 
     // Verificar que la clínica existe
@@ -127,19 +119,6 @@ export class InventoryService {
       availableQuantity: Number(createStockDto.quantity),
       reservedQuantity: 0,
     };
-
-    console.log(
-      '[BACKEND] Stock data antes de crear:',
-      JSON.stringify(
-        {
-          ...stockData,
-          medication: { id: medication.id },
-          clinic: { id: clinic.id },
-        },
-        null,
-        2,
-      ),
-    );
 
     const stock = this.stockRepository.create(stockData);
 
