@@ -1,4 +1,6 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
+import { Request } from 'express';
+import { resolveClinicId } from '../auth/decorators/clinic-roles.decorator';
 import { Auth } from '../auth/decorators/auth.decorator';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { ValidRoles } from '../auth/interfaces';
@@ -14,23 +16,23 @@ export class AssetsController {
 
   @Post()
   @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
-  create(@Body() createAssetDto: CreateAssetDto, @GetUser() user: User) {
-    // TODO: Obtener clinicId del contexto o del usuario
-    return this.assetsService.create(createAssetDto, user.id);
+  create(@Body() createAssetDto: CreateAssetDto, @GetUser() user: User, @Req() req: Request) {
+    const clinicId = resolveClinicId(req);
+    return this.assetsService.create(createAssetDto, user.id, clinicId);
   }
 
   @Get()
   @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
-  findAll(@Query() filters: FilterAssetsDto) {
-    // TODO: Filtrar por clinicId del usuario
-    return this.assetsService.findAll(filters);
+  findAll(@Query() filters: FilterAssetsDto, @Req() req: Request) {
+    const clinicId = resolveClinicId(req);
+    return this.assetsService.findAll(filters, clinicId);
   }
 
   @Get('stats')
   @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
-  getStats() {
-    // TODO: Filtrar por clinicId del usuario
-    return this.assetsService.getStats();
+  getStats(@Req() req: Request) {
+    const clinicId = resolveClinicId(req);
+    return this.assetsService.getStats(clinicId);
   }
 
   @Get('validate-serial/:serialNumber')
@@ -41,9 +43,9 @@ export class AssetsController {
 
   @Get('unique/:field')
   @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
-  getUniqueValues(@Param('field') field: 'type' | 'manufacturer' | 'location' | 'category') {
-    // TODO: Filtrar por clinicId del usuario
-    return this.assetsService.getUniqueValues(field);
+  getUniqueValues(@Param('field') field: 'type' | 'manufacturer' | 'location' | 'category', @Req() req: Request) {
+    const clinicId = resolveClinicId(req);
+    return this.assetsService.getUniqueValues(field, clinicId);
   }
 
   // ==================== MAINTENANCE ROUTES ====================
