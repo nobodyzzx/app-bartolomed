@@ -137,9 +137,7 @@ export class AppointmentFormComponent implements OnInit {
       next: patients => {
         this.patients = patients.filter(p => p.isActive)
       },
-      error: error => {
-        console.error('Error al cargar pacientes:', error)
-      },
+      error: () => {},
     })
 
     // Cargar doctores (usuarios con rol doctor)
@@ -147,9 +145,7 @@ export class AppointmentFormComponent implements OnInit {
       next: users => {
         this.doctors = users.filter(u => u.isActive && u.roles.includes('doctor'))
       },
-      error: error => {
-        console.error('Error al cargar doctores:', error)
-      },
+      error: () => {},
     })
 
     // Cargar clínicas
@@ -164,8 +160,7 @@ export class AppointmentFormComponent implements OnInit {
         }
         this.isLoading = false
       },
-      error: error => {
-        console.error('Error al cargar clínicas:', error)
+      error: () => {
         this.isLoading = false
       },
     })
@@ -194,8 +189,7 @@ export class AppointmentFormComponent implements OnInit {
         })
         this.isLoading = false
       },
-      error: error => {
-        console.error('Error al cargar cita:', error)
+      error: () => {
         this.alert
           .fire({
             icon: 'error',
@@ -248,8 +242,7 @@ export class AppointmentFormComponent implements OnInit {
           this.isLoading = false
           this.router.navigate(['/dashboard/appointments/list'])
         },
-        error: error => {
-          console.error('Error al actualizar cita:', error)
+        error: () => {
           this.isLoading = false
         },
       })
@@ -259,8 +252,7 @@ export class AppointmentFormComponent implements OnInit {
           this.isLoading = false
           this.router.navigate(['/dashboard/appointments/list'])
         },
-        error: error => {
-          console.error('Error al crear cita:', error)
+        error: () => {
           this.isLoading = false
         },
       })
@@ -304,9 +296,7 @@ export class AppointmentFormComponent implements OnInit {
             })
           }
         },
-        error: error => {
-          console.error('Error al verificar disponibilidad:', error)
-        },
+        error: () => {},
       })
   }
 

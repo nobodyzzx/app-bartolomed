@@ -197,28 +197,13 @@ export class MainDashboardComponent implements OnInit {
     }
   }
 
-  viewAppointmentDetails(appointment: RecentAppointment): void {
-    console.log('Ver detalles de cita:', appointment)
-    // Aquí iría la navegación a los detalles de la cita
-  }
+  viewAppointmentDetails(_appointment: RecentAppointment): void {}
 
-  editAppointment(appointment: RecentAppointment): void {
-    console.log('Editar cita:', appointment)
-    // Aquí iría la navegación a editar la cita
-  }
+  editAppointment(_appointment: RecentAppointment): void {}
 
-  restockMedication(alert: StockAlert): void {
-    console.log('Reabastecer medicamento:', alert)
-    // Aquí iría la lógica para reabastecer
-  }
+  restockMedication(_alert: StockAlert): void {}
 
-  viewPatientDetails(patient: RecentPatient): void {
-    console.log('Ver detalles del paciente:', patient)
-    // Aquí iría la navegación a los detalles del paciente
-  }
+  viewPatientDetails(_patient: RecentPatient): void {}
 
-  scheduleAppointment(patient: RecentPatient): void {
-    console.log('Programar cita para:', patient)
-    // Aquí iría la navegación a programar cita
-  }
+  scheduleAppointment(_patient: RecentPatient): void {}
 }

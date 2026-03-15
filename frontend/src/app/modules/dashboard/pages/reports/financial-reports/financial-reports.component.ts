@@ -144,9 +144,6 @@ export class FinancialReportsComponent implements OnInit {
         showConfirmButton: false,
       })
 
-      // Aquí iría la lógica real de descarga
-      console.log('Downloading report:', report.id)
-
       await this.alert.fire({
         icon: 'success',
         title: 'Descarga exitosa',

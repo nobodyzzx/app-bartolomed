@@ -72,7 +72,6 @@ export class PrescriptionsPageComponent implements OnInit {
     this.isLoading = true
     this.prescriptionsService.list(1, 100).subscribe({
       next: (response: any) => {
-        console.log('Respuesta de prescripciones:', response)
         // El backend devuelve { items, total, page, pageSize }
         const prescriptions: Prescription[] = response.items || []
 
@@ -104,9 +103,8 @@ export class PrescriptionsPageComponent implements OnInit {
 
         this.isLoading = false
       },
-      error: error => {
-        console.error('Error cargando prescripciones:', error)
-        this.alert.error('Error al cargar prescripciones', error?.message || 'Inténtalo de nuevo')
+      error: () => {
+        this.alert.error('Error al cargar prescripciones', 'Inténtalo de nuevo')
         this.isLoading = false
         // Inicializar con valores vacíos en caso de error
         this.statistics = {

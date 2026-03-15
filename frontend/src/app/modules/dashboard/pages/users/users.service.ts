@@ -132,22 +132,6 @@ export class UsersService {
     );
   } */
 
-  /* createUser(userData: any): Observable<any> {
-      const headers = this.getHeaders();
-      
-      return this.http.post(`${this.baseUrl}/users/create`, userData, { headers })
-        .pipe(
-          tap(response => console.log('Usuario creado:', response)),
-          catchError(error => {
-            console.error('Error en createUser:', error);
-            return throwError(() => ({
-              status: error.status,
-              error: error.error,
-              message: error.error?.message
-            }));
-          })
-        );
-    }
   getUsers(): Observable<any> {
     const headers = this.getHeaders();
     return this.http.get(`${this.baseUrl}/users`, { headers }).pipe(

@@ -150,7 +150,6 @@ export class PatientFormComponent implements OnInit {
       .findAll(true)
       .pipe(
         catchError(err => {
-          console.error('Error al cargar clínicas:', err)
           this.alert
             .fire({
               title: 'Error al Cargar Clínicas',
@@ -225,7 +224,6 @@ export class PatientFormComponent implements OnInit {
         }),
         catchError(error => {
           this.isLoading = false
-          console.error('Error al cargar paciente:', error)
 
           if (error.status === 404) {
             this.alert
@@ -470,8 +468,6 @@ export class PatientFormComponent implements OnInit {
   }
 
   private handlePatientError(error: any, patientData: CreatePatientDto): void {
-    console.error('Error al guardar paciente:', error)
-
     // Error de paciente duplicado (409 Conflict)
     if (error.status === 409 || error.error?.message?.includes('already exists')) {
       this.alert

@@ -148,9 +148,7 @@ export class UserRegisterComponent implements OnInit {
       next: clinics => {
         this.clinics = clinics
       },
-      error: error => {
-        console.error('Error al cargar clínicas:', error)
-      },
+      error: () => {},
     })
   }
 
@@ -161,8 +159,7 @@ export class UserRegisterComponent implements OnInit {
         this.availableRoles = roles
         this.isLoadingRoles = false
       },
-      error: error => {
-        console.error('Error al cargar roles:', error)
+      error: () => {
         this.isLoadingRoles = false
       },
     })
