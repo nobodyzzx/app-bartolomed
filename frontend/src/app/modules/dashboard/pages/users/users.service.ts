@@ -133,10 +133,9 @@ export class UsersService {
   } */
 
   getUsers(): Observable<any> {
-    const headers = this.getHeaders();
+    const headers = this.getHeaders()
     return this.http.get(`${this.baseUrl}/users`, { headers }).pipe(
-      map(response => response),
-      catchError(error => throwError(() => error.error.message))
-    );
+      catchError(error => throwError(() => error.error.message)),
+    )
   }
 }
