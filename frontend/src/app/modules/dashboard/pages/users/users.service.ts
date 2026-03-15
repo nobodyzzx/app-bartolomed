@@ -138,5 +138,5 @@ export class UsersService {
       map(response => response),
       catchError(error => throwError(() => error.error.message))
     );
-  } */
+  }
 }
