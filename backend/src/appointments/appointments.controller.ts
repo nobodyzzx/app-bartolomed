@@ -2,11 +2,14 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe
 import { AppointmentsService } from './services/appointments.service';
 import { CreateAppointmentDto, UpdateAppointmentDto } from './dto';
 import { Auth, GetUser } from '../auth/decorators';
+import { RequirePermissions } from '../auth/permissions/permissions.decorator';
+import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
 import { User } from '../users/entities/user.entity';
 import { AppointmentStatus } from './entities/appointment.entity';
 
 @Controller('appointments')
+@RequirePermissions(Permission.AppointmentsRead, Permission.AppointmentsWrite)
 export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
 

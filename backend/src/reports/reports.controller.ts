@@ -1,9 +1,12 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ReportsService, ReportFilters } from './services/reports.service';
 import { Auth } from '../auth/decorators';
+import { RequirePermissions } from '../auth/permissions/permissions.decorator';
+import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
 
 @Controller('reports')
+@RequirePermissions(Permission.ReportsMedical, Permission.ReportsFinancial, Permission.ReportsStock)
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 

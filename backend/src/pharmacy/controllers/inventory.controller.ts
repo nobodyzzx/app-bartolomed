@@ -1,5 +1,8 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Auth } from '../../auth/decorators/auth.decorator';
+import { RequirePermissions } from '../../auth/permissions/permissions.decorator';
+import { Permission } from '../../auth/permissions/permissions.enum';
+import { ValidRoles } from '../../auth/interfaces';
 import {
   CreateMedicationDto,
   CreateMedicationStockDto,
@@ -10,7 +13,8 @@ import {
 import { InventoryService } from '../services/inventory.service';
 
 @Controller('pharmacy/inventory')
-@UseGuards(JwtAuthGuard)
+@Auth(ValidRoles.PHARMACIST, ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
+@RequirePermissions(Permission.PharmacyInventoryManage)
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
