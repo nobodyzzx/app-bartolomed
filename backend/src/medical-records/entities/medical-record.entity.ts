@@ -188,7 +188,7 @@ export class MedicalRecord {
   updatedAt: Date;
 
   // Helper method para calcular BMI automáticamente
-  calculateBMI(): number {
+  calculateBMI(): number | null {
     if (this.weight && this.height) {
       const heightInMeters = this.height / 100;
       return this.weight / (heightInMeters * heightInMeters);

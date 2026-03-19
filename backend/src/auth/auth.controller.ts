@@ -48,7 +48,7 @@ export class AuthController {
   @Post('refresh')
   async refresh(@Body() dto: RefreshTokenDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     // Prefer cookie 'rt'; fallback to body
-    let refreshToken = dto?.refreshToken;
+    let refreshToken: string | undefined = dto?.refreshToken;
     if (!refreshToken) {
       const cookieHeader = req.headers['cookie'] || '';
       const match = cookieHeader

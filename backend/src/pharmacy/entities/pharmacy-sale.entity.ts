@@ -36,13 +36,13 @@ export class PharmacySale {
   patientName: string;
 
   @Column('text', { nullable: true })
-  patientId: string;
+  patientId: string | undefined;
 
   @Column('text', { nullable: true })
-  prescriptionNumber: string;
+  prescriptionNumber: string | undefined;
 
   @Column('text', { nullable: true })
-  doctorName: string;
+  doctorName: string | undefined;
 
   @Column('timestamp')
   saleDate: Date;
@@ -79,7 +79,7 @@ export class PharmacySale {
   change: number;
 
   @Column('text', { nullable: true })
-  notes: string;
+  notes: string | undefined;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'sold_by' })
@@ -142,10 +142,10 @@ export class PharmacySaleItem {
   subtotal: number;
 
   @Column('date', { nullable: true })
-  expiryDate: Date;
+  expiryDate: Date | undefined;
 
   @Column('text', { nullable: true })
-  instructions: string;
+  instructions: string | undefined;
 
   @CreateDateColumn()
   createdAt: Date;

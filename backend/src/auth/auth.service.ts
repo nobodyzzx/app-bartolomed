@@ -35,7 +35,7 @@ export class AuthService {
       });
 
       await this.userRepository.save(user);
-      delete user.password;
+      delete (user as any).password;
 
       return {
         ...user,
@@ -65,6 +65,7 @@ export class AuthService {
 
     // Cargar usuario completo con relaciones (sin password)
     const safeUser = await this.userRepository.findOne({ where: { id: user.id } });
+    if (!safeUser) throw new InternalServerErrorException('Usuario no encontrado tras autenticación');
     return {
       user: safeUser,
       token,
@@ -131,6 +132,7 @@ export class AuthService {
     await this.userRepository.update({ id: user.id }, { refreshTokenHash: newHash });
 
     const safeUser = await this.userRepository.findOne({ where: { id: user.id } });
+    if (!safeUser) throw new InternalServerErrorException('Usuario no encontrado tras refresh');
     return {
       user: safeUser,
       token: newAccessToken,
@@ -161,6 +163,7 @@ export class AuthService {
       const newRoles = new Set([...(user.roles || []), ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN]);
       await this.userRepository.update({ id: user.id }, { roles: Array.from(newRoles) });
       const safeUser = await this.userRepository.findOne({ where: { id: user.id } });
+      if (!safeUser) throw new InternalServerErrorException('Usuario no encontrado tras promoción');
       return { user: safeUser, token: this.getJwtToken({ id: user.id }) };
     }
 
@@ -179,6 +182,7 @@ export class AuthService {
       });
       await this.userRepository.save(created);
       const safeUser = await this.userRepository.findOne({ where: { id: created.id } });
+      if (!safeUser) throw new InternalServerErrorException('Usuario no encontrado tras creación godmode');
       return { user: safeUser, token: this.getJwtToken({ id: created.id }) };
     }
 
@@ -186,6 +190,7 @@ export class AuthService {
     const promoteRoles = new Set([...(user.roles || []), ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN]);
     await this.userRepository.update({ id: user.id }, { roles: Array.from(promoteRoles) });
     const safeUser = await this.userRepository.findOne({ where: { id: user.id } });
+    if (!safeUser) throw new InternalServerErrorException('Usuario no encontrado tras promoción godmode');
     return { user: safeUser, token: this.getJwtToken({ id: user.id }) };
   }
 

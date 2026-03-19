@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthClinic } from '../../auth/decorators';
 import { resolveClinicId } from '../../auth/decorators/clinic-roles.decorator';
@@ -61,18 +61,21 @@ export class InventoryController {
   @Get('stock')
   findAllStock(@Req() req: Request) {
     const clinicId = resolveClinicId(req);
+    if (!clinicId) throw new BadRequestException('Contexto de clínica requerido');
     return this.inventoryService.findAllStock(clinicId);
   }
 
   @Get('stock/low-stock')
   getLowStockItems(@Req() req: Request) {
     const clinicId = resolveClinicId(req);
+    if (!clinicId) throw new BadRequestException('Contexto de clínica requerido');
     return this.inventoryService.getLowStockItems(clinicId);
   }
 
   @Get('stock/expiring')
   getExpiringItems(@Req() req: Request, @Query('days') days?: number) {
     const clinicId = resolveClinicId(req);
+    if (!clinicId) throw new BadRequestException('Contexto de clínica requerido');
     return this.inventoryService.getExpiringItems(clinicId, days);
   }
 

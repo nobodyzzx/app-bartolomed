@@ -1,5 +1,7 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { Auth, AuthClinic, GetUser } from '../auth/decorators';
+import { RequirePermissions } from '../auth/permissions/permissions.decorator';
+import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
 import { User } from '../users/entities/user.entity';
 import { CreateClinicDto, UpdateClinicDto } from './dto';
@@ -14,6 +16,7 @@ export class ClinicsController {
 
   @Post()
   @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN)
+  @RequirePermissions(Permission.ClinicsManage)
   create(@Body() createClinicDto: CreateClinicDto, @GetUser() user: User) {
     return this.clinicsService.create(createClinicDto, user);
   }
@@ -31,6 +34,7 @@ export class ClinicsController {
 
   @Get('statistics')
   @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN)
+  @RequirePermissions(Permission.ClinicsManage)
   getStatistics() {
     return this.clinicsService.getClinicStatistics();
   }
@@ -42,24 +46,28 @@ export class ClinicsController {
 
   @Patch(':id')
   @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN)
+  @RequirePermissions(Permission.ClinicsManage)
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updateClinicDto: UpdateClinicDto) {
     return this.clinicsService.update(id, updateClinicDto);
   }
 
   @Delete(':id')
   @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN)
+  @RequirePermissions(Permission.ClinicsManage)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.clinicsService.remove(id);
   }
 
   @Patch(':id/activate')
   @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN)
+  @RequirePermissions(Permission.ClinicsManage)
   activate(@Param('id', ParseUUIDPipe) id: string) {
     return this.clinicsService.activate(id);
   }
 
   @Patch(':id/deactivate')
   @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN)
+  @RequirePermissions(Permission.ClinicsManage)
   deactivate(@Param('id', ParseUUIDPipe) id: string) {
     return this.clinicsService.deactivate(id);
   }

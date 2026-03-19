@@ -210,7 +210,9 @@ export class PrescriptionsService {
       }
 
       await presRepo.save(pres);
-      return await presRepo.findOne({ where: { id, clinic: { id: clinicId } }, relations: ['patient', 'doctor', 'clinic', 'items'] });
+      const updated = await presRepo.findOne({ where: { id, clinic: { id: clinicId } }, relations: ['patient', 'doctor', 'clinic', 'items'] });
+      if (!updated) throw new NotFoundException('Prescripción no encontrada tras actualización');
+      return updated;
     });
   }
 

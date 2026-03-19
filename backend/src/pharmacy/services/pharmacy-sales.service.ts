@@ -69,9 +69,9 @@ export class PharmacySalesService {
 
     const pharmacySale = new PharmacySale();
     pharmacySale.saleNumber = saleNumber;
-    pharmacySale.patientId = createPharmacySaleDto.patientId;
+    pharmacySale.patientId = createPharmacySaleDto.patientId ?? undefined;
     pharmacySale.patientName = createPharmacySaleDto.patientId || 'Cliente';
-    pharmacySale.prescriptionNumber = createPharmacySaleDto.prescriptionNumber;
+    pharmacySale.prescriptionNumber = createPharmacySaleDto.prescriptionNumber ?? undefined;
     pharmacySale.saleDate = new Date();
     pharmacySale.paymentMethod = createPharmacySaleDto.paymentMethod;
     pharmacySale.subtotal = subtotal;
@@ -80,7 +80,7 @@ export class PharmacySalesService {
     pharmacySale.total = totalAmount;
     pharmacySale.amountPaid = createPharmacySaleDto.amountPaid;
     pharmacySale.change = changeAmount;
-    pharmacySale.notes = createPharmacySaleDto.notes;
+    pharmacySale.notes = createPharmacySaleDto.notes ?? undefined;
     pharmacySale.soldById = soldById;
     pharmacySale.status = SaleStatus.PENDING;
 
@@ -94,12 +94,12 @@ export class PharmacySalesService {
       item.saleId = savedSale.id;
       item.medicationStockId = itemDto.medicationStockId;
       item.productName = stock?.medication?.name || 'Producto';
-      item.batchNumber = itemDto.batchNumber || stock?.batchNumber;
+      item.batchNumber = itemDto.batchNumber || stock?.batchNumber || '';
       item.quantity = itemDto.quantity;
       item.unitPrice = itemDto.unitPrice;
       item.discount = itemDto.discountAmount || 0;
       item.subtotal = itemDto.totalPrice;
-      item.expiryDate = itemDto.expiryDate ? new Date(itemDto.expiryDate) : stock?.expiryDate ?? null;
+      item.expiryDate = itemDto.expiryDate ? new Date(itemDto.expiryDate) : (stock?.expiryDate ?? undefined);
       await this.pharmacySaleItemRepository.save(item);
     }
 
@@ -213,7 +213,7 @@ export class PharmacySalesService {
           discount: itemDiscountAmount,
           subtotal: itemSubtotal,
           batchNumber: itemDto.batchNumber,
-          expiryDate: itemDto.expiryDate ? new Date(itemDto.expiryDate) : null,
+          expiryDate: itemDto.expiryDate ? new Date(itemDto.expiryDate) : undefined,
           saleId: id,
         });
         await this.pharmacySaleItemRepository.save(item);
@@ -284,7 +284,7 @@ export class PharmacySalesService {
         movement.totalAmount = item.subtotal;
         movement.reference = pharmacySale.saleNumber;
         movement.reason = `Venta ${pharmacySale.saleNumber}`;
-        movement.notes = pharmacySale.notes;
+        movement.notes = pharmacySale.notes ?? undefined;
         movement.movementDate = new Date();
         await this.stockMovementRepository.save(movement);
       }

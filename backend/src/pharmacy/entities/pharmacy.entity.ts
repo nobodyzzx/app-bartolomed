@@ -251,13 +251,13 @@ export class StockMovement {
   totalAmount: number;
 
   @Column('text', { nullable: true })
-  reference: string; // Invoice number, prescription number, etc.
+  reference: string | undefined; // Invoice number, prescription number, etc.
 
   @Column('text', { nullable: true })
-  reason: string;
+  reason: string | undefined;
 
   @Column('text', { nullable: true })
-  notes: string;
+  notes: string | undefined;
 
   @Column('timestamp with time zone')
   movementDate: Date;

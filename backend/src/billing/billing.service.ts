@@ -51,12 +51,13 @@ export class BillingService {
       if (!clinic) throw new NotFoundException('Clinic not found');
 
       // Verificar appointment si se proporciona
-      let appointment = null;
+      let appointment: Appointment | undefined;
       if (createDto.appointmentId) {
-        appointment = await this.appointmentRepository.findOne({
+        const foundAppointment = await this.appointmentRepository.findOne({
           where: { id: createDto.appointmentId, clinic: { id: scopedClinicId }, patient: { id: patient.id } },
         });
-        if (!appointment) throw new NotFoundException('Appointment not found');
+        if (!foundAppointment) throw new NotFoundException('Appointment not found');
+        appointment = foundAppointment;
       }
 
       // Calcular subtotal desde los items
@@ -106,10 +107,12 @@ export class BillingService {
       await itemRepo.save(items);
 
       // Recargar con relaciones
-      return await invoiceRepo.findOne({
+      const result = await invoiceRepo.findOne({
         where: { id: savedInvoice.id },
         relations: ['patient', 'clinic', 'appointment', 'items', 'payments', 'createdBy'],
       });
+      if (!result) throw new NotFoundException('Factura no encontrada tras creación');
+      return result;
     });
   }
 
@@ -248,10 +251,12 @@ export class BillingService {
 
       await invoiceRepo.save(invoice);
 
-      return await invoiceRepo.findOne({
+      const updated = await invoiceRepo.findOne({
         where,
         relations: ['patient', 'clinic', 'appointment', 'items', 'payments', 'createdBy'],
       });
+      if (!updated) throw new NotFoundException('Factura no encontrada tras actualización');
+      return updated;
     });
   }
 

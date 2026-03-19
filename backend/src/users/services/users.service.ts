@@ -23,7 +23,7 @@ export class UsersService {
       // Si se proporciona clinicId, verificar que la clínica existe
       let clinic: Clinic | undefined;
       if (clinicId) {
-        clinic = await this.clinicRepository.findOne({ where: { id: clinicId } });
+        clinic = await this.clinicRepository.findOne({ where: { id: clinicId } }) ?? undefined;
         if (!clinic) {
           throw new BadRequestException(`Clinic with id ${clinicId} not found`);
         }
@@ -36,7 +36,7 @@ export class UsersService {
       });
 
       await this.userRepository.save(user);
-      delete user.password;
+      delete (user as any).password;
 
       return user;
     } catch (error) {
@@ -86,13 +86,13 @@ export class UsersService {
         throw new BadRequestException(`Clinic with id ${updateUserDto.clinicId} not found`);
       }
       user.clinic = clinic;
-      delete updateUserDto.clinicId; // Eliminar del objeto para evitar conflicto
+      delete (updateUserDto as any).clinicId; // Eliminar del objeto para evitar conflicto
     }
 
     try {
       Object.assign(user, updateUserDto);
       await this.userRepository.save(user);
-      delete user.password;
+      delete (user as any).password;
 
       return user;
     } catch (error) {

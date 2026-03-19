@@ -63,7 +63,7 @@ export class PurchaseOrdersService {
       orderDate: new Date(createPurchaseOrderDto.orderDate),
       expectedDeliveryDate: createPurchaseOrderDto.expectedDeliveryDate
         ? new Date(createPurchaseOrderDto.expectedDeliveryDate)
-        : null,
+        : undefined,
       notes: createPurchaseOrderDto.notes,
       subtotal: Number(subtotal),
       taxRate: Number(taxRate),

@@ -130,8 +130,8 @@ export class SeedService implements OnModuleInit {
     await this.userClinicRepository.delete({});
 
     // Desasociar FKs circulares antes de borrar (incluyendo admin temporalmente)
-    await this.clinicsRepository.update({}, { createdBy: null }); // clinics.createdBy → users
-    await this.usersRepository.update({}, { clinic: null }); // users.clinic → clinics (todos, incluyendo admin)
+    await this.clinicsRepository.update({}, { createdBy: null as any }); // clinics.createdBy → users
+    await this.usersRepository.update({}, { clinic: null as any }); // users.clinic → clinics (todos, incluyendo admin)
 
     // Ahora sí borrar usuarios (excepto admin) y clínicas
     await this.usersRepository.delete({ email: Not('admin@bartolomed.com') });

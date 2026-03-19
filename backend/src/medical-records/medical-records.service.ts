@@ -82,13 +82,13 @@ export class MedicalRecordsService {
 
     // Calcular BMI si se proporcionan peso y altura
     if (medicalRecord.weight && medicalRecord.height) {
-      medicalRecord.bmi = medicalRecord.calculateBMI();
+      medicalRecord.bmi = medicalRecord.calculateBMI()!;
     }
 
     const savedRecord = await this.medicalRecordRepository.save(medicalRecord);
 
     // Recargar con relaciones para devolver datos completos
-    return await this.medicalRecordRepository.findOne({
+    const reloaded = await this.medicalRecordRepository.findOne({
       where: { id: savedRecord.id },
       relations: [
         'patient',
@@ -100,6 +100,8 @@ export class MedicalRecordsService {
         'updatedBy',
       ],
     });
+    if (!reloaded) throw new NotFoundException('Expediente no encontrado tras creación');
+    return reloaded;
   }
 
   async findAll(
@@ -223,7 +225,7 @@ export class MedicalRecordsService {
     // Recalcular BMI si se actualizaron peso o altura
     if (updateMedicalRecordDto.weight || updateMedicalRecordDto.height) {
       if (medicalRecord.weight && medicalRecord.height) {
-        medicalRecord.bmi = medicalRecord.calculateBMI();
+        medicalRecord.bmi = medicalRecord.calculateBMI()!;
       }
     }
 

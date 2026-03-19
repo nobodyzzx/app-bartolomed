@@ -1,5 +1,7 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { Auth } from '../auth/decorators';
+import { RequirePermissions } from '../auth/permissions/permissions.decorator';
+import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
 import { CreateRoleDto, UpdateRoleDto } from './dto';
 import { Role } from './entities';
@@ -7,6 +9,7 @@ import { RolesService } from './services/roles.service';
 
 @Controller('roles')
 @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN)
+@RequirePermissions(Permission.RolesManage)
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
