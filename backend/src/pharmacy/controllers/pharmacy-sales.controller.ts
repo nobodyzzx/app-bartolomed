@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request } from '@nestjs/common';
-import { Auth } from '../../auth/decorators/auth.decorator';
+import { AuthClinic } from '../../auth/decorators';
+import { resolveClinicId } from '../../auth/decorators/clinic-roles.decorator';
 import { RequirePermissions } from '../../auth/permissions/permissions.decorator';
 import { Permission } from '../../auth/permissions/permissions.enum';
 import { ValidRoles } from '../../auth/interfaces';
@@ -8,7 +9,7 @@ import { SaleStatus } from '../entities/pharmacy-sale.entity';
 import { PharmacySalesService } from '../services/pharmacy-sales.service';
 
 @Controller('pharmacy-sales')
-@Auth(ValidRoles.PHARMACIST, ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
+@AuthClinic({ roles: [ValidRoles.PHARMACIST, ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN] })
 @RequirePermissions(Permission.PharmacyDispense, Permission.PharmacyBilling)
 export class PharmacySalesController {
   constructor(private readonly pharmacySalesService: PharmacySalesService) {}
@@ -28,9 +29,12 @@ export class PharmacySalesController {
     @Query('paymentMethod') paymentMethod?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Request() req?: any,
   ) {
+    const clinicId = req ? resolveClinicId(req) : undefined;
     return this.pharmacySalesService.listWithFilters({
       status,
+      clinicId,
       paymentMethod,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
@@ -38,15 +42,17 @@ export class PharmacySalesController {
   }
 
   @Get('daily-total/:date')
-  getDailyTotal(@Param('date') date: string) {
-    return this.pharmacySalesService.getDailySalesTotal(new Date(date));
+  getDailyTotal(@Param('date') date: string, @Request() req: any) {
+    const clinicId = resolveClinicId(req);
+    return this.pharmacySalesService.getDailySalesTotal(new Date(date), clinicId);
   }
 
   @Get('summary')
-  getSummary(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
+  getSummary(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string, @Request() req?: any) {
     const start = startDate ? new Date(startDate) : undefined;
     const end = endDate ? new Date(endDate) : undefined;
-    return this.pharmacySalesService.getSalesSummary(start, end);
+    const clinicId = req ? resolveClinicId(req) : undefined;
+    return this.pharmacySalesService.getSalesSummary(start, end, clinicId);
   }
 
   @Get(':id')

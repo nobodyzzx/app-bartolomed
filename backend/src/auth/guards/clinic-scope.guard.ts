@@ -1,7 +1,6 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { UserClinic } from '../../users/entities/user-clinic.entity';
 import { User } from '../../users/entities/user.entity';
 import { ValidRoles } from '../../users/interfaces';
@@ -11,8 +10,7 @@ import { META_CLINIC_ROLES, resolveClinicId } from '../decorators/clinic-roles.d
 export class ClinicScopeGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    @InjectRepository(UserClinic)
-    private readonly userClinicRepo: Repository<UserClinic>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -29,7 +27,7 @@ export class ClinicScopeGuard implements CanActivate {
     const requiredClinicRoles =
       this.reflector.getAllAndOverride<string[]>(META_CLINIC_ROLES, [context.getHandler(), context.getClass()]) || [];
 
-    const membership = await this.userClinicRepo.findOne({
+    const membership = await this.dataSource.getRepository(UserClinic).findOne({
       where: { clinic: { id: clinicId }, user: { id: user.id } },
       relations: ['clinic', 'user'],
     });

@@ -41,6 +41,7 @@ export class SuppliersService {
   }
 
   async findAll(): Promise<Supplier[]> {
+    // Proveedores se manejan como dato maestro global (compartido entre clínicas).
     return await this.supplierRepository.find({
       where: { status: SupplierStatus.ACTIVE },
       order: { name: 'ASC' },

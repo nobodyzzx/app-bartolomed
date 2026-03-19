@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
-import { SidenavService } from '../../../../../shared/components/services/sidenav.services'
+import { SidenavService } from '../../../../../shared/components/services/sidenav.service'
 import { CreateClinicDto, UpdateClinicDto } from '../interfaces'
 import { ClinicsService } from '../services'
 

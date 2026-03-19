@@ -1,11 +1,20 @@
 <div class="min-h-screen bg-slate-50" *ngIf="!loading; else loadingTpl">
   <div class="max-w-4xl mx-auto p-6">
-    <header class="mb-6 flex items-center gap-4">
-      <button (click)="cancel()" class="w-9 h-9 rounded-full hover:bg-slate-100">
-        <span class="material-symbols-outlined">arrow_back</span>
+    <div class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
+      <button
+        type="button"
+        (click)="cancel()"
+        class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+        aria-label="Volver"
+      >
+        <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
       </button>
-      <h1 class="text-3xl font-bold text-slate-900">Registrar Pago</h1>
-    </header>
+      <div class="text-left">
+        <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Registrar Pago</h1>
+      </div>
+      </div>
+    </div>
 
     <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
       <!-- Datos principales -->
@@ -152,9 +161,7 @@
 </div>
 
 <ng-template #loadingTpl>
-  <div class="p-10 flex items-center justify-center">
-    <span class="material-symbols-outlined animate-spin text-4xl text-slate-500"
-      >progress_activity</span
-    >
+  <div class="flex justify-center items-center py-12">
+    <mat-spinner diameter="50"></mat-spinner>
   </div>
 </ng-template>

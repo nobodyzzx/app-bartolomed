@@ -80,4 +80,8 @@ export class ClinicDashboardComponent implements OnInit {
   showAssignedUsers() {
     this.router.navigate(['/dashboard/users/list'])
   }
+
+  getTotalAssignedUsers(): number {
+    return (this.statistics?.clinicsWithUsers ?? []).reduce((sum, c) => sum + c.userCount, 0)
+  }
 }

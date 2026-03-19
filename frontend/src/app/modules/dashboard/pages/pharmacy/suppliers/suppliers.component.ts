@@ -14,15 +14,28 @@ export class SuppliersComponent implements OnInit {
   loading = signal(false)
   suppliers = signal<Supplier[]>([])
   search = signal('')
+  statusFilter = signal<'all' | 'active' | 'inactive'>('all')
+
   filtered = computed(() => {
     const term = this.search().toLowerCase().trim()
-    if (!term) return this.suppliers()
-    return this.suppliers().filter(s =>
-      [s.nombreComercial || s.name, s.razonSocial, s.contactPerson, s.email, s.city, s.country]
+    const status = this.statusFilter()
+    return this.suppliers().filter(s => {
+      if (status === 'active' && !s.isActive) return false
+      if (status === 'inactive' && s.isActive) return false
+      if (!term) return true
+      return [s.nombreComercial || s.name, s.razonSocial, s.contactPerson, s.email, s.city, s.country]
         .filter(Boolean)
-        .some(v => v!.toLowerCase().includes(term)),
-    )
+        .some(v => v!.toLowerCase().includes(term))
+    })
   })
+
+  activeCount       = computed(() => this.suppliers().filter(s => s.isActive).length)
+  inactiveCount     = computed(() => this.suppliers().filter(s => !s.isActive).length)
+  medicamentosCount = computed(() => this.suppliers().filter(s => s.tipoProveedor === SupplierType.MEDICAMENTOS).length)
+
+  setStatusFilter(f: 'all' | 'active' | 'inactive'): void {
+    this.statusFilter.set(f)
+  }
 
   constructor(
     private suppliersService: SuppliersService,

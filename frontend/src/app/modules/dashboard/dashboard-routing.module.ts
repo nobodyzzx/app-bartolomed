@@ -263,8 +263,11 @@ const routes: Routes = [
         path: 'system-params',
         loadChildren: () =>
           import('./pages/system-params/system-params.module').then(m => m.SystemParamsModule),
-        canActivate: [roleGuard],
-        data: { allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN] },
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+          requiredPermissions: [Permission.SettingsManage],
+        },
       },
       {
         path: 'notifications-config',
@@ -272,8 +275,11 @@ const routes: Routes = [
           import('./pages/notifications-config/notifications-config.module').then(
             m => m.NotificationsConfigModule,
           ),
-        canActivate: [roleGuard],
-        data: { allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN] },
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+          requiredPermissions: [Permission.SettingsManage],
+        },
       },
       {
         path: 'document-templates',
@@ -281,8 +287,11 @@ const routes: Routes = [
           import('./pages/document-templates/document-templates.module').then(
             m => m.DocumentTemplatesModule,
           ),
-        canActivate: [roleGuard],
-        data: { allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN] },
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+          requiredPermissions: [Permission.SettingsManage],
+        },
       },
       {
         path: 'api-integration',
@@ -290,8 +299,11 @@ const routes: Routes = [
           import('./pages/api-integration/api-integration.module').then(
             m => m.ApiIntegrationModule,
           ),
-        canActivate: [roleGuard],
-        data: { allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN] },
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+          requiredPermissions: [Permission.SettingsManage],
+        },
       },
       {
         path: '',

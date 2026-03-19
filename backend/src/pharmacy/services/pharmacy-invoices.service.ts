@@ -62,11 +62,21 @@ export class PharmacyInvoicesService {
     return await this.pharmacyInvoiceRepository.save(pharmacyInvoice);
   }
 
-  async findAll(): Promise<PharmacyInvoice[]> {
-    return await this.pharmacyInvoiceRepository.find({
-      relations: ['sale', 'createdBy'],
-      order: { createdAt: 'DESC' },
-    });
+  async findAll(clinicId?: string): Promise<PharmacyInvoice[]> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+
+    const qb = this.pharmacyInvoiceRepository
+      .createQueryBuilder('invoice')
+      .leftJoinAndSelect('invoice.sale', 'sale')
+      .leftJoinAndSelect('invoice.createdBy', 'createdBy')
+      .leftJoin('createdBy.clinic', 'clinic')
+      .orderBy('invoice.createdAt', 'DESC');
+
+    qb.andWhere('clinic.id = :clinicId', { clinicId });
+
+    return await qb.getMany();
   }
 
   async findOne(id: string): Promise<PharmacyInvoice> {
@@ -139,33 +149,59 @@ export class PharmacyInvoicesService {
     await this.pharmacyInvoiceRepository.remove(pharmacyInvoice);
   }
 
-  async getInvoicesByStatus(status: InvoiceStatus): Promise<PharmacyInvoice[]> {
-    return await this.pharmacyInvoiceRepository.find({
-      where: { status },
-      relations: ['sale', 'createdBy'],
-      order: { createdAt: 'DESC' },
-    });
-  }
+  async getInvoicesByStatus(status: InvoiceStatus, clinicId?: string): Promise<PharmacyInvoice[]> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
 
-  async getOverdueInvoices(): Promise<PharmacyInvoice[]> {
-    const today = new Date();
-
-    return await this.pharmacyInvoiceRepository
+    const qb = this.pharmacyInvoiceRepository
       .createQueryBuilder('invoice')
       .leftJoinAndSelect('invoice.sale', 'sale')
       .leftJoinAndSelect('invoice.createdBy', 'createdBy')
+      .leftJoin('createdBy.clinic', 'clinic')
+      .where('invoice.status = :status', { status })
+      .orderBy('invoice.createdAt', 'DESC');
+
+    qb.andWhere('clinic.id = :clinicId', { clinicId });
+
+    return await qb.getMany();
+  }
+
+  async getOverdueInvoices(clinicId?: string): Promise<PharmacyInvoice[]> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+
+    const today = new Date();
+
+    const qb = this.pharmacyInvoiceRepository
+      .createQueryBuilder('invoice')
+      .leftJoinAndSelect('invoice.sale', 'sale')
+      .leftJoinAndSelect('invoice.createdBy', 'createdBy')
+      .leftJoin('createdBy.clinic', 'clinic')
       .where('invoice.dueDate < :today', { today })
       .andWhere('invoice.status != :paidStatus', { paidStatus: InvoiceStatus.PAID })
       .andWhere('invoice.status != :cancelledStatus', { cancelledStatus: InvoiceStatus.CANCELLED })
-      .orderBy('invoice.dueDate', 'ASC')
-      .getMany();
+      .orderBy('invoice.dueDate', 'ASC');
+
+    qb.andWhere('clinic.id = :clinicId', { clinicId });
+
+    return await qb.getMany();
   }
 
-  async getTotalRevenue(startDate?: Date, endDate?: Date): Promise<number> {
+  async getTotalRevenue(startDate?: Date, endDate?: Date, clinicId?: string): Promise<number> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+
     let query = this.pharmacyInvoiceRepository
       .createQueryBuilder('invoice')
+      .leftJoin('invoice.createdBy', 'createdBy')
+      .leftJoin('createdBy.clinic', 'clinic')
       .select('SUM(invoice.amountPaid)', 'total')
       .where('invoice.status = :status', { status: InvoiceStatus.PAID });
+
+    query = query.andWhere('clinic.id = :clinicId', { clinicId });
 
     if (startDate && endDate) {
       query = query
@@ -177,27 +213,54 @@ export class PharmacyInvoicesService {
     return parseFloat(result.total) || 0;
   }
 
-  async getPendingAmount(): Promise<number> {
-    const result = await this.pharmacyInvoiceRepository
+  async getPendingAmount(clinicId?: string): Promise<number> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+
+    const query = this.pharmacyInvoiceRepository
       .createQueryBuilder('invoice')
+      .leftJoin('invoice.createdBy', 'createdBy')
+      .leftJoin('createdBy.clinic', 'clinic')
       .select('SUM(invoice.balance)', 'total')
       .where('invoice.status IN (:...statuses)', {
         statuses: [InvoiceStatus.PENDING, InvoiceStatus.OVERDUE],
-      })
-      .getRawOne();
+      });
+
+    query.andWhere('clinic.id = :clinicId', { clinicId });
+
+    const result = await query.getRawOne();
 
     return parseFloat(result.total) || 0;
   }
 
-  async markOverdueInvoices(): Promise<void> {
+  async markOverdueInvoices(clinicId?: string): Promise<void> {
     const today = new Date();
+
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+
+    const invoices = await this.pharmacyInvoiceRepository
+      .createQueryBuilder('invoice')
+      .leftJoin('invoice.createdBy', 'createdBy')
+      .leftJoin('createdBy.clinic', 'clinic')
+      .select('invoice.id', 'id')
+      .where('invoice.dueDate < :today', { today })
+      .andWhere('invoice.status = :pendingStatus', { pendingStatus: InvoiceStatus.PENDING })
+      .andWhere('clinic.id = :clinicId', { clinicId })
+      .getRawMany();
+
+    const ids = invoices.map(row => row.id);
+    if (ids.length === 0) {
+      return;
+    }
 
     await this.pharmacyInvoiceRepository
       .createQueryBuilder()
       .update(PharmacyInvoice)
       .set({ status: InvoiceStatus.OVERDUE })
-      .where('dueDate < :today', { today })
-      .andWhere('status = :pendingStatus', { pendingStatus: InvoiceStatus.PENDING })
+      .where('id IN (:...ids)', { ids })
       .execute();
   }
 

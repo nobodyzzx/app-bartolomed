@@ -27,14 +27,20 @@ export class BillingService {
     private userRepository: Repository<User>,
   ) {}
 
-  async create(createDto: CreateInvoiceDto, user: User): Promise<Invoice> {
+  async create(createDto: CreateInvoiceDto, user: User, scopedClinicId?: string): Promise<Invoice> {
+    if (!scopedClinicId) throw new BadRequestException('clinicId is required');
+    if (createDto.clinicId !== scopedClinicId) {
+      throw new BadRequestException('clinicId no coincide con el contexto de clínica');
+    }
+    this.assertCreatableInvoiceStatus(createDto.status);
+
     return await this.invoiceRepository.manager.transaction(async manager => {
       const invoiceRepo = manager.getRepository(Invoice);
       const itemRepo = manager.getRepository(InvoiceItem);
 
       // Verificar que el paciente existe
       const patient = await this.patientRepository.findOne({
-        where: { id: createDto.patientId },
+        where: { id: createDto.patientId, clinic: { id: scopedClinicId }, isActive: true },
       });
       if (!patient) throw new NotFoundException('Patient not found');
 
@@ -48,7 +54,7 @@ export class BillingService {
       let appointment = null;
       if (createDto.appointmentId) {
         appointment = await this.appointmentRepository.findOne({
-          where: { id: createDto.appointmentId },
+          where: { id: createDto.appointmentId, clinic: { id: scopedClinicId }, patient: { id: patient.id } },
         });
         if (!appointment) throw new NotFoundException('Appointment not found');
       }
@@ -148,46 +154,54 @@ export class BillingService {
     return { items, total, page, pageSize };
   }
 
-  async findOne(id: string): Promise<Invoice> {
+  async findOne(id: string, clinicId?: string): Promise<Invoice> {
+    const where = clinicId ? ({ id, clinic: { id: clinicId } } as any) : ({ id } as any);
     const invoice = await this.invoiceRepository.findOne({
-      where: { id },
+      where,
       relations: ['patient', 'clinic', 'appointment', 'items', 'payments', 'createdBy'],
     });
     if (!invoice) throw new NotFoundException('Invoice not found');
     return invoice;
   }
 
-  async update(id: string, updateDto: UpdateInvoiceDto): Promise<Invoice> {
+  async update(id: string, updateDto: UpdateInvoiceDto, clinicId?: string): Promise<Invoice> {
     return await this.invoiceRepository.manager.transaction(async manager => {
       const invoiceRepo = manager.getRepository(Invoice);
       const itemRepo = manager.getRepository(InvoiceItem);
 
+      const where = clinicId ? ({ id, clinic: { id: clinicId } } as any) : ({ id } as any);
       const invoice = await invoiceRepo.findOne({
-        where: { id },
+        where,
         relations: ['items'],
       });
       if (!invoice) throw new NotFoundException('Invoice not found');
+      this.assertInvoiceUpdatable(invoice);
+      if (updateDto.status && updateDto.status !== invoice.status) {
+        throw new BadRequestException('Use status endpoint to change invoice status');
+      }
 
       // Actualizar relaciones si se proporcionan
       if (updateDto.patientId) {
         const patient = await this.patientRepository.findOne({
-          where: { id: updateDto.patientId },
+          where: { id: updateDto.patientId, clinic: { id: clinicId || invoice.clinic.id }, isActive: true },
         });
         if (!patient) throw new NotFoundException('Patient not found');
         invoice.patient = patient;
       }
 
       if (updateDto.clinicId) {
-        const clinic = await this.clinicRepository.findOne({
-          where: { id: updateDto.clinicId },
-        });
-        if (!clinic) throw new NotFoundException('Clinic not found');
-        invoice.clinic = clinic;
+        if (clinicId && updateDto.clinicId !== clinicId) {
+          throw new BadRequestException('Cannot change invoice clinic');
+        }
       }
 
       if (updateDto.appointmentId) {
         const appointment = await this.appointmentRepository.findOne({
-          where: { id: updateDto.appointmentId },
+          where: {
+            id: updateDto.appointmentId,
+            clinic: { id: clinicId || invoice.clinic.id },
+            patient: { id: invoice.patient.id },
+          },
         });
         if (!appointment) throw new NotFoundException('Appointment not found');
         invoice.appointment = appointment;
@@ -195,7 +209,6 @@ export class BillingService {
 
       // Actualizar campos primitivos
       if (updateDto.invoiceNumber !== undefined) invoice.invoiceNumber = updateDto.invoiceNumber;
-      if (updateDto.status !== undefined) invoice.status = updateDto.status;
       if (updateDto.issueDate !== undefined) invoice.issueDate = updateDto.issueDate;
       if (updateDto.dueDate !== undefined) invoice.dueDate = updateDto.dueDate;
       if (updateDto.taxRate !== undefined) invoice.taxRate = updateDto.taxRate;
@@ -236,34 +249,45 @@ export class BillingService {
       await invoiceRepo.save(invoice);
 
       return await invoiceRepo.findOne({
-        where: { id },
+        where,
         relations: ['patient', 'clinic', 'appointment', 'items', 'payments', 'createdBy'],
       });
     });
   }
 
-  async setStatus(id: string, status: InvoiceStatus): Promise<Invoice> {
-    const invoice = await this.findOne(id);
+  async setStatus(id: string, status: InvoiceStatus, clinicId?: string): Promise<Invoice> {
+    const invoice = await this.findOne(id, clinicId);
+    this.assertInvoiceStatusTransition(invoice.status, status);
     invoice.status = status;
     await this.invoiceRepository.save(invoice);
-    return this.findOne(id);
+    return this.findOne(id, clinicId);
   }
 
-  async delete(id: string): Promise<void> {
-    const invoice = await this.findOne(id);
+  async delete(id: string, clinicId?: string): Promise<void> {
+    const invoice = await this.findOne(id, clinicId);
     invoice.isActive = false;
     await this.invoiceRepository.save(invoice);
   }
 
   // Métodos para pagos
-  async addPayment(createDto: CreatePaymentDto, user: User): Promise<Payment> {
-    const invoice = await this.findOne(createDto.invoiceId);
+  async addPayment(createDto: CreatePaymentDto, user: User, clinicId?: string): Promise<Payment> {
+    const invoice = await this.findOne(createDto.invoiceId, clinicId);
+    const requestedStatus = createDto.status || PaymentStatus.PENDING;
+    if (![PaymentStatus.PENDING, PaymentStatus.COMPLETED].includes(requestedStatus)) {
+      throw new BadRequestException('New payments can only be pending or completed');
+    }
+    if ([InvoiceStatus.CANCELLED, InvoiceStatus.REFUNDED].includes(invoice.status)) {
+      throw new BadRequestException('Cannot register payments for cancelled/refunded invoice');
+    }
+    if (createDto.amount > Number(invoice.remainingAmount)) {
+      throw new BadRequestException('Payment amount exceeds invoice remaining amount');
+    }
 
     const payment = this.paymentRepository.create({
       paymentNumber: createDto.paymentNumber,
       amount: createDto.amount,
       method: createDto.method,
-      status: createDto.status || PaymentStatus.PENDING,
+      status: requestedStatus,
       paymentDate: createDto.paymentDate,
       reference: createDto.reference,
       transactionId: createDto.transactionId,
@@ -277,29 +301,48 @@ export class BillingService {
     // Actualizar monto pagado de la factura
     if (savedPayment.status === PaymentStatus.COMPLETED) {
       invoice.paidAmount = Number(invoice.paidAmount) + Number(savedPayment.amount);
+      if (Number(invoice.paidAmount) > Number(invoice.totalAmount)) {
+        throw new BadRequestException('Payment exceeds invoice total amount');
+      }
       await this.invoiceRepository.save(invoice);
     }
 
     return savedPayment;
   }
 
-  async getPaymentsByInvoice(invoiceId: string): Promise<Payment[]> {
-    return await this.paymentRepository.find({
-      where: { invoice: { id: invoiceId } },
-      relations: ['processedBy'],
-      order: { createdAt: 'DESC' },
-    });
+  async getPaymentsByInvoice(invoiceId: string, clinicId?: string): Promise<Payment[]> {
+    const qb = this.paymentRepository
+      .createQueryBuilder('payment')
+      .leftJoinAndSelect('payment.processedBy', 'processedBy')
+      .leftJoin('payment.invoice', 'invoice')
+      .leftJoin('invoice.clinic', 'clinic')
+      .where('invoice.id = :invoiceId', { invoiceId })
+      .orderBy('payment.createdAt', 'DESC');
+
+    if (clinicId) {
+      qb.andWhere('clinic.id = :clinicId', { clinicId });
+    }
+
+    return qb.getMany();
   }
 
-  async confirmPayment(paymentId: string): Promise<Payment> {
-    const payment = await this.paymentRepository.findOne({
-      where: { id: paymentId },
-      relations: ['invoice'],
-    });
+  async confirmPayment(paymentId: string, clinicId?: string): Promise<Payment> {
+    const paymentQb = this.paymentRepository
+      .createQueryBuilder('payment')
+      .leftJoinAndSelect('payment.invoice', 'invoice')
+      .leftJoin('invoice.clinic', 'clinic')
+      .where('payment.id = :paymentId', { paymentId });
+    if (clinicId) {
+      paymentQb.andWhere('clinic.id = :clinicId', { clinicId });
+    }
+    const payment = await paymentQb.getOne();
     if (!payment) throw new NotFoundException('Payment not found');
 
     if (payment.status === PaymentStatus.COMPLETED) {
       throw new BadRequestException('Payment already confirmed');
+    }
+    if (payment.status === PaymentStatus.CANCELLED) {
+      throw new BadRequestException('Cannot confirm a cancelled payment');
     }
 
     const previousStatus = payment.status;
@@ -308,25 +351,39 @@ export class BillingService {
 
     // Actualizar factura solo si el pago estaba pendiente
     if (previousStatus === PaymentStatus.PENDING) {
-      const invoice = await this.findOne(payment.invoice.id);
+      const invoice = await this.findOne(payment.invoice.id, clinicId);
       invoice.paidAmount = Number(invoice.paidAmount) + Number(payment.amount);
+      if (Number(invoice.paidAmount) > Number(invoice.totalAmount)) {
+        throw new BadRequestException('Payment exceeds invoice total amount');
+      }
       await this.invoiceRepository.save(invoice);
     }
 
     return payment;
   }
 
-  async cancelPayment(paymentId: string): Promise<Payment> {
-    const payment = await this.paymentRepository.findOne({
-      where: { id: paymentId },
-      relations: ['invoice'],
-    });
+  async cancelPayment(paymentId: string, clinicId?: string): Promise<Payment> {
+    const paymentQb = this.paymentRepository
+      .createQueryBuilder('payment')
+      .leftJoinAndSelect('payment.invoice', 'invoice')
+      .leftJoin('invoice.clinic', 'clinic')
+      .where('payment.id = :paymentId', { paymentId });
+    if (clinicId) {
+      paymentQb.andWhere('clinic.id = :clinicId', { clinicId });
+    }
+    const payment = await paymentQb.getOne();
     if (!payment) throw new NotFoundException('Payment not found');
+    if (payment.status === PaymentStatus.CANCELLED) {
+      throw new BadRequestException('Payment already cancelled');
+    }
 
     if (payment.status === PaymentStatus.COMPLETED) {
       // Restar el monto del pago de la factura
-      const invoice = await this.findOne(payment.invoice.id);
+      const invoice = await this.findOne(payment.invoice.id, clinicId);
       invoice.paidAmount = Number(invoice.paidAmount) - Number(payment.amount);
+      if (Number(invoice.paidAmount) < 0) {
+        throw new BadRequestException('Invalid payment cancellation state');
+      }
       await this.invoiceRepository.save(invoice);
     }
 
@@ -375,5 +432,39 @@ export class BillingService {
     const count = await this.paymentRepository.count();
     const nextNumber = count + 1;
     return `PAY-${year}-${String(nextNumber).padStart(6, '0')}`;
+  }
+
+  private assertCreatableInvoiceStatus(status?: InvoiceStatus): void {
+    if (!status) return;
+    if (![InvoiceStatus.DRAFT, InvoiceStatus.PENDING].includes(status)) {
+      throw new BadRequestException('New invoices can only start as draft or pending');
+    }
+  }
+
+  private assertInvoiceUpdatable(invoice: Invoice): void {
+    if ([InvoiceStatus.CANCELLED, InvoiceStatus.REFUNDED].includes(invoice.status)) {
+      throw new BadRequestException('Cannot update cancelled/refunded invoice');
+    }
+  }
+
+  private assertInvoiceStatusTransition(current: InvoiceStatus, next: InvoiceStatus): void {
+    if (current === next) return;
+    const transitions: Record<InvoiceStatus, InvoiceStatus[]> = {
+      [InvoiceStatus.DRAFT]: [InvoiceStatus.PENDING, InvoiceStatus.CANCELLED],
+      [InvoiceStatus.PENDING]: [
+        InvoiceStatus.PARTIALLY_PAID,
+        InvoiceStatus.PAID,
+        InvoiceStatus.OVERDUE,
+        InvoiceStatus.CANCELLED,
+      ],
+      [InvoiceStatus.PARTIALLY_PAID]: [InvoiceStatus.PAID, InvoiceStatus.OVERDUE, InvoiceStatus.CANCELLED],
+      [InvoiceStatus.OVERDUE]: [InvoiceStatus.PARTIALLY_PAID, InvoiceStatus.PAID, InvoiceStatus.CANCELLED],
+      [InvoiceStatus.PAID]: [InvoiceStatus.REFUNDED],
+      [InvoiceStatus.CANCELLED]: [],
+      [InvoiceStatus.REFUNDED]: [],
+    };
+    if (!transitions[current].includes(next)) {
+      throw new BadRequestException(`Invalid invoice status transition from ${current} to ${next}`);
+    }
   }
 }

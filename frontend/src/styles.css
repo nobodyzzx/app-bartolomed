@@ -301,6 +301,61 @@ h6 {
   background: #94a3b8;
 }
 
+/* ===== Sidebar: menú flotante en modo colapsado ===== */
+/* Nota: debe ir aquí (estilos globales) porque mat-menu se renderiza en el overlay container */
+
+/* Tokens MDC — controlan el color en Angular Material 18 */
+.sidebar-menu-panel {
+  --mat-menu-container-color: #eff6ff;
+  --mat-menu-item-label-text-color: #1e3a5f;
+  --mat-menu-item-icon-color: #2563eb;
+  --mat-menu-item-hover-state-layer-color: #dbeafe;
+  --mat-menu-item-focus-state-layer-color: #dbeafe;
+}
+
+/* Capa 1: el panel contenedor principal */
+.sidebar-menu-panel.mat-mdc-menu-panel,
+.sidebar-menu-panel {
+  background-color: #eff6ff !important;
+  border-radius: 0.5rem !important;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Capa 2: superficie MDC interna (mdc-menu-surface) */
+.sidebar-menu-panel .mdc-menu-surface,
+.sidebar-menu-panel .mdc-menu {
+  background-color: #eff6ff !important;
+}
+
+/* Capa 3: contenido del menú */
+.sidebar-menu-panel .mat-mdc-menu-content {
+  background-color: #eff6ff !important;
+}
+
+/* Items de lista */
+.sidebar-menu-panel .mdc-list-item {
+  background-color: transparent !important;
+}
+
+.sidebar-menu-panel .mdc-list-item:hover,
+.sidebar-menu-panel .mat-mdc-menu-item:hover {
+  background-color: #dbeafe !important;
+}
+
+/* Texto de los items */
+.sidebar-menu-panel .mdc-list-item__primary-text,
+.sidebar-menu-panel .mat-mdc-menu-item .mdc-list-item__primary-text {
+  color: #1e3a5f !important;
+}
+
+/* Iconos dentro del flyout */
+.sidebar-menu-panel .mat-icon,
+.sidebar-menu-panel .material-symbols-outlined {
+  color: #2563eb !important;
+}
+
 /* ===== Formularios unificados (inputs base) ===== */
 .form-input {
   @apply w-full h-11 rounded-xl border border-slate-200 px-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300 bg-white;

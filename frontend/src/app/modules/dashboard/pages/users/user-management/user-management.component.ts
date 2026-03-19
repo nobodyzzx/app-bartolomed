@@ -19,6 +19,7 @@ interface UserStatistics {
   styleUrl: './user-management.component.css',
 })
 export class UserManagementComponent implements OnInit {
+  readonly Object = Object
   statistics: UserStatistics | null = null
   recentUsers: User[] = []
   isLoading = false

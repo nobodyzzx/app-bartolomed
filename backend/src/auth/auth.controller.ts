@@ -1,15 +1,12 @@
-import { Body, Controller, Get, Headers, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Body, Controller, Get, Headers, Post, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 
 import { CreateUserDto } from '../users/dto';
 import { User } from '../users/entities/user.entity';
 import { Auth, GetUser, RawHeaders } from './decorators';
-import { RoleProtected } from './decorators/role-protected.decorator';
 import { LoginUserDto, RefreshTokenDto } from './dto';
 import { GodBootstrapDto } from './dto/god-bootstrap.dto';
-import { UserRoleGuard } from './guards/user-role.guard';
 import { LoginResponse, ValidRoles } from './interfaces';
 
 @Controller('auth')
@@ -91,7 +88,7 @@ export class AuthController {
   }
 
   @Post('logout')
-  @UseGuards(AuthGuard('jwt'))
+  @Auth()
   async logout(@GetUser() user: User, @Res({ passthrough: true }) res: Response) {
     await this.authService.logout(user.id);
     const isProduction = process.env.NODE_ENV === 'production';
@@ -105,7 +102,7 @@ export class AuthController {
   }
 
   @Get('check-status')
-  @UseGuards(AuthGuard('jwt'))
+  @Auth()
   async checkStatus(@GetUser() user: User): Promise<LoginResponse> {
     return this.authService.checkAuthStatus(user);
   }
@@ -125,7 +122,7 @@ export class AuthController {
   }
 
   @Get('private')
-  @UseGuards(AuthGuard())
+  @Auth()
   testingPrivateRoute(
     @Req() request: Request,
     @GetUser() user: User,
@@ -140,11 +137,8 @@ export class AuthController {
       rawHeaders,
     };
   }
-  // @SetMetadata('roles', ['admin', 'super-user'])
-
   @Get('private2')
-  @RoleProtected(ValidRoles.SUPER_ADMIN)
-  @UseGuards(AuthGuard(), UserRoleGuard)
+  @Auth(ValidRoles.SUPER_ADMIN)
   privateRoute2(@GetUser() user: User) {
     return {
       ok: true,

@@ -39,6 +39,7 @@ export class InventoryService {
   }
 
   async findAllMedications(): Promise<Medication[]> {
+    // Catálogo maestro global: no está aislado por clínica por diseño.
     return await this.medicationRepository.find({
       where: { isActive: true },
       relations: ['stock'],
@@ -72,6 +73,7 @@ export class InventoryService {
   }
 
   async searchMedications(searchTerm: string): Promise<Medication[]> {
+    // Catálogo maestro global: búsqueda compartida para todas las clínicas.
     return await this.medicationRepository.find({
       where: [
         { name: Like(`%${searchTerm}%`), isActive: true },
@@ -84,12 +86,18 @@ export class InventoryService {
   }
 
   // Stock Management
-  async addStock(createStockDto: CreateMedicationStockDto): Promise<MedicationStock> {
+  async addStock(createStockDto: CreateMedicationStockDto, scopedClinicId?: string): Promise<MedicationStock> {
+    if (!scopedClinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+    if (createStockDto.clinicId !== scopedClinicId) {
+      throw new BadRequestException('clinicId mismatch with current clinic context');
+    }
     const medication = await this.findMedicationById(createStockDto.medicationId);
 
     // Verificar que la clínica existe
     const clinic = await this.clinicRepository.findOne({
-      where: { id: createStockDto.clinicId },
+      where: { id: createStockDto.clinicId, isActive: true },
     });
 
     if (!clinic) {
@@ -121,20 +129,27 @@ export class InventoryService {
     };
 
     const stock = this.stockRepository.create(stockData);
-
-    return await this.stockRepository.save(stock);
+    const savedStock = await this.stockRepository.save(stock);
+    await this.recordMovement(savedStock, MovementType.PURCHASE, Number(createStockDto.quantity), 'stock_entry');
+    return savedStock;
   }
 
   async findAllStock(clinicId: string): Promise<MedicationStock[]> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
     return await this.stockRepository.find({
       where: { clinic: { id: clinicId }, isActive: true },
       relations: ['medication', 'clinic'],
     });
   }
 
-  async findStockById(id: string): Promise<MedicationStock> {
+  async findStockById(id: string, clinicId?: string): Promise<MedicationStock> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
     const stock = await this.stockRepository.findOne({
-      where: { id, isActive: true },
+      where: { id, isActive: true, clinic: { id: clinicId } },
       relations: ['medication', 'clinic'],
     });
 
@@ -145,8 +160,8 @@ export class InventoryService {
     return stock;
   }
 
-  async updateStock(id: string, updateStockDto: UpdateMedicationStockDto): Promise<MedicationStock> {
-    const stock = await this.findStockById(id);
+  async updateStock(id: string, updateStockDto: UpdateMedicationStockDto, clinicId?: string): Promise<MedicationStock> {
+    const stock = await this.findStockById(id, clinicId);
 
     Object.assign(stock, updateStockDto);
 
@@ -155,6 +170,9 @@ export class InventoryService {
     }
 
     if (updateStockDto.quantity !== undefined) {
+      if (updateStockDto.quantity < stock.reservedQuantity) {
+        throw new BadRequestException('Quantity cannot be lower than reserved quantity');
+      }
       stock.availableQuantity = updateStockDto.quantity - stock.reservedQuantity;
     }
 
@@ -162,6 +180,9 @@ export class InventoryService {
   }
 
   async getLowStockItems(clinicId: string): Promise<MedicationStock[]> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
     return await this.stockRepository
       .createQueryBuilder('stock')
       .leftJoinAndSelect('stock.medication', 'medication')
@@ -172,6 +193,9 @@ export class InventoryService {
   }
 
   async getExpiringItems(clinicId: string, days: number = 30): Promise<MedicationStock[]> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + days);
 
@@ -185,8 +209,9 @@ export class InventoryService {
     });
   }
 
-  async reserveStock(stockId: string, quantity: number): Promise<MedicationStock> {
-    const stock = await this.findStockById(stockId);
+  async reserveStock(stockId: string, quantity: number, clinicId?: string): Promise<MedicationStock> {
+    const stock = await this.findStockById(stockId, clinicId);
+    this.assertPositiveQuantity(quantity);
 
     if (stock.availableQuantity < quantity) {
       throw new BadRequestException('Insufficient stock available');
@@ -198,8 +223,9 @@ export class InventoryService {
     return await this.stockRepository.save(stock);
   }
 
-  async releaseStock(stockId: string, quantity: number): Promise<MedicationStock> {
-    const stock = await this.findStockById(stockId);
+  async releaseStock(stockId: string, quantity: number, clinicId?: string): Promise<MedicationStock> {
+    const stock = await this.findStockById(stockId, clinicId);
+    this.assertPositiveQuantity(quantity);
 
     if (stock.reservedQuantity < quantity) {
       throw new BadRequestException('Cannot release more than reserved quantity');
@@ -211,8 +237,9 @@ export class InventoryService {
     return await this.stockRepository.save(stock);
   }
 
-  async consumeStock(stockId: string, quantity: number): Promise<MedicationStock> {
-    const stock = await this.findStockById(stockId);
+  async consumeStock(stockId: string, quantity: number, clinicId?: string): Promise<MedicationStock> {
+    const stock = await this.findStockById(stockId, clinicId);
+    this.assertPositiveQuantity(quantity);
 
     if (stock.reservedQuantity < quantity) {
       throw new BadRequestException('Cannot consume more than reserved quantity');
@@ -220,13 +247,17 @@ export class InventoryService {
 
     stock.reservedQuantity -= quantity;
     stock.quantity -= quantity;
-
-    return await this.stockRepository.save(stock);
+    const savedStock = await this.stockRepository.save(stock);
+    await this.recordMovement(savedStock, MovementType.SALE, quantity, 'stock_consume');
+    return savedStock;
   }
 
   // Transfer stock between clinics
-  async transferStock(dto: TransferStockDto) {
-    const source = await this.findStockById(dto.sourceStockId);
+  async transferStock(dto: TransferStockDto, clinicId?: string) {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+    const source = await this.findStockById(dto.sourceStockId, clinicId);
 
     if (!source.isActive) {
       throw new BadRequestException('Source stock is inactive');
@@ -239,8 +270,11 @@ export class InventoryService {
     if (source.availableQuantity < dto.quantity) {
       throw new BadRequestException('Insufficient available quantity to transfer');
     }
+    if (dto.toClinicId === source.clinic.id) {
+      throw new BadRequestException('Destination clinic must be different from source clinic');
+    }
 
-    const toClinic = await this.clinicRepository.findOne({ where: { id: dto.toClinicId } });
+    const toClinic = await this.clinicRepository.findOne({ where: { id: dto.toClinicId, isActive: true } });
     if (!toClinic) {
       throw new BadRequestException(`Destination clinic with id ${dto.toClinicId} not found`);
     }
@@ -301,5 +335,29 @@ export class InventoryService {
       destination: savedDest,
       transferred: dto.quantity,
     };
+  }
+
+  private assertPositiveQuantity(quantity: number): void {
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      throw new BadRequestException('Quantity must be greater than zero');
+    }
+  }
+
+  private async recordMovement(
+    stock: MedicationStock,
+    type: MovementType,
+    quantity: number,
+    reason: string,
+  ): Promise<void> {
+    const movement = this.movementRepository.create({
+      type,
+      quantity,
+      unitPrice: Number(stock.unitCost),
+      reason,
+      movementDate: new Date(),
+      stock,
+      isActive: true,
+    });
+    await this.movementRepository.save(movement);
   }
 }

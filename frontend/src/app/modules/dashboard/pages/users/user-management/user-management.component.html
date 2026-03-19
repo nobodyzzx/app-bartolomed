@@ -96,7 +96,7 @@
         <button
           type="button"
           (click)="searchUsers()"
-          [disabled]="!searchTerm?.trim()"
+          [disabled]="!searchTerm.trim()"
           class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
           aria-label="Buscar usuarios"
         >
@@ -109,7 +109,7 @@
         <button
           type="button"
           (click)="navigateToNewUser()"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-200 focus-visible:ring-offset-1 transition-all border-0"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
           aria-label="Crear nuevo usuario"
         >
           <span class="material-symbols-outlined msz-18">person_add</span>
@@ -294,7 +294,7 @@
       </div>
 
       <div *ngIf="recentUsers.length === 0 && !isLoading" class="text-center py-12 px-6">
-        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4">group</span>
+        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">group</span>
         <p class="text-slate-500 mb-4">No hay usuarios registrados aún</p>
         <button
           type="button"
@@ -306,9 +306,8 @@
         </button>
       </div>
 
-      <div *ngIf="isLoading" class="text-center py-12 px-6">
-        <mat-spinner diameter="50" class="mx-auto"></mat-spinner>
-        <p class="text-slate-500 mt-4">Cargando usuarios...</p>
+      <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+        <mat-spinner diameter="50"></mat-spinner>
       </div>
     </div>
   </div>

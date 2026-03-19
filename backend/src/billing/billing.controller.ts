@@ -1,5 +1,7 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
-import { Auth, GetUser } from '../auth/decorators';
+import { BadRequestException, Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
+import { Request } from 'express';
+import { Auth, AuthClinic, GetUser } from '../auth/decorators';
+import { resolveClinicId } from '../auth/decorators/clinic-roles.decorator';
 import { RequirePermissions } from '../auth/permissions/permissions.decorator';
 import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
@@ -9,7 +11,7 @@ import { CreateInvoiceDto, CreatePaymentDto, UpdateInvoiceDto } from './dto';
 import { InvoiceStatus } from './entities/billing.entity';
 
 @Controller('billing')
-@Auth()
+@AuthClinic()
 @RequirePermissions(Permission.BillingRead, Permission.BillingManage)
 export class BillingController {
   constructor(private readonly billingService: BillingService) {}
@@ -17,81 +19,114 @@ export class BillingController {
   // Invoice endpoints
   @Post('invoices')
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.RECEPTIONIST)
-  createInvoice(@Body() createDto: CreateInvoiceDto, @GetUser() user: User) {
-    return this.billingService.create(createDto, user);
+  @RequirePermissions(Permission.BillingManage)
+  createInvoice(@Body() createDto: CreateInvoiceDto, @GetUser() user: User, @Req() req?: Request) {
+    const scopedClinicId = req ? resolveClinicId(req) : undefined;
+    return this.billingService.create(createDto, user, scopedClinicId);
   }
 
   @Get('invoices')
-  findAllInvoices(@Query('page') page?: number, @Query('pageSize') pageSize?: number, @Query() query?: any) {
+  @RequirePermissions(Permission.BillingRead)
+  findAllInvoices(@Query('page') page?: number, @Query('pageSize') pageSize?: number, @Query() query?: any, @Req() req?: Request) {
     const p = page ? Number(page) : 1;
     const ps = pageSize ? Number(pageSize) : 20;
     const filter = { ...query };
     delete filter.page;
     delete filter.pageSize;
+    const scopedClinicId = req ? resolveClinicId(req) : undefined;
+    if (scopedClinicId && filter.clinicId && filter.clinicId !== scopedClinicId) {
+      throw new BadRequestException('clinicId no coincide con el contexto de clínica');
+    }
+    if (scopedClinicId) {
+      filter.clinicId = scopedClinicId;
+    }
     return this.billingService.findAll(p, ps, filter);
   }
 
   @Get('invoices/:id')
-  findOneInvoice(@Param('id', ParseUUIDPipe) id: string) {
-    return this.billingService.findOne(id);
+  @RequirePermissions(Permission.BillingRead)
+  findOneInvoice(@Param('id', ParseUUIDPipe) id: string, @Req() req?: Request) {
+    const scopedClinicId = req ? resolveClinicId(req) : undefined;
+    return this.billingService.findOne(id, scopedClinicId);
   }
 
   @Patch('invoices/:id')
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.RECEPTIONIST)
-  updateInvoice(@Param('id', ParseUUIDPipe) id: string, @Body() updateDto: UpdateInvoiceDto) {
-    return this.billingService.update(id, updateDto);
+  @RequirePermissions(Permission.BillingManage)
+  updateInvoice(@Param('id', ParseUUIDPipe) id: string, @Body() updateDto: UpdateInvoiceDto, @Req() req?: Request) {
+    const scopedClinicId = req ? resolveClinicId(req) : undefined;
+    return this.billingService.update(id, updateDto, scopedClinicId);
   }
 
   @Patch('invoices/:id/status')
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.RECEPTIONIST)
-  setInvoiceStatus(@Param('id', ParseUUIDPipe) id: string, @Body('status') status: InvoiceStatus) {
-    return this.billingService.setStatus(id, status);
+  @RequirePermissions(Permission.BillingManage)
+  setInvoiceStatus(@Param('id', ParseUUIDPipe) id: string, @Body('status') status: InvoiceStatus, @Req() req?: Request) {
+    const scopedClinicId = req ? resolveClinicId(req) : undefined;
+    return this.billingService.setStatus(id, status, scopedClinicId);
   }
 
   @Delete('invoices/:id')
   @Auth(ValidRoles.ADMIN)
-  deleteInvoice(@Param('id', ParseUUIDPipe) id: string) {
-    return this.billingService.delete(id);
+  @RequirePermissions(Permission.BillingManage)
+  deleteInvoice(@Param('id', ParseUUIDPipe) id: string, @Req() req?: Request) {
+    const scopedClinicId = req ? resolveClinicId(req) : undefined;
+    return this.billingService.delete(id, scopedClinicId);
   }
 
   // Payment endpoints
   @Post('payments')
   @Auth(ValidRoles.ADMIN, ValidRoles.RECEPTIONIST)
-  addPayment(@Body() createDto: CreatePaymentDto, @GetUser() user: User) {
-    return this.billingService.addPayment(createDto, user);
+  @RequirePermissions(Permission.BillingManage)
+  addPayment(@Body() createDto: CreatePaymentDto, @GetUser() user: User, @Req() req?: Request) {
+    const scopedClinicId = req ? resolveClinicId(req) : undefined;
+    return this.billingService.addPayment(createDto, user, scopedClinicId);
   }
 
   @Get('payments/invoice/:invoiceId')
-  getPaymentsByInvoice(@Param('invoiceId', ParseUUIDPipe) invoiceId: string) {
-    return this.billingService.getPaymentsByInvoice(invoiceId);
+  @RequirePermissions(Permission.BillingRead)
+  getPaymentsByInvoice(@Param('invoiceId', ParseUUIDPipe) invoiceId: string, @Req() req?: Request) {
+    const scopedClinicId = req ? resolveClinicId(req) : undefined;
+    return this.billingService.getPaymentsByInvoice(invoiceId, scopedClinicId);
   }
 
   @Patch('payments/:id/confirm')
   @Auth(ValidRoles.ADMIN, ValidRoles.RECEPTIONIST)
-  confirmPayment(@Param('id', ParseUUIDPipe) id: string) {
-    return this.billingService.confirmPayment(id);
+  @RequirePermissions(Permission.BillingManage)
+  confirmPayment(@Param('id', ParseUUIDPipe) id: string, @Req() req?: Request) {
+    const scopedClinicId = req ? resolveClinicId(req) : undefined;
+    return this.billingService.confirmPayment(id, scopedClinicId);
   }
 
   @Patch('payments/:id/cancel')
   @Auth(ValidRoles.ADMIN)
-  cancelPayment(@Param('id', ParseUUIDPipe) id: string) {
-    return this.billingService.cancelPayment(id);
+  @RequirePermissions(Permission.BillingManage)
+  cancelPayment(@Param('id', ParseUUIDPipe) id: string, @Req() req?: Request) {
+    const scopedClinicId = req ? resolveClinicId(req) : undefined;
+    return this.billingService.cancelPayment(id, scopedClinicId);
   }
 
   // Statistics and utilities
   @Get('statistics')
-  getStatistics(@Query('clinicId') clinicId?: string) {
-    return this.billingService.getStatistics(clinicId);
+  @RequirePermissions(Permission.BillingRead)
+  getStatistics(@Query('clinicId') clinicId?: string, @Req() req?: Request) {
+    const scopedClinicId = req ? resolveClinicId(req) : undefined;
+    if (scopedClinicId && clinicId && clinicId !== scopedClinicId) {
+      throw new BadRequestException('clinicId no coincide con el contexto de clínica');
+    }
+    return this.billingService.getStatistics(scopedClinicId || clinicId);
   }
 
   @Get('generate/invoice-number')
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.RECEPTIONIST)
+  @RequirePermissions(Permission.BillingManage)
   generateInvoiceNumber() {
     return this.billingService.generateInvoiceNumber();
   }
 
   @Get('generate/payment-number')
   @Auth(ValidRoles.ADMIN, ValidRoles.RECEPTIONIST)
+  @RequirePermissions(Permission.BillingManage)
   generatePaymentNumber() {
     return this.billingService.generatePaymentNumber();
   }

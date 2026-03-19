@@ -27,6 +27,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 RUN npm install -g @angular/cli
+RUN apk add --no-cache chromium && \
+    if [ -x /usr/bin/chromium-browser ] && [ ! -e /usr/bin/chromium ]; then ln -s /usr/bin/chromium-browser /usr/bin/chromium; fi
+ENV CHROME_BIN=/usr/bin/chromium
 COPY . .
 EXPOSE 4200
 CMD ["npx", "ng", "serve", "--host", "0.0.0.0"]

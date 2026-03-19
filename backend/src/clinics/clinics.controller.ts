@@ -1,7 +1,5 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { Auth, GetUser } from '../auth/decorators';
-import { ClinicRoles } from '../auth/decorators/clinic-roles.decorator';
-import { ClinicScopeGuard } from '../auth/guards/clinic-scope.guard';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Auth, AuthClinic, GetUser } from '../auth/decorators';
 import { ValidRoles } from '../auth/interfaces';
 import { User } from '../users/entities/user.entity';
 import { CreateClinicDto, UpdateClinicDto } from './dto';
@@ -68,24 +66,19 @@ export class ClinicsController {
 
   // Membership management scoped by clinic: SUPER_ADMIN or clinic admin
   @Get(':clinicId/members')
-  @Auth()
-  @UseGuards(ClinicScopeGuard)
+  @AuthClinic()
   getMembers(@Param('clinicId', ParseUUIDPipe) clinicId: string) {
     return this.clinicsService.getClinicMembers(clinicId);
   }
 
   @Post(':clinicId/members')
-  @Auth() // requiere JWT
-  @UseGuards(ClinicScopeGuard)
-  @ClinicRoles('admin')
+  @AuthClinic({ clinicRoles: ['admin'] })
   addMember(@Param('clinicId', ParseUUIDPipe) clinicId: string, @Body() dto: AddClinicMemberDto) {
     return this.clinicsService.addMemberWithRoles(clinicId, dto);
   }
 
   @Patch(':clinicId/members/:userId')
-  @Auth()
-  @UseGuards(ClinicScopeGuard)
-  @ClinicRoles('admin')
+  @AuthClinic({ clinicRoles: ['admin'] })
   updateMember(
     @Param('clinicId', ParseUUIDPipe) clinicId: string,
     @Param('userId', ParseUUIDPipe) userId: string,
@@ -95,9 +88,7 @@ export class ClinicsController {
   }
 
   @Delete(':clinicId/members/:userId')
-  @Auth()
-  @UseGuards(ClinicScopeGuard)
-  @ClinicRoles('admin')
+  @AuthClinic({ clinicRoles: ['admin'] })
   removeMember(@Param('clinicId', ParseUUIDPipe) clinicId: string, @Param('userId', ParseUUIDPipe) userId: string) {
     return this.clinicsService.removeUserFromClinic(userId, clinicId);
   }

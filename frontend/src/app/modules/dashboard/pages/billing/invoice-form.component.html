@@ -134,7 +134,7 @@
           <div
             class="grid md:grid-cols-12 gap-3 items-center"
             *ngFor="let item of items.controls; let i = index"
-            [formGroup]="item"
+            [formGroup]="$any(item)"
           >
             <mat-form-field class="md:col-span-5" appearance="outline">
               <mat-label>Descripción</mat-label>

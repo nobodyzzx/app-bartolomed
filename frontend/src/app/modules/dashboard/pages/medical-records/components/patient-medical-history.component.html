@@ -77,12 +77,6 @@
               <span class="material-symbols-outlined text-orange-500 text-sm">warning</span>
               <span class="text-sm text-slate-700">Alergias: {{ patient.allergies }}</span>
             </div>
-            <div class="flex items-start gap-2" *ngIf="patient.chronicDiseases">
-              <span class="material-symbols-outlined text-purple-500 text-sm">healing</span>
-              <span class="text-sm text-slate-700"
-                >Enfermedades crónicas: {{ patient.chronicDiseases }}</span
-              >
-            </div>
           </div>
         </div>
 
@@ -241,8 +235,8 @@
       </div>
 
       <!-- Mensaje vacío -->
-      <div *ngIf="filteredRecords.length === 0" class="text-center py-16">
-        <span class="material-symbols-outlined text-slate-300 text-6xl mb-4 block"
+      <div *ngIf="filteredRecords.length === 0" class="text-center py-12 px-6">
+        <span class="material-symbols-outlined text-slate-400 text-6xl mb-4 block"
           >description</span
         >
         <p class="text-lg text-slate-500 mb-2">No se encontraron consultas</p>
@@ -268,15 +262,15 @@
                 >
                   <span class="material-symbols-outlined text-base">
                     {{
-                      record.type === 'EMERGENCY'
+                      record.type === RecordType.EMERGENCY
                         ? 'emergency'
-                        : record.type === 'SURGERY'
+                        : record.type === RecordType.SURGERY
                           ? 'healing'
-                          : record.type === 'FOLLOW_UP'
+                          : record.type === RecordType.FOLLOW_UP
                             ? 'refresh'
-                            : record.type === 'LABORATORY'
+                            : record.type === RecordType.LABORATORY
                               ? 'science'
-                              : record.type === 'IMAGING'
+                              : record.type === RecordType.IMAGING
                                 ? 'radiology'
                                 : 'medical_services'
                     }}
@@ -410,11 +404,8 @@
     </div>
 
     <!-- Loading -->
-    <div *ngIf="isLoading" class="flex flex-col justify-center items-center py-16">
-      <div
-        class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"
-      ></div>
-      <p class="text-slate-600">Cargando historial médico...</p>
+    <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+      <mat-spinner diameter="50"></mat-spinner>
     </div>
   </div>
 </div>

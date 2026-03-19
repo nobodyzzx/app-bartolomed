@@ -1,13 +1,14 @@
 import { Component, computed, inject } from '@angular/core'
 
+import { MENU_ITEMS } from '@core/constants/menu-items'
 import { Permission } from '@core/enums/permission.enum'
 import { UserRoles } from '@core/enums/user-roles.enum'
 import { MenuItem } from '@core/interfaces/menu-item.interface'
 import { AlertService } from '@core/services/alert.service'
 import { RoleStateService } from '@core/services/role-state.service'
-import { SidebarService } from '@core/services/sidebar.service'
 import { AuthStatus } from '../../../../app/modules/auth/interfaces/auth-status.enum'
 import { AuthService as AppAuthService } from '../../../../app/modules/auth/services/auth.service'
+import { SidenavService } from '../services/sidenav.service'
 
 @Component({
   selector: 'shared-sidebar',
@@ -15,81 +16,50 @@ import { AuthService as AppAuthService } from '../../../../app/modules/auth/serv
   styleUrls: ['./sidebar.component.scss'],
 })
 export class SidebarComponent {
-  private sidebarService = inject(SidebarService)
+  private sidenavService = inject(SidenavService)
   private authService = inject(RoleStateService)
   private appAuth = inject(AppAuthService)
   private alert = inject(AlertService)
 
-  public isExpanded = this.sidebarService.isExpanded
-  private allMenuItems = this.sidebarService.menuItems
+  public isExpanded = this.sidenavService.isExpanded
 
-  // Signal computada para el menú filtrado
   public filteredMenuItems = computed(() => {
     const userRoles = this.authService.currentUserRoles()
-    if (userRoles.length === 0) {
-      return [] // Si no hay roles (no logueado), no mostrar nada
-    }
-    return this.filterMenuByRoles(this.allMenuItems(), userRoles)
+    if (userRoles.length === 0) return []
+    return this.filterMenuByRoles(MENU_ITEMS, userRoles)
   })
 
-  // Función recursiva para filtrar el menú
   private filterMenuByRoles(items: MenuItem[], roles: UserRoles[]): MenuItem[] {
     if (!items) return []
-
     return items
-      .filter(item => this.hasVisibility(item, roles)) // 1. Filtrar el item padre (roles o permisos)
+      .filter(item => this.hasVisibility(item, roles))
       .map(item => {
-        // 2. Si el item tiene hijos, filtrarlos recursivamente
         if (item.children && item.children.length > 0) {
-          const filteredChildren = this.filterMenuByRoles(item.children, roles)
-          // Clonar el item y asignar los hijos filtrados
-          return { ...item, children: filteredChildren }
+          return { ...item, children: this.filterMenuByRoles(item.children, roles) }
         }
-        // Si no tiene hijos, devolver el item tal cual
         return { ...item }
       })
-      .filter(item => {
-        // 3. Ocultar padres si se quedaron sin hijos visibles
-        // Si un item TIENE hijos definidos (originalmente) pero AHORA no tiene hijos visibles
-        // Y TAMPOCO tiene una ruta propia, entonces no debe mostrarse.
-        if (item.children && item.children.length === 0 && !item.route) {
-          return false
-        }
-        // Tu caso: Los padres SÍ tienen ruta (ej: /medical), así que este filtro
-        // no los ocultará, lo cual es correcto.
-        return true
-      })
+      .filter(item => !(item.children && item.children.length === 0 && !item.route))
   }
 
-  // Helper para verificar permisos
   private hasVisibility(item: MenuItem, userRoles: UserRoles[]): boolean {
-    // Preferir permisos si se definen
     const perms = item.requiredPermissions as Permission[] | undefined
-    if (perms && perms.length > 0) {
-      return this.authService.hasAnyPermission(perms)
-    }
-    // Fallback a roles
+    if (perms && perms.length > 0) return this.authService.hasAnyPermission(perms)
     const allowedRoles = item.allowedRoles || []
     if (allowedRoles.length === 0) return true
     return userRoles.some(role => allowedRoles.includes(role))
   }
 
-  onLogout(): void {
-    // Cerrar sesión real (backend) y limpiar simulador de roles
-    try {
-      this.appAuth.logout()
-    } catch {}
-    // Asegurar limpieza de roles/permisos simulados para coherencia del UI
-    this.authService.logout()
-  }
-
-  // Modo DEMO: si no hay autenticación real, evitamos navegaciones que disparen llamadas 401
   get isDemo(): boolean {
     try {
       return this.appAuth.authStatus() !== AuthStatus.authenticated
     } catch {
       return true
     }
+  }
+
+  trackByLabel(_index: number, item: MenuItem): string {
+    return item.label
   }
 
   onDemoClick(): void {

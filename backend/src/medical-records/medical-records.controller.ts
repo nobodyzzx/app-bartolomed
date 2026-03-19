@@ -10,16 +10,20 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { Auth } from '../auth/decorators';
+import { Auth, AuthClinic, GetUser } from '../auth/decorators';
+import { resolveClinicId } from '../auth/decorators/clinic-roles.decorator';
 import { RequirePermissions } from '../auth/permissions/permissions.decorator';
 import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
+import { User } from '../users/entities/user.entity';
 import {
   CreateConsentFormDto,
   CreateMedicalRecordDto,
@@ -31,7 +35,7 @@ import { ConsentStatus } from './entities';
 import { MedicalRecordFilters, MedicalRecordsService, PaginationOptions } from './medical-records.service';
 
 @Controller('medical-records')
-@Auth()
+@AuthClinic()
 @RequirePermissions(Permission.RecordsRead, Permission.RecordsWrite, Permission.RecordsWriteVitals)
 export class MedicalRecordsController {
   constructor(private readonly medicalRecordsService: MedicalRecordsService) {}
@@ -39,8 +43,8 @@ export class MedicalRecordsController {
   // Medical Records Endpoints
   @Post()
   @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
-  create(@Body() createMedicalRecordDto: CreateMedicalRecordDto) {
-    return this.medicalRecordsService.create(createMedicalRecordDto);
+  create(@Body() createMedicalRecordDto: CreateMedicalRecordDto, @GetUser() user: User) {
+    return this.medicalRecordsService.create(createMedicalRecordDto, user);
   }
 
   @Get()
@@ -55,13 +59,16 @@ export class MedicalRecordsController {
     @Query('isEmergency') isEmergency?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
+    const clinicId = req ? resolveClinicId(req) : undefined;
     const filters: MedicalRecordFilters = {
       search,
       type,
       status,
       patientId,
       doctorId,
+      clinicId,
       startDate,
       endDate,
       isEmergency: isEmergency ? isEmergency === 'true' : undefined,
@@ -77,18 +84,21 @@ export class MedicalRecordsController {
 
   @Get('stats')
   @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
-  getStats() {
-    return this.medicalRecordsService.getStats();
+  getStats(@Req() req: Request) {
+    const clinicId = resolveClinicId(req);
+    return this.medicalRecordsService.getStats(clinicId);
   }
 
   @Get('patient/:patientId')
-  getMedicalRecordsByPatient(@Param('patientId', ParseUUIDPipe) patientId: string) {
-    return this.medicalRecordsService.getMedicalRecordsByPatient(patientId);
+  getMedicalRecordsByPatient(@Param('patientId', ParseUUIDPipe) patientId: string, @Req() req: Request) {
+    const clinicId = resolveClinicId(req);
+    return this.medicalRecordsService.getMedicalRecordsByPatient(patientId, clinicId);
   }
 
   @Get('doctor/:doctorId')
-  getMedicalRecordsByDoctor(@Param('doctorId', ParseUUIDPipe) doctorId: string) {
-    return this.medicalRecordsService.getMedicalRecordsByDoctor(doctorId);
+  getMedicalRecordsByDoctor(@Param('doctorId', ParseUUIDPipe) doctorId: string, @Req() req: Request) {
+    const clinicId = resolveClinicId(req);
+    return this.medicalRecordsService.getMedicalRecordsByDoctor(doctorId, clinicId);
   }
 
   @Get(':id')
@@ -98,8 +108,12 @@ export class MedicalRecordsController {
 
   @Patch(':id')
   @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateMedicalRecordDto: UpdateMedicalRecordDto) {
-    return this.medicalRecordsService.update(id, updateMedicalRecordDto);
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateMedicalRecordDto: UpdateMedicalRecordDto,
+    @GetUser() user: User,
+  ) {
+    return this.medicalRecordsService.update(id, updateMedicalRecordDto, user);
   }
 
   @Delete(':id')

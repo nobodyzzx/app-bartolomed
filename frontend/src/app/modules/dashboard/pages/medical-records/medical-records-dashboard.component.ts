@@ -1,6 +1,5 @@
 import { Location } from '@angular/common'
-import { Component, OnInit, ViewChild, inject } from '@angular/core'
-import { MatDialog } from '@angular/material/dialog'
+import { AfterViewInit, Component, OnInit, ViewChild, inject } from '@angular/core'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
@@ -16,16 +15,11 @@ import { MedicalRecordsService } from './services/medical-records.service'
   templateUrl: './medical-records-dashboard.component.html',
   styleUrls: ['./medical-records-dashboard.component.css'],
 })
-export class MedicalRecordsDashboardComponent implements OnInit {
-  displayedColumns: string[] = [
-    'date',
-    'patient',
-    'type',
-    'chiefComplaint',
-    'doctor',
-    'status',
-    'actions',
-  ]
+export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
+  private appAuth = inject(AppAuthService)
+  private alert = inject(AlertService)
+
+  displayedColumns: string[] = ['date', 'patient', 'type', 'chiefComplaint', 'doctor', 'status', 'actions']
 
   dataSource = new MatTableDataSource<MedicalRecord>([])
   totalRecords = 0
@@ -33,32 +27,28 @@ export class MedicalRecordsDashboardComponent implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator
   @ViewChild(MatSort) sort!: MatSort
 
-  // Filtros
   filters: MedicalRecordFilters = {}
-  recordTypes = Object.values(RecordType)
-  recordStatuses = Object.values(RecordStatus)
+  searchTerm = ''
 
-  // Estadísticas
-  stats = {
-    total: 0,
-    drafts: 0,
-    completed: 0,
-    emergencies: 0,
-  }
-
+  stats = { total: 0, drafts: 0, completed: 0, emergencies: 0 }
   loading = false
+
+  readonly RecordStatus = RecordStatus
+
+  private readonly statusColors: Record<string, string> = {
+    [RecordStatus.DRAFT]:      'bg-amber-100 text-amber-800',
+    [RecordStatus.COMPLETED]:  'bg-green-100 text-green-800',
+    [RecordStatus.REVIEWED]:   'bg-blue-100 text-blue-800',
+    [RecordStatus.ARCHIVED]:   'bg-slate-100 text-slate-700',
+  }
 
   constructor(
     private medicalRecordsService: MedicalRecordsService,
-    private dialog: MatDialog,
     private router: Router,
     private location: Location,
   ) {}
-  private appAuth = inject(AppAuthService)
-  private alert = inject(AlertService)
 
   ngOnInit(): void {
-    // Evitar llamadas al backend en modo DEMO (cuando no hay autenticación real)
     if (this.isAuthenticated()) {
       this.loadMedicalRecords()
       this.loadStats()
@@ -88,14 +78,17 @@ export class MedicalRecordsDashboardComponent implements OnInit {
   loadStats(): void {
     if (!this.isAuthenticated()) return
     this.medicalRecordsService.getMedicalRecordsStats().subscribe({
-      next: stats => {
-        this.stats = stats
-      },
+      next: stats => { this.stats = stats },
       error: () => {},
     })
   }
 
-  // Acciones de tarjetas de estadísticas
+  applyFilter(event: Event): void {
+    this.searchTerm = (event.target as HTMLInputElement).value
+    this.dataSource.filter = this.searchTerm.trim().toLowerCase()
+    if (this.dataSource.paginator) this.dataSource.paginator.firstPage()
+  }
+
   showAllRecords(): void {
     this.filters = {}
     this.loadMedicalRecords()
@@ -116,21 +109,10 @@ export class MedicalRecordsDashboardComponent implements OnInit {
     this.loadMedicalRecords()
   }
 
-  applyFilter(event: Event): void {
-    const filterValue = (event.target as HTMLInputElement).value
-    this.dataSource.filter = filterValue.trim().toLowerCase()
-
-    if (this.dataSource.paginator) {
-      this.dataSource.paginator.firstPage()
-    }
-  }
-
-  applyFilters(): void {
-    this.loadMedicalRecords()
-  }
-
   clearFilters(): void {
     this.filters = {}
+    this.searchTerm = ''
+    this.dataSource.filter = ''
     if (this.isAuthenticated()) this.loadMedicalRecords()
   }
 
@@ -146,21 +128,18 @@ export class MedicalRecordsDashboardComponent implements OnInit {
     this.router.navigate(['/dashboard/medical-records', record.id, 'edit'])
   }
 
+  viewPatientHistory(patientId: string): void {
+    this.router.navigate(['/dashboard/medical-records/patient', patientId, 'history'])
+  }
+
   deleteRecord(record: MedicalRecord): void {
-    if (!this.isAuthenticated()) {
-      this.alert.fire({
-        icon: 'info',
-        title: 'Modo demo',
-        text: 'Para eliminar expedientes, primero inicia sesión con un usuario válido.',
-      })
-      return
-    }
+    if (!this.isAuthenticated()) return
     this.alert
       .fire({
         title: '¿Eliminar expediente?',
-        html: `¿Está seguro de que desea eliminar este expediente médico?<br><br>
-             <strong>Paciente:</strong> ${record.patient?.firstName} ${record.patient?.lastName}<br>
-             <strong>Tipo:</strong> ${this.getTypeText(record.type)}`,
+        html: `¿Está seguro de eliminar este expediente?<br><br>
+               <strong>Paciente:</strong> ${record.patient?.firstName} ${record.patient?.lastName}<br>
+               <strong>Tipo:</strong> ${this.getTypeText(record.type)}`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Sí, eliminar',
@@ -170,20 +149,12 @@ export class MedicalRecordsDashboardComponent implements OnInit {
         if (result.isConfirmed) {
           this.medicalRecordsService.deleteMedicalRecord(record.id!).subscribe({
             next: () => {
-              this.alert.fire({
-                icon: 'success',
-                title: '¡Eliminado!',
-                text: 'El expediente médico ha sido eliminado.',
-              })
+              this.alert.success('Eliminado', 'El expediente médico ha sido eliminado.')
               this.loadMedicalRecords()
               this.loadStats()
             },
-            error: error => {
-              this.alert.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'No se pudo eliminar el expediente médico.',
-              })
+            error: () => {
+              this.alert.error('Error', 'No se pudo eliminar el expediente médico.')
             },
           })
         }
@@ -194,120 +165,61 @@ export class MedicalRecordsDashboardComponent implements OnInit {
     this.location.back()
   }
 
-  viewPatientHistory(patientId: string): void {
-    this.router.navigate(['/dashboard/medical-records/patient', patientId, 'history'])
-  }
-
-  completeRecord(record: MedicalRecord): void {
-    // Actualizar el estado del expediente a 'completed'
-    const updateData = { status: 'completed' as any }
-    if (!this.isAuthenticated()) return
-    this.medicalRecordsService.updateMedicalRecord(record.id!, updateData).subscribe({
-      next: () => {
-        this.loadMedicalRecords()
-      },
-      error: () => {},
-    })
-  }
-
-  reviewRecord(record: MedicalRecord): void {
-    // Actualizar el estado del expediente a 'reviewed'
-    const updateData = { status: 'reviewed' as any }
-    if (!this.isAuthenticated()) return
-    this.medicalRecordsService.updateMedicalRecord(record.id!, updateData).subscribe({
-      next: () => {
-        this.loadMedicalRecords()
-      },
-      error: () => {},
-    })
-  }
-
-  exportRecord(record: MedicalRecord): void {
-    // Por ahora, mostrar un mensaje indicando que la funcionalidad estará disponible próximamente
-    // TODO: Implementar exportación cuando esté disponible en el backend
-  }
-
-  getStatusColor(status: RecordStatus): string {
-    switch (status) {
-      case RecordStatus.DRAFT:
-        return 'warn'
-      case RecordStatus.COMPLETED:
-        return 'primary'
-      case RecordStatus.REVIEWED:
-        return 'accent'
-      case RecordStatus.ARCHIVED:
-        return 'basic'
-      default:
-        return 'basic'
-    }
+  getStatusColor(status: string): string {
+    return this.statusColors[status] ?? 'bg-slate-100 text-slate-700'
   }
 
   getStatusText(status: RecordStatus): string {
-    switch (status) {
-      case RecordStatus.DRAFT:
-        return 'Borrador'
-      case RecordStatus.COMPLETED:
-        return 'Completado'
-      case RecordStatus.REVIEWED:
-        return 'Revisado'
-      case RecordStatus.ARCHIVED:
-        return 'Archivado'
-      default:
-        return status
+    const labels: Record<string, string> = {
+      [RecordStatus.DRAFT]:     'Borrador',
+      [RecordStatus.COMPLETED]: 'Completado',
+      [RecordStatus.REVIEWED]:  'Revisado',
+      [RecordStatus.ARCHIVED]:  'Archivado',
     }
+    return labels[status] ?? status
   }
 
   getTypeText(type: RecordType): string {
-    switch (type) {
-      case RecordType.CONSULTATION:
-        return 'Consulta'
-      case RecordType.EMERGENCY:
-        return 'Emergencia'
-      case RecordType.SURGERY:
-        return 'Cirugía'
-      case RecordType.FOLLOW_UP:
-        return 'Seguimiento'
-      case RecordType.LABORATORY:
-        return 'Laboratorio'
-      case RecordType.IMAGING:
-        return 'Imagenología'
-      case RecordType.OTHER:
-        return 'Otro'
-      default:
-        return type
+    const labels: Record<string, string> = {
+      [RecordType.CONSULTATION]: 'Consulta',
+      [RecordType.EMERGENCY]:    'Emergencia',
+      [RecordType.SURGERY]:      'Cirugía',
+      [RecordType.FOLLOW_UP]:    'Seguimiento',
+      [RecordType.LABORATORY]:   'Laboratorio',
+      [RecordType.IMAGING]:      'Imagenología',
+      [RecordType.OTHER]:        'Otro',
     }
+    return labels[type] ?? type
+  }
+
+  getPatientInitials(record: MedicalRecord): string {
+    const first = record.patient?.firstName?.charAt(0) ?? ''
+    const last  = record.patient?.lastName?.charAt(0) ?? ''
+    return (first + last).toUpperCase() || '?'
   }
 
   getRecordIcon(type: RecordType): string {
-    switch (type) {
-      case RecordType.CONSULTATION:
-        return 'assignment'
-      case RecordType.EMERGENCY:
-        return 'emergency'
-      case RecordType.SURGERY:
-        return 'healing'
-      case RecordType.FOLLOW_UP:
-        return 'update'
-      case RecordType.LABORATORY:
-        return 'biotech'
-      case RecordType.IMAGING:
-        return 'camera_alt'
-      case RecordType.OTHER:
-        return 'description'
-      default:
-        return 'description'
+    const icons: Record<string, string> = {
+      [RecordType.CONSULTATION]: 'assignment',
+      [RecordType.EMERGENCY]:    'emergency',
+      [RecordType.SURGERY]:      'healing',
+      [RecordType.FOLLOW_UP]:    'update',
+      [RecordType.LABORATORY]:   'biotech',
+      [RecordType.IMAGING]:      'camera_alt',
+      [RecordType.OTHER]:        'description',
     }
+    return icons[type] ?? 'description'
   }
+
+  get isDemo(): boolean {
+    return !this.isAuthenticated()
+  }
+
   private isAuthenticated(): boolean {
     try {
       return this.appAuth.authStatus() === AuthStatus.authenticated
     } catch {
       return false
     }
-  }
-
-  // Exponer a la plantilla si estamos en modo demo (sin autenticación real)
-  get isDemo(): boolean {
-    return !this.isAuthenticated()
   }
 }

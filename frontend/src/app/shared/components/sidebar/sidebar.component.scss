@@ -1,38 +1,6 @@
-/* Estilos para coherencia visual del sidebar (override Angular Material) */
-
-/* Expansion panel: forzar fondo azul claro en contenedor, header y body */
-:host ::ng-deep .mat-expansion-panel {
-  background-color: #eff6ff !important; /* blue-50 */
+/* Expansion panel: usar variables MDC en vez de ::ng-deep */
+mat-expansion-panel {
+  --mat-expansion-container-background-color: #eff6ff; /* blue-50 */
+  --mat-expansion-header-hover-state-layer-color: #dbeafe; /* blue-100 */
   box-shadow: none !important;
-}
-
-:host ::ng-deep .mat-expansion-panel-header {
-  background-color: #eff6ff !important; /* blue-50 */
-}
-
-:host ::ng-deep .mat-expansion-panel-content,
-:host ::ng-deep .mat-expansion-panel-body {
-  background-color: #eff6ff !important; /* blue-50 */
-}
-
-/* Menú flotante en modo colapsado: fondo y bordes coherentes */
-:host ::ng-deep .sidebar-menu-panel.mat-mdc-menu-panel {
-  --mdc-theme-surface: #eff6ff; /* para algunos tokens MDC */
-  background-color: #eff6ff !important; /* blue-50 */
-  border-radius: 0.5rem; /* rounded-lg */
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-:host ::ng-deep .sidebar-menu-panel .mat-mdc-menu-content {
-  background-color: #eff6ff !important;
-}
-
-:host ::ng-deep .sidebar-menu-panel .mdc-list-item {
-  background-color: transparent !important;
-}
-
-:host ::ng-deep .sidebar-menu-panel .mdc-list-item:hover {
-  background-color: #dbeafe !important; /* blue-100 */
 }

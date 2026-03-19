@@ -1,11 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Patient } from '../../patients/entities/patient.entity';
 import { Appointment, AppointmentStatus } from '../../appointments/entities/appointment.entity';
 import { MedicalRecord } from '../../medical-records/entities/medical-record.entity';
 import { Prescription } from '../../prescriptions/entities/prescription.entity';
-import { Invoice, InvoiceStatus } from '../../billing/entities/billing.entity';
+import { Invoice, InvoiceStatus, Payment, PaymentStatus } from '../../billing/entities/billing.entity';
+import { MedicationStock } from '../../pharmacy/entities/pharmacy.entity';
 
 export interface DateRange {
   startDate: string;
@@ -32,27 +33,51 @@ export class ReportsService {
     private readonly prescriptionRepository: Repository<Prescription>,
     @InjectRepository(Invoice)
     private readonly invoiceRepository: Repository<Invoice>,
+    @InjectRepository(Payment)
+    private readonly paymentRepository: Repository<Payment>,
+    @InjectRepository(MedicationStock)
+    private readonly medicationStockRepository: Repository<MedicationStock>,
   ) {}
+
+  private requireClinicId(filters: ReportFilters): string {
+    if (!filters.clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+    return filters.clinicId;
+  }
+
+  private applyDateRange(
+    queryBuilder: any,
+    field: string,
+    dateRange?: DateRange,
+    parameterPrefix: string = 'date',
+  ): void {
+    if (!dateRange) return;
+    queryBuilder.andWhere(`${field} BETWEEN :${parameterPrefix}Start AND :${parameterPrefix}End`, {
+      [`${parameterPrefix}Start`]: dateRange.startDate,
+      [`${parameterPrefix}End`]: dateRange.endDate,
+    });
+  }
 
   // REPORTES MÉDICOS
   async getPatientDemographicsReport(filters: ReportFilters) {
-    const queryBuilder = this.patientRepository.createQueryBuilder('patient');
+    const clinicId = this.requireClinicId(filters);
+    const queryBuilder = this.patientRepository
+      .createQueryBuilder('patient')
+      .leftJoin('patient.clinic', 'clinic')
+      .where('clinic.id = :clinicId', { clinicId })
+      .andWhere('patient.isActive = true');
 
-    if (filters.clinicId) {
-      queryBuilder.andWhere('patient.clinic.id = :clinicId', { clinicId: filters.clinicId });
+    if (filters.patientId) {
+      queryBuilder.andWhere('patient.id = :patientId', { patientId: filters.patientId });
     }
+    this.applyDateRange(queryBuilder, 'patient.createdAt', filters.dateRange, 'patients');
 
-    if (filters.dateRange) {
-      queryBuilder.andWhere('patient.createdAt BETWEEN :startDate AND :endDate', {
-        startDate: filters.dateRange.startDate,
-        endDate: filters.dateRange.endDate,
-      });
-    }
-
-    const totalPatients = await queryBuilder.getCount();
+    const totalPatients = await queryBuilder.clone().getCount();
 
     // Distribución por género
     const genderDistribution = await queryBuilder
+      .clone()
       .select('patient.gender', 'gender')
       .addSelect('COUNT(*)', 'count')
       .groupBy('patient.gender')
@@ -60,6 +85,7 @@ export class ReportsService {
 
     // Distribución por grupos de edad
     const ageDistribution = await queryBuilder
+      .clone()
       .select(
         `CASE 
           WHEN EXTRACT(YEAR FROM AGE(patient.birthDate)) < 18 THEN 'Under 18'
@@ -76,9 +102,10 @@ export class ReportsService {
 
     // Distribución por tipo de sangre
     const bloodTypeDistribution = await queryBuilder
+      .clone()
       .select('patient.bloodType', 'bloodType')
       .addSelect('COUNT(*)', 'count')
-      .where('patient.bloodType IS NOT NULL')
+      .andWhere('patient.bloodType IS NOT NULL')
       .groupBy('patient.bloodType')
       .getRawMany();
 
@@ -91,27 +118,30 @@ export class ReportsService {
   }
 
   async getAppointmentStatisticsReport(filters: ReportFilters) {
-    const queryBuilder = this.appointmentRepository.createQueryBuilder('appointment');
-
-    if (filters.clinicId) {
-      queryBuilder.andWhere('appointment.clinic.id = :clinicId', { clinicId: filters.clinicId });
-    }
+    const clinicId = this.requireClinicId(filters);
+    const queryBuilder = this.appointmentRepository
+      .createQueryBuilder('appointment')
+      .leftJoin('appointment.clinic', 'clinic')
+      .leftJoin('appointment.doctor', 'doctor')
+      .leftJoin('appointment.patient', 'patient')
+      .where('clinic.id = :clinicId', { clinicId })
+      .andWhere('appointment.isActive = true');
 
     if (filters.doctorId) {
-      queryBuilder.andWhere('appointment.doctor.id = :doctorId', { doctorId: filters.doctorId });
+      queryBuilder.andWhere('doctor.id = :doctorId', { doctorId: filters.doctorId });
     }
 
-    if (filters.dateRange) {
-      queryBuilder.andWhere('appointment.appointmentDate BETWEEN :startDate AND :endDate', {
-        startDate: filters.dateRange.startDate,
-        endDate: filters.dateRange.endDate,
-      });
+    if (filters.patientId) {
+      queryBuilder.andWhere('patient.id = :patientId', { patientId: filters.patientId });
     }
 
-    const totalAppointments = await queryBuilder.getCount();
+    this.applyDateRange(queryBuilder, 'appointment.appointmentDate', filters.dateRange, 'appointments');
+
+    const totalAppointments = await queryBuilder.clone().getCount();
 
     // Distribución por estado
     const statusDistribution = await queryBuilder
+      .clone()
       .select('appointment.status', 'status')
       .addSelect('COUNT(*)', 'count')
       .groupBy('appointment.status')
@@ -119,6 +149,7 @@ export class ReportsService {
 
     // Distribución por tipo
     const typeDistribution = await queryBuilder
+      .clone()
       .select('appointment.type', 'type')
       .addSelect('COUNT(*)', 'count')
       .groupBy('appointment.type')
@@ -126,6 +157,7 @@ export class ReportsService {
 
     // Distribución por mes
     const monthlyDistribution = await queryBuilder
+      .clone()
       .select("TO_CHAR(appointment.appointmentDate, 'YYYY-MM')", 'month')
       .addSelect('COUNT(*)', 'count')
       .groupBy('month')
@@ -134,7 +166,8 @@ export class ReportsService {
 
     // Tasa de cancelación
     const cancelledAppointments = await queryBuilder
-      .where('appointment.status = :status', { status: AppointmentStatus.CANCELLED })
+      .clone()
+      .andWhere('appointment.status = :status', { status: AppointmentStatus.CANCELLED })
       .getCount();
 
     const cancellationRate = totalAppointments > 0 ? (cancelledAppointments / totalAppointments) * 100 : 0;
@@ -149,29 +182,25 @@ export class ReportsService {
   }
 
   async getDoctorPerformanceReport(filters: ReportFilters) {
+    const clinicId = this.requireClinicId(filters);
     const queryBuilder = this.appointmentRepository
       .createQueryBuilder('appointment')
-      .leftJoinAndSelect('appointment.doctor', 'doctor');
-
-    if (filters.clinicId) {
-      queryBuilder.andWhere('appointment.clinic.id = :clinicId', { clinicId: filters.clinicId });
-    }
+      .leftJoin('appointment.doctor', 'doctor')
+      .leftJoin('doctor.personalInfo', 'personalInfo')
+      .leftJoin('appointment.clinic', 'clinic')
+      .where('clinic.id = :clinicId', { clinicId })
+      .andWhere('appointment.isActive = true');
 
     if (filters.doctorId) {
-      queryBuilder.andWhere('appointment.doctor.id = :doctorId', { doctorId: filters.doctorId });
+      queryBuilder.andWhere('doctor.id = :doctorId', { doctorId: filters.doctorId });
     }
 
-    if (filters.dateRange) {
-      queryBuilder.andWhere('appointment.appointmentDate BETWEEN :startDate AND :endDate', {
-        startDate: filters.dateRange.startDate,
-        endDate: filters.dateRange.endDate,
-      });
-    }
+    this.applyDateRange(queryBuilder, 'appointment.appointmentDate', filters.dateRange, 'doctorPerf');
 
     // Estadísticas por doctor
     const doctorStats = await queryBuilder
       .select('doctor.id', 'doctorId')
-      .addSelect("CONCAT(doctor.personalInfo.firstName, ' ', doctor.personalInfo.lastName)", 'doctorName')
+      .addSelect("CONCAT(personalInfo.firstName, ' ', personalInfo.lastName)", 'doctorName')
       .addSelect('COUNT(*)', 'totalAppointments')
       .addSelect('SUM(CASE WHEN appointment.status = :completedStatus THEN 1 ELSE 0 END)', 'completedAppointments')
       .addSelect('SUM(CASE WHEN appointment.status = :cancelledStatus THEN 1 ELSE 0 END)', 'cancelledAppointments')
@@ -179,36 +208,38 @@ export class ReportsService {
       .setParameter('completedStatus', AppointmentStatus.COMPLETED)
       .setParameter('cancelledStatus', AppointmentStatus.CANCELLED)
       .groupBy('doctor.id')
-      .addGroupBy('doctorName')
+      .addGroupBy('personalInfo.firstName')
+      .addGroupBy('personalInfo.lastName')
       .getRawMany();
 
     return doctorStats;
   }
 
   async getMedicalRecordsReport(filters: ReportFilters) {
-    const queryBuilder = this.medicalRecordRepository.createQueryBuilder('record');
-
-    if (filters.clinicId) {
-      queryBuilder
-        .leftJoin('record.patient', 'patient')
-        .andWhere('patient.clinic.id = :clinicId', { clinicId: filters.clinicId });
-    }
+    const clinicId = this.requireClinicId(filters);
+    const queryBuilder = this.medicalRecordRepository
+      .createQueryBuilder('record')
+      .leftJoin('record.patient', 'patient')
+      .leftJoin('patient.clinic', 'clinic')
+      .leftJoin('record.doctor', 'doctor')
+      .where('clinic.id = :clinicId', { clinicId })
+      .andWhere('record.isActive = true');
 
     if (filters.doctorId) {
-      queryBuilder.andWhere('record.doctor.id = :doctorId', { doctorId: filters.doctorId });
+      queryBuilder.andWhere('doctor.id = :doctorId', { doctorId: filters.doctorId });
     }
 
-    if (filters.dateRange) {
-      queryBuilder.andWhere('record.createdAt BETWEEN :startDate AND :endDate', {
-        startDate: filters.dateRange.startDate,
-        endDate: filters.dateRange.endDate,
-      });
+    if (filters.patientId) {
+      queryBuilder.andWhere('patient.id = :patientId', { patientId: filters.patientId });
     }
 
-    const totalRecords = await queryBuilder.getCount();
+    this.applyDateRange(queryBuilder, 'record.createdAt', filters.dateRange, 'records');
+
+    const totalRecords = await queryBuilder.clone().getCount();
 
     // Distribución por tipo
     const typeDistribution = await queryBuilder
+      .clone()
       .select('record.type', 'type')
       .addSelect('COUNT(*)', 'count')
       .groupBy('record.type')
@@ -216,6 +247,7 @@ export class ReportsService {
 
     // Distribución por estado
     const statusDistribution = await queryBuilder
+      .clone()
       .select('record.status', 'status')
       .addSelect('COUNT(*)', 'count')
       .groupBy('record.status')
@@ -230,22 +262,19 @@ export class ReportsService {
 
   // REPORTES FINANCIEROS
   async getFinancialSummaryReport(filters: ReportFilters) {
-    const queryBuilder = this.invoiceRepository.createQueryBuilder('invoice');
+    const clinicId = this.requireClinicId(filters);
+    const queryBuilder = this.invoiceRepository
+      .createQueryBuilder('invoice')
+      .leftJoin('invoice.clinic', 'clinic')
+      .where('clinic.id = :clinicId', { clinicId })
+      .andWhere('invoice.isActive = true');
 
-    if (filters.clinicId) {
-      queryBuilder.andWhere('invoice.clinic.id = :clinicId', { clinicId: filters.clinicId });
-    }
+    this.applyDateRange(queryBuilder, 'invoice.issueDate', filters.dateRange, 'financial');
 
-    if (filters.dateRange) {
-      queryBuilder.andWhere('invoice.issueDate BETWEEN :startDate AND :endDate', {
-        startDate: filters.dateRange.startDate,
-        endDate: filters.dateRange.endDate,
-      });
-    }
-
-    const totalInvoices = await queryBuilder.getCount();
+    const totalInvoices = await queryBuilder.clone().getCount();
 
     const summary = await queryBuilder
+      .clone()
       .select('SUM(invoice.totalAmount)', 'totalBilled')
       .addSelect('SUM(invoice.paidAmount)', 'totalPaid')
       .addSelect('SUM(invoice.remainingAmount)', 'totalOutstanding')
@@ -257,6 +286,7 @@ export class ReportsService {
 
     // Ingresos por mes
     const monthlyRevenue = await queryBuilder
+      .clone()
       .select("TO_CHAR(invoice.issueDate, 'YYYY-MM')", 'month')
       .addSelect('SUM(invoice.totalAmount)', 'totalBilled')
       .addSelect('SUM(invoice.paidAmount)', 'totalPaid')
@@ -275,24 +305,21 @@ export class ReportsService {
   }
 
   async getPaymentMethodReport(filters: ReportFilters) {
-    const queryBuilder = this.invoiceRepository.createQueryBuilder('invoice').leftJoin('invoice.payments', 'payment');
+    const clinicId = this.requireClinicId(filters);
+    const queryBuilder = this.paymentRepository
+      .createQueryBuilder('payment')
+      .leftJoin('payment.invoice', 'invoice')
+      .leftJoin('invoice.clinic', 'clinic')
+      .where('clinic.id = :clinicId', { clinicId })
+      .andWhere('payment.isActive = true')
+      .andWhere('payment.status = :status', { status: PaymentStatus.COMPLETED });
 
-    if (filters.clinicId) {
-      queryBuilder.andWhere('invoice.clinic.id = :clinicId', { clinicId: filters.clinicId });
-    }
-
-    if (filters.dateRange) {
-      queryBuilder.andWhere('payment.paymentDate BETWEEN :startDate AND :endDate', {
-        startDate: filters.dateRange.startDate,
-        endDate: filters.dateRange.endDate,
-      });
-    }
+    this.applyDateRange(queryBuilder, 'payment.paymentDate', filters.dateRange, 'paymentMethods');
 
     const paymentMethods = await queryBuilder
       .select('payment.method', 'method')
       .addSelect('COUNT(*)', 'count')
       .addSelect('SUM(payment.amount)', 'totalAmount')
-      .where('payment.status = :status', { status: 'completed' })
       .groupBy('payment.method')
       .getRawMany();
 
@@ -301,13 +328,31 @@ export class ReportsService {
 
   // REPORTES DE INVENTARIO
   async getStockReport(filters: ReportFilters) {
-    // Este reporte se implementaría cuando tengamos el repositorio de MedicationStock
-    // Por ahora retornamos un placeholder
-    // TODO: Implementar con filtros cuando esté disponible el repositorio de MedicationStock
+    const clinicId = this.requireClinicId(filters);
+    const queryBuilder = this.medicationStockRepository
+      .createQueryBuilder('stock')
+      .leftJoinAndSelect('stock.medication', 'medication')
+      .leftJoin('stock.clinic', 'clinic')
+      .where('clinic.id = :clinicId', { clinicId })
+      .andWhere('stock.isActive = true');
+
+    this.applyDateRange(queryBuilder, 'stock.receivedDate', filters.dateRange, 'stock');
+
+    const [lowStockMedications, expiringMedications, stockValueRaw] = await Promise.all([
+      queryBuilder.clone().andWhere('stock.availableQuantity <= stock.minimumStock').getMany(),
+      queryBuilder.clone().andWhere('stock.expiryDate <= :expiringDate', {
+        expiringDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      }).getMany(),
+      queryBuilder
+        .clone()
+        .select('SUM(stock.availableQuantity * stock.unitCost)', 'stockValue')
+        .getRawOne(),
+    ]);
+
     return {
-      lowStockMedications: [],
-      expiringMedications: [],
-      stockValue: 0,
+      lowStockMedications,
+      expiringMedications,
+      stockValue: Number(stockValueRaw?.stockValue || 0),
     };
   }
 

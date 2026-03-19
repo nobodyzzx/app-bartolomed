@@ -6,7 +6,7 @@ import { throwError } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 import { environment } from '../../../../environments/environments'
 import { ErrorService } from '../../../../shared/components/services/error.service'
-import { SidenavService } from '../../../../shared/components/services/sidenav.services'
+import { SidenavService } from '../../../../shared/components/services/sidenav.service'
 
 interface Appointment {
   id: string

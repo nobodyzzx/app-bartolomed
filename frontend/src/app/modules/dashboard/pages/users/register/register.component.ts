@@ -5,7 +5,7 @@ import { AlertService } from '@core/services/alert.service'
 import { of } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
-import { SidenavService } from '../../../../../shared/components/services/sidenav.services'
+import { SidenavService } from '../../../../../shared/components/services/sidenav.service'
 import { Role, RolesService } from '../../../services/roles.service'
 import { ClinicsService } from '../../clinics/services/clinics.service'
 import { UsersService } from '../users.service'
@@ -124,7 +124,7 @@ export class UserRegisterComponent implements OnInit {
           this.isEditMode = !!this.userId
 
           if (this.isEditMode && this.userId) {
-            return this.usersService.findOne(this.userId)
+            return this.usersService.getUserById(this.userId)
           }
           return of(null)
         }),

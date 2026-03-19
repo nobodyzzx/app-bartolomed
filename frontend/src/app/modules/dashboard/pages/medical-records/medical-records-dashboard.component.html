@@ -1,14 +1,11 @@
 <div class="min-h-screen bg-slate-50 p-8">
   <div class="max-w-7xl mx-auto">
+
     <!-- Aviso de Modo DEMO -->
     <div *ngIf="isDemo" class="mb-10">
-      <div
-        class="bg-amber-50 border-l-4 border-amber-500 p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow"
-      >
+      <div class="bg-amber-50 border-l-4 border-amber-500 p-6 rounded-xl shadow-md">
         <div class="flex items-start gap-4">
-          <div
-            class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0"
-          >
+          <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
             <span class="material-symbols-outlined msz-24 text-amber-600">info</span>
           </div>
           <div class="flex-1">
@@ -29,391 +26,310 @@
           type="button"
           (click)="goBack()"
           class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          matTooltip="Volver"
           aria-label="Volver"
         >
           <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
         </button>
-        <div class="text-left">
+        <div>
           <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Expedientes Médicos</h1>
           <p class="text-slate-600">Gestión completa de historiales clínicos</p>
         </div>
       </div>
       <button
         type="button"
-        routerLink="new"
+        (click)="createNewRecord()"
         [disabled]="isDemo"
-        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
-        matTooltip="Inicia sesión para crear expedientes"
-        [matTooltipDisabled]="!isDemo"
-        aria-label="Crear nuevo expediente"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
       >
-        <span class="material-symbols-outlined msz-20 leading-none">add</span>
+        <span class="material-symbols-outlined msz-18 leading-none">add</span>
         Nuevo Expediente
       </button>
     </div>
 
-    <!-- Estadísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-      <!-- Total Expedientes -->
+    <!-- Tarjetas de estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+
       <div
-        class="bg-blue-50 p-4 rounded-xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+        class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="!filters.status && !filters.isEmergency"
+        [class.ring-blue-400]="!filters.status && !filters.isEmergency"
         (click)="showAllRecords()"
       >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-blue-600 text-sm font-semibold">Total Expedientes</p>
-            <p class="text-3xl font-bold text-blue-900 mt-2">{{ stats.total }}</p>
-            <p class="text-xs text-blue-600/60 mt-1">Registros en el sistema</p>
+            <p class="text-3xl font-bold text-blue-900 mt-1">{{ stats.total }}</p>
+            <p class="text-xs text-blue-500 mt-1">Registros en el sistema</p>
           </div>
-          <span class="material-symbols-outlined text-blue-500 msz-40 !w-10 !h-10"
-            >folder_shared</span
-          >
+          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">folder_shared</span>
         </div>
       </div>
 
-      <!-- Borradores -->
       <div
-        class="bg-orange-50 p-4 rounded-xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+        class="bg-amber-50 p-5 rounded-2xl border-l-4 border-amber-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="filters.status === RecordStatus.DRAFT"
+        [class.ring-amber-400]="filters.status === RecordStatus.DRAFT"
         (click)="showDrafts()"
       >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-orange-600 text-sm font-semibold">Borradores</p>
-            <p class="text-3xl font-bold text-orange-900 mt-2">{{ stats.drafts }}</p>
-            <p class="text-xs text-orange-600/60 mt-1">Pendientes de completar</p>
+            <p class="text-amber-600 text-sm font-semibold">Borradores</p>
+            <p class="text-3xl font-bold text-amber-900 mt-1">{{ stats.drafts }}</p>
+            <p class="text-xs text-amber-500 mt-1">Pendientes de completar</p>
           </div>
-          <span class="material-symbols-outlined text-orange-500 msz-40 !w-10 !h-10"
-            >edit_note</span
-          >
+          <span class="material-symbols-outlined text-amber-300" style="font-size: 40px">edit_note</span>
         </div>
       </div>
 
-      <!-- Completados -->
       <div
-        class="bg-green-50 p-4 rounded-xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+        class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="filters.status === RecordStatus.COMPLETED"
+        [class.ring-green-400]="filters.status === RecordStatus.COMPLETED"
         (click)="showCompleted()"
       >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-green-600 text-sm font-semibold">Completados</p>
-            <p class="text-3xl font-bold text-green-900 mt-2">{{ stats.completed }}</p>
-            <p class="text-xs text-green-600/60 mt-1">Expedientes finalizados</p>
+            <p class="text-3xl font-bold text-green-900 mt-1">{{ stats.completed }}</p>
+            <p class="text-xs text-green-500 mt-1">Expedientes finalizados</p>
           </div>
-          <span class="material-symbols-outlined text-green-500 msz-40 !w-10 !h-10"
-            >check_circle</span
-          >
+          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">check_circle</span>
         </div>
       </div>
 
-      <!-- Emergencias -->
       <div
-        class="bg-red-50 p-4 rounded-xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+        class="bg-red-50 p-5 rounded-2xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="filters.isEmergency"
+        [class.ring-red-400]="filters.isEmergency"
         (click)="showEmergencies()"
       >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-red-600 text-sm font-semibold">Emergencias</p>
-            <p class="text-3xl font-bold text-red-900 mt-2">{{ stats.emergencies }}</p>
-            <p class="text-xs text-red-600/60 mt-1">Atención prioritaria</p>
+            <p class="text-3xl font-bold text-red-900 mt-1">{{ stats.emergencies }}</p>
+            <p class="text-xs text-red-500 mt-1">Atención prioritaria</p>
           </div>
-          <span class="material-symbols-outlined text-red-500 msz-40 !w-10 !h-10">emergency</span>
+          <span class="material-symbols-outlined text-red-300" style="font-size: 40px">emergency</span>
         </div>
       </div>
+
     </div>
 
-    <!-- Búsqueda y Acciones -->
-    <div class="flex items-center gap-4 mb-6">
-      <div class="flex-1 max-w-2xl">
-        <div class="relative">
-          <input
-            type="text"
-            (keyup)="applyFilter($event)"
-            placeholder="Paciente, diagnóstico, doctor..."
-            class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
-          />
-          <span class="material-symbols-outlined absolute right-3 top-2.5 text-blue-400"
-            >search</span
+    <!-- Contenedor principal: buscador + tabla -->
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+
+      <!-- Buscador -->
+      <div class="p-6 border-b border-slate-100">
+        <div class="flex items-center gap-4">
+          <div class="flex-1 max-w-md relative">
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              (input)="applyFilter($event)"
+              placeholder="Paciente, diagnóstico, doctor..."
+              class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
+            />
+            <span class="material-symbols-outlined absolute right-4 top-2.5 text-blue-400 msz-18">search</span>
+          </div>
+          <button
+            *ngIf="searchTerm || filters.status || filters.isEmergency"
+            type="button"
+            (click)="clearFilters()"
+            class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all border-0"
           >
+            <span class="material-symbols-outlined msz-16">close</span>
+            Limpiar filtros
+          </button>
         </div>
       </div>
 
-      <button
-        type="button"
-        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-      >
-        <span class="material-symbols-outlined msz-18">search</span>
-        Buscar
-      </button>
+      <!-- Cargando -->
+      <div *ngIf="loading" class="flex justify-center items-center py-12">
+        <mat-spinner diameter="50"></mat-spinner>
+      </div>
 
-      <div class="flex-1"></div>
+      <!-- Estado vacío -->
+      <div *ngIf="!loading && dataSource.data.length === 0" class="text-center py-12 px-6">
+        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">folder_open</span>
+        <p class="text-lg font-semibold text-slate-700 mb-2">Sin expedientes médicos</p>
+        <p class="text-sm text-slate-400 mb-6">Comienza creando el primer expediente</p>
+        <button
+          *ngIf="!isDemo"
+          type="button"
+          (click)="createNewRecord()"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none">add</span>
+          Nuevo Expediente
+        </button>
+      </div>
 
-      <button
-        type="button"
-        [disabled]="isDemo"
-        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
-        matTooltip="Inicia sesión para exportar"
-        [matTooltipDisabled]="!isDemo"
-      >
-        <span class="material-symbols-outlined msz-18">download</span>
-        Exportar
-      </button>
-    </div>
-
-    <!-- Tabla de Expedientes -->
-    <div class="bg-white rounded-xl shadow-md overflow-hidden">
-      <div class="overflow-x-auto">
+      <!-- Tabla -->
+      <div *ngIf="!loading && dataSource.data.length > 0" class="overflow-x-auto">
         <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
-          <!-- Columna Fecha -->
+
+          <!-- Fecha -->
           <ng-container matColumnDef="date">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              mat-sort-header
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">schedule</span>
-                Fecha
-              </div>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</span>
             </th>
-            <td mat-cell *matCellDef="let record" class="p-4">
+            <td mat-cell *matCellDef="let record" class="px-6 py-4">
               <div class="flex flex-col">
-                <span class="font-medium text-slate-900">{{
-                  record.createdAt | date: 'short'
-                }}</span>
-                <span
-                  class="text-xs text-red-600 font-semibold flex items-center gap-1 mt-1"
-                  *ngIf="record.isEmergency"
-                >
-                  <span class="material-symbols-outlined msz-14">emergency</span>
+                <span class="text-sm font-medium text-slate-900">{{ record.createdAt | date: 'dd/MM/yyyy' }}</span>
+                <span *ngIf="record.isEmergency" class="text-xs text-red-600 font-semibold flex items-center gap-1 mt-0.5">
+                  <span class="material-symbols-outlined msz-12">emergency</span>
                   EMERGENCIA
                 </span>
               </div>
             </td>
           </ng-container>
 
-          <!-- Columna Paciente -->
+          <!-- Paciente -->
           <ng-container matColumnDef="patient">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              mat-sort-header
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">person</span>
-                Paciente
-              </div>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</span>
             </th>
-            <td mat-cell *matCellDef="let record" class="p-4">
+            <td mat-cell *matCellDef="let record" class="px-6 py-4">
               <div class="flex items-center gap-3">
-                <div
-                  class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0"
-                >
-                  <span class="material-symbols-outlined text-blue-600 msz-20">person</span>
+                <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0 font-semibold text-sm">
+                  {{ getPatientInitials(record) }}
                 </div>
                 <div>
                   <div class="font-medium text-slate-900">
                     {{ record.patient?.firstName }} {{ record.patient?.lastName }}
                   </div>
-                  <div class="text-sm text-slate-600">{{ record.patient?.documentNumber }}</div>
+                  <div *ngIf="record.patient?.documentNumber" class="text-xs text-slate-400">
+                    {{ record.patient?.documentNumber }}
+                  </div>
                 </div>
               </div>
             </td>
           </ng-container>
 
-          <!-- Columna Tipo -->
+          <!-- Tipo -->
           <ng-container matColumnDef="type">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              mat-sort-header
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">category</span>
-                Tipo
-              </div>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Tipo</span>
             </th>
-            <td mat-cell *matCellDef="let record" class="p-4">
+            <td mat-cell *matCellDef="let record" class="px-6 py-4">
               <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">{{
-                  getRecordIcon(record.type)
-                }}</span>
-                <span class="text-slate-600">{{ getTypeText(record.type) }}</span>
+                <span class="material-symbols-outlined text-slate-400 msz-18">{{ getRecordIcon(record.type) }}</span>
+                <span class="text-sm text-slate-700">{{ getTypeText(record.type) }}</span>
               </div>
             </td>
           </ng-container>
 
-          <!-- Columna Motivo de Consulta -->
+          <!-- Motivo -->
           <ng-container matColumnDef="chiefComplaint">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">description</span>
-                Motivo de Consulta
-              </div>
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Motivo</span>
             </th>
-            <td mat-cell *matCellDef="let record" class="p-4">
-              <span class="max-w-xs truncate block text-slate-600" [title]="record.chiefComplaint">
-                {{ record.chiefComplaint }}
+            <td mat-cell *matCellDef="let record" class="px-6 py-4">
+              <span class="text-sm text-slate-600 max-w-xs truncate block" [title]="record.chiefComplaint">
+                {{ record.chiefComplaint || '—' }}
               </span>
             </td>
           </ng-container>
 
-          <!-- Columna Doctor -->
+          <!-- Doctor -->
           <ng-container matColumnDef="doctor">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">medical_services</span>
-                Doctor
-              </div>
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Doctor</span>
             </th>
-            <td mat-cell *matCellDef="let record" class="p-4">
-              <div class="flex flex-col">
-                <span class="font-medium text-slate-900">
-                  Dr. {{ record.doctor?.personalInfo?.firstName }}
-                  {{ record.doctor?.personalInfo?.lastName }}
-                </span>
-                <span
-                  class="text-sm text-slate-600"
-                  *ngIf="record.doctor?.professionalInfo?.specialization"
-                >
+            <td mat-cell *matCellDef="let record" class="px-6 py-4">
+              <div>
+                <div class="text-sm font-medium text-slate-900">
+                  Dr. {{ record.doctor?.personalInfo?.firstName }} {{ record.doctor?.personalInfo?.lastName }}
+                </div>
+                <div *ngIf="record.doctor?.professionalInfo?.specialization" class="text-xs text-slate-400">
                   {{ record.doctor?.professionalInfo?.specialization }}
-                </span>
+                </div>
               </div>
             </td>
           </ng-container>
 
-          <!-- Columna Estado -->
+          <!-- Estado -->
           <ng-container matColumnDef="status">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              mat-sort-header
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">flag</span>
-                Estado
-              </div>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
             </th>
-            <td mat-cell *matCellDef="let record" class="p-4">
+            <td mat-cell *matCellDef="let record" class="px-6 py-4">
               <span
-                class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
-                [ngClass]="{
-                  'bg-orange-100 text-orange-800 border-orange-200': record.status === 'draft',
-                  'bg-green-100 text-green-800 border-green-200': record.status === 'completed',
-                  'bg-blue-100 text-blue-800 border-blue-200': record.status === 'reviewed',
-                  'bg-slate-100 text-slate-800 border-slate-200': record.status === 'archived',
-                }"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                [ngClass]="getStatusColor(record.status)"
               >
-                <span
-                  class="w-2 h-2 rounded-full"
-                  [ngClass]="{
-                    'bg-orange-500': record.status === 'draft',
-                    'bg-green-500': record.status === 'completed',
-                    'bg-blue-500': record.status === 'reviewed',
-                    'bg-slate-500': record.status === 'archived',
-                  }"
-                ></span>
                 {{ getStatusText(record.status) }}
               </span>
             </td>
           </ng-container>
 
-          <!-- Columna Acciones -->
+          <!-- Acciones -->
           <ng-container matColumnDef="actions">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">settings</span>
-                Acciones
-              </div>
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4 text-right">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span>
             </th>
-            <td mat-cell *matCellDef="let record" class="p-4">
-              <div class="flex gap-2 items-center">
+            <td mat-cell *matCellDef="let record" class="px-6 py-4">
+              <div class="flex items-center justify-end gap-1">
                 <button
-                  mat-icon-button
-                  class="w-9 h-9 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-purple-200"
-                  (click)="viewPatientHistory(record.patient?.id)"
-                  matTooltip="Ver historial del paciente"
-                  aria-label="Ver historial del paciente"
+                  type="button"
+                  (click)="viewRecord(record); $event.stopPropagation()"
+                  matTooltip="Ver expediente"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
                 >
-                  <span class="material-symbols-outlined msz-20 leading-none">history</span>
+                  <span class="material-symbols-outlined msz-18">visibility</span>
                 </button>
-
                 <button
-                  mat-icon-button
-                  class="w-9 h-9 text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-200"
-                  (click)="deleteRecord(record)"
-                  matTooltip="Eliminar expediente"
-                  aria-label="Eliminar expediente"
+                  type="button"
+                  (click)="editRecord(record); $event.stopPropagation()"
+                  matTooltip="Editar"
                   [disabled]="isDemo"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <span class="material-symbols-outlined msz-20 leading-none">delete</span>
+                  <span class="material-symbols-outlined msz-18">edit</span>
+                </button>
+                <button
+                  type="button"
+                  (click)="viewPatientHistory(record.patient?.id); $event.stopPropagation()"
+                  matTooltip="Historial del paciente"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-purple-50 hover:text-purple-600 transition-colors border-0"
+                >
+                  <span class="material-symbols-outlined msz-18">history</span>
+                </button>
+                <button
+                  type="button"
+                  (click)="deleteRecord(record); $event.stopPropagation()"
+                  matTooltip="Eliminar"
+                  [disabled]="isDemo"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors border-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <span class="material-symbols-outlined msz-18">delete</span>
                 </button>
               </div>
             </td>
           </ng-container>
 
-          <tr
-            mat-header-row
-            *matHeaderRowDef="displayedColumns"
-            class="border-b-2 border-slate-200"
-          ></tr>
-          <tr
-            mat-row
-            *matRowDef="let row; columns: displayedColumns"
-            class="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-          ></tr>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"
+              (click)="viewRecord(row)"
+              class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors cursor-pointer"></tr>
         </table>
       </div>
 
-      <!-- Indicador de carga -->
-      <div *ngIf="loading" class="flex justify-center items-center py-12">
-        <mat-spinner diameter="50"></mat-spinner>
+      <!-- Footer -->
+      <div *ngIf="!loading && dataSource.data.length > 0" class="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-100">
+        <span class="text-sm text-slate-500">
+          Mostrando <span class="font-semibold text-slate-700">{{ dataSource.filteredData.length }}</span> de
+          <span class="font-semibold text-slate-700">{{ totalRecords }}</span> expedientes
+        </span>
+        <mat-paginator
+          [pageSizeOptions]="[10, 25, 50]"
+          showFirstLastButtons
+          aria-label="Seleccionar página"
+          class="bg-transparent border-0"
+        ></mat-paginator>
       </div>
 
-      <!-- Mensaje cuando no hay datos -->
-      <div *ngIf="!loading && dataSource.data.length === 0" class="text-center py-12 px-6">
-        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4">folder_open</span>
-        <p class="text-slate-500 text-lg mb-4">No se encontraron expedientes médicos</p>
-        <button
-          type="button"
-          (click)="createNewRecord()"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-        >
-          <span class="material-symbols-outlined msz-20 leading-none">add</span>
-          Crear primer expediente
-        </button>
-      </div>
-
-      <!-- Paginador -->
-      <mat-paginator
-        [pageSizeOptions]="[10, 25, 50, 100]"
-        showFirstLastButtons
-        aria-label="Seleccionar página de expedientes"
-        class="bg-slate-50 border-t border-slate-200"
-      ></mat-paginator>
     </div>
 
-    <!-- Contador de resultados -->
-    <div class="mt-6 text-center text-slate-600" *ngIf="!loading">
-      <p *ngIf="dataSource.data.length > 0" class="text-sm">
-        Mostrando {{ dataSource.data.length }} expedientes en total
-      </p>
-    </div>
   </div>
 </div>

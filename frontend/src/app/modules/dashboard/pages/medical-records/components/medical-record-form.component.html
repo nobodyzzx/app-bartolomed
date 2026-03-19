@@ -352,7 +352,7 @@
                       </ng-container>
                       {{ doctor.personalInfo?.firstName }} {{ doctor.personalInfo?.lastName }}
                       <span *ngIf="doctor.professionalInfo?.specialization" class="text-slate-500">
-                        – {{ doctor.professionalInfo.specialization }}</span
+                        – {{ doctor.professionalInfo?.specialization }}</span
                       >
                     </mat-option>
                   </mat-autocomplete>

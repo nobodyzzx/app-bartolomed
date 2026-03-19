@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
-import { SidenavService } from '../../../../shared/components/services/sidenav.services'
+import { SidenavService } from '../../../../shared/components/services/sidenav.service'
 import { PrescriptionsService } from './prescriptions.service'
 
 interface Prescription {

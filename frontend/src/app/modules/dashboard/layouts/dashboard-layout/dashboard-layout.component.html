@@ -2,14 +2,21 @@
   <!-- Navbar -->
   <share-navbar></share-navbar>
 
+  <!-- Backdrop mobile: visible solo en pantallas pequeñas cuando el sidebar está abierto -->
+  <div
+    *ngIf="isExpanded()"
+    class="fixed inset-0 top-16 bg-black/40 z-30 md:hidden"
+    (click)="closeSidebar()"
+    aria-hidden="true"
+  ></div>
+
   <!-- Contenedor principal -->
-  <div class="flex-1 flex">
-    <!-- Espacio reservado para el sidebar fijo -->
-    <div 
-      [ngClass]="{'w-96': isExpanded, 'w-16': !isExpanded}"
-      class="transition-all duration-300 ease-in-out flex-shrink-0"
+  <div class="flex-1 flex overflow-hidden">
+    <!-- Espacio reservado para el sidebar (solo en md+) -->
+    <div
+      [ngClass]="{'md:w-72': isExpanded(), 'md:w-16': !isExpanded()}"
+      class="w-0 transition-all duration-300 ease-in-out flex-shrink-0"
     >
-      <!-- Sidebar fijo posicionado independientemente -->
       <shared-sidebar></shared-sidebar>
     </div>
 
@@ -19,5 +26,3 @@
     </div>
   </div>
 </div>
-
-

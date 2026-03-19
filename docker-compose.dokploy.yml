@@ -30,6 +30,9 @@ services:
       traefik.enable: 'true'
       # Router del frontend por host
       traefik.http.routers.frontend.rule: 'Host(`${FRONTEND_DOMAIN:-bartolomed.tecnocondor.dev}`)'
+      traefik.http.routers.frontend.entrypoints: 'websecure'
+      traefik.http.routers.frontend.tls: 'true'
+      traefik.http.routers.frontend.tls.certresolver: '${TRAEFIK_CERT_RESOLVER:-letsencrypt}'
       traefik.http.routers.frontend.service: 'frontend-svc'
       traefik.http.services.frontend-svc.loadbalancer.server.port: '4200'
       # Forzar a Traefik a usar su red compartida
@@ -50,12 +53,12 @@ services:
       - NODE_ENV=production
       - DB_HOST=database
       - DB_PORT=5432
-      - DB_USER=${POSTGRES_USER:-bartolomed_user}
-      - DB_PASS=${POSTGRES_PASSWORD:-bartolomed_pass}
-      - DB_NAME=${POSTGRES_DB:-bartolomed_db}
-      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-change-in-production}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your-refresh-secret-change-in-production}
-      - GOD_MODE_TOKEN=${GOD_MODE_TOKEN:-change-me-very-strong}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASS=${POSTGRES_PASSWORD}
+      - DB_NAME=${POSTGRES_DB}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - GOD_MODE_TOKEN=${GOD_MODE_TOKEN}
     volumes:
       - bartolomed_uploads:/app/uploads
     depends_on:
@@ -80,6 +83,9 @@ services:
       traefik.enable: 'true'
       # Router para /api en el MISMO dominio del frontend (evita CORS y DNS del api.*)
       traefik.http.routers.backend-path.rule: 'Host(`${FRONTEND_DOMAIN:-bartolomed.tecnocondor.dev}`) && PathPrefix(`/api`)'
+      traefik.http.routers.backend-path.entrypoints: 'websecure'
+      traefik.http.routers.backend-path.tls: 'true'
+      traefik.http.routers.backend-path.tls.certresolver: '${TRAEFIK_CERT_RESOLVER:-letsencrypt}'
       traefik.http.routers.backend-path.service: 'backend-svc'
       traefik.http.services.backend-svc.loadbalancer.server.port: '3000'
       # Forzar a Traefik a usar su red compartida
@@ -94,9 +100,9 @@ services:
     expose:
       - '5432'
     environment:
-      - POSTGRES_DB=${POSTGRES_DB:-bartolomed_db}
-      - POSTGRES_USER=${POSTGRES_USER:-bartolomed_user}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-bartolomed_pass}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
     volumes:
       - bartolomed_db_data:/var/lib/postgresql/data
@@ -105,7 +111,7 @@ services:
       test:
         [
           'CMD-SHELL',
-          'pg_isready -U ${POSTGRES_USER:-bartolomed_user} -d ${POSTGRES_DB:-bartolomed_db}',
+          'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}',
         ]
       interval: 15s
       timeout: 5s

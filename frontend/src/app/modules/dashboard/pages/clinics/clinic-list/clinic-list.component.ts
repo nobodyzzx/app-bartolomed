@@ -7,7 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { ConfirmDialogComponent } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
-import { SidenavService } from '../../../../../shared/components/services/sidenav.services'
+import { SidenavService } from '../../../../../shared/components/services/sidenav.service'
 import { Clinic } from '../interfaces'
 import { ClinicsService } from '../services'
 
