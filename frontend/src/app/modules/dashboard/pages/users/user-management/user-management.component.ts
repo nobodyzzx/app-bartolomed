@@ -95,6 +95,12 @@ export class UserManagementComponent implements OnInit {
     return user.email
   }
 
+  getUserInitials(user: User): string {
+    const first = user.personalInfo?.firstName?.charAt(0) ?? ''
+    const last  = user.personalInfo?.lastName?.charAt(0) ?? ''
+    return (first + last).toUpperCase() || user.email?.charAt(0).toUpperCase() || '?'
+  }
+
   getUserRole(user: User): string {
     if (!user.roles || user.roles.length === 0) return 'Sin rol'
 

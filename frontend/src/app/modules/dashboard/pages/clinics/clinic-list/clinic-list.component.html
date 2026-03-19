@@ -1,5 +1,6 @@
 <div class="min-h-screen bg-slate-50 p-8">
   <div class="max-w-7xl mx-auto">
+
     <!-- Header -->
     <div class="flex items-center justify-between mb-10">
       <div class="flex items-center gap-4">
@@ -7,12 +8,11 @@
           type="button"
           (click)="navigateToDashboard()"
           class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          matTooltip="Volver al dashboard"
-          aria-label="Volver al dashboard"
+          aria-label="Volver"
         >
-          <mat-icon class="!text-[20px] leading-none">arrow_back</mat-icon>
+          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
         </button>
-        <div class="text-left">
+        <div>
           <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Lista de Clínicas</h1>
           <p class="text-slate-600">Gestiona todas tus clínicas</p>
         </div>
@@ -20,20 +20,73 @@
       <button
         type="button"
         (click)="navigateToNew()"
-        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-        aria-label="Crear nueva clínica"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
       >
-        <mat-icon class="!text-[20px] leading-none">add</mat-icon>
+        <span class="material-symbols-outlined msz-18 leading-none">add</span>
         Nueva Clínica
       </button>
     </div>
 
-    <!-- Search and Filter Controls -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
-      <!-- Search -->
-      <div class="flex items-center gap-4 mb-6">
-        <div class="flex-1 max-w-2xl">
-          <div class="relative">
+    <!-- Tarjetas de estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+      <div
+        class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="filterStatus === 'all'"
+        [class.ring-blue-400]="filterStatus === 'all'"
+        (click)="setFilterStatus('all')"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-blue-600 text-sm font-semibold">Total</p>
+            <p class="text-3xl font-bold text-blue-900 mt-1">{{ allClinics.length }}</p>
+            <p class="text-xs text-blue-500 mt-1">Clínicas registradas</p>
+          </div>
+          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">business</span>
+        </div>
+      </div>
+
+      <div
+        class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="filterStatus === 'active'"
+        [class.ring-green-400]="filterStatus === 'active'"
+        (click)="setFilterStatus('active')"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-green-600 text-sm font-semibold">Activas</p>
+            <p class="text-3xl font-bold text-green-900 mt-1">{{ getActiveClinicsCount() }}</p>
+            <p class="text-xs text-green-500 mt-1">En operación</p>
+          </div>
+          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">check_circle</span>
+        </div>
+      </div>
+
+      <div
+        class="bg-red-50 p-5 rounded-2xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="filterStatus === 'inactive'"
+        [class.ring-red-400]="filterStatus === 'inactive'"
+        (click)="setFilterStatus('inactive')"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-red-600 text-sm font-semibold">Inactivas</p>
+            <p class="text-3xl font-bold text-red-900 mt-1">{{ getInactiveClinicsCount() }}</p>
+            <p class="text-xs text-red-500 mt-1">Deshabilitadas</p>
+          </div>
+          <span class="material-symbols-outlined text-red-300" style="font-size: 40px">cancel</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Contenedor principal -->
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+
+      <!-- Buscador -->
+      <div class="p-6 border-b border-slate-100">
+        <div class="flex items-center gap-4">
+          <div class="flex-1 max-w-md relative">
             <input
               type="text"
               [(ngModel)]="searchTerm"
@@ -41,287 +94,178 @@
               placeholder="Buscar clínicas..."
               class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
             />
-            <mat-icon class="absolute right-3 top-2.5 text-blue-400">search</mat-icon>
+            <span class="material-symbols-outlined absolute right-4 top-2.5 text-blue-400 msz-18">search</span>
           </div>
+          <button
+            *ngIf="searchTerm"
+            type="button"
+            (click)="searchTerm = ''; loadClinics()"
+            class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all border-0"
+          >
+            <span class="material-symbols-outlined msz-16">close</span>
+            Limpiar
+          </button>
         </div>
+      </div>
 
+      <!-- Cargando -->
+      <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+        <mat-spinner diameter="50"></mat-spinner>
+      </div>
+
+      <!-- Estado vacío -->
+      <div *ngIf="!isLoading && dataSource.data.length === 0" class="text-center py-12 px-6">
+        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">business</span>
+        <p class="text-lg font-semibold text-slate-700 mb-2">
+          {{ searchTerm ? 'Sin resultados' : 'Sin clínicas registradas' }}
+        </p>
+        <p class="text-sm text-slate-400 mb-6">
+          {{ searchTerm ? 'Intenta con otros términos' : 'Comienza creando la primera clínica' }}
+        </p>
         <button
+          *ngIf="!searchTerm"
           type="button"
-          (click)="searchClinics()"
-          [disabled]="!searchTerm.trim()"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
+          (click)="navigateToNew()"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
         >
-          <mat-icon class="!text-[18px]">search</mat-icon>
-          Buscar
+          <span class="material-symbols-outlined msz-18 leading-none">add</span>
+          Nueva Clínica
         </button>
       </div>
 
-      <!-- Filter by Status -->
-      <div class="flex flex-wrap gap-3">
-        <button
-          type="button"
-          (click)="setFilterStatus('all')"
-          [ngClass]="{
-            'bg-blue-600 text-white shadow-md': filterStatus === 'all',
-            'bg-blue-50 text-blue-400 hover:bg-blue-100 hover:text-blue-600':
-              filterStatus !== 'all',
-          }"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
-        >
-          <mat-icon class="!text-[18px]">done_all</mat-icon>
-          Todas ({{ allClinics.length }})
-        </button>
-        <button
-          type="button"
-          (click)="setFilterStatus('active')"
-          [ngClass]="{
-            'bg-green-600 text-white shadow-md': filterStatus === 'active',
-            'bg-green-50 text-green-400 hover:bg-green-100 hover:text-green-600':
-              filterStatus !== 'active',
-          }"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-200 focus-visible:ring-offset-1"
-        >
-          <mat-icon class="!text-[18px]">check_circle</mat-icon>
-          Activas ({{ getActiveClinicsCount() }})
-        </button>
-        <button
-          type="button"
-          (click)="setFilterStatus('inactive')"
-          [ngClass]="{
-            'bg-red-600 text-white shadow-md': filterStatus === 'inactive',
-            'bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600':
-              filterStatus !== 'inactive',
-          }"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:ring-offset-1"
-        >
-          <mat-icon class="!text-[18px]">cancel</mat-icon>
-          Inactivas ({{ getInactiveClinicsCount() }})
-        </button>
-      </div>
-    </div>
-
-    <!-- Loading indicator -->
-    <div *ngIf="isLoading" class="flex justify-center items-center py-12">
-      <mat-spinner diameter="50"></mat-spinner>
-    </div>
-
-    <!-- Table Card -->
-    <div
-      *ngIf="!isLoading"
-      class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
-    >
-      <div class="overflow-x-auto">
+      <!-- Tabla -->
+      <div *ngIf="!isLoading && dataSource.data.length > 0" class="overflow-x-auto">
         <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
-          <!-- Name Column -->
+
           <ng-container matColumnDef="name">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              mat-sort-header
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              Nombre
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Nombre</span>
             </th>
-            <td mat-cell *matCellDef="let clinic" class="p-4">
+            <td mat-cell *matCellDef="let clinic" class="px-6 py-4">
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <mat-icon class="text-blue-600">business</mat-icon>
+                <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined text-blue-600 msz-18">business</span>
                 </div>
                 <div>
                   <div class="font-medium text-slate-900">{{ clinic.name }}</div>
-                  <div class="text-sm text-slate-500" *ngIf="clinic.description">
-                    {{ clinic.description }}
-                  </div>
+                  <div *ngIf="clinic.description" class="text-xs text-slate-400 truncate max-w-xs">{{ clinic.description }}</div>
                 </div>
               </div>
             </td>
           </ng-container>
 
-          <!-- Address Column -->
           <ng-container matColumnDef="address">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              Dirección
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Dirección</span>
             </th>
-            <td mat-cell *matCellDef="let clinic" class="p-4">
-              <div>
-                <div class="text-slate-900 font-medium">{{ clinic.address }}</div>
-                <div
-                  class="text-sm text-slate-500"
-                  *ngIf="clinic.departamento || clinic.provincia || clinic.localidad"
-                >
-                  <ng-container *ngIf="clinic.departamento">{{ clinic.departamento }}</ng-container>
-                  <ng-container *ngIf="clinic.provincia"> - {{ clinic.provincia }}</ng-container>
-                  <ng-container *ngIf="clinic.localidad"> - {{ clinic.localidad }}</ng-container>
-                </div>
+            <td mat-cell *matCellDef="let clinic" class="px-6 py-4">
+              <div class="text-sm text-slate-900">{{ clinic.address }}</div>
+              <div *ngIf="clinic.departamento || clinic.provincia || clinic.localidad" class="text-xs text-slate-400">
+                <ng-container *ngIf="clinic.departamento">{{ clinic.departamento }}</ng-container>
+                <ng-container *ngIf="clinic.provincia"> · {{ clinic.provincia }}</ng-container>
+                <ng-container *ngIf="clinic.localidad"> · {{ clinic.localidad }}</ng-container>
               </div>
             </td>
           </ng-container>
 
-          <!-- Phone Column -->
           <ng-container matColumnDef="phone">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              Teléfono
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Teléfono</span>
             </th>
-            <td mat-cell *matCellDef="let clinic" class="p-4">
-              <div class="flex items-center gap-2 text-slate-900">
-                <mat-icon class="text-slate-400 text-lg">phone</mat-icon>
-                {{ clinic.phone }}
-              </div>
+            <td mat-cell *matCellDef="let clinic" class="px-6 py-4 text-sm text-slate-700">
+              {{ clinic.phone || '—' }}
             </td>
           </ng-container>
 
-          <!-- Email Column -->
           <ng-container matColumnDef="email">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              Email
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Email</span>
             </th>
-            <td mat-cell *matCellDef="let clinic" class="p-4">
-              <div class="flex items-center gap-2 text-slate-900" *ngIf="clinic.email">
-                <mat-icon class="text-slate-400 text-lg">email</mat-icon>
-                {{ clinic.email }}
-              </div>
-              <span *ngIf="!clinic.email" class="text-slate-400">-</span>
+            <td mat-cell *matCellDef="let clinic" class="px-6 py-4 text-sm text-slate-700">
+              {{ clinic.email || '—' }}
             </td>
           </ng-container>
 
-          <!-- Status Column -->
           <ng-container matColumnDef="isActive">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              Estado
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
             </th>
-            <td mat-cell *matCellDef="let clinic" class="p-4">
+            <td mat-cell *matCellDef="let clinic" class="px-6 py-4">
               <span
-                class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
-                [ngClass]="{
-                  'bg-green-100 text-green-800 border-green-200': clinic.isActive,
-                  'bg-red-100 text-red-800 border-red-200': !clinic.isActive,
-                }"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                [ngClass]="clinic.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
               >
-                <span
-                  class="w-2 h-2 rounded-full"
-                  [ngClass]="clinic.isActive ? 'bg-green-500' : 'bg-red-500'"
-                ></span>
-                {{ clinic.isActive ? 'Activo' : 'Inactivo' }}
+                <span class="w-1.5 h-1.5 rounded-full" [ngClass]="clinic.isActive ? 'bg-green-500' : 'bg-red-500'"></span>
+                {{ clinic.isActive ? 'Activa' : 'Inactiva' }}
               </span>
             </td>
           </ng-container>
 
-          <!-- Actions Column -->
           <ng-container matColumnDef="actions">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              Acciones
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4 text-right">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span>
             </th>
-            <td mat-cell *matCellDef="let clinic" class="p-4">
-              <div class="flex items-center gap-2">
+            <td mat-cell *matCellDef="let clinic" class="px-6 py-4">
+              <div class="flex items-center justify-end gap-1">
                 <button
-                  mat-icon-button
-                  (click)="viewClinic(clinic)"
-                  class="w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-200"
+                  type="button"
+                  (click)="viewClinic(clinic); $event.stopPropagation()"
                   matTooltip="Ver detalles"
-                  aria-label="Ver detalles de la clínica"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
                 >
-                  <mat-icon class="!text-[20px] leading-none">visibility</mat-icon>
+                  <span class="material-symbols-outlined msz-18">visibility</span>
                 </button>
-
                 <button
-                  mat-icon-button
-                  (click)="editClinic(clinic)"
-                  class="w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-amber-200"
+                  type="button"
+                  (click)="editClinic(clinic); $event.stopPropagation()"
                   matTooltip="Editar"
-                  aria-label="Editar clínica"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0"
                 >
-                  <mat-icon class="!text-[20px] leading-none">edit</mat-icon>
+                  <span class="material-symbols-outlined msz-18">edit</span>
                 </button>
-
                 <button
-                  mat-icon-button
-                  (click)="toggleClinicStatus(clinic)"
-                  [ngClass]="{
-                    'text-red-600 hover:bg-red-50 focus-visible:ring-red-200': clinic.isActive,
-                    'text-green-600 hover:bg-green-50 focus-visible:ring-green-200':
-                      !clinic.isActive,
-                  }"
+                  type="button"
+                  (click)="toggleClinicStatus(clinic); $event.stopPropagation()"
                   [matTooltip]="clinic.isActive ? 'Desactivar' : 'Activar'"
-                  class="w-9 h-9 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
-                  [attr.aria-label]="clinic.isActive ? 'Desactivar clínica' : 'Activar clínica'"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg transition-colors border-0"
+                  [ngClass]="clinic.isActive ? 'text-slate-600 hover:bg-red-50 hover:text-red-600' : 'text-slate-600 hover:bg-green-50 hover:text-green-600'"
                 >
-                  <mat-icon class="!text-[20px] leading-none">{{
-                    clinic.isActive ? 'block' : 'check_circle'
-                  }}</mat-icon>
+                  <span class="material-symbols-outlined msz-18">{{ clinic.isActive ? 'block' : 'check_circle' }}</span>
                 </button>
-
                 <button
-                  mat-icon-button
-                  (click)="deleteClinic(clinic)"
-                  class="w-9 h-9 text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-200"
+                  type="button"
+                  (click)="deleteClinic(clinic); $event.stopPropagation()"
                   matTooltip="Eliminar"
-                  aria-label="Eliminar clínica"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors border-0"
                 >
-                  <mat-icon class="!text-[20px] leading-none">delete</mat-icon>
+                  <span class="material-symbols-outlined msz-18">delete</span>
                 </button>
               </div>
             </td>
           </ng-container>
 
-          <tr
-            mat-header-row
-            *matHeaderRowDef="displayedColumns"
-            class="border-b-2 border-slate-200"
-          ></tr>
-          <tr
-            mat-row
-            *matRowDef="let row; columns: displayedColumns"
-            class="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-          ></tr>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"
+              (click)="viewClinic(row)"
+              class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors cursor-pointer"></tr>
         </table>
       </div>
 
-      <!-- Paginator -->
-      <div class="bg-slate-50 border-t border-slate-200">
+      <!-- Footer -->
+      <div *ngIf="!isLoading && dataSource.data.length > 0" class="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-100">
+        <span class="text-sm text-slate-500">
+          Mostrando <span class="font-semibold text-slate-700">{{ dataSource.data.length }}</span> de
+          <span class="font-semibold text-slate-700">{{ allClinics.length }}</span> clínicas
+        </span>
         <mat-paginator
-          [pageSizeOptions]="[5, 10, 20, 50]"
+          [pageSizeOptions]="[10, 25, 50]"
           showFirstLastButtons
-          class="bg-transparent"
+          aria-label="Seleccionar página"
+          class="bg-transparent border-0"
         ></mat-paginator>
       </div>
+
     </div>
 
-    <!-- No data message -->
-    <div
-      *ngIf="!isLoading && dataSource.data.length === 0"
-      class="bg-white rounded-xl shadow-sm border border-slate-200 text-center py-12 px-6"
-    >
-      <mat-icon class="text-6xl text-slate-400 mb-4">business</mat-icon>
-      <h3 class="text-2xl font-bold text-slate-900 mb-2">No se encontraron clínicas</h3>
-      <p class="text-slate-600 mb-6">No hay clínicas registradas en el sistema.</p>
-      <button
-        type="button"
-        (click)="navigateToNew()"
-        class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-      >
-        <mat-icon>add</mat-icon>
-        Crear Primera Clínica
-      </button>
-    </div>
   </div>
 </div>

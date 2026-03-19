@@ -1,218 +1,215 @@
-<div
-  class="clinic-dashboard min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100 relative overflow-hidden p-8"
->
-  <!-- Elementos decorativos de fondo -->
-  <div class="absolute inset-0 overflow-hidden pointer-events-none">
-    <div
-      class="absolute top-0 right-0 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"
-    ></div>
-    <div
-      class="absolute top-0 left-0 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"
-    ></div>
-    <div
-      class="absolute bottom-0 left-1/2 w-96 h-96 bg-slate-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"
-    ></div>
-  </div>
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
 
-  <div class="relative z-10">
     <!-- Header -->
-    <div class="dashboard-header text-center mb-12">
-      <h1 class="text-4xl font-bold text-blue-900 mb-3">Gestión de Clínicas</h1>
-      <div class="w-20 h-1 bg-blue-600 mx-auto rounded-full mb-3"></div>
-      <p class="text-blue-600 text-lg">Administra y supervisa todas tus clínicas</p>
+    <div class="flex items-center justify-between mb-10">
+      <div>
+        <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Gestión de Clínicas</h1>
+        <p class="text-slate-600">Administra y supervisa todas tus clínicas</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          (click)="navigateToClinics()"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none">list</span>
+          Ver Lista
+        </button>
+        <button
+          type="button"
+          (click)="navigateToNewClinic()"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none">add</span>
+          Nueva Clínica
+        </button>
+      </div>
     </div>
 
-    <!-- Loading indicator -->
-    <div *ngIf="isLoading" class="flex justify-center items-center py-12">
-      <mat-spinner diameter="50"></mat-spinner>
-    </div>
+    <!-- Tarjetas de estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 
-    <!-- Statistics cards -->
-    <div
-      *ngIf="statistics && !isLoading"
-      class="stats-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
-    >
-      <!-- Total Clínicas Card -->
-      <mat-card
-        class="stat-card cursor-pointer transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border border-blue-100"
+      <div
+        class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
         (click)="showAllClinics()"
       >
-        <mat-card-content class="p-6">
-          <div class="stat-content flex items-center gap-4">
-            <div
-              class="stat-icon total w-16 h-16 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg"
-            >
-              <span class="material-symbols-outlined text-white text-3xl">business</span>
-            </div>
-            <div class="stat-info flex-1">
-              <h3 class="text-3xl font-bold text-blue-900">{{ statistics.totalClinics }}</h3>
-              <p class="text-blue-600 text-sm mt-1">Total de Clínicas</p>
-            </div>
-            <span class="material-symbols-outlined text-blue-300 text-2xl">arrow_forward</span>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-blue-600 text-sm font-semibold">Total</p>
+            <p class="text-3xl font-bold text-blue-900 mt-1">
+              {{ isLoading ? '—' : (statistics?.totalClinics ?? 0) }}
+            </p>
+            <p class="text-xs text-blue-500 mt-1">Clínicas registradas</p>
           </div>
-        </mat-card-content>
-      </mat-card>
+          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">business</span>
+        </div>
+      </div>
 
-      <!-- Clínicas Activas Card -->
-      <mat-card
-        class="stat-card cursor-pointer transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border border-green-100"
+      <div
+        class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
         (click)="showActiveClinics()"
       >
-        <mat-card-content class="p-6">
-          <div class="stat-content flex items-center gap-4">
-            <div
-              class="stat-icon active w-16 h-16 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg"
-            >
-              <span class="material-symbols-outlined text-white text-3xl">check_circle</span>
-            </div>
-            <div class="stat-info flex-1">
-              <h3 class="text-3xl font-bold text-green-900">{{ statistics.activeClinics }}</h3>
-              <p class="text-green-600 text-sm mt-1">Clínicas Activas</p>
-            </div>
-            <span class="material-symbols-outlined text-green-300 text-2xl">arrow_forward</span>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-green-600 text-sm font-semibold">Activas</p>
+            <p class="text-3xl font-bold text-green-900 mt-1">
+              {{ isLoading ? '—' : (statistics?.activeClinics ?? 0) }}
+            </p>
+            <p class="text-xs text-green-500 mt-1">En operación</p>
           </div>
-        </mat-card-content>
-      </mat-card>
+          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">check_circle</span>
+        </div>
+      </div>
 
-      <!-- Clínicas Inactivas Card -->
-      <mat-card
-        class="stat-card cursor-pointer transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border border-red-100"
+      <div
+        class="bg-red-50 p-5 rounded-2xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
         (click)="showInactiveClinics()"
       >
-        <mat-card-content class="p-6">
-          <div class="stat-content flex items-center gap-4">
-            <div
-              class="stat-icon inactive w-16 h-16 rounded-xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center shadow-lg"
-            >
-              <span class="material-symbols-outlined text-white text-3xl">cancel</span>
-            </div>
-            <div class="stat-info flex-1">
-              <h3 class="text-3xl font-bold text-red-900">{{ statistics.inactiveClinics }}</h3>
-              <p class="text-red-600 text-sm mt-1">Clínicas Inactivas</p>
-            </div>
-            <span class="material-symbols-outlined text-red-300 text-2xl">arrow_forward</span>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-red-600 text-sm font-semibold">Inactivas</p>
+            <p class="text-3xl font-bold text-red-900 mt-1">
+              {{ isLoading ? '—' : (statistics?.inactiveClinics ?? 0) }}
+            </p>
+            <p class="text-xs text-red-500 mt-1">Deshabilitadas</p>
           </div>
-        </mat-card-content>
-      </mat-card>
+          <span class="material-symbols-outlined text-red-300" style="font-size: 40px">cancel</span>
+        </div>
+      </div>
 
-      <!-- Usuarios Asignados Card -->
-      <mat-card
-        class="stat-card cursor-pointer transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border border-purple-100"
+      <div
+        class="bg-purple-50 p-5 rounded-2xl border-l-4 border-purple-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
         (click)="showAssignedUsers()"
       >
-        <mat-card-content class="p-6">
-          <div class="stat-content flex items-center gap-4">
-            <div
-              class="stat-icon users w-16 h-16 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg"
-            >
-              <span class="material-symbols-outlined text-white text-3xl">group</span>
-            </div>
-            <div class="stat-info flex-1">
-              <h3 class="text-3xl font-bold text-purple-900">{{ getTotalAssignedUsers() }}</h3>
-              <p class="text-purple-600 text-sm mt-1">Usuarios Asignados</p>
-            </div>
-            <span class="material-symbols-outlined text-purple-300 text-2xl">arrow_forward</span>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-purple-600 text-sm font-semibold">Usuarios asignados</p>
+            <p class="text-3xl font-bold text-purple-900 mt-1">
+              {{ isLoading ? '—' : getTotalAssignedUsers() }}
+            </p>
+            <p class="text-xs text-purple-500 mt-1">En todas las clínicas</p>
           </div>
-        </mat-card-content>
-      </mat-card>
+          <span class="material-symbols-outlined text-purple-300" style="font-size: 40px">group</span>
+        </div>
+      </div>
+
     </div>
 
-    <!-- Recent clinics section -->
-    <mat-card class="recent-clinics-card shadow-lg border border-blue-100">
-      <mat-card-header
-        class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-t-lg"
-      >
-        <mat-card-title class="text-2xl font-bold">Clínicas Recientes</mat-card-title>
-        <mat-card-subtitle class="text-blue-100">Últimas clínicas registradas</mat-card-subtitle>
-      </mat-card-header>
+    <!-- Card: Clínicas recientes -->
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
 
-      <mat-card-content class="p-6">
-        <div *ngIf="recentClinics.length === 0" class="no-data text-center py-12">
-          <span class="material-symbols-outlined text-6xl text-gray-300 mb-4">business</span>
-          <p class="text-gray-500 text-lg">No hay clínicas registradas</p>
-          <button mat-stroked-button color="primary" (click)="navigateToNewClinic()" class="mt-4">
-            Registrar Primera Clínica
-          </button>
-        </div>
-
-        <div *ngIf="recentClinics.length > 0" class="clinics-list space-y-4">
-          <div
-            *ngFor="let clinic of recentClinics"
-            class="clinic-item p-4 border border-gray-200 rounded-lg hover:border-blue-400 hover:shadow-md transition-all duration-300 cursor-pointer"
-            (click)="viewClinic(clinic)"
-          >
-            <div class="flex items-start justify-between">
-              <div class="clinic-info flex-1">
-                <h4 class="text-lg font-semibold text-gray-900 mb-2">{{ clinic.name }}</h4>
-                <p class="clinic-address text-gray-600 text-sm mb-2 flex items-center gap-2">
-                  <span
-                    class="material-symbols-outlined text-gray-400"
-                    [style.font-size]="'18px'"
-                    [style.width]="'18px'"
-                    [style.height]="'18px'"
-                    >location_on</span
-                  >
-                  {{ clinic.address }}
-                  <span
-                    *ngIf="clinic.departamento || clinic.provincia || clinic.localidad"
-                    class="text-gray-500"
-                  >
-                    —
-                    <ng-container *ngIf="clinic.departamento">{{
-                      clinic.departamento
-                    }}</ng-container>
-                    <ng-container *ngIf="clinic.provincia"> - {{ clinic.provincia }}</ng-container>
-                    <ng-container *ngIf="clinic.localidad"> - {{ clinic.localidad }}</ng-container>
-                  </span>
-                </p>
-                <p class="clinic-contact text-gray-600 text-sm flex items-center gap-2">
-                  <span
-                    class="material-symbols-outlined text-gray-400"
-                    [style.font-size]="'18px'"
-                    [style.width]="'18px'"
-                    [style.height]="'18px'"
-                    >phone</span
-                  >
-                  {{ clinic.phone }}
-                  <span *ngIf="clinic.email" class="email ml-4 flex items-center gap-1">
-                    <span
-                      class="material-symbols-outlined text-gray-400"
-                      [style.font-size]="'18px'"
-                      [style.width]="'18px'"
-                      [style.height]="'18px'"
-                      >email</span
-                    >
-                    {{ clinic.email }}
-                  </span>
-                </p>
-              </div>
-              <div class="clinic-status ml-4">
-                <mat-chip
-                  [class.status-active]="clinic.isActive"
-                  [class.status-inactive]="!clinic.isActive"
-                  [color]="clinic.isActive ? 'primary' : 'warn'"
-                  selected
-                >
-                  {{ clinic.isActive ? 'Activa' : 'Inactiva' }}
-                </mat-chip>
-              </div>
-            </div>
-          </div>
-        </div>
-      </mat-card-content>
-
-      <mat-card-actions class="p-6 border-t border-gray-200">
+      <!-- Encabezado de sección -->
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <h2 class="text-base font-semibold text-slate-800">Clínicas recientes</h2>
         <button
-          mat-raised-button
-          color="primary"
+          type="button"
           (click)="navigateToClinics()"
-          *ngIf="recentClinics.length > 0"
-          class="w-full"
+          class="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
         >
-          <span class="material-symbols-outlined">list</span>
-          Ver Todas las Clínicas
+          Ver todas →
         </button>
-      </mat-card-actions>
-    </mat-card>
+      </div>
+
+      <!-- Cargando -->
+      <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+        <mat-spinner diameter="50"></mat-spinner>
+      </div>
+
+      <!-- Estado vacío -->
+      <div *ngIf="!isLoading && recentClinics.length === 0" class="text-center py-12 px-6">
+        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">business</span>
+        <p class="text-lg font-semibold text-slate-700 mb-2">Sin clínicas registradas</p>
+        <p class="text-sm text-slate-400 mb-6">Comienza creando la primera clínica</p>
+        <button
+          type="button"
+          (click)="navigateToNewClinic()"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none">add</span>
+          Nueva Clínica
+        </button>
+      </div>
+
+      <!-- Tabla -->
+      <div *ngIf="!isLoading && recentClinics.length > 0" class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-100">
+            <tr>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Clínica</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Dirección</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Contacto</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
+              <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acción</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr
+              *ngFor="let clinic of recentClinics"
+              (click)="viewClinic(clinic)"
+              class="hover:bg-blue-50/40 transition-colors cursor-pointer"
+            >
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-blue-600 msz-18">business</span>
+                  </div>
+                  <div>
+                    <div class="font-medium text-slate-900">{{ clinic.name }}</div>
+                    <div *ngIf="clinic.description" class="text-xs text-slate-400 truncate max-w-xs">{{ clinic.description }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-4 text-sm text-slate-700">
+                <div>{{ clinic.address }}</div>
+                <div *ngIf="clinic.departamento || clinic.provincia" class="text-xs text-slate-400">
+                  {{ clinic.departamento }}<ng-container *ngIf="clinic.provincia"> · {{ clinic.provincia }}</ng-container>
+                </div>
+              </td>
+              <td class="px-6 py-4 text-sm text-slate-600">
+                <div *ngIf="clinic.phone">{{ clinic.phone }}</div>
+                <div *ngIf="clinic.email" class="text-xs text-slate-400">{{ clinic.email }}</div>
+                <span *ngIf="!clinic.phone && !clinic.email" class="text-slate-400">—</span>
+              </td>
+              <td class="px-6 py-4">
+                <span
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="clinic.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full" [ngClass]="clinic.isActive ? 'bg-green-500' : 'bg-red-500'"></span>
+                  {{ clinic.isActive ? 'Activa' : 'Inactiva' }}
+                </span>
+              </td>
+              <td class="px-6 py-4 text-right">
+                <button
+                  type="button"
+                  (click)="viewClinic(clinic); $event.stopPropagation()"
+                  matTooltip="Ver detalle"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
+                >
+                  <span class="material-symbols-outlined msz-18">arrow_forward</span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Footer -->
+      <div *ngIf="!isLoading && recentClinics.length > 0" class="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-100">
+        <span class="text-sm text-slate-500">
+          Mostrando las <span class="font-semibold text-slate-700">{{ recentClinics.length }}</span> clínicas más recientes
+        </span>
+        <button
+          type="button"
+          (click)="navigateToClinics()"
+          class="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+        >
+          Ver lista completa →
+        </button>
+      </div>
+
+    </div>
+
   </div>
 </div>

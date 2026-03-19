@@ -1,5 +1,6 @@
-<div class="min-h-screen bg-slate-50 p-6">
+<div class="min-h-screen bg-slate-50 p-8">
   <div class="max-w-7xl mx-auto">
+
     <!-- Header -->
     <div class="flex items-center justify-between mb-10">
       <div class="flex items-center gap-4">
@@ -7,12 +8,11 @@
           type="button"
           (click)="navigateToDashboard()"
           class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          matTooltip="Volver al dashboard"
-          aria-label="Volver al dashboard"
+          aria-label="Volver"
         >
-          <mat-icon class="!text-[20px] leading-none">arrow_back</mat-icon>
+          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
         </button>
-        <div class="text-left">
+        <div>
           <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Gestión de Usuarios</h1>
           <p class="text-slate-600">Administra todos los usuarios del sistema</p>
         </div>
@@ -20,317 +20,248 @@
       <button
         type="button"
         (click)="navigateToNew()"
-        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-        aria-label="Crear nuevo usuario"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
       >
-        <mat-icon class="!text-[20px] leading-none">person_add</mat-icon>
+        <span class="material-symbols-outlined msz-18 leading-none">person_add</span>
         Nuevo Usuario
       </button>
     </div>
 
-    <!-- Search and Filter Controls -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
-      <!-- Search -->
-      <div class="flex items-center gap-4 mb-6">
-        <div class="flex-1 max-w-2xl">
-          <div class="relative">
+    <!-- Tarjetas de estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+
+      <div
+        class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="filterStatus === 'all'"
+        [class.ring-blue-400]="filterStatus === 'all'"
+        (click)="setFilterStatus('all')"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-blue-600 text-sm font-semibold">Total</p>
+            <p class="text-3xl font-bold text-blue-900 mt-1">{{ allUsers.length }}</p>
+            <p class="text-xs text-blue-500 mt-1">Usuarios registrados</p>
+          </div>
+          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">group</span>
+        </div>
+      </div>
+
+      <div
+        class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="filterStatus === 'active'"
+        [class.ring-green-400]="filterStatus === 'active'"
+        (click)="setFilterStatus('active')"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-green-600 text-sm font-semibold">Activos</p>
+            <p class="text-3xl font-bold text-green-900 mt-1">{{ getActiveUsersCount() }}</p>
+            <p class="text-xs text-green-500 mt-1">Con acceso habilitado</p>
+          </div>
+          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">check_circle</span>
+        </div>
+      </div>
+
+      <div
+        class="bg-red-50 p-5 rounded-2xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="filterStatus === 'inactive'"
+        [class.ring-red-400]="filterStatus === 'inactive'"
+        (click)="setFilterStatus('inactive')"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-red-600 text-sm font-semibold">Inactivos</p>
+            <p class="text-3xl font-bold text-red-900 mt-1">{{ getInactiveUsersCount() }}</p>
+            <p class="text-xs text-red-500 mt-1">Sin acceso</p>
+          </div>
+          <span class="material-symbols-outlined text-red-300" style="font-size: 40px">cancel</span>
+        </div>
+      </div>
+
+      <div class="bg-purple-50 p-5 rounded-2xl border-l-4 border-purple-500 shadow-md">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-purple-600 text-sm font-semibold">Administradores</p>
+            <p class="text-3xl font-bold text-purple-900 mt-1">{{ getAdminCount() }}</p>
+            <p class="text-xs text-purple-500 mt-1">Con rol admin</p>
+          </div>
+          <span class="material-symbols-outlined text-purple-300" style="font-size: 40px">admin_panel_settings</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Contenedor principal -->
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+
+      <!-- Buscador -->
+      <div class="p-6 border-b border-slate-100">
+        <div class="flex items-center gap-4">
+          <div class="flex-1 max-w-md relative">
             <input
               type="text"
               [(ngModel)]="searchTerm"
               (input)="applyFilter()"
-              placeholder="Buscar usuarios por nombre o email..."
+              placeholder="Nombre, email..."
               class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
             />
-            <mat-icon class="absolute right-3 top-2.5 text-blue-400">search</mat-icon>
+            <span class="material-symbols-outlined absolute right-4 top-2.5 text-blue-400 msz-18">search</span>
           </div>
+          <button
+            *ngIf="searchTerm || filterStatus !== 'all'"
+            type="button"
+            (click)="searchTerm = ''; setFilterStatus('all')"
+            class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all border-0"
+          >
+            <span class="material-symbols-outlined msz-16">close</span>
+            Limpiar
+          </button>
         </div>
-
-        <button
-          type="button"
-          (click)="applyFilter()"
-          [disabled]="!searchTerm.trim()"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
-        >
-          <mat-icon class="!text-[18px]">search</mat-icon>
-          Buscar
-        </button>
       </div>
 
-      <!-- Filter by Status -->
-      <div class="flex flex-wrap gap-3">
-        <button
-          type="button"
-          (click)="setFilterStatus('all')"
-          [ngClass]="{
-            'bg-blue-600 text-white shadow-md': filterStatus === 'all',
-            'bg-blue-50 text-blue-400 hover:bg-blue-100 hover:text-blue-600':
-              filterStatus !== 'all',
-          }"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
-        >
-          <mat-icon class="!text-[18px]">group</mat-icon>
-          Todos ({{ allUsers.length }})
-        </button>
-        <button
-          type="button"
-          (click)="setFilterStatus('active')"
-          [ngClass]="{
-            'bg-green-600 text-white shadow-md': filterStatus === 'active',
-            'bg-green-50 text-green-400 hover:bg-green-100 hover:text-green-600':
-              filterStatus !== 'active',
-          }"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-200 focus-visible:ring-offset-1"
-        >
-          <mat-icon class="!text-[18px]">check_circle</mat-icon>
-          Activos ({{ getActiveUsersCount() }})
-        </button>
-        <button
-          type="button"
-          (click)="setFilterStatus('inactive')"
-          [ngClass]="{
-            'bg-red-600 text-white shadow-md': filterStatus === 'inactive',
-            'bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600':
-              filterStatus !== 'inactive',
-          }"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:ring-offset-1"
-        >
-          <mat-icon class="!text-[18px]">cancel</mat-icon>
-          Inactivos ({{ getInactiveUsersCount() }})
-        </button>
-      </div>
-    </div>
-
-    <!-- Table Card -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <!-- Tabla -->
       <div class="overflow-x-auto">
         <table mat-table [dataSource]="dataSource" class="w-full bg-transparent">
-          <!-- Nombre Column -->
+
           <ng-container matColumnDef="fullName">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600">person</mat-icon>
-                Nombre
-              </div>
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Nombre</span>
             </th>
-            <td mat-cell *matCellDef="let user" class="p-4 text-slate-900">
+            <td mat-cell *matCellDef="let user" class="px-6 py-4">
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
-                  <mat-icon class="text-blue-600">account_circle</mat-icon>
+                <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0 font-semibold text-sm">
+                  {{ getUserInitials(user) }}
                 </div>
                 <div>
-                  <p class="font-medium text-slate-900">
+                  <div class="font-medium text-slate-900">
                     {{ user.personalInfo?.firstName }} {{ user.personalInfo?.lastName }}
-                  </p>
-                  <p class="text-sm text-slate-500">{{ user.email }}</p>
+                  </div>
+                  <div class="text-xs text-slate-400">{{ user.email }}</div>
                 </div>
               </div>
             </td>
           </ng-container>
 
-          <!-- Teléfono Column -->
           <ng-container matColumnDef="phone">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600">phone</mat-icon>
-                Teléfono
-              </div>
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Teléfono</span>
             </th>
-            <td mat-cell *matCellDef="let user" class="p-4 text-slate-600">
-              <p class="text-sm">
-                {{ user.personalInfo?.phone || 'No disponible' }}
-              </p>
+            <td mat-cell *matCellDef="let user" class="px-6 py-4 text-sm text-slate-600">
+              {{ user.personalInfo?.phone || '—' }}
             </td>
           </ng-container>
 
-          <!-- Fecha de Inicio Column -->
           <ng-container matColumnDef="startDate">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600">calendar_today</mat-icon>
-                Fecha de Inicio
-              </div>
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha inicio</span>
             </th>
-            <td mat-cell *matCellDef="let user" class="p-4 text-slate-600">
-              <p class="text-sm">{{ formatDate(user.startDate) }}</p>
+            <td mat-cell *matCellDef="let user" class="px-6 py-4 text-sm text-slate-600">
+              {{ formatDate(user.startDate) }}
             </td>
           </ng-container>
 
-          <!-- Roles Column -->
           <ng-container matColumnDef="roles">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600">admin_panel_settings</mat-icon>
-                Roles
-              </div>
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Roles</span>
             </th>
-            <td mat-cell *matCellDef="let user" class="p-4">
-              <div class="flex flex-wrap gap-2">
+            <td mat-cell *matCellDef="let user" class="px-6 py-4">
+              <div class="flex flex-wrap gap-1.5">
                 <span
                   *ngFor="let role of user.roles"
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border"
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                   [ngClass]="
-                    role?.toLowerCase().includes('super')
-                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                      : role?.toLowerCase().includes('admin')
-                        ? 'bg-rose-50 text-rose-700 border-rose-200'
-                        : role?.toLowerCase().includes('doctor') ||
-                            role?.toLowerCase().includes('medic') ||
-                            role?.toLowerCase().includes('user')
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : role?.toLowerCase().includes('nurse')
-                            ? 'bg-sky-50 text-sky-700 border-sky-200'
-                            : role?.toLowerCase().includes('pharm')
-                              ? 'bg-purple-50 text-purple-700 border-purple-200'
-                              : 'bg-slate-100 text-slate-700 border-slate-200'
+                    role?.toLowerCase().includes('super') ? 'bg-indigo-100 text-indigo-700' :
+                    role?.toLowerCase().includes('admin') ? 'bg-rose-100 text-rose-700' :
+                    role?.toLowerCase().includes('doctor') ? 'bg-emerald-100 text-emerald-700' :
+                    role?.toLowerCase().includes('nurse') ? 'bg-sky-100 text-sky-700' :
+                    role?.toLowerCase().includes('pharm') ? 'bg-purple-100 text-purple-700' :
+                    'bg-slate-100 text-slate-600'
                   "
-                >
-                  <mat-icon
-                    class="!text-[14px]"
-                    [ngClass]="
-                      role?.toLowerCase().includes('super')
-                        ? 'text-indigo-600'
-                        : role?.toLowerCase().includes('admin')
-                          ? 'text-rose-600'
-                          : role?.toLowerCase().includes('doctor') ||
-                              role?.toLowerCase().includes('medic') ||
-                              role?.toLowerCase().includes('user')
-                            ? 'text-emerald-600'
-                            : role?.toLowerCase().includes('nurse')
-                              ? 'text-sky-600'
-                              : role?.toLowerCase().includes('pharm')
-                                ? 'text-purple-600'
-                                : 'text-slate-500'
-                    "
-                  >
-                    verified_user
-                  </mat-icon>
-                  {{ role }}
-                </span>
+                >{{ role }}</span>
               </div>
             </td>
           </ng-container>
 
-          <!-- Estado Column -->
           <ng-container matColumnDef="isActive">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600">radio_button_checked</mat-icon>
-                Estado
-              </div>
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
             </th>
-            <td mat-cell *matCellDef="let user" class="p-4">
+            <td mat-cell *matCellDef="let user" class="px-6 py-4">
               <span
-                class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
-                [ngClass]="
-                  user.isActive
-                    ? 'bg-green-100 text-green-800 border-green-200'
-                    : 'bg-red-100 text-red-800 border-red-200'
-                "
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                [ngClass]="user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
               >
-                <span
-                  class="w-2 h-2 rounded-full"
-                  [ngClass]="user.isActive ? 'bg-green-500' : 'bg-red-500'"
-                ></span>
+                <span class="w-1.5 h-1.5 rounded-full" [ngClass]="user.isActive ? 'bg-green-500' : 'bg-red-500'"></span>
                 {{ user.isActive ? 'Activo' : 'Inactivo' }}
               </span>
             </td>
           </ng-container>
 
-          <!-- Acciones Column -->
           <ng-container matColumnDef="actions">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <mat-icon class="text-blue-600">settings</mat-icon>
-                Acciones
-              </div>
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4 text-right">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span>
             </th>
-            <td mat-cell *matCellDef="let user" class="p-4">
-              <div class="flex gap-2 items-center">
+            <td mat-cell *matCellDef="let user" class="px-6 py-4">
+              <div class="flex items-center justify-end gap-1">
                 <button
-                  mat-icon-button
-                  class="w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-200"
-                  (click)="viewUser(user)"
+                  type="button"
+                  (click)="viewUser(user); $event.stopPropagation()"
                   matTooltip="Ver detalles"
-                  aria-label="Ver detalles del usuario"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
                 >
-                  <mat-icon class="!text-[20px] leading-none">visibility</mat-icon>
+                  <span class="material-symbols-outlined msz-18">visibility</span>
                 </button>
                 <button
-                  mat-icon-button
-                  class="w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-amber-200"
-                  (click)="editUser(user)"
-                  matTooltip="Editar usuario"
-                  aria-label="Editar usuario"
+                  type="button"
+                  (click)="editUser(user); $event.stopPropagation()"
+                  matTooltip="Editar"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0"
                 >
-                  <mat-icon class="!text-[20px] leading-none">edit</mat-icon>
+                  <span class="material-symbols-outlined msz-18">edit</span>
                 </button>
                 <button
-                  mat-icon-button
-                  class="w-9 h-9 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-purple-200"
-                  (click)="editRoles(user)"
-                  matTooltip="Editar roles"
-                  aria-label="Editar roles del usuario"
+                  type="button"
+                  (click)="editRoles(user); $event.stopPropagation()"
+                  matTooltip="Gestionar roles"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-purple-50 hover:text-purple-600 transition-colors border-0"
                 >
-                  <mat-icon class="!text-[20px] leading-none">manage_accounts</mat-icon>
+                  <span class="material-symbols-outlined msz-18">manage_accounts</span>
                 </button>
                 <button
-                  mat-icon-button
-                  class="w-9 h-9 text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-200"
-                  (click)="deleteUser(user)"
-                  matTooltip="Eliminar usuario"
-                  aria-label="Eliminar usuario"
+                  type="button"
+                  (click)="deleteUser(user); $event.stopPropagation()"
+                  matTooltip="Eliminar"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors border-0"
                 >
-                  <mat-icon class="!text-[20px] leading-none">delete</mat-icon>
+                  <span class="material-symbols-outlined msz-18">delete</span>
                 </button>
               </div>
             </td>
           </ng-container>
 
-          <!-- Table Rows -->
-          <tr
-            mat-header-row
-            *matHeaderRowDef="displayedColumns"
-            class="border-b-2 border-slate-200"
-          ></tr>
-          <tr
-            mat-row
-            *matRowDef="let row; columns: displayedColumns"
-            class="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-          ></tr>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"
+              (click)="viewUser(row)"
+              class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors cursor-pointer"></tr>
         </table>
+      </div>
 
-        <!-- Paginador -->
+      <!-- Footer -->
+      <div class="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-100">
+        <span class="text-sm text-slate-500">
+          Mostrando <span class="font-semibold text-slate-700">{{ dataSource.data.length }}</span> de
+          <span class="font-semibold text-slate-700">{{ allUsers.length }}</span> usuarios
+        </span>
         <mat-paginator
           [pageSize]="10"
-          [pageSizeOptions]="[5, 10, 25, 100]"
-          class="bg-slate-50 border-t border-slate-200 mt-4"
-        >
-        </mat-paginator>
+          [pageSizeOptions]="[10, 25, 50]"
+          showFirstLastButtons
+          aria-label="Seleccionar página"
+          class="bg-transparent border-0"
+        ></mat-paginator>
       </div>
+
     </div>
+
   </div>
 </div>

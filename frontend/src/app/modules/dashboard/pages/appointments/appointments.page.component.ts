@@ -218,6 +218,28 @@ export class AppointmentsPageComponent implements OnInit {
     return this.priorityIcons[priority] || 'flag'
   }
 
+  getCountByStatus(status: string): number {
+    return this.appointments.filter(a => a.status === status).length
+  }
+
+  getTodayCount(): number {
+    const today = new Date().toDateString()
+    return this.appointments.filter(
+      a => new Date(a.appointmentDate).toDateString() === today,
+    ).length
+  }
+
+  getPatientInitials(apt: Appointment): string {
+    return (
+      (apt.patient.firstName?.charAt(0) ?? '') + (apt.patient.lastName?.charAt(0) ?? '')
+    ).toUpperCase() || '?'
+  }
+
+  setStatus(status: string): void {
+    this.selectedStatus = status
+    this.applyFilters()
+  }
+
   canConfirm(appointment: Appointment): boolean {
     return appointment.status === AppointmentStatus.SCHEDULED
   }
