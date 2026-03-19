@@ -22,7 +22,7 @@
         <button
           type="button"
           (click)="goToMedications()"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
           aria-label="Ver catálogo de medicamentos"
         >
           <span class="material-symbols-outlined msz-20 leading-none">library_books</span>
@@ -31,7 +31,7 @@
         <button
           type="button"
           routerLink="/dashboard/pharmacy/inventory/transfer"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:ring-offset-1 transition-all border-0"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:ring-offset-1 transition-all border-0"
           aria-label="Transferir stock entre clínicas"
         >
           <span class="material-symbols-outlined msz-20 leading-none">local_shipping</span>
@@ -40,7 +40,7 @@
         <button
           type="button"
           (click)="openImportModal()"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
           aria-label="Importar listado"
         >
           <span class="material-symbols-outlined msz-20 leading-none">upload_file</span>
@@ -49,7 +49,7 @@
         <button
           type="button"
           (click)="createMedication()"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
           aria-label="Crear nuevo medicamento"
         >
           <span class="material-symbols-outlined msz-20 leading-none">medication</span>
@@ -69,7 +69,12 @@
 
     <!-- Estadísticas -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
+      <div
+        class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="statFilter() === 'all'"
+        [class.ring-blue-400]="statFilter() === 'all'"
+        (click)="setStatFilter('all')"
+      >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-blue-600 text-sm font-semibold">Total Productos</p>
@@ -79,7 +84,12 @@
           <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">inventory_2</span>
         </div>
       </div>
-      <div class="bg-orange-50 p-5 rounded-2xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
+      <div
+        class="bg-orange-50 p-5 rounded-2xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="statFilter() === 'low'"
+        [class.ring-orange-400]="statFilter() === 'low'"
+        (click)="setStatFilter('low')"
+      >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-orange-600 text-sm font-semibold">Stock Bajo</p>
@@ -89,7 +99,12 @@
           <span class="material-symbols-outlined text-orange-300" style="font-size: 40px">warning</span>
         </div>
       </div>
-      <div class="bg-red-50 p-5 rounded-2xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
+      <div
+        class="bg-red-50 p-5 rounded-2xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="statFilter() === 'expiring'"
+        [class.ring-red-400]="statFilter() === 'expiring'"
+        (click)="setStatFilter('expiring')"
+      >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-red-600 text-sm font-semibold">Por Vencer</p>
@@ -99,7 +114,7 @@
           <span class="material-symbols-outlined text-red-300" style="font-size: 40px">schedule</span>
         </div>
       </div>
-      <div class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
+      <div class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all select-none">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-green-600 text-sm font-semibold">Valor Total</p>

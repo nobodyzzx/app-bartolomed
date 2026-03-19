@@ -73,6 +73,7 @@ export class PurchaseOrdersComponent implements OnInit {
   })
 
   readonly orderStatuses = Object.values(PurchaseOrderStatus)
+  readonly POS = PurchaseOrderStatus
 
   constructor(
     private ordersService: PurchaseOrdersService,

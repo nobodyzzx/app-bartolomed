@@ -1,5 +1,5 @@
-<div class="min-h-screen bg-slate-50">
-  <div class="max-w-7xl mx-auto p-6">
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
     <!-- Header -->
     <header class="flex items-center justify-between mb-10">
       <div class="flex items-center gap-4">
@@ -22,7 +22,7 @@
       <div class="flex items-center gap-2" *ngIf="sale() as s">
         <button
           (click)="printReceipt()"
-          class="px-4 h-11 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-colors flex items-center gap-2 font-medium shadow-sm"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
           type="button"
         >
           <span class="material-symbols-outlined">print</span>
@@ -32,7 +32,7 @@
         <button
           *ngIf="isPending()"
           (click)="completeSale()"
-          class="px-4 h-11 rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors flex items-center gap-2 font-medium shadow-sm"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
           type="button"
         >
           <span class="material-symbols-outlined">check_circle</span>
@@ -42,7 +42,7 @@
         <button
           *ngIf="isPending()"
           (click)="cancelSale()"
-          class="px-4 h-11 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors flex items-center gap-2 font-medium shadow-sm"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-red-600 text-white hover:bg-red-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-1 transition-all border-0"
           type="button"
         >
           <span class="material-symbols-outlined">cancel</span>
@@ -59,7 +59,7 @@
     <!-- Content -->
     <div *ngIf="!loading() && sale() as s" class="grid gap-6">
       <!-- Sale Number & Status Card -->
-      <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg p-6 text-white">
+      <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl shadow-lg p-6 text-white">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-blue-100 text-sm font-medium mb-1">🧾 Número de Venta</p>
@@ -72,7 +72,7 @@
 
           <div class="text-right">
             <span
-              class="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold shadow-md"
+              class="inline-flex items-center gap-2 px-4 h-11 rounded-full text-sm font-bold shadow-md"
               [ngClass]="{
                 'bg-green-500 text-white': s.status === 'completed',
                 'bg-orange-500 text-white': s.status === 'pending',
@@ -109,7 +109,7 @@
         <!-- Left Column: Customer & Payment Info -->
         <div class="lg:col-span-1 space-y-6">
           <!-- Customer Info -->
-          <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="bg-white rounded-2xl shadow-md p-6">
             <!--
                         <span
                           *ngIf="item.discountPercent"
@@ -133,7 +133,7 @@
           </div>
 
           <!-- Payment Info -->
-          <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="bg-white rounded-2xl shadow-md p-6">
             <div class="flex items-center gap-3 mb-4">
               <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
                 <span class="material-symbols-outlined text-green-600">payments</span>
@@ -187,7 +187,7 @@
           </div>
 
           <!-- Notes (if any) -->
-          <div *ngIf="s.notes" class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div *ngIf="s.notes" class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
             <div class="flex items-start gap-2">
               <span class="material-symbols-outlined text-amber-600">notes</span>
               <div class="flex-1">
@@ -201,8 +201,8 @@
         <!-- Right Column: Items & Totals -->
         <div class="lg:col-span-2 space-y-6">
           <!-- Items Table -->
-          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
+          <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
               <h3 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
                 <span class="material-symbols-outlined">shopping_cart</span>
                 Productos Vendidos
@@ -210,38 +210,38 @@
             </div>
 
             <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-slate-200">
-                <thead class="bg-slate-50">
-                  <tr>
+              <table class="min-w-full">
+                <thead class="bg-slate-100">
+                  <tr class="border-b border-slate-100">
                     <th
-                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
+                      class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide"
                     >
                       Producto
                     </th>
                     <th
-                      class="px-6 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider"
+                      class="px-6 py-4 text-center text-xs font-semibold text-slate-600 uppercase tracking-wide"
                     >
                       Cantidad
                     </th>
                     <th
-                      class="px-6 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider"
+                      class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide"
                     >
                       P. Unitario
                     </th>
                     <th
-                      class="px-6 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider"
+                      class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide"
                     >
                       Desc.
                     </th>
                     <th
-                      class="px-6 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider"
+                      class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide"
                     >
                       Subtotal
                     </th>
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-slate-100">
-                  <tr *ngFor="let item of s.items" class="hover:bg-blue-50/50 transition-colors">
+                  <tr *ngFor="let item of s.items" class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors">
                     <td class="px-6 py-4">
                       <div class="flex items-start gap-3">
                         <div
@@ -306,7 +306,7 @@
           </div>
 
           <!-- Totals Summary -->
-          <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="bg-white rounded-2xl shadow-md p-6">
             <h3 class="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
               <span class="material-symbols-outlined">receipt</span>
               Resumen de Totales

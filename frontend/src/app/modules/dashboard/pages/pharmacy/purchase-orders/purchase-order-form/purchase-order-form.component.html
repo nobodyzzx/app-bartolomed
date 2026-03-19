@@ -1,5 +1,5 @@
 <div class="min-h-screen bg-slate-50 p-8">
-  <div class="max-w-6xl mx-auto">
+  <div class="max-w-7xl mx-auto">
     <!-- Header -->
     <div class="flex items-center justify-between mb-10">
       <div class="flex items-center gap-4">
@@ -30,7 +30,7 @@
     <!-- Formulario -->
     <form [formGroup]="orderForm" (ngSubmit)="onSubmit()">
       <!-- Información General -->
-      <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+      <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
         <h2 class="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
           <span class="material-symbols-outlined text-blue-600 msz-24">info</span>
           Información General
@@ -97,7 +97,7 @@
 
         <!-- Info del proveedor seleccionado -->
         @if (selectedSupplier()) {
-          <div class="mt-6 p-4 bg-blue-50 rounded-xl border-l-4 border-blue-500">
+          <div class="mt-6 p-4 bg-blue-50 rounded-2xl border-l-4 border-blue-500">
             <div class="flex items-start gap-3">
               <div
                 class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0"
@@ -133,7 +133,7 @@
       </div>
 
       <!-- Items de la Orden -->
-      <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+      <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
             <span class="material-symbols-outlined text-blue-600 msz-24">inventory_2</span>
@@ -142,7 +142,7 @@
           <button
             type="button"
             (click)="addItem()"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
           >
             <span class="material-symbols-outlined msz-20 leading-none">add</span>
             Agregar Item
@@ -154,7 +154,7 @@
           @for (item of items.controls; track $index; let i = $index) {
             <div
               [formGroupName]="i"
-              class="border-2 border-slate-200 rounded-xl p-5 bg-gradient-to-br from-slate-50 to-white hover:shadow-md transition-shadow"
+              class="border-2 border-slate-200 rounded-2xl p-5 bg-gradient-to-br from-slate-50 to-white hover:shadow-md transition-shadow"
             >
               <div class="flex items-start gap-4">
                 <div class="flex-1 space-y-4">
@@ -277,47 +277,47 @@
       </div>
 
       <!-- Resumen -->
-      <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+      <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
         <h2 class="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
           <span class="material-symbols-outlined text-blue-600 msz-24">receipt_long</span>
           Resumen de la Orden
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="bg-slate-50 p-4 rounded-xl border-l-4 border-slate-500">
+          <div class="bg-slate-50 p-5 rounded-2xl border-l-4 border-slate-500 shadow-md hover:shadow-lg transition-all">
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-slate-600 text-sm font-semibold">Total de Items</p>
-                <p class="text-3xl font-bold text-slate-900 mt-2">{{ totalItems }}</p>
+                <p class="text-3xl font-bold text-slate-900 mt-1">{{ totalItems }}</p>
                 <p class="text-xs text-slate-600/60 mt-1">Productos diferentes</p>
               </div>
-              <span class="material-symbols-outlined text-slate-500 msz-40 !w-10 !h-10"
+              <span class="material-symbols-outlined text-slate-300" style="font-size: 40px"
                 >inventory_2</span
               >
             </div>
           </div>
 
-          <div class="bg-blue-50 p-4 rounded-xl border-l-4 border-blue-500">
+          <div class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all">
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-blue-600 text-sm font-semibold">Total Unidades</p>
-                <p class="text-3xl font-bold text-blue-900 mt-2">{{ totalUnits }}</p>
+                <p class="text-3xl font-bold text-blue-900 mt-1">{{ totalUnits }}</p>
                 <p class="text-xs text-blue-600/60 mt-1">Cantidad total</p>
               </div>
-              <span class="material-symbols-outlined text-blue-500 msz-40 !w-10 !h-10">tag</span>
+              <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">tag</span>
             </div>
           </div>
 
-          <div class="bg-green-50 p-4 rounded-xl border-l-4 border-green-500">
+          <div class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all">
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-green-600 text-sm font-semibold">Monto Total</p>
-                <p class="text-3xl font-bold text-green-900 mt-2">
+                <p class="text-3xl font-bold text-green-900 mt-1">
                   {{ totalAmount | currency: 'BOB' : 'symbol-narrow' : '1.2-2' }}
                 </p>
                 <p class="text-xs text-green-600/60 mt-1">Importe de la orden</p>
               </div>
-              <span class="material-symbols-outlined text-green-500 msz-40 !w-10 !h-10"
+              <span class="material-symbols-outlined text-green-300" style="font-size: 40px"
                 >attach_money</span
               >
             </div>
@@ -330,7 +330,7 @@
         <button
           type="button"
           (click)="cancel()"
-          class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+          class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
         >
           <span class="material-symbols-outlined msz-20 leading-none">close</span>
           Cancelar
@@ -338,7 +338,7 @@
         <button
           type="submit"
           [disabled]="loading() || orderForm.invalid || items.length === 0"
-          class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
         >
           @if (loading()) {
             <span

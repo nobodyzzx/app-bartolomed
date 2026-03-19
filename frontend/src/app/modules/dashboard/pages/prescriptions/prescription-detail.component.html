@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-slate-50 p-6" *ngIf="prescription as p">
+<div class="min-h-screen bg-slate-50 p-8" *ngIf="prescription as p">
   <div class="max-w-4xl mx-auto">
     <div class="flex items-center justify-between mb-10">
       <div class="flex items-center gap-4">
@@ -16,7 +16,7 @@
       </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow-md p-6">
+    <div class="bg-white rounded-2xl shadow-md p-6">
       <div class="flex items-start justify-between mb-4">
         <div>
           <div class="text-sm text-slate-500">Paciente</div>
@@ -79,34 +79,34 @@
         <button
           (click)="changeStatus('dispensed')"
           *ngIf="p.status === 'active' && !isExpired(p.expiryDate)"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200"
+          class="inline-flex items-center gap-2 px-4 h-11 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors border-0"
         >
           <span class="material-symbols-outlined msz-18">local_pharmacy</span> Dispensar
         </button>
         <button
           (click)="changeStatus('completed')"
           *ngIf="p.status === 'active' && !isExpired(p.expiryDate)"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+          class="inline-flex items-center gap-2 px-4 h-11 rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors border-0"
         >
           <span class="material-symbols-outlined msz-18">done_all</span> Completar
         </button>
         <button
           (click)="changeStatus('cancelled')"
           *ngIf="p.status !== 'cancelled' && !isExpired(p.expiryDate)"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-100 text-red-700 hover:bg-red-200"
+          class="inline-flex items-center gap-2 px-4 h-11 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition-colors border-0"
         >
           <span class="material-symbols-outlined msz-18">cancel</span> Cancelar
         </button>
         <button
           (click)="doRefill()"
           *ngIf="canRefill(p)"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200"
+          class="inline-flex items-center gap-2 px-4 h-11 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors border-0"
         >
           <span class="material-symbols-outlined msz-18">autorenew</span> Resurtir
         </button>
         <button
           (click)="print()"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800 text-white hover:bg-black"
+          class="inline-flex items-center gap-2 px-4 h-11 rounded-full bg-slate-800 text-white hover:bg-black transition-colors border-0"
         >
           <span class="material-symbols-outlined msz-18">print</span> Imprimir
         </button>

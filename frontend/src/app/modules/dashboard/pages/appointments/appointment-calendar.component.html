@@ -1,5 +1,5 @@
-<div class="min-h-screen bg-slate-50">
-  <div class="mx-auto p-6" [ngClass]="isExpanded ? 'max-w-7xl' : 'max-w-full'">
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="mx-auto" [ngClass]="isExpanded ? 'max-w-7xl' : 'max-w-full'">
     <!-- Header Unificado -->
     <header class="mb-10 flex items-center justify-between">
       <div class="flex items-center gap-4">
@@ -18,7 +18,7 @@
 
       <button
         (click)="createNewAppointment()"
-        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
         aria-label="Crear nueva cita"
       >
         <span class="material-symbols-outlined msz-18 leading-none">event_available</span>
@@ -27,7 +27,7 @@
     </header>
 
     <!-- Calendar Controls -->
-    <div class="mb-6 bg-white rounded-2xl shadow-md p-4">
+    <div class="mb-6 bg-white rounded-2xl shadow-md p-6">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <button
@@ -69,7 +69,7 @@
     <!-- Calendar Grid -->
     <div *ngIf="!loading" class="bg-white rounded-2xl shadow-md overflow-hidden">
       <!-- Week Days Header -->
-      <div class="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
+      <div class="grid grid-cols-7 border-b border-slate-100 bg-slate-50">
         <div
           *ngFor="let day of weekDays"
           class="py-3 text-center text-sm font-semibold text-slate-600"
@@ -79,7 +79,7 @@
       </div>
 
       <!-- Calendar Days -->
-      <div class="grid grid-cols-7 divide-x divide-y divide-slate-200">
+      <div class="grid grid-cols-7 divide-x divide-y divide-slate-100">
         <div
           *ngFor="let day of calendarDays"
           class="min-h-[120px] p-2 transition-colors cursor-pointer relative"
@@ -207,7 +207,7 @@
       <p class="text-slate-500 text-lg">No hay citas programadas este mes</p>
       <button
         (click)="createNewAppointment()"
-        class="mt-4 inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+        class="mt-4 inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
       >
         <span class="material-symbols-outlined msz-18 leading-none">add</span>
         <span>Crear primera cita</span>

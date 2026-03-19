@@ -21,11 +21,10 @@
       </div>
       <div>
         <button
-          mat-stroked-button
           type="button"
           (click)="goBack()"
           [disabled]="loading"
-          class="rounded-full h-10 px-4 bg-red-50 text-red-600 border-red-200 hover:bg-red-100 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:ring-offset-1"
+          class="inline-flex items-center gap-2 rounded-full h-11 px-4 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:ring-offset-1 transition-all border-0"
           matTooltip="Cancelar"
           aria-label="Cancelar"
         >
@@ -37,7 +36,7 @@
 
     <!-- Form Card -->
     <form
-      class="bg-white rounded-xl shadow-md p-6 grid gap-6"
+      class="bg-white rounded-2xl shadow-md p-6 grid gap-6"
       [formGroup]="form"
       (ngSubmit)="submit()"
     >
@@ -123,7 +122,7 @@
           <button
             type="button"
             (click)="addItem()"
-            class="px-3 py-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 inline-flex items-center gap-2"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
           >
             <span class="material-symbols-outlined msz-20 leading-none">add</span>
             Agregar ítem
@@ -158,7 +157,7 @@
             <button
               type="button"
               (click)="removeItem(i)"
-              class="md:col-span-1 w-10 h-10 rounded-full bg-red-50 hover:bg-red-100 text-red-600 inline-flex items-center justify-center"
+              class="md:col-span-1 inline-flex items-center justify-center w-9 h-9 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors border-0"
             >
               <span class="material-symbols-outlined msz-20 leading-none">delete</span>
             </button>
@@ -204,7 +203,7 @@
           </mat-form-field>
         </div>
 
-        <div class="bg-slate-50 rounded-lg p-4">
+        <div class="bg-slate-50 rounded-2xl p-4">
           <div class="flex justify-between py-1 text-slate-700">
             <span>Subtotal</span><span>{{ subtotal | number: '1.2-2' }}</span>
           </div>
@@ -235,20 +234,17 @@
       <!-- Actions -->
       <div class="flex items-center justify-end gap-3 pt-2">
         <button
-          mat-stroked-button
           type="button"
           (click)="goBack()"
-          class="rounded-full h-11 px-5 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 border-0"
+          class="inline-flex items-center gap-2 rounded-full h-11 px-5 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
         >
           <mat-icon class="!text-[20px]">arrow_back</mat-icon>
           Cancelar
         </button>
         <button
-          mat-flat-button
-          color="primary"
           type="submit"
           [disabled]="loading || form.invalid"
-          class="rounded-full h-11 px-5 inline-flex items-center gap-2 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
+          class="inline-flex items-center gap-2 rounded-full h-11 px-5 bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0"
         >
           <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
           <span>{{ isEdit ? 'Guardar cambios' : 'Crear factura' }}</span>

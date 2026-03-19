@@ -28,6 +28,16 @@ export class SalesDispensingComponent implements OnInit {
   dataSource = new MatTableDataSource<Sale>()
 
   sales: Sale[] = []
+  statFilter: 'all' | 'completed' | 'pending' = 'all'
+
+  setStatFilter(filter: 'all' | 'completed' | 'pending'): void {
+    this.statFilter = filter
+    const base = filter === 'all' ? this.sales
+      : filter === 'completed' ? this.sales.filter(s => s.status === SaleStatus.COMPLETED)
+      : this.sales.filter(s => s.status === SaleStatus.PENDING)
+    this.dataSource.data = base
+    if (this.dataSource.paginator) this.dataSource.paginator.firstPage()
+  }
 
   stats = {
     totalSales: 0,

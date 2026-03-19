@@ -31,6 +31,12 @@ export class InventoryComponent implements OnInit, OnDestroy {
     totalValue: 0,
   }
 
+  statFilter = signal<'all' | 'low' | 'expiring'>('all')
+
+  setStatFilter(filter: 'all' | 'low' | 'expiring'): void {
+    this.statFilter.set(filter)
+  }
+
   importOpen = signal(false)
   importLoading = signal(false)
   importHeaders: string[] = []
@@ -228,9 +234,12 @@ export class InventoryComponent implements OnInit, OnDestroy {
 
   get filteredProducts(): MedicationStock[] {
     const term = (this.searchTerm || '').toLowerCase()
+    let base = this.products
+    if (this.statFilter() === 'low') base = this.lowStockProducts
+    else if (this.statFilter() === 'expiring') base = this.expiringProducts
     const rows = !term
-      ? this.products
-      : this.products.filter(p =>
+      ? base
+      : base.filter(p =>
           [p.medication?.name, p.medication?.brandName, p.batchNumber, p.location]
             .filter(Boolean)
             .some(v => String(v).toLowerCase().includes(term)),

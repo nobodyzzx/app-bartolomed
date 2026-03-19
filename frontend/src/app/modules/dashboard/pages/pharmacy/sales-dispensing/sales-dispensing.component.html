@@ -31,7 +31,12 @@
 
     <!-- Estadísticas -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
+      <div
+        class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="statFilter === 'all'"
+        [class.ring-blue-400]="statFilter === 'all'"
+        (click)="setStatFilter('all')"
+      >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-blue-600 text-sm font-semibold">Total Ventas</p>
@@ -41,7 +46,12 @@
           <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">receipt</span>
         </div>
       </div>
-      <div class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
+      <div
+        class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="statFilter === 'completed'"
+        [class.ring-green-400]="statFilter === 'completed'"
+        (click)="setStatFilter('completed')"
+      >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-green-600 text-sm font-semibold">Completadas</p>
@@ -51,7 +61,12 @@
           <span class="material-symbols-outlined text-green-300" style="font-size: 40px">check_circle</span>
         </div>
       </div>
-      <div class="bg-orange-50 p-5 rounded-2xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
+      <div
+        class="bg-orange-50 p-5 rounded-2xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="statFilter === 'pending'"
+        [class.ring-orange-400]="statFilter === 'pending'"
+        (click)="setStatFilter('pending')"
+      >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-orange-600 text-sm font-semibold">Pendientes</p>
@@ -61,7 +76,7 @@
           <span class="material-symbols-outlined text-orange-300" style="font-size: 40px">pending</span>
         </div>
       </div>
-      <div class="bg-purple-50 p-5 rounded-2xl border-l-4 border-purple-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
+      <div class="bg-purple-50 p-5 rounded-2xl border-l-4 border-purple-500 shadow-md hover:shadow-lg transition-all select-none">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-purple-600 text-sm font-semibold">Ingresos</p>
@@ -199,8 +214,8 @@
             <td mat-cell *matCellDef="let sale" class="px-6 py-4">
               <div class="flex items-center gap-1">
                 <button
-                  mat-icon-button
-                  class="w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-200"
+                  type="button"
+                  class="inline-flex items-center justify-center w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border-0"
                   (click)="viewSaleDetails(sale); $event.stopPropagation()"
                   matTooltip="Ver detalle de la venta"
                   aria-label="Ver detalle de la venta"
@@ -208,8 +223,8 @@
                   <span class="material-symbols-outlined msz-20 leading-none">visibility</span>
                 </button>
                 <button
-                  mat-icon-button
-                  class="w-9 h-9 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-200"
+                  type="button"
+                  class="inline-flex items-center justify-center w-9 h-9 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors border-0"
                   (click)="printReceipt(sale); $event.stopPropagation()"
                   matTooltip="Imprimir recibo"
                   aria-label="Imprimir recibo"
@@ -217,8 +232,8 @@
                   <span class="material-symbols-outlined msz-20 leading-none">print</span>
                 </button>
                 <button
-                  mat-icon-button
-                  class="w-9 h-9 text-green-600 hover:bg-green-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-green-200"
+                  type="button"
+                  class="inline-flex items-center justify-center w-9 h-9 text-green-600 hover:bg-green-50 rounded-lg transition-colors border-0"
                   (click)="completeSale(sale); $event.stopPropagation()"
                   [disabled]="sale.status !== 'pending'"
                   matTooltip="Completar venta"
@@ -227,8 +242,8 @@
                   <span class="material-symbols-outlined msz-20 leading-none">check_circle</span>
                 </button>
                 <button
-                  mat-icon-button
-                  class="w-9 h-9 text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-200"
+                  type="button"
+                  class="inline-flex items-center justify-center w-9 h-9 text-red-600 hover:bg-red-50 rounded-lg transition-colors border-0"
                   (click)="cancelSale(sale); $event.stopPropagation()"
                   [disabled]="sale.status === 'completed' || sale.status === 'cancelled'"
                   matTooltip="Cancelar venta"
@@ -240,19 +255,19 @@
             </td>
           </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns" class=""></tr>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedColumns"
               (click)="viewSaleDetails(row)"
               class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors cursor-pointer"></tr>
         </table>
+      </div>
 
-        <!-- Footer -->
-        <div class="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-100">
-          <span class="text-sm text-slate-500">
-            <span class="font-semibold text-slate-700">{{ dataSource.filteredData?.length || dataSource.data.length }}</span> ventas en total
-          </span>
-          <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons class="bg-transparent"></mat-paginator>
-        </div>
+      <!-- Footer -->
+      <div *ngIf="dataSource.data.length > 0" class="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-100">
+        <span class="text-sm text-slate-500">
+          <span class="font-semibold text-slate-700">{{ dataSource.filteredData.length || dataSource.data.length }}</span> ventas en total
+        </span>
+        <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons class="bg-transparent border-0"></mat-paginator>
       </div>
     </div>
   </div>

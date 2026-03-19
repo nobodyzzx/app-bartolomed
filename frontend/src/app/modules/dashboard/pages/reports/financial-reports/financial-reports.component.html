@@ -1,5 +1,5 @@
-<div class="min-h-screen bg-slate-50">
-  <div class="max-w-7xl mx-auto p-6">
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
     <!-- Header -->
     <div class="flex items-center justify-between mb-10">
       <div class="flex items-center gap-4">
@@ -18,76 +18,64 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <!-- Total Reportes -->
-      <div
-        class="bg-white rounded-lg shadow-sm border-l-4 border-emerald-500 p-4 hover:shadow-md transition-shadow"
-      >
+      <div class="bg-emerald-50 p-5 rounded-2xl border-l-4 border-emerald-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-slate-600">Total Reportes</p>
-            <p class="text-2xl font-bold text-slate-900 mt-1">{{ totalReports }}</p>
+            <p class="text-emerald-600 text-sm font-semibold">Total Reportes</p>
+            <p class="text-3xl font-bold text-emerald-900 mt-1">{{ totalReports }}</p>
+            <p class="text-xs text-emerald-500 mt-1">Generados</p>
           </div>
-          <span class="material-symbols-outlined msz-40 text-emerald-500 leading-none"
-            >description</span
-          >
+          <span class="material-symbols-outlined text-emerald-300" style="font-size: 40px">description</span>
         </div>
       </div>
 
       <!-- Ingresos Totales -->
-      <div
-        class="bg-white rounded-lg shadow-sm border-l-4 border-blue-500 p-4 hover:shadow-md transition-shadow"
-      >
+      <div class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-slate-600">Ingresos Totales</p>
-            <p class="text-2xl font-bold text-slate-900 mt-1">{{ formatCurrency(totalRevenue) }}</p>
+            <p class="text-blue-600 text-sm font-semibold">Ingresos Totales</p>
+            <p class="text-3xl font-bold text-blue-900 mt-1">{{ formatCurrency(totalRevenue) }}</p>
+            <p class="text-xs text-blue-500 mt-1">Cobros acumulados</p>
           </div>
-          <span class="material-symbols-outlined msz-40 text-blue-500 leading-none"
-            >trending_up</span
-          >
+          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">trending_up</span>
         </div>
       </div>
 
       <!-- Gastos Totales -->
-      <div
-        class="bg-white rounded-lg shadow-sm border-l-4 border-red-500 p-4 hover:shadow-md transition-shadow"
-      >
+      <div class="bg-red-50 p-5 rounded-2xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-slate-600">Gastos Totales</p>
-            <p class="text-2xl font-bold text-slate-900 mt-1">
-              {{ formatCurrency(totalExpenses) }}
-            </p>
+            <p class="text-red-600 text-sm font-semibold">Gastos Totales</p>
+            <p class="text-3xl font-bold text-red-900 mt-1">{{ formatCurrency(totalExpenses) }}</p>
+            <p class="text-xs text-red-500 mt-1">Egresos registrados</p>
           </div>
-          <span class="material-symbols-outlined msz-40 text-red-500 leading-none">money_off</span>
+          <span class="material-symbols-outlined text-red-300" style="font-size: 40px">money_off</span>
         </div>
       </div>
 
       <!-- Utilidad Neta -->
-      <div
-        class="bg-white rounded-lg shadow-sm border-l-4 border-amber-500 p-4 hover:shadow-md transition-shadow"
-      >
+      <div class="bg-amber-50 p-5 rounded-2xl border-l-4 border-amber-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-slate-600">Utilidad Neta</p>
+            <p class="text-amber-600 text-sm font-semibold">Utilidad Neta</p>
             <p
-              class="text-2xl font-bold mt-1"
+              class="text-3xl font-bold mt-1"
               [class.text-emerald-600]="totalProfit >= 0"
               [class.text-red-600]="totalProfit < 0"
             >
               {{ formatCurrency(totalProfit) }}
             </p>
+            <p class="text-xs text-amber-500 mt-1">Balance general</p>
           </div>
-          <span class="material-symbols-outlined msz-40 text-amber-500 leading-none"
-            >account_balance_wallet</span
-          >
+          <span class="material-symbols-outlined text-amber-300" style="font-size: 40px">account_balance_wallet</span>
         </div>
       </div>
     </div>
 
     <!-- Formulario de Generación -->
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
       <div
         class="bg-gradient-to-r from-emerald-50 to-teal-50 px-6 py-4 border-b border-emerald-100"
       >
@@ -180,7 +168,7 @@
           <button
             type="button"
             (click)="generateForm.reset()"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors border-0"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors border-0"
           >
             <span class="material-symbols-outlined msz-18">restart_alt</span>
             Limpiar
@@ -188,7 +176,7 @@
           <button
             type="submit"
             [disabled]="generateForm.invalid || generating"
-            class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-medium bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0"
+            class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0"
           >
             <span class="material-symbols-outlined msz-20" [class.animate-spin]="generating">{{
               generating ? 'sync' : 'add_circle'
@@ -200,9 +188,9 @@
     </div>
 
     <!-- Lista de Reportes -->
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
       <div
-        class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between"
+        class="px-6 py-4 border-b border-slate-100 bg-slate-100 flex items-center justify-between"
       >
         <div class="flex items-center gap-2">
           <span class="material-symbols-outlined msz-20 text-slate-600">folder_open</span>
@@ -217,7 +205,7 @@
           type="button"
           (click)="loadFinancialReports()"
           [disabled]="loading"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors border-0 disabled:opacity-50"
+          class="inline-flex items-center gap-2 px-4 h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors border-0 disabled:opacity-50"
         >
           <span class="material-symbols-outlined msz-18" [class.animate-spin]="loading">sync</span>
           Actualizar
@@ -232,51 +220,51 @@
       <!-- Tabla -->
       <div *ngIf="!loading && financialReports.length > 0" class="overflow-x-auto">
         <table class="w-full">
-          <thead class="bg-slate-50 border-b border-slate-200">
+          <thead class="bg-slate-100 border-b border-slate-200">
             <tr>
-              <th class="px-6 py-3 text-left">
+              <th class="px-6 py-4 text-left">
                 <div
-                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
+                  class="text-xs font-semibold text-slate-600 uppercase tracking-wide"
                 >
                   <span class="material-symbols-outlined msz-16">title</span>
                   Título
                 </div>
               </th>
-              <th class="px-6 py-3 text-left">
+              <th class="px-6 py-4 text-left">
                 <div
-                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
+                  class="text-xs font-semibold text-slate-600 uppercase tracking-wide"
                 >
                   <span class="material-symbols-outlined msz-16">category</span>
                   Tipo
                 </div>
               </th>
-              <th class="px-6 py-3 text-left">
+              <th class="px-6 py-4 text-left">
                 <div
-                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
+                  class="text-xs font-semibold text-slate-600 uppercase tracking-wide"
                 >
                   <span class="material-symbols-outlined msz-16">event</span>
                   Fecha
                 </div>
               </th>
-              <th class="px-6 py-3 text-left">
+              <th class="px-6 py-4 text-left">
                 <div
-                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
+                  class="text-xs font-semibold text-slate-600 uppercase tracking-wide"
                 >
                   <span class="material-symbols-outlined msz-16">attach_money</span>
                   Monto
                 </div>
               </th>
-              <th class="px-6 py-3 text-left">
+              <th class="px-6 py-4 text-left">
                 <div
-                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
+                  class="text-xs font-semibold text-slate-600 uppercase tracking-wide"
                 >
                   <span class="material-symbols-outlined msz-16">info</span>
                   Estado
                 </div>
               </th>
-              <th class="px-6 py-3 text-center">
+              <th class="px-6 py-4 text-center">
                 <div
-                  class="flex items-center justify-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
+                  class="text-xs font-semibold text-slate-600 uppercase tracking-wide"
                 >
                   <span class="material-symbols-outlined msz-16">settings</span>
                   Acciones
@@ -285,7 +273,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr *ngFor="let report of financialReports" class="hover:bg-slate-50 transition-colors">
+            <tr *ngFor="let report of financialReports" class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors">
               <td class="px-6 py-4">
                 <div>
                   <p class="text-sm font-medium text-slate-900">{{ report.title }}</p>
@@ -332,7 +320,7 @@
                   <button
                     type="button"
                     (click)="viewReport(report)"
-                    class="p-2 rounded-full hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors border-0"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors border-0"
                     title="Ver detalles"
                   >
                     <span class="material-symbols-outlined msz-18">visibility</span>
@@ -340,7 +328,7 @@
                   <button
                     type="button"
                     (click)="downloadReport(report)"
-                    class="p-2 rounded-full hover:bg-blue-50 text-blue-600 hover:text-blue-700 transition-colors border-0"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors border-0"
                     title="Descargar PDF"
                   >
                     <span class="material-symbols-outlined msz-18">download</span>
@@ -348,7 +336,7 @@
                   <button
                     type="button"
                     (click)="deleteReport(report)"
-                    class="p-2 rounded-full hover:bg-red-50 text-red-600 hover:text-red-700 transition-colors border-0"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-red-600 hover:bg-red-50 transition-colors border-0"
                     title="Eliminar"
                   >
                     <span class="material-symbols-outlined msz-18">delete</span>
@@ -377,7 +365,7 @@
       (click)="selectedReport = null"
     >
       <div
-        class="bg-white rounded-xl shadow-2xl w-full max-w-3xl animate-in fade-in zoom-in duration-200"
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl animate-in fade-in zoom-in duration-200"
         (click)="$event.stopPropagation()"
       >
         <!-- Header -->
@@ -517,14 +505,14 @@
           <button
             type="button"
             (click)="selectedReport = null"
-            class="px-5 py-2.5 rounded-full bg-white text-slate-700 hover:bg-slate-100 font-medium transition-colors border border-slate-200"
+            class="px-5 h-11 rounded-full bg-white text-slate-700 hover:bg-slate-100 font-medium transition-colors border border-slate-200"
           >
             Cerrar
           </button>
           <button
             type="button"
             (click)="downloadReport(selectedReport!)"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 font-medium transition-colors border-0"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-medium transition-colors border-0"
           >
             <span class="material-symbols-outlined msz-18">download</span>
             Descargar PDF
