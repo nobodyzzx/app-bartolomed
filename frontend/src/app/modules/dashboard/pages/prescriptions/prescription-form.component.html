@@ -22,7 +22,7 @@
 
     <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
       <!-- Información Principal -->
-      <div class="bg-white rounded-xl shadow-md p-6">
+      <div class="bg-white rounded-2xl shadow-md p-6">
         <div class="flex items-center gap-3 mb-6">
           <div
             class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
@@ -234,7 +234,7 @@
       </div>
 
       <!-- Medicamentos -->
-      <div class="bg-white rounded-xl shadow-md p-6">
+      <div class="bg-white rounded-2xl shadow-md p-6">
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center gap-3">
             <div
@@ -252,7 +252,7 @@
           <button
             type="button"
             (click)="addItem()"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
           >
             <span class="material-symbols-outlined msz-20 leading-none">add</span>
             Agregar Medicamento
@@ -262,7 +262,7 @@
         <div class="space-y-6" *ngIf="items.length > 0">
           <div
             *ngFor="let it of items.controls; let i = index"
-            class="relative border-2 border-slate-200 rounded-xl p-6 bg-gradient-to-br from-slate-50 to-white hover:border-blue-200 transition-colors"
+            class="relative border-2 border-slate-200 rounded-2xl p-6 bg-gradient-to-br from-slate-50 to-white hover:border-blue-200 transition-colors"
           >
             <!-- Número del medicamento y botón eliminar -->
             <div class="flex items-center justify-between mb-4">
@@ -437,7 +437,7 @@
           <button
             type="button"
             (click)="addItem()"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg border-0"
           >
             <span class="material-symbols-outlined msz-20">add</span>
             Agregar Primer Medicamento
@@ -446,7 +446,7 @@
       </div>
 
       <!-- Notas -->
-      <div class="bg-white rounded-xl shadow-md p-6">
+      <div class="bg-white rounded-2xl shadow-md p-6">
         <div class="flex items-center gap-3 mb-6">
           <div
             class="w-10 h-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center shadow-sm"
@@ -477,7 +477,7 @@
       <!-- Resumen de validación -->
       <div
         *ngIf="form.invalid && (form.dirty || form.touched)"
-        class="bg-amber-50 border-2 border-amber-200 rounded-xl p-6"
+        class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6"
       >
         <div class="flex items-start gap-3">
           <div
@@ -566,7 +566,7 @@
           <button
             type="button"
             (click)="router.navigate(['../list'], { relativeTo: route })"
-            class="inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+            class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
           >
             <span class="material-symbols-outlined msz-18">cancel</span>
             Cancelar
@@ -574,7 +574,7 @@
           <button
             type="submit"
             [disabled]="loading || form.invalid"
-            class="inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
+            class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
             [class.animate-pulse]="loading"
           >
             <span class="material-symbols-outlined msz-18">{{

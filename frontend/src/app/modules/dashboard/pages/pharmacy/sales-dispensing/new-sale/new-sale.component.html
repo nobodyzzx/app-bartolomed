@@ -1,5 +1,5 @@
-<div class="min-h-screen bg-slate-50">
-  <div class="max-w-7xl mx-auto p-6">
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
     <!-- Header -->
     <header class="flex items-center justify-between mb-10">
       <div class="flex items-center gap-4">
@@ -27,7 +27,7 @@
     } @else {
       <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
         <!-- Add Product Card -->
-        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+        <div class="bg-white rounded-2xl shadow-md p-6">
           <fieldset class="border border-blue-200 rounded-lg p-4 bg-blue-50/30">
             <legend class="px-2 text-sm font-semibold text-blue-900">
               ➕ Agregar producto a la venta
@@ -129,7 +129,7 @@
 
         <!-- Items Table -->
         @if (saleItems().length > 0) {
-          <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="bg-white rounded-2xl shadow-md p-6">
             <h3 class="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
               <span class="material-symbols-outlined text-blue-600">shopping_cart</span>
               Productos en la venta ({{ saleItems().length }})
@@ -137,20 +137,20 @@
 
             <div class="overflow-x-auto">
               <table class="w-full">
-                <thead>
-                  <tr class="border-b-2 border-slate-200">
-                    <th class="text-left py-3 px-2 text-sm font-semibold text-slate-700">
+                <thead class="bg-slate-100">
+                  <tr class="border-b border-slate-100">
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
                       Producto
                     </th>
-                    <th class="text-left py-3 px-2 text-sm font-semibold text-slate-700">Lote</th>
-                    <th class="text-right py-3 px-2 text-sm font-semibold text-slate-700">Cant.</th>
-                    <th class="text-right py-3 px-2 text-sm font-semibold text-slate-700">
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Lote</th>
+                    <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Cant.</th>
+                    <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">
                       Precio
                     </th>
-                    <th class="text-right py-3 px-2 text-sm font-semibold text-slate-700">
+                    <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">
                       Desc. %
                     </th>
-                    <th class="text-right py-3 px-2 text-sm font-semibold text-slate-700">
+                    <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">
                       Subtotal
                     </th>
                     <th class="w-20"></th>
@@ -158,8 +158,8 @@
                 </thead>
                 <tbody>
                   @for (item of saleItems(); track $index; let i = $index) {
-                    <tr class="border-b border-slate-100 hover:bg-slate-50">
-                      <td class="py-3 px-2">
+                    <tr class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors">
+                      <td class="px-6 py-4">
                         <div class="font-medium text-slate-900">
                           {{ item.medicationStock.medication?.name || 'N/A' }}
                         </div>
@@ -167,29 +167,29 @@
                           {{ item.medicationStock.medication?.activeIngredients }}
                         </div>
                       </td>
-                      <td class="py-3 px-2 text-sm text-slate-600">
+                      <td class="px-6 py-4 text-sm text-slate-600">
                         {{ item.medicationStock.batchNumber }}
                       </td>
-                      <td class="py-3 px-2 text-right text-sm text-slate-900 font-medium">
+                      <td class="px-6 py-4 text-right text-sm text-slate-900 font-medium">
                         {{ item.quantity }}
                       </td>
-                      <td class="py-3 px-2 text-right text-sm text-slate-900">
+                      <td class="px-6 py-4 text-right text-sm text-slate-900">
                         ${{ item.unitPrice | number: '1.2-2' }}
                       </td>
-                      <td class="py-3 px-2 text-right text-sm text-slate-600">
+                      <td class="px-6 py-4 text-right text-sm text-slate-600">
                         {{ item.discountPercent }}%
                       </td>
-                      <td class="py-3 px-2 text-right text-sm text-slate-900 font-semibold">
+                      <td class="px-6 py-4 text-right text-sm text-slate-900 font-semibold">
                         ${{ item.subtotal | number: '1.2-2' }}
                       </td>
-                      <td class="py-3 px-2 text-center">
+                      <td class="px-6 py-4 text-center">
                         <button
                           type="button"
                           (click)="removeItem(i)"
-                          class="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
+                          class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-red-600 hover:bg-red-50 transition-colors border-0"
                           matTooltip="Eliminar"
                         >
-                          <span class="material-symbols-outlined text-xl">delete</span>
+                          <span class="material-symbols-outlined msz-18">delete</span>
                         </button>
                       </td>
                     </tr>
@@ -203,7 +203,7 @@
         <!-- Sale Details -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Left Column: Patient & Payment -->
-          <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+          <div class="bg-white rounded-2xl shadow-md p-6 space-y-6">
             <fieldset class="border border-slate-200 rounded-lg p-4 bg-slate-50">
               <legend class="px-2 text-sm font-semibold text-slate-700">Información general</legend>
 
@@ -368,7 +368,7 @@
                             </div>
                             <button
                               type="button"
-                              class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium transition-colors shadow-sm hover:shadow flex items-center gap-1.5"
+                              class="px-4 h-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors shadow-sm hover:shadow flex items-center gap-1.5"
                               (click)="applyPrescription(pr)"
                               matTooltip="Agregar medicamentos de esta receta a la venta"
                             >
@@ -470,7 +470,7 @@
           </div>
 
           <!-- Right Column: Totals Summary -->
-          <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="bg-white rounded-2xl shadow-md p-6">
             <fieldset class="border border-blue-200 rounded-lg p-4 bg-blue-50/30 h-full">
               <legend class="px-2 text-sm font-semibold text-blue-900">
                 💰 Resumen de totales
@@ -573,7 +573,7 @@
           <button
             type="button"
             (click)="goBack()"
-            class="px-6 h-11 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-colors flex items-center gap-2 font-medium"
+            class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
           >
             <span class="material-symbols-outlined">close</span>
             <span>Cancelar</span>
@@ -581,7 +581,7 @@
           <button
             type="submit"
             [disabled]="loading() || saleItems().length === 0"
-            class="px-6 h-11 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed border-0"
           >
             @if (loading()) {
               <div

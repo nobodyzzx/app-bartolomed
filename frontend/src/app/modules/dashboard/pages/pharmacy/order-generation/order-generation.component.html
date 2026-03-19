@@ -12,16 +12,14 @@
           <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
         </button>
         <div class="text-left">
-          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">
-            Generación de Pedidos
-          </h1>
+          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Generación de Pedidos</h1>
           <p class="text-slate-600">Gestión de pedidos a proveedores</p>
         </div>
       </div>
       <button
         type="button"
         (click)="createNewOrder()"
-        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
         aria-label="Crear nuevo pedido"
       >
         <span class="material-symbols-outlined msz-20 leading-none">add</span>
@@ -30,243 +28,192 @@
     </div>
 
     <!-- Estadísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-      <div
-        class="bg-blue-50 p-4 rounded-xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-      >
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-blue-600 text-sm font-semibold">Total Pedidos</p>
-            <p class="text-3xl font-bold text-blue-900 mt-2">{{ stats.totalOrders }}</p>
-            <p class="text-xs text-blue-600/60 mt-1">Pedidos registrados</p>
+            <p class="text-3xl font-bold text-blue-900 mt-1">{{ stats.totalOrders }}</p>
+            <p class="text-xs text-blue-500 mt-1">Pedidos registrados</p>
           </div>
-          <span class="material-symbols-outlined text-blue-500 msz-40 !w-10 !h-10"
-            >receipt_long</span
-          >
+          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">receipt_long</span>
         </div>
       </div>
 
-      <div
-        class="bg-orange-50 p-4 rounded-xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-      >
+      <div class="bg-orange-50 p-5 rounded-2xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-orange-600 text-sm font-semibold">Pendientes</p>
-            <p class="text-3xl font-bold text-orange-900 mt-2">{{ stats.pendingOrders }}</p>
-            <p class="text-xs text-orange-600/60 mt-1">Esperando aprobación</p>
+            <p class="text-3xl font-bold text-orange-900 mt-1">{{ stats.pendingOrders }}</p>
+            <p class="text-xs text-orange-500 mt-1">Esperando aprobación</p>
           </div>
-          <span class="material-symbols-outlined text-orange-500 msz-40 !w-10 !h-10">pending</span>
+          <span class="material-symbols-outlined text-orange-300" style="font-size: 40px">pending</span>
         </div>
       </div>
 
-      <div
-        class="bg-green-50 p-4 rounded-xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-      >
+      <div class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-green-600 text-sm font-semibold">Aprobados</p>
-            <p class="text-3xl font-bold text-green-900 mt-2">{{ stats.approvedOrders }}</p>
-            <p class="text-xs text-green-600/60 mt-1">Listos para procesar</p>
+            <p class="text-3xl font-bold text-green-900 mt-1">{{ stats.approvedOrders }}</p>
+            <p class="text-xs text-green-500 mt-1">Listos para procesar</p>
           </div>
-          <span class="material-symbols-outlined text-green-500 msz-40 !w-10 !h-10"
-            >check_circle</span
-          >
+          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">check_circle</span>
         </div>
       </div>
 
-      <div
-        class="bg-purple-50 p-4 rounded-xl border-l-4 border-purple-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-      >
+      <div class="bg-purple-50 p-5 rounded-2xl border-l-4 border-purple-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-purple-600 text-sm font-semibold">Valor Total</p>
-            <p class="text-3xl font-bold text-purple-900 mt-2">
-              ${{ stats.totalValue | number: '1.2-2' }}
-            </p>
-            <p class="text-xs text-purple-600/60 mt-1">En pedidos activos</p>
+            <p class="text-3xl font-bold text-purple-900 mt-1">${{ stats.totalValue | number: '1.2-2' }}</p>
+            <p class="text-xs text-purple-500 mt-1">En pedidos activos</p>
           </div>
-          <span class="material-symbols-outlined text-purple-500 msz-40 !w-10 !h-10"
-            >attach_money</span
-          >
+          <span class="material-symbols-outlined text-purple-300" style="font-size: 40px">attach_money</span>
         </div>
       </div>
     </div>
 
-    <!-- Búsqueda y Filtros -->
-    <div class="flex items-center gap-4 mb-6">
-      <!-- Campo de búsqueda -->
-      <div class="flex-1 max-w-2xl">
-        <div class="relative">
-          <input
-            type="text"
-            (keyup)="applyTextFilter($event)"
-            placeholder="ID, proveedor, estado..."
-            class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
-          />
-          <span class="material-symbols-outlined msz-18 absolute right-3 top-2.5 text-blue-400"
-            >search</span
+    <!-- Contenedor principal -->
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+
+      <!-- Búsqueda y Filtros -->
+      <div class="p-6 border-b border-slate-100">
+        <div class="flex items-center gap-4 flex-wrap">
+          <div class="flex-1 min-w-60 max-w-md relative">
+            <input
+              type="text"
+              (keyup)="applyTextFilter($event)"
+              placeholder="ID, proveedor, estado..."
+              class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
+            />
+            <span class="material-symbols-outlined absolute right-4 top-2.5 text-blue-400 msz-18">search</span>
+          </div>
+
+          <!-- Filtro de Estado -->
+          <div class="relative">
+            <select
+              [value]="statusFilter()"
+              (change)="changeStatusFilter($any($event.target).value)"
+              class="h-11 rounded-full bg-slate-50 px-5 pr-10 text-slate-700 shadow-md hover:bg-slate-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-1 transition border-0 appearance-none cursor-pointer font-medium"
+            >
+              <option value="all">Todos los estados</option>
+              <option value="draft">Borrador</option>
+              <option value="pending">Pendiente</option>
+              <option value="approved">Aprobado</option>
+              <option value="sent">Enviado</option>
+              <option value="partially_received">Parcialmente recibido</option>
+              <option value="received">Recibido</option>
+              <option value="delivered">Entregado</option>
+              <option value="cancelled">Cancelado</option>
+            </select>
+            <span class="material-symbols-outlined msz-18 absolute right-3 top-2.5 text-slate-400 pointer-events-none">expand_more</span>
+          </div>
+
+          <!-- Filtro de Proveedor -->
+          <div class="relative">
+            <select
+              [value]="supplierFilter()"
+              (change)="changeSupplierFilter($any($event.target).value)"
+              class="h-11 rounded-full bg-slate-50 px-5 pr-10 text-slate-700 shadow-md hover:bg-slate-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-1 transition border-0 appearance-none cursor-pointer font-medium min-w-[200px]"
+            >
+              <option value="all">Todos los proveedores</option>
+              <option *ngFor="let s of suppliers" [value]="s.id">{{ s.name }}</option>
+            </select>
+            <span class="material-symbols-outlined msz-18 absolute right-3 top-2.5 text-slate-400 pointer-events-none">expand_more</span>
+          </div>
+
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+            aria-label="Exportar pedidos"
           >
+            <span class="material-symbols-outlined msz-18">download</span>
+            Exportar
+          </button>
         </div>
       </div>
 
-      <!-- Filtro de Estado -->
-      <div class="relative">
-        <select
-          [value]="statusFilter()"
-          (change)="changeStatusFilter($any($event.target).value)"
-          class="h-11 rounded-full bg-blue-50 px-5 pr-10 text-slate-900 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 transition border-0 appearance-none cursor-pointer font-medium"
+      <!-- Estado vacío -->
+      <div *ngIf="dataSource.data.length === 0" class="text-center py-12 px-6">
+        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">shopping_cart</span>
+        <p class="text-lg font-semibold text-slate-700 mb-2">No se encontraron pedidos</p>
+        <p class="text-sm text-slate-400 mb-6">Crea el primer pedido a un proveedor</p>
+        <button
+          type="button"
+          (click)="createNewOrder()"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
         >
-          <option value="all">Todos los estados</option>
-          <option value="draft">Borrador</option>
-          <option value="pending">Pendiente</option>
-          <option value="approved">Aprobado</option>
-          <option value="sent">Enviado</option>
-          <option value="partially_received">Parcialmente recibido</option>
-          <option value="received">Recibido</option>
-          <option value="delivered">Entregado</option>
-          <option value="cancelled">Cancelado</option>
-        </select>
-        <span
-          class="material-symbols-outlined msz-18 absolute right-3 top-2.5 text-blue-400 pointer-events-none"
-          >expand_more</span
-        >
+          <span class="material-symbols-outlined msz-20 leading-none">add</span>
+          Crear primer pedido
+        </button>
       </div>
 
-      <!-- Filtro de Proveedor -->
-      <div class="relative">
-        <select
-          [value]="supplierFilter()"
-          (change)="changeSupplierFilter($any($event.target).value)"
-          class="h-11 rounded-full bg-blue-50 px-5 pr-10 text-slate-900 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 transition border-0 appearance-none cursor-pointer font-medium min-w-[200px]"
-        >
-          <option value="all">Todos los proveedores</option>
-          <option *ngFor="let s of suppliers" [value]="s.id">{{ s.name }}</option>
-        </select>
-        <span
-          class="material-symbols-outlined msz-18 absolute right-3 top-2.5 text-blue-400 pointer-events-none"
-          >expand_more</span
-        >
-      </div>
-
-      <!-- Botón Exportar -->
-      <button
-        type="button"
-        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
-        aria-label="Exportar pedidos"
-      >
-        <span class="material-symbols-outlined msz-18">download</span>
-        Exportar
-      </button>
-    </div>
-
-    <!-- Tabla de Pedidos -->
-    <div class="bg-white rounded-xl shadow-md overflow-hidden">
-      <div class="overflow-x-auto">
+      <!-- Tabla -->
+      <div *ngIf="dataSource.data.length > 0" class="overflow-x-auto">
         <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
+
           <!-- Columna Pedido -->
           <ng-container matColumnDef="orderNumber">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              mat-sort-header
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18"
-                  >confirmation_number</span
-                >
-                Pedido
-              </div>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Pedido</span>
             </th>
-            <td mat-cell *matCellDef="let order" class="p-4">
-              <div class="text-sm font-medium text-blue-700">
-                {{ order.orderNumber || order.id }}
-              </div>
+            <td mat-cell *matCellDef="let order" class="px-6 py-4 text-blue-700 font-medium text-sm">
+              {{ order.orderNumber || order.id }}
             </td>
           </ng-container>
 
           <!-- Columna Proveedor -->
           <ng-container matColumnDef="supplier">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              mat-sort-header
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">business</span>
-                Proveedor
-              </div>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Proveedor</span>
             </th>
-            <td mat-cell *matCellDef="let order" class="p-4">
-              <div>
-                <div class="text-sm font-medium text-slate-900">
-                  {{ order.supplier?.name || '-' }}
-                </div>
-                <div class="text-xs text-slate-500">ID: {{ order.supplierId }}</div>
-              </div>
+            <td mat-cell *matCellDef="let order" class="px-6 py-4">
+              <div class="font-medium text-slate-900 text-sm">{{ order.supplier?.name || '-' }}</div>
+              <div class="text-xs text-slate-500">ID: {{ order.supplierId }}</div>
             </td>
           </ng-container>
 
           <!-- Columna Fecha -->
           <ng-container matColumnDef="orderDate">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              mat-sort-header
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">calendar_today</span>
-                Fecha
-              </div>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</span>
             </th>
-            <td mat-cell *matCellDef="let order" class="p-4">
-              <div class="text-sm text-slate-700">
-                {{ order.orderDate | date: 'dd/MM/yyyy' }}
-              </div>
+            <td mat-cell *matCellDef="let order" class="px-6 py-4 text-sm text-slate-700">
+              {{ order.orderDate | date: 'dd/MM/yyyy' }}
             </td>
           </ng-container>
 
           <!-- Columna Estado -->
           <ng-container matColumnDef="status">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              mat-sort-header
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">flag</span>
-                Estado
-              </div>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
             </th>
-            <td mat-cell *matCellDef="let order" class="p-4">
+            <td mat-cell *matCellDef="let order" class="px-6 py-4">
               <span
-                class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
+                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border"
                 [ngClass]="{
-                  'bg-gray-100 text-gray-800 border-gray-200': order.status === 'draft',
-                  'bg-orange-100 text-orange-800 border-orange-200': order.status === 'pending',
-                  'bg-green-100 text-green-800 border-green-200': order.status === 'approved',
-                  'bg-blue-100 text-blue-800 border-blue-200': order.status === 'sent',
-                  'bg-purple-100 text-purple-800 border-purple-200':
-                    order.status === 'partially_received',
-                  'bg-cyan-100 text-cyan-800 border-cyan-200': order.status === 'received',
-                  'bg-teal-100 text-teal-800 border-teal-200': order.status === 'delivered',
-                  'bg-red-100 text-red-800 border-red-200': order.status === 'cancelled',
+                  'bg-slate-100 text-slate-700 border-slate-200': order.status === 'draft',
+                  'bg-orange-50 text-orange-700 border-orange-200': order.status === 'pending',
+                  'bg-green-50 text-green-700 border-green-200': order.status === 'approved',
+                  'bg-blue-50 text-blue-700 border-blue-200': order.status === 'sent',
+                  'bg-purple-50 text-purple-700 border-purple-200': order.status === 'partially_received',
+                  'bg-cyan-50 text-cyan-700 border-cyan-200': order.status === 'received',
+                  'bg-teal-50 text-teal-700 border-teal-200': order.status === 'delivered',
+                  'bg-red-50 text-red-700 border-red-200': order.status === 'cancelled'
                 }"
               >
                 <span
-                  class="w-2 h-2 rounded-full"
+                  class="w-1.5 h-1.5 rounded-full"
                   [ngClass]="{
-                    'bg-gray-500': order.status === 'draft',
+                    'bg-slate-500': order.status === 'draft',
                     'bg-orange-500': order.status === 'pending',
                     'bg-green-500': order.status === 'approved',
                     'bg-blue-500': order.status === 'sent',
                     'bg-purple-500': order.status === 'partially_received',
                     'bg-cyan-500': order.status === 'received',
                     'bg-teal-500': order.status === 'delivered',
-                    'bg-red-500': order.status === 'cancelled',
+                    'bg-red-500': order.status === 'cancelled'
                   }"
                 ></span>
                 {{ getStatusLabel(order.status || 'pending') }}
@@ -276,125 +223,80 @@
 
           <!-- Columna Total -->
           <ng-container matColumnDef="totalAmount">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              mat-sort-header
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-right"
-            >
-              <div class="flex items-center justify-end gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">attach_money</span>
-                Total
-              </div>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Total</span>
             </th>
-            <td mat-cell *matCellDef="let order" class="p-4 text-right">
-              <div class="text-sm font-semibold text-green-700">
-                ${{ order.totalAmount | number: '1.2-2' }}
-              </div>
+            <td mat-cell *matCellDef="let order" class="px-6 py-4 text-green-700 font-semibold text-sm">
+              ${{ order.totalAmount | number: '1.2-2' }}
             </td>
           </ng-container>
 
           <!-- Columna Acciones -->
           <ng-container matColumnDef="actions">
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="bg-slate-100 text-slate-800 font-semibold p-4 text-left"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-600 msz-18">settings</span>
-                Acciones
-              </div>
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4 text-right">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span>
             </th>
-            <td mat-cell *matCellDef="let order" class="p-4">
-              <div class="flex gap-2 items-center">
+            <td mat-cell *matCellDef="let order" class="px-6 py-4">
+              <div class="flex gap-1 items-center justify-end">
                 <button
-                  mat-icon-button
-                  class="w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-200"
-                  (click)="viewOrder(order)"
-                  matTooltip="Ver detalle del pedido"
-                  aria-label="Ver detalle del pedido"
+                  type="button"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
+                  (click)="viewOrder(order); $event.stopPropagation()"
+                  matTooltip="Ver detalle"
                 >
-                  <span class="material-symbols-outlined msz-20 leading-none">visibility</span>
+                  <span class="material-symbols-outlined msz-18 leading-none">visibility</span>
                 </button>
-
                 <button
-                  mat-icon-button
-                  class="w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-amber-200"
-                  (click)="editOrder(order)"
+                  type="button"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                  (click)="editOrder(order); $event.stopPropagation()"
                   [disabled]="order.status === 'delivered' || order.status === 'cancelled'"
-                  matTooltip="Editar pedido"
-                  aria-label="Editar pedido"
+                  matTooltip="Editar"
                 >
-                  <span class="material-symbols-outlined msz-20 leading-none">edit</span>
+                  <span class="material-symbols-outlined msz-18 leading-none">edit</span>
                 </button>
-
                 <button
-                  mat-icon-button
-                  class="w-9 h-9 text-green-600 hover:bg-green-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-green-200"
-                  (click)="approveOrder(order)"
+                  type="button"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-green-50 hover:text-green-600 transition-colors border-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                  (click)="approveOrder(order); $event.stopPropagation()"
                   [disabled]="order.status !== 'pending'"
-                  matTooltip="Aprobar pedido"
-                  aria-label="Aprobar pedido"
+                  matTooltip="Aprobar"
                 >
-                  <span class="material-symbols-outlined msz-20 leading-none">check_circle</span>
+                  <span class="material-symbols-outlined msz-18 leading-none">check_circle</span>
                 </button>
-
                 <button
-                  mat-icon-button
-                  class="w-9 h-9 text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-200"
-                  (click)="cancelOrder(order)"
+                  type="button"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors border-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                  (click)="cancelOrder(order); $event.stopPropagation()"
                   [disabled]="order.status === 'delivered' || order.status === 'cancelled'"
-                  matTooltip="Cancelar pedido"
-                  aria-label="Cancelar pedido"
+                  matTooltip="Cancelar"
                 >
-                  <span class="material-symbols-outlined msz-20 leading-none">cancel</span>
+                  <span class="material-symbols-outlined msz-18 leading-none">cancel</span>
                 </button>
               </div>
             </td>
           </ng-container>
 
-          <tr
-            mat-header-row
-            *matHeaderRowDef="displayedColumns"
-            class="border-b-2 border-slate-200"
-          ></tr>
-          <tr
-            mat-row
-            *matRowDef="let row; columns: displayedColumns"
-            class="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-          ></tr>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"
+              (click)="viewOrder(row)"
+              class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors cursor-pointer"></tr>
         </table>
       </div>
 
-      <!-- Mensaje cuando no hay datos -->
-      <div *ngIf="dataSource.data.length === 0" class="text-center py-12 px-6">
-        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">shopping_cart</span>
-        <p class="text-slate-500 text-lg mb-4">No se encontraron pedidos</p>
-        <button
-          type="button"
-          (click)="createNewOrder()"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-        >
-          <span class="material-symbols-outlined msz-20 leading-none">add</span>
-          Crear primer pedido
-        </button>
+      <!-- Footer -->
+      <div *ngIf="dataSource.data.length > 0" class="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-100">
+        <span class="text-sm text-slate-500">
+          <span class="font-semibold text-slate-700">{{ dataSource.data.length }}</span> pedidos en total
+        </span>
+        <mat-paginator
+          [pageSizeOptions]="[10, 25, 50, 100]"
+          showFirstLastButtons
+          aria-label="Seleccionar página de pedidos"
+          class="bg-transparent border-0"
+        ></mat-paginator>
       </div>
 
-      <!-- Paginador -->
-      <mat-paginator
-        [pageSizeOptions]="[10, 25, 50, 100]"
-        showFirstLastButtons
-        aria-label="Seleccionar página de pedidos"
-        class="bg-slate-50 border-t border-slate-200"
-      ></mat-paginator>
-    </div>
-
-    <!-- Contador de resultados -->
-    <div class="mt-6 text-center text-slate-600">
-      <p *ngIf="dataSource.data.length > 0" class="text-sm">
-        Mostrando {{ dataSource.data.length }} pedidos en total
-      </p>
     </div>
   </div>
 </div>
@@ -427,10 +329,7 @@
             <option value="">Seleccione proveedor</option>
             <option *ngFor="let s of suppliers" [value]="s.id">{{ s.name }}</option>
           </select>
-          <span
-            class="material-symbols-outlined msz-18 absolute right-3 top-2.5 text-slate-400 pointer-events-none"
-            >expand_more</span
-          >
+          <span class="material-symbols-outlined msz-18 absolute right-3 top-2.5 text-slate-400 pointer-events-none">expand_more</span>
         </div>
       </div>
 
@@ -480,7 +379,6 @@
           *ngFor="let it of items(); let i = index"
           class="grid grid-cols-12 gap-3 items-center border-2 border-slate-200 rounded-xl p-4 bg-gradient-to-br from-slate-50 to-white hover:border-blue-200 transition-colors"
         >
-          <!-- Producto -->
           <div class="col-span-5">
             <input
               type="text"
@@ -490,8 +388,6 @@
               class="w-full h-10 rounded-lg bg-white px-4 text-slate-900 placeholder-slate-400 shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-blue-200 transition border border-slate-200"
             />
           </div>
-
-          <!-- Cantidad -->
           <div class="col-span-2">
             <input
               type="number"
@@ -502,8 +398,6 @@
               class="w-full h-10 rounded-lg bg-white px-4 text-slate-900 placeholder-slate-400 shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-blue-200 transition border border-slate-200"
             />
           </div>
-
-          <!-- Costo unitario -->
           <div class="col-span-2">
             <div class="relative">
               <span class="absolute left-3 top-2 text-slate-500 text-sm">$</span>
@@ -518,17 +412,11 @@
               />
             </div>
           </div>
-
-          <!-- Subtotal -->
           <div class="col-span-2">
-            <div
-              class="h-10 rounded-lg bg-slate-100 px-4 flex items-center text-sm font-semibold text-slate-900 border border-slate-200"
-            >
+            <div class="h-10 rounded-lg bg-slate-100 px-4 flex items-center text-sm font-semibold text-slate-900 border border-slate-200">
               ${{ (it.quantity || 0) * (it.unitPrice || 0) | number: '1.2-2' }}
             </div>
           </div>
-
-          <!-- Eliminar -->
           <div class="col-span-1 flex justify-end">
             <button
               type="button"

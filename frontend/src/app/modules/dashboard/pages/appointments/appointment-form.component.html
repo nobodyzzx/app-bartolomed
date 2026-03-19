@@ -1,5 +1,5 @@
-<div class="min-h-screen bg-slate-50 p-6">
-  <div class="mx-auto max-w-5xl">
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
     <!-- Header Unificado -->
     <div class="flex items-center justify-between mb-10">
       <div class="flex items-center gap-4">
@@ -29,7 +29,7 @@
     <!-- Formulario -->
     <form [formGroup]="appointmentForm" (ngSubmit)="onSubmit()" class="space-y-6">
       <!-- Información del Paciente y Doctor -->
-      <div class="bg-white rounded-2xl shadow-md p-6 border border-slate-200">
+      <div class="bg-white rounded-2xl shadow-md p-6">
         <div class="flex items-center gap-3 mb-6">
           <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
             <span class="material-symbols-outlined text-blue-600 msz-20">person</span>
@@ -108,7 +108,7 @@
       </div>
 
       <!-- Fecha, Hora y Duración -->
-      <div class="bg-white rounded-2xl shadow-md p-6 border border-slate-200">
+      <div class="bg-white rounded-2xl shadow-md p-6">
         <div class="flex items-center gap-3 mb-6">
           <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center">
             <span class="material-symbols-outlined text-green-600 msz-20">schedule</span>
@@ -169,7 +169,7 @@
       </div>
 
       <!-- Tipo y Prioridad -->
-      <div class="bg-white rounded-2xl shadow-md p-6 border border-slate-200">
+      <div class="bg-white rounded-2xl shadow-md p-6">
         <div class="flex items-center gap-3 mb-6">
           <div class="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center">
             <span class="material-symbols-outlined text-purple-600 msz-20">category</span>
@@ -223,7 +223,7 @@
       </div>
 
       <!-- Motivo y Notas -->
-      <div class="bg-white rounded-2xl shadow-md p-6 border border-slate-200">
+      <div class="bg-white rounded-2xl shadow-md p-6">
         <div class="flex items-center gap-3 mb-6">
           <div class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center">
             <span class="material-symbols-outlined text-orange-600 msz-20">description</span>
@@ -287,7 +287,7 @@
         <button
           type="submit"
           [disabled]="appointmentForm.invalid || isLoading"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0 disabled:opacity-60 disabled:cursor-not-allowed"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <span *ngIf="!isLoading" class="material-symbols-outlined msz-18 leading-none">
             {{ isEditMode ? 'update' : 'save' }}

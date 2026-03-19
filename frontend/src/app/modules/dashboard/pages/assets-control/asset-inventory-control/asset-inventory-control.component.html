@@ -322,20 +322,20 @@
               (click)="viewAsset(row)"
               class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors cursor-pointer"></tr>
         </table>
+      </div>
 
-        <!-- Footer: contador + paginador -->
-        <div class="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-100">
-          <span class="text-sm text-slate-500">
-            <span class="font-semibold text-slate-700">{{ dataSource.filteredData.length }}</span>
-            {{ dataSource.filteredData.length === 1 ? 'activo' : 'activos' }}
-            {{ activeStatusFilter || searchTerm ? 'encontrados' : 'en total' }}
-          </span>
-          <mat-paginator
-            [pageSizeOptions]="[10, 25, 50]"
-            showFirstLastButtons
-            class="bg-transparent"
-          ></mat-paginator>
-        </div>
+      <!-- Footer: contador + paginador -->
+      <div *ngIf="!isLoading && dataSource.filteredData.length > 0" class="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-100">
+        <span class="text-sm text-slate-500">
+          <span class="font-semibold text-slate-700">{{ dataSource.filteredData.length }}</span>
+          {{ dataSource.filteredData.length === 1 ? 'activo' : 'activos' }}
+          {{ activeStatusFilter || searchTerm ? 'encontrados' : 'en total' }}
+        </span>
+        <mat-paginator
+          [pageSizeOptions]="[10, 25, 50]"
+          showFirstLastButtons
+          class="bg-transparent"
+        ></mat-paginator>
       </div>
 
     </div>

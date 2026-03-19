@@ -1,5 +1,5 @@
 <div class="min-h-screen bg-slate-50 p-8">
-  <div class="max-w-6xl mx-auto">
+  <div class="max-w-7xl mx-auto">
     @if (loading()) {
       <div class="flex justify-center items-center py-12">
         <mat-spinner diameter="50"></mat-spinner>
@@ -10,9 +10,10 @@
         <div class="flex items-center gap-4 mb-4">
           <button
             (click)="goBack()"
-            class="w-9 h-9 rounded-full hover:bg-slate-100 transition-colors flex items-center justify-center"
+            class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+            aria-label="Volver"
           >
-            <span class="material-symbols-outlined text-slate-600">arrow_back</span>
+            <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
           </button>
           <div class="flex-1">
             <h1 class="text-3xl font-bold text-slate-900">Recibir Productos</h1>
@@ -22,21 +23,21 @@
 
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div class="bg-white rounded-lg border border-slate-200 p-4">
-            <div class="text-sm text-slate-600 mb-1">Total ítems</div>
-            <div class="text-2xl font-bold text-slate-900">{{ items.length }}</div>
+          <div class="bg-slate-50 p-5 rounded-2xl border-l-4 border-slate-500 shadow-md hover:shadow-lg transition-all">
+            <div class="text-sm text-slate-600 font-semibold mb-1">Total ítems</div>
+            <div class="text-3xl font-bold text-slate-900 mt-1">{{ items.length }}</div>
           </div>
-          <div class="bg-blue-50 rounded-lg border border-blue-200 p-4">
-            <div class="text-sm text-blue-700 mb-1">Recibiendo ahora</div>
-            <div class="text-2xl font-bold text-blue-700">{{ getTotalReceiving() }}</div>
+          <div class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all">
+            <div class="text-sm text-blue-600 font-semibold mb-1">Recibiendo ahora</div>
+            <div class="text-3xl font-bold text-blue-900 mt-1">{{ getTotalReceiving() }}</div>
           </div>
-          <div class="bg-green-50 rounded-lg border border-green-200 p-4">
-            <div class="text-sm text-green-700 mb-1">Completos</div>
-            <div class="text-2xl font-bold text-green-700">{{ getItemsFullyReceived() }}</div>
+          <div class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all">
+            <div class="text-sm text-green-600 font-semibold mb-1">Completos</div>
+            <div class="text-3xl font-bold text-green-900 mt-1">{{ getItemsFullyReceived() }}</div>
           </div>
-          <div class="bg-amber-50 rounded-lg border border-amber-200 p-4">
-            <div class="text-sm text-amber-700 mb-1">Parciales</div>
-            <div class="text-2xl font-bold text-amber-700">{{ getItemsPartiallyReceived() }}</div>
+          <div class="bg-amber-50 p-5 rounded-2xl border-l-4 border-amber-500 shadow-md hover:shadow-lg transition-all">
+            <div class="text-sm text-amber-600 font-semibold mb-1">Parciales</div>
+            <div class="text-3xl font-bold text-amber-900 mt-1">{{ getItemsPartiallyReceived() }}</div>
           </div>
         </div>
       </header>
@@ -44,14 +45,14 @@
       <!-- Form -->
       <form [formGroup]="receiveForm" (ngSubmit)="submit()">
         <!-- Quick Actions -->
-        <div class="bg-white rounded-lg border border-slate-200 p-4 mb-6">
+        <div class="bg-white rounded-2xl shadow-md p-5 mb-6">
           <div class="flex items-center justify-between">
             <h3 class="text-sm font-medium text-slate-700">Acciones rápidas:</h3>
             <div class="flex gap-2">
               <button
                 type="button"
                 (click)="receiveAll()"
-                class="inline-flex items-center gap-2 px-4 h-9 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-colors text-sm"
+                class="inline-flex items-center gap-2 px-4 h-9 rounded-full bg-slate-50 text-slate-700 hover:bg-slate-100 transition-all border-0 text-sm font-medium"
               >
                 <span class="material-symbols-outlined text-lg">check_circle</span>
                 Recibir Todo
@@ -59,7 +60,7 @@
               <button
                 type="button"
                 (click)="clearAll()"
-                class="inline-flex items-center gap-2 px-4 h-9 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-colors text-sm"
+                class="inline-flex items-center gap-2 px-4 h-9 rounded-full bg-slate-50 text-slate-700 hover:bg-slate-100 transition-all border-0 text-sm font-medium"
               >
                 <span class="material-symbols-outlined text-lg">clear</span>
                 Limpiar Todo
@@ -69,11 +70,11 @@
         </div>
 
         <!-- Items List -->
-        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden mb-6">
-          <div class="p-6 border-b border-slate-200">
+        <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+          <div class="p-6 border-b border-slate-100">
             <h2 class="text-lg font-semibold text-slate-900">Productos a Recibir</h2>
           </div>
-          <div class="divide-y divide-slate-200" formArrayName="items">
+          <div class="divide-y divide-slate-100" formArrayName="items">
             @for (item of items.controls; track $index; let i = $index) {
               <div class="p-6" [formGroupName]="i">
                 <div class="grid grid-cols-12 gap-4 items-start">
@@ -190,7 +191,7 @@
         </div>
 
         <!-- General Notes -->
-        <div class="bg-white rounded-lg border border-slate-200 p-6 mb-6">
+        <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
           <label class="block text-sm font-medium text-slate-700 mb-3"
             >Notas generales de recepción</label
           >
@@ -203,7 +204,7 @@
         </div>
 
         <!-- Footer Actions -->
-        <div class="bg-white rounded-lg border border-slate-200 p-6">
+        <div class="bg-white rounded-2xl shadow-md p-6">
           <div class="flex items-center justify-between">
             <div>
               @if (isFullyReceived()) {
@@ -222,14 +223,14 @@
               <button
                 type="button"
                 (click)="goBack()"
-                class="px-6 h-11 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-colors font-medium"
+                class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 [disabled]="loading() || receiveForm.invalid || getTotalReceiving() === 0"
-                class="px-6 h-11 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed border-0"
               >
                 @if (loading()) {
                   <div

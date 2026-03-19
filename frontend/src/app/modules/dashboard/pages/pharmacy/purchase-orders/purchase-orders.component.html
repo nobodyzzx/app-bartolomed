@@ -30,7 +30,12 @@
 
     <!-- Estadísticas -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
+      <div
+        class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="statusFilter() === 'all'"
+        [class.ring-blue-400]="statusFilter() === 'all'"
+        (click)="statusFilter.set('all')"
+      >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-blue-600 text-sm font-semibold">Total Órdenes</p>
@@ -40,7 +45,12 @@
           <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">receipt_long</span>
         </div>
       </div>
-      <div class="bg-slate-50 p-5 rounded-2xl border-l-4 border-slate-400 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
+      <div
+        class="bg-slate-50 p-5 rounded-2xl border-l-4 border-slate-400 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="statusFilter() === 'draft'"
+        [class.ring-slate-400]="statusFilter() === 'draft'"
+        (click)="statusFilter.set(POS.DRAFT)"
+      >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-slate-600 text-sm font-semibold">Borradores</p>
@@ -50,7 +60,12 @@
           <span class="material-symbols-outlined text-slate-300" style="font-size: 40px">draft</span>
         </div>
       </div>
-      <div class="bg-orange-50 p-5 rounded-2xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
+      <div
+        class="bg-orange-50 p-5 rounded-2xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="statusFilter() === 'pending'"
+        [class.ring-orange-400]="statusFilter() === 'pending'"
+        (click)="statusFilter.set(POS.PENDING)"
+      >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-orange-600 text-sm font-semibold">Pendientes</p>
@@ -60,7 +75,12 @@
           <span class="material-symbols-outlined text-orange-300" style="font-size: 40px">pending</span>
         </div>
       </div>
-      <div class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
+      <div
+        class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="statusFilter() === 'approved'"
+        [class.ring-green-400]="statusFilter() === 'approved'"
+        (click)="statusFilter.set(POS.APPROVED)"
+      >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-green-600 text-sm font-semibold">Aprobadas</p>
@@ -188,51 +208,51 @@
             <td mat-cell *matCellDef="let order" class="px-6 py-4">
               <div class="flex gap-2 items-center">
                 <button
-                  mat-icon-button
-                  class="w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-200"
+                  type="button"
+                  class="inline-flex items-center justify-center w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border-0"
                   (click)="viewOrder(order); $event.stopPropagation()"
                   matTooltip="Ver detalles"
                   aria-label="Ver detalles"
                 >
-                  <span class="material-symbols-outlined msz-20 leading-none">visibility</span>
+                  <span class="material-symbols-outlined msz-18 leading-none">visibility</span>
                 </button>
 
                 <button
-                  mat-icon-button
-                  class="w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-amber-200"
+                  type="button"
+                  class="inline-flex items-center justify-center w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors border-0"
                   (click)="editOrder(order); $event.stopPropagation()"
                   matTooltip="Editar"
                   aria-label="Editar"
                 >
-                  <span class="material-symbols-outlined msz-20 leading-none">edit</span>
+                  <span class="material-symbols-outlined msz-18 leading-none">edit</span>
                 </button>
 
                 <button
-                  mat-icon-button
-                  class="w-9 h-9 text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-200"
+                  type="button"
+                  class="inline-flex items-center justify-center w-9 h-9 text-red-600 hover:bg-red-50 rounded-lg transition-colors border-0"
                   (click)="deleteOrder(order); $event.stopPropagation()"
                   matTooltip="Eliminar"
                   aria-label="Eliminar"
                 >
-                  <span class="material-symbols-outlined msz-20 leading-none">delete</span>
+                  <span class="material-symbols-outlined msz-18 leading-none">delete</span>
                 </button>
               </div>
             </td>
           </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedColumns"
               (click)="viewOrder(row)"
               class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors cursor-pointer"></tr>
         </table>
+      </div>
 
-        <!-- Footer -->
-        <div class="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-100">
-          <span class="text-sm text-slate-500">
-            <span class="font-semibold text-slate-700">{{ dataSource.data.length }}</span> órdenes en total
-          </span>
-          <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons class="bg-transparent"></mat-paginator>
-        </div>
+      <!-- Footer -->
+      <div *ngIf="!loading() && dataSource.data.length > 0" class="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-100">
+        <span class="text-sm text-slate-500">
+          <span class="font-semibold text-slate-700">{{ dataSource.data.length }}</span> órdenes en total
+        </span>
+        <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons class="bg-transparent border-0"></mat-paginator>
       </div>
     </div>
   </div>

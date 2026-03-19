@@ -154,7 +154,7 @@
     </div>
 
     <!-- Navegación compacta de pasos -->
-    <div class="bg-white rounded-xl shadow-md p-3 mb-6 sticky top-[76px] z-40" *ngIf="!isLoading">
+    <div class="bg-white rounded-2xl shadow-md p-3 mb-6 sticky top-[76px] z-40" *ngIf="!isLoading">
       <div class="flex flex-wrap items-center gap-2">
         <!-- Paso 1 -->
         <button
@@ -251,7 +251,7 @@
 
         <form [formGroup]="patientInfoForm">
           <div class="step-content">
-            <div class="form-card bg-white rounded-xl shadow-md p-6 mb-6">
+            <div class="form-card bg-white rounded-2xl shadow-md p-6 mb-6">
               <div class="flex items-center gap-3 mb-6">
                 <div
                   class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
@@ -350,7 +350,7 @@
                       <ng-container *ngIf="doctor.professionalInfo?.title as t"
                         >{{ t }}
                       </ng-container>
-                      {{ doctor.personalInfo?.firstName }} {{ doctor.personalInfo?.lastName }}
+                      {{ doctor.personalInfo.firstName }} {{ doctor.personalInfo.lastName }}
                       <span *ngIf="doctor.professionalInfo?.specialization" class="text-slate-500">
                         – {{ doctor.professionalInfo?.specialization }}</span
                       >
@@ -515,7 +515,7 @@
             </button>
           </div>
           <div class="step-content">
-            <div id="history-section" class="form-card bg-white rounded-xl shadow-md p-6 mb-6">
+            <div id="history-section" class="form-card bg-white rounded-2xl shadow-md p-6 mb-6">
               <div class="flex items-center gap-3 mb-6">
                 <div
                   class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
@@ -610,7 +610,7 @@
           </div>
 
           <!-- Signos Vitales (en el mismo paso) -->
-          <div id="vitals-section" class="form-card bg-white rounded-xl shadow-md p-6 mb-6 mt-6">
+          <div id="vitals-section" class="form-card bg-white rounded-2xl shadow-md p-6 mb-6 mt-6">
             <div class="flex items-center gap-3 mb-6">
               <div
                 class="w-10 h-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center shadow-sm"
@@ -622,7 +622,7 @@
 
             <!-- Resumen Visual de Signos Vitales -->
             <div
-              class="mb-6 p-5 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border border-purple-200"
+              class="mb-6 p-5 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-200"
               *ngIf="
                 clinicalDataForm.get('temperature')?.value ||
                 clinicalDataForm.get('systolicBP')?.value ||
@@ -1079,7 +1079,7 @@
             <!-- Examen Físico -->
             <div
               id="physical-exam-section"
-              class="form-card bg-white rounded-xl shadow-md p-6 mb-6"
+              class="form-card bg-white rounded-2xl shadow-md p-6 mb-6"
             >
               <div class="flex items-center gap-3 mb-6">
                 <div
@@ -1220,7 +1220,7 @@
             <!-- Evaluación y Plan de Tratamiento -->
             <div
               id="assessment-plan-section"
-              class="form-card bg-white rounded-xl shadow-md p-6 mb-6 mt-6"
+              class="form-card bg-white rounded-2xl shadow-md p-6 mb-6 mt-6"
             >
               <div class="flex items-center gap-3 mb-6">
                 <div
@@ -1382,7 +1382,7 @@
         </ng-template>
 
         <form [formGroup]="consentForm">
-          <div class="form-card bg-white rounded-xl shadow-md p-6 mb-6">
+          <div class="form-card bg-white rounded-2xl shadow-md p-6 mb-6">
             <div class="flex items-center gap-3 mb-6">
               <div
                 class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"

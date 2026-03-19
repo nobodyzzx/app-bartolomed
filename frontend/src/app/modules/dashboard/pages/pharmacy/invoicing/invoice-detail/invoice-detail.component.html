@@ -1,5 +1,5 @@
-<div class="min-h-screen bg-slate-50 p-6">
-  <div class="max-w-5xl mx-auto">
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
     <!-- Loading -->
     <div *ngIf="isLoading" class="flex justify-center items-center py-12">
       <mat-spinner diameter="50"></mat-spinner>
@@ -31,7 +31,7 @@
           <button
             type="button"
             (click)="printInvoice()"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg transition-all border-0"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg transition-all border-0"
           >
             <span class="material-symbols-outlined msz-20">print</span>
             Imprimir
@@ -40,7 +40,7 @@
             type="button"
             (click)="editInvoice()"
             [disabled]="invoice.status === 'paid' || invoice.status === 'cancelled'"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0"
           >
             <span class="material-symbols-outlined msz-20">edit</span>
             Editar
@@ -51,7 +51,7 @@
       <!-- Información Principal -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <!-- Datos de la Factura -->
-        <div class="lg:col-span-2 bg-white rounded-xl shadow-md p-6">
+        <div class="lg:col-span-2 bg-white rounded-2xl shadow-md p-6">
           <div class="flex items-center gap-3 mb-6">
             <div
               class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
@@ -102,7 +102,7 @@
         </div>
 
         <!-- Datos del Paciente -->
-        <div class="bg-white rounded-xl shadow-md p-6">
+        <div class="bg-white rounded-2xl shadow-md p-6">
           <div class="flex items-center gap-3 mb-6">
             <div
               class="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center shadow-sm"
@@ -122,7 +122,7 @@
       </div>
 
       <!-- Detalles Financieros -->
-      <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+      <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
         <div class="flex items-center gap-3 mb-6">
           <div
             class="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center shadow-sm"
@@ -154,7 +154,7 @@
 
           <div class="flex items-center justify-center">
             <div
-              class="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border-2 border-green-200 w-full"
+              class="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border-2 border-green-200 w-full"
             >
               <p class="text-sm text-green-700 font-semibold mb-2">Total a Pagar</p>
               <p class="text-4xl font-bold text-green-900">
@@ -166,7 +166,7 @@
       </div>
 
       <!-- Notas -->
-      <div class="bg-white rounded-xl shadow-md p-6 mb-6" *ngIf="invoice.notes">
+      <div class="bg-white rounded-2xl shadow-md p-6 mb-6" *ngIf="invoice.notes">
         <div class="flex items-center gap-3 mb-4">
           <div
             class="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shadow-sm"
@@ -184,7 +184,7 @@
           type="button"
           (click)="markAsPaid()"
           [disabled]="invoice.status === 'paid' || invoice.status === 'cancelled'"
-          class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-medium bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0"
+          class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0"
         >
           <span class="material-symbols-outlined msz-20">payment</span>
           Marcar como Pagada
@@ -200,7 +200,7 @@
       <button
         type="button"
         (click)="goBack()"
-        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all border-0"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all border-0"
       >
         <span class="material-symbols-outlined msz-20">arrow_back</span>
         Volver

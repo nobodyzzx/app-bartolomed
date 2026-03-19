@@ -177,13 +177,13 @@
                     {{ getPatientInitials(p) }}
                   </div>
                   <div>
-                    <div class="font-medium text-slate-900">{{ p.patient?.firstName }} {{ p.patient?.lastName }}</div>
-                    <div class="text-xs text-slate-400">CI: {{ p.patient?.documentNumber }}</div>
+                    <div class="font-medium text-slate-900">{{ p.patient.firstName }} {{ p.patient.lastName }}</div>
+                    <div class="text-xs text-slate-400">CI: {{ p.patient.documentNumber }}</div>
                   </div>
                 </div>
               </td>
               <td class="px-6 py-4 text-sm text-slate-700">
-                Dr. {{ p.doctor?.personalInfo?.firstName || p.doctor?.email }}
+                Dr. {{ p.doctor.personalInfo?.firstName || p.doctor.email }}
               </td>
               <td class="px-6 py-4">
                 <div class="flex flex-wrap gap-1.5" *ngIf="p.items?.length">
