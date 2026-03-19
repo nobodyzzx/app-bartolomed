@@ -1,4 +1,4 @@
-<div class="inventory-container min-h-screen bg-slate-50 p-8">
+<div class="min-h-screen bg-slate-50 p-8">
   <div class="max-w-7xl mx-auto">
     <!-- Header Unificado -->
     <div class="flex items-center justify-between mb-10">
@@ -58,7 +58,7 @@
         <button
           type="button"
           (click)="addProduct()"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
           aria-label="Agregar stock"
         >
           <span class="material-symbols-outlined msz-20 leading-none">add</span>
@@ -68,68 +68,56 @@
     </div>
 
     <!-- Estadísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-      <div
-        class="bg-blue-50 p-4 rounded-xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-      >
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-blue-600 text-sm font-semibold">Total Productos</p>
-            <p class="text-3xl font-bold text-blue-900 mt-2">{{ stats.totalProducts }}</p>
-            <p class="text-xs text-blue-600/60 mt-1">En inventario</p>
+            <p class="text-3xl font-bold text-blue-900 mt-1">{{ stats.totalProducts }}</p>
+            <p class="text-xs text-blue-500 mt-1">En inventario</p>
           </div>
-          <span class="material-symbols-outlined text-blue-500 msz-40 !w-10 !h-10"
-            >inventory_2</span
-          >
+          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">inventory_2</span>
         </div>
       </div>
-      <div
-        class="bg-orange-50 p-4 rounded-xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-      >
+      <div class="bg-orange-50 p-5 rounded-2xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-orange-600 text-sm font-semibold">Stock Bajo</p>
-            <p class="text-3xl font-bold text-orange-900 mt-2">{{ stats.lowStock }}</p>
-            <p class="text-xs text-orange-600/60 mt-1">Requieren reabastecimiento</p>
+            <p class="text-3xl font-bold text-orange-900 mt-1">{{ stats.lowStock }}</p>
+            <p class="text-xs text-orange-500 mt-1">Requieren reabastecimiento</p>
           </div>
-          <span class="material-symbols-outlined text-orange-500 msz-40 !w-10 !h-10">warning</span>
+          <span class="material-symbols-outlined text-orange-300" style="font-size: 40px">warning</span>
         </div>
       </div>
-      <div
-        class="bg-red-50 p-4 rounded-xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-      >
+      <div class="bg-red-50 p-5 rounded-2xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-red-600 text-sm font-semibold">Por Vencer</p>
-            <p class="text-3xl font-bold text-red-900 mt-2">{{ stats.expiring }}</p>
-            <p class="text-xs text-red-600/60 mt-1">Próximos a caducar</p>
+            <p class="text-3xl font-bold text-red-900 mt-1">{{ stats.expiring }}</p>
+            <p class="text-xs text-red-500 mt-1">Próximos a caducar</p>
           </div>
-          <span class="material-symbols-outlined text-red-500 msz-40 !w-10 !h-10">schedule</span>
+          <span class="material-symbols-outlined text-red-300" style="font-size: 40px">schedule</span>
         </div>
       </div>
-      <div
-        class="bg-green-50 p-4 rounded-xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-      >
+      <div class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-green-600 text-sm font-semibold">Valor Total</p>
-            <p class="text-3xl font-bold text-green-900 mt-2">
-              ${{ stats.totalValue | number: '1.2-2' }}
-            </p>
-            <p class="text-xs text-green-600/60 mt-1">Valor del inventario</p>
+            <p class="text-3xl font-bold text-green-900 mt-1">${{ stats.totalValue | number: '1.2-2' }}</p>
+            <p class="text-xs text-green-500 mt-1">Valor del inventario</p>
           </div>
-          <span class="material-symbols-outlined text-green-500 msz-40 !w-10 !h-10"
-            >attach_money</span
-          >
+          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">attach_money</span>
         </div>
       </div>
     </div>
 
     <!-- Contenido Principal -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
-      <div class="flex items-center gap-4 mb-6">
-        <div class="flex-1 max-w-2xl">
-          <div class="relative">
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+
+      <!-- Buscador -->
+      <div class="p-6 border-b border-slate-100">
+        <div class="flex items-center gap-4">
+          <div class="flex-1 max-w-md relative">
             <input
               type="text"
               [(ngModel)]="searchTermRaw"
@@ -137,192 +125,132 @@
               placeholder="Nombre, marca, categoría..."
               class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
             />
-            <span class="material-symbols-outlined msz-18 absolute right-3 top-2.5 text-blue-400"
-              >search</span
-            >
+            <span class="material-symbols-outlined absolute right-4 top-2.5 text-blue-400 msz-18">search</span>
           </div>
+          <button
+            *ngIf="searchTermRaw"
+            type="button"
+            (click)="searchTermRaw = ''; applyFilterManual()"
+            class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all border-0"
+          >
+            <span class="material-symbols-outlined msz-16">close</span>
+            Limpiar
+          </button>
         </div>
+      </div>
+
+      <!-- Cargando -->
+      <div *ngIf="loading()" class="flex justify-center items-center py-12">
+        <mat-spinner diameter="50"></mat-spinner>
+      </div>
+
+      <!-- Estado vacío -->
+      <div *ngIf="!loading() && filteredProducts.length === 0" class="text-center py-12 px-6">
+        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">inventory_2</span>
+        <p class="text-lg font-semibold text-slate-700 mb-2">Sin productos en inventario</p>
+        <p class="text-sm text-slate-400 mb-6">
+          {{ searchTermRaw ? 'Intenta ajustar la búsqueda' : 'Agrega el primer producto al inventario' }}
+        </p>
         <button
+          *ngIf="!searchTermRaw"
           type="button"
-          (click)="applyFilterManual()"
-          [disabled]="!searchTermRaw?.trim()"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
-          aria-label="Buscar"
+          (click)="addProduct()"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
         >
-          <span class="material-symbols-outlined msz-18">search</span>
-          Buscar
-        </button>
-        <div class="flex-1"></div>
-        <button
-          type="button"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
-          aria-label="Exportar inventario"
-        >
-          <span class="material-symbols-outlined msz-18">download</span>
-          Exportar
+          <span class="material-symbols-outlined msz-18 leading-none">add</span>
+          Agregar Stock
         </button>
       </div>
-    </div>
 
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200">
-          <thead class="bg-slate-50">
+      <!-- Tabla -->
+      <div *ngIf="!loading() && filteredProducts.length > 0" class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-100">
             <tr>
-              <th
-                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-              >
-                Lote
-              </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-              >
-                Medicamento
-              </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-              >
-                Marca
-              </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-              >
-                Stock
-              </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-              >
-                Precio Venta
-              </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-              >
-                Vencimiento
-              </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-              >
-                Ubicación
-              </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-              >
-                Estado
-              </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-              >
-                Acciones
-              </th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Lote</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Medicamento</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Marca</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Stock</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Precio Venta</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Vencimiento</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Ubicación</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
+              <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-slate-100">
+          <tbody class="divide-y divide-slate-100">
             <tr
               *ngFor="let product of filteredProducts; trackBy: trackById"
-              class="hover:bg-slate-50"
+              class="hover:bg-blue-50/40 transition-colors"
             >
-              <td class="px-4 py-3 text-blue-700 font-medium text-xs">{{ product.batchNumber }}</td>
-              <td class="px-4 py-3">
+              <td class="px-6 py-4 text-blue-700 font-medium text-xs">{{ product.batchNumber }}</td>
+              <td class="px-6 py-4">
                 <div class="flex flex-col">
-                  <span class="font-medium text-slate-900">{{
-                    product.medication?.name || 'Sin nombre'
-                  }}</span>
-                  <span class="text-xs text-slate-500"
-                    >{{ product.medication?.strength }} - {{ product.medication?.dosageForm }}</span
-                  >
+                  <span class="font-medium text-slate-900">{{ product.medication?.name || 'Sin nombre' }}</span>
+                  <span class="text-xs text-slate-500">{{ product.medication?.strength }} - {{ product.medication?.dosageForm }}</span>
                 </div>
               </td>
-              <td class="px-4 py-3 text-slate-600">{{ product.medication?.brandName || '-' }}</td>
-              <td class="px-4 py-3">
+              <td class="px-6 py-4 text-slate-600 text-sm">{{ product.medication?.brandName || '-' }}</td>
+              <td class="px-6 py-4">
                 <span
-                  class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
-                  [ngClass]="
-                    isLowStock(product)
-                      ? 'bg-red-50 text-red-700 border-red-200'
-                      : 'bg-green-50 text-green-700 border-green-200'
-                  "
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="isLowStock(product) ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
                 >
-                  <span
-                    class="w-2 h-2 rounded-full"
-                    [ngClass]="isLowStock(product) ? 'bg-red-500' : 'bg-green-500'"
-                  ></span>
+                  <span class="w-1.5 h-1.5 rounded-full" [ngClass]="isLowStock(product) ? 'bg-red-500' : 'bg-green-500'"></span>
                   {{ product.quantity }} unidades
                 </span>
               </td>
-              <td class="px-4 py-3 text-green-700 font-semibold">
-                ${{ product.sellingPrice | number: '1.2-2' }}
-              </td>
-              <td class="px-4 py-3">
+              <td class="px-6 py-4 text-green-700 font-semibold">${{ product.sellingPrice | number: '1.2-2' }}</td>
+              <td class="px-6 py-4">
                 <span
-                  class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
-                  [ngClass]="
-                    isExpiring(product)
-                      ? 'bg-orange-50 text-orange-700 border-orange-200'
-                      : 'bg-slate-50 text-slate-700 border-slate-200'
-                  "
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="isExpiring(product) ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-700'"
                 >
                   {{ product.expiryDate | date: 'dd/MM/yyyy' }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-slate-600">{{ product.location || '-' }}</td>
-              <td class="px-4 py-3">
+              <td class="px-6 py-4 text-slate-600 text-sm">{{ product.location || '-' }}</td>
+              <td class="px-6 py-4">
                 <span
-                  class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
                   [ngClass]="productStatus(product).classes"
                 >
-                  <span class="w-2 h-2 rounded-full" [ngClass]="productStatus(product).dot"></span>
+                  <span class="w-1.5 h-1.5 rounded-full" [ngClass]="productStatus(product).dot"></span>
                   {{ productStatus(product).label }}
                 </span>
               </td>
-              <td class="px-4 py-3">
-                <div class="flex gap-2 items-center">
+              <td class="px-6 py-4">
+                <div class="flex gap-1 items-center justify-end">
                   <button
                     type="button"
-                    class="w-9 h-9 inline-flex items-center justify-center text-amber-600 hover:bg-amber-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-amber-200"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0"
                     (click)="editProduct(product)"
-                    aria-label="Editar producto"
+                    matTooltip="Editar"
                   >
-                    <span class="material-symbols-outlined msz-20 leading-none">edit</span>
+                    <span class="material-symbols-outlined msz-18 leading-none">edit</span>
                   </button>
                   <button
                     type="button"
-                    class="w-9 h-9 inline-flex items-center justify-center text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-200"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors border-0"
                     (click)="deleteProduct(product)"
-                    aria-label="Eliminar producto"
+                    matTooltip="Eliminar"
                   >
-                    <span class="material-symbols-outlined msz-20 leading-none">delete</span>
+                    <span class="material-symbols-outlined msz-18 leading-none">delete</span>
                   </button>
                 </div>
               </td>
             </tr>
-            <ng-container *ngIf="loading(); else dataRows">
-              <tr *ngFor="let _ of [1, 2, 3, 4, 5, 6]" class="animate-pulse">
-                <td class="px-4 py-3"><div class="h-3 w-20 bg-slate-200 rounded"></div></td>
-                <td class="px-4 py-3"><div class="h-3 w-40 bg-slate-200 rounded"></div></td>
-                <td class="px-4 py-3"><div class="h-3 w-32 bg-slate-200 rounded"></div></td>
-                <td class="px-4 py-3"><div class="h-6 w-24 bg-slate-200 rounded-full"></div></td>
-                <td class="px-4 py-3"><div class="h-3 w-16 bg-slate-200 rounded"></div></td>
-                <td class="px-4 py-3"><div class="h-6 w-28 bg-slate-200 rounded-full"></div></td>
-                <td class="px-4 py-3"><div class="h-3 w-24 bg-slate-200 rounded"></div></td>
-                <td class="px-4 py-3"><div class="h-6 w-28 bg-slate-200 rounded-full"></div></td>
-                <td class="px-4 py-3"><div class="h-6 w-20 bg-slate-200 rounded"></div></td>
-              </tr>
-            </ng-container>
-            <ng-template #dataRows>
-              <tr *ngIf="filteredProducts.length === 0">
-                <td colspan="9" class="px-4 py-10 text-center text-slate-500">
-                  <div class="flex flex-col items-center gap-2">
-                    <span class="material-symbols-outlined text-3xl text-slate-400"
-                      >inventory_2</span
-                    >
-                    <span>No hay productos que coincidan con la búsqueda</span>
-                  </div>
-                </td>
-              </tr>
-            </ng-template>
           </tbody>
         </table>
       </div>
+
+      <!-- Footer -->
+      <div *ngIf="!loading() && filteredProducts.length > 0" class="flex items-center px-6 py-3 bg-slate-50 border-t border-slate-100">
+        <span class="text-sm text-slate-500">
+          Mostrando <span class="font-semibold text-slate-700">{{ filteredProducts.length }}</span> productos
+        </span>
+      </div>
+
     </div>
   </div>
 </div>
