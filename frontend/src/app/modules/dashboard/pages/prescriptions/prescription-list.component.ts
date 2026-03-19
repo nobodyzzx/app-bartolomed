@@ -164,6 +164,25 @@ export class PrescriptionListComponent implements OnInit {
     )
   }
 
+  getCountByStatus(status: string): number {
+    return this.prescriptions.filter(p => p.status === status).length
+  }
+
+  getExpiredCount(): number {
+    return this.prescriptions.filter(p => this.isExpired(p.expiryDate)).length
+  }
+
+  getPatientInitials(p: Prescription): string {
+    return (
+      (p.patient?.firstName?.charAt(0) ?? '') + (p.patient?.lastName?.charAt(0) ?? '')
+    ).toUpperCase() || '?'
+  }
+
+  setStatusFilter(status: string): void {
+    this.selectedStatus = status
+    this.loadPrescriptions()
+  }
+
   changeStatus(p: Prescription, status: string) {
     this.alert
       .fire({

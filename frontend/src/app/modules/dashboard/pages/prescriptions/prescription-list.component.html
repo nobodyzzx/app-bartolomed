@@ -1,5 +1,6 @@
-<div class="min-h-screen bg-slate-50 p-6">
-  <div class="mx-auto space-y-6" [ngClass]="isExpanded ? 'max-w-7xl' : 'max-w-full'">
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
+
     <!-- Header -->
     <div class="flex items-center justify-between mb-10">
       <div class="flex items-center gap-4">
@@ -7,11 +8,11 @@
           type="button"
           (click)="goBack()"
           class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          aria-label="Volver al dashboard"
+          aria-label="Volver"
         >
           <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
         </button>
-        <div class="text-left">
+        <div>
           <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Recetas Médicas</h1>
           <p class="text-slate-600">Gestión de recetas y prescripciones</p>
         </div>
@@ -19,252 +20,248 @@
       <button
         type="button"
         (click)="createPrescription()"
-        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-        aria-label="Crear nueva receta"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
       >
-        <span class="material-symbols-outlined msz-18 leading-none">prescription</span>
+        <span class="material-symbols-outlined msz-18 leading-none">add</span>
         Nueva Receta
       </button>
     </div>
 
-    <!-- Búsqueda y Filtros -->
-    <div class="flex items-center gap-4 mb-6">
-      <div class="flex-1 max-w-2xl">
-        <div class="relative">
-          <input
-            type="text"
-            [(ngModel)]="searchTerm"
-            (keyup.enter)="onSearch()"
-            placeholder="Paciente, diagnóstico, número de receta..."
-            class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 focus:bg-white transition border-0"
-          />
-          <span class="material-symbols-outlined absolute right-3 top-2.5 text-blue-400"
-            >search</span
-          >
-        </div>
-      </div>
+    <!-- Tarjetas de estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 
-      <button
-        type="button"
-        (click)="onSearch()"
-        [disabled]="!searchTerm?.trim()"
-        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
-      >
-        <span class="material-symbols-outlined msz-18">search</span>
-        Buscar
-      </button>
-
-      <div class="relative">
-        <select
-          [(ngModel)]="selectedStatus"
-          (change)="onStatusChange()"
-          class="h-11 rounded-full bg-blue-50 px-5 pr-10 text-slate-900 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition border-0 appearance-none cursor-pointer font-medium"
-        >
-          <option *ngFor="let option of statusOptions" [value]="option.value">
-            {{ option.label }}
-          </option>
-        </select>
-        <span
-          class="material-symbols-outlined absolute right-3 top-2.5 text-blue-400 pointer-events-none"
-          >expand_more</span
-        >
-      </div>
-    </div>
-
-    <!-- Loading State -->
-    <div *ngIf="loading" class="flex justify-center items-center py-12">
-      <mat-spinner diameter="50"></mat-spinner>
-    </div>
-
-    <!-- Empty State -->
-    <div
-      *ngIf="!loading && filteredPrescriptions.length === 0"
-      class="bg-white rounded-2xl shadow-md p-12 text-center"
-    >
-      <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">prescription</span>
-      <h3 class="text-xl font-semibold text-slate-700 mb-2">No hay recetas registradas</h3>
-      <p class="text-slate-500 mb-6">Comienza creando la primera receta médica</p>
-      <button
-        type="button"
-        (click)="createPrescription()"
-        class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all"
-      >
-        <span class="material-symbols-outlined msz-18">add</span>
-        Crear primera receta
-      </button>
-    </div>
-
-    <!-- Prescriptions List -->
-    <div *ngIf="!loading && filteredPrescriptions.length > 0" class="space-y-4">
       <div
-        *ngFor="let prescription of filteredPrescriptions"
-        class="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all cursor-pointer overflow-hidden"
-        (click)="viewPrescription(prescription)"
+        class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="selectedStatus === ''"
+        [class.ring-blue-400]="selectedStatus === ''"
+        (click)="setStatusFilter('')"
       >
-        <div class="p-6">
-          <div class="flex items-start justify-between">
-            <!-- Left: Patient & Doctor Info -->
-            <div class="flex-1">
-              <div class="flex items-center gap-3 mb-3">
-                <div
-                  class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shadow-md"
-                >
-                  {{ prescription.patient?.firstName?.charAt(0) || '?'
-                  }}{{ prescription.patient?.lastName?.charAt(0) || '' }}
-                </div>
-                <div>
-                  <h3 class="text-lg font-semibold text-slate-900">
-                    {{ prescription.patient?.firstName }} {{ prescription.patient?.lastName }}
-                  </h3>
-                  <p class="text-sm text-slate-500">
-                    CI: {{ prescription.patient?.documentNumber }}
-                  </p>
-                </div>
-              </div>
-
-              <!-- Prescription Details -->
-              <div class="grid grid-cols-2 gap-4 mb-3">
-                <div class="flex items-center gap-2 text-slate-600">
-                  <span class="material-symbols-outlined msz-18 text-slate-400"
-                    >calendar_today</span
-                  >
-                  <span class="text-sm">{{
-                    prescription.prescriptionDate | date: 'dd/MM/yyyy'
-                  }}</span>
-                </div>
-                <div class="flex items-center gap-2 text-slate-600">
-                  <span class="material-symbols-outlined msz-18 text-slate-400"
-                    >event_upcoming</span
-                  >
-                  <span class="text-sm"
-                    >Vence: {{ prescription.expiryDate | date: 'dd/MM/yyyy' }}</span
-                  >
-                  <span
-                    *ngIf="isExpiringSoon(prescription.expiryDate)"
-                    class="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700"
-                  >
-                    {{ getDaysUntilExpiry(prescription.expiryDate) }} días
-                  </span>
-                  <span
-                    *ngIf="isExpired(prescription.expiryDate)"
-                    class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700"
-                  >
-                    Vencida
-                  </span>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-2 text-slate-600 mb-3">
-                <span class="material-symbols-outlined msz-18 text-slate-400">stethoscope</span>
-                <span class="text-sm">
-                  Dr.
-                  {{ prescription.doctor?.personalInfo?.firstName || prescription.doctor?.email }}
-                </span>
-              </div>
-
-              <!-- Medications -->
-              <div
-                *ngIf="prescription.items && prescription.items.length > 0"
-                class="flex items-center gap-2 text-slate-600"
-              >
-                <span class="material-symbols-outlined msz-18 text-slate-400">medication</span>
-                <div class="flex flex-wrap gap-2">
-                  <span
-                    *ngFor="let item of prescription.items.slice(0, 3)"
-                    class="text-xs px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-medium"
-                  >
-                    {{ item.medicationName }} {{ item.strength }}
-                  </span>
-                  <span
-                    *ngIf="prescription.items.length > 3"
-                    class="text-xs px-3 py-1 rounded-full bg-slate-100 text-slate-600"
-                  >
-                    +{{ prescription.items.length - 3 }} más
-                  </span>
-                </div>
-              </div>
-
-              <!-- Diagnosis -->
-              <div *ngIf="prescription.diagnosis" class="mt-3 pt-3 border-t border-slate-100">
-                <p class="text-sm text-slate-600">
-                  <span class="font-medium">Diagnóstico:</span> {{ prescription.diagnosis }}
-                </p>
-              </div>
-            </div>
-
-            <!-- Right: Status & Actions -->
-            <div class="flex flex-col items-end gap-3">
-              <span
-                class="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap"
-                [ngClass]="getStatusBadgeClass(prescription.status)"
-              >
-                {{ getStatusLabel(prescription.status) }}
-              </span>
-
-              <div class="text-right">
-                <p class="text-xs text-slate-400 mb-1">Número</p>
-                <p class="text-sm font-mono font-semibold text-slate-700">
-                  {{ prescription.prescriptionNumber }}
-                </p>
-              </div>
-
-              <div *ngIf="prescription.refillsAllowed > 0" class="text-right">
-                <p class="text-xs text-slate-400 mb-1">Resurtidos</p>
-                <p class="text-sm font-semibold text-slate-700">
-                  {{ prescription.refillsUsed || 0 }} / {{ prescription.refillsAllowed }}
-                </p>
-              </div>
-
-              <div class="flex flex-wrap gap-2 justify-end">
-                <button
-                  type="button"
-                  (click)="editPrescription(prescription); $event.stopPropagation()"
-                  class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all text-sm"
-                >
-                  <span class="material-symbols-outlined msz-16">edit</span>
-                  Editar
-                </button>
-                <button
-                  *ngIf="prescription.status === 'active' && !isExpired(prescription.expiryDate)"
-                  type="button"
-                  (click)="changeStatus(prescription, 'dispensed'); $event.stopPropagation()"
-                  class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all text-sm"
-                >
-                  <span class="material-symbols-outlined msz-16">local_pharmacy</span>
-                  Dispensar
-                </button>
-                <button
-                  *ngIf="prescription.status === 'active' && !isExpired(prescription.expiryDate)"
-                  type="button"
-                  (click)="changeStatus(prescription, 'completed'); $event.stopPropagation()"
-                  class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-all text-sm"
-                >
-                  <span class="material-symbols-outlined msz-16">done_all</span>
-                  Completar
-                </button>
-                <button
-                  *ngIf="prescription.status !== 'cancelled' && !isExpired(prescription.expiryDate)"
-                  type="button"
-                  (click)="changeStatus(prescription, 'cancelled'); $event.stopPropagation()"
-                  class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition-all text-sm"
-                >
-                  <span class="material-symbols-outlined msz-16">cancel</span>
-                  Cancelar
-                </button>
-                <button
-                  *ngIf="canRefill(prescription)"
-                  type="button"
-                  (click)="doRefill(prescription); $event.stopPropagation()"
-                  class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 transition-all text-sm"
-                >
-                  <span class="material-symbols-outlined msz-16">autorenew</span>
-                  Resurtir
-                </button>
-              </div>
-            </div>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-blue-600 text-sm font-semibold">Total</p>
+            <p class="text-3xl font-bold text-blue-900 mt-1">{{ prescriptions.length }}</p>
+            <p class="text-xs text-blue-500 mt-1">Recetas registradas</p>
           </div>
+          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">prescription</span>
         </div>
       </div>
+
+      <div
+        class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="selectedStatus === 'active'"
+        [class.ring-green-400]="selectedStatus === 'active'"
+        (click)="setStatusFilter('active')"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-green-600 text-sm font-semibold">Activas</p>
+            <p class="text-3xl font-bold text-green-900 mt-1">{{ getCountByStatus('active') }}</p>
+            <p class="text-xs text-green-500 mt-1">Vigentes</p>
+          </div>
+          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">check_circle</span>
+        </div>
+      </div>
+
+      <div
+        class="bg-purple-50 p-5 rounded-2xl border-l-4 border-purple-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="selectedStatus === 'dispensed'"
+        [class.ring-purple-400]="selectedStatus === 'dispensed'"
+        (click)="setStatusFilter('dispensed')"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-purple-600 text-sm font-semibold">Dispensadas</p>
+            <p class="text-3xl font-bold text-purple-900 mt-1">{{ getCountByStatus('dispensed') }}</p>
+            <p class="text-xs text-purple-500 mt-1">Entregadas en farmacia</p>
+          </div>
+          <span class="material-symbols-outlined text-purple-300" style="font-size: 40px">local_pharmacy</span>
+        </div>
+      </div>
+
+      <div
+        class="bg-red-50 p-5 rounded-2xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="selectedStatus === 'expired'"
+        [class.ring-red-400]="selectedStatus === 'expired'"
+        (click)="setStatusFilter('expired')"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-red-600 text-sm font-semibold">Vencidas</p>
+            <p class="text-3xl font-bold text-red-900 mt-1">{{ getExpiredCount() }}</p>
+            <p class="text-xs text-red-500 mt-1">Fuera de vigencia</p>
+          </div>
+          <span class="material-symbols-outlined text-red-300" style="font-size: 40px">event_busy</span>
+        </div>
+      </div>
+
     </div>
+
+    <!-- Contenedor principal -->
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+
+      <!-- Buscador -->
+      <div class="p-6 border-b border-slate-100">
+        <div class="flex items-center gap-4">
+          <div class="flex-1 max-w-md relative">
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              (keyup.enter)="onSearch()"
+              placeholder="Paciente, diagnóstico, número de receta..."
+              class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
+            />
+            <span class="material-symbols-outlined absolute right-4 top-2.5 text-blue-400 msz-18">search</span>
+          </div>
+          <button
+            *ngIf="searchTerm || selectedStatus"
+            type="button"
+            (click)="searchTerm = ''; setStatusFilter('')"
+            class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all border-0"
+          >
+            <span class="material-symbols-outlined msz-16">close</span>
+            Limpiar
+          </button>
+        </div>
+      </div>
+
+      <!-- Cargando -->
+      <div *ngIf="loading" class="flex justify-center items-center py-12">
+        <mat-spinner diameter="50"></mat-spinner>
+      </div>
+
+      <!-- Estado vacío -->
+      <div *ngIf="!loading && filteredPrescriptions.length === 0" class="text-center py-12 px-6">
+        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">prescription</span>
+        <p class="text-lg font-semibold text-slate-700 mb-2">Sin recetas</p>
+        <p class="text-sm text-slate-400 mb-6">
+          {{ searchTerm || selectedStatus ? 'Intenta ajustar los filtros' : 'Comienza creando la primera receta médica' }}
+        </p>
+        <button
+          *ngIf="!searchTerm && !selectedStatus"
+          type="button"
+          (click)="createPrescription()"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none">add</span>
+          Nueva Receta
+        </button>
+      </div>
+
+      <!-- Tabla -->
+      <div *ngIf="!loading && filteredPrescriptions.length > 0" class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-100">
+            <tr>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Nº Receta</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Doctor</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Medicamentos</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Vencimiento</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
+              <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr
+              *ngFor="let p of filteredPrescriptions"
+              (click)="viewPrescription(p)"
+              class="hover:bg-blue-50/40 transition-colors cursor-pointer"
+            >
+              <td class="px-6 py-4">
+                <span class="font-mono text-sm font-semibold text-slate-700">{{ p.prescriptionNumber }}</span>
+                <div class="text-xs text-slate-400 mt-0.5">{{ p.prescriptionDate | date: 'dd/MM/yyyy' }}</div>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center flex-shrink-0 font-semibold text-sm">
+                    {{ getPatientInitials(p) }}
+                  </div>
+                  <div>
+                    <div class="font-medium text-slate-900">{{ p.patient?.firstName }} {{ p.patient?.lastName }}</div>
+                    <div class="text-xs text-slate-400">CI: {{ p.patient?.documentNumber }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-4 text-sm text-slate-700">
+                Dr. {{ p.doctor?.personalInfo?.firstName || p.doctor?.email }}
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex flex-wrap gap-1.5" *ngIf="p.items?.length">
+                  <span
+                    *ngFor="let item of p.items.slice(0, 2)"
+                    class="text-xs px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700"
+                  >{{ item.medicationName }}</span>
+                  <span *ngIf="p.items.length > 2" class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                    +{{ p.items.length - 2 }}
+                  </span>
+                </div>
+                <span *ngIf="!p.items?.length" class="text-xs text-slate-400">—</span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="text-sm text-slate-700">{{ p.expiryDate | date: 'dd/MM/yyyy' }}</div>
+                <span *ngIf="isExpiringSoon(p.expiryDate)" class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 mt-0.5 inline-block">
+                  {{ getDaysUntilExpiry(p.expiryDate) }} días
+                </span>
+                <span *ngIf="isExpired(p.expiryDate)" class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 mt-0.5 inline-block">
+                  Vencida
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium" [ngClass]="getStatusBadgeClass(p.status)">
+                  {{ getStatusLabel(p.status) }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center justify-end gap-1">
+                  <button
+                    type="button"
+                    (click)="viewPrescription(p); $event.stopPropagation()"
+                    matTooltip="Ver"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
+                  >
+                    <span class="material-symbols-outlined msz-18">visibility</span>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="editPrescription(p); $event.stopPropagation()"
+                    matTooltip="Editar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0"
+                  >
+                    <span class="material-symbols-outlined msz-18">edit</span>
+                  </button>
+                  <button
+                    *ngIf="p.status === 'active' && !isExpired(p.expiryDate)"
+                    type="button"
+                    (click)="changeStatus(p, 'dispensed'); $event.stopPropagation()"
+                    matTooltip="Dispensar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-purple-50 hover:text-purple-600 transition-colors border-0"
+                  >
+                    <span class="material-symbols-outlined msz-18">local_pharmacy</span>
+                  </button>
+                  <button
+                    *ngIf="canRefill(p)"
+                    type="button"
+                    (click)="doRefill(p); $event.stopPropagation()"
+                    matTooltip="Resurtir"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-green-50 hover:text-green-600 transition-colors border-0"
+                  >
+                    <span class="material-symbols-outlined msz-18">autorenew</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Footer -->
+      <div *ngIf="!loading && filteredPrescriptions.length > 0" class="flex items-center px-6 py-3 bg-slate-50 border-t border-slate-100">
+        <span class="text-sm text-slate-500">
+          Mostrando <span class="font-semibold text-slate-700">{{ filteredPrescriptions.length }}</span> recetas
+        </span>
+      </div>
+
+    </div>
+
   </div>
 </div>

@@ -112,6 +112,16 @@ export class UserListComponent implements OnInit {
     return this.allUsers.filter(user => !user.isActive).length
   }
 
+  getAdminCount(): number {
+    return this.allUsers.filter(u => u.roles?.some(r => r.toLowerCase().includes('admin'))).length
+  }
+
+  getUserInitials(user: User): string {
+    const first = user.personalInfo?.firstName?.charAt(0) ?? ''
+    const last  = user.personalInfo?.lastName?.charAt(0) ?? ''
+    return (first + last).toUpperCase() || user.email?.charAt(0).toUpperCase() || '?'
+  }
+
   formatDate(date: Date | undefined): string {
     if (!date) return 'No disponible'
     return new Date(date).toLocaleDateString('es-ES', {
