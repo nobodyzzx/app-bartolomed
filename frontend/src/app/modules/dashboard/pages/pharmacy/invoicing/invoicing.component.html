@@ -183,46 +183,22 @@
       <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
         <!-- Columna Número Venta -->
         <ng-container matColumnDef="saleNumber">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            mat-sort-header
-            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
-          >
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined msz-18 text-slate-600">receipt_long</span>
-              Nº Venta
-            </div>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Nº Venta</span>
           </th>
-          <td
-            mat-cell
-            *matCellDef="let sale"
-            class="!p-4 !border-b !border-slate-100 text-blue-700 font-medium tracking-tight"
-          >
+          <td mat-cell *matCellDef="let sale" class="px-6 py-4 text-blue-700 font-medium tracking-tight">
             {{ sale.saleNumber }}
           </td>
         </ng-container>
 
         <!-- Columna Paciente -->
         <ng-container matColumnDef="patient">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            mat-sort-header
-            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
-          >
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined msz-18 text-slate-600">person</span>
-              Paciente
-            </div>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</span>
           </th>
-          <td mat-cell *matCellDef="let invoice" class="!p-4 !border-b !border-slate-100">
+          <td mat-cell *matCellDef="let invoice" class="px-6 py-4">
             <div class="flex items-center gap-2">
-              <div
-                class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0"
-              >
-                <span class="material-symbols-outlined msz-20 text-blue-600">person</span>
-              </div>
+              <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0 font-semibold text-sm">{{ invoice.patientName?.charAt(0) || '?' }}</div>
               <div>
                 <div class="font-medium text-slate-900">{{ invoice.patientName }}</div>
                 <div class="text-xs text-slate-500">Venta: {{ invoice.saleId }}</div>
@@ -233,61 +209,30 @@
 
         <!-- Columna Fecha -->
         <ng-container matColumnDef="date">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            mat-sort-header
-            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
-          >
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined msz-18 text-slate-600">calendar_today</span>
-              Fecha
-            </div>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</span>
           </th>
-          <td
-            mat-cell
-            *matCellDef="let invoice"
-            class="!p-4 !border-b !border-slate-100 text-slate-700"
-          >
+          <td mat-cell *matCellDef="let invoice" class="px-6 py-4 text-slate-700">
             {{ invoice.date | date: 'dd/MM/yyyy' }}
           </td>
         </ng-container>
 
         <!-- Columna Total -->
         <ng-container matColumnDef="total">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            mat-sort-header
-            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
-          >
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined msz-18 text-slate-600">attach_money</span>
-              Total
-            </div>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Total</span>
           </th>
-          <td
-            mat-cell
-            *matCellDef="let invoice"
-            class="!p-4 !border-b !border-slate-100 text-green-700 font-semibold"
-          >
+          <td mat-cell *matCellDef="let invoice" class="px-6 py-4 text-green-700 font-semibold">
             ${{ invoice.total | number: '1.2-2' }}
           </td>
         </ng-container>
 
         <!-- Columna Estado -->
         <ng-container matColumnDef="status">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
-          >
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined msz-18 text-slate-600">flag</span>
-              Estado
-            </div>
+          <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
           </th>
-          <td mat-cell *matCellDef="let invoice" class="!p-4 !border-b !border-slate-100">
+          <td mat-cell *matCellDef="let invoice" class="px-6 py-4">
             <span
               class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border"
               [ngClass]="{
@@ -320,39 +265,29 @@
 
         <!-- Nueva columna Método de Pago -->
         <ng-container matColumnDef="paymentMethod">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            class="!bg-slate-100 !text-slate-800 !font-semibold !p-4 !border-b-2 !border-slate-200"
-          >
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined msz-18 text-slate-600">payments</span>
-              Método
-            </div>
+          <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Método</span>
           </th>
-          <td
-            mat-cell
-            *matCellDef="let sale"
-            class="!p-4 !border-b !border-slate-100 text-slate-700 capitalize"
-          >
+          <td mat-cell *matCellDef="let sale" class="px-6 py-4 text-slate-700 capitalize">
             {{ sale.paymentMethod | lowercase }}
           </td>
         </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="hover:bg-transparent"></tr>
-        <tr
-          mat-row
-          *matRowDef="let row; columns: displayedColumns"
-          class="hover:bg-slate-50 transition-colors"
-        ></tr>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns" class=""></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"
+            class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors cursor-pointer"></tr>
       </table>
 
       <!-- Paginador -->
-      <div class="border-t border-slate-100">
+      <div class="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-100">
+        <span class="text-sm text-slate-500">
+          <span class="font-semibold text-slate-700">{{ dataSource.filteredData?.length || dataSource.data.length }}</span> ventas en total
+        </span>
         <mat-paginator
           [pageSizeOptions]="[10, 25, 50, 100]"
           showFirstLastButtons
           aria-label="Seleccionar página de ventas"
+          class="bg-transparent"
         ></mat-paginator>
       </div>
     </div>
