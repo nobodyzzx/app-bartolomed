@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Not, Repository } from 'typeorm';
@@ -22,6 +22,8 @@ import { ProfessionalRoles } from '../users/interfaces/professional-roles';
 
 @Injectable()
 export class SeedService implements OnModuleInit {
+  private readonly logger = new Logger(SeedService.name);
+
   constructor(
     @InjectRepository(Role)
     private rolesRepository: Repository<Role>,
@@ -105,9 +107,9 @@ export class SeedService implements OnModuleInit {
       if (!existingRole) {
         const role = this.rolesRepository.create(roleData);
         await this.rolesRepository.save(role);
-        console.log(`✓ Role creado: ${roleData.name}`);
+        this.logger.log(`Role creado: ${roleData.name}`);
       } else {
-        console.log(`✓ Role ya existe: ${roleData.name}`);
+        this.logger.debug(`Role ya existe: ${roleData.name}`);
       }
     }
   }
@@ -274,15 +276,13 @@ export class SeedService implements OnModuleInit {
     for (const c of toRemove) {
       try {
         await this.clinicsRepository.remove(c);
-        // eslint-disable-next-line no-console
-        console.log(`✓ Clínica eliminada (stray): ${c.id} - ${c.name}`);
+        this.logger.log(`Clínica stray eliminada: ${c.id} - ${c.name}`);
       } catch {
         // If FK constraints block deletion, deactivate and rename to mark as removed
         c.isActive = false as any;
         c.name = `Eliminada-${c.name}`;
         await this.clinicsRepository.save(c);
-        // eslint-disable-next-line no-console
-        console.log(`⚠ No se pudo eliminar clínica ${c.id}; marcada como inactiva`);
+        this.logger.warn(`No se pudo eliminar clínica ${c.id}; marcada como inactiva`);
       }
     }
   }

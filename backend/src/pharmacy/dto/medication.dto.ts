@@ -1,4 +1,5 @@
-import { IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { MedicationCategory, StorageCondition } from '../entities/pharmacy.entity';
 
 export class CreateMedicationDto {
@@ -71,78 +72,9 @@ export class CreateMedicationDto {
   controlledSubstanceSchedule?: string;
 }
 
-export class UpdateMedicationDto {
+export class UpdateMedicationDto extends PartialType(CreateMedicationDto) {
   @IsOptional()
-  @IsString()
-  name?: string;
-
-  @IsOptional()
-  @IsString()
-  genericName?: string;
-
-  @IsOptional()
-  @IsString()
-  brandName?: string;
-
-  @IsOptional()
-  @IsString()
-  strength?: string;
-
-  @IsOptional()
-  @IsString()
-  dosageForm?: string;
-
-  @IsOptional()
-  @IsEnum(MedicationCategory)
-  category?: MedicationCategory;
-
-  @IsOptional()
-  @IsString()
-  manufacturer?: string;
-
-  @IsOptional()
-  @IsString()
-  supplier?: string;
-
-  @IsOptional()
-  @IsString()
-  description?: string;
-
-  @IsOptional()
-  @IsString()
-  activeIngredients?: string;
-
-  @IsOptional()
-  @IsString()
-  indications?: string;
-
-  @IsOptional()
-  @IsString()
-  contraindications?: string;
-
-  @IsOptional()
-  @IsString()
-  sideEffects?: string;
-
-  @IsOptional()
-  @IsString()
-  dosageInstructions?: string;
-
-  @IsOptional()
-  @IsEnum(StorageCondition)
-  storageCondition?: StorageCondition;
-
-  @IsOptional()
-  requiresPrescription?: boolean;
-
-  @IsOptional()
-  isControlledSubstance?: boolean;
-
-  @IsOptional()
-  @IsString()
-  controlledSubstanceSchedule?: string;
-
-  @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 }
 
