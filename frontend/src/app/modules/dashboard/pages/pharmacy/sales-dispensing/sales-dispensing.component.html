@@ -33,14 +33,14 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <div
         class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [class.ring-2]="statFilter === 'all'"
-        [class.ring-blue-400]="statFilter === 'all'"
+        [class.ring-2]="statFilter() === 'all'"
+        [class.ring-blue-400]="statFilter() === 'all'"
         (click)="setStatFilter('all')"
       >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-blue-600 text-sm font-semibold">Total Ventas</p>
-            <p class="text-3xl font-bold text-blue-900 mt-1">{{ stats.totalSales }}</p>
+            <p class="text-3xl font-bold text-blue-900 mt-1">{{ stats().totalSales }}</p>
             <p class="text-xs text-blue-500 mt-1">Ventas registradas</p>
           </div>
           <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">receipt</span>
@@ -48,14 +48,14 @@
       </div>
       <div
         class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [class.ring-2]="statFilter === 'completed'"
-        [class.ring-green-400]="statFilter === 'completed'"
+        [class.ring-2]="statFilter() === 'completed'"
+        [class.ring-green-400]="statFilter() === 'completed'"
         (click)="setStatFilter('completed')"
       >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-green-600 text-sm font-semibold">Completadas</p>
-            <p class="text-3xl font-bold text-green-900 mt-1">{{ stats.completedSales }}</p>
+            <p class="text-3xl font-bold text-green-900 mt-1">{{ stats().completedSales }}</p>
             <p class="text-xs text-green-500 mt-1">Transacciones finalizadas</p>
           </div>
           <span class="material-symbols-outlined text-green-300" style="font-size: 40px">check_circle</span>
@@ -63,14 +63,14 @@
       </div>
       <div
         class="bg-orange-50 p-5 rounded-2xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [class.ring-2]="statFilter === 'pending'"
-        [class.ring-orange-400]="statFilter === 'pending'"
+        [class.ring-2]="statFilter() === 'pending'"
+        [class.ring-orange-400]="statFilter() === 'pending'"
         (click)="setStatFilter('pending')"
       >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-orange-600 text-sm font-semibold">Pendientes</p>
-            <p class="text-3xl font-bold text-orange-900 mt-1">{{ stats.pendingSales }}</p>
+            <p class="text-3xl font-bold text-orange-900 mt-1">{{ stats().pendingSales }}</p>
             <p class="text-xs text-orange-500 mt-1">Esperando procesamiento</p>
           </div>
           <span class="material-symbols-outlined text-orange-300" style="font-size: 40px">pending</span>
@@ -80,7 +80,7 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-purple-600 text-sm font-semibold">Ingresos</p>
-            <p class="text-3xl font-bold text-purple-900 mt-1">${{ stats.totalRevenue | number: '1.2-2' }}</p>
+            <p class="text-3xl font-bold text-purple-900 mt-1">${{ stats().totalRevenue | number: '1.2-2' }}</p>
             <p class="text-xs text-purple-500 mt-1">Ingresos totales</p>
           </div>
           <span class="material-symbols-outlined text-purple-300" style="font-size: 40px">trending_up</span>

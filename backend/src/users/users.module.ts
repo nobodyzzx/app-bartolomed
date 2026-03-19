@@ -6,7 +6,7 @@ import { PersonalInfo } from './entities/personal-info.entity';
 import { ProfessionalInfo } from './entities/professional-info.entity';
 import { User } from './entities/user.entity';
 import { UsersService } from './services/users.service';
-import { UsersController } from './users.controlLer';
+import { UsersController } from './users.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, PersonalInfo, ProfessionalInfo, Clinic]), AuthModule],
