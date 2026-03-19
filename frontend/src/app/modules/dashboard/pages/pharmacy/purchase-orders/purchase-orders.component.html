@@ -20,7 +20,7 @@
       <button
         type="button"
         (click)="newOrder()"
-        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
         aria-label="Crear nueva orden"
       >
         <span class="material-symbols-outlined msz-20 leading-none">add</span>
@@ -29,106 +29,68 @@
     </div>
 
     <!-- Estadísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-      <!-- Total Órdenes -->
-      <div
-        class="bg-blue-50 p-4 rounded-xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-      >
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-blue-600 text-sm font-semibold">Total Órdenes</p>
-            <p class="text-3xl font-bold text-blue-900 mt-2">{{ stats().total }}</p>
-            <p class="text-xs text-blue-600/60 mt-1">Registros en el sistema</p>
+            <p class="text-3xl font-bold text-blue-900 mt-1">{{ stats().total }}</p>
+            <p class="text-xs text-blue-500 mt-1">Registros en el sistema</p>
           </div>
-          <span class="material-symbols-outlined text-blue-500 msz-40 !w-10 !h-10"
-            >receipt_long</span
-          >
+          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">receipt_long</span>
         </div>
       </div>
-
-      <!-- Borradores -->
-      <div
-        class="bg-gray-50 p-4 rounded-xl border-l-4 border-gray-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-      >
+      <div class="bg-slate-50 p-5 rounded-2xl border-l-4 border-slate-400 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-gray-600 text-sm font-semibold">Borradores</p>
-            <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats().draft }}</p>
-            <p class="text-xs text-gray-600/60 mt-1">En proceso de creación</p>
+            <p class="text-slate-600 text-sm font-semibold">Borradores</p>
+            <p class="text-3xl font-bold text-slate-900 mt-1">{{ stats().draft }}</p>
+            <p class="text-xs text-slate-500 mt-1">En proceso de creación</p>
           </div>
-          <span class="material-symbols-outlined text-gray-500 msz-40 !w-10 !h-10">draft</span>
+          <span class="material-symbols-outlined text-slate-300" style="font-size: 40px">draft</span>
         </div>
       </div>
-
-      <!-- Pendientes -->
-      <div
-        class="bg-orange-50 p-4 rounded-xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-      >
+      <div class="bg-orange-50 p-5 rounded-2xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-orange-600 text-sm font-semibold">Pendientes</p>
-            <p class="text-3xl font-bold text-orange-900 mt-2">{{ stats().pending }}</p>
-            <p class="text-xs text-orange-600/60 mt-1">Esperando aprobación</p>
+            <p class="text-3xl font-bold text-orange-900 mt-1">{{ stats().pending }}</p>
+            <p class="text-xs text-orange-500 mt-1">Esperando aprobación</p>
           </div>
-          <span class="material-symbols-outlined text-orange-500 msz-40 !w-10 !h-10">pending</span>
+          <span class="material-symbols-outlined text-orange-300" style="font-size: 40px">pending</span>
         </div>
       </div>
-
-      <!-- Aprobadas -->
-      <div
-        class="bg-green-50 p-4 rounded-xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-      >
+      <div class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-green-600 text-sm font-semibold">Aprobadas</p>
-            <p class="text-3xl font-bold text-green-900 mt-2">{{ stats().approved }}</p>
-            <p class="text-xs text-green-600/60 mt-1">Listas para procesar</p>
+            <p class="text-3xl font-bold text-green-900 mt-1">{{ stats().approved }}</p>
+            <p class="text-xs text-green-500 mt-1">Listas para procesar</p>
           </div>
-          <span class="material-symbols-outlined text-green-500 msz-40 !w-10 !h-10"
-            >check_circle</span
-          >
+          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">check_circle</span>
         </div>
       </div>
-    </div>
-
-    <!-- Búsqueda y Acciones -->
-    <div class="flex items-center gap-4 mb-6">
-      <div class="flex-1 max-w-2xl">
-        <div class="relative">
-          <input
-            type="text"
-            [ngModel]="search()"
-            (ngModelChange)="search.set($event)"
-            placeholder="Número de orden, proveedor..."
-            class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
-          />
-          <span class="material-symbols-outlined absolute right-3 top-2.5 text-blue-400"
-            >search</span
-          >
-        </div>
-      </div>
-
-      <button
-        type="button"
-        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-      >
-        <span class="material-symbols-outlined msz-18">search</span>
-        Buscar
-      </button>
-
-      <div class="flex-1"></div>
-
-      <button
-        type="button"
-        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
-      >
-        <span class="material-symbols-outlined msz-18">download</span>
-        Exportar
-      </button>
     </div>
 
     <!-- Tabla de órdenes -->
-    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+
+      <!-- Buscador -->
+      <div class="p-6 border-b border-slate-100">
+        <div class="flex items-center gap-4">
+          <div class="flex-1 max-w-md relative">
+            <input
+              type="text"
+              [ngModel]="search()"
+              (ngModelChange)="search.set($event)"
+              placeholder="Número de orden, proveedor..."
+              class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
+            />
+            <span class="material-symbols-outlined absolute right-4 top-2.5 text-blue-400">search</span>
+          </div>
+        </div>
+      </div>
+
       <div class="overflow-x-auto">
         <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
           <!-- Columna Número de Orden -->
@@ -311,27 +273,25 @@
         <button
           type="button"
           (click)="newOrder()"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
         >
-          <span class="material-symbols-outlined msz-20 leading-none">add</span>
+          <span class="material-symbols-outlined msz-18 leading-none">add</span>
           Crear primera orden
         </button>
       </div>
 
-      <!-- Paginador -->
+      <!-- Footer -->
+      <div *ngIf="!loading() && dataSource.data.length > 0" class="px-6 pt-3 bg-slate-50 border-t border-slate-100">
+        <span class="text-sm text-slate-500">
+          <span class="font-semibold text-slate-700">{{ dataSource.data.length }}</span> órdenes en total
+        </span>
+      </div>
       <mat-paginator
         [pageSizeOptions]="[10, 25, 50, 100]"
         showFirstLastButtons
         aria-label="Seleccionar página de órdenes"
-        class="bg-slate-50 border-t border-slate-200"
+        class="bg-slate-50 border-t border-slate-100"
       ></mat-paginator>
-    </div>
-
-    <!-- Contador de resultados -->
-    <div class="mt-6 text-center text-slate-600">
-      <p *ngIf="!loading() && dataSource.data.length > 0" class="text-sm">
-        Mostrando {{ dataSource.data.length }} órdenes en total
-      </p>
     </div>
   </div>
 </div>

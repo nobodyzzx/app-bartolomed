@@ -18,82 +18,60 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <!-- Total Informes -->
-      <div
-        class="bg-white rounded-lg shadow-sm border-l-4 border-blue-500 p-4 hover:shadow-md transition-shadow"
-      >
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-slate-600">Total Informes</p>
-            <p class="text-2xl font-bold text-slate-900 mt-1">{{ totalReports }}</p>
+            <p class="text-blue-600 text-sm font-semibold">Total Informes</p>
+            <p class="text-3xl font-bold text-blue-900 mt-1">{{ totalReports }}</p>
+            <p class="text-xs text-blue-500 mt-1">Generados</p>
           </div>
-          <span class="material-symbols-outlined msz-40 text-blue-500 leading-none"
-            >assignment</span
-          >
+          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">assignment</span>
         </div>
       </div>
-
-      <!-- Consultas -->
       <div
-        class="bg-white rounded-lg shadow-sm border-l-4 border-green-500 p-4 hover:shadow-md transition-shadow cursor-pointer"
+        class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
         (click)="filterByType('Consultas')"
       >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-slate-600">Consultas</p>
-            <p class="text-2xl font-bold text-slate-900 mt-1">{{ consultasCount }}</p>
+            <p class="text-green-600 text-sm font-semibold">Consultas</p>
+            <p class="text-3xl font-bold text-green-900 mt-1">{{ consultasCount }}</p>
+            <p class="text-xs text-green-500 mt-1">Informes de consulta</p>
           </div>
-          <span class="material-symbols-outlined msz-40 text-green-500 leading-none"
-            >medical_services</span
-          >
+          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">medical_services</span>
         </div>
       </div>
-
-      <!-- Diagnósticos -->
       <div
-        class="bg-white rounded-lg shadow-sm border-l-4 border-purple-500 p-4 hover:shadow-md transition-shadow cursor-pointer"
+        class="bg-purple-50 p-5 rounded-2xl border-l-4 border-purple-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
         (click)="filterByType('Diagnósticos')"
       >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-slate-600">Diagnósticos</p>
-            <p class="text-2xl font-bold text-slate-900 mt-1">{{ diagnosticosCount }}</p>
+            <p class="text-purple-600 text-sm font-semibold">Diagnósticos</p>
+            <p class="text-3xl font-bold text-purple-900 mt-1">{{ diagnosticosCount }}</p>
+            <p class="text-xs text-purple-500 mt-1">Informes diagnósticos</p>
           </div>
-          <span class="material-symbols-outlined msz-40 text-purple-500 leading-none"
-            >diagnosis</span
-          >
+          <span class="material-symbols-outlined text-purple-300" style="font-size: 40px">diagnosis</span>
         </div>
       </div>
-
-      <!-- Total Pacientes -->
-      <div
-        class="bg-white rounded-lg shadow-sm border-l-4 border-amber-500 p-4 hover:shadow-md transition-shadow"
-      >
+      <div class="bg-amber-50 p-5 rounded-2xl border-l-4 border-amber-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-slate-600">Total Pacientes</p>
-            <p class="text-2xl font-bold text-slate-900 mt-1">{{ totalPatients }}</p>
+            <p class="text-amber-600 text-sm font-semibold">Total Pacientes</p>
+            <p class="text-3xl font-bold text-amber-900 mt-1">{{ totalPatients }}</p>
+            <p class="text-xs text-amber-500 mt-1">En informes</p>
           </div>
-          <span class="material-symbols-outlined msz-40 text-amber-500 leading-none">people</span>
+          <span class="material-symbols-outlined text-amber-300" style="font-size: 40px">people</span>
         </div>
       </div>
     </div>
 
     <!-- Formulario de Generación -->
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
-      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-blue-100">
-        <div class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0"
-          >
-            <span class="material-symbols-outlined msz-24 text-white">add_circle</span>
-          </div>
-          <div>
-            <h2 class="text-lg font-semibold text-slate-800">Generar Nuevo Informe Médico</h2>
-            <p class="text-sm text-slate-600">Configure los parámetros del informe a generar</p>
-          </div>
-        </div>
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+      <div class="px-6 py-4 border-b border-slate-100">
+        <h2 class="text-base font-semibold text-slate-800">Generar Nuevo Informe Médico</h2>
+        <p class="text-sm text-slate-500 mt-0.5">Configure los parámetros del informe a generar</p>
       </div>
 
       <form [formGroup]="generateForm" (ngSubmit)="onGenerateReport()" class="p-6">
@@ -192,10 +170,8 @@
     </div>
 
     <!-- Lista de Informes -->
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div
-        class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between"
-      >
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <span class="material-symbols-outlined msz-20 text-slate-600">folder_open</span>
           <h3 class="text-lg font-semibold text-slate-800">Informes Generados</h3>
@@ -224,56 +200,14 @@
       <!-- Tabla -->
       <div *ngIf="!loading && medicalReports.length > 0" class="overflow-x-auto">
         <table class="w-full">
-          <thead class="bg-slate-50 border-b border-slate-200">
+          <thead class="bg-slate-100">
             <tr>
-              <th class="px-6 py-3 text-left">
-                <div
-                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-16">title</span>
-                  Título
-                </div>
-              </th>
-              <th class="px-6 py-3 text-left">
-                <div
-                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-16">category</span>
-                  Tipo
-                </div>
-              </th>
-              <th class="px-6 py-3 text-left">
-                <div
-                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-16">event</span>
-                  Fecha
-                </div>
-              </th>
-              <th class="px-6 py-3 text-left">
-                <div
-                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-16">people</span>
-                  Pacientes
-                </div>
-              </th>
-              <th class="px-6 py-3 text-left">
-                <div
-                  class="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-16">info</span>
-                  Estado
-                </div>
-              </th>
-              <th class="px-6 py-3 text-center">
-                <div
-                  class="flex items-center justify-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-16">settings</span>
-                  Acciones
-                </div>
-              </th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Título</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Tipo</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Pacientes</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
+              <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -314,7 +248,7 @@
                 </span>
               </td>
               <td class="px-6 py-4">
-                <div class="flex items-center justify-center gap-1">
+                <div class="flex items-center justify-end gap-1">
                   <button
                     type="button"
                     (click)="viewReport(report)"

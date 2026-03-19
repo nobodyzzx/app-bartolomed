@@ -37,75 +37,58 @@
       </div>
     </div>
 
-    <!-- Estadísticas (simplificadas a ventas pagadas) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
-      <!-- Total Ventas -->
+    <!-- Estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <div
-        class="bg-blue-50 p-4 rounded-xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+        class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
         (click)="filterByStatus(null)"
       >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-blue-600 text-sm font-semibold">Total Ventas</p>
-            <p class="text-3xl font-bold text-blue-900 mt-2">{{ stats.totalInvoices }}</p>
-            <p class="text-xs text-blue-600/60 mt-1">Ventas registradas</p>
+            <p class="text-3xl font-bold text-blue-900 mt-1">{{ stats.totalInvoices }}</p>
+            <p class="text-xs text-blue-500 mt-1">Ventas registradas</p>
           </div>
-          <span class="material-symbols-outlined text-blue-500 msz-40 !w-10 !h-10"
-            >description</span
-          >
+          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">description</span>
         </div>
       </div>
-      <!-- Ventas Pagadas -->
       <div
-        class="bg-green-50 p-4 rounded-xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+        class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
         (click)="selectedStatus = InvoiceStatus.PAID; applyFilters()"
       >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-green-600 text-sm font-semibold">Ventas Pagadas</p>
-            <p class="text-3xl font-bold text-green-900 mt-2">{{ stats.paidInvoices }}</p>
-            <p class="text-xs text-green-600/60 mt-1">Cobros completados</p>
+            <p class="text-3xl font-bold text-green-900 mt-1">{{ stats.paidInvoices }}</p>
+            <p class="text-xs text-green-500 mt-1">Cobros completados</p>
           </div>
-          <span class="material-symbols-outlined text-green-500 msz-40 !w-10 !h-10"
-            >check_circle</span
-          >
+          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">check_circle</span>
         </div>
       </div>
-    </div>
-
-    <!-- Resumen Financiero -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-      <div
-        class="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-xl text-white shadow-lg hover:shadow-xl transition-shadow"
-      >
+      <div class="bg-emerald-50 p-5 rounded-2xl border-l-4 border-emerald-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-green-100 text-sm font-semibold">Ingresos Totales</p>
-            <p class="text-4xl font-bold mt-2">${{ stats.totalRevenue | number: '1.2-2' }}</p>
-            <p class="text-xs text-green-100/80 mt-1">Monto total cobrado</p>
+            <p class="text-emerald-600 text-sm font-semibold">Ingresos Totales</p>
+            <p class="text-3xl font-bold text-emerald-900 mt-1">${{ stats.totalRevenue | number: '1.2-2' }}</p>
+            <p class="text-xs text-emerald-500 mt-1">Monto total cobrado</p>
           </div>
-          <span class="material-symbols-outlined text-green-200 msz-48 !w-12 !h-12"
-            >trending_up</span
-          >
+          <span class="material-symbols-outlined text-emerald-300" style="font-size: 40px">trending_up</span>
         </div>
       </div>
-
-      <div
-        class="bg-gradient-to-r from-orange-500 to-orange-600 p-6 rounded-xl text-white shadow-lg hover:shadow-xl transition-shadow"
-      >
+      <div class="bg-orange-50 p-5 rounded-2xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-orange-100 text-sm font-semibold">Monto Pendiente</p>
-            <p class="text-4xl font-bold mt-2">${{ stats.pendingAmount | number: '1.2-2' }}</p>
-            <p class="text-xs text-orange-100/80 mt-1">Por cobrar</p>
+            <p class="text-orange-600 text-sm font-semibold">Monto Pendiente</p>
+            <p class="text-3xl font-bold text-orange-900 mt-1">${{ stats.pendingAmount | number: '1.2-2' }}</p>
+            <p class="text-xs text-orange-500 mt-1">Por cobrar</p>
           </div>
-          <span class="material-symbols-outlined text-orange-200 msz-48 !w-12 !h-12">schedule</span>
+          <span class="material-symbols-outlined text-orange-300" style="font-size: 40px">schedule</span>
         </div>
       </div>
     </div>
 
     <!-- Filtros y Búsqueda -->
-    <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+    <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <!-- Búsqueda -->
         <div class="md:col-span-2">
@@ -196,7 +179,7 @@
     </div>
 
     <!-- Tabla de Ventas -->
-    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
       <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
         <!-- Columna Número Venta -->
         <ng-container matColumnDef="saleNumber">
