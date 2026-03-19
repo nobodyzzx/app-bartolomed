@@ -66,9 +66,12 @@ Este documento resume los cambios aplicados y el flujo final que quedó funciona
 - En Dokploy o `.env.production` (según tu flujo):
   - `FRONTEND_DOMAIN=bartolomed.tecnocondor.dev`
   - `TRAEFIK_NETWORK=dokploy-network` (ajústalo si tu instalación usa otro nombre)
+  - `TRAEFIK_CERT_RESOLVER=letsencrypt` (o el nombre real configurado en tu Traefik de Dokploy)
   - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
   - `JWT_SECRET`, `JWT_REFRESH_SECRET`
   - `GOD_MODE_TOKEN`
+- En `docker-compose.dokploy.yml` los secretos críticos ya no tienen fallback; si faltan, el despliegue debe considerarse inválido.
+- Los routers `frontend` y `backend-path` están configurados con `entrypoints=websecure`, `tls=true` y `tls.certresolver`.
 
 ## Verificaciones rápidas
 
@@ -143,6 +146,101 @@ where lower(email) = 'doctor@example.com';
 - Error en `init.sql` con `${POSTGRES_DB}`:
   - Ya removido; no se deben usar variables ni `CREATE DATABASE` en ese script.
 
+- Certificado self-signed (`TRAEFIK DEFAULT CERT`):
+
+  - Verificar que `TRAEFIK_CERT_RESOLVER` coincida con el resolver real de Dokploy/Traefik.
+  - Re-desplegar el stack para que Traefik reprovisione certificados.
+  - Confirmar emisión con:
+
+```sh
+echo | openssl s_client -servername <FRONTEND_DOMAIN> -connect <FRONTEND_DOMAIN>:443 2>/dev/null | openssl x509 -noout -issuer -subject -dates
+```
+
 ---
 
-Con esto, el frontend y backend funcionan por una sola URL y toda la comunicación entre contenedores es interna. Si deseas, puedo convertir estas instrucciones en un checklist de despliegue en Dokploy y un script de verificación rápida.
+Con esto, el frontend y backend funcionan por una sola URL y toda la comunicación entre contenedores es interna.
+
+## Checklist de preproducción (go-live)
+
+### 1) Secretos y acceso
+
+- [ ] Cambiar valores por defecto en entorno productivo:
+  - `JWT_SECRET`
+  - `JWT_REFRESH_SECRET`
+  - `GOD_MODE_TOKEN`
+  - `POSTGRES_PASSWORD`
+- [ ] Verificar que ningún secreto esté hardcodeado en `docker-compose*.yml` o repositorio.
+- [ ] Confirmar HTTPS activo en el dominio final (requerido para cookie `rt` con `Secure`).
+- [ ] Ejecutar bootstrap de `SUPER_ADMIN` y **eliminar `GOD_MODE_TOKEN`** del entorno al terminar.
+
+### 2) Base de datos y backups
+
+- [ ] Confirmar estado saludable de DB (`pg_isready`) y conectividad desde backend.
+- [ ] Ejecutar backup inicial antes de go-live:
+
+```sh
+pg_dump -h <db-host> -U <db-user> -d <db-name> -Fc -f backup-preprod.dump
+```
+
+- [ ] Verificar restauración en entorno de prueba:
+
+```sh
+pg_restore -h <db-host-test> -U <db-user> -d <db-name-test> --clean --if-exists backup-preprod.dump
+```
+
+- [ ] Definir ventana/frecuencia de backup y retención.
+
+### 3) Salud operativa y monitoreo
+
+- [ ] Ejecutar verificación operativa rápida del entorno:
+
+```sh
+bash ./check-status.sh
+```
+
+- [ ] Health endpoint responde por dominio público:
+
+```sh
+curl -fSs https://<FRONTEND_DOMAIN>/api/health
+```
+
+- [ ] Revisar logs de `frontend`, `backend` y `db` sin errores críticos al iniciar.
+- [ ] Confirmar alertas mínimas (caída de backend, DB no saludable, 5xx sostenidos).
+- [ ] Validar uso de CPU/memoria en picos básicos de carga.
+
+### 4) Seguridad funcional (auth + permisos + clínica)
+
+- [ ] Login/logout y refresh token funcionan por HTTPS.
+- [ ] Rutas admin (`system-params`, `notifications-config`, `document-templates`, `api-integration`) respetan rol/permisos esperados.
+- [ ] Verificar aislamiento por clínica (`X-Clinic-Id`) en operaciones críticas.
+- [ ] Confirmar que usuarios sin permisos reciben 401/403 correctamente.
+
+### 5) Calidad y pruebas mínimas
+
+- [ ] Backend core tests y hardening completados.
+- [ ] Frontend smoke tests en contenedor:
+
+```sh
+podman compose exec -T frontend sh -lc "CHROME_BIN=/usr/bin/chromium npm test -- --watch=false"
+```
+
+- [ ] Build frontend/backend en verde en pipeline/entorno final.
+
+### 6) Rollback operativo
+
+- [ ] Definir versión/tag anterior estable para rollback inmediato.
+- [ ] Confirmar procedimiento de rollback de app y DB (si aplica migración).
+- [ ] Guardar comandos de recuperación rápida (con runtime disponible):
+
+```sh
+podman compose pull
+podman compose up -d
+```
+
+- [ ] Ensayar rollback en staging al menos una vez.
+
+### 7) Cierre previo a go-live
+
+- [ ] Ejecutar smoke funcional final (login, pacientes, citas, receta, facturación, reportes).
+- [ ] Confirmar responsables on-call y canal de incidentes.
+- [ ] Registrar evidencia de checklist (comandos/salidas) en bitácora interna.

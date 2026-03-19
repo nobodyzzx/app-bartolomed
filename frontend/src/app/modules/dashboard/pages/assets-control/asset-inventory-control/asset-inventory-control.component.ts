@@ -1,5 +1,5 @@
 import { Location } from '@angular/common'
-import { Component, OnInit, ViewChild } from '@angular/core'
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
@@ -13,7 +13,7 @@ import { AssetRegistrationService } from '../services/asset-registration.service
   templateUrl: './asset-inventory-control.component.html',
   styleUrls: ['./asset-inventory-control.component.css'],
 })
-export class AssetInventoryControlComponent implements OnInit {
+export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = [
     'assetTag',
     'name',
@@ -25,12 +25,40 @@ export class AssetInventoryControlComponent implements OnInit {
   ]
   dataSource: MatTableDataSource<BaseAsset>
   isLoading = false
-  searchTerm: string = ''
+  searchTerm = ''
 
   @ViewChild(MatPaginator) paginator!: MatPaginator
   @ViewChild(MatSort) sort!: MatSort
 
+  readonly AssetStatus = AssetStatus
   assets: BaseAsset[] = []
+  activeStatusFilter: string | null = null
+
+  private readonly typeLabels: Record<string, string> = {
+    medical_equipment: 'Equipo Médico',
+    furniture: 'Mobiliario',
+    computer: 'Computadora',
+    vehicle: 'Vehículo',
+    building: 'Inmueble',
+    other: 'Otro',
+  }
+
+  private readonly typeIcons: Record<string, string> = {
+    medical_equipment: 'medical_services',
+    furniture: 'chair',
+    computer: 'computer',
+    vehicle: 'directions_car',
+    building: 'business',
+    other: 'inventory_2',
+  }
+
+  private readonly statusColors: Record<string, string> = {
+    [AssetStatus.ACTIVE]: 'bg-green-100 text-green-800',
+    [AssetStatus.INACTIVE]: 'bg-slate-100 text-slate-700',
+    [AssetStatus.MAINTENANCE]: 'bg-amber-100 text-amber-800',
+    [AssetStatus.RETIRED]: 'bg-red-100 text-red-800',
+    [AssetStatus.DISPOSED]: 'bg-slate-200 text-slate-600',
+  }
 
   constructor(
     private assetService: AssetRegistrationService,
@@ -38,14 +66,24 @@ export class AssetInventoryControlComponent implements OnInit {
     private location: Location,
     private alert: AlertService,
   ) {
-    this.dataSource = new MatTableDataSource(this.assets)
+    this.dataSource = new MatTableDataSource<BaseAsset>([])
+    this.dataSource.filterPredicate = (asset: BaseAsset, filter: string) => {
+      const term = filter.toLowerCase()
+      return (
+        asset.name.toLowerCase().includes(term) ||
+        (asset.assetTag ?? '').toLowerCase().includes(term) ||
+        (asset.location ?? '').toLowerCase().includes(term) ||
+        this.getTypeLabel(asset.type).toLowerCase().includes(term) ||
+        asset.manufacturer.toLowerCase().includes(term)
+      )
+    }
   }
 
   ngOnInit(): void {
     this.loadAssets()
   }
 
-  ngAfterViewInit() {
+  ngAfterViewInit(): void {
     this.dataSource.paginator = this.paginator
     this.dataSource.sort = this.sort
   }
@@ -55,7 +93,7 @@ export class AssetInventoryControlComponent implements OnInit {
     this.assetService.getAssets().subscribe({
       next: assets => {
         this.assets = assets
-        this.dataSource.data = assets
+        this.applyFilters()
         this.isLoading = false
       },
       error: () => {
@@ -65,9 +103,21 @@ export class AssetInventoryControlComponent implements OnInit {
   }
 
   applyFilter(event: Event): void {
-    const filterValue = (event.target as HTMLInputElement).value
-    this.dataSource.filter = filterValue.trim().toLowerCase()
+    this.searchTerm = (event.target as HTMLInputElement).value
+    this.applyFilters()
+  }
 
+  setStatusFilter(status: string | null): void {
+    this.activeStatusFilter = status
+    this.applyFilters()
+  }
+
+  private applyFilters(): void {
+    const filtered = this.activeStatusFilter
+      ? this.assets.filter(a => a.status === this.activeStatusFilter)
+      : this.assets
+    this.dataSource.data = filtered
+    this.dataSource.filter = this.searchTerm.trim().toLowerCase()
     if (this.dataSource.paginator) {
       this.dataSource.paginator.firstPage()
     }
@@ -104,7 +154,7 @@ export class AssetInventoryControlComponent implements OnInit {
       this.assetService.deleteAsset(asset.id).subscribe({
         next: () => {
           this.assets = this.assets.filter(a => a.id !== asset.id)
-          this.dataSource.data = this.assets
+          this.applyFilters()
           this.alert.success('Eliminado', 'Activo eliminado correctamente')
           this.isLoading = false
         },
@@ -115,53 +165,37 @@ export class AssetInventoryControlComponent implements OnInit {
     }
   }
 
-  getStatusColor(status: string): string {
-    const statusMap: { [key: string]: string } = {
-      active: 'bg-green-100 text-green-800',
-      inactive: 'bg-slate-100 text-slate-800',
-      maintenance: 'bg-amber-100 text-amber-800',
-      retired: 'bg-red-100 text-red-800',
-    }
-    return statusMap[status] || 'bg-slate-100 text-slate-800'
-  }
-
-  getTypeIcon(type: string): string {
-    const typeMap: { [key: string]: string } = {
-      medical_equipment: 'medical_services',
-      furniture: 'chair',
-      computer: 'computer',
-      vehicle: 'directions_car',
-      building: 'business',
-      other: 'inventory_2',
-    }
-    return typeMap[type] || 'inventory_2'
-  }
-
   exportToCSV(): void {
     const headers = ['Tag', 'Nombre', 'Tipo', 'Estado', 'Ubicación', 'Valor Actual']
-    const csvData = this.assets.map(asset => [
-      (asset as any).assetTag || '',
-      asset.name,
-      asset.type,
-      asset.status,
-      asset.location || '',
-      (asset as any).currentValue?.toString() || '0',
+    const rows = this.assets.map(a => [
+      a.assetTag ?? '',
+      a.name,
+      this.getTypeLabel(a.type),
+      a.status,
+      a.location ?? '',
+      (a.currentValue ?? 0).toString(),
     ])
-
-    const csvContent = [
-      headers.join(','),
-      ...csvData.map(row => row.map(cell => `"${cell}"`).join(',')),
-    ].join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const csv = [headers, ...rows].map(row => row.map(c => `"${c}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
+    link.setAttribute('href', URL.createObjectURL(blob))
     link.setAttribute('download', `activos_${new Date().toISOString().split('T')[0]}.csv`)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+  }
+
+  getStatusColor(status: string): string {
+    return this.statusColors[status] ?? 'bg-slate-100 text-slate-700'
+  }
+
+  getTypeLabel(type: string): string {
+    return this.typeLabels[type] ?? type
+  }
+
+  getTypeIcon(type: string): string {
+    return this.typeIcons[type] ?? 'inventory_2'
   }
 
   getActiveCount(): number {
@@ -172,7 +206,11 @@ export class AssetInventoryControlComponent implements OnInit {
     return this.assets.filter(a => a.status === AssetStatus.MAINTENANCE).length
   }
 
+  getRetiredCount(): number {
+    return this.assets.filter(a => a.status === AssetStatus.RETIRED).length
+  }
+
   getTotalValue(): number {
-    return this.assets.reduce((sum, asset) => sum + ((asset as any).currentValue || 0), 0)
+    return this.assets.reduce((sum, a) => sum + (a.currentValue ?? 0), 0)
   }
 }

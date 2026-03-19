@@ -1,8 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
+import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { ActivatedRoute } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { of } from 'rxjs'
+import { MaterialModule } from '../../../../material/material.module'
 import { ClinicsService } from '../clinics/services/clinics.service'
 import { PatientsService } from '../patients/services/patients.service'
 import { UsersService } from '../users/users.service'
@@ -29,7 +31,7 @@ describe('PrescriptionFormComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [PrescriptionFormComponent],
-      imports: [ReactiveFormsModule, FormsModule],
+      imports: [ReactiveFormsModule, FormsModule, MaterialModule, NoopAnimationsModule],
       providers: [
         { provide: AlertService, useValue: mockAlert },
         { provide: PatientsService, useValue: mockPatientsService },

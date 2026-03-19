@@ -2,6 +2,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import * as request from 'supertest';
+import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { Clinic } from '../src/clinics/entities/clinic.entity';
@@ -20,6 +21,7 @@ describe('Clinic Membership Management (e2e)', () => {
   let clinicAdminUser: User;
   let clinicAdminToken: string;
   let regularUser: User;
+  const TEST_PASSWORD = 'Abc123!';
 
   beforeAll(async () => {
     process.env.JWT_SECRET = 'test-secret';
@@ -39,7 +41,7 @@ describe('Clinic Membership Management (e2e)', () => {
     // Crear SUPER_ADMIN
     superAdminUser = userRepo.create({
       email: 'superadmin-membership@example.com',
-      password: 'hashedpassword',
+      password: await bcrypt.hash(TEST_PASSWORD, 10),
       roles: ['super-admin', 'admin'],
       personalInfo: {
         firstName: 'Super',
@@ -51,7 +53,7 @@ describe('Clinic Membership Management (e2e)', () => {
     // Login para obtener token
     const loginResponse = await request(app.getHttpServer()).post('/auth/login').send({
       email: 'superadmin-membership@example.com',
-      password: 'hashedpassword',
+      password: TEST_PASSWORD,
     });
     superAdminToken = loginResponse.body.token;
 
@@ -67,7 +69,7 @@ describe('Clinic Membership Management (e2e)', () => {
     // Crear admin de clínica
     clinicAdminUser = userRepo.create({
       email: 'clinicadmin-test@example.com',
-      password: 'hashedpassword',
+      password: await bcrypt.hash(TEST_PASSWORD, 10),
       roles: ['user'],
       personalInfo: {
         firstName: 'Clinic',
@@ -87,14 +89,14 @@ describe('Clinic Membership Management (e2e)', () => {
     // Login clinic admin
     const adminLoginResponse = await request(app.getHttpServer()).post('/auth/login').send({
       email: 'clinicadmin-test@example.com',
-      password: 'hashedpassword',
+      password: TEST_PASSWORD,
     });
     clinicAdminToken = adminLoginResponse.body.token;
 
     // Crear usuario regular
     regularUser = userRepo.create({
       email: 'regular-member@example.com',
-      password: 'hashedpassword',
+      password: await bcrypt.hash(TEST_PASSWORD, 10),
       roles: ['user'],
       personalInfo: {
         firstName: 'Regular',
@@ -168,10 +170,14 @@ describe('Clinic Membership Management (e2e)', () => {
     });
 
     it('should reject without admin role in clinic', async () => {
+      const runTag = Date.now();
+      const nonAdminEmail = `nonadmin-${runTag}@example.com`;
+      const newMemberEmail = `newmember-${runTag}@example.com`;
+
       // Crear otro usuario sin rol de admin
       const nonAdminUser = userRepo.create({
-        email: 'nonadmin@example.com',
-        password: 'hashedpassword',
+        email: nonAdminEmail,
+        password: await bcrypt.hash(TEST_PASSWORD, 10),
         roles: ['user'],
         personalInfo: {
           firstName: 'Non',
@@ -189,15 +195,15 @@ describe('Clinic Membership Management (e2e)', () => {
       await userClinicRepo.save(membership);
 
       const loginResp = await request(app.getHttpServer()).post('/auth/login').send({
-        email: 'nonadmin@example.com',
-        password: 'hashedpassword',
+        email: nonAdminEmail,
+        password: TEST_PASSWORD,
       });
       const nonAdminToken = loginResp.body.token;
 
       // Crear otro usuario a agregar
       const newUser = userRepo.create({
-        email: 'newmember@example.com',
-        password: 'hashedpassword',
+        email: newMemberEmail,
+        password: await bcrypt.hash(TEST_PASSWORD, 10),
         roles: ['user'],
         personalInfo: { firstName: 'New', lastName: 'Member' } as any,
       });

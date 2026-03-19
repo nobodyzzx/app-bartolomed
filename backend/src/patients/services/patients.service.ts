@@ -15,8 +15,20 @@ export class PatientsService {
     private readonly clinicRepository: Repository<Clinic>,
   ) {}
 
+  private ensureBirthDateNotFuture(birthDate: string | Date) {
+    const parsed = new Date(birthDate);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new BadRequestException('birthDate is invalid');
+    }
+    if (parsed > new Date()) {
+      throw new BadRequestException('birthDate cannot be in the future');
+    }
+  }
+
   async create(createPatientDto: CreatePatientDto, user: User): Promise<Patient> {
     try {
+      this.ensureBirthDateNotFuture(createPatientDto.birthDate);
+
       // Verificar que la clínica existe
       const clinic = await this.clinicRepository.findOne({
         where: { id: createPatientDto.clinicId },
@@ -51,11 +63,12 @@ export class PatientsService {
   }
 
   async findAll(clinicId?: string): Promise<Patient[]> {
-    const whereConditions: any = { isActive: true };
-
-    if (clinicId) {
-      whereConditions.clinic = { id: clinicId };
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
     }
+
+    const whereConditions: any = { isActive: true };
+    whereConditions.clinic = { id: clinicId };
 
     return await this.patientRepository.find({
       where: whereConditions,
@@ -64,9 +77,13 @@ export class PatientsService {
     });
   }
 
-  async findOne(id: string): Promise<Patient> {
+  async findOne(id: string, clinicId?: string): Promise<Patient> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+
     const patient = await this.patientRepository.findOne({
-      where: { id, isActive: true },
+      where: { id, isActive: true, clinic: { id: clinicId } },
       relations: ['clinic', 'createdBy'],
     });
 
@@ -77,9 +94,14 @@ export class PatientsService {
     return patient;
   }
 
-  async findByDocumentNumber(documentNumber: string): Promise<Patient> {
+  async findByDocumentNumber(documentNumber: string, clinicId?: string): Promise<Patient> {
+    const normalizedDocument = documentNumber.trim().toUpperCase();
+    const where: any = { documentNumber: normalizedDocument, isActive: true };
+    if (clinicId) {
+      where.clinic = { id: clinicId };
+    }
     const patient = await this.patientRepository.findOne({
-      where: { documentNumber, isActive: true },
+      where,
       relations: ['clinic', 'createdBy'],
     });
 
@@ -90,8 +112,12 @@ export class PatientsService {
     return patient;
   }
 
-  async update(id: string, updatePatientDto: UpdatePatientDto): Promise<Patient> {
-    const patient = await this.findOne(id);
+  async update(id: string, updatePatientDto: UpdatePatientDto, clinicId?: string): Promise<Patient> {
+    const patient = await this.findOne(id, clinicId);
+
+    if (updatePatientDto.birthDate) {
+      this.ensureBirthDateNotFuture(updatePatientDto.birthDate);
+    }
 
     // Si se está actualizando el número de documento, verificar que no exista
     if (updatePatientDto.documentNumber && updatePatientDto.documentNumber !== patient.documentNumber) {
@@ -122,13 +148,17 @@ export class PatientsService {
     return await this.patientRepository.save(patient);
   }
 
-  async remove(id: string): Promise<void> {
-    const patient = await this.findOne(id);
+  async remove(id: string, clinicId?: string): Promise<void> {
+    const patient = await this.findOne(id, clinicId);
     patient.isActive = false;
     await this.patientRepository.save(patient);
   }
 
   async searchPatients(searchTerm: string, clinicId?: string): Promise<Patient[]> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+
     const queryBuilder = this.patientRepository
       .createQueryBuilder('patient')
       .leftJoinAndSelect('patient.clinic', 'clinic')
@@ -139,21 +169,20 @@ export class PatientsService {
         { searchTerm: `%${searchTerm}%` },
       );
 
-    if (clinicId) {
-      queryBuilder.andWhere('clinic.id = :clinicId', { clinicId });
-    }
+    queryBuilder.andWhere('clinic.id = :clinicId', { clinicId });
 
     return await queryBuilder.getMany();
   }
 
   async getPatientStatistics(clinicId?: string): Promise<any> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+
     let whereConditions = 'patient.isActive = true';
     const parameters: any = {};
-
-    if (clinicId) {
-      whereConditions += ' AND clinic.id = :clinicId';
-      parameters.clinicId = clinicId;
-    }
+    whereConditions += ' AND clinic.id = :clinicId';
+    parameters.clinicId = clinicId;
 
     const totalPatients = await this.patientRepository
       .createQueryBuilder('patient')

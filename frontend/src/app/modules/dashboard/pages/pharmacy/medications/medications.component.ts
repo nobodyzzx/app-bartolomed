@@ -14,15 +14,27 @@ export class MedicationsComponent implements OnInit {
   loading = signal(false)
   medications = signal<Medication[]>([])
   search = signal('')
+  categoryFilter = signal<string>('all')
+
   filtered = computed(() => {
     const term = this.search().toLowerCase().trim()
-    if (!term) return this.medications()
-    return this.medications().filter(m =>
-      [m.name, m.genericName, m.brandName, m.code, m.manufacturer]
+    const cat = this.categoryFilter()
+    return this.medications().filter(m => {
+      if (cat !== 'all' && m.category !== cat) return false
+      if (!term) return true
+      return [m.name, m.genericName, m.brandName, m.code, m.manufacturer]
         .filter(Boolean)
-        .some(v => v!.toLowerCase().includes(term)),
-    )
+        .some(v => v!.toLowerCase().includes(term))
+    })
   })
+
+  countByCategory = computed(() => (cat: string) =>
+    this.medications().filter(m => m.category === cat).length
+  )
+
+  setCategoryFilter(cat: string): void {
+    this.categoryFilter.set(cat)
+  }
 
   constructor(
     private inventoryService: InventoryService,

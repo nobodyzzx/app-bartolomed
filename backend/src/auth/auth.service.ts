@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, InternalServerErrorException, Logger, 
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { createHash, randomUUID } from 'crypto';
 
 import * as bcrypt from 'bcrypt';
 
@@ -59,7 +60,7 @@ export class AuthService {
     const refreshToken = await this.getRefreshToken({ id: user.id });
 
     // Guardar hash del refresh token para rotación
-    const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+    const refreshTokenHash = await bcrypt.hash(this.fingerprintToken(refreshToken), 10);
     await this.userRepository.update({ id: user.id }, { refreshTokenHash });
 
     // Cargar usuario completo con relaciones (sin password)
@@ -88,41 +89,54 @@ export class AuthService {
   private async getRefreshToken(payload: JwtPayload): Promise<string> {
     // Usar secreto y expiración diferente para refresh tokens
     const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'changeme-refresh';
-    const token = this.jwtService.sign(payload, { secret, expiresIn: '15d' });
+    const token = this.jwtService.sign({ ...payload, jti: randomUUID() }, { secret, expiresIn: '15d' });
     return token;
   }
 
   async refreshToken(dto: RefreshTokenDto): Promise<LoginResponse> {
     const { refreshToken } = dto;
-    try {
-      const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'changeme-refresh';
-      const payload = this.jwtService.verify<JwtPayload>(refreshToken, { secret });
-      const user = await this.userRepository.findOne({
-        where: { id: payload.id },
-        select: { id: true, email: true, roles: true, isActive: true, refreshTokenHash: true },
-      });
-      if (!user || !user.isActive) throw new UnauthorizedException('Usuario no válido');
-
-      if (!user.refreshTokenHash) throw new UnauthorizedException('No hay refresh token registrado');
-      const isValid = await bcrypt.compare(refreshToken, user.refreshTokenHash);
-      if (!isValid) throw new UnauthorizedException('Refresh token inválido');
-
-      // Rotar tokens
-      const newAccessToken = this.getJwtToken({ id: user.id });
-      const newRefreshToken = await this.getRefreshToken({ id: user.id });
-      const newHash = await bcrypt.hash(newRefreshToken, 10);
-      await this.userRepository.update({ id: user.id }, { refreshTokenHash: newHash });
-
-      const safeUser = await this.userRepository.findOne({ where: { id: user.id } });
-      return {
-        user: safeUser,
-        token: newAccessToken,
-        refreshToken: newRefreshToken,
-        permissions: permissionsForRoles(safeUser.roles),
-      };
-    } catch {
-      throw new UnauthorizedException('No se pudo refrescar el token');
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token requerido');
     }
+
+    const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'changeme-refresh';
+    let payload: JwtPayload;
+    try {
+      payload = this.jwtService.verify<JwtPayload>(refreshToken, { secret });
+    } catch {
+      throw new UnauthorizedException('Refresh token inválido o expirado');
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: payload.id },
+      select: { id: true, email: true, roles: true, isActive: true, refreshTokenHash: true },
+    });
+    if (!user || !user.isActive) throw new UnauthorizedException('Usuario no válido');
+
+    if (!user.refreshTokenHash) throw new UnauthorizedException('No hay refresh token registrado');
+    const tokenFingerprint = this.fingerprintToken(refreshToken);
+    const isValidFingerprint = await bcrypt.compare(tokenFingerprint, user.refreshTokenHash);
+    const isValidLegacy = isValidFingerprint ? false : await bcrypt.compare(refreshToken, user.refreshTokenHash);
+    const isValid = isValidFingerprint || isValidLegacy;
+    if (!isValid) {
+      // Reuso o token stale: invalidar sesión para forzar login explícito.
+      await this.userRepository.update({ id: user.id }, { refreshTokenHash: null });
+      throw new UnauthorizedException('Refresh token inválido');
+    }
+
+    // Rotar tokens
+    const newAccessToken = this.getJwtToken({ id: user.id });
+    const newRefreshToken = await this.getRefreshToken({ id: user.id });
+    const newHash = await bcrypt.hash(this.fingerprintToken(newRefreshToken), 10);
+    await this.userRepository.update({ id: user.id }, { refreshTokenHash: newHash });
+
+    const safeUser = await this.userRepository.findOne({ where: { id: user.id } });
+    return {
+      user: safeUser,
+      token: newAccessToken,
+      refreshToken: newRefreshToken,
+      permissions: permissionsForRoles(safeUser.roles),
+    };
   }
 
   async logout(userId: string): Promise<void> {
@@ -131,8 +145,9 @@ export class AuthService {
 
   // Godmode: crea o promueve un SUPER_ADMIN, protegido por token de entorno
   async bootstrapSuperAdmin(dto: GodBootstrapDto, providedToken?: string): Promise<LoginResponse> {
-    const godToken = process.env.GOD_MODE_TOKEN;
-    if (!godToken) throw new UnauthorizedException('God mode is not configured');
+    const godToken = process.env.GOD_MODE_TOKEN?.trim();
+    if (!godToken || this.isInsecureGodToken(godToken))
+      throw new UnauthorizedException('God mode is not configured');
     if (!providedToken || providedToken !== godToken) throw new UnauthorizedException('Invalid god token');
 
     const email = dto.email.toLowerCase().trim();
@@ -175,6 +190,15 @@ export class AuthService {
   }
 
   private readonly logger = new Logger(AuthService.name);
+
+  private isInsecureGodToken(token: string): boolean {
+    const normalized = token.toLowerCase();
+    return normalized === 'change-me-very-strong' || normalized.includes('change-me');
+  }
+
+  private fingerprintToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
+  }
 
   private handleDBError(error: any): never {
     if (error.code === '23505') throw new BadRequestException(error.detail);

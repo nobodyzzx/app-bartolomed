@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core'
 import { Observable, throwError } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 import { AlertService } from '../../../../../core/services/alert.service'
-import { environment } from '../../../../../environments/environment'
+import { environment } from '../../../../../environments/environments'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
 import { AssetFilters, BaseAsset, CreateAssetDto } from '../interfaces/assets.interfaces'
 
@@ -26,7 +26,7 @@ export interface AssetStats {
   providedIn: 'root',
 })
 export class AssetRegistrationService {
-  private apiUrl = `${environment.apiUrl}/assets`
+  private apiUrl = `${environment.baseUrl}/assets`
 
   constructor(
     private http: HttpClient,

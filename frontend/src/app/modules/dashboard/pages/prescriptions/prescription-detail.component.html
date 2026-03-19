@@ -1,14 +1,20 @@
 <div class="min-h-screen bg-slate-50 p-6" *ngIf="prescription as p">
   <div class="max-w-4xl mx-auto">
-    <header class="mb-6 flex items-center gap-4">
+    <div class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
       <button
+        type="button"
         (click)="goBack()"
-        class="w-9 h-9 rounded-full hover:bg-slate-100 grid place-items-center"
+        class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+        aria-label="Volver"
       >
-        <span class="material-symbols-outlined">arrow_back</span>
+        <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
       </button>
-      <h1 class="text-3xl font-bold text-slate-900">Receta {{ p.prescriptionNumber }}</h1>
-    </header>
+      <div class="text-left">
+        <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Receta {{ p.prescriptionNumber }}</h1>
+      </div>
+      </div>
+    </div>
 
     <div class="bg-white rounded-xl shadow-md p-6">
       <div class="flex items-start justify-between mb-4">

@@ -19,8 +19,8 @@
 
     <!-- Loading State -->
     @if (loadingStocks() || loadingClinics()) {
-      <div class="flex justify-center items-center py-20">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-3 border-blue-600"></div>
+      <div class="flex justify-center items-center py-12">
+        <mat-spinner diameter="50"></mat-spinner>
       </div>
     } @else {
       <!-- Transfer Form -->

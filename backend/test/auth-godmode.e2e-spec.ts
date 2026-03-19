@@ -2,6 +2,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import * as request from 'supertest';
+import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { User } from '../src/users/entities/user.entity';
@@ -10,6 +11,7 @@ describe('Auth Godmode (e2e)', () => {
   let app: INestApplication;
   let userRepo: Repository<User>;
   const GOD_TOKEN = 'test-god-token-123';
+  const TEST_PASSWORD = 'Abc123!';
 
   beforeAll(async () => {
     // Configurar GOD_MODE_TOKEN para las pruebas
@@ -40,7 +42,7 @@ describe('Auth Godmode (e2e)', () => {
         .post('/auth/godmode/super-admin')
         .send({
           email: 'godmode-test@example.com',
-          password: 'Abc123!',
+          password: TEST_PASSWORD,
           firstName: 'God',
           lastName: 'Test',
         })
@@ -53,7 +55,7 @@ describe('Auth Godmode (e2e)', () => {
         .set('x-god-token', 'wrong-token')
         .send({
           email: 'godmode-test@example.com',
-          password: 'Abc123!',
+          password: TEST_PASSWORD,
           firstName: 'God',
           lastName: 'Test',
         })
@@ -66,7 +68,7 @@ describe('Auth Godmode (e2e)', () => {
         .set('x-god-token', GOD_TOKEN)
         .send({
           email: 'godmode-test@example.com',
-          password: 'Abc123!',
+          password: TEST_PASSWORD,
           firstName: 'God',
           lastName: 'Test',
         })
@@ -89,7 +91,7 @@ describe('Auth Godmode (e2e)', () => {
         .set('Authorization', `Bearer ${GOD_TOKEN}`)
         .send({
           email: 'godmode-bearer@example.com',
-          password: 'Abc123!',
+          password: TEST_PASSWORD,
           firstName: 'Bearer',
           lastName: 'Test',
         })
@@ -108,7 +110,7 @@ describe('Auth Godmode (e2e)', () => {
       // Crear un usuario normal para promover
       const existingUser = userRepo.create({
         email: 'promote-test@example.com',
-        password: 'hashedpassword',
+        password: await bcrypt.hash(TEST_PASSWORD, 10),
         roles: ['user'],
         personalInfo: {
           firstName: 'Promote',
@@ -124,6 +126,7 @@ describe('Auth Godmode (e2e)', () => {
         .set('x-god-token', GOD_TOKEN)
         .send({
           email: 'promote-test@example.com',
+          password: TEST_PASSWORD,
           mode: 'promote',
         })
         .expect(201);
@@ -145,11 +148,27 @@ describe('Auth Godmode (e2e)', () => {
         .set('x-god-token', 'any-token')
         .send({
           email: 'test@example.com',
-          password: 'Abc123!',
+          password: TEST_PASSWORD,
         })
         .expect(401);
 
       // Restaurar
+      process.env.GOD_MODE_TOKEN = originalToken;
+    });
+
+    it('should reject when GOD_MODE_TOKEN uses insecure placeholder value', async () => {
+      const originalToken = process.env.GOD_MODE_TOKEN;
+      process.env.GOD_MODE_TOKEN = 'change-me-very-strong';
+
+      await request(app.getHttpServer())
+        .post('/auth/godmode/super-admin')
+        .set('x-god-token', 'change-me-very-strong')
+        .send({
+          email: 'test@example.com',
+          password: TEST_PASSWORD,
+        })
+        .expect(401);
+
       process.env.GOD_MODE_TOKEN = originalToken;
     });
   });

@@ -62,8 +62,8 @@
     </div>
 
     <!-- Loading State -->
-    <div *ngIf="loading" class="flex justify-center items-center py-20">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    <div *ngIf="loading" class="flex justify-center items-center py-12">
+      <mat-spinner diameter="50"></mat-spinner>
     </div>
 
     <!-- Calendar Grid -->
@@ -203,7 +203,7 @@
 
     <!-- Empty State -->
     <div *ngIf="!loading && appointments.length === 0" class="no-data text-center py-12 mt-6">
-      <span class="material-symbols-outlined text-6xl text-slate-300 mb-4">event_busy</span>
+      <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">event_busy</span>
       <p class="text-slate-500 text-lg">No hay citas programadas este mes</p>
       <button
         (click)="createNewAppointment()"

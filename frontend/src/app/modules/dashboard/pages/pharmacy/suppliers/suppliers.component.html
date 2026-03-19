@@ -1,17 +1,18 @@
 <div class="min-h-screen bg-slate-50 p-8">
   <div class="max-w-6xl mx-auto">
-    <header class="flex items-center justify-between mb-10">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-10">
       <div class="flex items-center gap-4">
         <button
           type="button"
           (click)="goBack()"
           class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          matTooltip="Volver"
           aria-label="Volver"
         >
           <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
         </button>
-        <div class="text-left">
+        <div>
           <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Proveedores</h1>
           <p class="text-slate-600">Gestión de proveedores de farmacia</p>
         </div>
@@ -19,150 +20,223 @@
       <button
         type="button"
         (click)="newSupplier()"
-        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-        aria-label="Crear nuevo proveedor"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
       >
-        <span class="material-symbols-outlined msz-20 leading-none">add</span>
+        <span class="material-symbols-outlined msz-18 leading-none">add</span>
         Nuevo Proveedor
       </button>
-    </header>
+    </div>
 
-    <!-- Barra de búsqueda -->
-    <div class="flex items-center gap-4 mb-8">
-      <div class="flex-1 max-w-2xl">
-        <div class="relative">
-          <input
-            type="text"
-            [ngModel]="search()"
-            (ngModelChange)="search.set($event)"
-            placeholder="Nombre, contacto, email..."
-            class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
-          />
-          <span class="material-symbols-outlined absolute right-3 top-2.5 text-blue-400"
-            >search</span
-          >
+    <!-- Tarjetas de estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+
+      <div
+        class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="statusFilter() === 'all'"
+        [class.ring-blue-400]="statusFilter() === 'all'"
+        (click)="setStatusFilter('all')"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-blue-600 text-sm font-semibold">Total</p>
+            <p class="text-3xl font-bold text-blue-900 mt-1">{{ suppliers().length }}</p>
+            <p class="text-xs text-blue-500 mt-1">Proveedores registrados</p>
+          </div>
+          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">store</span>
         </div>
       </div>
-      <div class="text-sm text-slate-600">
-        {{ filtered().length }} proveedor{{ filtered().length !== 1 ? 'es' : '' }}
+
+      <div
+        class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="statusFilter() === 'active'"
+        [class.ring-green-400]="statusFilter() === 'active'"
+        (click)="setStatusFilter('active')"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-green-600 text-sm font-semibold">Activos</p>
+            <p class="text-3xl font-bold text-green-900 mt-1">{{ activeCount() }}</p>
+            <p class="text-xs text-green-500 mt-1">En operación</p>
+          </div>
+          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">check_circle</span>
+        </div>
       </div>
+
+      <div
+        class="bg-red-50 p-5 rounded-2xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
+        [class.ring-2]="statusFilter() === 'inactive'"
+        [class.ring-red-400]="statusFilter() === 'inactive'"
+        (click)="setStatusFilter('inactive')"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-red-600 text-sm font-semibold">Inactivos</p>
+            <p class="text-3xl font-bold text-red-900 mt-1">{{ inactiveCount() }}</p>
+            <p class="text-xs text-red-500 mt-1">Deshabilitados</p>
+          </div>
+          <span class="material-symbols-outlined text-red-300" style="font-size: 40px">cancel</span>
+        </div>
+      </div>
+
+      <div class="bg-purple-50 p-5 rounded-2xl border-l-4 border-purple-500 shadow-md">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-purple-600 text-sm font-semibold">Medicamentos</p>
+            <p class="text-3xl font-bold text-purple-900 mt-1">{{ medicamentosCount() }}</p>
+            <p class="text-xs text-purple-500 mt-1">Proveedores de meds.</p>
+          </div>
+          <span class="material-symbols-outlined text-purple-300" style="font-size: 40px">medication</span>
+        </div>
+      </div>
+
     </div>
 
-    <!-- Tabla -->
-    <div class="bg-white rounded-xl shadow-md overflow-hidden">
-      <table class="min-w-full divide-y divide-slate-200">
-        <thead class="bg-slate-50">
-          <tr>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-              Nombre Comercial
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-              Razón Social
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Tipo</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-              Contacto
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-              Email
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-              Ubicación
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-              Estado
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-              Acciones
-            </th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100 bg-white">
-          <tr *ngFor="let s of filtered(); trackBy: trackById" class="hover:bg-slate-50">
-            <td class="px-4 py-3 font-medium text-slate-900">{{ s.nombreComercial || s.name }}</td>
-            <td class="px-4 py-3 text-slate-600 text-sm">{{ s.razonSocial || '-' }}</td>
-            <td class="px-4 py-3">
-              <span
-                class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
-                [ngClass]="{
-                  'bg-blue-50 text-blue-700 border border-blue-200':
-                    s.tipoProveedor === 'medicamentos',
-                  'bg-purple-50 text-purple-700 border border-purple-200':
-                    s.tipoProveedor === 'insumos',
-                  'bg-green-50 text-green-700 border border-green-200':
-                    s.tipoProveedor === 'servicios',
-                  'bg-slate-50 text-slate-700 border border-slate-200': !s.tipoProveedor,
-                }"
-              >
-                {{ getSupplierTypeLabel(s.tipoProveedor) || 'N/A' }}
-              </span>
-            </td>
-            <td class="px-4 py-3 text-slate-600">{{ s.contactPerson }}</td>
-            <td class="px-4 py-3 text-slate-600 text-sm">{{ s.email }}</td>
-            <td class="px-4 py-3 text-slate-600 text-sm">
-              {{ s.city || '-' }}<span *ngIf="s.state">, {{ s.state }}</span>
-            </td>
-            <td class="px-4 py-3">
-              <span
-                class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
-                [ngClass]="
-                  s.isActive
-                    ? 'bg-green-50 text-green-700 border-green-200'
-                    : 'bg-red-50 text-red-700 border-red-200'
-                "
-              >
+    <!-- Contenedor principal -->
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+
+      <!-- Buscador -->
+      <div class="p-6 border-b border-slate-100">
+        <div class="flex items-center gap-4">
+          <div class="flex-1 max-w-md relative">
+            <input
+              type="text"
+              [ngModel]="search()"
+              (ngModelChange)="search.set($event)"
+              placeholder="Nombre, contacto, email..."
+              class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
+            />
+            <span class="material-symbols-outlined absolute right-4 top-2.5 text-blue-400 msz-18">search</span>
+          </div>
+          <button
+            *ngIf="search() || statusFilter() !== 'all'"
+            type="button"
+            (click)="search.set(''); setStatusFilter('all')"
+            class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all border-0"
+          >
+            <span class="material-symbols-outlined msz-16">close</span>
+            Limpiar
+          </button>
+        </div>
+      </div>
+
+      <!-- Cargando -->
+      <div *ngIf="loading()" class="flex justify-center items-center py-12">
+        <mat-spinner diameter="50"></mat-spinner>
+      </div>
+
+      <!-- Estado vacío -->
+      <div *ngIf="!loading() && filtered().length === 0" class="text-center py-12 px-6">
+        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">store</span>
+        <p class="text-lg font-semibold text-slate-700 mb-2">
+          {{ search() || statusFilter() !== 'all' ? 'Sin resultados' : 'Sin proveedores registrados' }}
+        </p>
+        <p class="text-sm text-slate-400 mb-6">
+          {{ search() || statusFilter() !== 'all' ? 'Intenta con otros términos o filtros' : 'Comienza agregando el primer proveedor' }}
+        </p>
+        <button
+          *ngIf="!search() && statusFilter() === 'all'"
+          type="button"
+          (click)="newSupplier()"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none">add</span>
+          Nuevo Proveedor
+        </button>
+      </div>
+
+      <!-- Tabla -->
+      <div *ngIf="!loading() && filtered().length > 0" class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-100">
+            <tr>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Nombre</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Razón Social</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Tipo</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Contacto</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Email</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Ubicación</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
+              <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr
+              *ngFor="let s of filtered(); trackBy: trackById"
+              class="hover:bg-blue-50/40 transition-colors"
+            >
+              <td class="px-6 py-4 font-medium text-slate-900">{{ s.nombreComercial || s.name }}</td>
+              <td class="px-6 py-4 text-sm text-slate-600">{{ s.razonSocial || '—' }}</td>
+              <td class="px-6 py-4">
                 <span
-                  class="w-2 h-2 rounded-full"
-                  [ngClass]="s.isActive ? 'bg-green-500' : 'bg-red-500'"
-                ></span>
-                {{ s.isActive ? 'Activo' : 'Inactivo' }}
-              </span>
-            </td>
-            <td class="px-4 py-3">
-              <div class="flex gap-2">
-                <button
-                  (click)="edit(s)"
-                  class="w-9 h-9 inline-flex items-center justify-center text-amber-600 hover:bg-amber-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
-                  aria-label="Editar"
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="{
+                    'bg-blue-50 text-blue-700':   s.tipoProveedor === 'medicamentos',
+                    'bg-purple-50 text-purple-700': s.tipoProveedor === 'insumos',
+                    'bg-green-50 text-green-700':  s.tipoProveedor === 'servicios',
+                    'bg-slate-50 text-slate-700':  !s.tipoProveedor
+                  }"
                 >
-                  <span class="material-symbols-outlined">edit</span>
-                </button>
-                <button
-                  *ngIf="s.isActive"
-                  (click)="delete(s)"
-                  class="w-9 h-9 inline-flex items-center justify-center text-red-600 hover:bg-red-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
-                  aria-label="Eliminar"
+                  {{ getSupplierTypeLabel(s.tipoProveedor) || 'N/A' }}
+                </span>
+              </td>
+              <td class="px-6 py-4 text-sm text-slate-600">{{ s.contactPerson || '—' }}</td>
+              <td class="px-6 py-4 text-sm text-slate-600">{{ s.email || '—' }}</td>
+              <td class="px-6 py-4 text-sm text-slate-600">
+                {{ s.city || '—' }}<span *ngIf="s.state">, {{ s.state }}</span>
+              </td>
+              <td class="px-6 py-4">
+                <span
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="s.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
                 >
-                  <span class="material-symbols-outlined">delete</span>
-                </button>
-                <button
-                  *ngIf="!s.isActive"
-                  (click)="restore(s)"
-                  class="w-9 h-9 inline-flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
-                  aria-label="Restaurar"
-                >
-                  <span class="material-symbols-outlined">restore</span>
-                </button>
-              </div>
-            </td>
-          </tr>
-          <tr *ngIf="filtered().length === 0 && !loading()">
-            <td colspan="8" class="px-4 py-10 text-center text-slate-500">
-              <div class="flex flex-col items-center gap-2">
-                <span class="material-symbols-outlined text-3xl text-slate-400">group</span>
-                <span>No hay proveedores que coincidan</span>
-              </div>
-            </td>
-          </tr>
-          <tr *ngIf="loading()">
-            <td colspan="8" class="px-4 py-8">
-              <div class="flex justify-center">
-                <div class="h-2 w-40 bg-slate-200 rounded-full animate-pulse"></div>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                  <span class="w-1.5 h-1.5 rounded-full" [ngClass]="s.isActive ? 'bg-green-500' : 'bg-red-500'"></span>
+                  {{ s.isActive ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center justify-end gap-1">
+                  <button
+                    type="button"
+                    (click)="edit(s)"
+                    matTooltip="Editar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0"
+                  >
+                    <span class="material-symbols-outlined msz-18">edit</span>
+                  </button>
+                  <button
+                    *ngIf="s.isActive"
+                    type="button"
+                    (click)="delete(s)"
+                    matTooltip="Eliminar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors border-0"
+                  >
+                    <span class="material-symbols-outlined msz-18">delete</span>
+                  </button>
+                  <button
+                    *ngIf="!s.isActive"
+                    type="button"
+                    (click)="restore(s)"
+                    matTooltip="Restaurar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
+                  >
+                    <span class="material-symbols-outlined msz-18">restore</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Footer -->
+      <div *ngIf="!loading() && filtered().length > 0" class="flex items-center px-6 py-3 bg-slate-50 border-t border-slate-100">
+        <span class="text-sm text-slate-500">
+          Mostrando <span class="font-semibold text-slate-700">{{ filtered().length }}</span> de
+          <span class="font-semibold text-slate-700">{{ suppliers().length }}</span> proveedores
+        </span>
+      </div>
+
     </div>
+
   </div>
 </div>

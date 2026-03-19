@@ -23,7 +23,12 @@ export class PrescriptionsService {
     private readonly clinicRepository: Repository<Clinic>,
   ) {}
 
-  async create(createDto: CreatePrescriptionDto, createdBy?: User): Promise<Prescription> {
+  async create(createDto: CreatePrescriptionDto, createdBy?: User, scopedClinicId?: string): Promise<Prescription> {
+    if (!scopedClinicId) throw new BadRequestException('clinicId is required');
+    if (createDto.clinicId !== scopedClinicId) {
+      throw new BadRequestException('clinicId mismatch with current clinic context');
+    }
+
     const prescriptionDate = new Date(createDto.prescriptionDate);
     const expiryDate = new Date(createDto.expiryDate);
     if (expiryDate < prescriptionDate) {
@@ -38,13 +43,15 @@ export class PrescriptionsService {
       }
     }
     // Basic validations: ensure patient, doctor, clinic exist
-    const patient = await this.patientRepository.findOne({ where: { id: createDto.patientId } });
+    const patient = await this.patientRepository.findOne({
+      where: { id: createDto.patientId, clinic: { id: scopedClinicId }, isActive: true },
+    });
     if (!patient) throw new NotFoundException('Patient not found');
 
     const doctor = await this.userRepository.findOne({ where: { id: createDto.doctorId } });
     if (!doctor) throw new NotFoundException('Doctor not found');
 
-    const clinic = await this.clinicRepository.findOne({ where: { id: createDto.clinicId } });
+    const clinic = await this.clinicRepository.findOne({ where: { id: createDto.clinicId, isActive: true } });
     if (!clinic) throw new NotFoundException('Clinic not found');
 
     const entity = this.prescriptionRepository.create({
@@ -64,14 +71,11 @@ export class PrescriptionsService {
 
     if (createdBy) entity.createdBy = createdBy;
 
-    try {
-      return await this.prescriptionRepository.save(entity);
-    } catch {
-      throw new BadRequestException('Could not create prescription');
-    }
+    return await this.prescriptionRepository.save(entity);
   }
 
-  async findAll(page = 1, pageSize = 20, filter: any = {}) {
+  async findAll(page = 1, pageSize = 20, filter: any = {}, clinicId?: string) {
+    if (!clinicId) throw new BadRequestException('clinicId is required');
     const skip = (page - 1) * pageSize;
     const qb = this.prescriptionRepository
       .createQueryBuilder('p')
@@ -79,6 +83,7 @@ export class PrescriptionsService {
       .leftJoinAndSelect('p.doctor', 'doctor')
       .leftJoinAndSelect('p.clinic', 'clinic')
       .leftJoinAndSelect('p.items', 'items')
+      .where('clinic.id = :clinicId', { clinicId })
       .orderBy('p.createdAt', 'DESC')
       .skip(skip)
       .take(pageSize);
@@ -98,26 +103,36 @@ export class PrescriptionsService {
     return { items, total, page, pageSize };
   }
 
-  async findOne(id: string): Promise<Prescription> {
+  async findOne(id: string, clinicId?: string): Promise<Prescription> {
+    if (!clinicId) throw new BadRequestException('clinicId is required');
     const pres = await this.prescriptionRepository.findOne({
-      where: { id },
+      where: { id, clinic: { id: clinicId } },
       relations: ['patient', 'doctor', 'clinic', 'items'],
     });
     if (!pres) throw new NotFoundException('Prescription not found');
     return pres;
   }
 
-  async update(id: string, updateDto: UpdatePrescriptionDto): Promise<Prescription> {
+  async update(id: string, updateDto: UpdatePrescriptionDto, clinicId?: string): Promise<Prescription> {
+    if (!clinicId) throw new BadRequestException('clinicId is required');
     return await this.prescriptionRepository.manager.transaction(async manager => {
       const presRepo = manager.getRepository(Prescription);
       const itemRepo = manager.getRepository(PrescriptionItem);
 
-      const pres = await presRepo.findOne({ where: { id }, relations: ['patient', 'doctor', 'clinic', 'items'] });
+      const pres = await presRepo.findOne({
+        where: { id, clinic: { id: clinicId } },
+        relations: ['patient', 'doctor', 'clinic', 'items'],
+      });
       if (!pres) throw new NotFoundException('Prescription not found');
+      if (updateDto.status && updateDto.status !== pres.status) {
+        throw new BadRequestException('Use sign/status endpoint to change prescription status');
+      }
 
       // Update relations if ids provided
       if ((updateDto as any).patientId) {
-        const patient = await this.patientRepository.findOne({ where: { id: (updateDto as any).patientId } });
+        const patient = await this.patientRepository.findOne({
+          where: { id: (updateDto as any).patientId, clinic: { id: clinicId }, isActive: true },
+        });
         if (!patient) throw new NotFoundException('Patient not found');
         pres.patient = patient;
       }
@@ -127,9 +142,9 @@ export class PrescriptionsService {
         pres.doctor = doctor;
       }
       if ((updateDto as any).clinicId) {
-        const clinic = await this.clinicRepository.findOne({ where: { id: (updateDto as any).clinicId } });
-        if (!clinic) throw new NotFoundException('Clinic not found');
-        pres.clinic = clinic;
+        if ((updateDto as any).clinicId !== clinicId) {
+          throw new BadRequestException('Changing clinic is not allowed');
+        }
       }
 
       // Primitive fields
@@ -195,18 +210,23 @@ export class PrescriptionsService {
       }
 
       await presRepo.save(pres);
-      return await presRepo.findOne({ where: { id }, relations: ['patient', 'doctor', 'clinic', 'items'] });
+      return await presRepo.findOne({ where: { id, clinic: { id: clinicId } }, relations: ['patient', 'doctor', 'clinic', 'items'] });
     });
   }
 
-  async setStatus(id: string, status: PrescriptionStatus): Promise<Prescription> {
-    const pres = await this.findOne(id);
+  async setStatus(id: string, status: PrescriptionStatus, clinicId?: string, actor?: User): Promise<Prescription> {
+    const pres = await this.findOne(id, clinicId);
+    this.validateStatusTransition(pres, status, actor);
     pres.status = status;
     return await this.prescriptionRepository.save(pres);
   }
 
-  async refill(id: string): Promise<Prescription> {
-    const pres = await this.findOne(id);
+  async sign(id: string, clinicId?: string, actor?: User): Promise<Prescription> {
+    return this.setStatus(id, PrescriptionStatus.ACTIVE, clinicId, actor);
+  }
+
+  async refill(id: string, clinicId?: string): Promise<Prescription> {
+    const pres = await this.findOne(id, clinicId);
     const today = new Date();
     if (today > new Date(pres.expiryDate)) {
       throw new BadRequestException('Prescription is expired');
@@ -218,5 +238,45 @@ export class PrescriptionsService {
     (pres as any).refillsUsed = ((pres as any).refillsUsed || 0) + 1;
     pres.status = PrescriptionStatus.DISPENSED;
     return await this.prescriptionRepository.save(pres);
+  }
+
+  private validateStatusTransition(prescription: Prescription, next: PrescriptionStatus, actor?: User): void {
+    const current = prescription.status;
+    if (current === next) return;
+
+    const allowed: Record<PrescriptionStatus, PrescriptionStatus[]> = {
+      [PrescriptionStatus.DRAFT]: [PrescriptionStatus.ACTIVE, PrescriptionStatus.CANCELLED],
+      [PrescriptionStatus.ACTIVE]: [
+        PrescriptionStatus.DISPENSED,
+        PrescriptionStatus.COMPLETED,
+        PrescriptionStatus.CANCELLED,
+        PrescriptionStatus.EXPIRED,
+      ],
+      [PrescriptionStatus.DISPENSED]: [PrescriptionStatus.COMPLETED],
+      [PrescriptionStatus.COMPLETED]: [],
+      [PrescriptionStatus.CANCELLED]: [],
+      [PrescriptionStatus.EXPIRED]: [],
+    };
+
+    if (!allowed[current].includes(next)) {
+      throw new BadRequestException(`Invalid status transition from ${current} to ${next}`);
+    }
+
+    if (next === PrescriptionStatus.ACTIVE) {
+      if (!actor) {
+        throw new BadRequestException('Missing signing actor');
+      }
+      if (!prescription.items || prescription.items.length === 0) {
+        throw new BadRequestException('Cannot sign a prescription without items');
+      }
+      if (new Date(prescription.expiryDate) < new Date()) {
+        throw new BadRequestException('Cannot sign an expired prescription');
+      }
+      const roles = Array.isArray(actor.roles) ? actor.roles : [];
+      const canAdminSign = roles.includes('admin') || roles.includes('super_admin');
+      if (actor.id !== prescription.doctor.id && !canAdminSign) {
+        throw new BadRequestException('Only prescribing doctor or admin can sign this prescription');
+      }
+    }
   }
 }

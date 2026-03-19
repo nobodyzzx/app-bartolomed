@@ -197,24 +197,24 @@
       <!-- Estado Vacío -->
       <div
         *ngIf="recentInvoices.length === 0 && !isLoading"
-        class="p-12 text-center text-slate-500"
+        class="text-center py-12 px-6"
       >
-        <span class="material-symbols-outlined text-6xl mb-4 text-slate-300">receipt_long</span>
-        <p class="text-lg font-medium mb-2">No hay facturas registradas</p>
-        <p class="text-sm mb-4">El módulo de facturación está en desarrollo</p>
+        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">receipt_long</span>
+        <p class="text-slate-500 text-lg mb-2">No hay facturas registradas</p>
+        <p class="text-slate-400 text-sm mb-6">El módulo de facturación está en desarrollo</p>
         <button
           type="button"
           (click)="navigateToNewInvoice()"
-          class="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-2"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
         >
+          <span class="material-symbols-outlined msz-20 leading-none">add</span>
           Crear primera factura
         </button>
       </div>
 
       <!-- Loading -->
-      <div *ngIf="isLoading && recentInvoices.length === 0" class="p-12 text-center">
-        <mat-spinner diameter="50" class="mx-auto"></mat-spinner>
-        <p class="text-slate-600 mt-4">Cargando facturas...</p>
+      <div *ngIf="isLoading && recentInvoices.length === 0" class="flex justify-center items-center py-12">
+        <mat-spinner diameter="50"></mat-spinner>
       </div>
     </div>
 

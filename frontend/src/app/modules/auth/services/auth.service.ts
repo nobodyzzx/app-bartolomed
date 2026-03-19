@@ -3,6 +3,7 @@ import { computed, inject, Injectable, signal } from '@angular/core'
 import { Router } from '@angular/router'
 
 import { catchError, map, Observable, of, throwError } from 'rxjs'
+import { SessionService } from '../../../core/services/session.service'
 import { environment } from '../../../environments/environments'
 
 import { AuthStatus, CheckTokenResponse, LoginResponse, User } from '../interfaces'
@@ -14,6 +15,7 @@ export class AuthService {
   private readonly baseUrl: string = environment.baseUrl
   private http = inject(HttpClient)
   private router = inject(Router)
+  private session = inject(SessionService)
 
   private _currentUser = signal<User | null>(null)
   private _authStatus = signal<AuthStatus>(AuthStatus.checking)
@@ -39,6 +41,7 @@ export class AuthService {
       sessionStorage.setItem('token', token)
       localStorage.removeItem('token')
     }
+    this.session.scheduleFromToken(token)
     return true
   }
 
@@ -99,7 +102,8 @@ export class AuthService {
         .subscribe()
     }
 
-    // Limpiar estado local
+    // Limpiar estado local y temporizadores de sesión
+    this.session.clearTimers()
     this._currentUser.set(null)
     this._authStatus.set(AuthStatus.notAuthenticated)
     localStorage.removeItem('token')

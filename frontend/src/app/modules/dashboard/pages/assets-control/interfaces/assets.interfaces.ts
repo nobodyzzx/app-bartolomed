@@ -2,11 +2,13 @@ export interface BaseAsset {
   id: string
   name: string
   type: string
+  assetTag?: string
   manufacturer: string
   model?: string
   serialNumber?: string
   purchaseDate: Date
   purchasePrice?: number
+  currentValue?: number
   warrantyExpiration?: Date
   status: AssetStatus
   location?: string

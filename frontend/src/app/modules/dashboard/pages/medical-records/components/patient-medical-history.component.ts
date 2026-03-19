@@ -23,6 +23,7 @@ import { MedicalRecordsService } from '../services/medical-records.service'
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PatientMedicalHistoryComponent implements OnInit, OnDestroy {
+  readonly RecordType = RecordType
   private destroy$ = new Subject<void>()
 
   patientId!: string

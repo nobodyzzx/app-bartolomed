@@ -21,8 +21,8 @@
 
     <!-- Loading State -->
     @if (loadingStocks()) {
-      <div class="flex justify-center items-center py-20">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-3 border-blue-600"></div>
+      <div class="flex justify-center items-center py-12">
+        <mat-spinner diameter="50"></mat-spinner>
       </div>
     } @else {
       <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
@@ -42,13 +42,13 @@
                   type="text"
                   matInput
                   [matAutocomplete]="auto"
-                  [formControl]="form.get('tempStockId')"
+                  [formControl]="$any(form.get('tempStockId'))"
                   placeholder="Buscar medicamento por nombre, lote o ingrediente"
                   (input)="searchTerm.set($any($event.target).value)"
                 />
                 <mat-autocomplete
                   #auto="matAutocomplete"
-                  (optionSelected)="form.get('tempStockId').setValue($event.option.value)"
+                  (optionSelected)="form.get('tempStockId')!.setValue($event.option.value)"
                 >
                   <mat-option *ngFor="let stock of filteredStocks()" [value]="stock.id">
                     {{ getStockDisplay(stock) }}
@@ -164,7 +164,7 @@
                           {{ item.medicationStock.medication?.name || 'N/A' }}
                         </div>
                         <div class="text-xs text-slate-500">
-                          {{ item.medicationStock.medication?.activeIngredient }}
+                          {{ item.medicationStock.medication?.activeIngredients }}
                         </div>
                       </td>
                       <td class="py-3 px-2 text-sm text-slate-600">
@@ -215,7 +215,7 @@
                     type="text"
                     matInput
                     [matAutocomplete]="autoPatient"
-                    [formControl]="form.get('patientId')"
+                    [formControl]="$any(form.get('patientId'))"
                     #patientInput
                     placeholder="Buscar paciente por nombre o documento"
                     (input)="onPatientInput($any($event.target).value)"

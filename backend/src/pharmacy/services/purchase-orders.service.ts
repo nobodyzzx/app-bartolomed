@@ -6,7 +6,6 @@ import {
   UpdatePurchaseOrderDto,
   UpdatePurchaseOrderStatusDto,
 } from '../dto/purchase-order.dto';
-import { MovementType, StockMovement } from '../entities/pharmacy.entity';
 import { PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus } from '../entities/purchase-order.entity';
 import { Supplier, SupplierStatus } from '../entities/supplier.entity';
 import { InventoryService } from './inventory.service';
@@ -20,8 +19,6 @@ export class PurchaseOrdersService {
     private purchaseOrderItemRepository: Repository<PurchaseOrderItem>,
     @InjectRepository(Supplier)
     private supplierRepository: Repository<Supplier>,
-    @InjectRepository(StockMovement)
-    private stockMovementRepository: Repository<StockMovement>,
     private readonly inventoryService: InventoryService,
   ) {}
 
@@ -96,16 +93,19 @@ export class PurchaseOrdersService {
     return await this.findOne(savedOrder.id);
   }
 
-  async findAll(): Promise<PurchaseOrder[]> {
+  async findAll(clinicId?: string): Promise<PurchaseOrder[]> {
+    const where = clinicId ? ({ clinicId } as any) : {};
     return await this.purchaseOrderRepository.find({
+      where,
       relations: ['supplier', 'items', 'createdBy'],
       order: { createdAt: 'DESC' },
     });
   }
 
-  async findOne(id: string): Promise<PurchaseOrder> {
+  async findOne(id: string, clinicId?: string): Promise<PurchaseOrder> {
+    const where = clinicId ? ({ id, clinicId } as any) : ({ id } as any);
     const purchaseOrder = await this.purchaseOrderRepository.findOne({
-      where: { id },
+      where,
       relations: ['supplier', 'items', 'createdBy', 'approvedBy'],
     });
 
@@ -116,8 +116,8 @@ export class PurchaseOrdersService {
     return purchaseOrder;
   }
 
-  async update(id: string, updatePurchaseOrderDto: UpdatePurchaseOrderDto): Promise<PurchaseOrder> {
-    const purchaseOrder = await this.findOne(id);
+  async update(id: string, updatePurchaseOrderDto: UpdatePurchaseOrderDto, clinicId?: string): Promise<PurchaseOrder> {
+    const purchaseOrder = await this.findOne(id, clinicId);
 
     if (purchaseOrder.status === PurchaseOrderStatus.DELIVERED) {
       throw new BadRequestException('Cannot update delivered purchase order');
@@ -187,15 +187,16 @@ export class PurchaseOrdersService {
     }
 
     await this.purchaseOrderRepository.save(purchaseOrder);
-    return await this.findOne(id);
+    return await this.findOne(id, clinicId);
   }
 
   async updateStatus(
     id: string,
     updateStatusDto: UpdatePurchaseOrderStatusDto,
     approvedById?: string,
+    clinicId?: string,
   ): Promise<PurchaseOrder> {
-    const purchaseOrder = await this.findOne(id);
+    const purchaseOrder = await this.findOne(id, clinicId);
 
     purchaseOrder.status = updateStatusDto.status;
 
@@ -217,11 +218,11 @@ export class PurchaseOrdersService {
     }
 
     await this.purchaseOrderRepository.save(purchaseOrder);
-    return await this.findOne(id);
+    return await this.findOne(id, clinicId);
   }
 
-  async remove(id: string): Promise<void> {
-    const purchaseOrder = await this.findOne(id);
+  async remove(id: string, clinicId?: string): Promise<void> {
+    const purchaseOrder = await this.findOne(id, clinicId);
 
     if (purchaseOrder.status === PurchaseOrderStatus.DELIVERED) {
       throw new BadRequestException('Cannot delete delivered purchase order');
@@ -230,17 +231,19 @@ export class PurchaseOrdersService {
     await this.purchaseOrderRepository.remove(purchaseOrder);
   }
 
-  async getOrdersByStatus(status: PurchaseOrderStatus): Promise<PurchaseOrder[]> {
+  async getOrdersByStatus(status: PurchaseOrderStatus, clinicId?: string): Promise<PurchaseOrder[]> {
+    const where = clinicId ? ({ status, clinicId } as any) : ({ status } as any);
     return await this.purchaseOrderRepository.find({
-      where: { status },
+      where,
       relations: ['supplier', 'items', 'createdBy'],
       order: { createdAt: 'DESC' },
     });
   }
 
-  async getOrdersBySupplier(supplierId: string): Promise<PurchaseOrder[]> {
+  async getOrdersBySupplier(supplierId: string, clinicId?: string): Promise<PurchaseOrder[]> {
+    const where = clinicId ? ({ supplierId, clinicId } as any) : ({ supplierId } as any);
     return await this.purchaseOrderRepository.find({
-      where: { supplierId },
+      where,
       relations: ['supplier', 'items', 'createdBy'],
       order: { createdAt: 'DESC' },
     });
@@ -258,9 +261,11 @@ export class PurchaseOrdersService {
       }[];
       notes?: string;
     },
+    clinicId?: string,
   ): Promise<PurchaseOrder> {
+    const where = clinicId ? ({ id, clinicId } as any) : ({ id } as any);
     const order = await this.purchaseOrderRepository.findOne({
-      where: { id },
+      where,
       relations: ['items'],
     });
 
@@ -298,7 +303,8 @@ export class PurchaseOrdersService {
             ? new Date(it.expiryDate)
             : new Date(order.expectedDeliveryDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000));
 
-          const createdStock = await this.inventoryService.addStock({
+          await this.inventoryService.addStock(
+            {
             medicationId: item.medicationId,
             batchNumber: it.batchNumber || `${order.orderNumber}-${item.id}-${Date.now()}`,
             quantity: qty,
@@ -310,23 +316,9 @@ export class PurchaseOrdersService {
             location: 'receiving',
             minimumStock: 10,
             clinicId: order.clinicId,
-          });
-
-          // Registrar movimiento de stock tipo PURCHASE
-          if (createdStock) {
-            const movement = this.stockMovementRepository.create({
-              type: MovementType.PURCHASE,
-              quantity: qty,
-              unitPrice: Number(item.unitPrice),
-              reference: order.orderNumber,
-              reason: 'purchase_receive',
-              notes: it.notes || dto.notes || null,
-              movementDate: new Date(),
-              stock: createdStock,
-              isActive: true,
-            });
-            await this.stockMovementRepository.save(movement);
-          }
+            },
+            order.clinicId,
+          );
         } catch {
           // No bloquear la recepción completa por un error puntual de stock
         }
@@ -344,7 +336,7 @@ export class PurchaseOrdersService {
     }
 
     await this.purchaseOrderRepository.save(order);
-    return this.findOne(id);
+    return this.findOne(id, clinicId);
   }
 
   /**

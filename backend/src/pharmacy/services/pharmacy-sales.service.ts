@@ -117,15 +117,23 @@ export class PharmacySalesService {
 
   async listWithFilters(options: {
     status?: SaleStatus;
+    clinicId?: string;
     paymentMethod?: string;
     startDate?: Date;
     endDate?: Date;
   }): Promise<PharmacySale[]> {
+    if (!options.clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+
     const qb = this.pharmacySaleRepository
       .createQueryBuilder('sale')
       .leftJoinAndSelect('sale.items', 'items')
       .leftJoinAndSelect('sale.soldBy', 'soldBy')
+      .leftJoin('soldBy.clinic', 'clinic')
       .orderBy('sale.createdAt', 'DESC');
+
+    qb.andWhere('clinic.id = :clinicId', { clinicId: options.clinicId });
 
     if (options.status) {
       qb.andWhere('sale.status = :status', { status: options.status });
@@ -328,7 +336,11 @@ export class PharmacySalesService {
       .getMany();
   }
 
-  async getDailySalesTotal(date: Date): Promise<number> {
+  async getDailySalesTotal(date: Date, clinicId?: string): Promise<number> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
 
@@ -337,10 +349,13 @@ export class PharmacySalesService {
 
     const result = await this.pharmacySaleRepository
       .createQueryBuilder('sale')
+      .leftJoin('sale.soldBy', 'soldBy')
+      .leftJoin('soldBy.clinic', 'clinic')
       .select('SUM(sale.total)', 'total')
       .where('sale.saleDate >= :startOfDay', { startOfDay })
       .andWhere('sale.saleDate <= :endOfDay', { endOfDay })
       .andWhere('sale.status = :status', { status: SaleStatus.COMPLETED })
+      .andWhere('clinic.id = :clinicId', { clinicId })
       .getRawOne();
 
     return parseFloat(result.total) || 0;
@@ -349,6 +364,7 @@ export class PharmacySalesService {
   async getSalesSummary(
     startDate?: Date,
     endDate?: Date,
+    clinicId?: string,
   ): Promise<{
     totalSales: number;
     completedSales: number;
@@ -357,7 +373,15 @@ export class PharmacySalesService {
     totalRevenue: number;
     dateRange?: { startDate: Date; endDate: Date };
   }> {
-    const qb = this.pharmacySaleRepository.createQueryBuilder('sale');
+    const qb = this.pharmacySaleRepository
+      .createQueryBuilder('sale')
+      .leftJoin('sale.soldBy', 'soldBy')
+      .leftJoin('soldBy.clinic', 'clinic');
+
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+    qb.andWhere('clinic.id = :clinicId', { clinicId });
 
     if (startDate) {
       const start = new Date(startDate);

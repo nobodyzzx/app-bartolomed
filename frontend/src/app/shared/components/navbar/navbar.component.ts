@@ -1,4 +1,5 @@
-import { Component, computed, inject, OnInit } from '@angular/core'
+import { Component, computed, inject, isDevMode, OnInit } from '@angular/core'
+import { Router } from '@angular/router'
 import { MatDialog } from '@angular/material/dialog'
 
 import { UserRoles } from '@core/enums/user-roles.enum'
@@ -8,7 +9,10 @@ import { ClinicContextService } from '../../../modules/clinics/services/clinic-c
 import { Clinic } from '../../../modules/dashboard/pages/clinics/interfaces/clinic.interface'
 import { ClinicsService } from '../../../modules/dashboard/pages/clinics/services/clinics.service'
 import { RoleSimulatorDialogComponent } from '../role-simulator-dialog/role-simulator-dialog.component'
-import { SidenavService } from '../services/sidenav.services'
+import { SidenavService } from '../services/sidenav.service'
+
+// Número mínimo de clínicas para mostrar el campo de búsqueda
+const CLINIC_SEARCH_THRESHOLD = 5
 
 @Component({
   selector: 'share-navbar',
@@ -22,9 +26,20 @@ export class NavbarComponent implements OnInit {
   private dialog = inject(MatDialog)
   private clinicCtx = inject(ClinicContextService)
   private clinicsService = inject(ClinicsService)
+  private router = inject(Router)
 
   public user = computed(() => this.authService.currentUser())
   public readonly UserRoles = UserRoles
+  public readonly isDevMode = isDevMode()
+
+  public userInitials = computed(() => {
+    const u = this.authService.currentUser()
+    const first = u?.personalInfo?.firstName?.[0] ?? ''
+    const last = u?.personalInfo?.lastName?.[0] ?? ''
+    return (first + last).toUpperCase() || '?'
+  })
+
+  public isExpanded = this.sidenavService.isExpanded
 
   // Clinic selector state
   public clinics: Clinic[] = []
@@ -32,13 +47,16 @@ export class NavbarComponent implements OnInit {
   public isClinicsLoading = false
   public selectedClinicId: string | null = null
   public clinicSearchTerm = ''
+  public showClinicSearch = false
+
+  // Término de búsqueda interno (en minúsculas para comparar)
+  private _searchLower = ''
 
   ngOnInit() {
-    this.authService.checkAuthStatus().subscribe(this.user)
+    this.authService.checkAuthStatus().subscribe()
     this.loadClinics()
     this.selectedClinicId = this.clinicCtx.clinicId
   }
-  isExpanded = true
 
   toggleSidenav() {
     this.sidenavService.toggleSidenav()
@@ -48,17 +66,6 @@ export class NavbarComponent implements OnInit {
     this.authService.logout()
   }
 
-  // Simular login con distintos roles
-  setRole(role: UserRoles) {
-    this.roleAuth.loginAs([role])
-  }
-
-  // Simular login con roles cruzados
-  setRoles(roles: UserRoles[]) {
-    this.roleAuth.loginAs(roles)
-  }
-
-  // Abrir diálogo de simulador de roles
   openRoleSimulator() {
     const dialogRef = this.dialog.open(RoleSimulatorDialogComponent, {
       width: '600px',
@@ -80,13 +87,11 @@ export class NavbarComponent implements OnInit {
         this.clinics = clinics || []
         this.filteredClinics = [...this.clinics]
         this.isClinicsLoading = false
+        this.showClinicSearch = this.clinics.length > CLINIC_SEARCH_THRESHOLD
 
-        // Si no hay clínicas y el usuario no es SUPER_ADMIN, mostrar mensaje
-        // 🔄 AUTOSELECCIÓN: Si el usuario solo tiene UNA clínica y no ha seleccionado ninguna
         if (!this.selectedClinicId && this.clinics.length === 1) {
-          const singleClinic = this.clinics[0]
-          this.selectedClinicId = singleClinic.id
-          this.clinicCtx.setClinic(singleClinic.id)
+          this.selectedClinicId = this.clinics[0].id
+          this.clinicCtx.setClinic(this.clinics[0].id)
         }
       },
       error: () => {
@@ -100,37 +105,49 @@ export class NavbarComponent implements OnInit {
   onClinicChange(clinicId: string | null) {
     this.selectedClinicId = clinicId
     this.clinicCtx.setClinic(clinicId)
-    // Recargar página para aplicar nuevo contexto en toda la app
-    window.location.reload()
+    const currentUrl = this.router.url
+    this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+      this.router.navigate([currentUrl])
+    })
   }
 
   onClinicSearchChange(searchTerm: string) {
-    this.clinicSearchTerm = searchTerm.toLowerCase()
-    if (!searchTerm.trim()) {
+    // Bug fix: usar variable interna para no sobreescribir el ngModel con minúsculas
+    this._searchLower = searchTerm.toLowerCase().trim()
+    if (!this._searchLower) {
       this.filteredClinics = [...this.clinics]
     } else {
       this.filteredClinics = this.clinics.filter(
         c =>
-          c.name.toLowerCase().includes(this.clinicSearchTerm) ||
-          c.address?.toLowerCase().includes(this.clinicSearchTerm),
+          c.name.toLowerCase().includes(this._searchLower) ||
+          c.address?.toLowerCase().includes(this._searchLower),
       )
     }
   }
 
+  resetClinicSearch() {
+    this.clinicSearchTerm = ''
+    this._searchLower = ''
+    this.filteredClinics = [...this.clinics]
+  }
+
   getSelectedClinicName(): string {
     if (!this.selectedClinicId) {
-      // Si es SUPER_ADMIN y no hay clínica, mostrar "Todas las clínicas"
       return this.isSuperAdmin() ? 'Todas las clínicas' : 'Seleccionar clínica'
     }
     const clinic = this.clinics.find(c => c.id === this.selectedClinicId)
-    return clinic ? clinic.name : this.selectedClinicId
+    return clinic?.name ?? 'Seleccionar clínica'
   }
 
   isSuperAdmin(): boolean {
-    return this.user()?.roles?.includes('super-admin') || false
+    return this.user()?.roles?.includes(UserRoles.SUPER_ADMIN) ?? false
   }
 
   hasNoClinics(): boolean {
     return !this.isClinicsLoading && this.clinics.length === 0
+  }
+
+  trackClinicById(_index: number, clinic: Clinic): string {
+    return clinic.id
   }
 }

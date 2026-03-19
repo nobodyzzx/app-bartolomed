@@ -1,8 +1,8 @@
 <div class="min-h-screen bg-slate-50 p-8 print:bg-white print:p-4">
   <div class="max-w-7xl mx-auto">
     @if (loading()) {
-      <div class="flex justify-center items-center py-20">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div class="flex justify-center items-center py-12">
+        <mat-spinner diameter="50"></mat-spinner>
       </div>
     } @else if (order()) {
       <!-- Header -->
@@ -392,7 +392,7 @@
                   >${{ order()!.subtotal || 0 | number: '1.2-2' }}</span
                 >
               </div>
-              @if (order()!.taxRate && order()!.taxRate > 0) {
+              @if (order()?.taxRate && order()?.taxRate! > 0) {
                 <div class="flex justify-between text-sm print:text-xs">
                   <span class="text-slate-600">IVA ({{ (order()!.taxRate || 0) * 100 }}%)</span>
                   <span class="font-medium text-slate-900"
@@ -400,7 +400,7 @@
                   >
                 </div>
               }
-              @if (order()!.discountAmount && order()!.discountAmount > 0) {
+              @if (order()?.discountAmount && order()?.discountAmount! > 0) {
                 <div class="flex justify-between text-sm text-green-600 print:text-xs">
                   <span>Descuento</span>
                   <span class="font-medium"
@@ -408,7 +408,7 @@
                   >
                 </div>
               }
-              @if (order()!.shippingCost && order()!.shippingCost > 0) {
+              @if (order()?.shippingCost && order()?.shippingCost! > 0) {
                 <div class="flex justify-between text-sm print:text-xs">
                   <span class="text-slate-600">Envío</span>
                   <span class="font-medium text-slate-900"

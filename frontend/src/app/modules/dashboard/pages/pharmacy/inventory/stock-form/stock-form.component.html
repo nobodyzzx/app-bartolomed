@@ -1,24 +1,26 @@
 <div class="min-h-screen bg-slate-50 p-8">
   <div class="max-w-4xl mx-auto">
     <!-- Header -->
-    <header class="mb-8 flex items-center gap-4">
+    <div class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
       <button
         type="button"
         (click)="goBack()"
-        class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 shadow-sm hover:shadow transition-all"
+        class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
         aria-label="Volver"
       >
-        <span class="material-symbols-outlined">arrow_back</span>
+        <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
       </button>
-      <div>
-        <h1 class="text-3xl font-bold text-slate-900">
+      <div class="text-left">
+        <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">
           {{ isEditMode ? 'Editar Stock' : 'Nuevo Stock' }}
         </h1>
         <p class="text-slate-600">
           {{ isEditMode ? 'Modifica el registro de stock' : 'Registra nuevo stock de medicamento' }}
         </p>
       </div>
-    </header>
+      </div>
+    </div>
 
     <!-- Formulario -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
@@ -40,7 +42,7 @@
           <button
             type="button"
             (click)="goToMedicationsCatalog()"
-            class="inline-flex items-center gap-2 px-4 h-14 rounded-lg font-medium bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200 transition-all"
+            class="inline-flex items-center gap-2 px-4 h-14 rounded-lg font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 transition-all"
             title="Ver catálogo completo"
           >
             <span class="material-symbols-outlined">library_books</span>

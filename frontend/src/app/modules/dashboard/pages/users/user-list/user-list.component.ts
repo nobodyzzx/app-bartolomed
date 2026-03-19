@@ -43,7 +43,7 @@ export class UserListComponent implements OnInit {
   }
 
   loadUsers(): void {
-    this.usersService.findAll().subscribe({
+    this.usersService.getUsers().subscribe({
       next: users => {
         this.allUsers = users
         this.users = users

@@ -1,18 +1,19 @@
 <div class="min-h-screen bg-slate-50">
   <div class="max-w-7xl mx-auto p-6">
     <!-- Header -->
-    <header class="mb-6 flex items-center justify-between">
+    <div class="flex items-center justify-between mb-10">
       <div class="flex items-center gap-4">
         <button
           type="button"
           (click)="goBack()"
-          class="flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all border-0"
+          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          aria-label="Volver"
         >
-          <span class="material-symbols-outlined msz-20">arrow_back</span>
+          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
         </button>
-        <div>
-          <h1 class="text-3xl font-bold text-slate-900">Mantenimiento de Activos</h1>
-          <p class="text-sm text-slate-600 mt-1">Programa y gestiona el mantenimiento de activos</p>
+        <div class="text-left">
+          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Mantenimiento de Activos</h1>
+          <p class="text-slate-600">Programa y gestiona el mantenimiento de activos</p>
         </div>
       </div>
       <button
@@ -28,7 +29,7 @@
         <span class="material-symbols-outlined msz-20">{{ showForm ? 'close' : 'add' }}</span>
         {{ showForm ? 'Cancelar' : 'Programar Mantenimiento' }}
       </button>
-    </header>
+    </div>
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
@@ -290,9 +291,8 @@
       </div>
 
       <!-- Loading -->
-      <div *ngIf="loading" class="flex flex-col items-center justify-center py-16 px-6">
-        <mat-spinner diameter="40"></mat-spinner>
-        <p class="mt-4 text-slate-500 font-medium">Cargando registros...</p>
+      <div *ngIf="loading" class="flex justify-center items-center py-12">
+        <mat-spinner diameter="50"></mat-spinner>
       </div>
 
       <!-- Tabla -->
@@ -453,20 +453,16 @@
       </div>
 
       <!-- Empty State -->
-      <div *ngIf="!loading && maintenanceRecords.length === 0" class="text-center py-16 px-6">
-        <div
-          class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4"
-        >
-          <span class="material-symbols-outlined text-4xl text-slate-400">build_circle</span>
-        </div>
+      <div *ngIf="!loading && maintenanceRecords.length === 0" class="text-center py-12 px-6">
+        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">build_circle</span>
         <h3 class="text-slate-900 font-semibold text-lg mb-2">No hay registros de mantenimiento</h3>
         <p class="text-slate-500 mb-6">Comience programando el primer mantenimiento</p>
         <button
           type="button"
           (click)="toggleForm()"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-green-600 text-white hover:bg-green-700 transition-colors border-0"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
         >
-          <span class="material-symbols-outlined msz-18">add</span>
+          <span class="material-symbols-outlined msz-18 leading-none">add</span>
           Programar Primer Mantenimiento
         </button>
       </div>

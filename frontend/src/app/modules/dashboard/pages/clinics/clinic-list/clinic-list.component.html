@@ -101,8 +101,8 @@
     </div>
 
     <!-- Loading indicator -->
-    <div *ngIf="isLoading" class="flex justify-center items-center py-20">
-      <mat-spinner diameter="60"></mat-spinner>
+    <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+      <mat-spinner diameter="50"></mat-spinner>
     </div>
 
     <!-- Table Card -->
@@ -309,9 +309,9 @@
     <!-- No data message -->
     <div
       *ngIf="!isLoading && dataSource.data.length === 0"
-      class="bg-white rounded-xl shadow-sm border border-slate-200 text-center py-20"
+      class="bg-white rounded-xl shadow-sm border border-slate-200 text-center py-12 px-6"
     >
-      <mat-icon class="text-6xl text-slate-300 mb-4">business</mat-icon>
+      <mat-icon class="text-6xl text-slate-400 mb-4">business</mat-icon>
       <h3 class="text-2xl font-bold text-slate-900 mb-2">No se encontraron clínicas</h3>
       <p class="text-slate-600 mb-6">No hay clínicas registradas en el sistema.</p>
       <button
