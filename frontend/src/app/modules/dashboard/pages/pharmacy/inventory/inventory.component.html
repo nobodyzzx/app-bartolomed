@@ -1,183 +1,88 @@
-<div class="min-h-screen bg-slate-50 p-8">
-  <div class="max-w-7xl mx-auto">
-    <!-- Header Unificado -->
-    <div class="flex items-center justify-between mb-10">
-      <div class="flex items-center gap-4">
-        <button
-          type="button"
-          (click)="goBack()"
-          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          aria-label="Volver"
-        >
-          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
-        </button>
-        <div class="text-left">
-          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">
-            Inventario de Farmacia
-          </h1>
-          <p class="text-slate-600">Gestión y control de medicamentos e insumos</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-3">
-        <button
-          type="button"
-          (click)="goToMedications()"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
-          aria-label="Ver catálogo de medicamentos"
-        >
-          <span class="material-symbols-outlined msz-20 leading-none">library_books</span>
-          Catálogo
-        </button>
-        <button
-          type="button"
-          routerLink="/dashboard/pharmacy/inventory/transfer"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:ring-offset-1 transition-all border-0"
-          aria-label="Transferir stock entre clínicas"
-        >
-          <span class="material-symbols-outlined msz-20 leading-none">local_shipping</span>
-          Transferir
-        </button>
-        <button
-          type="button"
-          (click)="openImportModal()"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
-          aria-label="Importar listado"
-        >
-          <span class="material-symbols-outlined msz-20 leading-none">upload_file</span>
-          Importar
-        </button>
-        <button
-          type="button"
-          (click)="createMedication()"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
-          aria-label="Crear nuevo medicamento"
-        >
-          <span class="material-symbols-outlined msz-20 leading-none">medication</span>
-          Crear Medicamento
-        </button>
-        <button
-          type="button"
-          (click)="addProduct()"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
-          aria-label="Agregar stock"
-        >
-          <span class="material-symbols-outlined msz-20 leading-none">add</span>
-          Agregar Stock
-        </button>
-      </div>
-    </div>
+<div class="page-wrapper">
+  <div class="page-inner">
 
-    <!-- Estadísticas -->
+    <app-page-header
+      title="Inventario de Farmacia"
+      subtitle="Gestión y control de medicamentos e insumos"
+      (back)="goBack()"
+    >
+      <button type="button" (click)="goToMedications()"
+        class="inline-flex items-center gap-2 px-4 h-10 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-sm hover:shadow-md transition-all border-0">
+        <span class="material-symbols-outlined msz-18 leading-none">library_books</span>
+        Catálogo
+      </button>
+      <button type="button" routerLink="/dashboard/pharmacy/inventory/transfer"
+        class="inline-flex items-center gap-2 px-4 h-10 rounded-full font-medium bg-amber-50 text-amber-600 hover:bg-amber-100 shadow-sm hover:shadow-md transition-all border-0">
+        <span class="material-symbols-outlined msz-18 leading-none">local_shipping</span>
+        Transferir
+      </button>
+      <button type="button" (click)="openImportModal()"
+        class="inline-flex items-center gap-2 px-4 h-10 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-sm hover:shadow-md transition-all border-0">
+        <span class="material-symbols-outlined msz-18 leading-none">upload_file</span>
+        Importar
+      </button>
+      <button type="button" (click)="createMedication()"
+        class="inline-flex items-center gap-2 px-4 h-10 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-sm hover:shadow-md transition-all border-0">
+        <span class="material-symbols-outlined msz-18 leading-none">medication</span>
+        Crear Medicamento
+      </button>
+      <button type="button" (click)="addProduct()"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0">
+        <span class="material-symbols-outlined msz-18 leading-none">add</span>
+        Agregar Stock
+      </button>
+    </app-page-header>
+
+    <!-- Stat cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div
-        class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [class.ring-2]="statFilter() === 'all'"
-        [class.ring-blue-400]="statFilter() === 'all'"
-        (click)="setStatFilter('all')"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-blue-600 text-sm font-semibold">Total Productos</p>
-            <p class="text-3xl font-bold text-blue-900 mt-1">{{ stats.totalProducts }}</p>
-            <p class="text-xs text-blue-500 mt-1">En inventario</p>
-          </div>
-          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">inventory_2</span>
-        </div>
-      </div>
-      <div
-        class="bg-orange-50 p-5 rounded-2xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [class.ring-2]="statFilter() === 'low'"
-        [class.ring-orange-400]="statFilter() === 'low'"
-        (click)="setStatFilter('low')"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-orange-600 text-sm font-semibold">Stock Bajo</p>
-            <p class="text-3xl font-bold text-orange-900 mt-1">{{ stats.lowStock }}</p>
-            <p class="text-xs text-orange-500 mt-1">Requieren reabastecimiento</p>
-          </div>
-          <span class="material-symbols-outlined text-orange-300" style="font-size: 40px">warning</span>
-        </div>
-      </div>
-      <div
-        class="bg-red-50 p-5 rounded-2xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [class.ring-2]="statFilter() === 'expiring'"
-        [class.ring-red-400]="statFilter() === 'expiring'"
-        (click)="setStatFilter('expiring')"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-red-600 text-sm font-semibold">Por Vencer</p>
-            <p class="text-3xl font-bold text-red-900 mt-1">{{ stats.expiring }}</p>
-            <p class="text-xs text-red-500 mt-1">Próximos a caducar</p>
-          </div>
-          <span class="material-symbols-outlined text-red-300" style="font-size: 40px">schedule</span>
-        </div>
-      </div>
-      <div class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all select-none">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-green-600 text-sm font-semibold">Valor Total</p>
-            <p class="text-3xl font-bold text-green-900 mt-1">${{ stats.totalValue | number: '1.2-2' }}</p>
-            <p class="text-xs text-green-500 mt-1">Valor del inventario</p>
-          </div>
-          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">attach_money</span>
-        </div>
-      </div>
+      <app-stat-card
+        label="Total Productos" [value]="stats.totalProducts" sublabel="En inventario"
+        icon="inventory_2" color="blue"
+        [active]="statFilter() === 'all'" [clickable]="true"
+        (cardClick)="setStatFilter('all')"
+      />
+      <app-stat-card
+        label="Stock Bajo" [value]="stats.lowStock" sublabel="Requieren reabastecimiento"
+        icon="warning" color="orange"
+        [active]="statFilter() === 'low'" [clickable]="true"
+        (cardClick)="setStatFilter('low')"
+      />
+      <app-stat-card
+        label="Por Vencer" [value]="stats.expiring" sublabel="Próximos a caducar"
+        icon="schedule" color="red"
+        [active]="statFilter() === 'expiring'" [clickable]="true"
+        (cardClick)="setStatFilter('expiring')"
+      />
+      <app-stat-card
+        label="Valor Total" [value]="'$' + (stats.totalValue | number: '1.2-2')" sublabel="Valor del inventario"
+        icon="attach_money" color="green"
+      />
     </div>
 
-    <!-- Contenido Principal -->
-    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+    <!-- Tabla -->
+    <div class="table-container">
 
-      <!-- Buscador -->
-      <div class="p-6 border-b border-slate-100">
-        <div class="flex items-center gap-4">
-          <div class="flex-1 max-w-md relative">
-            <input
-              type="text"
-              [(ngModel)]="searchTermRaw"
-              (input)="applyFilterManual()"
-              placeholder="Nombre, marca, categoría..."
-              class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
-            />
-            <span class="material-symbols-outlined absolute right-4 top-2.5 text-blue-400 msz-18">search</span>
-          </div>
-          <button
-            *ngIf="searchTermRaw"
-            type="button"
-            (click)="searchTermRaw = ''; applyFilterManual()"
-            class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all border-0"
-          >
-            <span class="material-symbols-outlined msz-16">close</span>
-            Limpiar
-          </button>
-        </div>
+      <div class="table-toolbar">
+        <app-search-bar
+          placeholder="Nombre, marca, categoría..."
+          [value]="searchTermRaw"
+          [showClear]="!!searchTermRaw"
+          (valueChange)="searchTermRaw = $event; applyFilterManual()"
+          (cleared)="searchTermRaw = ''; applyFilterManual()"
+        />
       </div>
 
-      <!-- Cargando -->
-      <div *ngIf="loading()" class="flex justify-center items-center py-12">
-        <mat-spinner diameter="50"></mat-spinner>
-      </div>
+      <app-skeleton-table *ngIf="loading()" [rows]="6" [columns]="7" />
 
-      <!-- Estado vacío -->
-      <div *ngIf="!loading() && filteredProducts.length === 0" class="text-center py-12 px-6">
-        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">inventory_2</span>
-        <p class="text-lg font-semibold text-slate-700 mb-2">Sin productos en inventario</p>
-        <p class="text-sm text-slate-400 mb-6">
-          {{ searchTermRaw ? 'Intenta ajustar la búsqueda' : 'Agrega el primer producto al inventario' }}
-        </p>
-        <button
-          *ngIf="!searchTermRaw"
-          type="button"
-          (click)="addProduct()"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
-        >
-          <span class="material-symbols-outlined msz-18 leading-none">add</span>
-          Agregar Stock
-        </button>
-      </div>
+      <app-empty-state
+        *ngIf="!loading() && filteredProducts.length === 0"
+        icon="inventory_2"
+        title="Sin productos en inventario"
+        [subtitle]="searchTermRaw ? 'Intenta ajustar la búsqueda' : 'Agrega el primer producto al inventario'"
+        [actionLabel]="!searchTermRaw ? 'Agregar Stock' : ''"
+        (action)="addProduct()"
+      />
 
-      <!-- Tabla -->
       <div *ngIf="!loading() && filteredProducts.length > 0" class="overflow-x-auto">
         <table class="w-full">
           <thead class="bg-slate-100">
@@ -188,16 +93,12 @@
               <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Stock</th>
               <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Precio Venta</th>
               <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Vencimiento</th>
-              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Ubicación</th>
               <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
               <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr
-              *ngFor="let product of filteredProducts; trackBy: trackById"
-              class="hover:bg-blue-50/40 transition-colors"
-            >
+            <tr *ngFor="let product of filteredProducts; trackBy: trackById" class="hover:bg-blue-50/40 transition-colors">
               <td class="px-6 py-4 text-blue-700 font-medium text-xs">{{ product.batchNumber }}</td>
               <td class="px-6 py-4">
                 <div class="flex flex-col">
@@ -205,72 +106,56 @@
                   <span class="text-xs text-slate-500">{{ product.medication?.strength }} - {{ product.medication?.dosageForm }}</span>
                 </div>
               </td>
-              <td class="px-6 py-4 text-slate-600 text-sm">{{ product.medication?.brandName || '-' }}</td>
+              <td class="px-6 py-4 text-sm text-slate-600">{{ product.medication?.brandName || '—' }}</td>
               <td class="px-6 py-4">
-                <span
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                  [ngClass]="isLowStock(product) ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
-                >
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="isLowStock(product) ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'">
                   <span class="w-1.5 h-1.5 rounded-full" [ngClass]="isLowStock(product) ? 'bg-red-500' : 'bg-green-500'"></span>
                   {{ product.quantity }} unidades
                 </span>
               </td>
               <td class="px-6 py-4 text-green-700 font-semibold">${{ product.sellingPrice | number: '1.2-2' }}</td>
               <td class="px-6 py-4">
-                <span
-                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
-                  [ngClass]="isExpiring(product) ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-700'"
-                >
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="isExpiring(product) ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-700'">
                   {{ product.expiryDate | date: 'dd/MM/yyyy' }}
                 </span>
               </td>
-              <td class="px-6 py-4 text-slate-600 text-sm">{{ product.location || '-' }}</td>
               <td class="px-6 py-4">
-                <span
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                  [ngClass]="productStatus(product).classes"
-                >
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="productStatus(product).classes">
                   <span class="w-1.5 h-1.5 rounded-full" [ngClass]="productStatus(product).dot"></span>
                   {{ productStatus(product).label }}
                 </span>
               </td>
               <td class="px-6 py-4">
                 <div class="flex gap-1 items-center justify-end">
-                  <button
-                    type="button"
-                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0"
-                    (click)="editProduct(product)"
-                    matTooltip="Editar"
-                  >
-                    <span class="material-symbols-outlined msz-18 leading-none">edit</span>
+                  <button type="button" (click)="editProduct(product)" matTooltip="Editar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">edit</span>
                   </button>
-                  <button
-                    type="button"
-                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors border-0"
-                    (click)="deleteProduct(product)"
-                    matTooltip="Eliminar"
-                  >
-                    <span class="material-symbols-outlined msz-18 leading-none">delete</span>
+                  <button type="button" (click)="deleteProduct(product)" matTooltip="Eliminar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">delete</span>
                   </button>
                 </div>
               </td>
             </tr>
           </tbody>
         </table>
-      </div>
 
-      <!-- Footer -->
-      <div *ngIf="!loading() && filteredProducts.length > 0" class="flex items-center px-6 py-3 bg-slate-50 border-t border-slate-100">
-        <span class="text-sm text-slate-500">
-          Mostrando <span class="font-semibold text-slate-700">{{ filteredProducts.length }}</span> productos
-        </span>
+        <div class="table-footer">
+          <span class="text-sm text-slate-500">
+            Mostrando <span class="font-semibold text-slate-700">{{ filteredProducts.length }}</span> productos
+          </span>
+        </div>
       </div>
 
     </div>
   </div>
 </div>
 
-<!-- Modal: Importar desde CSV (carga y vista previa) -->
+<!-- Modal: Importar desde CSV -->
 <pharmacy-ui-modal
   [open]="importOpen()"
   (closed)="importOpen.set(false)"
@@ -303,33 +188,21 @@
         <table class="min-w-full text-sm">
           <thead class="bg-slate-100 sticky top-0">
             <tr>
-              <th
-                *ngFor="let h of importHeaders"
-                class="px-3 py-2 text-left font-semibold text-slate-600 border-b"
-              >
-                {{ h }}
-              </th>
+              <th *ngFor="let h of importHeaders" class="px-3 py-2 text-left font-semibold text-slate-600 border-b">{{ h }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let r of importRows; let i = index" class="odd:bg-white even:bg-slate-50">
-              <td
-                *ngFor="let h of importHeaders"
-                class="px-3 py-1 border-b border-slate-200 align-top"
-              >
-                {{ r[h] }}
-              </td>
+            <tr *ngFor="let r of importRows" class="odd:bg-white even:bg-slate-50">
+              <td *ngFor="let h of importHeaders" class="px-3 py-1 border-b border-slate-200 align-top">{{ r[h] }}</td>
             </tr>
           </tbody>
         </table>
       </div>
       <div class="px-3 py-2 bg-slate-50 text-xs text-slate-500 border-t flex justify-between">
         <span>{{ importRows.length }} filas</span>
-        <button
-          type="button"
+        <button type="button"
           class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100"
-          (click)="resetImport()"
-        >
+          (click)="resetImport()">
           <span class="material-symbols-outlined msz-18">delete</span>
           Limpiar
         </button>
@@ -337,7 +210,7 @@
     </div>
 
     <div *ngIf="!importRows.length" class="text-center py-10 text-slate-400">
-      <span class="material-symbols-outlined text-5xl mb-3">upload_file</span>
+      <span class="material-symbols-outlined msz-48 mb-3 block">upload_file</span>
       <p class="text-sm">Aún no hay datos cargados</p>
     </div>
   </div>

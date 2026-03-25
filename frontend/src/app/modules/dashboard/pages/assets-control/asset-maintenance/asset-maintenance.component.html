@@ -1,21 +1,12 @@
-<div class="min-h-screen bg-slate-50 p-8">
-  <div class="max-w-7xl mx-auto">
+<div class="page-wrapper">
+  <div class="page-inner">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-10">
-      <div class="flex items-center gap-4">
-        <button
-          type="button"
-          (click)="goBack()"
-          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          aria-label="Volver"
-        >
-          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
-        </button>
-        <div class="text-left">
-          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Mantenimiento de Activos</h1>
-          <p class="text-slate-600">Programa y gestiona el mantenimiento de activos</p>
-        </div>
-      </div>
+    <app-page-header
+      title="Mantenimiento de Activos"
+      subtitle="Programa y gestiona el mantenimiento de activos"
+      [showBack]="true"
+      (back)="goBack()"
+    >
       <button
         type="button"
         (click)="toggleForm()"
@@ -29,78 +20,51 @@
         <span class="material-symbols-outlined msz-20">{{ showForm ? 'close' : 'add' }}</span>
         {{ showForm ? 'Cancelar' : 'Programar Mantenimiento' }}
       </button>
-    </div>
+    </app-page-header>
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-      <!-- Total -->
-      <div class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all select-none">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-blue-600 text-sm font-semibold">Total</p>
-            <p class="text-3xl font-bold text-blue-900 mt-1">{{ totalRecords }}</p>
-            <p class="text-xs text-blue-500 mt-1">Registros totales</p>
-          </div>
-          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">build_circle</span>
-        </div>
-      </div>
-
-      <!-- Programado -->
-      <div
-        class="bg-amber-50 p-5 rounded-2xl border-l-4 border-amber-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        (click)="filterByStatus(maintenanceStatuses[0])"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-amber-600 text-sm font-semibold">Programado</p>
-            <p class="text-3xl font-bold text-amber-900 mt-1">{{ scheduledCount }}</p>
-            <p class="text-xs text-amber-500 mt-1">Por realizar</p>
-          </div>
-          <span class="material-symbols-outlined text-amber-300" style="font-size: 40px">schedule</span>
-        </div>
-      </div>
-
-      <!-- En Progreso -->
-      <div
-        class="bg-sky-50 p-5 rounded-2xl border-l-4 border-sky-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        (click)="filterByStatus(maintenanceStatuses[1])"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sky-600 text-sm font-semibold">En Progreso</p>
-            <p class="text-3xl font-bold text-sky-900 mt-1">{{ inProgressCount }}</p>
-            <p class="text-xs text-sky-500 mt-1">En ejecución</p>
-          </div>
-          <span class="material-symbols-outlined text-sky-300" style="font-size: 40px">sync</span>
-        </div>
-      </div>
-
-      <!-- Completado -->
-      <div
-        class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        (click)="filterByStatus(maintenanceStatuses[2])"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-green-600 text-sm font-semibold">Completado</p>
-            <p class="text-3xl font-bold text-green-900 mt-1">{{ completedCount }}</p>
-            <p class="text-xs text-green-500 mt-1">Finalizados</p>
-          </div>
-          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">check_circle</span>
-        </div>
-      </div>
-
-      <!-- Costo Total -->
-      <div class="bg-purple-50 p-5 rounded-2xl border-l-4 border-purple-500 shadow-md hover:shadow-lg transition-all select-none">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-purple-600 text-sm font-semibold">Costo Total</p>
-            <p class="text-3xl font-bold text-purple-900 mt-1">{{ formatCurrency(totalCost) }}</p>
-            <p class="text-xs text-purple-500 mt-1">Gasto acumulado</p>
-          </div>
-          <span class="material-symbols-outlined text-purple-300" style="font-size: 40px">attach_money</span>
-        </div>
-      </div>
+      <app-stat-card
+        label="Total"
+        [value]="totalRecords"
+        sublabel="Registros totales"
+        icon="build_circle"
+        color="blue"
+      />
+      <app-stat-card
+        label="Programado"
+        [value]="scheduledCount"
+        sublabel="Por realizar"
+        icon="schedule"
+        color="amber"
+        [clickable]="true"
+        (cardClick)="filterByStatus(maintenanceStatuses[0])"
+      />
+      <app-stat-card
+        label="En Progreso"
+        [value]="inProgressCount"
+        sublabel="En ejecución"
+        icon="sync"
+        color="indigo"
+        [clickable]="true"
+        (cardClick)="filterByStatus(maintenanceStatuses[1])"
+      />
+      <app-stat-card
+        label="Completado"
+        [value]="completedCount"
+        sublabel="Finalizados"
+        icon="check_circle"
+        color="green"
+        [clickable]="true"
+        (cardClick)="filterByStatus(maintenanceStatuses[2])"
+      />
+      <app-stat-card
+        label="Costo Total"
+        [value]="formatCurrency(totalCost)"
+        sublabel="Gasto acumulado"
+        icon="attach_money"
+        color="purple"
+      />
     </div>
 
     <!-- Formulario (Collapsible) -->
@@ -261,8 +225,8 @@
     </div>
 
     <!-- Tabla de Registros -->
-    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+    <div class="table-container">
+      <div class="table-toolbar">
         <div class="flex items-center gap-2">
           <span class="material-symbols-outlined msz-20 text-slate-600">history</span>
           <h3 class="text-lg font-semibold text-slate-800">Registros de Mantenimiento</h3>
@@ -284,9 +248,7 @@
       </div>
 
       <!-- Loading -->
-      <div *ngIf="loading" class="flex justify-center items-center py-12">
-        <mat-spinner diameter="50"></mat-spinner>
-      </div>
+      <app-skeleton-table *ngIf="loading" [rows]="6" [columns]="5" />
 
       <!-- Tabla -->
       <div *ngIf="!loading && maintenanceRecords.length > 0" class="overflow-x-auto">
@@ -305,7 +267,7 @@
           <tbody class="divide-y divide-slate-100">
             <tr
               *ngFor="let record of maintenanceRecords"
-              class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors"
+              class="table-row-hover"
             >
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
@@ -399,19 +361,14 @@
       </div>
 
       <!-- Empty State -->
-      <div *ngIf="!loading && maintenanceRecords.length === 0" class="text-center py-12 px-6">
-        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">build_circle</span>
-        <h3 class="text-slate-900 font-semibold text-lg mb-2">No hay registros de mantenimiento</h3>
-        <p class="text-slate-500 mb-6">Comience programando el primer mantenimiento</p>
-        <button
-          type="button"
-          (click)="toggleForm()"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-        >
-          <span class="material-symbols-outlined msz-18 leading-none">add</span>
-          Programar Primer Mantenimiento
-        </button>
-      </div>
+      <app-empty-state
+        *ngIf="!loading && maintenanceRecords.length === 0"
+        icon="build_circle"
+        title="No hay registros de mantenimiento"
+        subtitle="Comience programando el primer mantenimiento"
+        actionLabel="Programar Primer Mantenimiento"
+        (action)="toggleForm()"
+      />
     </div>
 
     <!-- Modal de Detalles -->

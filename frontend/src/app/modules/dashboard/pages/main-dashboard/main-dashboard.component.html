@@ -1,165 +1,104 @@
-<div class="main-dashboard-container min-h-screen bg-slate-50 p-8">
-  <div class="max-w-7xl mx-auto">
-    <!-- Alerta de Permisos Insuficientes -->
-    <div
-      *ngIf="permissionError"
-      class="mb-10 p-6 bg-red-50 border-l-4 border-red-500 rounded-xl shadow-md hover:shadow-lg transition-shadow flex items-start gap-4"
-    >
-      <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-        <span class="material-symbols-outlined msz-24 text-red-600">warning</span>
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <!-- Alerta de permisos -->
+    <div *ngIf="permissionError"
+      class="mb-8 p-5 bg-red-50 border-l-4 border-red-500 rounded-xl shadow-md flex items-start gap-4">
+      <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined msz-20 text-red-600">warning</span>
       </div>
-      <div class="flex-1">
-        <h3 class="text-lg font-bold text-red-900 mb-2">Acceso Denegado</h3>
-        <p class="text-red-700 text-sm leading-relaxed mb-2">{{ permissionError }}</p>
-        <p class="text-xs text-red-600/80">
-          Contacta con el administrador si necesitas acceso a ese módulo.
-        </p>
+      <div>
+        <h3 class="font-bold text-red-900 mb-1">Acceso Denegado</h3>
+        <p class="text-red-700 text-sm leading-relaxed">{{ permissionError }}</p>
+        <p class="text-xs text-red-600/80 mt-1">Contacta con el administrador si necesitas acceso a ese módulo.</p>
       </div>
     </div>
 
-    <!-- Encabezado del Dashboard -->
-    <div class="mb-10 flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2">Dashboard Principal</h1>
-        <p class="text-slate-600">Centro de control del sistema médico - Vista general</p>
-      </div>
+    <!-- Header -->
+    <app-page-header
+      title="Dashboard Principal"
+      subtitle="Centro de control del sistema médico"
+      [showBack]="false"
+    >
       <button
         type="button"
         (click)="refreshDashboard()"
         [disabled]="loading"
         class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0"
       >
-        <span class="material-symbols-outlined msz-20" [class.animate-spin]="loading">{{
-          loading ? 'sync' : 'refresh'
-        }}</span>
+        <span class="material-symbols-outlined msz-20" [class.animate-spin]="loading">
+          {{ loading ? 'sync' : 'refresh' }}
+        </span>
         Actualizar
       </button>
-    </div>
+    </app-page-header>
 
-    <!-- Métricas Principales -->
+    <!-- Métricas principales -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <!-- Total Pacientes -->
-      <div
-        class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        (click)="goToPatientsList()"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-blue-600 text-sm font-semibold">Total Pacientes</p>
-            <p class="text-3xl font-bold text-blue-900 mt-1">{{ stats.totalPatients }}</p>
-            <p class="text-xs text-blue-500 mt-1">Registrados en el sistema</p>
-          </div>
-          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">people</span>
-        </div>
-      </div>
-
-      <!-- Citas Programadas -->
-      <div
-        class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        (click)="goToAppointmentsList()"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-green-600 text-sm font-semibold">Citas Programadas</p>
-            <p class="text-3xl font-bold text-green-900 mt-1">{{ stats.totalAppointments }}</p>
-            <p class="text-xs text-green-500 mt-1">Este mes</p>
-          </div>
-          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">calendar_today</span>
-        </div>
-      </div>
-
-      <!-- Doctores Activos -->
-      <div
-        class="bg-purple-50 p-5 rounded-2xl border-l-4 border-purple-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        (click)="goToUsersList()"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-purple-600 text-sm font-semibold">Doctores Activos</p>
-            <p class="text-3xl font-bold text-purple-900 mt-1">{{ stats.totalDoctors }}</p>
-            <p class="text-xs text-purple-500 mt-1">Personal médico</p>
-          </div>
-          <span class="material-symbols-outlined text-purple-300" style="font-size: 40px">medical_services</span>
-        </div>
-      </div>
-
-      <!-- Ingresos del Mes -->
-      <div
-        class="bg-orange-50 p-5 rounded-2xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        (click)="goToReports()"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-orange-600 text-sm font-semibold">Ingresos del Mes</p>
-            <p class="text-3xl font-bold text-orange-900 mt-1">{{ formatCurrency(stats.monthlyRevenue) }}</p>
-            <p class="text-xs text-orange-500 mt-1">Facturación mensual</p>
-          </div>
-          <span class="material-symbols-outlined text-orange-300" style="font-size: 40px">attach_money</span>
-        </div>
-      </div>
+      <app-stat-card
+        label="Total Pacientes" [value]="stats.totalPatients" sublabel="Registrados en el sistema"
+        icon="people" color="blue" [clickable]="true"
+        (cardClick)="goToPatientsList()"
+      />
+      <app-stat-card
+        label="Citas Programadas" [value]="stats.totalAppointments" sublabel="Este mes"
+        icon="calendar_today" color="green" [clickable]="true"
+        (cardClick)="goToAppointmentsList()"
+      />
+      <app-stat-card
+        label="Doctores Activos" [value]="stats.totalDoctors" sublabel="Personal médico"
+        icon="medical_services" color="purple" [clickable]="true"
+        (cardClick)="goToUsersList()"
+      />
+      <app-stat-card
+        label="Ingresos del Mes" [value]="formatCurrency(stats.monthlyRevenue)" sublabel="Facturación mensual"
+        icon="attach_money" color="orange" [clickable]="true"
+        (cardClick)="goToReports()"
+      />
     </div>
 
-    <!-- Sección de contenido principal -->
+    <!-- Tablas: Citas recientes + Alertas de stock -->
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-      <!-- Citas Recientes -->
-      <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+
+      <!-- Citas recientes -->
+      <div class="table-container">
         <div class="flex items-center justify-between p-6 border-b border-slate-100">
           <h2 class="text-xl font-bold text-slate-900">Citas Recientes</h2>
-          <button
-            type="button"
-            routerLink="/dashboard/appointments"
-            class="inline-flex items-center gap-2 px-4 h-9 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          >
+          <a routerLink="/dashboard/appointments"
+            class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all border-0">
             Ver todas
-          </button>
+          </a>
         </div>
-
         <div class="overflow-x-auto">
-          <table class="w-full bg-transparent">
+          <table class="w-full">
             <thead class="bg-slate-100">
-              <tr class="border-b border-slate-200">
+              <tr>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</th>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Doctor</th>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Hora</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Tipo</th>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
-                <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</th>
+                <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acción</th>
               </tr>
             </thead>
-            <tbody>
-              <tr
-                *ngFor="let appointment of recentAppointments"
-                class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors"
-              >
-                <td class="px-6 py-4 text-slate-900 font-medium">{{ appointment.patientName }}</td>
-                <td class="px-6 py-4 text-slate-600 text-sm">{{ appointment.doctorName }}</td>
-                <td class="px-6 py-4 text-slate-600 text-sm">{{ appointment.time }}</td>
-                <td class="px-6 py-4 text-slate-600 text-sm">{{ appointment.type }}</td>
+            <tbody class="divide-y divide-slate-100">
+              <tr *ngFor="let appointment of recentAppointments" class="hover:bg-blue-50/40 transition-colors">
+                <td class="px-6 py-4 font-medium text-slate-900">{{ appointment.patientName }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600">{{ appointment.doctorName }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600">{{ appointment.time }}</td>
                 <td class="px-6 py-4">
-                  <span
-                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
-                    [ngClass]="getStatusClass(appointment.status)"
-                  >
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium" [ngClass]="getStatusClass(appointment.status)">
                     {{ getStatusText(appointment.status) }}
                   </span>
                 </td>
                 <td class="px-6 py-4">
-                  <div class="flex gap-1 items-center justify-end">
-                    <button
-                      type="button"
-                      class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
-                      (click)="viewAppointmentDetails(appointment)"
-                      matTooltip="Ver detalles"
-                    >
-                      <span class="material-symbols-outlined msz-18 leading-none">visibility</span>
+                  <div class="flex gap-1 justify-end">
+                    <button type="button" (click)="viewAppointmentDetails(appointment)" matTooltip="Ver detalles"
+                      class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0">
+                      <span class="material-symbols-outlined msz-18">visibility</span>
                     </button>
-                    <button
-                      type="button"
-                      class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0"
-                      (click)="editAppointment(appointment)"
-                      matTooltip="Editar"
-                    >
-                      <span class="material-symbols-outlined msz-18 leading-none">edit</span>
+                    <button type="button" (click)="editAppointment(appointment)" matTooltip="Editar"
+                      class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0">
+                      <span class="material-symbols-outlined msz-18">edit</span>
                     </button>
                   </div>
                 </td>
@@ -169,84 +108,54 @@
         </div>
       </div>
 
-      <!-- Alertas de Stock -->
-      <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+      <!-- Alertas de stock -->
+      <div class="table-container">
         <div class="flex items-center justify-between p-6 border-b border-slate-100">
           <h2 class="text-xl font-bold text-slate-900">Alertas de Stock</h2>
-          <button
-            type="button"
-            routerLink="/dashboard/pharmacy-inventory"
-            class="inline-flex items-center gap-2 px-4 h-9 rounded-full font-medium bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-200 focus-visible:ring-offset-1 transition-all border-0"
-          >
+          <a routerLink="/dashboard/pharmacy/inventory"
+            class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium bg-orange-50 text-orange-600 hover:bg-orange-100 transition-all border-0">
             Ver inventario
-          </button>
+          </a>
         </div>
-
         <div class="p-6 space-y-4">
-          <div
-            *ngFor="let alert of stockAlerts"
-            class="p-5 bg-red-50 border-l-4 border-red-500 rounded-2xl shadow-md hover:shadow-lg transition-all"
-          >
-            <div class="flex justify-between items-start gap-4">
-              <div class="flex items-start gap-4 flex-1">
-                <div
-                  class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0"
-                >
-                  <span class="material-symbols-outlined msz-24 text-red-600">inventory_2</span>
-                </div>
-                <div class="flex-1">
-                  <h3 class="font-bold text-red-900 text-base">{{ alert.medication }}</h3>
-                  <p class="text-sm text-red-700 mt-1">{{ alert.category }}</p>
-                  <div class="mt-3 flex items-center gap-4">
-                    <div class="flex items-center gap-2">
-                      <span class="text-xs text-red-600/80 font-medium">Stock actual:</span>
-                      <span
-                        class="px-2.5 py-1 bg-red-100 text-red-900 text-sm font-bold rounded-full"
-                        >{{ alert.currentStock }}</span
-                      >
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <span class="text-xs text-red-600/80 font-medium">Mínimo:</span>
-                      <span
-                        class="px-2.5 py-1 bg-red-200 text-red-900 text-sm font-bold rounded-full"
-                        >{{ alert.minimumStock }}</span
-                      >
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                class="inline-flex items-center justify-center w-11 h-11 bg-white text-red-600 hover:bg-red-600 hover:text-white rounded-full shadow-md hover:shadow-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-300 border-0"
-                (click)="restockMedication(alert)"
-                matTooltip="Reabastecer medicamento"
-                aria-label="Reabastecer medicamento"
-              >
-                <span class="material-symbols-outlined msz-20 leading-none">add_circle</span>
-              </button>
+          <div *ngFor="let alert of stockAlerts"
+            class="p-4 bg-red-50 border-l-4 border-red-500 rounded-xl shadow-sm hover:shadow-md transition-all flex items-start gap-4">
+            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined msz-20 text-red-600">inventory_2</span>
             </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-bold text-red-900">{{ alert.medication }}</h3>
+              <p class="text-xs text-red-700 mt-0.5">{{ alert.category }}</p>
+              <div class="flex items-center gap-3 mt-2">
+                <span class="text-xs text-red-600/80">Stock: <strong>{{ alert.currentStock }}</strong></span>
+                <span class="text-xs text-red-600/80">Mín: <strong>{{ alert.minimumStock }}</strong></span>
+              </div>
+            </div>
+            <button type="button" (click)="restockMedication(alert)" matTooltip="Reabastecer"
+              class="w-9 h-9 inline-flex items-center justify-center rounded-full bg-white text-red-600 hover:bg-red-600 hover:text-white shadow-sm hover:shadow-md transition-all border-0 flex-shrink-0">
+              <span class="material-symbols-outlined msz-18">add_circle</span>
+            </button>
           </div>
+          <app-empty-state *ngIf="!stockAlerts?.length"
+            icon="inventory" title="Sin alertas de stock" subtitle="Todo el inventario está en orden" />
         </div>
       </div>
+
     </div>
 
-    <!-- Pacientes Recientes -->
-    <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-8">
+    <!-- Pacientes recientes -->
+    <div class="table-container mb-8">
       <div class="flex items-center justify-between p-6 border-b border-slate-100">
         <h2 class="text-xl font-bold text-slate-900">Pacientes Recientes</h2>
-        <button
-          type="button"
-          routerLink="/dashboard/patients"
-          class="inline-flex items-center gap-2 px-4 h-9 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-        >
+        <a routerLink="/dashboard/patients"
+          class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all border-0">
           Ver todos
-        </button>
+        </a>
       </div>
-
       <div class="overflow-x-auto">
-        <table class="w-full bg-transparent">
+        <table class="w-full">
           <thead class="bg-slate-100">
-            <tr class="border-b border-slate-200">
+            <tr>
               <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Nombre</th>
               <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Edad</th>
               <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Última Visita</th>
@@ -255,51 +164,29 @@
               <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</th>
             </tr>
           </thead>
-          <tbody>
-            <tr
-              *ngFor="let patient of recentPatients"
-              class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors"
-            >
-              <td class="px-6 py-4 text-slate-900 font-medium">{{ patient.name }}</td>
-              <td class="px-6 py-4 text-slate-600 text-sm">{{ patient.age }} años</td>
-              <td class="px-6 py-4 text-slate-600 text-sm">{{ patient.lastVisit | date: 'short' }}</td>
-              <td class="px-6 py-4 text-slate-600 text-sm">
-                {{
-                  patient.nextAppointment
-                    ? (patient.nextAppointment | date: 'short')
-                    : 'No programada'
-                }}
+          <tbody class="divide-y divide-slate-100">
+            <tr *ngFor="let patient of recentPatients" class="hover:bg-blue-50/40 transition-colors">
+              <td class="px-6 py-4 font-medium text-slate-900">{{ patient.name }}</td>
+              <td class="px-6 py-4 text-sm text-slate-600">{{ patient.age }} años</td>
+              <td class="px-6 py-4 text-sm text-slate-600">{{ patient.lastVisit | date: 'short' }}</td>
+              <td class="px-6 py-4 text-sm text-slate-600">
+                {{ patient.nextAppointment ? (patient.nextAppointment | date: 'short') : 'No programada' }}
               </td>
               <td class="px-6 py-4">
-                <span
-                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
-                  [ngClass]="getStatusClass(patient.status)"
-                >
-                  <span class="material-symbols-outlined msz-14">{{
-                    getStatusIcon(patient.status)
-                  }}</span>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium" [ngClass]="getStatusClass(patient.status)">
+                  <span class="material-symbols-outlined msz-14">{{ getStatusIcon(patient.status) }}</span>
                   {{ getStatusText(patient.status) }}
                 </span>
               </td>
               <td class="px-6 py-4">
-                <div class="flex gap-1 items-center justify-end">
-                  <button
-                    type="button"
-                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors border-0"
-                    (click)="viewPatientDetails(patient)"
-                    matTooltip="Ver perfil"
-                    aria-label="Ver perfil"
-                  >
-                    <span class="material-symbols-outlined msz-18 leading-none">person</span>
+                <div class="flex gap-1 justify-end">
+                  <button type="button" (click)="viewPatientDetails(patient)" matTooltip="Ver perfil"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">person</span>
                   </button>
-                  <button
-                    type="button"
-                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-green-600 hover:bg-green-50 transition-colors border-0"
-                    (click)="scheduleAppointment(patient)"
-                    matTooltip="Programar cita"
-                    aria-label="Programar cita"
-                  >
-                    <span class="material-symbols-outlined msz-18 leading-none">event_available</span>
+                  <button type="button" (click)="scheduleAppointment(patient)" matTooltip="Programar cita"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">event_available</span>
                   </button>
                 </div>
               </td>
@@ -309,43 +196,29 @@
       </div>
     </div>
 
-    <!-- Acciones Rápidas -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <button
-        type="button"
-        routerLink="/dashboard/patients/new"
-        class="inline-flex flex-col items-center justify-center gap-3 p-6 rounded-2xl font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-      >
+    <!-- Acciones rápidas -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <a routerLink="/dashboard/patients/new"
+        class="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg transition-all">
         <span class="material-symbols-outlined msz-40">person_add</span>
-        <div class="text-base font-semibold">Registrar Paciente</div>
-      </button>
-
-      <button
-        type="button"
-        routerLink="/dashboard/appointments/new"
-        class="inline-flex flex-col items-center justify-center gap-3 p-6 rounded-2xl font-medium bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-200 focus-visible:ring-offset-1 transition-all border-0"
-      >
+        <span class="text-sm font-semibold text-center">Registrar Paciente</span>
+      </a>
+      <a routerLink="/dashboard/appointments/new"
+        class="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 shadow-md hover:shadow-lg transition-all">
         <span class="material-symbols-outlined msz-40">event_available</span>
-        <div class="text-base font-semibold">Nueva Cita</div>
-      </button>
-
-      <button
-        type="button"
-        routerLink="/dashboard/pharmacy/inventory"
-        class="inline-flex flex-col items-center justify-center gap-3 p-6 rounded-2xl font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
-      >
+        <span class="text-sm font-semibold text-center">Nueva Cita</span>
+      </a>
+      <a routerLink="/dashboard/pharmacy/inventory"
+        class="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 shadow-md hover:shadow-lg transition-all">
         <span class="material-symbols-outlined msz-40">inventory</span>
-        <div class="text-base font-semibold">Inventario</div>
-      </button>
-
-      <button
-        type="button"
-        routerLink="/dashboard/medical-records"
-        class="inline-flex flex-col items-center justify-center gap-3 p-6 rounded-2xl font-medium bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-200 focus-visible:ring-offset-1 transition-all border-0"
-      >
+        <span class="text-sm font-semibold text-center">Inventario</span>
+      </a>
+      <a routerLink="/dashboard/medical-records"
+        class="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 shadow-md hover:shadow-lg transition-all">
         <span class="material-symbols-outlined msz-40">folder_shared</span>
-        <div class="text-base font-semibold">Expedientes Médicos</div>
-      </button>
+        <span class="text-sm font-semibold text-center">Expedientes Médicos</span>
+      </a>
     </div>
+
   </div>
 </div>

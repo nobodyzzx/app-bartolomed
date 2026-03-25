@@ -1,0 +1,19 @@
+<!-- Skeleton de barra de búsqueda -->
+<div class="p-6 border-b border-slate-100">
+  <div class="skeleton-shimmer h-11 w-80 rounded-full"></div>
+</div>
+
+<!-- Skeleton de filas de tabla -->
+<div class="divide-y divide-slate-100">
+  <div *ngFor="let row of rowArray" class="flex items-center gap-4 px-6 py-4">
+    <!-- Avatar circular -->
+    <div class="skeleton-shimmer w-9 h-9 rounded-full flex-shrink-0"></div>
+    <!-- Columnas de contenido -->
+    <ng-container *ngFor="let col of colArray; let i = index">
+      <div
+        class="skeleton-shimmer h-4 rounded"
+        [style.width]="i === 0 ? '160px' : i === colArray.length - 1 ? '80px' : '120px'"
+      ></div>
+    </ng-container>
+  </div>
+</div>

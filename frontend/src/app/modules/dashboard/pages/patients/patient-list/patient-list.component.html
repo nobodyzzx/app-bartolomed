@@ -1,22 +1,11 @@
-<div class="min-h-screen bg-slate-50 p-8">
-  <div class="max-w-7xl mx-auto">
+<div class="page-wrapper">
+  <div class="page-inner">
 
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-10">
-      <div class="flex items-center gap-4">
-        <button
-          type="button"
-          (click)="goBack()"
-          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          aria-label="Volver"
-        >
-          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
-        </button>
-        <div>
-          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Pacientes</h1>
-          <p class="text-slate-600">Gestión y registro de pacientes</p>
-        </div>
-      </div>
+    <app-page-header
+      title="Pacientes"
+      subtitle="Gestión y registro de pacientes"
+      (back)="goBack()"
+    >
       <button
         type="button"
         (click)="createPatient()"
@@ -25,170 +14,95 @@
         <span class="material-symbols-outlined msz-18 leading-none">person_add</span>
         Nuevo Paciente
       </button>
-    </div>
+    </app-page-header>
 
-    <!-- Tarjetas de estadísticas -->
+    <!-- Stat cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div
-        class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [ngClass]="activeGenderFilter === null ? 'ring-2 ring-blue-400' : ''"
-        (click)="setGenderFilter(null)"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-blue-600 text-sm font-semibold">Total Pacientes</p>
-            <p class="text-3xl font-bold text-blue-900 mt-1">{{ patients.length }}</p>
-            <p class="text-xs text-blue-500 mt-1">Registrados</p>
-          </div>
-          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">group</span>
-        </div>
-      </div>
-
-      <div
-        class="bg-indigo-50 p-5 rounded-2xl border-l-4 border-indigo-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [ngClass]="activeGenderFilter === Gender.MALE ? 'ring-2 ring-indigo-400' : ''"
-        (click)="setGenderFilter(Gender.MALE)"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-indigo-600 text-sm font-semibold">Masculinos</p>
-            <p class="text-3xl font-bold text-indigo-900 mt-1">{{ getMaleCount() }}</p>
-            <p class="text-xs text-indigo-500 mt-1">Pacientes hombres</p>
-          </div>
-          <span class="material-symbols-outlined text-indigo-300" style="font-size: 40px">man</span>
-        </div>
-      </div>
-
-      <div
-        class="bg-pink-50 p-5 rounded-2xl border-l-4 border-pink-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [ngClass]="activeGenderFilter === Gender.FEMALE ? 'ring-2 ring-pink-400' : ''"
-        (click)="setGenderFilter(Gender.FEMALE)"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-pink-600 text-sm font-semibold">Femeninas</p>
-            <p class="text-3xl font-bold text-pink-900 mt-1">{{ getFemaleCount() }}</p>
-            <p class="text-xs text-pink-500 mt-1">Pacientes mujeres</p>
-          </div>
-          <span class="material-symbols-outlined text-pink-300" style="font-size: 40px">woman</span>
-        </div>
-      </div>
-
-      <div class="bg-slate-50 p-5 rounded-2xl border-l-4 border-slate-400 shadow-md hover:shadow-lg transition-all select-none">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-slate-600 text-sm font-semibold">Edad Promedio</p>
-            <p class="text-3xl font-bold text-slate-800 mt-1">{{ getAverageAge() }}</p>
-            <p class="text-xs text-slate-500 mt-1">Años</p>
-          </div>
-          <span class="material-symbols-outlined text-slate-300" style="font-size: 40px">cake</span>
-        </div>
-      </div>
+      <app-stat-card
+        label="Total Pacientes" [value]="patients.length" sublabel="Registrados"
+        icon="group" color="blue"
+        [active]="activeGenderFilter === null" [clickable]="true"
+        (cardClick)="setGenderFilter(null)"
+      />
+      <app-stat-card
+        label="Masculinos" [value]="getMaleCount()" sublabel="Pacientes hombres"
+        icon="man" color="indigo"
+        [active]="activeGenderFilter === Gender.MALE" [clickable]="true"
+        (cardClick)="setGenderFilter(Gender.MALE)"
+      />
+      <app-stat-card
+        label="Femeninas" [value]="getFemaleCount()" sublabel="Pacientes mujeres"
+        icon="woman" color="pink"
+        [active]="activeGenderFilter === Gender.FEMALE" [clickable]="true"
+        (cardClick)="setGenderFilter(Gender.FEMALE)"
+      />
+      <app-stat-card
+        label="Edad Promedio" [value]="getAverageAge()" sublabel="Años"
+        icon="cake" color="slate"
+      />
     </div>
 
-    <!-- Contenedor principal: buscador + tabla -->
-    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+    <!-- Tabla -->
+    <div class="table-container">
 
-      <!-- Buscador y filtros -->
-      <div class="p-6 border-b border-slate-100">
-        <div class="flex items-center gap-4 flex-wrap">
-          <div class="flex-1 min-w-60 max-w-md relative">
-            <input
-              type="text"
-              [(ngModel)]="searchTerm"
-              (input)="applyFilter($event)"
-              placeholder="Nombre, documento, teléfono, email..."
-              class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
-            />
-            <span class="material-symbols-outlined absolute right-4 top-2.5 text-blue-400 msz-18">search</span>
-          </div>
-
+      <!-- Toolbar: buscador + filtros -->
+      <div class="table-toolbar">
+        <app-search-bar
+          placeholder="Nombre, documento, teléfono, email..."
+          [value]="searchTerm"
+          [showClear]="!!(searchTerm || activeGenderFilter)"
+          (valueChange)="searchTerm = $event; applyFilter($event)"
+          (cleared)="searchTerm = ''; setGenderFilter(null)"
+        >
+          <!-- Filtros de género -->
           <div class="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              (click)="setGenderFilter(null)"
+            <button type="button" (click)="setGenderFilter(null)"
               class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium transition-all border-0"
-              [ngClass]="activeGenderFilter === null
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'"
-            >
-              Todos
-              <span class="text-xs opacity-70">({{ patients.length }})</span>
+              [ngClass]="activeGenderFilter === null ? 'bg-blue-600 text-white shadow-md' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'">
+              Todos <span class="text-xs opacity-70">({{ patients.length }})</span>
             </button>
-            <button
-              type="button"
-              (click)="setGenderFilter(Gender.MALE)"
+            <button type="button" (click)="setGenderFilter(Gender.MALE)"
               class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium transition-all border-0"
-              [ngClass]="activeGenderFilter === Gender.MALE
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'"
-            >
-              <span class="w-1.5 h-1.5 rounded-full"
-                [ngClass]="activeGenderFilter === Gender.MALE ? 'bg-indigo-200' : 'bg-indigo-500'"></span>
-              Masculino
-              <span class="text-xs opacity-70">({{ getMaleCount() }})</span>
+              [ngClass]="activeGenderFilter === Gender.MALE ? 'bg-indigo-600 text-white shadow-md' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'">
+              <span class="w-1.5 h-1.5 rounded-full" [ngClass]="activeGenderFilter === Gender.MALE ? 'bg-indigo-200' : 'bg-indigo-500'"></span>
+              Masculino <span class="text-xs opacity-70">({{ getMaleCount() }})</span>
             </button>
-            <button
-              type="button"
-              (click)="setGenderFilter(Gender.FEMALE)"
+            <button type="button" (click)="setGenderFilter(Gender.FEMALE)"
               class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium transition-all border-0"
-              [ngClass]="activeGenderFilter === Gender.FEMALE
-                ? 'bg-pink-600 text-white shadow-md'
-                : 'bg-pink-50 text-pink-700 hover:bg-pink-100'"
-            >
-              <span class="w-1.5 h-1.5 rounded-full"
-                [ngClass]="activeGenderFilter === Gender.FEMALE ? 'bg-pink-200' : 'bg-pink-500'"></span>
-              Femenino
-              <span class="text-xs opacity-70">({{ getFemaleCount() }})</span>
+              [ngClass]="activeGenderFilter === Gender.FEMALE ? 'bg-pink-600 text-white shadow-md' : 'bg-pink-50 text-pink-700 hover:bg-pink-100'">
+              <span class="w-1.5 h-1.5 rounded-full" [ngClass]="activeGenderFilter === Gender.FEMALE ? 'bg-pink-200' : 'bg-pink-500'"></span>
+              Femenino <span class="text-xs opacity-70">({{ getFemaleCount() }})</span>
             </button>
           </div>
-        </div>
+        </app-search-bar>
       </div>
 
-      <!-- Cargando -->
-      <div *ngIf="isLoading" class="flex justify-center items-center py-12">
-        <mat-spinner diameter="50"></mat-spinner>
-      </div>
+      <!-- Skeleton carga -->
+      <app-skeleton-table *ngIf="isLoading" [rows]="6" [columns]="4" />
 
       <!-- Estado vacío -->
-      <div *ngIf="!isLoading && dataSource.filteredData.length === 0" class="text-center py-12 px-6">
-        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">group</span>
-        <p class="text-lg font-semibold text-slate-700 mb-2">
-          {{ activeGenderFilter || searchTerm ? 'Sin resultados' : 'Sin pacientes registrados' }}
-        </p>
-        <p class="text-sm text-slate-400 mb-6">
-          {{ activeGenderFilter || searchTerm
-            ? 'Intenta con otro filtro o término de búsqueda'
-            : 'Comienza registrando el primer paciente' }}
-        </p>
-        <button
-          *ngIf="!activeGenderFilter && !searchTerm"
-          type="button"
-          (click)="createPatient()"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
-        >
-          <span class="material-symbols-outlined msz-18 leading-none">person_add</span>
-          Nuevo Paciente
-        </button>
-      </div>
+      <app-empty-state
+        *ngIf="!isLoading && dataSource.filteredData.length === 0"
+        icon="group"
+        [title]="activeGenderFilter || searchTerm ? 'Sin resultados' : 'Sin pacientes registrados'"
+        [subtitle]="activeGenderFilter || searchTerm ? 'Intenta con otro filtro o término de búsqueda' : 'Comienza registrando el primer paciente'"
+        [actionLabel]="!activeGenderFilter && !searchTerm ? 'Nuevo Paciente' : ''"
+        (action)="createPatient()"
+      />
 
-      <!-- Tabla -->
+      <!-- Tabla de datos -->
       <div *ngIf="!isLoading && dataSource.filteredData.length > 0" class="overflow-x-auto">
         <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
 
-          <!-- Documento -->
           <ng-container matColumnDef="documentNumber">
             <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
               <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Documento</span>
             </th>
             <td mat-cell *matCellDef="let patient" class="px-6 py-4">
-              <span class="font-mono text-sm bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
-                {{ patient.documentNumber }}
-              </span>
+              <span class="font-mono text-sm bg-slate-100 text-slate-700 px-2 py-0.5 rounded">{{ patient.documentNumber }}</span>
             </td>
           </ng-container>
 
-          <!-- Nombre -->
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
               <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</span>
@@ -196,12 +110,7 @@
             <td mat-cell *matCellDef="let patient" class="px-6 py-4">
               <div class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-sm"
-                  [ngClass]="patient.gender === Gender.FEMALE
-                    ? 'bg-pink-100 text-pink-700'
-                    : patient.gender === Gender.MALE
-                      ? 'bg-indigo-100 text-indigo-700'
-                      : 'bg-slate-100 text-slate-700'"
-                >
+                  [ngClass]="patient.gender === Gender.FEMALE ? 'bg-pink-100 text-pink-700' : patient.gender === Gender.MALE ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-700'">
                   {{ patient.firstName.charAt(0) }}{{ patient.lastName.charAt(0) }}
                 </div>
                 <div>
@@ -212,7 +121,6 @@
             </td>
           </ng-container>
 
-          <!-- Edad -->
           <ng-container matColumnDef="age">
             <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
               <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Edad</span>
@@ -222,26 +130,18 @@
             </td>
           </ng-container>
 
-          <!-- Género -->
           <ng-container matColumnDef="gender">
             <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
               <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Género</span>
             </th>
             <td mat-cell *matCellDef="let patient" class="px-6 py-4">
-              <span
-                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
-                [ngClass]="patient.gender === Gender.MALE
-                  ? 'bg-indigo-100 text-indigo-800'
-                  : patient.gender === Gender.FEMALE
-                    ? 'bg-pink-100 text-pink-800'
-                    : 'bg-slate-100 text-slate-700'"
-              >
-                {{ patient.gender === Gender.MALE ? 'Masculino' : patient.gender === Gender.FEMALE ? 'Femenino' : 'Otro' }}
-              </span>
+              <app-status-badge
+                [label]="patient.gender === Gender.MALE ? 'Masculino' : patient.gender === Gender.FEMALE ? 'Femenino' : 'Otro'"
+                [color]="patient.gender === Gender.MALE ? 'indigo' : patient.gender === Gender.FEMALE ? 'pink' : 'slate'"
+              />
             </td>
           </ng-container>
 
-          <!-- Teléfono -->
           <ng-container matColumnDef="phone">
             <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
               <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Teléfono</span>
@@ -255,51 +155,35 @@
             </td>
           </ng-container>
 
-          <!-- Acciones -->
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4 text-right">
               <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span>
             </th>
             <td mat-cell *matCellDef="let patient" class="px-6 py-4">
               <div class="flex items-center justify-end gap-1">
-                <button
-                  type="button"
-                  (click)="viewMedicalHistory(patient); $event.stopPropagation()"
+                <button type="button" (click)="viewMedicalHistory(patient); $event.stopPropagation()"
                   matTooltip="Historial médico"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-purple-50 hover:text-purple-600 transition-colors border-0"
-                >
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-purple-50 hover:text-purple-600 transition-colors border-0">
                   <span class="material-symbols-outlined msz-18">history</span>
                 </button>
-                <button
-                  type="button"
-                  (click)="createMedicalRecord(patient); $event.stopPropagation()"
+                <button type="button" (click)="createMedicalRecord(patient); $event.stopPropagation()"
                   matTooltip="Nuevo expediente"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-green-50 hover:text-green-600 transition-colors border-0"
-                >
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors border-0">
                   <span class="material-symbols-outlined msz-18">note_add</span>
                 </button>
-                <button
-                  type="button"
-                  (click)="viewPatient(patient); $event.stopPropagation()"
+                <button type="button" (click)="viewPatient(patient); $event.stopPropagation()"
                   matTooltip="Ver detalles"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
-                >
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0">
                   <span class="material-symbols-outlined msz-18">visibility</span>
                 </button>
-                <button
-                  type="button"
-                  (click)="editPatient(patient); $event.stopPropagation()"
+                <button type="button" (click)="editPatient(patient); $event.stopPropagation()"
                   matTooltip="Editar"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0"
-                >
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0">
                   <span class="material-symbols-outlined msz-18">edit</span>
                 </button>
-                <button
-                  type="button"
-                  (click)="deletePatient(patient); $event.stopPropagation()"
+                <button type="button" (click)="deletePatient(patient); $event.stopPropagation()"
                   matTooltip="Eliminar"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors border-0"
-                >
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0">
                   <span class="material-symbols-outlined msz-18">delete</span>
                 </button>
               </div>
@@ -309,21 +193,16 @@
           <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedColumns"
               (click)="viewPatient(row)"
-              class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors cursor-pointer"></tr>
+              class="table-row-hover"></tr>
         </table>
 
-        <!-- Footer: contador + paginador -->
-        <div class="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-100">
+        <div class="table-footer">
           <span class="text-sm text-slate-500">
             <span class="font-semibold text-slate-700">{{ dataSource.filteredData.length }}</span>
             {{ dataSource.filteredData.length === 1 ? 'paciente' : 'pacientes' }}
             {{ activeGenderFilter || searchTerm ? 'encontrados' : 'en total' }}
           </span>
-          <mat-paginator
-            [pageSizeOptions]="[10, 25, 50]"
-            showFirstLastButtons
-            class="bg-transparent"
-          ></mat-paginator>
+          <mat-paginator [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons class="bg-transparent" />
         </div>
       </div>
 

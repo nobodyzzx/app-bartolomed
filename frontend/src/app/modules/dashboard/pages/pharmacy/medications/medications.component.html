@@ -1,22 +1,13 @@
-<div class="min-h-screen bg-slate-50 p-8">
-  <div class="max-w-7xl mx-auto">
+<div class="page-wrapper">
+  <div class="page-inner">
 
     <!-- Header -->
-    <div class="flex items-center justify-between mb-10">
-      <div class="flex items-center gap-4">
-        <button
-          type="button"
-          (click)="goBack()"
-          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          aria-label="Volver"
-        >
-          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
-        </button>
-        <div>
-          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Medicamentos</h1>
-          <p class="text-slate-600">Gestión del maestro de medicamentos</p>
-        </div>
-      </div>
+    <app-page-header
+      title="Medicamentos"
+      subtitle="Gestión del maestro de medicamentos"
+      [showBack]="true"
+      (back)="goBack()"
+    >
       <button
         type="button"
         (click)="newMedication()"
@@ -25,129 +16,78 @@
         <span class="material-symbols-outlined msz-18 leading-none">add</span>
         Nuevo Medicamento
       </button>
-    </div>
+    </app-page-header>
 
     <!-- Tarjetas de estadísticas -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-
-      <div
-        class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [class.ring-2]="categoryFilter() === 'all'"
-        [class.ring-blue-400]="categoryFilter() === 'all'"
-        (click)="setCategoryFilter('all')"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-blue-600 text-sm font-semibold">Total</p>
-            <p class="text-3xl font-bold text-blue-900 mt-1">{{ medications().length }}</p>
-            <p class="text-xs text-blue-500 mt-1">Medicamentos registrados</p>
-          </div>
-          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">medication</span>
-        </div>
-      </div>
-
-      <div
-        class="bg-red-50 p-5 rounded-2xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [class.ring-2]="categoryFilter() === 'analgesic'"
-        [class.ring-red-400]="categoryFilter() === 'analgesic'"
-        (click)="setCategoryFilter('analgesic')"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-red-600 text-sm font-semibold">Analgésicos</p>
-            <p class="text-3xl font-bold text-red-900 mt-1">{{ countByCategory()('analgesic') }}</p>
-            <p class="text-xs text-red-500 mt-1">Para el dolor</p>
-          </div>
-          <span class="material-symbols-outlined text-red-300" style="font-size: 40px">healing</span>
-        </div>
-      </div>
-
-      <div
-        class="bg-amber-50 p-5 rounded-2xl border-l-4 border-amber-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [class.ring-2]="categoryFilter() === 'antibiotic'"
-        [class.ring-amber-400]="categoryFilter() === 'antibiotic'"
-        (click)="setCategoryFilter('antibiotic')"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-amber-600 text-sm font-semibold">Antibióticos</p>
-            <p class="text-3xl font-bold text-amber-900 mt-1">{{ countByCategory()('antibiotic') }}</p>
-            <p class="text-xs text-amber-500 mt-1">Antimicrobianos</p>
-          </div>
-          <span class="material-symbols-outlined text-amber-300" style="font-size: 40px">biotech</span>
-        </div>
-      </div>
-
-      <div
-        class="bg-slate-50 p-5 rounded-2xl border-l-4 border-slate-400 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [class.ring-2]="categoryFilter() === 'other'"
-        [class.ring-slate-400]="categoryFilter() === 'other'"
-        (click)="setCategoryFilter('other')"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-slate-600 text-sm font-semibold">Otros</p>
-            <p class="text-3xl font-bold text-slate-900 mt-1">{{ countByCategory()('other') }}</p>
-            <p class="text-xs text-slate-500 mt-1">Otras categorías</p>
-          </div>
-          <span class="material-symbols-outlined text-slate-300" style="font-size: 40px">category</span>
-        </div>
-      </div>
-
+      <app-stat-card
+        label="Total"
+        [value]="medications().length"
+        sublabel="Medicamentos registrados"
+        icon="medication"
+        color="blue"
+        [clickable]="true"
+        [active]="categoryFilter() === 'all'"
+        (cardClick)="setCategoryFilter('all')"
+      />
+      <app-stat-card
+        label="Analgésicos"
+        [value]="countByCategory()('analgesic')"
+        sublabel="Para el dolor"
+        icon="healing"
+        color="red"
+        [clickable]="true"
+        [active]="categoryFilter() === 'analgesic'"
+        (cardClick)="setCategoryFilter('analgesic')"
+      />
+      <app-stat-card
+        label="Antibióticos"
+        [value]="countByCategory()('antibiotic')"
+        sublabel="Antimicrobianos"
+        icon="biotech"
+        color="amber"
+        [clickable]="true"
+        [active]="categoryFilter() === 'antibiotic'"
+        (cardClick)="setCategoryFilter('antibiotic')"
+      />
+      <app-stat-card
+        label="Otros"
+        [value]="countByCategory()('other')"
+        sublabel="Otras categorías"
+        icon="category"
+        color="slate"
+        [clickable]="true"
+        [active]="categoryFilter() === 'other'"
+        (cardClick)="setCategoryFilter('other')"
+      />
     </div>
 
     <!-- Contenedor principal -->
-    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+    <div class="table-container">
 
       <!-- Buscador -->
-      <div class="p-6 border-b border-slate-100">
-        <div class="flex items-center gap-4">
-          <div class="flex-1 max-w-md relative">
-            <input
-              type="text"
-              [ngModel]="search()"
-              (ngModelChange)="search.set($event)"
-              placeholder="Nombre, código, fabricante..."
-              class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
-            />
-            <span class="material-symbols-outlined absolute right-4 top-2.5 text-blue-400 msz-18">search</span>
-          </div>
-          <button
-            *ngIf="search() || categoryFilter() !== 'all'"
-            type="button"
-            (click)="search.set(''); setCategoryFilter('all')"
-            class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all border-0"
-          >
-            <span class="material-symbols-outlined msz-16">close</span>
-            Limpiar
-          </button>
-        </div>
+      <div class="table-toolbar">
+        <app-search-bar
+          placeholder="Nombre, código, fabricante..."
+          [value]="search()"
+          [showClear]="!!(search() || categoryFilter() !== 'all')"
+          (valueChange)="search.set($event)"
+          (cleared)="search.set(''); setCategoryFilter('all')"
+        />
       </div>
 
       <!-- Cargando -->
-      <div *ngIf="loading()" class="flex justify-center items-center py-12">
-        <mat-spinner diameter="50"></mat-spinner>
-      </div>
+      <app-skeleton-table *ngIf="loading()" [rows]="6" [columns]="5" />
 
       <!-- Estado vacío -->
-      <div *ngIf="!loading() && filtered().length === 0" class="text-center py-12 px-6">
-        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">medication</span>
-        <p class="text-lg font-semibold text-slate-700 mb-2">
-          {{ search() || categoryFilter() !== 'all' ? 'Sin resultados' : 'Sin medicamentos registrados' }}
-        </p>
-        <p class="text-sm text-slate-400 mb-6">
-          {{ search() || categoryFilter() !== 'all' ? 'Intenta con otros términos o filtros' : 'Comienza registrando el primer medicamento' }}
-        </p>
-        <button
-          *ngIf="!search() && categoryFilter() === 'all'"
-          type="button"
-          (click)="newMedication()"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
-        >
-          <span class="material-symbols-outlined msz-18 leading-none">add</span>
-          Nuevo Medicamento
-        </button>
-      </div>
+      <app-empty-state
+        *ngIf="!loading() && filtered().length === 0"
+        icon="medication"
+        [title]="search() || categoryFilter() !== 'all' ? 'Sin resultados' : 'Sin medicamentos registrados'"
+        [subtitle]="search() || categoryFilter() !== 'all' ? 'Intenta con otros términos o filtros' : 'Comienza registrando el primer medicamento'"
+        [actionLabel]="!search() && categoryFilter() === 'all' ? 'Nuevo Medicamento' : ''"
+        (action)="newMedication()"
+      />
 
       <!-- Tabla -->
       <div *ngIf="!loading() && filtered().length > 0" class="overflow-x-auto">
@@ -220,7 +160,7 @@
       </div>
 
       <!-- Footer -->
-      <div *ngIf="!loading() && filtered().length > 0" class="flex items-center px-6 py-3 bg-slate-50 border-t border-slate-100">
+      <div *ngIf="!loading() && filtered().length > 0" class="table-footer">
         <span class="text-sm text-slate-500">
           Mostrando <span class="font-semibold text-slate-700">{{ filtered().length }}</span> de
           <span class="font-semibold text-slate-700">{{ medications().length }}</span> medicamentos

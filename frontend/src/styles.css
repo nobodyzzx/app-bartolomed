@@ -1,19 +1,55 @@
-/* You can add global styles to this file, and also import other style files */
-/* Import toast notifications styles - debe ir ANTES de tailwind */
+/* ============================================================
+   GLOBAL STYLES — app-bartolomed
+   Orden: imports → tailwind → reset → tokens → material fixes → utilidades
+   ============================================================ */
+
 @import './app/shared/styles/toast.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Reset moderno con variables CSS */
+/* ============================================================
+   1. DESIGN TOKENS
+   ============================================================ */
 :root {
-  --primary-color: #007bff;
-  --secondary-color: #6c757d;
-  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu,
-    Cantarell, 'Helvetica Neue', sans-serif;
+  /* Paleta primaria (alineada con Tailwind blue-600) */
+  --color-primary:        #2563eb;
+  --color-primary-light:  #eff6ff;
+  --color-primary-hover:  #1d4ed8;
+
+  /* Superficies */
+  --color-surface:        #ffffff;
+  --color-bg:             #f8fafc; /* slate-50 */
+  --color-border:         #e2e8f0; /* slate-200 */
+
+  /* Texto */
+  --color-text-primary:   #0f172a; /* slate-900 */
+  --color-text-secondary: #475569; /* slate-600 */
+  --color-text-muted:     #94a3b8; /* slate-400 */
+
+  /* Sombras */
+  --shadow-sm:   0 1px 3px 0 rgb(0 0 0 / .08), 0 1px 2px -1px rgb(0 0 0 / .08);
+  --shadow-md:   0 4px 6px -1px rgb(0 0 0 / .08), 0 2px 4px -2px rgb(0 0 0 / .08);
+  --shadow-lg:   0 10px 15px -3px rgb(0 0 0 / .08), 0 4px 6px -4px rgb(0 0 0 / .08);
+
+  /* Radios */
+  --radius-sm:   0.5rem;  /* 8px */
+  --radius-md:   0.75rem; /* 12px */
+  --radius-lg:   1rem;    /* 16px */
+  --radius-xl:   1.5rem;  /* 24px */
+  --radius-full: 9999px;
+
+  /* Tipografía */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                 Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+  --font-size-base: 16px;
+  --line-height:    1.5;
 }
 
+/* ============================================================
+   2. RESET MODERNO
+   ============================================================ */
 *,
 *::before,
 *::after {
@@ -23,85 +59,60 @@
 }
 
 html {
-  font-size: 16px;
+  font-size: var(--font-size-base);
   scroll-behavior: smooth;
 }
 
 body {
   font-family: var(--font-family);
-  line-height: 1.5;
+  line-height: var(--line-height);
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-img,
-picture,
-video,
-canvas,
-svg {
+img, picture, video, canvas, svg {
   display: block;
   max-width: 100%;
 }
 
-input,
-button,
-textarea,
-select {
+input, button, textarea, select {
   font: inherit;
 }
 
-p,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+p, h1, h2, h3, h4, h5, h6 {
   overflow-wrap: break-word;
 }
 
-#root,
-#__next {
-  isolation: isolate;
-}
-
-/* ===== CORRECCIONES GLOBALES PARA ICONOS MATERIAL DESIGN ===== */
-
-/* Material Symbols (ligatures) */
+/* ============================================================
+   3. MATERIAL SYMBOLS — configuración base + utilidades de tamaño
+   ============================================================ */
 .material-symbols-outlined {
-  font-variation-settings:
-    'FILL' 0,
-    'wght' 400,
-    'GRAD' 0,
-    'opsz' 24;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   vertical-align: middle !important;
   line-height: 1 !important;
+  user-select: none;
 }
 
-/* Utilidades de tamaño para Material Symbols */
-.material-symbols-outlined.msz-18 {
-  font-size: 18px !important;
-}
-.material-symbols-outlined.msz-14 {
-  font-size: 14px !important;
-}
-.material-symbols-outlined.msz-20 {
-  font-size: 20px !important;
-}
-.material-symbols-outlined.msz-24 {
-  font-size: 24px !important;
-}
-.material-symbols-outlined.msz-40 {
-  font-size: 40px !important;
-}
-.material-symbols-outlined.msz-48 {
-  font-size: 48px !important;
-}
+/* Clases de tamaño (usar en lugar de inline style="font-size: XXpx") */
+.msz-12 { font-size: 12px !important; }
+.msz-14 { font-size: 14px !important; }
+.msz-16 { font-size: 16px !important; }
+.msz-18 { font-size: 18px !important; }
+.msz-20 { font-size: 20px !important; }
+.msz-24 { font-size: 24px !important; }
+.msz-32 { font-size: 32px !important; }
+.msz-40 { font-size: 40px !important; }
+.msz-48 { font-size: 48px !important; }
+.msz-56 { font-size: 56px !important; }
 
-/* Corrección base para todos los mat-icon */
+/* ============================================================
+   4. MAT-ICON — correcciones de alineación (compatible con Material 3 MDC)
+   ============================================================ */
 .mat-icon {
   display: inline-flex !important;
   align-items: center !important;
@@ -114,148 +125,47 @@ h6 {
   line-height: 1 !important;
 }
 
-/* Iconos en form fields */
 .mat-form-field .mat-icon {
   font-size: 1.25rem !important;
   width: 1.25rem !important;
   height: 1.25rem !important;
 }
 
-/* Iconos en botones */
-.mat-raised-button .mat-icon,
-.mat-button .mat-icon,
-.mat-flat-button .mat-icon,
-.mat-stroked-button .mat-icon {
-  font-size: 1.2rem !important;
-  width: 1.2rem !important;
-  height: 1.2rem !important;
-  margin-right: 0.5rem !important;
-}
-
-/* Iconos en mat-icon-button */
-.mat-icon-button {
-  width: 40px !important;
-  height: 40px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.mat-icon-button .mat-icon {
+.mat-mdc-icon-button .mat-icon {
   font-size: 1.5rem !important;
   width: 1.5rem !important;
   height: 1.5rem !important;
   margin-right: 0 !important;
 }
 
-/* Iconos en mini-fab */
-.mat-mini-fab .mat-icon {
-  font-size: 1.2rem !important;
-  width: 1.2rem !important;
-  height: 1.2rem !important;
-}
-
-/* Iconos en fab */
-.mat-fab .mat-icon {
-  font-size: 1.5rem !important;
-  width: 1.5rem !important;
-  height: 1.5rem !important;
-}
-
-/* Iconos en tablas */
-.mat-table .mat-icon {
-  font-size: 1.25rem !important;
-  width: 1.25rem !important;
-  height: 1.25rem !important;
-}
-
-/* Iconos en chips */
-.mat-chip .mat-icon {
-  font-size: 1rem !important;
-  width: 1rem !important;
-  height: 1rem !important;
-}
-
-/* Iconos en stepper */
-.mat-stepper .mat-icon {
-  font-size: 1.5rem !important;
-  width: 1.5rem !important;
-  height: 1.5rem !important;
-}
-
-/* Iconos en toolbar */
-.mat-toolbar .mat-icon {
-  font-size: 1.5rem !important;
-  width: 1.5rem !important;
-  height: 1.5rem !important;
-}
-
-/* Iconos en sidebar */
-.sidebar .mat-icon {
-  font-size: 1.5rem !important;
-  width: 1.5rem !important;
-  height: 1.5rem !important;
-}
-
-/* Iconos grandes (para casos especiales) */
-.mat-icon.large {
-  font-size: 2rem !important;
-  width: 2rem !important;
-  height: 2rem !important;
-}
-
-.mat-icon.extra-large {
-  font-size: 3rem !important;
-  width: 3rem !important;
-  height: 3rem !important;
-}
-
-/* Responsive: iconos más pequeños en móviles */
 @media (max-width: 768px) {
   .mat-icon {
     font-size: 1.25rem !important;
     width: 1.25rem !important;
     height: 1.25rem !important;
   }
-
-  .mat-form-field .mat-icon {
-    font-size: 1rem !important;
-    width: 1rem !important;
-    height: 1rem !important;
-  }
-
-  .mat-icon-button {
-    width: 36px !important;
-    height: 36px !important;
-  }
-
-  .mat-icon-button .mat-icon {
-    font-size: 1.25rem !important;
-    width: 1.25rem !important;
-    height: 1.25rem !important;
-  }
 }
 
-/* ===== Mejora de usabilidad: tamaño de flecha en desplegables (mat-select) ===== */
-/* Aumenta significativamente el tamaño del ícono de despliegue para mejor accesibilidad */
+/* ============================================================
+   5. MAT-SELECT — flecha de desplegable más visible
+   ============================================================ */
 .mat-mdc-select .mdc-select__dropdown-icon {
   width: 28px !important;
   height: 28px !important;
 }
 
-/* Escala más agresiva para máxima visibilidad */
 .mat-mdc-select-arrow {
   transform: scale(1.8) !important;
   transform-origin: center !important;
 }
 
-/* Asegurar que el contenedor del ícono también escale */
 .mat-mdc-select-arrow-wrapper {
   transform: scale(1.3) !important;
 }
 
-/* ===== Estilos personalizados para el selector de clínica en navbar ===== */
-/* Botón selector minimalista que se integra con el navbar */
+/* ============================================================
+   6. NAVBAR — selector de clínica
+   ============================================================ */
 .clinic-selector-button {
   height: 40px !important;
   border-radius: 8px !important;
@@ -271,10 +181,7 @@ h6 {
   cursor: not-allowed !important;
 }
 
-/* Menu desplegable de clínicas */
-.clinic-menu {
-  margin-top: 8px !important;
-}
+.clinic-menu { margin-top: 8px !important; }
 
 .clinic-menu .mat-mdc-menu-content {
   padding: 0 !important;
@@ -283,28 +190,14 @@ h6 {
   min-width: 320px !important;
 }
 
-/* Mejorar scroll del menú */
-.clinic-menu .mat-mdc-menu-content::-webkit-scrollbar {
-  width: 6px;
-}
+.clinic-menu .mat-mdc-menu-content::-webkit-scrollbar { width: 6px; }
+.clinic-menu .mat-mdc-menu-content::-webkit-scrollbar-track { background: #f1f5f9; }
+.clinic-menu .mat-mdc-menu-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+.clinic-menu .mat-mdc-menu-content::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-.clinic-menu .mat-mdc-menu-content::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-
-.clinic-menu .mat-mdc-menu-content::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-
-.clinic-menu .mat-mdc-menu-content::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* ===== Sidebar: menú flotante en modo colapsado ===== */
-/* Nota: debe ir aquí (estilos globales) porque mat-menu se renderiza en el overlay container */
-
-/* Tokens MDC — controlan el color en Angular Material 18 */
+/* ============================================================
+   7. SIDEBAR — menú flotante en modo colapsado (overlay portal)
+   ============================================================ */
 .sidebar-menu-panel {
   --mat-menu-container-color: #eff6ff;
   --mat-menu-item-label-text-color: #1e3a5f;
@@ -313,50 +206,84 @@ h6 {
   --mat-menu-item-focus-state-layer-color: #dbeafe;
 }
 
-/* Capa 1: el panel contenedor principal */
 .sidebar-menu-panel.mat-mdc-menu-panel,
 .sidebar-menu-panel {
   background-color: #eff6ff !important;
-  border-radius: 0.5rem !important;
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-lg) !important;
 }
 
-/* Capa 2: superficie MDC interna (mdc-menu-surface) */
 .sidebar-menu-panel .mdc-menu-surface,
-.sidebar-menu-panel .mdc-menu {
-  background-color: #eff6ff !important;
-}
-
-/* Capa 3: contenido del menú */
+.sidebar-menu-panel .mdc-menu,
 .sidebar-menu-panel .mat-mdc-menu-content {
   background-color: #eff6ff !important;
 }
 
-/* Items de lista */
-.sidebar-menu-panel .mdc-list-item {
-  background-color: transparent !important;
-}
+.sidebar-menu-panel .mdc-list-item { background-color: transparent !important; }
 
 .sidebar-menu-panel .mdc-list-item:hover,
-.sidebar-menu-panel .mat-mdc-menu-item:hover {
-  background-color: #dbeafe !important;
-}
+.sidebar-menu-panel .mat-mdc-menu-item:hover { background-color: #dbeafe !important; }
 
-/* Texto de los items */
 .sidebar-menu-panel .mdc-list-item__primary-text,
-.sidebar-menu-panel .mat-mdc-menu-item .mdc-list-item__primary-text {
-  color: #1e3a5f !important;
-}
+.sidebar-menu-panel .mat-mdc-menu-item .mdc-list-item__primary-text { color: #1e3a5f !important; }
 
-/* Iconos dentro del flyout */
 .sidebar-menu-panel .mat-icon,
-.sidebar-menu-panel .material-symbols-outlined {
-  color: #2563eb !important;
+.sidebar-menu-panel .material-symbols-outlined { color: #2563eb !important; }
+
+/* ============================================================
+   8. UTILIDADES DE LAYOUT (usadas por los componentes compartidos)
+   ============================================================ */
+
+/* Wrapper de página estándar */
+.page-wrapper {
+  @apply min-h-screen bg-slate-50 p-6 md:p-8;
 }
 
-/* ===== Formularios unificados (inputs base) ===== */
+.page-inner {
+  @apply max-w-7xl mx-auto;
+}
+
+/* Contenedor blanco con tabla adentro */
+.table-container {
+  @apply bg-white rounded-2xl shadow-md overflow-hidden;
+}
+
+/* Footer de tabla (contador + paginador) */
+.table-footer {
+  @apply flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-100;
+}
+
+/* Separador de sección dentro de tabla (buscador, etc.) */
+.table-toolbar {
+  @apply p-6 border-b border-slate-100;
+}
+
+/* Fila de tabla estándar */
+.table-row-hover {
+  @apply border-b border-slate-100 hover:bg-blue-50/40 transition-colors cursor-pointer;
+}
+
+/* ============================================================
+   9. FORMULARIOS — inputs base (mat-form-field complemento)
+   ============================================================ */
 .form-input {
-  @apply w-full h-11 rounded-xl border border-slate-200 px-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300 bg-white;
+  @apply w-full h-11 rounded-xl border border-slate-200 px-4
+         text-slate-900 placeholder-slate-400
+         focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300
+         bg-white transition;
+}
+
+/* ============================================================
+   10. SKELETON — animación de carga (usada por skeleton-table)
+   ============================================================ */
+@keyframes skeleton-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.5s infinite linear;
+  border-radius: 0.375rem;
 }

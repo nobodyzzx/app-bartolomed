@@ -1,163 +1,81 @@
-<div class="min-h-screen bg-slate-50 p-8">
-  <div class="max-w-7xl mx-auto">
+<div class="page-wrapper">
+  <div class="page-inner">
 
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-10">
-      <div class="flex items-center gap-4">
-        <button
-          type="button"
-          routerLink="/dashboard"
-          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          aria-label="Volver"
-        >
-          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
-        </button>
-        <div>
-          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Citas Médicas</h1>
-          <p class="text-slate-600">Gestión de citas y calendario</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-3">
-        <button
-          type="button"
-          (click)="viewCalendar()"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
-        >
-          <span class="material-symbols-outlined msz-18 leading-none">calendar_month</span>
-          Calendario
-        </button>
-        <button
-          type="button"
-          (click)="createAppointment()"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
-        >
-          <span class="material-symbols-outlined msz-18 leading-none">add</span>
-          Nueva Cita
-        </button>
-      </div>
-    </div>
+    <app-page-header
+      title="Citas Médicas"
+      subtitle="Gestión de citas y calendario"
+      (back)="goBack ? goBack() : null"
+    >
+      <button
+        type="button"
+        (click)="viewCalendar()"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <span class="material-symbols-outlined msz-18 leading-none">calendar_month</span>
+        Calendario
+      </button>
+      <button
+        type="button"
+        (click)="createAppointment()"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <span class="material-symbols-outlined msz-18 leading-none">add</span>
+        Nueva Cita
+      </button>
+    </app-page-header>
 
-    <!-- Tarjetas de estadísticas -->
+    <!-- Stat cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-
-      <div
-        class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [class.ring-2]="selectedStatus === 'all'"
-        [class.ring-blue-400]="selectedStatus === 'all'"
-        (click)="setStatus('all')"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-blue-600 text-sm font-semibold">Total</p>
-            <p class="text-3xl font-bold text-blue-900 mt-1">{{ appointments.length }}</p>
-            <p class="text-xs text-blue-500 mt-1">Citas cargadas</p>
-          </div>
-          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">event</span>
-        </div>
-      </div>
-
-      <div
-        class="bg-amber-50 p-5 rounded-2xl border-l-4 border-amber-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [class.ring-2]="selectedStatus === 'scheduled'"
-        [class.ring-amber-400]="selectedStatus === 'scheduled'"
-        (click)="setStatus('scheduled')"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-amber-600 text-sm font-semibold">Programadas</p>
-            <p class="text-3xl font-bold text-amber-900 mt-1">{{ getCountByStatus('scheduled') }}</p>
-            <p class="text-xs text-amber-500 mt-1">Pendientes de confirmar</p>
-          </div>
-          <span class="material-symbols-outlined text-amber-300" style="font-size: 40px">schedule</span>
-        </div>
-      </div>
-
-      <div
-        class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [class.ring-2]="selectedStatus === 'confirmed'"
-        [class.ring-green-400]="selectedStatus === 'confirmed'"
-        (click)="setStatus('confirmed')"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-green-600 text-sm font-semibold">Confirmadas</p>
-            <p class="text-3xl font-bold text-green-900 mt-1">{{ getCountByStatus('confirmed') }}</p>
-            <p class="text-xs text-green-500 mt-1">Listas para atender</p>
-          </div>
-          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">check_circle</span>
-        </div>
-      </div>
-
-      <div
-        class="bg-slate-50 p-5 rounded-2xl border-l-4 border-slate-400 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [class.ring-2]="selectedStatus === 'completed'"
-        [class.ring-slate-400]="selectedStatus === 'completed'"
-        (click)="setStatus('completed')"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-slate-600 text-sm font-semibold">Completadas</p>
-            <p class="text-3xl font-bold text-slate-900 mt-1">{{ getCountByStatus('completed') }}</p>
-            <p class="text-xs text-slate-500 mt-1">Atendidas</p>
-          </div>
-          <span class="material-symbols-outlined text-slate-300" style="font-size: 40px">task_alt</span>
-        </div>
-      </div>
-
+      <app-stat-card
+        label="Total" [value]="appointments.length" sublabel="Citas cargadas"
+        icon="event" color="blue"
+        [active]="selectedStatus === 'all'" [clickable]="true"
+        (cardClick)="setStatus('all')"
+      />
+      <app-stat-card
+        label="Programadas" [value]="getCountByStatus('scheduled')" sublabel="Pendientes de confirmar"
+        icon="schedule" color="amber"
+        [active]="selectedStatus === 'scheduled'" [clickable]="true"
+        (cardClick)="setStatus('scheduled')"
+      />
+      <app-stat-card
+        label="Confirmadas" [value]="getCountByStatus('confirmed')" sublabel="Listas para atender"
+        icon="check_circle" color="green"
+        [active]="selectedStatus === 'confirmed'" [clickable]="true"
+        (cardClick)="setStatus('confirmed')"
+      />
+      <app-stat-card
+        label="Completadas" [value]="getCountByStatus('completed')" sublabel="Atendidas"
+        icon="task_alt" color="slate"
+        [active]="selectedStatus === 'completed'" [clickable]="true"
+        (cardClick)="setStatus('completed')"
+      />
     </div>
 
-    <!-- Contenedor principal -->
-    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+    <!-- Tabla -->
+    <div class="table-container">
 
-      <!-- Buscador -->
-      <div class="p-6 border-b border-slate-100">
-        <div class="flex items-center gap-4">
-          <div class="flex-1 max-w-md relative">
-            <input
-              type="text"
-              [(ngModel)]="searchTerm"
-              (input)="applyFilters()"
-              placeholder="Paciente, doctor, motivo..."
-              class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
-            />
-            <span class="material-symbols-outlined absolute right-4 top-2.5 text-blue-400 msz-18">search</span>
-          </div>
-          <button
-            *ngIf="searchTerm || selectedStatus !== 'all'"
-            type="button"
-            (click)="searchTerm = ''; setStatus('all')"
-            class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all border-0"
-          >
-            <span class="material-symbols-outlined msz-16">close</span>
-            Limpiar
-          </button>
-        </div>
+      <div class="table-toolbar">
+        <app-search-bar
+          placeholder="Paciente, doctor, motivo..."
+          [value]="searchTerm"
+          [showClear]="!!(searchTerm || selectedStatus !== 'all')"
+          (valueChange)="searchTerm = $event; applyFilters()"
+          (cleared)="searchTerm = ''; setStatus('all')"
+        />
       </div>
 
-      <!-- Cargando -->
-      <div *ngIf="loading" class="flex justify-center items-center py-12">
-        <mat-spinner diameter="50"></mat-spinner>
-      </div>
+      <app-skeleton-table *ngIf="loading" [rows]="6" [columns]="5" />
 
-      <!-- Estado vacío -->
-      <div *ngIf="!loading && filteredAppointments.length === 0" class="text-center py-12 px-6">
-        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">event_busy</span>
-        <p class="text-lg font-semibold text-slate-700 mb-2">Sin citas</p>
-        <p class="text-sm text-slate-400 mb-6">
-          {{ searchTerm || selectedStatus !== 'all' ? 'Intenta ajustar los filtros' : 'Comienza creando la primera cita' }}
-        </p>
-        <button
-          *ngIf="!searchTerm && selectedStatus === 'all'"
-          type="button"
-          (click)="createAppointment()"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
-        >
-          <span class="material-symbols-outlined msz-18 leading-none">add</span>
-          Nueva Cita
-        </button>
-      </div>
+      <app-empty-state
+        *ngIf="!loading && filteredAppointments.length === 0"
+        icon="event_busy"
+        title="Sin citas"
+        [subtitle]="searchTerm || selectedStatus !== 'all' ? 'Intenta ajustar los filtros' : 'Comienza creando la primera cita'"
+        [actionLabel]="!searchTerm && selectedStatus === 'all' ? 'Nueva Cita' : ''"
+        (action)="createAppointment()"
+      />
 
-      <!-- Tabla -->
       <div *ngIf="!loading && filteredAppointments.length > 0" class="overflow-x-auto">
         <table class="w-full">
           <thead class="bg-slate-100">
@@ -174,7 +92,7 @@
             <tr
               *ngFor="let apt of filteredAppointments"
               (click)="editAppointment(apt)"
-              class="hover:bg-blue-50/40 transition-colors cursor-pointer"
+              class="table-row-hover"
               [class.bg-red-50]="apt.isEmergency"
             >
               <td class="px-6 py-4">
@@ -209,30 +127,19 @@
               </td>
               <td class="px-6 py-4">
                 <div class="flex items-center justify-end gap-1">
-                  <button
-                    *ngIf="canConfirm(apt)"
-                    type="button"
-                    (click)="confirmAppointment($event, apt)"
-                    matTooltip="Confirmar"
-                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-green-50 hover:text-green-600 transition-colors border-0"
-                  >
+                  <button *ngIf="canConfirm(apt)" type="button"
+                    (click)="confirmAppointment($event, apt)" matTooltip="Confirmar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors border-0">
                     <span class="material-symbols-outlined msz-18">check_circle</span>
                   </button>
-                  <button
-                    *ngIf="canCancel(apt)"
-                    type="button"
-                    (click)="cancelAppointment($event, apt)"
-                    matTooltip="Cancelar"
-                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors border-0"
-                  >
+                  <button *ngIf="canCancel(apt)" type="button"
+                    (click)="cancelAppointment($event, apt)" matTooltip="Cancelar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0">
                     <span class="material-symbols-outlined msz-18">cancel</span>
                   </button>
-                  <button
-                    type="button"
-                    (click)="editAppointment(apt); $event.stopPropagation()"
+                  <button type="button" (click)="editAppointment(apt); $event.stopPropagation()"
                     matTooltip="Ver detalles"
-                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
-                  >
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0">
                     <span class="material-symbols-outlined msz-18">visibility</span>
                   </button>
                 </div>
@@ -240,17 +147,15 @@
             </tr>
           </tbody>
         </table>
-      </div>
 
-      <!-- Footer -->
-      <div *ngIf="!loading && filteredAppointments.length > 0" class="flex items-center px-6 py-3 bg-slate-50 border-t border-slate-100">
-        <span class="text-sm text-slate-500">
-          Mostrando <span class="font-semibold text-slate-700">{{ filteredAppointments.length }}</span> de
-          <span class="font-semibold text-slate-700">{{ appointments.length }}</span> citas
-        </span>
+        <div class="table-footer">
+          <span class="text-sm text-slate-500">
+            Mostrando <span class="font-semibold text-slate-700">{{ filteredAppointments.length }}</span> de
+            <span class="font-semibold text-slate-700">{{ appointments.length }}</span> citas
+          </span>
+        </div>
       </div>
 
     </div>
-
   </div>
 </div>

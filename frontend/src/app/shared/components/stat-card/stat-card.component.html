@@ -1,0 +1,10 @@
+<div [class]="cardClass" (click)="onClick()">
+  <div class="flex items-center justify-between">
+    <div>
+      <p [class]="c.label">{{ label }}</p>
+      <p [class]="c.value">{{ value }}</p>
+      <p [class]="c.sub">{{ sublabel }}</p>
+    </div>
+    <span [class]="c.icon">{{ icon }}</span>
+  </div>
+</div>
