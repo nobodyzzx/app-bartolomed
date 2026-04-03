@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
@@ -15,6 +16,8 @@ import { AssetMaintenanceService } from '../services/asset-maintenance.service'
   styleUrls: ['./asset-maintenance.component.css'],
 })
 export class AssetMaintenanceComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   maintenanceRecords: AssetMaintenance[] = []
   loading = false
   saving = false
@@ -59,7 +62,7 @@ export class AssetMaintenanceComponent implements OnInit {
 
   loadMaintenanceRecords(): void {
     this.loading = true
-    this.maintenanceService.getMaintenanceRecords().subscribe({
+    this.maintenanceService.getMaintenanceRecords().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: records => {
         this.maintenanceRecords = records
         this.calculateStats()
@@ -122,7 +125,7 @@ export class AssetMaintenanceComponent implements OnInit {
         : undefined,
     }
 
-    this.maintenanceService.createMaintenance(maintenanceData).subscribe({
+    this.maintenanceService.createMaintenance(maintenanceData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: newRecord => {
         this.maintenanceRecords.unshift(newRecord)
         this.calculateStats()
@@ -158,7 +161,7 @@ export class AssetMaintenanceComponent implements OnInit {
     if (!result.isConfirmed) return
 
     this.loading = true
-    this.maintenanceService.updateMaintenance(record.id, { status: newStatus }).subscribe({
+    this.maintenanceService.updateMaintenance(record.id, { status: newStatus }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: updated => {
         const index = this.maintenanceRecords.findIndex(r => r.id === record.id)
         if (index !== -1) {
@@ -195,7 +198,7 @@ export class AssetMaintenanceComponent implements OnInit {
     if (!result.isConfirmed) return
 
     this.loading = true
-    this.maintenanceService.deleteMaintenance(record.id).subscribe({
+    this.maintenanceService.deleteMaintenance(record.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.maintenanceRecords = this.maintenanceRecords.filter(r => r.id !== record.id)
         this.calculateStats()
@@ -252,7 +255,7 @@ export class AssetMaintenanceComponent implements OnInit {
     if (amount === undefined || amount === null) return 'N/A'
     return new Intl.NumberFormat('es-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'BOB',
     }).format(amount)
   }
 
@@ -273,7 +276,7 @@ export class AssetMaintenanceComponent implements OnInit {
       this.loadMaintenanceRecords()
     } else {
       this.loading = true
-      this.maintenanceService.getMaintenanceByStatus(status).subscribe({
+      this.maintenanceService.getMaintenanceByStatus(status).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (records: AssetMaintenance[]) => {
           this.maintenanceRecords = records
           this.loading = false
@@ -291,7 +294,7 @@ export class AssetMaintenanceComponent implements OnInit {
       this.loadMaintenanceRecords()
     } else {
       this.loading = true
-      this.maintenanceService.getMaintenanceByType(type).subscribe({
+      this.maintenanceService.getMaintenanceByType(type).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (records: AssetMaintenance[]) => {
           this.maintenanceRecords = records
           this.loading = false

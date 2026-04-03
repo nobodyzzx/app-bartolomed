@@ -1,13 +1,16 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, ElementRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { of } from 'rxjs'
 import { switchMap, tap } from 'rxjs/operators'
 import { ErrorService } from '../../../../shared/components/services/error.service'
-import { ClinicsService } from '../clinics/services/clinics.service'
+import { Clinic } from '../admin/clinics/interfaces/clinic.interface'
+import { ClinicsService } from '../admin/clinics/services/clinics.service'
+import { Patient } from '../patients/interfaces/patient.interface'
 import { PatientsService } from '../patients/services/patients.service'
-import { BillingService } from './billing.service'
+import { BillingService, InvoiceResponse, PaymentResponse } from './billing.service'
 
 @Component({
   selector: 'app-payment-form',
@@ -15,6 +18,8 @@ import { BillingService } from './billing.service'
   styleUrls: ['./payment-form.component.css'],
 })
 export class PaymentFormComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   form!: FormGroup
   loading = false
   submitting = false
@@ -24,13 +29,14 @@ export class PaymentFormComponent implements OnInit {
     { value: 'cash', label: 'Efectivo', icon: 'payments' },
     { value: 'card', label: 'Tarjeta', icon: 'credit_card' },
     { value: 'transfer', label: 'Transferencia', icon: 'account_balance' },
+    { value: 'qr', label: 'QR', icon: 'qr_code' },
     { value: 'check', label: 'Cheque', icon: 'receipt_long' },
     { value: 'other', label: 'Otro', icon: 'pending' },
   ]
 
-  patients: any[] = []
-  clinics: any[] = []
-  invoice: any | null = null
+  patients: Patient[] = []
+  clinics: Clinic[] = []
+  invoice: InvoiceResponse | null = null
 
   constructor(
     private fb: FormBuilder,
@@ -41,6 +47,7 @@ export class PaymentFormComponent implements OnInit {
     private errorService: ErrorService,
     private patientsService: PatientsService,
     private clinicsService: ClinicsService,
+    private elRef: ElementRef,
   ) {}
 
   ngOnInit(): void {
@@ -51,7 +58,7 @@ export class PaymentFormComponent implements OnInit {
     of(null)
       .pipe(
         switchMap(() => this.patientsService.findAll()),
-        tap(p => (this.patients = p)),
+        tap(p => (this.patients = p.data)),
         switchMap(() => this.clinicsService.findAll()),
         tap(c => (this.clinics = c)),
         switchMap(() => {
@@ -67,6 +74,7 @@ export class PaymentFormComponent implements OnInit {
         }),
         switchMap(() => this.billingService.generatePaymentNumber()),
         tap(num => this.form.patchValue({ paymentNumber: num })),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: () => (this.loading = false),
@@ -94,6 +102,7 @@ export class PaymentFormComponent implements OnInit {
   submit() {
     if (this.form.invalid) {
       this.form.markAllAsTouched()
+      this.scrollToFirstError()
       return
     }
     this.submitting = true
@@ -109,16 +118,23 @@ export class PaymentFormComponent implements OnInit {
       notes: raw.notes || undefined,
     }
 
-    this.billingService.addPayment(payload).subscribe({
-      next: (created: any) => {
+    this.billingService.addPayment(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (created: PaymentResponse) => {
         this.submitting = false
         this.alert.success('Pago registrado', `Se creó el pago #${created.paymentNumber}`)
         this.router.navigate(['/dashboard/billing'])
       },
-      error: (err: any) => {
+      error: (err: unknown) => {
         this.submitting = false
         this.errorService.handleError(err)
       },
+    })
+  }
+
+  private scrollToFirstError(): void {
+    requestAnimationFrame(() => {
+      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     })
   }
 

@@ -1,315 +1,246 @@
-<div class="min-h-screen bg-slate-50 p-8">
-  <div class="max-w-7xl mx-auto">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-10">
-      <div class="flex items-center gap-4">
-        <button
-          type="button"
-          routerLink="/dashboard/pharmacy"
-          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          matTooltip="Volver"
-          aria-label="Volver"
-        >
-          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
-        </button>
-        <div class="text-left">
-          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Ventas de Farmacia</h1>
-          <p class="text-slate-600">
-            Visualización de ventas pagadas derivadas de recetas dispensadas
-          </p>
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      title="Ventas de Farmacia"
+      subtitle="Visualización de ventas pagadas derivadas de recetas dispensadas"
+      (back)="goBack()"
+    />
+
+    <!-- Aviso modo solo visualización (amber) -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+      <div class="flex items-center gap-4 px-6 py-4 bg-amber-50 border-b border-amber-100">
+        <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">info</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Modo solo visualización</h3>
+          <p class="text-sm text-slate-500 m-0">Funcionalidades de creación y edición deshabilitadas temporalmente</p>
         </div>
       </div>
-      <!-- Botón de nueva factura eliminado en modo solo visualización -->
-    </div>
-
-    <!-- Aviso modo solo visualización -->
-    <div class="mb-8">
-      <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-xl shadow-sm">
-        <div class="flex items-start gap-3 text-amber-800 text-sm">
-          <span class="material-symbols-outlined msz-24 text-amber-600">info</span>
-          <p class="m-0 leading-relaxed">
-            <span class="font-semibold">Modo solo visualización:</span> Por el momento la plataforma
-            no genera facturas. Aquí se reflejan las ventas provenientes de
-            <span class="font-semibold">recetas dispensadas</span>. Las acciones de creación o
-            modificación de facturas están deshabilitadas temporalmente.
-          </p>
-        </div>
+      <div class="p-6">
+        <p class="text-sm text-slate-600 m-0">
+          Por el momento la plataforma no genera facturas. Aquí se reflejan las ventas provenientes de
+          <span class="font-semibold">recetas dispensadas</span>.
+          Las acciones de creación o modificación de facturas están deshabilitadas temporalmente.
+        </p>
       </div>
     </div>
 
     <!-- Estadísticas -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div
-        class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [class.ring-2]="selectedStatus === null"
-        [class.ring-blue-400]="selectedStatus === null"
-        (click)="filterByStatus(null)"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-blue-600 text-sm font-semibold">Total Ventas</p>
-            <p class="text-3xl font-bold text-blue-900 mt-1">{{ stats.totalInvoices }}</p>
-            <p class="text-xs text-blue-500 mt-1">Ventas registradas</p>
-          </div>
-          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">description</span>
-        </div>
-      </div>
-      <div
-        class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        [class.ring-2]="selectedStatus === InvoiceStatus.PAID"
-        [class.ring-green-400]="selectedStatus === InvoiceStatus.PAID"
-        (click)="selectedStatus = InvoiceStatus.PAID; applyFilters()"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-green-600 text-sm font-semibold">Ventas Pagadas</p>
-            <p class="text-3xl font-bold text-green-900 mt-1">{{ stats.paidInvoices }}</p>
-            <p class="text-xs text-green-500 mt-1">Cobros completados</p>
-          </div>
-          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">check_circle</span>
-        </div>
-      </div>
-      <div class="bg-emerald-50 p-5 rounded-2xl border-l-4 border-emerald-500 shadow-md hover:shadow-lg transition-all select-none">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-emerald-600 text-sm font-semibold">Ingresos Totales</p>
-            <p class="text-3xl font-bold text-emerald-900 mt-1">${{ stats.totalRevenue | number: '1.2-2' }}</p>
-            <p class="text-xs text-emerald-500 mt-1">Monto total cobrado</p>
-          </div>
-          <span class="material-symbols-outlined text-emerald-300" style="font-size: 40px">trending_up</span>
-        </div>
-      </div>
-      <div class="bg-orange-50 p-5 rounded-2xl border-l-4 border-orange-500 shadow-md hover:shadow-lg transition-all select-none">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-orange-600 text-sm font-semibold">Monto Pendiente</p>
-            <p class="text-3xl font-bold text-orange-900 mt-1">${{ stats.pendingAmount | number: '1.2-2' }}</p>
-            <p class="text-xs text-orange-500 mt-1">Por cobrar</p>
-          </div>
-          <span class="material-symbols-outlined text-orange-300" style="font-size: 40px">schedule</span>
-        </div>
-      </div>
+      <app-stat-card
+        label="Total Ventas"
+        [value]="stats.totalInvoices"
+        sublabel="Ventas registradas"
+        icon="description"
+        color="blue"
+        [active]="selectedStatus === null"
+        [clickable]="true"
+        (cardClick)="filterByStatus(null)"
+      />
+      <app-stat-card
+        label="Ventas Pagadas"
+        [value]="stats.paidInvoices"
+        sublabel="Cobros completados"
+        icon="check_circle"
+        color="green"
+        [active]="selectedStatus === InvoiceStatus.PAID"
+        [clickable]="true"
+        (cardClick)="selectedStatus = InvoiceStatus.PAID; applyFilters()"
+      />
+      <app-stat-card
+        label="Ingresos Totales"
+        [value]="(stats.totalRevenue | number: '1.2-2') ?? ''"
+        sublabel="Monto total cobrado"
+        icon="trending_up"
+        color="green"
+      />
+      <app-stat-card
+        label="Monto Pendiente"
+        [value]="(stats.pendingAmount | number: '1.2-2') ?? ''"
+        sublabel="Por cobrar"
+        icon="schedule"
+        color="orange"
+      />
     </div>
 
-    <!-- Filtros y Búsqueda -->
-    <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <!-- Búsqueda -->
-        <div class="md:col-span-2">
-          <div class="relative">
-            <input
-              type="text"
-              (keyup)="applyFilter($event)"
-              placeholder="Buscar por ID, paciente, venta..."
-              class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
-            />
-            <span class="material-symbols-outlined msz-18 absolute right-4 top-2.5 text-blue-400"
-              >search</span
+    <!-- Tabla principal -->
+    <div class="table-container">
+
+      <!-- Toolbar: búsqueda + filtros -->
+      <div class="table-toolbar">
+        <app-search-bar
+          placeholder="Buscar por ID, paciente, venta..."
+          (valueChange)="applyFilter($event)"
+          (cleared)="applyFilter('')"
+        >
+          <mat-form-field appearance="outline" class="w-48" subscriptSizing="dynamic">
+            <mat-label>Estado</mat-label>
+            <mat-select [(value)]="selectedStatus" (selectionChange)="onStatusFilterChange()">
+              <mat-option [value]="null">Todos los estados</mat-option>
+              <mat-option value="paid">Pagadas</mat-option>
+              <mat-option value="pending">Pendientes</mat-option>
+              <mat-option value="overdue">Vencidas</mat-option>
+              <mat-option value="cancelled">Canceladas</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-48" subscriptSizing="dynamic">
+            <mat-label>Método de Pago</mat-label>
+            <mat-select [(value)]="selectedPaymentMethod" (selectionChange)="onPaymentMethodChange()">
+              <mat-option [value]="null">Todos</mat-option>
+              <mat-option value="cash">Efectivo</mat-option>
+              <mat-option value="card">Tarjeta</mat-option>
+              <mat-option value="transfer">Transferencia</mat-option>
+              <mat-option value="insurance">Seguro</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-64" subscriptSizing="dynamic">
+            <mat-label>Rango de Fechas</mat-label>
+            <mat-date-range-input [rangePicker]="picker">
+              <input matStartDate placeholder="Inicio" [(ngModel)]="startDate" (dateChange)="onDateFilterChange()" />
+              <input matEndDate placeholder="Fin" [(ngModel)]="endDate" (dateChange)="onDateFilterChange()" />
+            </mat-date-range-input>
+            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-date-range-picker #picker></mat-date-range-picker>
+          </mat-form-field>
+
+          <div class="flex items-center gap-2 ml-auto">
+            <span class="text-sm text-slate-600 hidden md:inline">
+              <span class="font-semibold text-slate-900">{{ dataSource.filteredData.length }}</span> ventas
+            </span>
+            <button
+              type="button"
+              (click)="clearFilters()"
+              class="inline-flex items-center gap-2 px-4 h-9 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all border-0 text-sm"
             >
+              <span class="material-symbols-outlined msz-16 leading-none">filter_alt_off</span>
+              Limpiar
+            </button>
+            <button
+              type="button"
+              (click)="exportToExcel()"
+              class="inline-flex items-center gap-2 px-4 h-9 rounded-full font-medium bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200 transition-all text-sm"
+            >
+              <span class="material-symbols-outlined msz-16 leading-none">download</span>
+              Exportar
+            </button>
           </div>
-        </div>
-
-        <!-- Filtro por Estado -->
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Estado</mat-label>
-          <mat-select [(value)]="selectedStatus" (selectionChange)="onStatusFilterChange()">
-            <mat-option [value]="null">Todos los estados</mat-option>
-            <mat-option value="paid">Pagadas</mat-option>
-            <mat-option value="pending">Pendientes</mat-option>
-            <mat-option value="overdue">Vencidas</mat-option>
-            <mat-option value="cancelled">Canceladas</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <!-- Filtro Método de Pago -->
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Método de Pago</mat-label>
-          <mat-select [(value)]="selectedPaymentMethod" (selectionChange)="onPaymentMethodChange()">
-            <mat-option [value]="null">Todos</mat-option>
-            <mat-option value="cash">Efectivo</mat-option>
-            <mat-option value="card">Tarjeta</mat-option>
-            <mat-option value="transfer">Transferencia</mat-option>
-            <mat-option value="insurance">Seguro</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <!-- Filtro por Fecha -->
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Rango de Fechas</mat-label>
-          <mat-date-range-input [rangePicker]="picker">
-            <input
-              matStartDate
-              placeholder="Inicio"
-              [(ngModel)]="startDate"
-              (dateChange)="onDateFilterChange()"
-            />
-            <input
-              matEndDate
-              placeholder="Fin"
-              [(ngModel)]="endDate"
-              (dateChange)="onDateFilterChange()"
-            />
-          </mat-date-range-input>
-          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-          <mat-date-range-picker #picker></mat-date-range-picker>
-        </mat-form-field>
+        </app-search-bar>
       </div>
 
-      <!-- Acciones de filtros -->
-      <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
-        <div class="text-sm text-slate-600">
-          <span class="font-semibold text-slate-900">{{ dataSource.filteredData.length }}</span>
-          ventas encontradas
-        </div>
-        <div class="flex gap-2">
-          <button
-            type="button"
-            (click)="clearFilters()"
-            class="inline-flex items-center gap-2 px-4 h-9 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 transition-all border-0 text-sm"
-          >
-            <span class="material-symbols-outlined msz-16">filter_alt_off</span>
-            Limpiar Filtros
-          </button>
-          <button
-            type="button"
-            (click)="exportToExcel()"
-            class="inline-flex items-center gap-2 px-4 h-9 rounded-full font-medium bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 transition-all border-0 text-sm"
-          >
-            <span class="material-symbols-outlined msz-16">download</span>
-            Exportar
-          </button>
-        </div>
-      </div>
-    </div>
+      <app-skeleton-table *ngIf="loading" [rows]="6" [columns]="6" />
 
-    <!-- Tabla de Ventas -->
-    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+      <app-empty-state
+        *ngIf="!loading && dataSource.data.length === 0"
+        icon="description"
+        title="Sin registros"
+        subtitle="No se encontraron ventas registradas"
+      />
 
-      <!-- Cargando -->
-      <div *ngIf="loading" class="flex justify-center items-center py-12">
-        <mat-spinner diameter="50"></mat-spinner>
-      </div>
-
-      <!-- Estado vacío -->
-      <div *ngIf="!loading && dataSource.data.length === 0" class="text-center py-12 px-6">
-        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">description</span>
-        <p class="text-lg font-semibold text-slate-700 mb-2">Sin registros</p>
-        <p class="text-sm text-slate-400">No se encontraron ventas registradas</p>
-      </div>
-
-      <!-- Tabla -->
       <div *ngIf="!loading && dataSource.data.length > 0" class="overflow-x-auto">
-      <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
-        <!-- Columna Número Venta -->
-        <ng-container matColumnDef="saleNumber">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Nº Venta</span>
-          </th>
-          <td mat-cell *matCellDef="let sale" class="px-6 py-4 text-blue-700 font-medium tracking-tight">
-            {{ sale.saleNumber }}
-          </td>
-        </ng-container>
+        <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
 
-        <!-- Columna Paciente -->
-        <ng-container matColumnDef="patient">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</span>
-          </th>
-          <td mat-cell *matCellDef="let invoice" class="px-6 py-4">
-            <div class="flex items-center gap-2">
-              <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0 font-semibold text-sm">{{ invoice.patientName?.charAt(0) || '?' }}</div>
-              <div>
-                <div class="font-medium text-slate-900">{{ invoice.patientName }}</div>
-                <div class="text-xs text-slate-500">Venta: {{ invoice.saleId }}</div>
+          <ng-container matColumnDef="saleNumber">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Nº Venta</span>
+            </th>
+            <td mat-cell *matCellDef="let sale" class="px-6 py-4 text-blue-700 font-medium tracking-tight">
+              {{ sale.saleNumber }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="patient">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</span>
+            </th>
+            <td mat-cell *matCellDef="let invoice" class="px-6 py-4">
+              <div class="flex items-center gap-2">
+                <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0 font-semibold text-sm">
+                  {{ invoice.patientName?.charAt(0) || '?' }}
+                </div>
+                <div>
+                  <div class="font-medium text-slate-900">{{ invoice.patientName }}</div>
+                  <div class="text-xs text-slate-500">Venta: {{ invoice.saleId }}</div>
+                </div>
               </div>
-            </div>
-          </td>
-        </ng-container>
+            </td>
+          </ng-container>
 
-        <!-- Columna Fecha -->
-        <ng-container matColumnDef="date">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</span>
-          </th>
-          <td mat-cell *matCellDef="let invoice" class="px-6 py-4 text-slate-700">
-            {{ invoice.date | date: 'dd/MM/yyyy' }}
-          </td>
-        </ng-container>
+          <ng-container matColumnDef="date">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</span>
+            </th>
+            <td mat-cell *matCellDef="let invoice" class="px-6 py-4 text-slate-700">
+              {{ invoice.date | date: 'dd/MM/yyyy' }}
+            </td>
+          </ng-container>
 
-        <!-- Columna Total -->
-        <ng-container matColumnDef="total">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Total</span>
-          </th>
-          <td mat-cell *matCellDef="let invoice" class="px-6 py-4 text-green-700 font-semibold">
-            ${{ invoice.total | number: '1.2-2' }}
-          </td>
-        </ng-container>
+          <ng-container matColumnDef="total">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Total</span>
+            </th>
+            <td mat-cell *matCellDef="let invoice" class="px-6 py-4 text-green-700 font-semibold">
+              Bs {{ invoice.total | number: '1.2-2' }}
+            </td>
+          </ng-container>
 
-        <!-- Columna Estado -->
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
-            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
-          </th>
-          <td mat-cell *matCellDef="let invoice" class="px-6 py-4">
-            <span
-              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border"
-              [ngClass]="{
-                'bg-green-50 text-green-700 border-green-200': invoice.status === 'paid',
-                'bg-orange-50 text-orange-700 border-orange-200': invoice.status === 'pending',
-                'bg-red-50 text-red-700 border-red-200':
-                  invoice.status === 'overdue' || invoice.status === 'cancelled',
-              }"
-            >
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
+            </th>
+            <td mat-cell *matCellDef="let invoice" class="px-6 py-4">
               <span
-                class="w-1.5 h-1.5 rounded-full"
+                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border"
                 [ngClass]="{
-                  'bg-green-600': invoice.status === 'paid',
-                  'bg-orange-600': invoice.status === 'pending',
-                  'bg-red-600': invoice.status === 'overdue' || invoice.status === 'cancelled',
+                  'bg-green-50 text-green-700 border-green-200': invoice.status === 'paid',
+                  'bg-orange-50 text-orange-700 border-orange-200': invoice.status === 'pending',
+                  'bg-red-50 text-red-700 border-red-200': invoice.status === 'overdue' || invoice.status === 'cancelled'
                 }"
               >
+                <span
+                  class="w-1.5 h-1.5 rounded-full"
+                  [ngClass]="{
+                    'bg-green-600': invoice.status === 'paid',
+                    'bg-orange-600': invoice.status === 'pending',
+                    'bg-red-600': invoice.status === 'overdue' || invoice.status === 'cancelled'
+                  }"
+                ></span>
+                {{ getStatusLabel(invoice.status) }}
+                <span *ngIf="isOverdue(invoice)" class="font-bold">({{ getDaysOverdue(invoice) }}d)</span>
               </span>
-              {{ getStatusLabel(invoice.status) }}
-              <span *ngIf="isOverdue(invoice)" class="font-bold">
-                ({{ getDaysOverdue(invoice) }}d)
-              </span>
-            </span>
-          </td>
-        </ng-container>
+            </td>
+          </ng-container>
 
-        <!-- Columna Fecha de Vencimiento eliminada -->
+          <ng-container matColumnDef="paymentMethod">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Método</span>
+            </th>
+            <td mat-cell *matCellDef="let sale" class="px-6 py-4 text-slate-700 capitalize">
+              {{ sale.paymentMethod | lowercase }}
+            </td>
+          </ng-container>
 
-        <!-- Columna de acciones eliminada en modo solo visualización -->
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"
+              class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors cursor-pointer"></tr>
+        </table>
 
-        <!-- Nueva columna Método de Pago -->
-        <ng-container matColumnDef="paymentMethod">
-          <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
-            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Método</span>
-          </th>
-          <td mat-cell *matCellDef="let sale" class="px-6 py-4 text-slate-700 capitalize">
-            {{ sale.paymentMethod | lowercase }}
-          </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"
-            class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors cursor-pointer"></tr>
-      </table>
+        <div class="table-footer">
+          <span class="text-sm text-slate-500">
+            <span class="font-semibold text-slate-700">{{ dataSource.filteredData.length || dataSource.data.length }}</span> ventas en total
+          </span>
+          <mat-paginator
+            [pageSizeOptions]="[10, 25, 50, 100]"
+            showFirstLastButtons
+            aria-label="Seleccionar página de ventas"
+            class="bg-transparent border-0"
+          ></mat-paginator>
+        </div>
       </div>
 
-      <!-- Footer -->
-      <div *ngIf="!loading && dataSource.data.length > 0" class="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-100">
-        <span class="text-sm text-slate-500">
-          <span class="font-semibold text-slate-700">{{ dataSource.filteredData.length || dataSource.data.length }}</span> ventas en total
-        </span>
-        <mat-paginator
-          [pageSizeOptions]="[10, 25, 50, 100]"
-          showFirstLastButtons
-          aria-label="Seleccionar página de ventas"
-          class="bg-transparent border-0"
-        ></mat-paginator>
-      </div>
     </div>
   </div>
 </div>

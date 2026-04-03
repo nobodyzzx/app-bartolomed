@@ -52,6 +52,7 @@ export enum PaymentMethod {
   TRANSFER = 'transfer',
   INSURANCE = 'insurance',
   MIXED = 'mixed',
+  QR = 'qr',
 }
 
 export enum InvoiceStatus {
@@ -356,6 +357,7 @@ export interface Sale {
 
 export interface CreateSaleDto {
   patientId?: string
+  patientName?: string
   paymentMethod: PaymentMethod
   taxRate?: number
   discountAmount?: number
@@ -454,4 +456,52 @@ export interface OrderItem {
   quantity: number
   price?: number
   subtotal?: number
+}
+
+// ===========================
+// UI-only interfaces
+// ===========================
+
+export interface PrescriptionListItem {
+  id: string
+  prescriptionNumber: string
+  prescriptionDate: string
+  expiryDate: string
+  status?: string
+  items: Array<{
+    medicationName: string
+    quantity: string
+    strength?: string
+  }>
+  patient?: any
+  doctor?: any
+}
+
+export interface SaleRow {
+  saleNumber: string
+  id: string
+  saleId: string
+  patientName: string
+  date: string
+  paymentMethod: string
+  total: number
+  status: InvoiceStatus
+}
+
+export interface ReceiveItemForm {
+  itemId: string
+  productName: string
+  orderedQuantity: number
+  previouslyReceived: number
+  receivingQuantity: number
+  notes: string
+  batchNumber?: string
+  expiryDate?: string
+}
+
+export interface PaginatedResult<T> {
+  data: T[]
+  total: number
+  page: number
+  limit: number
 }

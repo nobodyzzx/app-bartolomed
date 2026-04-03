@@ -104,7 +104,7 @@ export class ReportsService {
         type: 'Balance',
         description: 'Balance financiero del mes de enero',
         totalAmount: 45000,
-        currency: 'USD',
+        currency: 'BOB',
         revenue: 52000,
         expenses: 38000,
         profit: 14000,
@@ -128,7 +128,7 @@ export class ReportsService {
         type: 'Ventas',
         description: 'Análisis detallado de ventas por categoría',
         totalAmount: 28000,
-        currency: 'USD',
+        currency: 'BOB',
         revenue: 28000,
         status: 'published',
         period: {
@@ -155,7 +155,7 @@ export class ReportsService {
       type: params.type as any,
       description: params.description,
       status: 'generated',
-      currency: 'USD',
+      currency: 'BOB',
       createdBy: 'Usuario Actual',
       createdAt: new Date(),
       period: {

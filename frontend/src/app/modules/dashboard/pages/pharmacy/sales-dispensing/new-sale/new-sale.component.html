@@ -1,71 +1,70 @@
-<div class="min-h-screen bg-slate-50 p-8">
-  <div class="max-w-7xl mx-auto">
-    <!-- Header -->
-    <header class="flex items-center justify-between mb-10">
-      <div class="flex items-center gap-4">
-        <button
-          type="button"
-          (click)="goBack()"
-          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          matTooltip="Volver"
-          aria-label="Volver"
-        >
-          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
-        </button>
-        <div class="text-left">
-          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Nueva Venta</h1>
-          <p class="text-slate-600">Registrar venta y dispensación de medicamentos</p>
-        </div>
-      </div>
-    </header>
+<div class="page-wrapper">
+  <div class="page-inner">
 
-    <!-- Loading State -->
+    <app-page-header
+      title="Nueva Venta"
+      subtitle="Registrar venta y dispensación de medicamentos"
+      (back)="goBack()"
+    >
+      <button
+        type="button"
+        (click)="goBack()"
+        class="btn btn-danger-outline"
+      >
+        <span class="material-symbols-outlined msz-18 leading-none">close</span>
+        Cancelar
+      </button>
+    </app-page-header>
+
     @if (loadingStocks()) {
       <div class="flex justify-center items-center py-12">
         <mat-spinner diameter="50"></mat-spinner>
       </div>
     } @else {
       <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
-        <!-- Add Product Card -->
-        <div class="bg-white rounded-2xl shadow-md p-6">
-          <fieldset class="border border-blue-200 rounded-lg p-4 bg-blue-50/30">
-            <legend class="px-2 text-sm font-semibold text-blue-900">
-              ➕ Agregar producto a la venta
-            </legend>
 
-            <!-- Campo de selección con búsqueda directa -->
-            <div class="mb-4">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Producto / Medicamento</mat-label>
-                <mat-icon matIconPrefix>medication</mat-icon>
-                <input
-                  type="text"
-                  matInput
-                  [matAutocomplete]="auto"
-                  [formControl]="$any(form.get('tempStockId'))"
-                  placeholder="Buscar medicamento por nombre, lote o ingrediente"
-                  (input)="searchTerm.set($any($event.target).value)"
-                />
-                <mat-autocomplete
-                  #auto="matAutocomplete"
-                  (optionSelected)="form.get('tempStockId')!.setValue($event.option.value)"
-                >
-                  <mat-option *ngFor="let stock of filteredStocks()" [value]="stock.id">
-                    {{ getStockDisplay(stock) }}
-                  </mat-option>
-                </mat-autocomplete>
-                <mat-hint>Buscar y seleccionar medicamento</mat-hint>
-              </mat-form-field>
+        <!-- ══════════════════════════════════════════
+             SECCIÓN 1 — Agregar Producto (azul)
+        ══════════════════════════════════════════ -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined msz-20">add_shopping_cart</span>
             </div>
+            <div>
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Agregar Producto</h3>
+              <p class="text-sm text-slate-500 m-0">Busca y añade medicamentos a la venta</p>
+            </div>
+          </div>
+          <div class="p-6 space-y-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Producto / Medicamento</mat-label>
+              <mat-icon matPrefix class="text-blue-400">medication</mat-icon>
+              <input
+                type="text"
+                matInput
+                [matAutocomplete]="auto"
+                [formControl]="$any(form.get('tempStockId'))"
+                placeholder="Buscar medicamento por nombre, lote o ingrediente"
+                (input)="cart.searchTerm.set($any($event.target).value)"
+              />
+              <mat-autocomplete
+                #auto="matAutocomplete"
+                [displayWith]="stockDisplayWithFn"
+                (optionSelected)="form.get('tempStockId')!.setValue($event.option.value)"
+              >
+                <mat-option *ngFor="let stock of cart.filteredStocks()" [value]="stock.id">
+                  {{ getStockDisplay(stock) }}
+                </mat-option>
+              </mat-autocomplete>
+              <mat-hint>Buscar y seleccionar medicamento</mat-hint>
+            </mat-form-field>
 
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
-              <!-- El campo de selección ya está arriba con búsqueda -->
-
-              <!-- Quantity -->
               <div class="md:col-span-2">
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Cantidad</mat-label>
-                  <mat-icon matIconPrefix>inventory</mat-icon>
+                  <mat-icon matPrefix class="text-blue-400">inventory</mat-icon>
                   <input
                     matInput
                     type="number"
@@ -79,11 +78,10 @@
                 </mat-form-field>
               </div>
 
-              <!-- Unit Price -->
               <div class="md:col-span-2">
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Precio Unit.</mat-label>
-                  <mat-icon matIconPrefix>attach_money</mat-icon>
+                  <mat-icon matPrefix class="text-blue-400">attach_money</mat-icon>
                   <input
                     matInput
                     type="number"
@@ -95,93 +93,59 @@
                 </mat-form-field>
               </div>
 
-              <!--
-              <!-- Discount -->
-              <!-- <div class="md:col-span-2">
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Desc. %</mat-label>
-                  <mat-icon matIconPrefix>percent</mat-icon>
-                  <input
-                    matInput
-                    type="number"
-                    formControlName="tempDiscountPercent"
-                    placeholder="0"
-                    min="0"
-                    max="100"
-                  />
-                </mat-form-field>
-              </div> -->
-
-              <!-- Add Button -->
-              <div class="md:col-span-1 flex items-start pt-1">
+              <div class="md:col-span-1 flex items-end pb-[1.3125rem]">
                 <button
                   type="button"
                   (click)="addItem()"
-                  class="w-full h-14 rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors flex items-center justify-center shadow-sm"
+                  class="w-full h-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center justify-center shadow-md"
                   [disabled]="!form.get('tempStockId')?.value"
                 >
-                  <span class="material-symbols-outlined">add_circle</span>
+                  <span class="material-symbols-outlined msz-18 leading-none">add_circle</span>
                 </button>
               </div>
             </div>
-          </fieldset>
+          </div>
         </div>
 
-        <!-- Items Table -->
-        @if (saleItems().length > 0) {
-          <div class="bg-white rounded-2xl shadow-md p-6">
-            <h3 class="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <span class="material-symbols-outlined text-blue-600">shopping_cart</span>
-              Productos en la venta ({{ saleItems().length }})
-            </h3>
-
+        <!-- ══════════════════════════════════════════
+             SECCIÓN 2 — Productos en la venta (azul, condicional)
+        ══════════════════════════════════════════ -->
+        @if (cart.items().length > 0) {
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+              <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined msz-20">shopping_cart</span>
+              </div>
+              <div>
+                <h3 class="font-semibold text-slate-900 m-0 leading-tight">Productos en la venta</h3>
+                <p class="text-sm text-slate-500 m-0">{{ cart.items().length }} ítem(s) agregado(s)</p>
+              </div>
+            </div>
             <div class="overflow-x-auto">
               <table class="w-full">
                 <thead class="bg-slate-100">
                   <tr class="border-b border-slate-100">
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                      Producto
-                    </th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Producto</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Lote</th>
                     <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Cant.</th>
-                    <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                      Precio
-                    </th>
-                    <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                      Desc. %
-                    </th>
-                    <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                      Subtotal
-                    </th>
+                    <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Precio</th>
+                    <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Desc. %</th>
+                    <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Subtotal</th>
                     <th class="w-20"></th>
                   </tr>
                 </thead>
-                <tbody>
-                  @for (item of saleItems(); track $index; let i = $index) {
-                    <tr class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors">
+                <tbody class="divide-y divide-slate-100">
+                  @for (item of cart.items(); track $index; let i = $index) {
+                    <tr class="table-row-hover">
                       <td class="px-6 py-4">
-                        <div class="font-medium text-slate-900">
-                          {{ item.medicationStock.medication?.name || 'N/A' }}
-                        </div>
-                        <div class="text-xs text-slate-500">
-                          {{ item.medicationStock.medication?.activeIngredients }}
-                        </div>
+                        <div class="font-medium text-slate-900">{{ item.medicationStock.medication?.name || 'N/A' }}</div>
+                        <div class="text-xs text-slate-500">{{ item.medicationStock.medication?.activeIngredients }}</div>
                       </td>
-                      <td class="px-6 py-4 text-sm text-slate-600">
-                        {{ item.medicationStock.batchNumber }}
-                      </td>
-                      <td class="px-6 py-4 text-right text-sm text-slate-900 font-medium">
-                        {{ item.quantity }}
-                      </td>
-                      <td class="px-6 py-4 text-right text-sm text-slate-900">
-                        ${{ item.unitPrice | number: '1.2-2' }}
-                      </td>
-                      <td class="px-6 py-4 text-right text-sm text-slate-600">
-                        {{ item.discountPercent }}%
-                      </td>
-                      <td class="px-6 py-4 text-right text-sm text-slate-900 font-semibold">
-                        ${{ item.subtotal | number: '1.2-2' }}
-                      </td>
+                      <td class="px-6 py-4 text-sm text-slate-600">{{ item.medicationStock.batchNumber }}</td>
+                      <td class="px-6 py-4 text-right text-sm text-slate-900 font-medium">{{ item.quantity }}</td>
+                      <td class="px-6 py-4 text-right text-sm text-slate-900">Bs {{ item.unitPrice | number: '1.2-2' }}</td>
+                      <td class="px-6 py-4 text-right text-sm text-slate-600">{{ item.discountPercent }}%</td>
+                      <td class="px-6 py-4 text-right text-sm text-slate-900 font-semibold">Bs {{ item.subtotal | number: '1.2-2' }}</td>
                       <td class="px-6 py-4 text-center">
                         <button
                           type="button"
@@ -200,17 +164,29 @@
           </div>
         }
 
-        <!-- Sale Details -->
+        <!-- ══════════════════════════════════════════
+             SECCIÓN 3 — Detalles y Totales
+        ══════════════════════════════════════════ -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Left Column: Patient & Payment -->
-          <div class="bg-white rounded-2xl shadow-md p-6 space-y-6">
-            <fieldset class="border border-slate-200 rounded-lg p-4 bg-slate-50">
-              <legend class="px-2 text-sm font-semibold text-slate-700">Información general</legend>
 
-              <div class="space-y-4">
+          <!-- Columna izquierda: Información, Recetas, Pago -->
+          <div class="space-y-6">
+
+            <!-- Información general (azul) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined msz-20">person</span>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información general</h3>
+                  <p class="text-sm text-slate-500 m-0">Paciente, receta y notas</p>
+                </div>
+              </div>
+              <div class="p-6 space-y-4">
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Paciente (opcional)</mat-label>
-                  <mat-icon matIconPrefix>person</mat-icon>
+                  <mat-icon matPrefix class="text-blue-400">person_search</mat-icon>
                   <input
                     type="text"
                     matInput
@@ -236,21 +212,15 @@
                     [displayWith]="patientDisplayWith"
                     (optionSelected)="onPatientSelected($event.option.value)"
                   >
-                    <mat-option [value]="''"> Venta genérica (sin paciente) </mat-option>
+                    <mat-option [value]="''">Venta genérica (sin paciente)</mat-option>
                     <mat-option *ngFor="let p of patientOptions()" [value]="p.id">
                       {{ p.firstName }} {{ p.lastName }} — {{ p.documentNumber }}
                     </mat-option>
-                    <mat-option *ngIf="patientSearchLoading()" disabled> Buscando... </mat-option>
+                    <mat-option *ngIf="patientSearchLoading()" disabled>Buscando...</mat-option>
                     <mat-option
-                      *ngIf="
-                        !patientSearchLoading() &&
-                        patientOptions().length === 0 &&
-                        patientSearchTerm().length >= 2
-                      "
+                      *ngIf="!patientSearchLoading() && patientOptions().length === 0 && patientSearchTerm().length >= 2"
                       disabled
-                    >
-                      Sin resultados
-                    </mat-option>
+                    >Sin resultados</mat-option>
                   </mat-autocomplete>
                   <mat-hint>Dejar vacío para venta genérica</mat-hint>
                 </mat-form-field>
@@ -262,9 +232,7 @@
                   </div>
                 } @else if (selectedPatientName()) {
                   <div class="flex items-center">
-                    <div
-                      class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200"
-                    >
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                       <span class="material-symbols-outlined text-base">person</span>
                       <span class="text-sm font-medium">{{ selectedPatientName() }}</span>
                       <button
@@ -281,18 +249,29 @@
                 }
 
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>N° Receta (opcional)</mat-label>
-                  <mat-icon matIconPrefix>receipt_long</mat-icon>
-                  <input
-                    matInput
-                    formControlName="prescriptionNumber"
-                    placeholder="Número de receta médica"
-                  />
+                  <mat-label>Receta (opcional)</mat-label>
+                  <mat-icon matPrefix class="text-blue-400">receipt_long</mat-icon>
+                  <mat-select
+                    [disabled]="!form.get('patientId')?.value || prescriptions().length === 0"
+                    (selectionChange)="onPrescriptionSelected($event.value)"
+                  >
+                    <mat-option value="">Sin receta</mat-option>
+                    @for (pr of prescriptions(); track pr.id) {
+                      <mat-option [value]="pr.id">
+                        Receta #{{ pr.prescriptionNumber || pr.id.slice(0, 8) }} — {{ pr.prescriptionDate | date: 'dd/MM/yyyy' }}
+                      </mat-option>
+                    }
+                  </mat-select>
+                  <mat-hint>
+                    @if (!form.get('patientId')?.value) { Seleccione un paciente primero }
+                    @else if (loadingPrescriptions()) { Cargando recetas... }
+                    @else if (prescriptions().length === 0) { Sin recetas activas }
+                  </mat-hint>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Notas (opcional)</mat-label>
-                  <mat-icon matIconPrefix>notes</mat-icon>
+                  <mat-icon matPrefix class="text-blue-400">notes</mat-icon>
                   <textarea
                     matInput
                     formControlName="notes"
@@ -304,128 +283,23 @@
                   ></textarea>
                 </mat-form-field>
               </div>
-            </fieldset>
+            </div>
 
-            <fieldset class="border border-purple-200 rounded-lg p-4 bg-purple-50/30">
-              <legend class="px-2 text-sm font-semibold text-purple-900">
-                <span class="flex items-center gap-1">
-                  <span class="material-symbols-outlined text-base">receipt_long</span>
-                  Recetas activas del paciente
-                </span>
-              </legend>
-
-              @if (form.get('patientId')?.value) {
-                @if (loadingPrescriptions()) {
-                  <div class="text-sm text-slate-600 flex items-center gap-2">
-                    <div
-                      class="animate-spin rounded-full h-4 w-4 border-2 border-purple-600 border-t-transparent"
-                    ></div>
-                    Cargando recetas...
-                  </div>
-                } @else {
-                  @if (prescriptions().length === 0) {
-                    <div class="text-sm text-slate-600 flex items-center gap-2">
-                      <span class="material-symbols-outlined text-slate-400">info</span>
-                      No hay recetas activas disponibles para este paciente.
-                    </div>
-                  } @else {
-                    <div class="space-y-3">
-                      @for (pr of prescriptions(); track pr.id) {
-                        <div
-                          class="p-3 bg-white border border-purple-200 rounded-lg hover:shadow-md transition-shadow"
-                        >
-                          <div class="flex items-start justify-between gap-3 mb-2">
-                            <div class="flex-1">
-                              <div class="flex items-center gap-2 mb-1">
-                                <span class="material-symbols-outlined text-purple-600 text-base"
-                                  >medical_services</span
-                                >
-                                <span class="text-sm font-semibold text-slate-900">
-                                  Receta #{{ pr.prescriptionNumber || pr.id.slice(0, 8) }}
-                                </span>
-                                <span
-                                  class="px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700 font-medium"
-                                >
-                                  {{ pr.status || 'Activa' }}
-                                </span>
-                              </div>
-                              <div class="text-xs text-slate-500 flex items-center gap-3">
-                                <span class="flex items-center gap-1">
-                                  <span class="material-symbols-outlined text-xs"
-                                    >calendar_today</span
-                                  >
-                                  {{ pr.prescriptionDate | date: 'dd/MM/yyyy' }}
-                                </span>
-                                @if (pr.expiryDate) {
-                                  <span class="flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-xs"
-                                      >event_busy</span
-                                    >
-                                    Vence: {{ pr.expiryDate | date: 'dd/MM/yyyy' }}
-                                  </span>
-                                }
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              class="px-4 h-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors shadow-sm hover:shadow flex items-center gap-1.5"
-                              (click)="applyPrescription(pr)"
-                              matTooltip="Agregar medicamentos de esta receta a la venta"
-                            >
-                              <span class="material-symbols-outlined text-base"
-                                >add_shopping_cart</span
-                              >
-                              Cargar
-                            </button>
-                          </div>
-
-                          @if (pr.items && pr.items.length > 0) {
-                            <div class="mt-2 pt-2 border-t border-purple-100">
-                              <div class="text-xs font-semibold text-purple-900 mb-1.5">
-                                Medicamentos ({{ pr.items.length }}):
-                              </div>
-                              <div class="space-y-1">
-                                @for (item of pr.items; track $index) {
-                                  <div class="flex items-start gap-2 text-xs text-slate-700 pl-2">
-                                    <span
-                                      class="material-symbols-outlined text-purple-400"
-                                      style="font-size: 14px"
-                                      >medication</span
-                                    >
-                                    <span class="flex-1">
-                                      <span class="font-medium">{{ item.medicationName }}</span>
-                                      @if (item.strength) {
-                                        <span class="text-slate-500"> — {{ item.strength }}</span>
-                                      }
-                                      <span class="text-purple-600 font-semibold ml-1"
-                                        >× {{ item.quantity }}</span
-                                      >
-                                    </span>
-                                  </div>
-                                }
-                              </div>
-                            </div>
-                          }
-                        </div>
-                      }
-                    </div>
-                  }
-                }
-              } @else {
-                <div class="text-sm text-slate-600 flex items-center gap-2">
-                  <span class="material-symbols-outlined text-slate-400">person_search</span>
-                  Seleccione un paciente para ver sus recetas activas.
+            <!-- Pago (verde) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+                <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined msz-20">payment</span>
                 </div>
-              }
-            </fieldset>
-
-            <fieldset class="border border-green-200 rounded-lg p-4 bg-green-50/30">
-              <legend class="px-2 text-sm font-semibold text-green-900">Pago</legend>
-
-              <div class="space-y-4">
+                <div>
+                  <h3 class="font-semibold text-slate-900 m-0 leading-tight">Pago</h3>
+                  <p class="text-sm text-slate-500 m-0">Método de pago y monto recibido</p>
+                </div>
+              </div>
+              <div class="p-6 space-y-4">
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Método de pago</mat-label>
-                  <mat-icon matIconPrefix>payment</mat-icon>
+                  <mat-icon matPrefix class="text-green-400">payment</mat-icon>
                   <mat-select formControlName="paymentMethod" required>
                     @for (method of paymentMethods; track method.value) {
                       <mat-option [value]="method.value">
@@ -441,7 +315,7 @@
 
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Monto pagado</mat-label>
-                  <mat-icon matIconPrefix>attach_money</mat-icon>
+                  <mat-icon matPrefix class="text-green-400">attach_money</mat-icon>
                   <input
                     matInput
                     type="number"
@@ -451,149 +325,99 @@
                     step="0.01"
                     required
                   />
-                  <mat-hint>Total a pagar: ${{ totalAmount() | number: '1.2-2' }}</mat-hint>
+                  <mat-hint>Total a pagar: Bs {{ totalAmount() | number: '1.2-2' }}</mat-hint>
                   <mat-error>El monto pagado es requerido</mat-error>
                 </mat-form-field>
 
                 @if (changeAmount() > 0) {
-                  <div
-                    class="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2"
-                  >
+                  <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2">
                     <span class="material-symbols-outlined text-amber-700">info</span>
                     <span class="text-sm text-amber-900">
-                      <strong>Cambio:</strong> ${{ changeAmount() | number: '1.2-2' }}
+                      <strong>Cambio:</strong> Bs {{ changeAmount() | number: '1.2-2' }}
                     </span>
                   </div>
                 }
               </div>
-            </fieldset>
+            </div>
           </div>
 
-          <!-- Right Column: Totals Summary -->
-          <div class="bg-white rounded-2xl shadow-md p-6">
-            <fieldset class="border border-blue-200 rounded-lg p-4 bg-blue-50/30 h-full">
-              <legend class="px-2 text-sm font-semibold text-blue-900">
-                💰 Resumen de totales
-              </legend>
-
-              <div class="space-y-4">
+          <!-- Columna derecha: Resumen de totales (slate) -->
+          <div>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200">
+                <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined msz-20">calculate</span>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-slate-900 m-0 leading-tight">Resumen de totales</h3>
+                  <p class="text-sm text-slate-500 m-0">Desglose del importe de la venta</p>
+                </div>
+              </div>
+              <div class="p-6 space-y-4">
                 <div class="flex items-center justify-between py-2">
                   <span class="text-slate-700">Subtotal:</span>
-                  <span class="text-lg font-semibold text-slate-900">
-                    ${{ subtotal() | number: '1.2-2' }}
-                  </span>
+                  <span class="text-lg font-semibold text-slate-900">Bs {{ cart.subtotal() | number: '1.2-2' }}</span>
                 </div>
 
-                <!--
-                <div class="flex items-center justify-between py-2">
-                  <div class="flex items-center gap-2">
-                    <span class="text-slate-700">Descuento:</span>
-                    <mat-form-field appearance="outline" class="w-32" subscriptSizing="dynamic">
-                      <input
-                        matInput
-                        type="number"
-                        formControlName="discountAmount"
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                      />
-                    </mat-form-field>
-                  </div>
-                  <span class="text-lg font-semibold text-red-600">
-                    -${{ discountAmount() | number: '1.2-2' }}
-                  </span>
-                </div>
-                -->
-
-                <!--
-                <div class="flex items-center justify-between py-2">
-                  <div class="flex items-center gap-2">
-                    <span class="text-slate-700">Impuesto:</span>
-                    <mat-form-field appearance="outline" class="w-24" subscriptSizing="dynamic">
-                      <input
-                        matInput
-                        type="number"
-                        formControlName="taxRate"
-                        placeholder="0.13"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                      />
-                    </mat-form-field>
-                  </div>
-                  <span class="text-lg font-semibold text-slate-900">
-                    ${{ taxAmount() | number: '1.2-2' }}
-                  </span>
-                </div>
-                -->
-
-                <div class="border-t-2 border-blue-300 my-3"></div>
+                <div class="border-t-2 border-slate-200 my-3"></div>
 
                 <div class="flex items-center justify-between py-2">
                   <span class="text-xl font-bold text-blue-900">TOTAL:</span>
-                  <span class="text-2xl font-bold text-blue-600">
-                    ${{ totalAmount() | number: '1.2-2' }}
-                  </span>
+                  <span class="text-2xl font-bold text-blue-600">Bs {{ totalAmount() | number: '1.2-2' }}</span>
                 </div>
 
-                <!-- Cambio Section -->
                 @if (changeAmount() > 0) {
-                  <div class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div class="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl">
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-green-600">payments</span>
                         <span class="text-green-900 font-semibold">Cambio a devolver:</span>
                       </div>
-                      <span class="text-2xl font-bold text-green-600">
-                        ${{ changeAmount() | number: '1.2-2' }}
-                      </span>
+                      <span class="text-2xl font-bold text-green-600">Bs {{ changeAmount() | number: '1.2-2' }}</span>
                     </div>
                   </div>
                 }
 
-                <div class="pt-4 space-y-2 text-sm text-slate-600">
+                <div class="pt-4 space-y-2 text-sm text-slate-600 border-t border-slate-100">
                   <div class="flex justify-between">
                     <span>Items:</span>
-                    <span class="font-medium">{{ saleItems().length }}</span>
+                    <span class="font-medium">{{ cart.items().length }}</span>
                   </div>
                   <div class="flex justify-between">
                     <span>Unidades totales:</span>
-                    <span class="font-medium">
-                      {{ totalUnits() }}
-                    </span>
+                    <span class="font-medium">{{ cart.totalUnits() }}</span>
                   </div>
                 </div>
               </div>
-            </fieldset>
+            </div>
           </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="flex justify-end gap-3 pt-4">
+        <!-- ══════ Sticky action bar ══════ -->
+        <div class="sticky bottom-4 z-30 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 rounded-2xl border border-slate-200 shadow-lg px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
           <button
             type="button"
             (click)="goBack()"
-            class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+            class="btn btn-danger-outline"
           >
-            <span class="material-symbols-outlined">close</span>
-            <span>Cancelar</span>
+            <span class="material-symbols-outlined msz-18 leading-none">close</span>
+            Cancelar
           </button>
           <button
             type="submit"
-            [disabled]="loading() || saleItems().length === 0"
-            class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed border-0"
+            [disabled]="loading() || cart.items().length === 0"
+            class="inline-flex items-center gap-2 px-8 h-10 rounded-full font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 border-0 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             @if (loading()) {
-              <div
-                class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"
-              ></div>
+              <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
               <span>Procesando...</span>
             } @else {
-              <span class="material-symbols-outlined">point_of_sale</span>
+              <span class="material-symbols-outlined msz-18 leading-none">point_of_sale</span>
               <span>Registrar Venta</span>
             }
           </button>
         </div>
+
       </form>
     }
   </div>

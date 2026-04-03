@@ -114,7 +114,7 @@
                   {{ product.quantity }} unidades
                 </span>
               </td>
-              <td class="px-6 py-4 text-green-700 font-semibold">${{ product.sellingPrice | number: '1.2-2' }}</td>
+              <td class="px-6 py-4 text-green-700 font-semibold">Bs {{ product.sellingPrice | number: '1.2-2' }}</td>
               <td class="px-6 py-4">
                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
                   [ngClass]="isExpiring(product) ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-700'">
