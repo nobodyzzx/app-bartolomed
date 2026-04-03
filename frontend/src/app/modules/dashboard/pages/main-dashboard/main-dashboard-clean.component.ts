@@ -1,37 +1,5 @@
 import { Component, OnInit } from '@angular/core'
-
-interface DashboardStats {
-  totalPatients: number
-  totalAppointments: number
-  totalDoctors: number
-  monthlyRevenue: number
-}
-
-interface RecentAppointment {
-  id: number
-  patientName: string
-  doctorName: string
-  time: string
-  status: 'confirmed' | 'pending' | 'cancelled'
-  type: string
-}
-
-interface StockAlert {
-  id: number
-  medication: string
-  currentStock: number
-  minimumStock: number
-  category: string
-}
-
-interface RecentPatient {
-  id: number
-  name: string
-  age: number
-  lastVisit: string
-  nextAppointment?: string
-  status: 'active' | 'inactive'
-}
+import { DashboardStats, RecentAppointment, RecentPatient, StockAlert } from './interfaces/dashboard-ui.interfaces'
 
 @Component({
   selector: 'app-main-dashboard-clean',
@@ -44,6 +12,8 @@ export class MainDashboardComponent implements OnInit {
     totalAppointments: 0,
     totalDoctors: 0,
     monthlyRevenue: 0,
+    pendingAppointments: 0,
+    lowStockItems: 0,
   }
 
   recentAppointments: RecentAppointment[] = []
@@ -67,41 +37,16 @@ export class MainDashboardComponent implements OnInit {
       totalAppointments: 89,
       totalDoctors: 23,
       monthlyRevenue: 125670,
+      pendingAppointments: 4,
+      lowStockItems: 3,
     }
 
+    const today = new Date().toISOString()
     this.recentAppointments = [
-      {
-        id: 1,
-        patientName: 'María García',
-        doctorName: 'Dr. José Martínez',
-        time: '09:00',
-        status: 'confirmed',
-        type: 'Consulta General',
-      },
-      {
-        id: 2,
-        patientName: 'Carlos López',
-        doctorName: 'Dra. Ana Rodríguez',
-        time: '10:30',
-        status: 'pending',
-        type: 'Cardiología',
-      },
-      {
-        id: 3,
-        patientName: 'Laura Fernández',
-        doctorName: 'Dr. Luis Gómez',
-        time: '11:15',
-        status: 'confirmed',
-        type: 'Dermatología',
-      },
-      {
-        id: 4,
-        patientName: 'Roberto Silva',
-        doctorName: 'Dra. Carmen Díaz',
-        time: '14:00',
-        status: 'pending',
-        type: 'Neurología',
-      },
+      { id: 1, patientName: 'María García',   doctorName: 'Dr. José Martínez',  time: '09:00', date: today, status: 'confirmed', type: 'Consulta General' },
+      { id: 2, patientName: 'Carlos López',   doctorName: 'Dra. Ana Rodríguez', time: '10:30', date: today, status: 'pending',   type: 'Cardiología' },
+      { id: 3, patientName: 'Laura Fernández', doctorName: 'Dr. Luis Gómez',    time: '11:15', date: today, status: 'confirmed', type: 'Dermatología' },
+      { id: 4, patientName: 'Roberto Silva',  doctorName: 'Dra. Carmen Díaz',   time: '14:00', date: today, status: 'pending',   type: 'Neurología' },
     ]
 
     this.stockAlerts = [

@@ -5,6 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { RouterModule } from '@angular/router'
 
 import { MaterialModule } from '../../../../material/material.module'
+import { SharedModule } from '../../../../shared/shared.module'
 import { UiModalComponent } from './components/ui-modal/ui-modal.component'
 import { InventoryComponent } from './inventory/inventory.component'
 import { MedicationFormComponent } from './inventory/medication-form/medication-form.component'
@@ -54,6 +55,7 @@ import { SuppliersComponent } from './suppliers/suppliers.component'
     PharmacyRoutingModule,
     DecimalPipe,
     CurrencyPipe,
+    SharedModule,
   ],
   exports: [
     InventoryComponent,

@@ -1,3 +1,9 @@
+/**
+ * ARCHIVO PENDIENTE — no conectado al AppModule.
+ * Esqueleto para futura migración a standalone components + provideRouter().
+ * El routing activo es: AppRoutingModule → DashboardModule → DashboardRoutingModule.
+ * No modificar este archivo hasta completar la migración a standalone.
+ */
 import { Routes } from '@angular/router'
 import { Permission } from '@core/enums/permission.enum'
 import { UserRoles } from '@core/enums/user-roles.enum'

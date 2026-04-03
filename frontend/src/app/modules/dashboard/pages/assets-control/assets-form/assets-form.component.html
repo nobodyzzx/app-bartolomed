@@ -1,65 +1,53 @@
-<div class="min-h-screen bg-slate-50 p-8">
-  <div class="max-w-5xl mx-auto">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-10">
-      <div class="flex items-center gap-4">
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      [title]="isViewMode ? 'Detalle del Activo' : isEditMode ? 'Editar Activo' : 'Nuevo Activo'"
+      [subtitle]="isViewMode ? 'Información completa del activo' : isEditMode ? 'Actualice la información del activo' : 'Complete el formulario para registrar un nuevo activo'"
+      (back)="goBack()"
+    >
+      <ng-container actions *ngIf="isViewMode">
+        <button
+          type="button"
+          (click)="enableEdit()"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none">edit</span>
+          Editar
+        </button>
+      </ng-container>
+      <ng-container actions *ngIf="!isViewMode">
         <button
           type="button"
           (click)="goBack()"
-          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          matTooltip="Volver"
-          aria-label="Volver"
+          class="btn btn-danger-outline"
         >
-          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
+          <span class="material-symbols-outlined msz-18">cancel</span>
+          Cancelar
         </button>
-        <div class="text-left">
-          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">
-            {{ isViewMode ? 'Detalle del Activo' : isEditMode ? 'Editar Activo' : 'Nuevo Activo' }}
-          </h1>
-          <p class="text-slate-600">
-            {{
-              isViewMode
-                ? 'Información completa del activo'
-                : isEditMode
-                  ? 'Actualice la información del activo'
-                  : 'Complete el formulario para registrar un nuevo activo'
-            }}
-          </p>
-        </div>
-      </div>
-      <button
-        *ngIf="isViewMode"
-        type="button"
-        (click)="enableEdit()"
-        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-      >
-        <span class="material-symbols-outlined msz-20">edit</span>
-        <span>Editar</span>
-      </button>
-    </div>
+      </ng-container>
+    </app-page-header>
 
-    <!-- Formulario -->
-    <form [formGroup]="assetForm" (ngSubmit)="onSubmit()">
-      <div class="space-y-6">
-        <!-- Información Básica -->
-        <div class="bg-white rounded-2xl shadow-md p-6">
-          <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-            <span class="material-symbols-outlined text-blue-600">info</span>
-            Información Básica
-          </h2>
+    <form [formGroup]="assetForm" (ngSubmit)="onSubmit()" class="space-y-6">
+
+      <!-- ══════ SECCIÓN 1 — Información Básica (azul) ══════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">info</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información Básica</h3>
+            <p class="text-sm text-slate-500 m-0">Nombre, tipo, descripción y categoría</p>
+          </div>
+        </div>
+        <div class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Nombre del Activo</mat-label>
-              <input
-                matInput
-                formControlName="name"
-                placeholder="Ej: Máquina de Rayos X"
-                required
-              />
-              <mat-icon matPrefix>inventory_2</mat-icon>
-              <mat-error *ngIf="assetForm.get('name')?.hasError('required')">
-                El nombre es requerido
-              </mat-error>
+              <mat-icon matPrefix class="text-blue-400">inventory_2</mat-icon>
+              <input matInput formControlName="name" placeholder="Ej: Máquina de Rayos X" required />
+              <mat-error *ngIf="assetForm.get('name')?.hasError('required')">El nombre es requerido</mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
@@ -72,265 +60,289 @@
                   </span>
                 </mat-option>
               </mat-select>
-              <mat-error *ngIf="assetForm.get('type')?.hasError('required')">
-                El tipo es requerido
-              </mat-error>
+              <mat-error *ngIf="assetForm.get('type')?.hasError('required')">El tipo es requerido</mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full md:col-span-2">
               <mat-label>Descripción</mat-label>
-              <textarea
-                matInput
-                formControlName="description"
-                rows="3"
-                placeholder="Descripción detallada del activo"
-              ></textarea>
-              <mat-icon matPrefix>description</mat-icon>
+              <mat-icon matPrefix class="text-blue-400">description</mat-icon>
+              <textarea matInput formControlName="description" rows="3" placeholder="Descripción detallada del activo"></textarea>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Categoría</mat-label>
+              <mat-icon matPrefix class="text-blue-400">category</mat-icon>
               <input matInput formControlName="category" placeholder="Ej: Diagnóstico" />
-              <mat-icon matPrefix>category</mat-icon>
             </mat-form-field>
           </div>
         </div>
+      </div>
 
-        <!-- Fabricante y Modelo -->
-        <div class="bg-white rounded-2xl shadow-md p-6">
-          <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-            <span class="material-symbols-outlined text-blue-600">manufacturing</span>
-            Fabricante y Modelo
-          </h2>
+      <!-- ══════ SECCIÓN 2 — Fabricante y Modelo (morado) ══════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
+          <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">manufacturing</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Fabricante y Modelo</h3>
+            <p class="text-sm text-slate-500 m-0">Fabricante, modelo y número de serie</p>
+          </div>
+        </div>
+        <div class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Fabricante</mat-label>
+              <mat-icon matPrefix class="text-purple-400">factory</mat-icon>
               <input matInput formControlName="manufacturer" placeholder="Ej: Siemens" required />
-              <mat-icon matPrefix>factory</mat-icon>
-              <mat-error *ngIf="assetForm.get('manufacturer')?.hasError('required')">
-                El fabricante es requerido
-              </mat-error>
+              <mat-error *ngIf="assetForm.get('manufacturer')?.hasError('required')">El fabricante es requerido</mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Modelo</mat-label>
+              <mat-icon matPrefix class="text-purple-400">model_training</mat-icon>
               <input matInput formControlName="model" placeholder="Ej: MULTIX Fusion" />
-              <mat-icon matPrefix>model_training</mat-icon>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full md:col-span-2">
               <mat-label>Número de Serie</mat-label>
-              <input
-                matInput
-                formControlName="serialNumber"
-                placeholder="Ej: SX-2024-001"
-                required
-              />
-              <mat-icon matPrefix>tag</mat-icon>
-              <mat-error *ngIf="assetForm.get('serialNumber')?.hasError('required')">
-                El número de serie es requerido
-              </mat-error>
+              <mat-icon matPrefix class="text-purple-400">tag</mat-icon>
+              <input matInput formControlName="serialNumber" placeholder="Ej: SX-2024-001" required />
+              <mat-error *ngIf="assetForm.get('serialNumber')?.hasError('required')">El número de serie es requerido</mat-error>
             </mat-form-field>
           </div>
         </div>
+      </div>
 
-        <!-- Estado y Condición -->
-        <div class="bg-white rounded-2xl shadow-md p-6">
-          <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-            <span class="material-symbols-outlined text-blue-600">health_and_safety</span>
-            Estado y Condición
-          </h2>
+      <!-- ══════ SECCIÓN 3 — Estado y Condición (naranja) ══════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-orange-50 border-b border-orange-100">
+          <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">health_and_safety</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Estado y Condición</h3>
+            <p class="text-sm text-slate-500 m-0">Estado operativo y condición física del activo</p>
+          </div>
+        </div>
+        <div class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Estado</mat-label>
+              <mat-icon matPrefix class="text-orange-400">info</mat-icon>
               <mat-select formControlName="status" required>
-                <mat-option *ngFor="let status of assetStatuses" [value]="status.value">
-                  {{ status.label }}
-                </mat-option>
+                <mat-option *ngFor="let status of assetStatuses" [value]="status.value">{{ status.label }}</mat-option>
               </mat-select>
-              <mat-icon matPrefix>info</mat-icon>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Condición</mat-label>
+              <mat-icon matPrefix class="text-orange-400">fact_check</mat-icon>
               <mat-select formControlName="condition" required>
-                <mat-option *ngFor="let condition of assetConditions" [value]="condition.value">
-                  {{ condition.label }}
-                </mat-option>
+                <mat-option *ngFor="let condition of assetConditions" [value]="condition.value">{{ condition.label }}</mat-option>
               </mat-select>
-              <mat-icon matPrefix>fact_check</mat-icon>
             </mat-form-field>
           </div>
         </div>
+      </div>
 
-        <!-- Información de Compra -->
-        <div class="bg-white rounded-2xl shadow-md p-6">
-          <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-            <span class="material-symbols-outlined text-blue-600">shopping_cart</span>
-            Información de Compra
-          </h2>
+      <!-- ══════ SECCIÓN 4 — Información de Compra (verde) ══════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">shopping_cart</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información de Compra</h3>
+            <p class="text-sm text-slate-500 m-0">Precio, fechas, proveedor y garantía</p>
+          </div>
+        </div>
+        <div class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Precio de Compra</mat-label>
+              <mat-icon matPrefix class="text-green-400">attach_money</mat-icon>
               <input matInput type="number" formControlName="purchasePrice" required min="0" />
-              <mat-icon matPrefix>attach_money</mat-icon>
-              <mat-error *ngIf="assetForm.get('purchasePrice')?.hasError('required')">
-                El precio de compra es requerido
-              </mat-error>
+              <mat-error *ngIf="assetForm.get('purchasePrice')?.hasError('required')">El precio de compra es requerido</mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Fecha de Compra</mat-label>
+              <mat-icon matPrefix class="text-green-400">calendar_today</mat-icon>
               <input matInput type="date" formControlName="purchaseDate" required />
-              <mat-icon matPrefix>calendar_today</mat-icon>
-              <mat-error *ngIf="assetForm.get('purchaseDate')?.hasError('required')">
-                La fecha de compra es requerida
-              </mat-error>
+              <mat-error *ngIf="assetForm.get('purchaseDate')?.hasError('required')">La fecha de compra es requerida</mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Proveedor</mat-label>
+              <mat-icon matPrefix class="text-green-400">store</mat-icon>
               <input matInput formControlName="vendor" placeholder="Nombre del proveedor" />
-              <mat-icon matPrefix>store</mat-icon>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Número de Factura</mat-label>
+              <mat-icon matPrefix class="text-green-400">receipt</mat-icon>
               <input matInput formControlName="invoiceNumber" placeholder="Ej: INV-2024-001" />
-              <mat-icon matPrefix>receipt</mat-icon>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Vencimiento de Garantía</mat-label>
+              <mat-icon matPrefix class="text-green-400">verified</mat-icon>
               <input matInput type="date" formControlName="warrantyExpiry" />
-              <mat-icon matPrefix>verified</mat-icon>
             </mat-form-field>
           </div>
         </div>
+      </div>
 
-        <!-- Depreciación -->
-        <div class="bg-white rounded-2xl shadow-md p-6">
-          <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-            <span class="material-symbols-outlined text-blue-600">trending_down</span>
-            Depreciación
-          </h2>
+      <!-- ══════ SECCIÓN 5 — Depreciación (teal) ══════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-teal-50 border-b border-teal-100">
+          <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">trending_down</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Depreciación</h3>
+            <p class="text-sm text-slate-500 m-0">Método, vida útil y valor residual</p>
+          </div>
+        </div>
+        <div class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Método de Depreciación</mat-label>
+              <mat-icon matPrefix class="text-teal-400">calculate</mat-icon>
               <mat-select formControlName="depreciationMethod">
-                <mat-option *ngFor="let method of depreciationMethods" [value]="method.value">
-                  {{ method.label }}
-                </mat-option>
+                <mat-option *ngFor="let method of depreciationMethods" [value]="method.value">{{ method.label }}</mat-option>
               </mat-select>
-              <mat-icon matPrefix>calculate</mat-icon>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Vida Útil (años)</mat-label>
+              <mat-icon matPrefix class="text-teal-400">schedule</mat-icon>
               <input matInput type="number" formControlName="usefulLifeYears" min="1" />
-              <mat-icon matPrefix>schedule</mat-icon>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Valor Residual</mat-label>
+              <mat-icon matPrefix class="text-teal-400">savings</mat-icon>
               <input matInput type="number" formControlName="salvageValue" min="0" />
-              <mat-icon matPrefix>savings</mat-icon>
             </mat-form-field>
           </div>
         </div>
+      </div>
 
-        <!-- Ubicación -->
-        <div class="bg-white rounded-2xl shadow-md p-6">
-          <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-            <span class="material-symbols-outlined text-blue-600">location_on</span>
-            Ubicación
-          </h2>
+      <!-- ══════ SECCIÓN 6 — Ubicación (slate) ══════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200">
+          <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">location_on</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Ubicación</h3>
+            <p class="text-sm text-slate-500 m-0">Sala, edificio y piso del activo</p>
+          </div>
+        </div>
+        <div class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Ubicación</mat-label>
+              <mat-icon matPrefix class="text-slate-400">place</mat-icon>
               <input matInput formControlName="location" placeholder="Ej: Sala de Radiología A" />
-              <mat-icon matPrefix>place</mat-icon>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Sala/Habitación</mat-label>
+              <mat-icon matPrefix class="text-slate-400">meeting_room</mat-icon>
               <input matInput formControlName="room" placeholder="Ej: 102" />
-              <mat-icon matPrefix>meeting_room</mat-icon>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Edificio</mat-label>
+              <mat-icon matPrefix class="text-slate-400">apartment</mat-icon>
               <input matInput formControlName="building" placeholder="Ej: Edificio Principal" />
-              <mat-icon matPrefix>apartment</mat-icon>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Piso</mat-label>
+              <mat-icon matPrefix class="text-slate-400">layers</mat-icon>
               <input matInput formControlName="floor" placeholder="Ej: 1" />
-              <mat-icon matPrefix>layers</mat-icon>
             </mat-form-field>
           </div>
         </div>
+      </div>
 
-        <!-- Mantenimiento -->
-        <div class="bg-white rounded-2xl shadow-md p-6">
-          <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-            <span class="material-symbols-outlined text-blue-600">build</span>
-            Mantenimiento
-          </h2>
+      <!-- ══════ SECCIÓN 7 — Mantenimiento (amber) ══════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-amber-50 border-b border-amber-100">
+          <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">build</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Mantenimiento</h3>
+            <p class="text-sm text-slate-500 m-0">Intervalo y último mantenimiento</p>
+          </div>
+        </div>
+        <div class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Intervalo de Mantenimiento (meses)</mat-label>
+              <mat-icon matPrefix class="text-amber-400">event_repeat</mat-icon>
               <input matInput type="number" formControlName="maintenanceIntervalMonths" min="1" />
-              <mat-icon matPrefix>event_repeat</mat-icon>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Último Mantenimiento</mat-label>
+              <mat-icon matPrefix class="text-amber-400">history</mat-icon>
               <input matInput type="date" formControlName="lastMaintenanceDate" />
-              <mat-icon matPrefix>history</mat-icon>
             </mat-form-field>
           </div>
         </div>
+      </div>
 
-        <!-- Notas -->
-        <div class="bg-white rounded-2xl shadow-md p-6">
-          <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-            <span class="material-symbols-outlined text-blue-600">note</span>
-            Notas Adicionales
-          </h2>
+      <!-- ══════ SECCIÓN 8 — Notas Adicionales (slate) ══════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200">
+          <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">note</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Notas Adicionales</h3>
+          </div>
+        </div>
+        <div class="p-6">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Notas</mat-label>
-            <textarea
-              matInput
-              formControlName="notes"
-              rows="4"
-              placeholder="Observaciones, comentarios o información adicional"
-            ></textarea>
+            <textarea matInput formControlName="notes" rows="4" placeholder="Observaciones, comentarios o información adicional"></textarea>
           </mat-form-field>
         </div>
-
-        <!-- Botones de Acción -->
-        <div class="flex items-center justify-end gap-4" *ngIf="!isViewMode">
-          <button
-            type="button"
-            (click)="goBack()"
-            class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            [disabled]="isSubmitting || assetForm.invalid"
-            class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
-          >
-            <span *ngIf="!isSubmitting">{{
-              isEditMode ? 'Actualizar Activo' : 'Registrar Activo'
-            }}</span>
-            <span *ngIf="isSubmitting">Guardando...</span>
-          </button>
-        </div>
       </div>
+
+      <!-- ══════ Sticky action bar ══════ -->
+      <div
+        *ngIf="!isViewMode"
+        class="form-action-bar"
+      >
+        <button
+          type="button"
+          (click)="goBack()"
+          class="btn btn-danger-outline"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          [disabled]="isSubmitting || assetForm.invalid"
+          class="btn btn-primary"
+        >
+          @if (isSubmitting) {
+            <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+            <span>Guardando...</span>
+          } @else {
+            <span class="material-symbols-outlined msz-18 leading-none">save</span>
+            <span>{{ isEditMode ? 'Actualizar Activo' : 'Registrar Activo' }}</span>
+          }
+        </button>
+      </div>
+
     </form>
   </div>
 </div>

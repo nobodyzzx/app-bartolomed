@@ -99,4 +99,13 @@ export class PrescriptionsService {
       }),
     )
   }
+
+  getPdf(id: string): Observable<Blob> {
+    return this.http.get(`${this.base}/prescriptions/${id}/pdf`, { responseType: 'blob' }).pipe(
+      catchError(err => {
+        this.errorService.handleError(err)
+        return throwError(() => err)
+      }),
+    )
+  }
 }

@@ -12,10 +12,15 @@ import { Appointment } from '../appointments/entities/appointment.entity';
 import { AssetInventory } from '../assets/entities/asset-inventory.entity';
 import { AssetMaintenance } from '../assets/entities/asset-maintenance.entity';
 import { AssetReport } from '../assets/entities/asset-report.entity';
-import { Asset, MaintenanceRecord } from '../assets/entities/asset.entity';
+import {
+  AssetTransfer,
+  AssetTransferAuditLog,
+  AssetTransferItem,
+} from '../assets/entities/asset-transfer.entity';
+import { Asset } from '../assets/entities/asset.entity';
 import { Invoice, InvoiceItem, Payment } from '../billing/entities/billing.entity';
 import { Clinic } from '../clinics/entities';
-import { ConsentForm, MedicalRecord } from '../medical-records/entities';
+import { ConsentForm, MedicalRecord, MedicalReport } from '../medical-records/entities';
 import { Patient } from '../patients/entities';
 import { PharmacyInvoice } from '../pharmacy/entities/pharmacy-invoice.entity';
 import { PharmacySale, PharmacySaleItem } from '../pharmacy/entities/pharmacy-sale.entity';
@@ -24,7 +29,13 @@ import { PurchaseOrder, PurchaseOrderItem } from '../pharmacy/entities/purchase-
 import { Supplier } from '../pharmacy/entities/supplier.entity';
 import { Prescription, PrescriptionItem } from '../prescriptions/entities/prescription.entity';
 import { Role } from '../roles/entities/role.entity';
+import {
+  StockTransfer,
+  StockTransferItem,
+  TransferAuditLog,
+} from '../transfers/entities/stock-transfer.entity';
 import { PersonalInfo, ProfessionalInfo, User } from '../users/entities';
+import { UserClinic } from '../users/entities/user-clinic.entity';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -38,21 +49,25 @@ export const AppDataSource = new DataSource({
     User,
     PersonalInfo,
     ProfessionalInfo,
+    UserClinic,
     Clinic,
     Patient,
     Appointment,
     MedicalRecord,
     ConsentForm,
+    MedicalReport,
     Prescription,
     PrescriptionItem,
     Invoice,
     InvoiceItem,
     Payment,
     Asset,
-    MaintenanceRecord,
     AssetMaintenance,
     AssetInventory,
     AssetReport,
+    AssetTransfer,
+    AssetTransferItem,
+    AssetTransferAuditLog,
     Medication,
     MedicationStock,
     StockMovement,
@@ -63,6 +78,9 @@ export const AppDataSource = new DataSource({
     PharmacySaleItem,
     PharmacyInvoice,
     Role,
+    StockTransfer,
+    StockTransferItem,
+    TransferAuditLog,
   ],
   migrations: ['src/migrations/*.ts'],
   synchronize: false,

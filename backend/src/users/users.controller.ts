@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, Query, HttpCode, HttpStatus } from '@nestjs/common';
 import { UsersService } from './services/users.service';
 import { CreateUserDto } from './dto';
 import { Auth } from '../auth/decorators/auth.decorator';
@@ -28,6 +28,13 @@ export class UsersController {
   @Auth(ValidRoles.ADMIN)
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.findOne(id);
+  }
+
+  @Patch(':id/status')
+  @Auth(ValidRoles.ADMIN)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  updateStatus(@Param('id', ParseUUIDPipe) id: string, @Body('isActive') isActive: boolean) {
+    return this.usersService.updateStatus(id, isActive);
   }
 
   @Patch(':id')

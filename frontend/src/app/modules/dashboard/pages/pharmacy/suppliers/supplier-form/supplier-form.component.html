@@ -1,156 +1,202 @@
-<div class="min-h-screen bg-slate-50 p-8">
-  <div class="max-w-5xl mx-auto">
-    <div class="flex items-center justify-between mb-10">
-      <div class="flex items-center gap-4">
-      <button
-        type="button"
-        (click)="goBack()"
-        class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-        aria-label="Volver"
-      >
-        <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
-      </button>
-      <div class="text-left">
-        <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">
-          {{ isEditMode ? 'Editar Proveedor' : 'Nuevo Proveedor' }}
-        </h1>
-        <p class="text-slate-600">
-          {{ isEditMode ? 'Modifica los datos del proveedor' : 'Registra un nuevo proveedor' }}
-        </p>
-      </div>
-      </div>
-    </div>
+<div class="page-wrapper">
+  <div class="page-inner">
 
-    <div class="bg-white rounded-2xl shadow-md p-6">
-      <form [formGroup]="supplierForm" (ngSubmit)="onSubmit()" class="space-y-6">
-        <fieldset class="border border-slate-200 rounded-lg p-4 bg-slate-50">
-          <legend class="px-2 text-sm font-semibold text-slate-700">Información Fiscal</legend>
-          <div class="grid gap-4">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Nombre comercial *</mat-label>
-              <input matInput formControlName="nombreComercial" />
-              <mat-error *ngIf="supplierForm.get('nombreComercial')?.hasError('required')"
-                >Requerido</mat-error
-              >
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Razón social *</mat-label>
-              <input matInput formControlName="razonSocial" />
-              <mat-error *ngIf="supplierForm.get('razonSocial')?.hasError('required')"
-                >Requerido</mat-error
-              >
-            </mat-form-field>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>ID Tributario *</mat-label>
-                <input matInput formControlName="idTributario" />
-                <mat-error *ngIf="supplierForm.get('idTributario')?.hasError('required')"
-                  >Requerido</mat-error
-                >
-              </mat-form-field>
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Tipo de proveedor *</mat-label>
-                <mat-select formControlName="tipoProveedor">
-                  <mat-option value="medicamentos">Medicamentos</mat-option>
-                  <mat-option value="insumos">Insumos</mat-option>
-                  <mat-option value="servicios">Servicios</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
+    <app-page-header
+      [title]="isEditMode ? 'Editar Proveedor' : 'Nuevo Proveedor'"
+      [subtitle]="isEditMode ? 'Modifica los datos del proveedor' : 'Registra un nuevo proveedor'"
+      (back)="goBack()"
+    >
+      <ng-container actions>
+        <button
+          type="button"
+          (click)="cancel()"
+          class="btn btn-danger-outline"
+        >
+          <span class="material-symbols-outlined msz-18">cancel</span>
+          Cancelar
+        </button>
+      </ng-container>
+    </app-page-header>
+
+    <form [formGroup]="supplierForm" (ngSubmit)="onSubmit()" class="space-y-6">
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 1 — Información Fiscal (azul)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">receipt_long</span>
           </div>
-        </fieldset>
-
-        <fieldset class="border border-slate-200 rounded-lg p-4 bg-blue-50/30">
-          <legend class="px-2 text-sm font-semibold text-slate-700">Contacto</legend>
-          <div class="grid gap-4">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Persona de contacto *</mat-label>
-              <input matInput formControlName="contactPerson" />
-              <mat-error *ngIf="supplierForm.get('contactPerson')?.hasError('required')"
-                >Requerido</mat-error
-              >
-            </mat-form-field>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Email *</mat-label>
-                <input matInput type="email" formControlName="email" />
-                <mat-error *ngIf="supplierForm.get('email')?.hasError('required')"
-                  >Requerido</mat-error
-                >
-                <mat-error *ngIf="supplierForm.get('email')?.hasError('email')"
-                  >Email inválido</mat-error
-                >
-              </mat-form-field>
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Teléfono</mat-label>
-                <input matInput formControlName="phone" />
-              </mat-form-field>
-            </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información Fiscal</h3>
+            <p class="text-sm text-slate-500 m-0">Razón social, ID tributario y tipo de proveedor</p>
           </div>
-        </fieldset>
-
-        <fieldset class="border border-slate-200 rounded-lg p-4 bg-green-50/30">
-          <legend class="px-2 text-sm font-semibold text-slate-700">Ubicación</legend>
-          <div class="grid gap-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>País *</mat-label>
-                <mat-select formControlName="country">
-                  <mat-option *ngFor="let c of countries" [value]="c.code">{{ c.name }}</mat-option>
-                </mat-select>
-              </mat-form-field>
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Estado *</mat-label>
-                <mat-select formControlName="state">
-                  <mat-option *ngFor="let st of availableStates()" [value]="st">{{
-                    st
-                  }}</mat-option>
-                </mat-select>
-                <mat-hint *ngIf="!availableStates().length">Selecciona país primero</mat-hint>
-              </mat-form-field>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Ciudad</mat-label>
-                <input matInput formControlName="city" />
-              </mat-form-field>
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Código postal</mat-label>
-                <input matInput formControlName="postalCode" />
-              </mat-form-field>
-            </div>
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Dirección</mat-label>
-              <input matInput formControlName="address" />
-            </mat-form-field>
-          </div>
-        </fieldset>
-
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Notas</mat-label>
-          <textarea matInput formControlName="notes" rows="3"></textarea>
-        </mat-form-field>
-
-        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-          <button
-            type="button"
-            (click)="cancel()"
-            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
-          >
-            <span class="material-symbols-outlined">close</span>
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            [disabled]="loading() || supplierForm.invalid"
-            class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            <span class="material-symbols-outlined" *ngIf="!loading()">save</span>
-            <span class="material-symbols-outlined animate-spin" *ngIf="loading()">refresh</span>
-            {{ isEditMode ? 'Actualizar' : 'Guardar' }}
-          </button>
         </div>
-      </form>
-    </div>
+        <div class="p-6 space-y-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Nombre comercial *</mat-label>
+            <mat-icon matPrefix class="text-blue-400">storefront</mat-icon>
+            <input matInput formControlName="nombreComercial" />
+            <mat-error *ngIf="supplierForm.get('nombreComercial')?.hasError('required')">Requerido</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Razón social *</mat-label>
+            <mat-icon matPrefix class="text-blue-400">business</mat-icon>
+            <input matInput formControlName="razonSocial" />
+            <mat-error *ngIf="supplierForm.get('razonSocial')?.hasError('required')">Requerido</mat-error>
+          </mat-form-field>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>ID Tributario *</mat-label>
+              <mat-icon matPrefix class="text-blue-400">badge</mat-icon>
+              <input matInput formControlName="idTributario" />
+              <mat-error *ngIf="supplierForm.get('idTributario')?.hasError('required')">Requerido</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Tipo de proveedor *</mat-label>
+              <mat-icon matPrefix class="text-blue-400">category</mat-icon>
+              <mat-select formControlName="tipoProveedor">
+                <mat-option value="medicamentos">Medicamentos</mat-option>
+                <mat-option value="insumos">Insumos</mat-option>
+                <mat-option value="servicios">Servicios</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 2 — Contacto (verde)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">contact_phone</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Contacto</h3>
+            <p class="text-sm text-slate-500 m-0">Persona de contacto, email y teléfono</p>
+          </div>
+        </div>
+        <div class="p-6 space-y-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Persona de contacto *</mat-label>
+            <mat-icon matPrefix class="text-green-400">person</mat-icon>
+            <input matInput formControlName="contactPerson" />
+            <mat-error *ngIf="supplierForm.get('contactPerson')?.hasError('required')">Requerido</mat-error>
+          </mat-form-field>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Email *</mat-label>
+              <mat-icon matPrefix class="text-green-400">email</mat-icon>
+              <input matInput type="email" formControlName="email" />
+              <mat-error *ngIf="supplierForm.get('email')?.hasError('required')">Requerido</mat-error>
+              <mat-error *ngIf="supplierForm.get('email')?.hasError('email')">Email inválido</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Teléfono</mat-label>
+              <mat-icon matPrefix class="text-green-400">phone</mat-icon>
+              <input matInput formControlName="phone" />
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 3 — Ubicación (morado)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
+          <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">location_on</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Ubicación</h3>
+            <p class="text-sm text-slate-500 m-0">País, estado, ciudad y dirección</p>
+          </div>
+        </div>
+        <div class="p-6 space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>País *</mat-label>
+              <mat-icon matPrefix class="text-purple-400">public</mat-icon>
+              <mat-select formControlName="country">
+                <mat-option *ngFor="let c of countries" [value]="c.code">{{ c.name }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Estado *</mat-label>
+              <mat-icon matPrefix class="text-purple-400">map</mat-icon>
+              <mat-select formControlName="state">
+                <mat-option *ngFor="let st of availableStates()" [value]="st">{{ st }}</mat-option>
+              </mat-select>
+              <mat-hint *ngIf="!availableStates().length">Selecciona país primero</mat-hint>
+            </mat-form-field>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Ciudad</mat-label>
+              <mat-icon matPrefix class="text-purple-400">location_city</mat-icon>
+              <input matInput formControlName="city" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Código postal</mat-label>
+              <mat-icon matPrefix class="text-purple-400">markunread_mailbox</mat-icon>
+              <input matInput formControlName="postalCode" />
+            </mat-form-field>
+          </div>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Dirección</mat-label>
+            <mat-icon matPrefix class="text-purple-400">home</mat-icon>
+            <input matInput formControlName="address" />
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 4 — Notas (slate)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200">
+          <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">notes</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Notas</h3>
+            <p class="text-sm text-slate-500 m-0">Observaciones adicionales</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Notas</mat-label>
+            <mat-icon matPrefix class="text-slate-400">edit_note</mat-icon>
+            <textarea matInput formControlName="notes" rows="3"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- ══════ Sticky action bar ══════ -->
+      <div class="form-action-bar">
+        <button
+          type="button"
+          (click)="cancel()"
+          class="btn btn-danger-outline"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none">close</span>
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          [disabled]="loading() || supplierForm.invalid"
+          class="btn btn-primary"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none" *ngIf="!loading()">save</span>
+          <span class="material-symbols-outlined msz-18 leading-none animate-spin" *ngIf="loading()">refresh</span>
+          {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+        </button>
+      </div>
+
+    </form>
   </div>
 </div>

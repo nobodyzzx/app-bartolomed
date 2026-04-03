@@ -1,9 +1,13 @@
 import { IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
-import { RecordType } from '../entities/medical-record.entity';
+import { RecordStatus, RecordType } from '../entities/medical-record.entity';
 
 export class CreateMedicalRecordDto {
   @IsEnum(RecordType)
   type: RecordType;
+
+  @IsOptional()
+  @IsEnum(RecordStatus)
+  status?: RecordStatus;
 
   @IsString()
   chiefComplaint: string;

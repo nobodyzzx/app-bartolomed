@@ -2,9 +2,11 @@ import {
   BadRequestException,
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -18,6 +20,7 @@ import { RequirePermissions } from '../auth/permissions/permissions.decorator';
 import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
 import { User } from '../users/entities/user.entity';
+import { Gender } from './entities/patient.entity';
 import { CreatePatientDto, UpdatePatientDto } from './dto';
 import { PatientsService } from './services/patients.service';
 
@@ -38,19 +41,28 @@ export class PatientsController {
   }
 
   @Get()
-  findAll(@Req() req: Request) {
-    const clinicId = resolveClinicId(req);
-    return this.patientsService.findAll(clinicId);
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(25), ParseIntPipe) limit: number,
+    @Query('gender') gender: Gender | undefined,
+    @Req() req: Request,
+  ) {
+    const clinicId = resolveClinicId(req)!;
+    return this.patientsService.findAll(clinicId, page, limit, gender);
   }
 
   @Get('search')
-  search(@Query('term') searchTerm: string, @Req() req: Request) {
+  search(
+    @Query('term') searchTerm: string,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Req() req: Request,
+  ) {
     const clinicId = resolveClinicId(req);
-    return this.patientsService.searchPatients(searchTerm, clinicId);
+    return this.patientsService.searchPatients(searchTerm, clinicId, limit);
   }
 
   @Get('statistics')
-  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR)
+  @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.RECEPTIONIST)
   getStatistics(@Req() req: Request) {
     const clinicId = resolveClinicId(req);
     return this.patientsService.getPatientStatistics(clinicId);

@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
   ManyToOne,
   OneToMany,
   JoinColumn,
@@ -12,6 +13,7 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Clinic } from '../../clinics/entities/clinic.entity';
+import { AssetMaintenance } from './asset-maintenance.entity';
 
 export enum AssetType {
   MEDICAL_EQUIPMENT = 'medical_equipment',
@@ -48,6 +50,7 @@ export enum DepreciationMethod {
 }
 
 @Entity('assets')
+@Index(['clinic', 'createdAt'])
 export class Asset {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -181,6 +184,7 @@ export class Asset {
   isActive: boolean;
 
   // Relaciones
+  @Index()
   @ManyToOne(() => Clinic, { eager: true })
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic;
@@ -189,8 +193,8 @@ export class Asset {
   @JoinColumn({ name: 'assigned_to' })
   assignedTo: User;
 
-  @OneToMany('MaintenanceRecord', 'asset')
-  maintenanceRecords: any[];
+  @OneToMany(() => AssetMaintenance, m => m.asset)
+  maintenanceRecords: AssetMaintenance[];
 
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'created_by' })

@@ -1,5 +1,6 @@
 import { Location } from '@angular/common'
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, ElementRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
@@ -12,6 +13,8 @@ import { AssetRegistrationService } from '../services/asset-registration.service
   styleUrls: ['./assets-form.component.css'],
 })
 export class AssetsFormComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   assetForm!: FormGroup
   isEditMode = false
   isViewMode = false
@@ -57,6 +60,7 @@ export class AssetsFormComponent implements OnInit {
     private route: ActivatedRoute,
     private location: Location,
     private alert: AlertService,
+    private elRef: ElementRef,
   ) {}
 
   ngOnInit(): void {
@@ -126,7 +130,7 @@ export class AssetsFormComponent implements OnInit {
 
   loadAsset(id: string): void {
     this.isLoading = true
-    this.assetService.getAssetById(id).subscribe({
+    this.assetService.getAssetById(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: asset => {
         this.assetForm.patchValue(asset)
         this.isLoading = false
@@ -141,7 +145,7 @@ export class AssetsFormComponent implements OnInit {
   onSubmit(): void {
     if (this.assetForm.invalid) {
       this.assetForm.markAllAsTouched()
-      this.alert.warning('Formulario incompleto', 'Por favor complete todos los campos requeridos')
+      this.scrollToFirstError()
       return
     }
 
@@ -152,7 +156,7 @@ export class AssetsFormComponent implements OnInit {
       ? this.assetService.updateAsset(this.assetId!, formData)
       : this.assetService.createAsset(formData)
 
-    request$.subscribe({
+    request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.isSubmitting = false
         this.router.navigate(['/dashboard/assets-control/list'])
@@ -160,6 +164,13 @@ export class AssetsFormComponent implements OnInit {
       error: () => {
         this.isSubmitting = false
       },
+    })
+  }
+
+  private scrollToFirstError(): void {
+    requestAnimationFrame(() => {
+      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     })
   }
 

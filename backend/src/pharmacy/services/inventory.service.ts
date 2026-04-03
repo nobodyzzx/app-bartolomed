@@ -1,6 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThanOrEqual, Like, Repository } from 'typeorm';
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
 import { Clinic } from '../../clinics/entities/clinic.entity';
 import {
   CreateMedicationDto,
@@ -38,12 +45,16 @@ export class InventoryService {
     return await this.medicationRepository.save(medication);
   }
 
-  async findAllMedications(): Promise<Medication[]> {
+  async findAllMedications(page = 1, limit = 100): Promise<PaginatedResult<Medication>> {
     // Catálogo maestro global: no está aislado por clínica por diseño.
-    return await this.medicationRepository.find({
+    const [data, total] = await this.medicationRepository.findAndCount({
       where: { isActive: true },
       relations: ['stock'],
+      order: { name: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return { data, total, page, limit };
   }
 
   async findMedicationById(id: string): Promise<Medication> {
@@ -134,14 +145,18 @@ export class InventoryService {
     return savedStock;
   }
 
-  async findAllStock(clinicId: string): Promise<MedicationStock[]> {
+  async findAllStock(clinicId: string, page = 1, limit = 100): Promise<PaginatedResult<MedicationStock>> {
     if (!clinicId) {
       throw new BadRequestException('clinicId is required');
     }
-    return await this.stockRepository.find({
+    const [data, total] = await this.stockRepository.findAndCount({
       where: { clinic: { id: clinicId }, isActive: true },
       relations: ['medication', 'clinic'],
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return { data, total, page, limit };
   }
 
   async findStockById(id: string, clinicId?: string): Promise<MedicationStock> {

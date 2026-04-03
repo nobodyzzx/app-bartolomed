@@ -1,11 +1,12 @@
 import { Location } from '@angular/common'
-import { Component, OnInit, signal } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { ClinicContextService } from '../../../../../../modules/clinics/services/clinic-context.service'
-import { Clinic } from '../../../clinics/interfaces'
-import { ClinicsService } from '../../../clinics/services/clinics.service'
+import { Clinic } from '../../../admin/clinics/interfaces'
+import { ClinicsService } from '../../../admin/clinics/services/clinics.service'
 import { MedicationStock } from '../../interfaces/pharmacy.interfaces'
 import { InventoryService } from '../../services/inventory.service'
 
@@ -14,6 +15,8 @@ import { InventoryService } from '../../services/inventory.service'
   templateUrl: './transfer-stock.component.html',
 })
 export class TransferStockComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   form: FormGroup
   loading = signal(false)
   loadingClinics = signal(false)
@@ -52,7 +55,7 @@ export class TransferStockComponent implements OnInit {
     this.loadClinics()
 
     // Watch stock selection
-    this.form.get('sourceStockId')?.valueChanges.subscribe(stockId => {
+    this.form.get('sourceStockId')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(stockId => {
       const stock = this.stocks().find(s => s.id === stockId)
       this.selectedStock.set(stock || null)
       if (stock && (stock.availableQuantity || 0) > 0) {
@@ -71,7 +74,7 @@ export class TransferStockComponent implements OnInit {
 
   loadClinics(): void {
     this.loadingClinics.set(true)
-    this.clinicsService.findAll(true).subscribe({
+    this.clinicsService.findAll(true).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (clinics: Clinic[]) => {
         this.clinics.set(clinics.filter((c: Clinic) => c.id !== this.currentClinicId()))
         this.loadingClinics.set(false)
@@ -85,9 +88,9 @@ export class TransferStockComponent implements OnInit {
 
   loadStocks(clinicId: string): void {
     this.loadingStocks.set(true)
-    this.inventory.getProducts(clinicId).subscribe({
-      next: stocks => {
-        this.stocks.set(stocks.filter(s => (s.availableQuantity || 0) > 0))
+    this.inventory.getProducts(clinicId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: result => {
+        this.stocks.set(result.data.filter(s => (s.availableQuantity || 0) > 0))
         this.loadingStocks.set(false)
       },
       error: () => {
@@ -125,7 +128,7 @@ export class TransferStockComponent implements OnInit {
     if (!result.isConfirmed) return
 
     this.loading.set(true)
-    this.inventory.transferStock(this.form.value).subscribe({
+    this.inventory.transferStock(this.form.value).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.alert.success('Transferencia completada', 'El stock fue transferido correctamente')
         this.router.navigate(['/dashboard/pharmacy/inventory'])

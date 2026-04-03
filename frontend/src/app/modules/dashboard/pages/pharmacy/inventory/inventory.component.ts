@@ -91,8 +91,8 @@ export class InventoryComponent implements OnInit, OnDestroy {
   loadProducts(): void {
     if (!this.clinicId) return
     this.inventoryService.getProducts(this.clinicId).subscribe({
-      next: products => {
-        this.products = products
+      next: result => {
+        this.products = result.data
         this.calculateStats()
         this.loading.set(false)
       },

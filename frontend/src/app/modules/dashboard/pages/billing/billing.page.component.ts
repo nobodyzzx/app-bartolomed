@@ -1,29 +1,10 @@
 import { Location } from '@angular/common'
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { BillingService } from './billing.service'
-
-interface BillingStatistics {
-  totalInvoices: number
-  paid: number
-  pending: number
-  overdue: number
-  totalRevenue: number
-  pendingRevenue: number
-}
-
-interface RecentInvoice {
-  id: string
-  invoiceNumber: string
-  patient: {
-    firstName: string
-    lastName: string
-  }
-  issueDate: string
-  totalAmount: number
-  status: 'paid' | 'pending' | 'overdue' | 'cancelled' | 'draft'
-}
+import { BillingStatistics, RecentInvoice } from './interfaces/billing-ui.interfaces'
 
 @Component({
   selector: 'app-billing-page',
@@ -31,6 +12,8 @@ interface RecentInvoice {
   styleUrls: ['./billing.page.component.css'],
 })
 export class BillingPageComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   searchTerm = ''
   statistics: BillingStatistics | null = null
   recentInvoices: RecentInvoice[] = []
@@ -52,7 +35,7 @@ export class BillingPageComponent implements OnInit {
     this.isLoading = true
 
     // Cargar estadísticas
-    this.billingService.getStatistics().subscribe({
+    this.billingService.getStatistics().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: stats => {
         this.statistics = stats
         this.isLoading = false
@@ -73,7 +56,7 @@ export class BillingPageComponent implements OnInit {
     })
 
     // Cargar facturas recientes
-    this.billingService.listInvoices(1, 5).subscribe({
+    this.billingService.listInvoices(1, 5).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (response: any) => {
         const invoices = response.items || []
         this.recentInvoices = invoices.slice(0, 5)

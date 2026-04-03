@@ -1,102 +1,61 @@
-<div class="min-h-screen bg-slate-50 p-8">
-  <div class="max-w-7xl mx-auto">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-10">
-      <div class="flex items-center gap-4">
-      <button
-        type="button"
-        (click)="goBack()"
-        class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-      >
-        <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
-      </button>
-      <div class="text-left">
-        <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Reportes Financieros</h1>
-        <p class="text-slate-600">Análisis financiero y control contable detallado</p>
-      </div>
-      </div>
-    </div>
+<div class="page-wrapper">
+  <div class="page-inner">
 
-    <!-- Stats Cards -->
+    <app-page-header
+      title="Reportes Financieros"
+      subtitle="Análisis financiero y control contable detallado"
+      (back)="goBack()"
+    />
+
+    <!-- Estadísticas -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <!-- Total Reportes -->
-      <div class="bg-emerald-50 p-5 rounded-2xl border-l-4 border-emerald-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-emerald-600 text-sm font-semibold">Total Reportes</p>
-            <p class="text-3xl font-bold text-emerald-900 mt-1">{{ totalReports }}</p>
-            <p class="text-xs text-emerald-500 mt-1">Generados</p>
-          </div>
-          <span class="material-symbols-outlined text-emerald-300" style="font-size: 40px">description</span>
-        </div>
-      </div>
-
-      <!-- Ingresos Totales -->
-      <div class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-blue-600 text-sm font-semibold">Ingresos Totales</p>
-            <p class="text-3xl font-bold text-blue-900 mt-1">{{ formatCurrency(totalRevenue) }}</p>
-            <p class="text-xs text-blue-500 mt-1">Cobros acumulados</p>
-          </div>
-          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">trending_up</span>
-        </div>
-      </div>
-
-      <!-- Gastos Totales -->
-      <div class="bg-red-50 p-5 rounded-2xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-red-600 text-sm font-semibold">Gastos Totales</p>
-            <p class="text-3xl font-bold text-red-900 mt-1">{{ formatCurrency(totalExpenses) }}</p>
-            <p class="text-xs text-red-500 mt-1">Egresos registrados</p>
-          </div>
-          <span class="material-symbols-outlined text-red-300" style="font-size: 40px">money_off</span>
-        </div>
-      </div>
-
-      <!-- Utilidad Neta -->
-      <div class="bg-amber-50 p-5 rounded-2xl border-l-4 border-amber-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-amber-600 text-sm font-semibold">Utilidad Neta</p>
-            <p
-              class="text-3xl font-bold mt-1"
-              [class.text-emerald-600]="totalProfit >= 0"
-              [class.text-red-600]="totalProfit < 0"
-            >
-              {{ formatCurrency(totalProfit) }}
-            </p>
-            <p class="text-xs text-amber-500 mt-1">Balance general</p>
-          </div>
-          <span class="material-symbols-outlined text-amber-300" style="font-size: 40px">account_balance_wallet</span>
-        </div>
-      </div>
+      <app-stat-card
+        label="Total Reportes"
+        [value]="totalReports"
+        sublabel="Generados"
+        icon="description"
+        color="green"
+      />
+      <app-stat-card
+        label="Ingresos Totales"
+        [value]="formatCurrency(totalRevenue)"
+        sublabel="Cobros acumulados"
+        icon="trending_up"
+        color="blue"
+      />
+      <app-stat-card
+        label="Gastos Totales"
+        [value]="formatCurrency(totalExpenses)"
+        sublabel="Egresos registrados"
+        icon="money_off"
+        color="red"
+      />
+      <app-stat-card
+        label="Utilidad Neta"
+        [value]="formatCurrency(totalProfit)"
+        sublabel="Balance general"
+        icon="account_balance_wallet"
+        color="amber"
+      />
     </div>
 
     <!-- Formulario de Generación -->
-    <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
-      <div
-        class="bg-gradient-to-r from-emerald-50 to-teal-50 px-6 py-4 border-b border-emerald-100"
-      >
-        <div class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0"
-          >
-            <span class="material-symbols-outlined msz-24 text-white">add_circle</span>
-          </div>
-          <div>
-            <h2 class="text-lg font-semibold text-slate-800">Generar Nuevo Reporte Financiero</h2>
-            <p class="text-sm text-slate-600">Configure los parámetros del análisis financiero</p>
-          </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+      <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+        <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">add_circle</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Generar Nuevo Reporte Financiero</h3>
+          <p class="text-sm text-slate-500 m-0">Configure los parámetros del análisis financiero</p>
         </div>
       </div>
 
       <form [formGroup]="generateForm" (ngSubmit)="onGenerateReport()" class="p-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <!-- Tipo de Reporte -->
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Tipo de Reporte</mat-label>
+            <mat-icon matPrefix class="text-green-400">category</mat-icon>
             <mat-select formControlName="type">
               <mat-option *ngFor="let type of reportTypes" [value]="type.value">
                 <div class="flex items-center gap-2">
@@ -105,43 +64,29 @@
                 </div>
               </mat-option>
             </mat-select>
-            <span matPrefix class="material-symbols-outlined msz-20 text-slate-400 mr-2"
-              >category</span
-            >
             <mat-error>Seleccione un tipo de reporte</mat-error>
           </mat-form-field>
 
-          <!-- Título -->
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Título del Reporte</mat-label>
-            <input
-              matInput
-              formControlName="title"
-              placeholder="Ej: Balance Financiero Enero 2025"
-            />
-            <span matPrefix class="material-symbols-outlined msz-20 text-slate-400 mr-2"
-              >title</span
-            >
-            <mat-error *ngIf="generateForm.get('title')?.hasError('required')">
-              El título es requerido
-            </mat-error>
-            <mat-error *ngIf="generateForm.get('title')?.hasError('minlength')">
-              Mínimo 5 caracteres
-            </mat-error>
+            <mat-icon matPrefix class="text-green-400">title</mat-icon>
+            <input matInput formControlName="title" placeholder="Ej: Balance Financiero Enero 2025" />
+            <mat-error *ngIf="generateForm.get('title')?.hasError('required')">El título es requerido</mat-error>
+            <mat-error *ngIf="generateForm.get('title')?.hasError('minlength')">Mínimo 5 caracteres</mat-error>
           </mat-form-field>
 
-          <!-- Fecha Inicio -->
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Fecha de Inicio</mat-label>
+            <mat-icon matPrefix class="text-green-400">calendar_today</mat-icon>
             <input matInput [matDatepicker]="startPicker" formControlName="startDate" />
             <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
             <mat-datepicker #startPicker></mat-datepicker>
             <mat-error>Seleccione una fecha de inicio</mat-error>
           </mat-form-field>
 
-          <!-- Fecha Fin -->
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Fecha de Fin</mat-label>
+            <mat-icon matPrefix class="text-green-400">event</mat-icon>
             <input matInput [matDatepicker]="endPicker" formControlName="endDate" />
             <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
             <mat-datepicker #endPicker></mat-datepicker>
@@ -149,21 +94,12 @@
           </mat-form-field>
         </div>
 
-        <!-- Descripción -->
         <mat-form-field appearance="outline" class="w-full mb-6">
           <mat-label>Descripción (Opcional)</mat-label>
-          <textarea
-            matInput
-            formControlName="description"
-            rows="3"
-            placeholder="Descripción adicional del reporte..."
-          ></textarea>
-          <span matPrefix class="material-symbols-outlined msz-20 text-slate-400 mr-2"
-            >description</span
-          >
+          <mat-icon matPrefix class="text-green-400">notes</mat-icon>
+          <textarea matInput formControlName="description" rows="3" placeholder="Descripción adicional del reporte..."></textarea>
         </mat-form-field>
 
-        <!-- Botones -->
         <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-200">
           <button
             type="button"
@@ -188,88 +124,49 @@
     </div>
 
     <!-- Lista de Reportes -->
-    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
-      <div
-        class="px-6 py-4 border-b border-slate-100 bg-slate-100 flex items-center justify-between"
-      >
-        <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined msz-20 text-slate-600">folder_open</span>
-          <h3 class="text-lg font-semibold text-slate-800">Reportes Financieros Generados</h3>
-          <span
-            class="ml-2 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium"
-          >
-            {{ financialReports.length }}
-          </span>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 bg-blue-50 border-b border-blue-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">folder_open</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Reportes Financieros Generados</h3>
+            <p class="text-sm text-slate-500 m-0">
+              <span class="font-semibold text-slate-700">{{ financialReports.length }}</span> reportes registrados
+            </p>
+          </div>
         </div>
         <button
           type="button"
           (click)="loadFinancialReports()"
           [disabled]="loading"
-          class="inline-flex items-center gap-2 px-4 h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors border-0 disabled:opacity-50"
+          class="inline-flex items-center gap-2 px-4 h-9 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-all border-0 disabled:opacity-50 text-sm font-medium"
         >
           <span class="material-symbols-outlined msz-18" [class.animate-spin]="loading">sync</span>
           Actualizar
         </button>
       </div>
 
-      <!-- Loading -->
-      <div *ngIf="loading" class="flex justify-center items-center py-12">
-        <mat-spinner diameter="50"></mat-spinner>
-      </div>
+      <app-skeleton-table *ngIf="loading" [rows]="6" [columns]="5" />
 
-      <!-- Tabla -->
+      <app-empty-state
+        *ngIf="!loading && financialReports.length === 0"
+        icon="account_balance"
+        title="No hay reportes financieros"
+        subtitle="Genere su primer reporte utilizando el formulario superior"
+      />
+
       <div *ngIf="!loading && financialReports.length > 0" class="overflow-x-auto">
         <table class="w-full">
           <thead class="bg-slate-100 border-b border-slate-200">
             <tr>
-              <th class="px-6 py-4 text-left">
-                <div
-                  class="text-xs font-semibold text-slate-600 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-16">title</span>
-                  Título
-                </div>
-              </th>
-              <th class="px-6 py-4 text-left">
-                <div
-                  class="text-xs font-semibold text-slate-600 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-16">category</span>
-                  Tipo
-                </div>
-              </th>
-              <th class="px-6 py-4 text-left">
-                <div
-                  class="text-xs font-semibold text-slate-600 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-16">event</span>
-                  Fecha
-                </div>
-              </th>
-              <th class="px-6 py-4 text-left">
-                <div
-                  class="text-xs font-semibold text-slate-600 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-16">attach_money</span>
-                  Monto
-                </div>
-              </th>
-              <th class="px-6 py-4 text-left">
-                <div
-                  class="text-xs font-semibold text-slate-600 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-16">info</span>
-                  Estado
-                </div>
-              </th>
-              <th class="px-6 py-4 text-center">
-                <div
-                  class="text-xs font-semibold text-slate-600 uppercase tracking-wide"
-                >
-                  <span class="material-symbols-outlined msz-16">settings</span>
-                  Acciones
-                </div>
-              </th>
+              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Título</span></th>
+              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Tipo</span></th>
+              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</span></th>
+              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Monto</span></th>
+              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span></th>
+              <th class="px-6 py-4 text-right"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -277,15 +174,11 @@
               <td class="px-6 py-4">
                 <div>
                   <p class="text-sm font-medium text-slate-900">{{ report.title }}</p>
-                  <p class="text-xs text-slate-500 mt-1" *ngIf="report.description">
-                    {{ report.description }}
-                  </p>
+                  <p class="text-xs text-slate-500 mt-1" *ngIf="report.description">{{ report.description }}</p>
                 </div>
               </td>
               <td class="px-6 py-4">
-                <span
-                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700"
-                >
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
                   {{ report.type }}
                 </span>
               </td>
@@ -298,7 +191,7 @@
               <td class="px-6 py-4">
                 <p
                   class="text-sm font-bold"
-                  [class.text-emerald-600]="(report.totalAmount || 0) >= 0"
+                  [class.text-green-600]="(report.totalAmount || 0) >= 0"
                   [class.text-red-600]="(report.totalAmount || 0) < 0"
                 >
                   {{ formatCurrency(report.totalAmount) }}
@@ -309,18 +202,16 @@
                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
                   [ngClass]="getStatusClass(report.status || 'draft')"
                 >
-                  <span class="material-symbols-outlined msz-14">{{
-                    getStatusIcon(report.status || 'draft')
-                  }}</span>
+                  <span class="material-symbols-outlined msz-14">{{ getStatusIcon(report.status || 'draft') }}</span>
                   {{ getStatusText(report.status || 'draft') }}
                 </span>
               </td>
               <td class="px-6 py-4">
-                <div class="flex items-center justify-center gap-1">
+                <div class="flex items-center justify-end gap-1">
                   <button
                     type="button"
                     (click)="viewReport(report)"
-                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors border-0"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors border-0"
                     title="Ver detalles"
                   >
                     <span class="material-symbols-outlined msz-18">visibility</span>
@@ -328,7 +219,7 @@
                   <button
                     type="button"
                     (click)="downloadReport(report)"
-                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors border-0"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors border-0"
                     title="Descargar PDF"
                   >
                     <span class="material-symbols-outlined msz-18">download</span>
@@ -347,15 +238,6 @@
           </tbody>
         </table>
       </div>
-
-      <!-- Empty State -->
-      <div *ngIf="!loading && financialReports.length === 0" class="text-center py-12 px-6">
-        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">account_balance</span>
-        <h3 class="text-slate-900 font-semibold text-lg mb-2">No hay reportes financieros</h3>
-        <p class="text-slate-500 mb-6">
-          Genere su primer reporte utilizando el formulario superior
-        </p>
-      </div>
     </div>
 
     <!-- Modal de Detalles -->
@@ -368,10 +250,7 @@
         class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl animate-in fade-in zoom-in duration-200"
         (click)="$event.stopPropagation()"
       >
-        <!-- Header -->
-        <div
-          class="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-emerald-50 to-teal-50"
-        >
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-emerald-50 to-teal-50">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center">
               <span class="material-symbols-outlined msz-24 text-white">account_balance</span>
@@ -381,106 +260,71 @@
               <p class="text-sm text-slate-600">Detalles del reporte financiero</p>
             </div>
           </div>
-          <button
-            type="button"
-            (click)="selectedReport = null"
-            class="p-2 rounded-full hover:bg-white/50 transition-colors border-0"
-          >
+          <button type="button" (click)="selectedReport = null" class="p-2 rounded-full hover:bg-white/50 transition-colors border-0">
             <span class="material-symbols-outlined msz-20 text-slate-600">close</span>
           </button>
         </div>
 
-        <!-- Body -->
         <div class="px-6 py-5 space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                >Tipo de Reporte</label
-              >
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Tipo de Reporte</label>
               <p class="mt-1 text-sm font-medium text-slate-900">{{ selectedReport.type }}</p>
             </div>
             <div>
-              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                >Estado</label
-              >
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Estado</label>
               <div class="mt-1">
                 <span
                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
                   [ngClass]="getStatusClass(selectedReport.status || 'draft')"
                 >
-                  <span class="material-symbols-outlined msz-14">{{
-                    getStatusIcon(selectedReport.status || 'draft')
-                  }}</span>
+                  <span class="material-symbols-outlined msz-14">{{ getStatusIcon(selectedReport.status || 'draft') }}</span>
                   {{ getStatusText(selectedReport.status || 'draft') }}
                 </span>
               </div>
             </div>
             <div>
-              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                >Fecha de Generación</label
-              >
-              <p class="mt-1 text-sm font-medium text-slate-900">
-                {{ selectedReport.date | date: 'dd/MM/yyyy HH:mm' }}
-              </p>
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Fecha de Generación</label>
+              <p class="mt-1 text-sm font-medium text-slate-900">{{ selectedReport.date | date: 'dd/MM/yyyy HH:mm' }}</p>
             </div>
             <div>
-              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                >Monto Total</label
-              >
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Monto Total</label>
               <p
                 class="mt-1 text-sm font-bold"
-                [class.text-emerald-600]="(selectedReport.totalAmount || 0) >= 0"
+                [class.text-green-600]="(selectedReport.totalAmount || 0) >= 0"
                 [class.text-red-600]="(selectedReport.totalAmount || 0) < 0"
               >
                 {{ formatCurrency(selectedReport.totalAmount) }}
               </p>
             </div>
             <div *ngIf="selectedReport.revenue">
-              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                >Ingresos</label
-              >
-              <p class="mt-1 text-sm font-medium text-emerald-600">
-                {{ formatCurrency(selectedReport.revenue) }}
-              </p>
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Ingresos</label>
+              <p class="mt-1 text-sm font-medium text-green-600">{{ formatCurrency(selectedReport.revenue) }}</p>
             </div>
             <div *ngIf="selectedReport.expenses">
-              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                >Gastos</label
-              >
-              <p class="mt-1 text-sm font-medium text-red-600">
-                {{ formatCurrency(selectedReport.expenses) }}
-              </p>
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Gastos</label>
+              <p class="mt-1 text-sm font-medium text-red-600">{{ formatCurrency(selectedReport.expenses) }}</p>
             </div>
             <div *ngIf="selectedReport.period">
-              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                >Período</label
-              >
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Período</label>
               <p class="mt-1 text-sm text-slate-700">
                 {{ selectedReport.period.startDate | date: 'dd/MM/yyyy' }} -
                 {{ selectedReport.period.endDate | date: 'dd/MM/yyyy' }}
               </p>
             </div>
             <div *ngIf="selectedReport.createdBy">
-              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                >Generado Por</label
-              >
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Generado Por</label>
               <p class="mt-1 text-sm font-medium text-slate-900">{{ selectedReport.createdBy }}</p>
             </div>
           </div>
 
           <div *ngIf="selectedReport.description">
-            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-              >Descripción</label
-            >
-            <p class="mt-1 text-sm text-slate-700 leading-relaxed">
-              {{ selectedReport.description }}
-            </p>
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Descripción</label>
+            <p class="mt-1 text-sm text-slate-700 leading-relaxed">{{ selectedReport.description }}</p>
           </div>
 
           <div *ngIf="selectedReport.categories && selectedReport.categories.length > 0">
-            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-              >Categorías</label
-            >
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Categorías</label>
             <div class="mt-2 space-y-2">
               <div
                 *ngFor="let category of selectedReport.categories"
@@ -488,9 +332,7 @@
               >
                 <span class="text-sm font-medium text-slate-700">{{ category.category }}</span>
                 <div class="text-right">
-                  <p class="text-sm font-bold text-slate-900">
-                    {{ formatCurrency(category.amount) }}
-                  </p>
+                  <p class="text-sm font-bold text-slate-900">{{ formatCurrency(category.amount) }}</p>
                   <p class="text-xs text-slate-500">{{ category.percentage }}%</p>
                 </div>
               </div>
@@ -498,10 +340,7 @@
           </div>
         </div>
 
-        <!-- Footer -->
-        <div
-          class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50"
-        >
+        <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50">
           <button
             type="button"
             (click)="selectedReport = null"
@@ -520,5 +359,6 @@
         </div>
       </div>
     </div>
+
   </div>
 </div>

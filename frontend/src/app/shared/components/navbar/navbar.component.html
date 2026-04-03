@@ -1,28 +1,27 @@
-<mat-toolbar class="bg-blue-100 shadow-md px-4 py-2">
-  <div class="flex items-center w-full gap-3">
+<mat-toolbar class="!bg-blue-50 border-b border-blue-200 !shadow-sm !px-4">
+  <div class="flex items-center w-full gap-3 h-16">
 
     <!-- Izquierda: hamburguesa + logo -->
-    <div class="flex items-center gap-3 flex-shrink-0">
+    <div class="flex items-center gap-2 flex-shrink-0">
       <button
         mat-icon-button
         (click)="toggleSidenav()"
         [attr.aria-label]="isExpanded() ? 'Cerrar menú lateral' : 'Abrir menú lateral'"
         [attr.aria-expanded]="isExpanded()"
-        class="text-blue-900 hover:bg-blue-200 transition-colors"
+        class="!text-slate-600 hover:!bg-slate-100"
       >
         <mat-icon>{{ isExpanded() ? 'close' : 'menu' }}</mat-icon>
       </button>
 
       <img
-        class="max-h-10 object-contain"
+        class="max-h-9 object-contain"
         src="assets/images/logo-horizontal-bartolomed.webp"
-        width="180"
-        height="40"
-        alt="Bartolomed Logo"
+        width="160"
+        height="36"
+        alt="Bartolomed"
       />
     </div>
 
-    <!-- Espacio flexible -->
     <div class="flex-grow"></div>
 
     <!-- Derecha: selector de clínica + usuario -->
@@ -32,185 +31,133 @@
       <button
         mat-button
         [matMenuTriggerFor]="clinicMenu"
-        class="clinic-selector-button !text-blue-900 !bg-transparent hover:!bg-blue-200 !transition-colors !normal-case !px-3 !py-2"
+        class="clinic-selector-button !text-slate-700 !normal-case !rounded-lg !px-3"
         [disabled]="isClinicsLoading || hasNoClinics()"
       >
-        <span class="flex items-center gap-2">
-          <span class="material-symbols-outlined msz-20">apartment</span>
-          <span class="hidden sm:inline text-sm font-semibold max-w-[180px] truncate">{{
-            getSelectedClinicName()
-          }}</span>
-          <span class="material-symbols-outlined msz-18">expand_more</span>
+        <span class="flex items-center gap-1.5">
+          <span class="material-symbols-outlined msz-18 text-blue-500">apartment</span>
+          <span class="hidden sm:inline text-sm font-medium max-w-[200px] truncate">{{ getSelectedClinicName() }}</span>
+          <span class="material-symbols-outlined msz-16 text-slate-400">expand_more</span>
         </span>
       </button>
 
       <mat-menu #clinicMenu="matMenu" class="clinic-menu" xPosition="before" (closed)="resetClinicSearch()">
-        <!-- Search input: solo visible si hay más de 5 clínicas -->
+        <!-- Búsqueda (solo si hay más de 5 clínicas) -->
         <div
           *ngIf="showClinicSearch"
           class="px-4 py-3 border-b border-slate-200 bg-slate-50"
           (click)="$event.stopPropagation()"
         >
-          <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-slate-300">
-            <span class="material-symbols-outlined msz-18 text-slate-400">search</span>
+          <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-slate-200">
+            <span class="material-symbols-outlined msz-16 text-slate-400">search</span>
             <input
               type="text"
               placeholder="Buscar clínica..."
-              class="flex-1 text-sm outline-none border-none bg-transparent"
+              class="flex-1 text-sm outline-none border-none bg-transparent text-slate-700"
               [(ngModel)]="clinicSearchTerm"
               (ngModelChange)="onClinicSearchChange($event)"
             />
           </div>
         </div>
 
-        <!-- SUPER_ADMIN: Ver todas -->
+        <!-- Super Admin: Ver todas las clínicas -->
         <button
           *ngIf="isSuperAdmin()"
           mat-menu-item
           (click)="onClinicChange(null)"
-          class="!min-h-[48px] hover:!bg-blue-50 !transition-colors"
-          [class.!bg-blue-100]="!selectedClinicId"
+          class="!min-h-[44px]"
+          [class.!bg-blue-50]="!selectedClinicId"
         >
           <span class="flex items-center gap-2">
-            <span
-              class="material-symbols-outlined msz-20"
+            <span class="material-symbols-outlined msz-18"
               [class.text-blue-600]="!selectedClinicId"
-              [class.text-slate-500]="selectedClinicId"
+              [class.text-slate-400]="selectedClinicId"
             >domain</span>
-            <span
-              class="text-sm font-medium"
-              [class.text-blue-900]="!selectedClinicId"
-              [class.text-slate-700]="selectedClinicId"
-            >Todas las clínicas</span>
-            <span *ngIf="!selectedClinicId" class="material-symbols-outlined msz-18 text-blue-600 ml-auto">
-              check_circle
+            <span class="text-sm" [class.font-medium]="!selectedClinicId" [class.text-blue-700]="!selectedClinicId">
+              Todas las clínicas
             </span>
+            <span *ngIf="!selectedClinicId" class="material-symbols-outlined msz-16 text-blue-500 ml-auto">check</span>
           </span>
         </button>
 
-        <!-- Otros roles: Sin clínica -->
-        <button
-          *ngIf="!isSuperAdmin()"
-          mat-menu-item
-          (click)="onClinicChange(null)"
-          class="!min-h-[48px] hover:!bg-blue-50 !transition-colors"
-        >
-          <span class="flex items-center gap-2 text-slate-500">
-            <span class="material-symbols-outlined msz-20">close</span>
-            <span class="text-sm">Sin clínica</span>
-          </span>
-        </button>
+        <mat-divider *ngIf="isSuperAdmin()" class="!my-1"></mat-divider>
 
-        <mat-divider class="!my-1"></mat-divider>
-
+        <!-- Lista de clínicas -->
         <button
           mat-menu-item
           *ngFor="let clinic of filteredClinics; trackBy: trackClinicById"
           (click)="onClinicChange(clinic.id)"
-          class="!min-h-[56px] hover:!bg-blue-50 !transition-colors"
-          [class.!bg-blue-100]="clinic.id === selectedClinicId"
+          class="!min-h-[52px]"
+          [class.!bg-blue-50]="clinic.id === selectedClinicId"
         >
-          <div class="flex items-start gap-3 py-1">
-            <span
-              class="material-symbols-outlined msz-20 mt-0.5"
+          <div class="flex items-center gap-3 py-0.5">
+            <span class="material-symbols-outlined msz-18"
               [class.text-blue-600]="clinic.id === selectedClinicId"
               [class.text-slate-400]="clinic.id !== selectedClinicId"
             >apartment</span>
             <div class="flex flex-col flex-1 min-w-0">
-              <span
-                class="text-sm font-medium truncate"
-                [class.text-blue-900]="clinic.id === selectedClinicId"
-                [class.text-slate-900]="clinic.id !== selectedClinicId"
+              <span class="text-sm truncate"
+                [class.font-semibold]="clinic.id === selectedClinicId"
+                [class.text-blue-800]="clinic.id === selectedClinicId"
+                [class.text-slate-800]="clinic.id !== selectedClinicId"
               >{{ clinic.name }}</span>
-              <span class="text-xs text-slate-500 truncate">{{ clinic.address }}</span>
+              <span *ngIf="clinic.address" class="text-xs text-slate-400 truncate">{{ clinic.address }}</span>
             </div>
-            <span *ngIf="clinic.id === selectedClinicId" class="material-symbols-outlined msz-18 text-blue-600">
-              check_circle
-            </span>
+            <span *ngIf="clinic.id === selectedClinicId" class="material-symbols-outlined msz-16 text-blue-500">check</span>
           </div>
         </button>
 
-        <div
-          *ngIf="filteredClinics.length === 0 && clinicSearchTerm"
-          class="px-4 py-3 text-center text-slate-400 italic text-sm"
-        >
-          No se encontraron clínicas
+        <div *ngIf="filteredClinics.length === 0 && clinicSearchTerm" class="px-4 py-3 text-center text-slate-400 text-sm italic">
+          Sin resultados para "{{ clinicSearchTerm }}"
         </div>
-
         <div *ngIf="hasNoClinics()" class="px-4 py-3 text-center text-amber-600 text-sm">
           No hay clínicas disponibles
         </div>
       </mat-menu>
 
-      <!-- User Info + Avatar -->
-      <div class="flex items-center gap-2">
+      <!-- Divider vertical -->
+      <div class="w-px h-6 bg-blue-200 mx-1 hidden sm:block"></div>
+
+      <!-- User: nombre + avatar -->
+      <div class="flex items-center gap-2.5">
         <!-- Nombre y rol (oculto en pantallas pequeñas) -->
-        <div class="hidden sm:flex flex-col text-right text-blue-800">
-          <span class="text-sm font-medium leading-tight">
-            {{ user()?.personalInfo?.firstName || 'Usuario' }}
-            {{ user()?.personalInfo?.lastName || '' }}
-          </span>
-          <span class="uppercase text-xs font-medium text-blue-500 leading-tight">
-            {{ user()?.roles?.[0] || 'Sin rol' }}
-          </span>
+        <div class="hidden md:flex flex-col items-end">
+          <span class="text-sm font-semibold text-slate-800 leading-tight">{{ displayName() }}</span>
+          <span class="text-xs text-slate-500 leading-tight">{{ userRoleLabel() }}</span>
         </div>
 
-        <!-- Avatar con iniciales -->
+        <!-- Avatar -->
         <button
           [matMenuTriggerFor]="userMenu"
           aria-label="Menú de usuario"
-          class="w-9 h-9 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center hover:bg-blue-700 transition-colors flex-shrink-0 border-0"
+          class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white text-sm font-bold flex items-center justify-center hover:opacity-90 transition-opacity flex-shrink-0 border-0 shadow-sm ring-2 ring-white ring-offset-1 ring-offset-white"
         >
           {{ userInitials() }}
         </button>
 
-        <mat-menu #userMenu="matMenu" class="user-menu">
-          <div mat-menu-content class="min-w-[260px]">
-            <!-- Encabezado -->
-            <div class="px-4 py-3 border-b border-slate-200 bg-slate-50">
-              <p class="text-sm font-semibold text-slate-900 leading-tight">
-                {{ user()?.personalInfo?.firstName || 'Usuario' }}
-                {{ user()?.personalInfo?.lastName || '' }}
-              </p>
-              <p class="text-xs text-slate-500 uppercase mt-0.5">
-                {{ user()?.roles?.join(' | ') || 'Sin rol asignado' }}
-              </p>
+        <!-- User Menu -->
+        <mat-menu #userMenu="matMenu" xPosition="before">
+          <div mat-menu-content class="min-w-[240px]">
+
+            <!-- Header del menú -->
+            <div class="px-4 py-3 border-b border-slate-100 bg-slate-50" (click)="$event.stopPropagation()">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white text-sm font-bold flex items-center justify-center flex-shrink-0 shadow-sm">
+                  {{ userInitials() }}
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-semibold text-slate-900 leading-tight truncate">{{ displayName() }}</p>
+                  <p class="text-xs text-slate-500 leading-tight mt-0.5">{{ allRoleLabels() }}</p>
+                </div>
+              </div>
             </div>
 
-            <button mat-menu-item disabled matTooltip="Próximamente"
-              class="flex items-center p-3 transition-colors duration-200">
-              <mat-icon class="mr-3 text-blue-800">account_circle</mat-icon>
-              <span class="text-blue-800">Mi Perfil</span>
+            <!-- Logout -->
+            <button mat-menu-item (click)="onLogout()">
+              <mat-icon class="text-red-500">logout</mat-icon>
+              <span class="text-sm text-red-600">Cerrar Sesión</span>
             </button>
 
-            <button mat-menu-item disabled matTooltip="Próximamente"
-              class="flex items-center p-3 transition-colors duration-200">
-              <mat-icon class="mr-3 text-blue-600">settings</mat-icon>
-              <span class="text-blue-900">Configuración</span>
-            </button>
-
-            <mat-divider *ngIf="isDevMode" class="my-2"></mat-divider>
-
-            <button
-              *ngIf="isDevMode"
-              mat-menu-item
-              (click)="openRoleSimulator()"
-              class="flex items-center p-3 hover:bg-blue-50 transition-colors duration-200"
-            >
-              <mat-icon class="mr-3 text-blue-700">admin_panel_settings</mat-icon>
-              <span class="text-blue-900">Simular Roles (DEMO)</span>
-            </button>
-
-            <mat-divider class="my-2"></mat-divider>
-
-            <button
-              mat-menu-item
-              (click)="onLogout()"
-              class="flex items-center p-3 hover:bg-red-50 transition-colors duration-200"
-            >
-              <mat-icon class="mr-3 text-red-600">logout</mat-icon>
-              <span class="text-red-600">Cerrar Sesión</span>
-            </button>
           </div>
         </mat-menu>
       </div>

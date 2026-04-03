@@ -1,5 +1,6 @@
 import { Location } from '@angular/common'
-import { Component, OnInit, signal } from '@angular/core'
+import { Component, DestroyRef, ElementRef, inject, OnInit, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
@@ -92,6 +93,8 @@ const COUNTRIES: Country[] = [
   styleUrls: ['./supplier-form.component.css'],
 })
 export class SupplierFormComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   supplierForm!: FormGroup
   loading = signal(false)
   isEditMode = false
@@ -108,6 +111,7 @@ export class SupplierFormComponent implements OnInit {
     private location: Location,
     private suppliersService: SuppliersService,
     private alertService: AlertService,
+    private elRef: ElementRef,
   ) {}
 
   ngOnInit(): void {
@@ -119,7 +123,7 @@ export class SupplierFormComponent implements OnInit {
       this.loadSupplier()
     }
 
-    this.supplierForm.get('country')?.valueChanges.subscribe(countryCode => {
+    this.supplierForm.get('country')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(countryCode => {
       this.onCountryChange(countryCode)
     })
   }
@@ -160,7 +164,7 @@ export class SupplierFormComponent implements OnInit {
   loadSupplier(): void {
     if (!this.supplierId) return
     this.loading.set(true)
-    this.suppliersService.getById(this.supplierId).subscribe({
+    this.suppliersService.getById(this.supplierId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: supplier => {
         this.supplierForm.patchValue({
           nombreComercial: supplier.nombreComercial,
@@ -194,7 +198,7 @@ export class SupplierFormComponent implements OnInit {
   async onSubmit(): Promise<void> {
     if (this.supplierForm.invalid) {
       this.supplierForm.markAllAsTouched()
-      this.alertService.error('Validación', 'Completa todos los campos requeridos')
+      this.scrollToFirstError()
       return
     }
 
@@ -220,7 +224,7 @@ export class SupplierFormComponent implements OnInit {
 
     if (this.isEditMode && this.supplierId) {
       const upd: UpdateSupplierDto = dto
-      this.suppliersService.update(this.supplierId, upd).subscribe({
+      this.suppliersService.update(this.supplierId, upd).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.alertService.success('Actualizado', 'Proveedor modificado correctamente')
           this.router.navigate(['/dashboard/pharmacy/suppliers'])
@@ -231,7 +235,7 @@ export class SupplierFormComponent implements OnInit {
         },
       })
     } else {
-      this.suppliersService.create(dto).subscribe({
+      this.suppliersService.create(dto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.alertService.success('Creado', 'Proveedor creado correctamente')
           this.router.navigate(['/dashboard/pharmacy/suppliers'])
@@ -253,6 +257,13 @@ export class SupplierFormComponent implements OnInit {
 
   cancel(): void {
     this.router.navigate(['/dashboard/pharmacy/suppliers'])
+  }
+
+  private scrollToFirstError(): void {
+    requestAnimationFrame(() => {
+      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
   }
 
   getSupplierTypeLabel(type: SupplierType): string {

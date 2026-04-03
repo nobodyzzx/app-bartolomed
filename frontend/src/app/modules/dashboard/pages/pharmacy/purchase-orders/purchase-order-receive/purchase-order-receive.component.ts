@@ -1,21 +1,11 @@
 import { Location } from '@angular/common'
-import { Component, OnInit, signal } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
-import { PurchaseOrder } from '../../interfaces/pharmacy.interfaces'
+import { PurchaseOrder, ReceiveItemForm } from '../../interfaces/pharmacy.interfaces'
 import { PurchaseOrdersService } from '../../services/purchase-orders.service'
-
-interface ReceiveItemForm {
-  itemId: string
-  productName: string
-  orderedQuantity: number
-  previouslyReceived: number
-  receivingQuantity: number
-  notes: string
-  batchNumber?: string
-  expiryDate?: string
-}
 
 @Component({
   selector: 'app-purchase-order-receive',
@@ -23,6 +13,8 @@ interface ReceiveItemForm {
   styleUrls: ['./purchase-order-receive.component.css'],
 })
 export class PurchaseOrderReceiveComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   order = signal<PurchaseOrder | null>(null)
   loading = signal(false)
   orderId: string = ''
@@ -55,7 +47,7 @@ export class PurchaseOrderReceiveComponent implements OnInit {
 
   loadOrder(): void {
     this.loading.set(true)
-    this.ordersService.getById(this.orderId).subscribe({
+    this.ordersService.getById(this.orderId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (order: PurchaseOrder) => {
         this.order.set(order)
         this.initializeForm(order)
@@ -182,7 +174,7 @@ export class PurchaseOrderReceiveComponent implements OnInit {
       notes: this.receiveForm.get('notes')?.value || undefined,
     }
 
-    this.ordersService.receive(this.orderId, payload).subscribe({
+    this.ordersService.receive(this.orderId, payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.alert.success('Recepción completada', 'Los productos han sido recibidos correctamente')
         this.router.navigate(['/dashboard/pharmacy/purchase-orders', this.orderId])

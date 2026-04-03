@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
 import { PaymentMethod, SaleStatus } from '../entities/pharmacy-sale.entity';
 
 export class CreatePharmacySaleItemDto {
@@ -33,6 +33,10 @@ export class CreatePharmacySaleDto {
   @IsString()
   patientId?: string;
 
+  @IsOptional()
+  @IsString()
+  patientName?: string;
+
   @IsNotEmpty()
   @IsString()
   clinicId: string;
@@ -56,6 +60,10 @@ export class CreatePharmacySaleDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsUUID()
+  prescriptionId?: string;
 
   @IsOptional()
   @IsString()

@@ -1,48 +1,18 @@
 import { Location } from '@angular/common'
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
+import { Prescription, PrescriptionStatistics } from './interfaces/prescription-ui.interface'
 import { PrescriptionsService } from './prescriptions.service'
-
-interface Prescription {
-  id: string
-  prescriptionNumber: string
-  prescriptionDate: string
-  expiryDate: string
-  status: string
-  patient: {
-    id: string
-    firstName: string
-    lastName: string
-    documentNumber: string
-  }
-  doctor: {
-    id: string
-    email: string
-    personalInfo?: {
-      firstName: string
-      lastName: string
-    }
-  }
-  items: Array<{
-    medicationName: string
-    strength: string
-    quantity: string
-  }>
-}
-
-interface PrescriptionStatistics {
-  total: number
-  active: number
-  expired: number
-  expiringSoon: number
-}
 
 @Component({
   selector: 'app-prescriptions-page',
   templateUrl: './prescriptions.page.component.html',
 })
 export class PrescriptionsPageComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   searchTerm = ''
   statistics: PrescriptionStatistics | null = null
   recentPrescriptions: Prescription[] = []
@@ -70,7 +40,7 @@ export class PrescriptionsPageComponent implements OnInit {
 
   loadData(): void {
     this.isLoading = true
-    this.prescriptionsService.list(1, 100).subscribe({
+    this.prescriptionsService.list(1, 100).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (response: any) => {
         // El backend devuelve { items, total, page, pageSize }
         const prescriptions: Prescription[] = response.items || []

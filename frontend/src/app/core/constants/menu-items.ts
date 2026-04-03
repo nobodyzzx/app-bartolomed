@@ -135,7 +135,7 @@ export const MENU_ITEMS: MenuItem[] = [
   },
   {
     label: 'Control de Activos',
-    icon: 'inventory',
+    icon: 'warehouse',
     route: '/assets',
     allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
     children: [
@@ -206,20 +206,6 @@ export const MENU_ITEMS: MenuItem[] = [
         requiredPermissions: [Permission.UsersManage],
       },
       {
-        label: 'Lista de Usuarios',
-        icon: 'group',
-        route: '/dashboard/users/list',
-        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-        requiredPermissions: [Permission.UsersManage],
-      },
-      {
-        label: 'Agregar Usuario',
-        icon: 'person_add',
-        route: '/dashboard/users/register',
-        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-        requiredPermissions: [Permission.UsersManage],
-      },
-      {
         label: 'Gestión de Roles',
         icon: 'security',
         route: '/dashboard/roles',
@@ -253,65 +239,6 @@ export const MENU_ITEMS: MenuItem[] = [
         route: '/dashboard/clinics',
         allowedRoles: [UserRoles.SUPER_ADMIN], // Solo SUPER_ADMIN
         requiredPermissions: [Permission.ClinicsManage],
-        children: [
-          {
-            label: 'Dashboard de Clínicas',
-            icon: 'dashboard',
-            route: '/dashboard/clinics',
-            allowedRoles: [UserRoles.SUPER_ADMIN],
-            requiredPermissions: [Permission.ClinicsManage],
-          },
-          {
-            label: 'Lista de Clínicas',
-            icon: 'list',
-            route: '/dashboard/clinics/list',
-            allowedRoles: [UserRoles.SUPER_ADMIN],
-            requiredPermissions: [Permission.ClinicsManage],
-          },
-          {
-            label: 'Nueva Clínica',
-            icon: 'add_business',
-            route: '/dashboard/clinics/new',
-            allowedRoles: [UserRoles.SUPER_ADMIN],
-            requiredPermissions: [Permission.ClinicsManage],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    label: 'Configuración Avanzada',
-    icon: 'tune',
-    route: '/advanced',
-    allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-    children: [
-      {
-        label: 'Parámetros del Sistema',
-        icon: 'settings_applications',
-        route: '/dashboard/system-params',
-        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-        requiredPermissions: [Permission.SettingsManage],
-      },
-      {
-        label: 'Configuración de Notificaciones',
-        icon: 'notifications',
-        route: '/dashboard/notifications-config',
-        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-        requiredPermissions: [Permission.SettingsManage],
-      },
-      {
-        label: 'Plantillas de Documentos',
-        icon: 'description',
-        route: '/dashboard/document-templates',
-        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-        requiredPermissions: [Permission.SettingsManage],
-      },
-      {
-        label: 'Integración con APIs',
-        icon: 'api',
-        route: '/dashboard/api-integration',
-        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-        requiredPermissions: [Permission.SettingsManage],
       },
     ],
   },

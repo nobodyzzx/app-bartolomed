@@ -23,7 +23,7 @@ export class PrescriptionsService {
     private readonly clinicRepository: Repository<Clinic>,
   ) {}
 
-  async create(createDto: CreatePrescriptionDto, createdBy?: User, scopedClinicId?: string): Promise<Prescription> {
+  async create(createDto: CreatePrescriptionDto, createdBy?: User, scopedClinicId?: string, validatedPatient?: Patient): Promise<Prescription> {
     if (!scopedClinicId) throw new BadRequestException('clinicId is required');
     if (createDto.clinicId !== scopedClinicId) {
       throw new BadRequestException('clinicId mismatch with current clinic context');
@@ -34,16 +34,8 @@ export class PrescriptionsService {
     if (expiryDate < prescriptionDate) {
       throw new BadRequestException('Expiry date cannot be before prescription date');
     }
-    const daysBetweenMs = Math.ceil((expiryDate.getTime() - prescriptionDate.getTime()) / (1000 * 60 * 60 * 24));
-    if (Array.isArray(createDto.items)) {
-      for (const it of createDto.items) {
-        if (it.duration && daysBetweenMs > 0 && it.duration > daysBetweenMs) {
-          throw new BadRequestException(`Item duration exceeds days until expiry (max ${daysBetweenMs})`);
-        }
-      }
-    }
-    // Basic validations: ensure patient, doctor, clinic exist
-    const patient = await this.patientRepository.findOne({
+    // Patient: use pre-validated entity from pipe, or fall back to DB lookup
+    const patient = validatedPatient ?? await this.patientRepository.findOne({
       where: { id: createDto.patientId, clinic: { id: scopedClinicId }, isActive: true },
     });
     if (!patient) throw new NotFoundException('Patient not found');
@@ -67,6 +59,7 @@ export class PrescriptionsService {
       isElectronic: !!createDto.isElectronic,
       isControlledSubstance: !!createDto.isControlledSubstance,
       refillsAllowed: createDto.refillsAllowed ?? 0,
+      status: createDto.status ?? PrescriptionStatus.ACTIVE,
     });
 
     if (createdBy) entity.createdBy = createdBy;
@@ -171,21 +164,9 @@ export class PrescriptionsService {
         (pres as any).refillsUsed = (updateDto as any).refillsUsed as any;
       }
 
-      // Business validation: date order and item durations
-      {
-        const effPresDate = pres.prescriptionDate;
-        const effExpDate = pres.expiryDate;
-        if (effExpDate < effPresDate) {
-          throw new BadRequestException('Expiry date cannot be before prescription date');
-        }
-        const maxDays = Math.ceil((effExpDate.getTime() - effPresDate.getTime()) / (1000 * 60 * 60 * 24));
-        if (Array.isArray((updateDto as any).items)) {
-          for (const it of (updateDto as any).items) {
-            if (it.duration && maxDays > 0 && it.duration > maxDays) {
-              throw new BadRequestException(`Item duration exceeds days until expiry (max ${maxDays})`);
-            }
-          }
-        }
+      // Business validation: date order
+      if (pres.expiryDate < pres.prescriptionDate) {
+        throw new BadRequestException('Expiry date cannot be before prescription date');
       }
 
       // Replace items atomically if provided
@@ -225,6 +206,14 @@ export class PrescriptionsService {
 
   async sign(id: string, clinicId?: string, actor?: User): Promise<Prescription> {
     return this.setStatus(id, PrescriptionStatus.ACTIVE, clinicId, actor);
+  }
+
+  async remove(id: string, clinicId?: string): Promise<void> {
+    const pres = await this.findOne(id, clinicId);
+    if (pres.status === PrescriptionStatus.DISPENSED || pres.status === PrescriptionStatus.COMPLETED) {
+      throw new BadRequestException('Cannot delete a dispensed or completed prescription');
+    }
+    await this.prescriptionRepository.softDelete(id);
   }
 
   async refill(id: string, clinicId?: string): Promise<Prescription> {

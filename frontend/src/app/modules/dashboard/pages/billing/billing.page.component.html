@@ -24,31 +24,16 @@
       </button>
     </app-page-header>
 
-    <!-- Barra de búsqueda standalone (sin stat-cards en este módulo) -->
-    <div class="mb-8">
-      <app-search-bar
-        placeholder="Número de factura, paciente..."
-        [value]="searchTerm"
-        [showClear]="!!searchTerm"
-        (valueChange)="searchTerm = $event"
-        (cleared)="searchTerm = ''"
-      >
-        <button
-          type="button"
-          (click)="performSearch()"
-          [disabled]="!searchTerm.trim()"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
-        >
-          <span class="material-symbols-outlined msz-18">search</span>
-          Buscar
-        </button>
-      </app-search-bar>
-    </div>
-
     <!-- Tabla de facturas -->
     <div class="table-container">
-      <div class="p-6 border-b border-slate-100">
-        <h2 class="text-xl font-bold text-slate-900">Facturas Recientes</h2>
+      <div class="table-toolbar">
+        <app-search-bar
+          placeholder="Número de factura, paciente..."
+          [value]="searchTerm"
+          [showClear]="!!searchTerm"
+          (valueChange)="searchTerm = $event"
+          (cleared)="searchTerm = ''"
+        />
       </div>
 
       <app-skeleton-table *ngIf="isLoading && recentInvoices.length === 0" [rows]="5" [columns]="4" />
@@ -137,11 +122,18 @@
     </div>
 
     <!-- Nota de desarrollo -->
-    <div class="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-xl flex items-start gap-3">
-      <span class="material-symbols-outlined text-blue-500 msz-24 flex-shrink-0">info</span>
-      <div>
-        <h3 class="font-semibold text-blue-900 mb-1">Módulo en Desarrollo</h3>
-        <p class="text-sm text-blue-800">
+    <div class="mt-6 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200">
+        <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">construction</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Módulo en Desarrollo</h3>
+          <p class="text-sm text-slate-500 m-0">Funcionalidades próximamente disponibles</p>
+        </div>
+      </div>
+      <div class="p-6">
+        <p class="text-sm text-slate-600 m-0">
           El módulo de facturación está actualmente en desarrollo. La interfaz está lista y
           esperando la implementación del backend. Todas las funcionalidades estarán disponibles próximamente.
         </p>

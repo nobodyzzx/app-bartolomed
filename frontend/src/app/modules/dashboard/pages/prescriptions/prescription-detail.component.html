@@ -1,117 +1,202 @@
-<div class="min-h-screen bg-slate-50 p-8" *ngIf="prescription as p">
-  <div class="max-w-4xl mx-auto">
-    <div class="flex items-center justify-between mb-10">
-      <div class="flex items-center gap-4">
-      <button
-        type="button"
-        (click)="goBack()"
-        class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-        aria-label="Volver"
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="flex justify-center items-center py-20">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+
+    <ng-container *ngIf="!loading && prescription as p">
+
+      <app-page-header
+        [title]="'Receta ' + p.prescriptionNumber"
+        subtitle="Detalle de la prescripción médica"
+        (back)="goBack()"
       >
-        <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
-      </button>
-      <div class="text-left">
-        <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Receta {{ p.prescriptionNumber }}</h1>
-      </div>
-      </div>
-    </div>
+        <!-- Acciones en el header -->
+        <button *ngIf="p.status === 'active' && !isExpired(p.expiryDate)"
+          type="button" (click)="changeStatus('dispensed')"
+          class="inline-flex items-center gap-2 px-4 h-10 rounded-full font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-all">
+          <span class="material-symbols-outlined msz-18 leading-none">local_pharmacy</span>
+          Dispensar
+        </button>
+        <button *ngIf="canRefill(p)"
+          type="button" (click)="doRefill()"
+          class="inline-flex items-center gap-2 px-4 h-10 rounded-full font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition-all">
+          <span class="material-symbols-outlined msz-18 leading-none">autorenew</span>
+          Resurtir
+        </button>
+        <button type="button" (click)="print()" [disabled]="printLoading"
+          class="inline-flex items-center gap-2 px-4 h-10 rounded-full font-medium bg-slate-800 text-white hover:bg-black shadow-sm transition-all border-0 disabled:opacity-60">
+          <span class="material-symbols-outlined msz-18 leading-none">{{ printLoading ? 'hourglass_empty' : 'print' }}</span>
+          {{ printLoading ? 'Generando...' : 'Imprimir' }}
+        </button>
+      </app-page-header>
 
-    <div class="bg-white rounded-2xl shadow-md p-6">
-      <div class="flex items-start justify-between mb-4">
-        <div>
-          <div class="text-sm text-slate-500">Paciente</div>
-          <div class="text-lg font-semibold text-slate-800">
-            {{ p.patient?.firstName }} {{ p.patient?.lastName }}
-          </div>
-          <div class="text-xs text-slate-500">CI: {{ p.patient?.documentNumber }}</div>
-        </div>
-        <div class="text-right">
-          <span
-            class="px-3 py-1.5 rounded-full text-xs font-semibold"
-            [ngClass]="getStatusBadgeClass(p.status)"
-          >
-            {{ p.status | uppercase }}
-          </span>
-          <div class="text-xs text-slate-400 mt-2">
-            Vence: {{ p.expiryDate | date: 'dd/MM/yyyy' }}
-          </div>
-          <div *ngIf="!isExpired(p.expiryDate)" class="text-xs text-amber-600 mt-1">
-            Quedan {{ getDaysUntilExpiry(p.expiryDate) }} días
-          </div>
-          <div *ngIf="isExpired(p.expiryDate)" class="text-xs text-red-600 mt-1">Vencida</div>
-        </div>
-      </div>
+      <div class="space-y-6">
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div class="flex items-center gap-2 text-slate-600">
-          <span class="material-symbols-outlined msz-18 text-slate-400">calendar_today</span>
-          <span>Emitida: {{ p.prescriptionDate | date: 'dd/MM/yyyy' }}</span>
-        </div>
-        <div class="flex items-center gap-2 text-slate-600">
-          <span class="material-symbols-outlined msz-18 text-slate-400">stethoscope</span>
-          <span>Médico: {{ p.doctor?.personalInfo?.firstName || p.doctor?.email }}</span>
-        </div>
-      </div>
-
-      <div class="mt-4">
-        <h3 class="text-lg font-semibold text-slate-800 mb-2">Medicamentos</h3>
-        <div class="divide-y divide-slate-100">
-          <div *ngFor="let it of p.items" class="py-3">
-            <div class="font-medium text-slate-800">{{ it.medicationName }} {{ it.strength }}</div>
-            <div class="text-sm text-slate-600">
-              {{ it.dosage }} • {{ it.frequency }} • {{ it.quantity }}
+        <!-- ══════════════════════════════════════════
+             SECCIÓN 1 — Datos de la Receta (azul)
+        ══════════════════════════════════════════ -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined msz-20">receipt_long</span>
             </div>
-            <div class="text-xs text-slate-500" *ngIf="it.route || it.duration || it.instructions">
-              <span *ngIf="it.route">Vía: {{ it.route }}</span>
-              <span *ngIf="it.duration"> • {{ it.duration }} días</span>
-              <span *ngIf="it.instructions"> • {{ it.instructions }}</span>
+            <div class="flex-1">
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Datos de la Receta</h3>
+              <p class="text-sm text-slate-500 m-0">Paciente, médico y vigencia</p>
+            </div>
+            <!-- Badge de estado -->
+            <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold"
+              [ngClass]="getStatusBadgeClass(p.status)">
+              {{ p.status | uppercase }}
+            </span>
+          </div>
+          <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              <!-- Paciente -->
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined msz-18">person</span>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500 mb-0.5">Paciente</div>
+                  <div class="font-semibold text-slate-900">{{ p.patient?.firstName }} {{ p.patient?.lastName }}</div>
+                  <div class="text-xs text-slate-500">CI: {{ p.patient?.documentNumber || '—' }}</div>
+                </div>
+              </div>
+
+              <!-- Médico -->
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined msz-18">stethoscope</span>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500 mb-0.5">Médico</div>
+                  <div class="font-semibold text-slate-900">{{ p.doctor?.personalInfo?.firstName || p.doctor?.email }}</div>
+                </div>
+              </div>
+
+              <!-- Emisión -->
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined msz-18">calendar_today</span>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500 mb-0.5">Fecha de Emisión</div>
+                  <div class="font-semibold text-slate-900">{{ p.prescriptionDate | date: 'dd/MM/yyyy' }}</div>
+                </div>
+              </div>
+
+              <!-- Vencimiento -->
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 flex-shrink-0 rounded-full flex items-center justify-center"
+                  [ngClass]="isExpired(p.expiryDate) ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'">
+                  <span class="material-symbols-outlined msz-18">event_busy</span>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500 mb-0.5">Vence</div>
+                  <div class="font-semibold" [ngClass]="isExpired(p.expiryDate) ? 'text-red-700' : 'text-slate-900'">
+                    {{ p.expiryDate | date: 'dd/MM/yyyy' }}
+                  </div>
+                  <div *ngIf="!isExpired(p.expiryDate)" class="text-xs text-amber-600">
+                    Quedan {{ getDaysUntilExpiry(p.expiryDate) }} días
+                  </div>
+                  <div *ngIf="isExpired(p.expiryDate)" class="text-xs text-red-600 font-medium">Vencida</div>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
-      </div>
 
-      <div *ngIf="p.diagnosis" class="mt-4">
-        <h3 class="text-lg font-semibold text-slate-800 mb-1">Diagnóstico</h3>
-        <p class="text-sm text-slate-700">{{ p.diagnosis }}</p>
-      </div>
+        <!-- ══════════════════════════════════════════
+             SECCIÓN 2 — Medicamentos (verde)
+        ══════════════════════════════════════════ -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+            <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined msz-20">medication</span>
+            </div>
+            <div>
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Medicamentos</h3>
+              <p class="text-sm text-slate-500 m-0">{{ p.items?.length || 0 }} medicamento(s) recetado(s)</p>
+            </div>
+          </div>
+          <div class="divide-y divide-slate-100">
+            <div *ngFor="let it of p.items; let i = index" class="px-6 py-4 flex items-start gap-4">
+              <div class="w-7 h-7 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">
+                {{ i + 1 }}
+              </div>
+              <div class="flex-1">
+                <div class="font-semibold text-slate-900">{{ it.medicationName }} <span class="font-normal text-slate-500">{{ it.strength }}</span></div>
+                <div class="text-sm text-slate-600 mt-0.5">
+                  {{ it.dosage }} · {{ it.frequency }} · {{ it.quantity }} unidades
+                </div>
+                <div class="text-xs text-slate-400 mt-0.5 flex flex-wrap gap-3">
+                  <span *ngIf="it.dosageForm">{{ it.dosageForm }}</span>
+                  <span *ngIf="it.route">Vía: {{ it.route }}</span>
+                  <span *ngIf="it.duration">{{ it.duration }} días</span>
+                  <span *ngIf="it.instructions" class="text-slate-500 italic">{{ it.instructions }}</span>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="!p.items?.length" class="px-6 py-8 text-center text-slate-400 text-sm">
+              Sin medicamentos registrados
+            </div>
+          </div>
+        </div>
 
-      <div class="mt-6 flex flex-wrap gap-2 justify-end">
-        <button
-          (click)="changeStatus('dispensed')"
-          *ngIf="p.status === 'active' && !isExpired(p.expiryDate)"
-          class="inline-flex items-center gap-2 px-4 h-11 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors border-0"
-        >
-          <span class="material-symbols-outlined msz-18">local_pharmacy</span> Dispensar
-        </button>
-        <button
-          (click)="changeStatus('completed')"
-          *ngIf="p.status === 'active' && !isExpired(p.expiryDate)"
-          class="inline-flex items-center gap-2 px-4 h-11 rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors border-0"
-        >
-          <span class="material-symbols-outlined msz-18">done_all</span> Completar
-        </button>
-        <button
-          (click)="changeStatus('cancelled')"
-          *ngIf="p.status !== 'cancelled' && !isExpired(p.expiryDate)"
-          class="inline-flex items-center gap-2 px-4 h-11 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition-colors border-0"
-        >
-          <span class="material-symbols-outlined msz-18">cancel</span> Cancelar
-        </button>
-        <button
-          (click)="doRefill()"
-          *ngIf="canRefill(p)"
-          class="inline-flex items-center gap-2 px-4 h-11 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors border-0"
-        >
-          <span class="material-symbols-outlined msz-18">autorenew</span> Resurtir
-        </button>
-        <button
-          (click)="print()"
-          class="inline-flex items-center gap-2 px-4 h-11 rounded-full bg-slate-800 text-white hover:bg-black transition-colors border-0"
-        >
-          <span class="material-symbols-outlined msz-18">print</span> Imprimir
-        </button>
-        <!-- Verification / QR functionality removed -->
+        <!-- ══════════════════════════════════════════
+             SECCIÓN 3 — Diagnóstico / Notas (naranja · si existen)
+        ══════════════════════════════════════════ -->
+        <div *ngIf="p.diagnosis || p.notes || p.patientInstructions"
+          class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="flex items-center gap-4 px-6 py-4 bg-orange-50 border-b border-orange-100">
+            <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined msz-20">note_add</span>
+            </div>
+            <div>
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Diagnóstico y Notas</h3>
+              <p class="text-sm text-slate-500 m-0">Indicaciones y observaciones del médico</p>
+            </div>
+          </div>
+          <div class="p-6 space-y-4">
+            <div *ngIf="p.diagnosis">
+              <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Diagnóstico</div>
+              <p class="text-sm text-slate-700">{{ p.diagnosis }}</p>
+            </div>
+            <div *ngIf="p.patientInstructions">
+              <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Indicaciones para el paciente</div>
+              <p class="text-sm text-slate-700">{{ p.patientInstructions }}</p>
+            </div>
+            <div *ngIf="p.notes">
+              <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Notas adicionales</div>
+              <p class="text-sm text-slate-700">{{ p.notes }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones de estado (completar / cancelar) -->
+        <div *ngIf="p.status !== 'cancelled' && p.status !== 'completed'"
+          class="flex flex-wrap gap-3 justify-end">
+          <button *ngIf="p.status === 'active' && !isExpired(p.expiryDate)"
+            type="button" (click)="changeStatus('completed')"
+            class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-all">
+            <span class="material-symbols-outlined msz-18 leading-none">done_all</span>
+            Marcar como completada
+          </button>
+          <button type="button" (click)="changeStatus('cancelled')"
+            class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-all">
+            <span class="material-symbols-outlined msz-18 leading-none">cancel</span>
+            Cancelar receta
+          </button>
+        </div>
+
       </div>
-    </div>
+    </ng-container>
+
   </div>
 </div>

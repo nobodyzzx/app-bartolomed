@@ -88,9 +88,8 @@ export class ConsentTemplatesService {
     .section { margin-top: 12px; }
     .sign { height: 60px; border-bottom: 1px solid #cbd5e1; margin-bottom: 4px; }
   </style>
-  <script>function afterLoad(){ window.print(); }</script>
   </head>
-  <body onload="afterLoad()">
+  <body>
     <div class="titlebar">
       <div>
         <h1>Consentimiento Informado para Procedimiento Diagnóstico (Bajo Riesgo)</h1>
@@ -609,28 +608,21 @@ export class ConsentTemplatesService {
       iframe.style.height = '0'
       iframe.style.border = '0'
       iframe.setAttribute('aria-hidden', 'true')
-      document.body.appendChild(iframe)
 
-      let printed = false
-      const onLoad = () => {
-        if (printed) return
-        printed = true
+      // Registrar onload ANTES de asignar srcdoc para no perder el evento
+      iframe.onload = () => {
         try {
           iframe.contentWindow?.focus()
           iframe.contentWindow?.print()
         } finally {
           setTimeout(() => {
-            if (iframe.parentNode) iframe.parentNode.removeChild(iframe)
-          }, 1000)
+            iframe.parentNode?.removeChild(iframe)
+          }, 1500)
         }
       }
 
-      const doc = iframe.contentWindow?.document
-      if (!doc) throw new Error('no-iframe-doc')
-      iframe.onload = onLoad
-      doc.open()
-      doc.write(html)
-      doc.close()
+      iframe.srcdoc = html
+      document.body.appendChild(iframe)
     } catch {
       this.alert.fire({
         icon: 'error',

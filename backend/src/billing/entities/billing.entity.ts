@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
   ManyToOne,
   OneToMany,
   JoinColumn,
@@ -44,6 +45,7 @@ export enum PaymentStatus {
 }
 
 @Entity('invoices')
+@Index(['clinic', 'createdAt'])
 export class Invoice {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -114,6 +116,7 @@ export class Invoice {
   @JoinColumn({ name: 'patient_id' })
   patient: Patient;
 
+  @Index()
   @ManyToOne(() => Clinic, { eager: true })
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic;

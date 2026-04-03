@@ -1,22 +1,13 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, ElementRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { ErrorService } from '../../../../shared/components/services/error.service'
-import { ClinicsService } from '../clinics/services/clinics.service'
+import { ClinicsService } from '../admin/clinics/services/clinics.service'
 import { PatientsService } from '../patients/services/patients.service'
-import { BillingService, InvoiceDto } from './billing.service'
-
-interface PatientOption {
-  id: string
-  firstName: string
-  lastName: string
-}
-
-interface ClinicOption {
-  id: string
-  name: string
-}
+import { BillingService, InvoiceDto, InvoiceItemDto, InvoiceResponse } from './billing.service'
+import { ClinicOption, PatientOption } from './interfaces/billing-ui.interfaces'
 
 @Component({
   selector: 'app-invoice-form',
@@ -24,6 +15,8 @@ interface ClinicOption {
   styleUrls: ['./invoice-form.component.css'],
 })
 export class InvoiceFormComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   form!: FormGroup
   isEdit = false
   loading = false
@@ -43,6 +36,7 @@ export class InvoiceFormComponent implements OnInit {
     private clinicsService: ClinicsService,
     private alert: AlertService,
     private errorService: ErrorService,
+    private elRef: ElementRef,
   ) {}
 
   goBack(): void {
@@ -99,19 +93,19 @@ export class InvoiceFormComponent implements OnInit {
   }
 
   loadOptions(): void {
-    this.patientsService.findAll().subscribe({
-      next: pts => (this.patients = pts as any),
+    this.patientsService.findAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: pts => (this.patients = pts.data.map(p => ({ id: p.id, firstName: p.firstName, lastName: p.lastName }))),
       error: err => this.errorService.handleError(err),
     })
-    this.clinicsService.findAll(true).subscribe({
-      next: cs => (this.clinics = cs as any),
+    this.clinicsService.findAll(true).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: cs => (this.clinics = cs.map(c => ({ id: c.id, name: c.name }))),
       error: err => this.errorService.handleError(err),
     })
   }
 
   loadInvoice(id: string): void {
     this.loading = true
-    this.billing.getInvoice(id).subscribe({
+    this.billing.getInvoice(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: inv => {
         this.form.patchValue({
           invoiceNumber: inv.invoiceNumber,
@@ -127,7 +121,7 @@ export class InvoiceFormComponent implements OnInit {
         })
 
         this.items.clear()
-        ;(inv.items || []).forEach((it: any) => {
+        ;(inv.items || []).forEach((it: InvoiceItemDto) => {
           this.items.push(
             this.fb.group({
               description: [it.description, Validators.required],
@@ -155,6 +149,7 @@ export class InvoiceFormComponent implements OnInit {
   submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched()
+      this.scrollToFirstError()
       return
     }
 
@@ -170,7 +165,7 @@ export class InvoiceFormComponent implements OnInit {
       terms: raw.terms,
       patientId: raw.patientId,
       clinicId: raw.clinicId,
-      items: raw.items.map((it: any) => ({
+      items: raw.items.map((it: InvoiceItemDto) => ({
         description: it.description,
         quantity: Number(it.quantity),
         unitPrice: Number(it.unitPrice),
@@ -185,7 +180,7 @@ export class InvoiceFormComponent implements OnInit {
       this.isEdit && id
         ? this.billing.updateInvoice(id, payload)
         : this.billing.createInvoice(payload)
-    obs.subscribe({
+    obs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.loading = false
         this.alert.success('Éxito', this.isEdit ? 'Factura actualizada' : 'Factura creada')
@@ -198,8 +193,15 @@ export class InvoiceFormComponent implements OnInit {
     })
   }
 
+  private scrollToFirstError(): void {
+    requestAnimationFrame(() => {
+      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
+  }
+
   async generateInvoiceNumber(): Promise<void> {
-    this.billing.generateInvoiceNumber().subscribe({
+    this.billing.generateInvoiceNumber().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: num => this.form.get('invoiceNumber')?.setValue(num),
       error: () => {},
     })

@@ -1,69 +1,96 @@
-<div class="min-h-screen bg-slate-50 p-8">
-  <div class="max-w-4xl mx-auto">
-    <!-- Header -->
-    <header class="flex items-center justify-between mb-10">
-      <div class="flex items-center gap-4">
-      <button
-        type="button"
-        (click)="goBack()"
-        class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-        aria-label="Volver"
-      >
-        <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
-      </button>
-      <div class="text-left">
-        <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">
-          {{ isEditMode ? 'Editar Medicamento' : 'Nuevo Medicamento' }}
-        </h1>
-        <p class="text-slate-600">
-          {{
-            isEditMode
-              ? 'Modifica los datos del medicamento'
-              : 'Registra un nuevo medicamento en el inventario'
-          }}
-        </p>
-      </div>
-      </div>
-    </header>
+<div class="page-wrapper">
+  <div class="page-inner">
 
-    <!-- Formulario -->
-    <div class="bg-white rounded-2xl shadow-md p-6">
-      <form [formGroup]="medicationForm" (ngSubmit)="onSubmit()" class="space-y-6">
-        <!-- Código (auto-generado) -->
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Código *</mat-label>
-          <input matInput formControlName="code" readonly />
-          <mat-hint>Generado automáticamente</mat-hint>
-        </mat-form-field>
+    <app-page-header
+      [title]="isEditMode ? 'Editar Medicamento' : 'Nuevo Medicamento'"
+      [subtitle]="isEditMode ? 'Modifica los datos del medicamento' : 'Registra un nuevo medicamento en el inventario'"
+      (back)="goBack()"
+    >
+      <ng-container actions>
+        <button
+          type="button"
+          (click)="cancel()"
+          class="btn btn-danger-outline"
+        >
+          <span class="material-symbols-outlined msz-18">cancel</span>
+          Cancelar
+        </button>
+      </ng-container>
+    </app-page-header>
 
-        <!-- Nombre Comercial y Principio Activo -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Nombre comercial *</mat-label>
-            <input matInput formControlName="nombreComercial" placeholder="Ej: Tafirol 500" />
-            <mat-error *ngIf="medicationForm.get('nombreComercial')?.hasError('required')">
-              El nombre comercial es requerido
-            </mat-error>
-            <mat-error *ngIf="medicationForm.get('nombreComercial')?.hasError('minlength')">
-              Mínimo 2 caracteres
-            </mat-error>
-          </mat-form-field>
+    <form [formGroup]="medicationForm" (ngSubmit)="onSubmit()" class="space-y-6">
 
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Principio activo *</mat-label>
-            <input matInput formControlName="principioActivo" placeholder="Ej: Paracetamol" />
-            <mat-error *ngIf="medicationForm.get('principioActivo')?.hasError('required')">
-              El principio activo es requerido
-            </mat-error>
-          </mat-form-field>
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 1 — Información Básica (azul)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">medication</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información Básica</h3>
+            <p class="text-sm text-slate-500 m-0">Identificación y datos del medicamento</p>
+          </div>
         </div>
+        <div class="p-6 space-y-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Código</mat-label>
+            <mat-icon matPrefix class="text-blue-400">tag</mat-icon>
+            <input matInput formControlName="code" readonly />
+            <mat-hint>Generado automáticamente</mat-hint>
+          </mat-form-field>
 
-        <!-- Concentración -->
-        <fieldset class="border border-slate-200 rounded-lg p-4 bg-slate-50">
-          <legend class="px-2 text-sm font-semibold text-slate-700">Concentración</legend>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Valor *</mat-label>
+              <mat-label>Nombre comercial *</mat-label>
+              <mat-icon matPrefix class="text-blue-400">sell</mat-icon>
+              <input matInput formControlName="nombreComercial" placeholder="Ej: Tafirol 500" />
+              <mat-error *ngIf="medicationForm.get('nombreComercial')?.hasError('required')">
+                El nombre comercial es requerido
+              </mat-error>
+              <mat-error *ngIf="medicationForm.get('nombreComercial')?.hasError('minlength')">
+                Mínimo 2 caracteres
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Principio activo *</mat-label>
+              <mat-icon matPrefix class="text-blue-400">science</mat-icon>
+              <input matInput formControlName="principioActivo" placeholder="Ej: Paracetamol" />
+              <mat-error *ngIf="medicationForm.get('principioActivo')?.hasError('required')">
+                El principio activo es requerido
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Laboratorio</mat-label>
+            <mat-icon matPrefix class="text-blue-400">business</mat-icon>
+            <input matInput formControlName="laboratorio" placeholder="Ej: ACME Labs" />
+            <mat-hint>Opcional</mat-hint>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 2 — Concentración y Presentación (morado)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
+          <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">labs</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Concentración y Presentación</h3>
+            <p class="text-sm text-slate-500 m-0">Forma farmacéutica y vía de administración</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Valor de concentración *</mat-label>
+              <mat-icon matPrefix class="text-purple-400">numbers</mat-icon>
               <input
                 matInput
                 type="number"
@@ -82,64 +109,58 @@
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Unidad *</mat-label>
+              <mat-icon matPrefix class="text-purple-400">straighten</mat-icon>
               <mat-select formControlName="concentracionUnidad">
                 <mat-option *ngFor="let u of concentrationUnits" [value]="u">{{ u }}</mat-option>
               </mat-select>
             </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Forma farmacéutica *</mat-label>
+              <mat-icon matPrefix class="text-purple-400">medication_liquid</mat-icon>
+              <mat-select formControlName="formaFarmaceutica">
+                <mat-option *ngFor="let f of dosageForms" [value]="f">{{ f }}</mat-option>
+              </mat-select>
+              <mat-error *ngIf="medicationForm.get('formaFarmaceutica')?.hasError('required')">
+                Requerido
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Vía de administración *</mat-label>
+              <mat-icon matPrefix class="text-purple-400">route</mat-icon>
+              <mat-select formControlName="viaAdministracion">
+                <mat-option *ngFor="let v of administrationRoutes" [value]="v">{{ v }}</mat-option>
+              </mat-select>
+              <mat-error *ngIf="medicationForm.get('viaAdministracion')?.hasError('required')">
+                Requerido
+              </mat-error>
+            </mat-form-field>
           </div>
-        </fieldset>
-
-        <!-- Forma Farmacéutica y Vía de Administración -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Forma farmacéutica *</mat-label>
-            <mat-select formControlName="formaFarmaceutica">
-              <mat-option *ngFor="let f of dosageForms" [value]="f">{{ f }}</mat-option>
-            </mat-select>
-            <mat-error *ngIf="medicationForm.get('formaFarmaceutica')?.hasError('required')">
-              Requerido
-            </mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Vía de administración *</mat-label>
-            <mat-select formControlName="viaAdministracion">
-              <mat-option *ngFor="let v of administrationRoutes" [value]="v">{{ v }}</mat-option>
-            </mat-select>
-            <mat-error *ngIf="medicationForm.get('viaAdministracion')?.hasError('required')">
-              Requerido
-            </mat-error>
-          </mat-form-field>
         </div>
+      </div>
 
-        <!-- Laboratorio -->
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Laboratorio</mat-label>
-          <input matInput formControlName="laboratorio" placeholder="Ej: ACME Labs" />
-          <mat-hint>Opcional</mat-hint>
-        </mat-form-field>
+      <!-- ══════ Sticky action bar ══════ -->
+      <div class="form-action-bar">
+        <button
+          type="button"
+          (click)="cancel()"
+          class="btn btn-danger-outline"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none">close</span>
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          [disabled]="loading || medicationForm.invalid"
+          class="btn btn-primary"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none" *ngIf="!loading">save</span>
+          <span class="material-symbols-outlined msz-18 leading-none animate-spin" *ngIf="loading">refresh</span>
+          {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+        </button>
+      </div>
 
-        <!-- Botones de acción -->
-        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
-          <button
-            type="button"
-            (click)="cancel()"
-            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
-          >
-            <span class="material-symbols-outlined">close</span>
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            [disabled]="loading || medicationForm.invalid"
-            class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            <span class="material-symbols-outlined" *ngIf="!loading">save</span>
-            <span class="material-symbols-outlined animate-spin" *ngIf="loading">refresh</span>
-            {{ isEditMode ? 'Actualizar' : 'Guardar' }}
-          </button>
-        </div>
-      </form>
-    </div>
+    </form>
   </div>
 </div>

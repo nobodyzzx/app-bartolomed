@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
+import { Clinic } from '../clinics/entities/clinic.entity';
 import { User } from '../users/entities/user.entity';
 import {
   CreateConsentFormDto,
@@ -46,7 +47,7 @@ export class MedicalRecordsService {
   ) {}
 
   // Medical Records Methods
-  async create(createMedicalRecordDto: CreateMedicalRecordDto, user: User): Promise<MedicalRecord> {
+  async create(createMedicalRecordDto: CreateMedicalRecordDto, user: User, clinicId: string): Promise<MedicalRecord> {
     const medicalRecord = this.medicalRecordRepository.create(createMedicalRecordDto);
 
     // CRÍTICO: Asignar manualmente las relaciones patient y doctor
@@ -58,6 +59,7 @@ export class MedicalRecordsService {
     if (createMedicalRecordDto.doctorId) {
       medicalRecord.doctor = { id: createMedicalRecordDto.doctorId } as any;
     }
+    medicalRecord.clinic = { id: clinicId } as Clinic;
     medicalRecord.createdBy = user;
 
     // Si hay un relatedRecordId, establecer la relación
@@ -107,7 +109,10 @@ export class MedicalRecordsService {
   async findAll(
     filters: MedicalRecordFilters = {},
     pagination: PaginationOptions = {},
+    clinicId?: string,
   ): Promise<{ data: MedicalRecord[]; total: number }> {
+    if (!clinicId) throw new BadRequestException('clinicId is required');
+    filters = { ...filters, clinicId };
     const { page = 1, limit = 10 } = pagination;
     const skip = (page - 1) * limit;
 
@@ -146,7 +151,7 @@ export class MedicalRecordsService {
     }
 
     if (filters.clinicId) {
-      queryBuilder.andWhere('patient.clinic.id = :clinicId', { clinicId: filters.clinicId });
+      queryBuilder.andWhere('medicalRecord.clinicId = :clinicId', { clinicId: filters.clinicId });
     }
 
     if (filters.isEmergency !== undefined) {
@@ -167,11 +172,17 @@ export class MedicalRecordsService {
     return { data, total };
   }
 
-  async findOne(id: string): Promise<MedicalRecord> {
-    const medicalRecord = await this.medicalRecordRepository.findOne({
-      where: { id, isActive: true },
-      relations: ['patient', 'doctor', 'createdBy', 'updatedBy'],
-    });
+  async findOne(id: string, clinicId?: string): Promise<MedicalRecord> {
+    if (!clinicId) throw new BadRequestException('clinicId is required');
+    const medicalRecord = await this.medicalRecordRepository
+      .createQueryBuilder('mr')
+      .leftJoinAndSelect('mr.patient', 'patient')
+      .leftJoinAndSelect('mr.doctor', 'doctor')
+      .leftJoinAndSelect('mr.createdBy', 'createdBy')
+      .leftJoinAndSelect('mr.updatedBy', 'updatedBy')
+      .where('mr.id = :id AND mr.isActive = true', { id })
+      .andWhere('mr.clinicId = :clinicId', { clinicId })
+      .getOne();
 
     if (!medicalRecord) {
       throw new NotFoundException(`Medical record with ID ${id} not found`);
@@ -181,6 +192,7 @@ export class MedicalRecordsService {
   }
 
   async getMedicalRecordsByPatient(patientId: string, clinicId?: string): Promise<MedicalRecord[]> {
+    if (!clinicId) throw new BadRequestException('clinicId is required');
     const qb = this.medicalRecordRepository
       .createQueryBuilder('medicalRecord')
       .leftJoinAndSelect('medicalRecord.patient', 'patient')
@@ -189,16 +201,14 @@ export class MedicalRecordsService {
       .leftJoinAndSelect('medicalRecord.updatedBy', 'updatedBy')
       .where('medicalRecord.isActive = :isActive', { isActive: true })
       .andWhere('patient.id = :patientId', { patientId })
+      .andWhere('medicalRecord.clinicId = :clinicId', { clinicId })
       .orderBy('medicalRecord.createdAt', 'DESC');
-
-    if (clinicId) {
-      qb.andWhere('patient.clinic.id = :clinicId', { clinicId });
-    }
 
     return await qb.getMany();
   }
 
   async getMedicalRecordsByDoctor(doctorId: string, clinicId?: string): Promise<MedicalRecord[]> {
+    if (!clinicId) throw new BadRequestException('clinicId is required');
     const qb = this.medicalRecordRepository
       .createQueryBuilder('medicalRecord')
       .leftJoinAndSelect('medicalRecord.patient', 'patient')
@@ -207,17 +217,14 @@ export class MedicalRecordsService {
       .leftJoinAndSelect('medicalRecord.updatedBy', 'updatedBy')
       .where('medicalRecord.isActive = :isActive', { isActive: true })
       .andWhere('doctor.id = :doctorId', { doctorId })
+      .andWhere('medicalRecord.clinicId = :clinicId', { clinicId })
       .orderBy('medicalRecord.createdAt', 'DESC');
-
-    if (clinicId) {
-      qb.andWhere('patient.clinic.id = :clinicId', { clinicId });
-    }
 
     return await qb.getMany();
   }
 
-  async update(id: string, updateMedicalRecordDto: UpdateMedicalRecordDto, user: User): Promise<MedicalRecord> {
-    const medicalRecord = await this.findOne(id);
+  async update(id: string, updateMedicalRecordDto: UpdateMedicalRecordDto, user: User, clinicId?: string): Promise<MedicalRecord> {
+    const medicalRecord = await this.findOne(id, clinicId);
 
     Object.assign(medicalRecord, updateMedicalRecordDto);
     medicalRecord.updatedBy = user;
@@ -232,21 +239,18 @@ export class MedicalRecordsService {
     return await this.medicalRecordRepository.save(medicalRecord);
   }
 
-  async remove(id: string): Promise<void> {
-    const medicalRecord = await this.findOne(id);
-    medicalRecord.isActive = false;
-    await this.medicalRecordRepository.save(medicalRecord);
+  async remove(id: string, clinicId?: string): Promise<void> {
+    await this.findOne(id, clinicId); // valida existencia y pertenencia a la clínica
+    await this.medicalRecordRepository.softDelete(id);
   }
 
   async getStats(clinicId?: string): Promise<MedicalRecordStats> {
+    if (!clinicId) throw new BadRequestException('clinicId is required');
     const baseQb = this.medicalRecordRepository
       .createQueryBuilder('medicalRecord')
       .leftJoin('medicalRecord.patient', 'patient')
-      .where('medicalRecord.isActive = true');
-
-    if (clinicId) {
-      baseQb.andWhere('patient.clinic.id = :clinicId', { clinicId });
-    }
+      .where('medicalRecord.isActive = true')
+      .andWhere('medicalRecord.clinicId = :clinicId', { clinicId });
 
     const total = await baseQb.getCount();
 
@@ -254,10 +258,8 @@ export class MedicalRecordsService {
       .createQueryBuilder('medicalRecord')
       .leftJoin('medicalRecord.patient', 'patient')
       .where('medicalRecord.isActive = true')
-      .andWhere('medicalRecord.isEmergency = true');
-    if (clinicId) {
-      emergenciesQb.andWhere('patient.clinic.id = :clinicId', { clinicId });
-    }
+      .andWhere('medicalRecord.isEmergency = true')
+      .andWhere('medicalRecord.clinicId = :clinicId', { clinicId });
     const emergencies = await emergenciesQb.getCount();
 
     const startOfMonth = new Date();
@@ -268,13 +270,11 @@ export class MedicalRecordsService {
       .createQueryBuilder('medicalRecord')
       .leftJoin('medicalRecord.patient', 'patient')
       .where('medicalRecord.isActive = true')
+      .andWhere('patient.clinic.id = :clinicId', { clinicId })
       .andWhere('medicalRecord.createdAt BETWEEN :startDate AND :endDate', {
         startDate: startOfMonth,
         endDate: new Date(),
       });
-    if (clinicId) {
-      thisMonthQb.andWhere('patient.clinic.id = :clinicId', { clinicId });
-    }
     const thisMonth = await thisMonthQb.getCount();
 
     // Stats por tipo
@@ -284,7 +284,7 @@ export class MedicalRecordsService {
       .select('medicalRecord.type', 'type')
       .addSelect('COUNT(*)', 'count')
       .where('medicalRecord.isActive = true')
-      .andWhere(clinicId ? 'patient.clinic.id = :clinicId' : '1=1', clinicId ? { clinicId } : {})
+      .andWhere('patient.clinic.id = :clinicId', { clinicId })
       .groupBy('medicalRecord.type')
       .getRawMany();
 
@@ -300,7 +300,7 @@ export class MedicalRecordsService {
       .select('medicalRecord.status', 'status')
       .addSelect('COUNT(*)', 'count')
       .where('medicalRecord.isActive = true')
-      .andWhere(clinicId ? 'patient.clinic.id = :clinicId' : '1=1', clinicId ? { clinicId } : {})
+      .andWhere('patient.clinic.id = :clinicId', { clinicId })
       .groupBy('medicalRecord.status')
       .getRawMany();
 
@@ -319,15 +319,20 @@ export class MedicalRecordsService {
   }
 
   // Consent Forms Methods
-  async createConsentForm(createConsentFormDto: CreateConsentFormDto): Promise<ConsentForm> {
+  async createConsentForm(createConsentFormDto: CreateConsentFormDto, clinicId: string): Promise<ConsentForm> {
     const consentForm = this.consentFormRepository.create(createConsentFormDto);
+    consentForm.clinic = { id: clinicId } as Clinic;
     return await this.consentFormRepository.save(consentForm);
   }
 
   async findAllConsentForms(
-    filters: { patientId?: string; medicalRecordId?: string; status?: ConsentStatus } = {},
+    filters: { patientId?: string; medicalRecordId?: string; status?: ConsentStatus; clinicId?: string } = {},
   ): Promise<ConsentForm[]> {
     const where: any = { isActive: true };
+
+    if (filters.clinicId) {
+      where['clinic'] = { id: filters.clinicId };
+    }
 
     if (filters.patientId) {
       where['patient'] = { id: filters.patientId };

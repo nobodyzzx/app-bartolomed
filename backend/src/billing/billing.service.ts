@@ -116,7 +116,8 @@ export class BillingService {
     });
   }
 
-  async findAll(page = 1, pageSize = 20, filter: any = {}) {
+  async findAll(page = 1, pageSize = 20, filter: any = {}, clinicId?: string) {
+    if (!clinicId) throw new BadRequestException('clinicId is required');
     const skip = (page - 1) * pageSize;
     const qb = this.invoiceRepository
       .createQueryBuilder('invoice')
@@ -124,15 +125,13 @@ export class BillingService {
       .leftJoinAndSelect('invoice.clinic', 'clinic')
       .leftJoinAndSelect('invoice.items', 'items')
       .leftJoinAndSelect('invoice.payments', 'payments')
+      .where('clinic.id = :clinicId', { clinicId })
       .orderBy('invoice.createdAt', 'DESC')
       .skip(skip)
       .take(pageSize);
 
     if (filter.patientId) {
       qb.andWhere('patient.id = :patientId', { patientId: filter.patientId });
-    }
-    if (filter.clinicId) {
-      qb.andWhere('clinic.id = :clinicId', { clinicId: filter.clinicId });
     }
     if (filter.status) {
       qb.andWhere('invoice.status = :status', { status: filter.status });
@@ -158,9 +157,9 @@ export class BillingService {
   }
 
   async findOne(id: string, clinicId?: string): Promise<Invoice> {
-    const where = clinicId ? ({ id, clinic: { id: clinicId } } as any) : ({ id } as any);
+    if (!clinicId) throw new BadRequestException('clinicId is required');
     const invoice = await this.invoiceRepository.findOne({
-      where,
+      where: { id, clinic: { id: clinicId } } as any,
       relations: ['patient', 'clinic', 'appointment', 'items', 'payments', 'createdBy'],
     });
     if (!invoice) throw new NotFoundException('Invoice not found');
@@ -316,30 +315,27 @@ export class BillingService {
   }
 
   async getPaymentsByInvoice(invoiceId: string, clinicId?: string): Promise<Payment[]> {
+    if (!clinicId) throw new BadRequestException('clinicId is required');
     const qb = this.paymentRepository
       .createQueryBuilder('payment')
       .leftJoinAndSelect('payment.processedBy', 'processedBy')
       .leftJoin('payment.invoice', 'invoice')
       .leftJoin('invoice.clinic', 'clinic')
       .where('invoice.id = :invoiceId', { invoiceId })
+      .andWhere('clinic.id = :clinicId', { clinicId })
       .orderBy('payment.createdAt', 'DESC');
-
-    if (clinicId) {
-      qb.andWhere('clinic.id = :clinicId', { clinicId });
-    }
 
     return qb.getMany();
   }
 
   async confirmPayment(paymentId: string, clinicId?: string): Promise<Payment> {
+    if (!clinicId) throw new BadRequestException('clinicId is required');
     const paymentQb = this.paymentRepository
       .createQueryBuilder('payment')
       .leftJoinAndSelect('payment.invoice', 'invoice')
       .leftJoin('invoice.clinic', 'clinic')
-      .where('payment.id = :paymentId', { paymentId });
-    if (clinicId) {
-      paymentQb.andWhere('clinic.id = :clinicId', { clinicId });
-    }
+      .where('payment.id = :paymentId', { paymentId })
+      .andWhere('clinic.id = :clinicId', { clinicId });
     const payment = await paymentQb.getOne();
     if (!payment) throw new NotFoundException('Payment not found');
 
@@ -368,14 +364,13 @@ export class BillingService {
   }
 
   async cancelPayment(paymentId: string, clinicId?: string): Promise<Payment> {
+    if (!clinicId) throw new BadRequestException('clinicId is required');
     const paymentQb = this.paymentRepository
       .createQueryBuilder('payment')
       .leftJoinAndSelect('payment.invoice', 'invoice')
       .leftJoin('invoice.clinic', 'clinic')
-      .where('payment.id = :paymentId', { paymentId });
-    if (clinicId) {
-      paymentQb.andWhere('clinic.id = :clinicId', { clinicId });
-    }
+      .where('payment.id = :paymentId', { paymentId })
+      .andWhere('clinic.id = :clinicId', { clinicId });
     const payment = await paymentQb.getOne();
     if (!payment) throw new NotFoundException('Payment not found');
     if (payment.status === PaymentStatus.CANCELLED) {
@@ -398,11 +393,9 @@ export class BillingService {
 
   // Estadísticas y reportes
   async getStatistics(clinicId?: string): Promise<any> {
+    if (!clinicId) throw new BadRequestException('clinicId is required');
     const qb = this.invoiceRepository.createQueryBuilder('invoice');
-
-    if (clinicId) {
-      qb.where('invoice.clinic_id = :clinicId', { clinicId });
-    }
+    qb.where('invoice.clinic_id = :clinicId', { clinicId });
 
     const [allInvoices, totalInvoices] = await qb.getManyAndCount();
 

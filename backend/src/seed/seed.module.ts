@@ -4,6 +4,7 @@ import { Appointment } from '../appointments/entities/appointment.entity';
 import { Clinic } from '../clinics/entities/clinic.entity';
 import { MedicalRecord } from '../medical-records/entities/medical-record.entity';
 import { Patient } from '../patients/entities/patient.entity';
+import { Medication, MedicationStock } from '../pharmacy/entities/pharmacy.entity';
 import { Prescription, PrescriptionItem } from '../prescriptions/entities/prescription.entity';
 import { Role } from '../roles/entities/role.entity';
 import { PersonalInfo } from '../users/entities/personal-info.entity';
@@ -26,8 +27,9 @@ import { SeedService } from './seed.service';
       Appointment,
       Prescription,
       PrescriptionItem,
-      // Agregado para seed de expedientes médicos
       MedicalRecord,
+      Medication,
+      MedicationStock,
     ]),
   ],
   providers: [SeedService],

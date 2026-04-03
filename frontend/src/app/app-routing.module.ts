@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { authGuard, guestGuard } from './modules/auth/guards';
-// import { authGuard, guestGuard } from './auth/guards';
+import { clinicContextGuard } from './core/guards/clinic-context.guard';
 
 const routes: Routes = [
   {
@@ -11,7 +11,7 @@ const routes: Routes = [
   },
   {
     path: 'dashboard',
-    canActivate: [authGuard],
+    canActivate: [authGuard, clinicContextGuard],
     loadChildren: () => import('./modules/dashboard/dashboard.module').then((m) => m.DashboardModule),
   },
   {

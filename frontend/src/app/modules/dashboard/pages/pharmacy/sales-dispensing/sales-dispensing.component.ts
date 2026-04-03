@@ -1,18 +1,21 @@
 import { Location } from '@angular/common'
-import { Component, OnInit, ViewChild, computed, effect, signal } from '@angular/core'
-import { MatPaginator } from '@angular/material/paginator'
+import { AfterViewInit, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
+import { MatPaginator, PageEvent } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
 import { Router } from '@angular/router'
 import { Sale, SaleStatus } from '../interfaces/pharmacy.interfaces'
-import { SalesDispensingService } from '../services/sales-dispensing.service'
+import { SalesDispensingService, SalesSummary } from '../services/sales-dispensing.service'
 
 @Component({
   selector: 'app-sales-dispensing',
   templateUrl: './sales-dispensing.component.html',
   styleUrls: ['./sales-dispensing.component.css'],
 })
-export class SalesDispensingComponent implements OnInit {
+export class SalesDispensingComponent implements OnInit, AfterViewInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   @ViewChild(MatPaginator) paginator!: MatPaginator
   @ViewChild(MatSort) sort!: MatSort
 
@@ -27,69 +30,67 @@ export class SalesDispensingComponent implements OnInit {
   ]
   dataSource = new MatTableDataSource<Sale>()
 
-  sales = signal<Sale[]>([])
-  statFilter = signal<'all' | 'completed' | 'pending'>('all')
-  loading = signal(false)
-
-  stats = computed(() => {
-    const all = this.sales()
-    return {
-      totalSales: all.length,
-      completedSales: all.filter(s => s.status === SaleStatus.COMPLETED).length,
-      pendingSales: all.filter(s => s.status === SaleStatus.PENDING).length,
-      totalRevenue: all
-        .filter(s => s.status === SaleStatus.COMPLETED)
-        .reduce((sum, sale) => sum + sale.totalAmount, 0),
-    }
-  })
-
-  filtered = computed(() => {
-    const filter = this.statFilter()
-    const all = this.sales()
-    if (filter === 'completed') return all.filter(s => s.status === SaleStatus.COMPLETED)
-    if (filter === 'pending') return all.filter(s => s.status === SaleStatus.PENDING)
-    return all
-  })
+  totalRecords = 0
+  pageSize = 25
+  currentPage = 0
+  statFilter: 'all' | 'completed' | 'pending' = 'all'
+  loading = false
+  summary: SalesSummary | null = null
 
   constructor(
     private salesService: SalesDispensingService,
     private router: Router,
     private location: Location,
-  ) {
-    effect(() => {
-      this.dataSource.data = this.filtered()
-      if (this.dataSource.paginator) this.dataSource.paginator.firstPage()
-    })
-  }
+  ) {}
 
   ngOnInit(): void {
+    this.loadSummary()
     this.loadSales()
   }
 
   ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator
     this.dataSource.sort = this.sort
   }
 
-  setStatFilter(filter: 'all' | 'completed' | 'pending'): void {
-    this.statFilter.set(filter)
-  }
-
-  loadSales(): void {
-    this.loading.set(true)
-    this.salesService.getSales().subscribe({
-      next: sales => {
-        this.sales.set(sales)
-        this.loading.set(false)
-      },
-      error: () => this.loading.set(false),
+  loadSummary(): void {
+    this.salesService.getSalesSummary().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: summary => { this.summary = summary },
+      error: () => { /* non-critical */ },
     })
   }
 
-  applyFilter(event: Event): void {
-    const filterValue = (event.target as HTMLInputElement).value
-    this.dataSource.filter = filterValue.trim().toLowerCase()
-    if (this.dataSource.paginator) this.dataSource.paginator.firstPage()
+  loadSales(): void {
+    this.loading = true
+    const status = this.statFilter === 'all' ? undefined : this.statFilter as SaleStatus
+    this.salesService.getSales({
+      page: this.currentPage + 1,
+      limit: this.pageSize,
+      status,
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: result => {
+        this.dataSource.data = result.data
+        this.totalRecords = result.total
+        this.loading = false
+      },
+      error: () => this.loading = false,
+    })
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex
+    this.pageSize = event.pageSize
+    this.loadSales()
+  }
+
+  setStatFilter(filter: 'all' | 'completed' | 'pending'): void {
+    this.statFilter = filter
+    this.currentPage = 0
+    if (this.paginator) this.paginator.firstPage()
+    this.loadSales()
+  }
+
+  applyFilter(value: string): void {
+    this.dataSource.filter = value.trim().toLowerCase()
   }
 
   getStatusChipClass(status: string): string {
@@ -124,13 +125,13 @@ export class SalesDispensingComponent implements OnInit {
   }
 
   completeSale(sale: Sale): void {
-    this.salesService.updateSaleStatus(sale.id, SaleStatus.COMPLETED).subscribe(updatedSale => {
+    this.salesService.updateSaleStatus(sale.id, SaleStatus.COMPLETED).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(updatedSale => {
       if (updatedSale) this.loadSales()
     })
   }
 
   cancelSale(sale: Sale): void {
-    this.salesService.updateSaleStatus(sale.id, SaleStatus.CANCELLED).subscribe(updatedSale => {
+    this.salesService.updateSaleStatus(sale.id, SaleStatus.CANCELLED).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(updatedSale => {
       if (updatedSale) this.loadSales()
     })
   }

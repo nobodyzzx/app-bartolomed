@@ -8,11 +8,14 @@ import { RoleStateService } from '../services/role-state.service'
  * Se ejecuta en cada activación del dashboard para mantener los roles actualizados
  * tras refresh de token o recarga de página.
  */
+/**
+ * Sincroniza roles desde el JWT en cada activación del dashboard.
+ * No usa caché — siempre fuerza sincronización para reflejar cambios de rol
+ * realizados en el servidor (ej. ascenso de doctor a admin) sin requerir re-login.
+ */
 export const rolesSyncGuard: CanActivateFn = () => {
   const backendAuth = inject(BackendAuthService)
   const roleAuth = inject(RoleStateService)
-
-  if (roleAuth.currentUserRoles().length > 0) return true
 
   const backendRoles: string[] = backendAuth.currentUser()?.roles ?? []
   const mapped = roleAuth.normalizeRoles(backendRoles)

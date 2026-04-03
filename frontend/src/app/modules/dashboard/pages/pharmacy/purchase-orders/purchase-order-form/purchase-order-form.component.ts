@@ -1,5 +1,6 @@
 import { Location } from '@angular/common'
-import { Component, OnInit, signal } from '@angular/core'
+import { Component, DestroyRef, ElementRef, inject, OnInit, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
@@ -14,6 +15,8 @@ import { SuppliersService } from '../../services/suppliers.service'
   styleUrls: ['./purchase-order-form.component.css'],
 })
 export class PurchaseOrderFormComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   orderForm!: FormGroup
   loading = signal(false)
   isEditMode = false
@@ -32,6 +35,7 @@ export class PurchaseOrderFormComponent implements OnInit {
     private suppliersService: SuppliersService,
     private inventoryService: InventoryService,
     private alertService: AlertService,
+    private elRef: ElementRef,
   ) {}
 
   ngOnInit(): void {
@@ -45,7 +49,7 @@ export class PurchaseOrderFormComponent implements OnInit {
     this.loadMedications()
 
     // Observar cambios en el proveedor
-    this.orderForm.get('supplierId')?.valueChanges.subscribe(supplierId => {
+    this.orderForm.get('supplierId')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(supplierId => {
       const supplier = this.suppliers().find(s => s.id === supplierId)
       this.selectedSupplier.set(supplier || null)
     })
@@ -113,16 +117,16 @@ export class PurchaseOrderFormComponent implements OnInit {
   }
 
   loadSuppliers(): void {
-    this.suppliersService.getAll().subscribe({
+    this.suppliersService.getAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: list => this.suppliers.set(list.filter(s => s.status === 'active' || s.isActive)),
       error: () => this.alertService.error('Error', 'No se pudieron cargar los proveedores'),
     })
   }
 
   loadMedications(): void {
-    this.inventoryService.getAllMedications().subscribe({
-      next: list => {
-        this.medications.set(list)
+    this.inventoryService.getAllMedications().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: result => {
+        this.medications.set(result.data)
         // Una vez cargados los medicamentos, cargamos la orden (edición) o agregamos item inicial
         if (this.isEditMode && this.orderId) {
           this.loadOrder()
@@ -138,7 +142,7 @@ export class PurchaseOrderFormComponent implements OnInit {
     if (!this.orderId) return
     this.loading.set(true)
 
-    this.ordersService.getById(this.orderId).subscribe({
+    this.ordersService.getById(this.orderId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: order => {
         this.orderForm.patchValue({
           supplierId: order.supplierId,
@@ -180,7 +184,7 @@ export class PurchaseOrderFormComponent implements OnInit {
   async onSubmit(): Promise<void> {
     if (this.orderForm.invalid) {
       this.orderForm.markAllAsTouched()
-      this.alertService.error('Validación', 'Completa todos los campos requeridos')
+      this.scrollToFirstError()
       return
     }
 
@@ -214,7 +218,7 @@ export class PurchaseOrderFormComponent implements OnInit {
     this.loading.set(true)
 
     if (this.isEditMode && this.orderId) {
-      this.ordersService.update(this.orderId, dto).subscribe({
+      this.ordersService.update(this.orderId, dto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.alertService.success('Actualizado', 'Orden actualizada correctamente')
           this.router.navigate(['/dashboard/pharmacy/purchase-orders'])
@@ -228,7 +232,7 @@ export class PurchaseOrderFormComponent implements OnInit {
         },
       })
     } else {
-      this.ordersService.create(dto).subscribe({
+      this.ordersService.create(dto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.alertService.success('Creado', 'Orden creada correctamente')
           this.router.navigate(['/dashboard/pharmacy/purchase-orders'])
@@ -242,6 +246,13 @@ export class PurchaseOrderFormComponent implements OnInit {
         },
       })
     }
+  }
+
+  private scrollToFirstError(): void {
+    requestAnimationFrame(() => {
+      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
   }
 
   goBack(): void {

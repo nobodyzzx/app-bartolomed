@@ -1,5 +1,6 @@
 import { Location } from '@angular/common'
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, ElementRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
@@ -16,6 +17,8 @@ import { InventoryService } from '../../services/inventory.service'
   styleUrls: ['./medication-form.component.css'],
 })
 export class MedicationFormComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   medicationForm!: FormGroup
   loading = false
   isEditMode = false
@@ -55,6 +58,7 @@ export class MedicationFormComponent implements OnInit {
     private location: Location,
     private inventoryService: InventoryService,
     private alertService: AlertService,
+    private elRef: ElementRef,
   ) {}
 
   ngOnInit(): void {
@@ -94,7 +98,7 @@ export class MedicationFormComponent implements OnInit {
   loadMedication(): void {
     if (!this.medicationId) return
     this.loading = true
-    this.inventoryService.getMedicationById(this.medicationId).subscribe({
+    this.inventoryService.getMedicationById(this.medicationId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: medication => {
         // Extraer valor y unidad de strength (ej: "500 mg" -> 500, "mg")
         const strengthMatch = medication.strength?.match(/^([\d.]+)\s*(.+)$/)
@@ -124,7 +128,7 @@ export class MedicationFormComponent implements OnInit {
   async onSubmit(): Promise<void> {
     if (this.medicationForm.invalid) {
       this.medicationForm.markAllAsTouched()
-      this.alertService.error('Validación', 'Completa todos los campos requeridos')
+      this.scrollToFirstError()
       return
     }
 
@@ -144,7 +148,7 @@ export class MedicationFormComponent implements OnInit {
     }
 
     this.loading = true
-    this.inventoryService.createMedication(dto).subscribe({
+    this.inventoryService.createMedication(dto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.alertService.success('Éxito', 'Medicamento creado correctamente')
         this.router.navigate(['/dashboard/pharmacy/inventory'])
@@ -153,6 +157,13 @@ export class MedicationFormComponent implements OnInit {
         this.alertService.error('Error', 'No se pudo crear el medicamento')
         this.loading = false
       },
+    })
+  }
+
+  private scrollToFirstError(): void {
+    requestAnimationFrame(() => {
+      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     })
   }
 

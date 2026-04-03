@@ -75,18 +75,21 @@ export class ClinicsController {
   // Membership management scoped by clinic: SUPER_ADMIN or clinic admin
   @Get(':clinicId/members')
   @AuthClinic()
+  @RequirePermissions(Permission.ClinicsManage)
   getMembers(@Param('clinicId', ParseUUIDPipe) clinicId: string) {
     return this.clinicsService.getClinicMembers(clinicId);
   }
 
   @Post(':clinicId/members')
   @AuthClinic({ clinicRoles: ['admin'] })
+  @RequirePermissions(Permission.ClinicsManage)
   addMember(@Param('clinicId', ParseUUIDPipe) clinicId: string, @Body() dto: AddClinicMemberDto) {
     return this.clinicsService.addMemberWithRoles(clinicId, dto);
   }
 
   @Patch(':clinicId/members/:userId')
   @AuthClinic({ clinicRoles: ['admin'] })
+  @RequirePermissions(Permission.ClinicsManage)
   updateMember(
     @Param('clinicId', ParseUUIDPipe) clinicId: string,
     @Param('userId', ParseUUIDPipe) userId: string,
@@ -97,6 +100,7 @@ export class ClinicsController {
 
   @Delete(':clinicId/members/:userId')
   @AuthClinic({ clinicRoles: ['admin'] })
+  @RequirePermissions(Permission.ClinicsManage)
   removeMember(@Param('clinicId', ParseUUIDPipe) clinicId: string, @Param('userId', ParseUUIDPipe) userId: string) {
     return this.clinicsService.removeUserFromClinic(userId, clinicId);
   }

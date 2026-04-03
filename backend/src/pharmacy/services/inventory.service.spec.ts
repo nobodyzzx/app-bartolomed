@@ -134,10 +134,13 @@ describe('InventoryService', () => {
   // ─── findAllMedications ───────────────────────────────────────────────────
 
   describe('findAllMedications', () => {
-    it('retorna lista de medicamentos activos', async () => {
-      medRepo.find!.mockResolvedValue([makeMedication(), makeMedication({ id: 'med-2' })]);
+    it('retorna resultado paginado de medicamentos activos', async () => {
+      const meds = [makeMedication(), makeMedication({ id: 'med-2' })];
+      medRepo.findAndCount!.mockResolvedValue([meds, 2]);
       const result = await service.findAllMedications();
-      expect(result).toHaveLength(2);
+      expect(result.data).toHaveLength(2);
+      expect(result.total).toBe(2);
+      expect(result.page).toBe(1);
     });
   });
 

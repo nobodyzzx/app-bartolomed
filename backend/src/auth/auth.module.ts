@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { Clinic } from '../clinics/entities/clinic.entity';
 import { UserClinic } from '../users/entities/user-clinic.entity';
 import { User } from '../users/entities/user.entity';
 import { AuthController } from './auth.controller';
@@ -17,7 +18,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   providers: [AuthService, JwtStrategy, JwtAuthGuard, ClinicScopeGuard],
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([User, UserClinic]),
+    TypeOrmModule.forFeature([User, UserClinic, Clinic]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

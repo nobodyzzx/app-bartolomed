@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -122,6 +123,7 @@ export class Medication {
 }
 
 @Entity('medication_stock')
+@Index(['clinic', 'createdAt'])
 export class MedicationStock {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -167,6 +169,7 @@ export class MedicationStock {
   @JoinColumn({ name: 'medication_id' })
   medication: Medication;
 
+  @Index()
   @ManyToOne(() => Clinic, { eager: true })
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic;
@@ -353,6 +356,7 @@ export enum OrderStatus {
 }
 
 @Entity('purchase_orders')
+@Index(['clinic', 'createdAt'])
 export class PurchaseOrder {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -390,6 +394,7 @@ export class PurchaseOrder {
   @JoinColumn({ name: 'supplier_id' })
   supplier: Supplier;
 
+  @Index()
   @ManyToOne(() => Clinic, { eager: true })
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic;

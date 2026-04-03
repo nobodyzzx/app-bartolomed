@@ -1,5 +1,6 @@
 import { Location } from '@angular/common'
-import { Component, OnInit, computed, signal } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit, computed, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { Sale, SaleStatus } from '../../interfaces/pharmacy.interfaces'
@@ -11,6 +12,8 @@ import { SalesDispensingService } from '../../services/sales-dispensing.service'
   styleUrls: ['./sale-details.component.css'],
 })
 export class SaleDetailsComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   loading = signal(false)
   sale = signal<Sale | null>(null)
 
@@ -36,7 +39,7 @@ export class SaleDetailsComponent implements OnInit {
 
   loadSale(id: string): void {
     this.loading.set(true)
-    this.salesService.getSaleById(id).subscribe({
+    this.salesService.getSaleById(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: sale => {
         this.sale.set(sale)
         this.loading.set(false)
@@ -68,7 +71,7 @@ export class SaleDetailsComponent implements OnInit {
 
     if (result.isConfirmed) {
       this.loading.set(true)
-      this.salesService.updateSaleStatus(s.id, SaleStatus.COMPLETED).subscribe({
+      this.salesService.updateSaleStatus(s.id, SaleStatus.COMPLETED).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: updated => {
           this.sale.set(updated)
           this.loading.set(false)
@@ -111,7 +114,7 @@ export class SaleDetailsComponent implements OnInit {
 
       if (notes) {
         this.loading.set(true)
-        this.salesService.updateSaleStatus(s.id, SaleStatus.CANCELLED, notes).subscribe({
+        this.salesService.updateSaleStatus(s.id, SaleStatus.CANCELLED, notes).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: updated => {
             this.sale.set(updated)
             this.loading.set(false)

@@ -5,7 +5,7 @@ import { Observable } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 import { environment } from '../../../../../environments/environments'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
-import { CreateSaleDto, Sale, SaleStatus } from '../interfaces/pharmacy.interfaces'
+import { CreateSaleDto, PaginatedResult, Sale, SaleStatus } from '../interfaces/pharmacy.interfaces'
 
 export interface SalesSummary {
   totalSales: number
@@ -28,17 +28,13 @@ export class SalesDispensingService {
     private alertService: AlertService,
   ) {}
 
-  getSales(): Observable<Sale[]> {
-    return this.http.get<Sale[]>(this.apiUrl).pipe(
-      catchError(error => {
-        this.errorService.handleError(error)
-        throw error
-      }),
-    )
-  }
-
-  getCompletedSales(): Observable<Sale[]> {
-    return this.http.get<Sale[]>(`${this.apiUrl}?status=completed`).pipe(
+  getSales(options: { page?: number; limit?: number; status?: SaleStatus } = {}): Observable<PaginatedResult<Sale>> {
+    const params: string[] = []
+    if (options.page) params.push(`page=${options.page}`)
+    if (options.limit) params.push(`limit=${options.limit}`)
+    if (options.status) params.push(`status=${options.status}`)
+    const url = params.length ? `${this.apiUrl}?${params.join('&')}` : this.apiUrl
+    return this.http.get<PaginatedResult<Sale>>(url).pipe(
       catchError(error => {
         this.errorService.handleError(error)
         throw error
@@ -50,13 +46,17 @@ export class SalesDispensingService {
     paymentMethod?: string
     startDate?: Date
     endDate?: Date
-  }): Observable<Sale[]> {
+    page?: number
+    limit?: number
+  }): Observable<PaginatedResult<Sale>> {
     const params: string[] = ['status=completed']
     if (options.paymentMethod) params.push(`paymentMethod=${options.paymentMethod}`)
     if (options.startDate) params.push(`startDate=${options.startDate.toISOString()}`)
     if (options.endDate) params.push(`endDate=${options.endDate.toISOString()}`)
+    if (options.page) params.push(`page=${options.page}`)
+    if (options.limit) params.push(`limit=${options.limit}`)
     const url = `${this.apiUrl}?${params.join('&')}`
-    return this.http.get<Sale[]>(url).pipe(
+    return this.http.get<PaginatedResult<Sale>>(url).pipe(
       catchError(error => {
         this.errorService.handleError(error)
         throw error

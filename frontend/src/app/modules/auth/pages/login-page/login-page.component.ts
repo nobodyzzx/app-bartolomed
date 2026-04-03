@@ -2,10 +2,8 @@ import { Component, inject } from '@angular/core'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { MatDialog } from '@angular/material/dialog'
 import { Router } from '@angular/router'
-import { UserRoles } from '@core/enums/user-roles.enum'
-import { RoleStateService } from '@core/services/role-state.service'
-import { RoleSimulatorDialogComponent } from '../../../../shared/components/role-simulator-dialog/role-simulator-dialog.component'
 import { NotificationService } from '../../../../shared/services/notification.service'
+import { ForgotPasswordDialogComponent } from '../forgot-password-dialog/forgot-password-dialog.component'
 import { AuthService } from '../../services/auth.service'
 
 @Component({
@@ -15,13 +13,12 @@ import { AuthService } from '../../services/auth.service'
 export class LoginPageComponent {
   hidePassword = true
   isLoading = false
+  readonly currentYear = new Date().getFullYear()
   private fb = inject(FormBuilder)
   private authService = inject(AuthService)
-  private roleAuth = inject(RoleStateService)
   private router = inject(Router)
   private notificationService = inject(NotificationService)
   private dialog = inject(MatDialog)
-  public readonly UserRoles = UserRoles
 
   public myForm: FormGroup = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -47,20 +44,15 @@ export class LoginPageComponent {
     const { email, password, rememberMe } = this.myForm.value
 
     this.authService.login(email, password, rememberMe).subscribe({
-      next: response => {
+      next: () => {
         if (rememberMe) {
           localStorage.setItem('rememberedEmail', email)
         } else {
           localStorage.removeItem('rememberedEmail')
         }
-        // Sincronizar roles con el sistema de roles (core) para el Sidebar
-        const backendRoles: string[] = this.authService.currentUser()?.roles ?? []
-        const mapped: UserRoles[] = this.mapBackendRolesToUserRoles(backendRoles)
-        if (mapped.length > 0) {
-          this.roleAuth.syncRoles(mapped)
-        }
+        // Los roles ya fueron sincronizados en AuthService.setAuthentication()
         this.notificationService.success('¡Bienvenido! Inicio de sesión exitoso')
-        this.router.navigateByUrl('/dashboard')
+        this.router.navigateByUrl('/auth/select-clinic')
       },
       error: error => {
         this.isLoading = false
@@ -98,76 +90,8 @@ export class LoginPageComponent {
     return ''
   }
 
-  // Simulación de roles (desarrollo)
-  simulateRole(role: UserRoles) {
-    this.roleAuth.loginAs([role])
+  openForgotPassword(): void {
+    this.dialog.open(ForgotPasswordDialogComponent, { width: '420px', disableClose: false })
   }
 
-  simulateRoleCombo(roles: UserRoles[]) {
-    this.roleAuth.loginAs(roles)
-  }
-
-  // Abrir diálogo de simulador de roles
-  openRoleSimulator() {
-    const dialogRef = this.dialog.open(RoleSimulatorDialogComponent, {
-      width: '600px',
-      disableClose: false,
-    })
-
-    dialogRef.afterClosed().subscribe((selectedRoles: UserRoles[] | undefined) => {
-      if (selectedRoles && selectedRoles.length > 0) {
-        this.roleAuth.loginAs(selectedRoles)
-      }
-    })
-  }
-
-  // Mapea roles del backend a los nuevos UserRoles, aceptando coincidencias exactas y alias legacy
-  private mapBackendRolesToUserRoles(roles: string[]): UserRoles[] {
-    const result = new Set<UserRoles>()
-    const values = Object.values(UserRoles)
-
-    for (const raw of roles) {
-      if (!raw) continue
-      const r = String(raw).toLowerCase().trim()
-
-      // 1) Coincidencia exacta con nuestros enums
-      if ((values as string[]).includes(r)) {
-        result.add(r as UserRoles)
-        continue
-      }
-
-      // 2) Aliases/variantes legacy comunes
-      switch (r) {
-        case 'super_user':
-        case 'superadmin':
-        case 'superadmin_user':
-          result.add(UserRoles.SUPER_ADMIN)
-          break
-        case 'administrator':
-          result.add(UserRoles.ADMIN)
-          break
-        case 'medic':
-          result.add(UserRoles.DOCTOR)
-          break
-        case 'nurse_role':
-          result.add(UserRoles.NURSE)
-          break
-        case 'reception':
-          result.add(UserRoles.RECEPTIONIST)
-          break
-        case 'pharma':
-          result.add(UserRoles.PHARMACIST)
-          break
-        case 'user':
-          // Por defecto, mapear 'user' a DOCTOR para acceso médico básico
-          result.add(UserRoles.DOCTOR)
-          break
-        default:
-          // Ignorar roles desconocidos
-          break
-      }
-    }
-
-    return Array.from(result)
-  }
 }

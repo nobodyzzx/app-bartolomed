@@ -1,40 +1,12 @@
 import { HttpClient } from '@angular/common/http'
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { throwError } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 import { environment } from '../../../../environments/environments'
-import { ErrorService } from '../../../../shared/components/services/error.service'
-import { SidenavService } from '../../../../shared/components/services/sidenav.service'
-
-interface Appointment {
-  id: string
-  appointmentDate: Date
-  duration: number
-  type: string
-  status: string
-  priority: string
-  reason: string
-  patient: {
-    id: string
-    firstName: string
-    lastName: string
-  }
-  doctor: {
-    id: string
-    firstName: string
-    lastName: string
-  }
-}
-
-interface CalendarDay {
-  date: Date
-  isCurrentMonth: boolean
-  isToday: boolean
-  appointments: Appointment[]
-  dayNumber: number
-}
+import { Appointment, CalendarDay } from './interfaces/appointment-calendar.interfaces'
 
 @Component({
   selector: 'app-appointment-calendar',
@@ -42,7 +14,8 @@ interface CalendarDay {
   styleUrls: ['./appointment-calendar.component.css'],
 })
 export class AppointmentCalendarComponent implements OnInit {
-  isExpanded: boolean = true
+  private readonly destroyRef = inject(DestroyRef)
+
   currentDate: Date = new Date()
   calendarDays: CalendarDay[] = []
   appointments: Appointment[] = []
@@ -97,14 +70,9 @@ export class AppointmentCalendarComponent implements OnInit {
     private router: Router,
     private http: HttpClient,
     private alert: AlertService,
-    private errorService: ErrorService,
-    private sidenavService: SidenavService,
   ) {}
 
   ngOnInit() {
-    this.sidenavService.isExpanded$.subscribe(
-      (isExpanded: boolean) => (this.isExpanded = isExpanded),
-    )
     this.loadAppointments()
   }
 
@@ -124,9 +92,9 @@ export class AppointmentCalendarComponent implements OnInit {
         tap(() => (this.loading = false)),
         catchError(error => {
           this.loading = false
-          this.errorService.handleError(error)
           return throwError(() => error)
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((appointments: Appointment[]) => {
         this.appointments = appointments.map((apt: Appointment) => ({
@@ -268,9 +236,9 @@ export class AppointmentCalendarComponent implements OnInit {
             this.loadAppointments()
           }),
           catchError(error => {
-            this.errorService.handleError(error)
             return throwError(() => error)
           }),
+          takeUntilDestroyed(this.destroyRef),
         )
         .subscribe()
     }

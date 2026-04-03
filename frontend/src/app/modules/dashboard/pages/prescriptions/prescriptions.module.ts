@@ -4,14 +4,13 @@ import { NgModule } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { RouterModule, Routes } from '@angular/router'
 import { MaterialModule } from '../../../../material/material.module'
+import { SharedModule } from '../../../../shared/shared.module'
 import { PrescriptionDetailComponent } from './prescription-detail.component'
 import { PrescriptionFormComponent } from './prescription-form.component'
 import { PrescriptionListComponent } from './prescription-list.component'
-import { PrescriptionsPageComponent } from './prescriptions.page.component'
 
 const routes: Routes = [
-  { path: '', component: PrescriptionsPageComponent },
-  { path: 'list', component: PrescriptionListComponent },
+  { path: '', component: PrescriptionListComponent },
   { path: 'new', component: PrescriptionFormComponent },
   { path: 'edit/:id', component: PrescriptionFormComponent },
   { path: ':id', component: PrescriptionDetailComponent },
@@ -19,7 +18,6 @@ const routes: Routes = [
 
 @NgModule({
   declarations: [
-    PrescriptionsPageComponent,
     PrescriptionListComponent,
     PrescriptionFormComponent,
     PrescriptionDetailComponent,
@@ -31,6 +29,7 @@ const routes: Routes = [
     ReactiveFormsModule,
     MaterialModule,
     HttpClientModule,
+    SharedModule,
   ],
 })
 export class PrescriptionsModule {}

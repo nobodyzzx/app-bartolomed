@@ -1,37 +1,17 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
-import { SidenavService } from '../../../../shared/components/services/sidenav.service'
+import { Prescription } from './interfaces/prescription-ui.interface'
 import { PrescriptionsService } from './prescriptions.service'
 
-interface Prescription {
-  id: string
-  prescriptionNumber: string
-  prescriptionDate: string
-  expiryDate: string
-  status: string
-  diagnosis: string
-  patient: {
-    id: string
-    firstName: string
-    lastName: string
-    documentNumber: string
-  }
-  doctor: {
-    id: string
-    email: string
-    personalInfo?: {
-      firstName: string
-      lastName: string
-    }
-  }
-  items: Array<{
-    medicationName: string
-    strength: string
-    quantity: string
-  }>
-  refillsAllowed: number
-  refillsUsed: number
+const STATUS_MAP: Record<string, { label: string; classes: string }> = {
+  draft:     { label: 'Borrador',    classes: 'bg-slate-100 text-slate-700' },
+  active:    { label: 'Activa',      classes: 'bg-emerald-100 text-emerald-700' },
+  dispensed: { label: 'Dispensada',  classes: 'bg-blue-100 text-blue-700' },
+  completed: { label: 'Completada',  classes: 'bg-purple-100 text-purple-700' },
+  cancelled: { label: 'Cancelada',   classes: 'bg-red-100 text-red-700' },
+  expired:   { label: 'Vencida',     classes: 'bg-orange-100 text-orange-700' },
 }
 
 @Component({
@@ -40,31 +20,19 @@ interface Prescription {
   styleUrls: ['./prescription-list.component.css'],
 })
 export class PrescriptionListComponent implements OnInit {
-  isExpanded: boolean = true
+  private readonly destroyRef = inject(DestroyRef)
+
   prescriptions: Prescription[] = []
   filteredPrescriptions: Prescription[] = []
-  loading: boolean = false
-  searchTerm: string = ''
-  selectedStatus: string = ''
-
-  statusOptions = [
-    { value: '', label: 'Todos los estados' },
-    { value: 'draft', label: 'Borrador' },
-    { value: 'active', label: 'Activa' },
-    { value: 'dispensed', label: 'Dispensada' },
-    { value: 'completed', label: 'Completada' },
-    { value: 'cancelled', label: 'Cancelada' },
-    { value: 'expired', label: 'Vencida' },
-  ]
+  loading = false
+  searchTerm = ''
+  selectedStatus = ''
 
   constructor(
     private prescriptionsService: PrescriptionsService,
     private router: Router,
-    private sidenavService: SidenavService,
     private alert: AlertService,
-  ) {
-    this.sidenavService.isExpanded$.subscribe(exp => (this.isExpanded = exp))
-  }
+  ) {}
 
   ngOnInit(): void {
     this.loadPrescriptions()
@@ -76,7 +44,7 @@ export class PrescriptionListComponent implements OnInit {
     if (this.selectedStatus) filter.status = this.selectedStatus
     if (this.searchTerm?.trim()) filter.search = this.searchTerm.trim()
 
-    this.prescriptionsService.list(1, 100, filter).subscribe({
+    this.prescriptionsService.list(1, 100, filter).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (response: any) => {
         this.prescriptions = response.items || []
         this.filteredPrescriptions = this.prescriptions
@@ -97,10 +65,6 @@ export class PrescriptionListComponent implements OnInit {
     this.loadPrescriptions()
   }
 
-  onStatusChange(): void {
-    this.loadPrescriptions()
-  }
-
   createPrescription(): void {
     this.router.navigate(['/dashboard/prescriptions/new'])
   }
@@ -118,27 +82,11 @@ export class PrescriptionListComponent implements OnInit {
   }
 
   getStatusBadgeClass(status: string): string {
-    const classes: any = {
-      draft: 'bg-slate-100 text-slate-700',
-      active: 'bg-emerald-100 text-emerald-700',
-      dispensed: 'bg-blue-100 text-blue-700',
-      completed: 'bg-purple-100 text-purple-700',
-      cancelled: 'bg-red-100 text-red-700',
-      expired: 'bg-orange-100 text-orange-700',
-    }
-    return classes[status] || 'bg-slate-100 text-slate-700'
+    return STATUS_MAP[status]?.classes ?? 'bg-slate-100 text-slate-700'
   }
 
   getStatusLabel(status: string): string {
-    const labels: any = {
-      draft: 'Borrador',
-      active: 'Activa',
-      dispensed: 'Dispensada',
-      completed: 'Completada',
-      cancelled: 'Cancelada',
-      expired: 'Vencida',
-    }
-    return labels[status] || status
+    return STATUS_MAP[status]?.label ?? status
   }
 
   getDaysUntilExpiry(expiryDate: string): number {
@@ -149,7 +97,8 @@ export class PrescriptionListComponent implements OnInit {
   }
 
   isExpiringSoon(expiryDate: string): boolean {
-    return this.getDaysUntilExpiry(expiryDate) <= 7 && this.getDaysUntilExpiry(expiryDate) > 0
+    const days = this.getDaysUntilExpiry(expiryDate)
+    return days > 0 && days <= 7
   }
 
   isExpired(expiryDate: string): boolean {
@@ -195,7 +144,7 @@ export class PrescriptionListComponent implements OnInit {
       })
       .then(res => {
         if (res.isConfirmed) {
-          this.prescriptionsService.setStatus(p.id, status).subscribe({
+          this.prescriptionsService.setStatus(p.id, status).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: () => {
               this.alert
                 .success('Estado actualizado', 'La receta fue actualizada.')
@@ -218,7 +167,7 @@ export class PrescriptionListComponent implements OnInit {
       })
       .then(res => {
         if (res.isConfirmed) {
-          this.prescriptionsService.refill(p.id).subscribe({
+          this.prescriptionsService.refill(p.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: () => {
               this.alert
                 .success('Resurtido registrado', 'La receta fue resurtida.')
@@ -227,5 +176,21 @@ export class PrescriptionListComponent implements OnInit {
           })
         }
       })
+  }
+
+  activate(p: Prescription) {
+    this.prescriptionsService.setStatus(p.id, 'active').pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => this.loadPrescriptions(),
+    })
+  }
+
+  printPdf(p: Prescription) {
+    this.prescriptionsService.getPdf(p.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob)
+        window.open(url, '_blank')
+        setTimeout(() => URL.revokeObjectURL(url), 60000)
+      },
+    })
   }
 }

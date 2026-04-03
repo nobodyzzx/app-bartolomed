@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
@@ -11,6 +12,8 @@ import { ReportsService } from '../services/reports.service'
   styleUrls: ['./stock-control.component.css'],
 })
 export class StockControlComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   stockReports: StockReport[] = []
   loading = false
   generating = false
@@ -51,7 +54,7 @@ export class StockControlComponent implements OnInit {
 
   loadStockReports(): void {
     this.loading = true
-    this.reportsService.getStockReports().subscribe({
+    this.reportsService.getStockReports().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (reports: StockReport[]) => {
         this.stockReports = reports
         this.calculateStats()
@@ -115,7 +118,7 @@ export class StockControlComponent implements OnInit {
       },
     }
 
-    this.reportsService.generateStockReport(params).subscribe({
+    this.reportsService.generateStockReport(params).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: async (newReport: StockReport) => {
         this.stockReports.unshift(newReport)
         this.calculateStats()
@@ -138,7 +141,7 @@ export class StockControlComponent implements OnInit {
   }
 
   downloadReport(report: StockReport): void {
-    this.reportsService.downloadReport(report.id, 'pdf').subscribe({
+    this.reportsService.downloadReport(report.id, 'pdf').pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: async (blob: Blob) => {
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -162,7 +165,7 @@ export class StockControlComponent implements OnInit {
   }
 
   exportToExcel(report: StockReport): void {
-    this.reportsService.exportReport(report.id, 'excel').subscribe({
+    this.reportsService.exportReport(report.id, 'excel').pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: async () => {
         await this.alert.fire({
           icon: 'success',
@@ -190,7 +193,7 @@ export class StockControlComponent implements OnInit {
     })
 
     if (result.isConfirmed) {
-      this.reportsService.deleteReport(report.id).subscribe({
+      this.reportsService.deleteReport(report.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: async () => {
           this.stockReports = this.stockReports.filter(r => r.id !== report.id)
           this.calculateStats()
@@ -253,7 +256,7 @@ export class StockControlComponent implements OnInit {
       this.loadStockReports()
     } else {
       this.loading = true
-      this.reportsService.getStockReportsByType(type).subscribe({
+      this.reportsService.getStockReportsByType(type).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (reports: StockReport[]) => {
           this.stockReports = reports
           this.calculateStats()

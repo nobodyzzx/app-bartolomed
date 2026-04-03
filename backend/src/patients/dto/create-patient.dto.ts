@@ -47,7 +47,11 @@ export class CreatePatientDto {
 
   @IsOptional()
   @IsEmail()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
+  @Transform(({ value }) => {
+    if (typeof value !== 'string') return value;
+    const t = value.trim().toLowerCase();
+    return t === '' ? undefined : t;
+  })
   email?: string;
 
   @IsOptional()
@@ -55,7 +59,11 @@ export class CreatePatientDto {
   @Matches(/^\+?[0-9()\-\s]{7,20}$/, {
     message: 'phone debe tener entre 7 y 20 caracteres numericos validos',
   })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }) => {
+    if (typeof value !== 'string') return value;
+    const t = value.trim();
+    return t === '' ? undefined : t;
+  })
   phone?: string;
 
   @IsOptional()
@@ -106,7 +114,11 @@ export class CreatePatientDto {
   @Matches(/^\+?[0-9()\-\s]{7,20}$/, {
     message: 'emergencyContactPhone debe tener entre 7 y 20 caracteres numericos validos',
   })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }) => {
+    if (typeof value !== 'string') return value;
+    const t = value.trim();
+    return t === '' ? undefined : t;
+  })
   emergencyContactPhone?: string;
 
   @IsOptional()

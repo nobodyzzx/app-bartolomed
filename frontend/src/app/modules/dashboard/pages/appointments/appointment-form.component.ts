@@ -1,15 +1,14 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, ElementRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormControl, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
-import { ErrorService } from '../../../../shared/components/services/error.service'
-import { SidenavService } from '../../../../shared/components/services/sidenav.service'
 import { User } from '../../../auth/interfaces/user.interface'
-import { Clinic } from '../clinics/interfaces'
-import { ClinicsService } from '../clinics/services/clinics.service'
+import { Clinic } from '../admin/clinics/interfaces'
+import { ClinicsService } from '../admin/clinics/services/clinics.service'
 import { Patient } from '../patients/interfaces'
 import { PatientsService } from '../patients/services/patients.service'
-import { UsersService } from '../users/users.service'
+import { UsersService } from '../admin/users/users.service'
 import {
   AppointmentPriority,
   AppointmentsService,
@@ -22,7 +21,8 @@ import {
   templateUrl: './appointment-form.component.html',
 })
 export class AppointmentFormComponent implements OnInit {
-  isExpanded: boolean = true
+  private readonly destroyRef = inject(DestroyRef)
+
   isEditMode: boolean = false
   appointmentId: string | null = null
   isLoading: boolean = false
@@ -64,7 +64,7 @@ export class AppointmentFormComponent implements OnInit {
     patientId: new FormControl('', Validators.required),
     doctorId: new FormControl('', Validators.required),
     clinicId: new FormControl('', Validators.required),
-    appointmentDate: new FormControl('', Validators.required),
+    appointmentDate: new FormControl<Date | null>(null, Validators.required),
     appointmentTime: new FormControl('', Validators.required),
     duration: new FormControl(30, Validators.required),
     appointmentType: new FormControl(AppointmentType.CONSULTATION, Validators.required),
@@ -76,30 +76,25 @@ export class AppointmentFormComponent implements OnInit {
   constructor(
     public router: Router,
     private route: ActivatedRoute,
-    private errorService: ErrorService,
-    private sidenavService: SidenavService,
     private alert: AlertService,
     private appointmentsService: AppointmentsService,
     private patientsService: PatientsService,
     private usersService: UsersService,
     private clinicsService: ClinicsService,
+    private elRef: ElementRef,
   ) {}
 
   ngOnInit() {
-    this.sidenavService.isExpanded$.subscribe(
-      (isExpanded: boolean) => (this.isExpanded = isExpanded),
-    )
-
     // Cargar datos iniciales
     this.loadInitialData()
 
     // Obtener parámetros de la URL
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       this.appointmentId = params.get('id')
       this.isEditMode = !!this.appointmentId
 
       // Pre-llenar datos si vienen de query params
-      this.route.queryParams.subscribe(queryParams => {
+      this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(queryParams => {
         if (queryParams['patientId']) {
           this.appointmentForm.patchValue({
             patientId: queryParams['patientId'],
@@ -122,10 +117,9 @@ export class AppointmentFormComponent implements OnInit {
       }
     })
 
-    // Configurar fecha mínima como hoy
+    // Fecha por defecto: hoy
     if (!this.appointmentForm.get('appointmentDate')?.value) {
-      const today = new Date().toISOString().split('T')[0]
-      this.appointmentForm.get('appointmentDate')?.setValue(today)
+      this.appointmentForm.get('appointmentDate')?.setValue(new Date())
     }
   }
 
@@ -133,15 +127,15 @@ export class AppointmentFormComponent implements OnInit {
     this.isLoading = true
 
     // Cargar pacientes
-    this.patientsService.findAll().subscribe({
+    this.patientsService.findAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: patients => {
-        this.patients = patients.filter(p => p.isActive)
+        this.patients = patients.data.filter(p => p.isActive)
       },
       error: () => {},
     })
 
     // Cargar doctores (usuarios con rol doctor)
-    this.usersService.getUsers().subscribe({
+    this.usersService.getUsers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: users => {
         this.doctors = users.filter(u => u.isActive && u.roles.includes('doctor'))
       },
@@ -149,7 +143,7 @@ export class AppointmentFormComponent implements OnInit {
     })
 
     // Cargar clínicas
-    this.clinicsService.findAll(true).subscribe({
+    this.clinicsService.findAll(true).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: clinics => {
         this.clinics = clinics
         // Si solo hay una clínica, pre-seleccionarla
@@ -168,18 +162,17 @@ export class AppointmentFormComponent implements OnInit {
 
   loadAppointmentData(id: string): void {
     this.isLoading = true
-    this.appointmentsService.getAppointment(id).subscribe({
+    this.appointmentsService.getAppointment(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: appointment => {
         // Separar fecha y hora
         const appointmentDate = new Date(appointment.appointmentDate)
-        const dateStr = appointmentDate.toISOString().split('T')[0]
         const timeStr = appointmentDate.toTimeString().slice(0, 5)
 
         this.appointmentForm.patchValue({
           patientId: appointment.patient.id,
           doctorId: appointment.doctor.id,
           clinicId: appointment.clinic.id,
-          appointmentDate: dateStr,
+          appointmentDate: appointmentDate,
           appointmentTime: timeStr,
           duration: appointment.duration,
           appointmentType: appointment.type,
@@ -206,11 +199,7 @@ export class AppointmentFormComponent implements OnInit {
   onSubmit() {
     if (this.appointmentForm.invalid) {
       this.appointmentForm.markAllAsTouched()
-      this.alert.fire({
-        icon: 'warning',
-        title: 'Formulario incompleto',
-        text: 'Por favor complete todos los campos requeridos',
-      })
+      this.scrollToFirstError()
       return
     }
 
@@ -218,10 +207,16 @@ export class AppointmentFormComponent implements OnInit {
 
     const appointmentData = this.appointmentForm.value
 
-    // Combinar fecha y hora
-    const date = appointmentData.appointmentDate
-    const time = appointmentData.appointmentTime
-    const fullDateTime = new Date(`${date}T${time}:00`)
+    // Combinar fecha (Date del datepicker) y hora (string HH:mm)
+    const date = appointmentData.appointmentDate as Date
+    const time = appointmentData.appointmentTime as string
+    const fullDateTime = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      parseInt(time.split(':')[0], 10),
+      parseInt(time.split(':')[1], 10),
+    )
 
     const submitData: CreateAppointmentDto = {
       patientId: appointmentData.patientId,
@@ -237,20 +232,20 @@ export class AppointmentFormComponent implements OnInit {
     }
 
     if (this.isEditMode && this.appointmentId) {
-      this.appointmentsService.updateAppointment(this.appointmentId, submitData).subscribe({
+      this.appointmentsService.updateAppointment(this.appointmentId, submitData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.isLoading = false
-          this.router.navigate(['/dashboard/appointments/list'])
+          this.router.navigate(['/dashboard/appointments'])
         },
         error: () => {
           this.isLoading = false
         },
       })
     } else {
-      this.appointmentsService.createAppointment(submitData).subscribe({
+      this.appointmentsService.createAppointment(submitData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.isLoading = false
-          this.router.navigate(['/dashboard/appointments/list'])
+          this.router.navigate(['/dashboard/appointments'])
         },
         error: () => {
           this.isLoading = false
@@ -262,8 +257,8 @@ export class AppointmentFormComponent implements OnInit {
   // Método para verificar disponibilidad
   checkAvailability() {
     const doctorId = this.appointmentForm.get('doctorId')?.value
-    const date = this.appointmentForm.get('appointmentDate')?.value
-    const time = this.appointmentForm.get('appointmentTime')?.value
+    const date: Date | null = this.appointmentForm.get('appointmentDate')?.value
+    const time: string = this.appointmentForm.get('appointmentTime')?.value
     const clinicId = this.appointmentForm.get('clinicId')?.value
 
     if (!doctorId || !date || !time) {
@@ -275,10 +270,17 @@ export class AppointmentFormComponent implements OnInit {
       return
     }
 
-    const fullDateTime = new Date(`${date}T${time}:00`)
+    const fullDateTime = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      parseInt(time.split(':')[0], 10),
+      parseInt(time.split(':')[1], 10),
+    )
 
     this.appointmentsService
       .getDoctorAvailability(doctorId, fullDateTime.toISOString(), clinicId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: availability => {
           if (availability.available) {
@@ -298,6 +300,13 @@ export class AppointmentFormComponent implements OnInit {
         },
         error: () => {},
       })
+  }
+
+  private scrollToFirstError(): void {
+    requestAnimationFrame(() => {
+      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
   }
 
   goBack() {

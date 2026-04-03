@@ -1,0 +1,142 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      title="Respaldos y Restauración"
+      subtitle="Gestión de copias de seguridad y restauración del sistema"
+      [showBack]="false"
+    />
+
+    <!-- Stats placeholder -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 opacity-60">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-green-600 text-sm font-semibold">Último respaldo</p>
+            <p class="text-lg font-bold text-slate-400 mt-1">—</p>
+            <p class="text-xs text-slate-400 mt-1">Fecha y hora</p>
+          </div>
+          <span class="material-symbols-outlined text-green-200" style="font-size:40px">cloud_done</span>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 opacity-60">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-blue-600 text-sm font-semibold">Respaldos totales</p>
+            <p class="text-3xl font-bold text-slate-400 mt-1">—</p>
+            <p class="text-xs text-slate-400 mt-1">Copias disponibles</p>
+          </div>
+          <span class="material-symbols-outlined text-blue-200" style="font-size:40px">backup</span>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 opacity-60">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-purple-600 text-sm font-semibold">Tamaño total</p>
+            <p class="text-3xl font-bold text-slate-400 mt-1">—</p>
+            <p class="text-xs text-slate-400 mt-1">Almacenamiento usado</p>
+          </div>
+          <span class="material-symbols-outlined text-purple-200" style="font-size:40px">storage</span>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 opacity-60">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-amber-600 text-sm font-semibold">Próx. programado</p>
+            <p class="text-lg font-bold text-slate-400 mt-1">—</p>
+            <p class="text-xs text-slate-400 mt-1">Respaldo automático</p>
+          </div>
+          <span class="material-symbols-outlined text-amber-200" style="font-size:40px">schedule</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Opciones de respaldo -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">cloud_upload</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Crear Respaldo</h3>
+            <p class="text-sm text-slate-500 m-0">Generar copia de seguridad ahora</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <p class="text-sm text-slate-600 mb-4">
+            Crea una copia de seguridad completa de la base de datos y archivos del sistema.
+          </p>
+          <button
+            type="button"
+            disabled
+            class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-green-100 text-green-600 text-sm cursor-not-allowed opacity-60 border-0"
+          >
+            <span class="material-symbols-outlined msz-18">backup</span>
+            Crear Respaldo Ahora
+          </button>
+          <span class="block mt-2 text-xs text-amber-600 font-medium">
+            <span class="material-symbols-outlined msz-12">schedule</span>
+            Disponible próximamente
+          </span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">restore</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Restaurar Sistema</h3>
+            <p class="text-sm text-slate-500 m-0">Revertir a un estado anterior</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <p class="text-sm text-slate-600 mb-4">
+            Restaura el sistema a partir de una copia de seguridad previamente creada.
+          </p>
+          <button
+            type="button"
+            disabled
+            class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-blue-100 text-blue-600 text-sm cursor-not-allowed opacity-60 border-0"
+          >
+            <span class="material-symbols-outlined msz-18">restore</span>
+            Seleccionar Respaldo
+          </button>
+          <span class="block mt-2 text-xs text-amber-600 font-medium">
+            <span class="material-symbols-outlined msz-12">schedule</span>
+            Disponible próximamente
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lista de respaldos placeholder -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">folder_open</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Historial de Respaldos</h3>
+            <p class="text-sm text-slate-500 m-0">Copias de seguridad disponibles</p>
+          </div>
+        </div>
+      </div>
+      <div class="py-16 px-6 flex flex-col items-center text-center">
+        <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+          <span class="material-symbols-outlined text-slate-400" style="font-size:32px">cloud_backup</span>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-700 mb-2">Módulo en desarrollo</h3>
+        <p class="text-sm text-slate-500 max-w-md">
+          El sistema de respaldos automáticos y restauración estará disponible próximamente.
+          Incluirá respaldos programados, compresión y almacenamiento externo.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>

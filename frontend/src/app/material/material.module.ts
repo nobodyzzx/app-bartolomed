@@ -6,7 +6,8 @@ import { MatButtonModule } from '@angular/material/button'
 import { MatCardModule } from '@angular/material/card'
 import { MatCheckboxModule } from '@angular/material/checkbox'
 import { MatChipsModule } from '@angular/material/chips'
-import { MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core'
+import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core'
+import { BO_DATE_FORMATS, BolivianDateAdapter } from './date-adapter'
 import { MatDatepickerModule } from '@angular/material/datepicker'
 import { MatDialogModule } from '@angular/material/dialog'
 import { MatDividerModule } from '@angular/material/divider'
@@ -94,6 +95,10 @@ import { MatTooltipModule } from '@angular/material/tooltip'
     MatToolbarModule,
     MatTooltipModule,
   ],
-  providers: [{ provide: MAT_DATE_LOCALE, useValue: 'es-BO' }],
+  providers: [
+    { provide: MAT_DATE_LOCALE, useValue: 'es-BO' },
+    { provide: DateAdapter,     useClass: BolivianDateAdapter, deps: [MAT_DATE_LOCALE] },
+    { provide: MAT_DATE_FORMATS, useValue: BO_DATE_FORMATS },
+  ],
 })
 export class MaterialModule {}

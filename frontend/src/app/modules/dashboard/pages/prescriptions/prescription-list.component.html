@@ -20,7 +20,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <app-stat-card
         label="Total" [value]="prescriptions.length" sublabel="Recetas registradas"
-        icon="prescription" color="blue"
+        icon="receipt_long" color="blue"
         [active]="selectedStatus === ''" [clickable]="true"
         (cardClick)="setStatusFilter('')"
       />
@@ -61,7 +61,7 @@
 
       <app-empty-state
         *ngIf="!loading && filteredPrescriptions.length === 0"
-        icon="prescription"
+        icon="receipt_long"
         title="Sin recetas"
         [subtitle]="searchTerm || selectedStatus ? 'Intenta ajustar los filtros' : 'Comienza creando la primera receta médica'"
         [actionLabel]="!searchTerm && !selectedStatus ? 'Nueva Receta' : ''"
@@ -122,10 +122,6 @@
                   class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 mt-0.5 inline-block">
                   {{ getDaysUntilExpiry(p.expiryDate) }} días
                 </span>
-                <span *ngIf="isExpired(p.expiryDate)"
-                  class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 mt-0.5 inline-block">
-                  Vencida
-                </span>
               </td>
               <td class="px-6 py-4">
                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
@@ -145,6 +141,12 @@
                     class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0">
                     <span class="material-symbols-outlined msz-18">edit</span>
                   </button>
+                  <button *ngIf="p.status === 'draft'"
+                    type="button" (click)="activate(p); $event.stopPropagation()"
+                    matTooltip="Activar receta"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">check_circle</span>
+                  </button>
                   <button *ngIf="p.status === 'active' && !isExpired(p.expiryDate)"
                     type="button" (click)="changeStatus(p, 'dispensed'); $event.stopPropagation()"
                     matTooltip="Dispensar"
@@ -156,6 +158,11 @@
                     matTooltip="Resurtir"
                     class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors border-0">
                     <span class="material-symbols-outlined msz-18">autorenew</span>
+                  </button>
+                  <button type="button" (click)="printPdf(p); $event.stopPropagation()"
+                    matTooltip="Imprimir"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">print</span>
                   </button>
                 </div>
               </td>

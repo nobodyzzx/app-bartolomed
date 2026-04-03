@@ -1,5 +1,6 @@
 import { Location } from '@angular/common'
-import { Component, OnInit, signal } from '@angular/core'
+import { Component, DestroyRef, ElementRef, inject, OnInit, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
@@ -13,6 +14,8 @@ import { InventoryService } from '../../services/inventory.service'
   styleUrls: ['./stock-form.component.css'],
 })
 export class StockFormComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   stockForm!: FormGroup
   loading = signal(false)
   isEditMode = false
@@ -28,6 +31,7 @@ export class StockFormComponent implements OnInit {
     private inventoryService: InventoryService,
     private clinicContext: ClinicContextService,
     private alertService: AlertService,
+    private elRef: ElementRef,
   ) {}
 
   ngOnInit(): void {
@@ -63,9 +67,9 @@ export class StockFormComponent implements OnInit {
 
   loadMedications(): void {
     this.loading.set(true)
-    this.inventoryService.getAllMedications().subscribe({
-      next: meds => {
-        this.medications.set(meds)
+    this.inventoryService.getAllMedications().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: result => {
+        this.medications.set(result.data)
         this.loading.set(false)
       },
       error: () => {
@@ -78,7 +82,7 @@ export class StockFormComponent implements OnInit {
   loadStock(): void {
     if (!this.stockId) return
     this.loading.set(true)
-    this.inventoryService.getProductById(this.stockId).subscribe({
+    this.inventoryService.getProductById(this.stockId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: stock => {
         this.stockForm.patchValue({
           medicationId: stock.medicationId,
@@ -103,7 +107,7 @@ export class StockFormComponent implements OnInit {
   async onSubmit(): Promise<void> {
     if (this.stockForm.invalid) {
       this.stockForm.markAllAsTouched()
-      this.alertService.error('Validación', 'Completa todos los campos requeridos')
+      this.scrollToFirstError()
       return
     }
 
@@ -153,7 +157,7 @@ export class StockFormComponent implements OnInit {
 
     if (this.isEditMode && this.stockId) {
       // Modo edición
-      this.inventoryService.updateProduct(this.stockId, dto).subscribe({
+      this.inventoryService.updateProduct(this.stockId, dto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.alertService.success('Éxito', 'Stock actualizado correctamente')
           this.router.navigate(['/dashboard/pharmacy/inventory'])
@@ -166,7 +170,7 @@ export class StockFormComponent implements OnInit {
     } else {
       // Modo creación
       // Enviar DTO al backend
-      this.inventoryService.addProduct(dto).subscribe({
+      this.inventoryService.addProduct(dto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.alertService.success('Éxito', 'Stock registrado correctamente')
           this.router.navigate(['/dashboard/pharmacy/inventory'])
@@ -178,6 +182,13 @@ export class StockFormComponent implements OnInit {
         },
       })
     }
+  }
+
+  private scrollToFirstError(): void {
+    requestAnimationFrame(() => {
+      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
   }
 
   goBack(): void {

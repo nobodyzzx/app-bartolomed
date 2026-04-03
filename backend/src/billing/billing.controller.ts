@@ -37,10 +37,8 @@ export class BillingController {
     if (scopedClinicId && filter.clinicId && filter.clinicId !== scopedClinicId) {
       throw new BadRequestException('clinicId no coincide con el contexto de clínica');
     }
-    if (scopedClinicId) {
-      filter.clinicId = scopedClinicId;
-    }
-    return this.billingService.findAll(p, ps, filter);
+    delete filter.clinicId;
+    return this.billingService.findAll(p, ps, filter, scopedClinicId);
   }
 
   @Get('invoices/:id')

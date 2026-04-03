@@ -10,6 +10,23 @@ import { AuthStatus } from '../../../../app/modules/auth/interfaces/auth-status.
 import { AuthService as AppAuthService } from '../../../../app/modules/auth/services/auth.service'
 import { SidenavService } from '../services/sidenav.service'
 
+const ROLE_LABELS: Record<string, string> = {
+  'super-admin': 'Super Admin',
+  admin: 'Administrador',
+  doctor: 'Médico',
+  nurse: 'Enfermero/a',
+  receptionist: 'Recepcionista',
+  pharmacist: 'Farmacéutico',
+}
+const ROLE_PRIORITY: UserRoles[] = [
+  UserRoles.SUPER_ADMIN,
+  UserRoles.ADMIN,
+  UserRoles.DOCTOR,
+  UserRoles.PHARMACIST,
+  UserRoles.NURSE,
+  UserRoles.RECEPTIONIST,
+]
+
 @Component({
   selector: 'shared-sidebar',
   templateUrl: './sidebar.component.html',
@@ -17,16 +34,35 @@ import { SidenavService } from '../services/sidenav.service'
 })
 export class SidebarComponent {
   private sidenavService = inject(SidenavService)
-  private authService = inject(RoleStateService)
+  private roleState = inject(RoleStateService)
   private appAuth = inject(AppAuthService)
   private alert = inject(AlertService)
 
   public isExpanded = this.sidenavService.isExpanded
 
   public filteredMenuItems = computed(() => {
-    const userRoles = this.authService.currentUserRoles()
+    const userRoles = this.roleState.currentUserRoles()
     if (userRoles.length === 0) return []
     return this.filterMenuByRoles(MENU_ITEMS, userRoles)
+  })
+
+  public userName = computed(() => {
+    const u = this.appAuth.currentUser()
+    if (!u?.personalInfo) return 'Usuario'
+    return `${u.personalInfo.firstName || ''} ${u.personalInfo.lastName || ''}`.trim() || 'Usuario'
+  })
+
+  public userInitials = computed(() => {
+    const u = this.appAuth.currentUser()
+    const first = u?.personalInfo?.firstName?.[0] ?? ''
+    const last = u?.personalInfo?.lastName?.[0] ?? ''
+    return (first + last).toUpperCase() || '?'
+  })
+
+  public userRoleLabel = computed(() => {
+    const roles = this.roleState.currentUserRoles()
+    const role = ROLE_PRIORITY.find(r => roles.includes(r))
+    return role ? (ROLE_LABELS[role] ?? role) : 'Usuario'
   })
 
   private filterMenuByRoles(items: MenuItem[], roles: UserRoles[]): MenuItem[] {
@@ -43,19 +79,13 @@ export class SidebarComponent {
   }
 
   private hasVisibility(item: MenuItem, userRoles: UserRoles[]): boolean {
-    const perms = item.requiredPermissions as Permission[] | undefined
-    if (perms && perms.length > 0) return this.authService.hasAnyPermission(perms)
     const allowedRoles = item.allowedRoles || []
     if (allowedRoles.length === 0) return true
     return userRoles.some(role => allowedRoles.includes(role))
   }
 
   get isDemo(): boolean {
-    try {
-      return this.appAuth.authStatus() !== AuthStatus.authenticated
-    } catch {
-      return true
-    }
+    return this.appAuth.authStatus() !== AuthStatus.authenticated
   }
 
   trackByLabel(_index: number, item: MenuItem): string {

@@ -1,5 +1,6 @@
 import { Location } from '@angular/common'
-import { Component, OnInit, inject } from '@angular/core'
+import { Component, DestroyRef, OnInit, inject } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { Invoice, InvoiceStatus } from '../../interfaces/pharmacy.interfaces'
@@ -11,6 +12,8 @@ import { InvoicingService } from '../../services/invoicing.service'
   styleUrls: ['./invoice-detail.component.css'],
 })
 export class InvoiceDetailComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   invoice: Invoice | null = null
   isLoading = false
   invoiceId: string | null = null
@@ -30,7 +33,7 @@ export class InvoiceDetailComponent implements OnInit {
 
   private loadInvoice(id: string): void {
     this.isLoading = true
-    this.invoicingService.getInvoice(id).subscribe({
+    this.invoicingService.getInvoice(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (invoice: Invoice | undefined) => {
         if (!invoice) {
           this.alert.error('Error', 'Factura no encontrada')
@@ -77,6 +80,7 @@ export class InvoiceDetailComponent implements OnInit {
       const today = new Date().toISOString().split('T')[0]
       this.invoicingService
         .updateInvoiceStatus(this.invoice.id, InvoiceStatus.PAID, today)
+        .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: () => {
             this.alert.success('¡Éxito!', 'Factura marcada como pagada')

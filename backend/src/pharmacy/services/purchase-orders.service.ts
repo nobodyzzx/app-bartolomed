@@ -94,16 +94,17 @@ export class PurchaseOrdersService {
   }
 
   async findAll(clinicId?: string): Promise<PurchaseOrder[]> {
-    const where = clinicId ? ({ clinicId } as any) : {};
+    if (!clinicId) throw new BadRequestException('clinicId is required');
     return await this.purchaseOrderRepository.find({
-      where,
+      where: { clinicId } as any,
       relations: ['supplier', 'items', 'createdBy'],
       order: { createdAt: 'DESC' },
     });
   }
 
   async findOne(id: string, clinicId?: string): Promise<PurchaseOrder> {
-    const where = clinicId ? ({ id, clinicId } as any) : ({ id } as any);
+    if (!clinicId) throw new BadRequestException('clinicId is required');
+    const where = { id, clinicId } as any;
     const purchaseOrder = await this.purchaseOrderRepository.findOne({
       where,
       relations: ['supplier', 'items', 'createdBy', 'approvedBy'],
@@ -232,18 +233,18 @@ export class PurchaseOrdersService {
   }
 
   async getOrdersByStatus(status: PurchaseOrderStatus, clinicId?: string): Promise<PurchaseOrder[]> {
-    const where = clinicId ? ({ status, clinicId } as any) : ({ status } as any);
+    if (!clinicId) throw new BadRequestException('clinicId is required');
     return await this.purchaseOrderRepository.find({
-      where,
+      where: { status, clinicId } as any,
       relations: ['supplier', 'items', 'createdBy'],
       order: { createdAt: 'DESC' },
     });
   }
 
   async getOrdersBySupplier(supplierId: string, clinicId?: string): Promise<PurchaseOrder[]> {
-    const where = clinicId ? ({ supplierId, clinicId } as any) : ({ supplierId } as any);
+    if (!clinicId) throw new BadRequestException('clinicId is required');
     return await this.purchaseOrderRepository.find({
-      where,
+      where: { supplierId, clinicId } as any,
       relations: ['supplier', 'items', 'createdBy'],
       order: { createdAt: 'DESC' },
     });
@@ -263,9 +264,9 @@ export class PurchaseOrdersService {
     },
     clinicId?: string,
   ): Promise<PurchaseOrder> {
-    const where = clinicId ? ({ id, clinicId } as any) : ({ id } as any);
+    if (!clinicId) throw new BadRequestException('clinicId is required');
     const order = await this.purchaseOrderRepository.findOne({
-      where,
+      where: { id, clinicId } as any,
       relations: ['items'],
     });
 

@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { Clinic } from '../../clinics/entities/clinic.entity';
 import { PaginationDto } from '../../common/dtos/pagination.dto';
 import { CreateUserDto } from '../dto/create-user.dto';
+import { UserClinic } from '../entities/user-clinic.entity';
 import { User } from '../entities/user.entity';
 
 @Injectable()
@@ -14,6 +15,8 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Clinic)
     private readonly clinicRepository: Repository<Clinic>,
+    @InjectRepository(UserClinic)
+    private readonly userClinicRepository: Repository<UserClinic>,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -38,6 +41,16 @@ export class UsersService {
       await this.userRepository.save(user);
       delete (user as any).password;
 
+      // Sincronizar: crear registro en user_clinics para que ClinicScopeGuard funcione
+      if (clinic) {
+        const membership = this.userClinicRepository.create({
+          user,
+          clinic,
+          roles: user.roles ?? [],
+        });
+        await this.userClinicRepository.save(membership);
+      }
+
       return user;
     } catch (error) {
       if (error.code === '23505') {
@@ -52,13 +65,15 @@ export class UsersService {
   }
 
   async findAll(paginationDto: PaginationDto) {
-    const { limit = 10, offset = 0 } = paginationDto;
+    const { limit = 25, offset = 0 } = paginationDto;
 
-    return await this.userRepository.find({
+    const [data, total] = await this.userRepository.findAndCount({
       take: limit,
       skip: offset,
-      relations: ['clinic'],
+      relations: ['clinic', 'personalInfo', 'professionalInfo'],
     });
+
+    return { data, total, limit, offset };
   }
 
   async findOne(id: string) {
@@ -86,7 +101,16 @@ export class UsersService {
         throw new BadRequestException(`Clinic with id ${updateUserDto.clinicId} not found`);
       }
       user.clinic = clinic;
-      delete (updateUserDto as any).clinicId; // Eliminar del objeto para evitar conflicto
+      delete (updateUserDto as any).clinicId;
+
+      // Sincronizar: upsert en user_clinics
+      const existing = await this.userClinicRepository.findOne({
+        where: { user: { id: user.id }, clinic: { id: clinic.id } },
+      });
+      if (!existing) {
+        const membership = this.userClinicRepository.create({ user, clinic, roles: user.roles ?? [] });
+        await this.userClinicRepository.save(membership);
+      }
     }
 
     try {
@@ -98,6 +122,12 @@ export class UsersService {
     } catch (error) {
       this.handleDBErrors(error);
     }
+  }
+
+  async updateStatus(id: string, isActive: boolean) {
+    const user = await this.findOne(id);
+    user.isActive = isActive;
+    await this.userRepository.save(user);
   }
 
   async remove(id: string) {

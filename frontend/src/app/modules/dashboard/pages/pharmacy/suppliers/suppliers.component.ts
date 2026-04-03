@@ -1,5 +1,6 @@
 import { Location } from '@angular/common'
-import { Component, computed, OnInit, signal } from '@angular/core'
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { Supplier, SupplierType } from '../interfaces/pharmacy.interfaces'
@@ -11,6 +12,8 @@ import { SuppliersService } from '../services/suppliers.service'
   styleUrls: ['./suppliers.component.css'],
 })
 export class SuppliersComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   loading = signal(false)
   suppliers = signal<Supplier[]>([])
   search = signal('')
@@ -50,7 +53,7 @@ export class SuppliersComponent implements OnInit {
 
   load(): void {
     this.loading.set(true)
-    this.suppliersService.getAll().subscribe({
+    this.suppliersService.getAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: list => {
         this.suppliers.set(list)
         this.loading.set(false)
@@ -78,7 +81,7 @@ export class SuppliersComponent implements OnInit {
       .then(result => {
         if (!result.isConfirmed) return
         this.loading.set(true)
-        this.suppliersService.remove(s.id).subscribe({
+        this.suppliersService.remove(s.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: () => {
             this.alert.success('Eliminado', 'Proveedor eliminado correctamente')
             this.suppliers.set(this.suppliers().filter(x => x.id !== s.id))
@@ -91,7 +94,7 @@ export class SuppliersComponent implements OnInit {
 
   restore(s: Supplier): void {
     this.loading.set(true)
-    this.suppliersService.restore(s.id).subscribe({
+    this.suppliersService.restore(s.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: restored => {
         this.alert.success('Restaurado', 'Proveedor restaurado correctamente')
         this.suppliers.set(

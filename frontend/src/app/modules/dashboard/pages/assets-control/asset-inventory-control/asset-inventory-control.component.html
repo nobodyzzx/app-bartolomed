@@ -10,6 +10,14 @@
     >
       <button
         type="button"
+        routerLink="/dashboard/assets-control/transfers"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-amber-50 text-amber-600 hover:bg-amber-100 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <span class="material-symbols-outlined msz-18 leading-none">local_shipping</span>
+        Transferir
+      </button>
+      <button
+        type="button"
         (click)="exportToCSV()"
         class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
       >

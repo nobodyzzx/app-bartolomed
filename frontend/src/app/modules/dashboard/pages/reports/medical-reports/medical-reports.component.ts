@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
@@ -11,6 +12,8 @@ import { ReportsService } from '../services/reports.service'
   styleUrls: ['./medical-reports.component.css'],
 })
 export class MedicalReportsComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   medicalReports: MedicalReport[] = []
   loading = false
   generating = false
@@ -64,7 +67,7 @@ export class MedicalReportsComponent implements OnInit {
 
   loadMedicalReports(): void {
     this.loading = true
-    this.reportsService.getMedicalReports().subscribe({
+    this.reportsService.getMedicalReports().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: reports => {
         this.medicalReports = reports
         this.calculateStats()
@@ -121,7 +124,7 @@ export class MedicalReportsComponent implements OnInit {
       },
     }
 
-    this.reportsService.generateMedicalReport(params).subscribe({
+    this.reportsService.generateMedicalReport(params).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: newReport => {
         this.medicalReports.unshift(newReport)
         this.calculateStats()
@@ -153,25 +156,32 @@ export class MedicalReportsComponent implements OnInit {
     }
 
     this.loading = true
-    this.reportsService.downloadReport(report.id, 'pdf').subscribe({
-      next: blob => {
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${report.title.replace(/\s+/g, '-')}.pdf`
-        a.click()
-        window.URL.revokeObjectURL(url)
+    const params: Record<string, string> = {}
+    if (report.period?.startDate) params['startDate'] = report.period.startDate
+    if (report.period?.endDate) params['endDate'] = report.period.endDate
+
+    // Elegir endpoint según el tipo de reporte
+    const type = report.type ?? ''
+    let obs$
+    if (type === 'Consultas' || type === 'Diagnósticos' || type === 'Tratamientos') {
+      obs$ = this.reportsService.downloadMedicalRecordsPdf(params)
+    } else {
+      obs$ = this.reportsService.downloadAppointmentsPdf(params)
+    }
+
+    obs$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
         this.loading = false
         this.alert.fire({
           icon: 'success',
-          title: 'Descarga Iniciada',
-          text: 'El reporte se está descargando',
+          title: 'PDF Generado',
+          text: 'El reporte se descargó correctamente',
           timer: 1500,
           showConfirmButton: false,
         })
       },
-      error: error => {
-        this.alert.error('Error al descargar el reporte')
+      error: () => {
+        this.alert.error('Error al generar el PDF con Puppeteer')
         this.loading = false
       },
     })
@@ -191,7 +201,7 @@ export class MedicalReportsComponent implements OnInit {
     if (!result.isConfirmed) return
 
     this.loading = true
-    this.reportsService.deleteReport(report.id).subscribe({
+    this.reportsService.deleteReport(report.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.medicalReports = this.medicalReports.filter(r => r.id !== report.id)
         this.calculateStats()
@@ -254,7 +264,7 @@ export class MedicalReportsComponent implements OnInit {
       this.loadMedicalReports()
     } else {
       this.loading = true
-      this.reportsService.getMedicalReportsByType(type).subscribe({
+      this.reportsService.getMedicalReportsByType(type).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (reports: MedicalReport[]) => {
           this.medicalReports = reports
           this.loading = false

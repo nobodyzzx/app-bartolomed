@@ -1,5 +1,6 @@
 import { Location } from '@angular/common'
-import { Component, OnInit, ViewChild, computed, signal } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit, ViewChild, computed, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
@@ -14,6 +15,8 @@ import { SuppliersService } from '../services/suppliers.service'
   styleUrls: ['./order-generation.component.css'],
 })
 export class OrderGenerationComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   @ViewChild(MatPaginator) paginator!: MatPaginator
   @ViewChild(MatSort) sort!: MatSort
 
@@ -90,7 +93,7 @@ export class OrderGenerationComponent implements OnInit {
   }
 
   loadOrders(): void {
-    this.ordersService.getAll().subscribe(orders => {
+    this.ordersService.getAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(orders => {
       this.orders = orders
       this.refreshDataSource()
       this.calculateStats()
@@ -102,7 +105,7 @@ export class OrderGenerationComponent implements OnInit {
   }
 
   loadSuppliers(): void {
-    this.suppliersService.getAll().subscribe(suppliers => {
+    this.suppliersService.getAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(suppliers => {
       this.suppliers = suppliers
     })
   }
@@ -118,8 +121,7 @@ export class OrderGenerationComponent implements OnInit {
     this.stats.totalValue = this.orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0)
   }
 
-  applyTextFilter(event: Event): void {
-    const value = (event.target as HTMLInputElement).value
+  applyTextFilter(value: string): void {
     this.textFilter.set(value)
     this.refreshDataSource()
     if (this.dataSource.paginator) this.dataSource.paginator.firstPage()
@@ -188,12 +190,14 @@ export class OrderGenerationComponent implements OnInit {
   approveOrder(order: PurchaseOrder): void {
     this.ordersService
       .updateStatus(order.id!, { status: PurchaseOrderStatus.APPROVED })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.loadOrders())
   }
 
   cancelOrder(order: PurchaseOrder): void {
     this.ordersService
       .updateStatus(order.id!, { status: PurchaseOrderStatus.CANCELLED })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.loadOrders())
   }
 
@@ -276,7 +280,7 @@ export class OrderGenerationComponent implements OnInit {
         unitPrice: Number(it.unitPrice),
       })),
     }
-    this.ordersService.create(dto).subscribe({
+    this.ordersService.create(dto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.createOpen.set(false)
         this.resetCreateForm()

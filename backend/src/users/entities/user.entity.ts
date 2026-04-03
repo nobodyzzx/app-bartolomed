@@ -3,6 +3,7 @@ import {
   BeforeUpdate,
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToOne,
@@ -27,6 +28,13 @@ export class User {
   @Column('text', { nullable: true, select: false })
   refreshTokenHash?: string | null;
 
+  // Recuperación de contraseña
+  @Column('text', { nullable: true, select: false })
+  passwordResetToken?: string | null;
+
+  @Column('timestamptz', { nullable: true })
+  passwordResetExpiresAt?: Date | null;
+
   @Column('text', {
     array: true,
     default: ['user'],
@@ -47,6 +55,7 @@ export class User {
   @JoinColumn()
   professionalInfo: ProfessionalInfo;
 
+  @Index()
   @ManyToOne(() => Clinic, clinic => clinic.users)
   clinic: Clinic;
 

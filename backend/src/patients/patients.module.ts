@@ -6,11 +6,12 @@ import { Patient } from './entities/patient.entity';
 import { Clinic } from '../clinics/entities/clinic.entity';
 import { AuthModule } from '../auth/auth.module';
 import { ClinicsModule } from '../clinics/clinics.module';
+import { ActivePatientPipe } from './pipes/active-patient.pipe';
 
 @Module({
   controllers: [PatientsController],
-  providers: [PatientsService],
+  providers: [PatientsService, ActivePatientPipe],
   imports: [TypeOrmModule.forFeature([Patient, Clinic]), AuthModule, ClinicsModule],
-  exports: [TypeOrmModule, PatientsService],
+  exports: [TypeOrmModule, PatientsService, ActivePatientPipe],
 })
 export class PatientsModule {}

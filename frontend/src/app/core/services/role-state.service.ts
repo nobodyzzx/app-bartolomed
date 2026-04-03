@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, isDevMode, signal } from '@angular/core'
+import { computed, inject, Injectable, signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { permissionsForRoles } from '../constants/role-permissions.map'
 import { Permission } from '../enums/permission.enum'
@@ -98,21 +98,16 @@ export class RoleStateService {
     return Array.from(normalized)
   }
 
-  /**
-   * Simula un login con roles específicos. SOLO DISPONIBLE EN DESARROLLO.
-   * En producción este método no hace nada.
-   */
-  loginAs(roles: UserRoles[]): void {
-    if (!isDevMode()) return
-    this.syncRoles(roles)
-    this.router.navigate(['/dashboard'])
-  }
-
-  logout(): void {
+  /** Limpia el estado de roles sin redirigir. Usar desde AuthService.logout(). */
+  clearRoles(): void {
     this._currentUserRoles.set([])
     this._currentPermissions.set([])
     localStorage.removeItem('userRoles')
     localStorage.removeItem('userPerms')
+  }
+
+  logout(): void {
+    this.clearRoles()
     this.router.navigate(['/auth/login'])
   }
 

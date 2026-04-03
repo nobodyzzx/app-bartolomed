@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
@@ -36,6 +37,7 @@ export enum MaritalStatus {
 }
 
 @Entity('patients')
+@Index(['clinic', 'createdAt'])
 export class Patient {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -129,6 +131,7 @@ export class Patient {
   @Column('text', { nullable: true })
   notes: string;
 
+  @Index()
   @ManyToOne(() => Clinic, clinic => clinic.patients)
   clinic: Clinic;
 

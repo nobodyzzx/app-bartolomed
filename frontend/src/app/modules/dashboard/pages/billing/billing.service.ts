@@ -47,6 +47,32 @@ export interface PaymentDto {
   invoiceId: string
 }
 
+export interface InvoiceResponse {
+  id: string
+  invoiceNumber: string
+  status: string
+  issueDate: string
+  dueDate: string
+  totalAmount: number
+  taxRate?: number
+  discountRate?: number
+  discountAmount?: number
+  notes?: string
+  terms?: string
+  patient?: { id: string; firstName: string; lastName: string }
+  clinic?: { id: string; name: string }
+  items: InvoiceItemDto[]
+}
+
+export interface PaymentResponse {
+  id: string
+  paymentNumber: string
+  amount: number
+  method: string
+  status: string
+  paymentDate: string
+}
+
 @Injectable({ providedIn: 'root' })
 export class BillingService {
   private readonly base = environment.baseUrl
@@ -72,8 +98,8 @@ export class BillingService {
     )
   }
 
-  getInvoice(id: string): Observable<any> {
-    return this.http.get(`${this.base}/billing/invoices/${id}`).pipe(
+  getInvoice(id: string): Observable<InvoiceResponse> {
+    return this.http.get<InvoiceResponse>(`${this.base}/billing/invoices/${id}`).pipe(
       catchError(err => {
         this.errorService.handleError(err)
         return throwError(() => err)
@@ -81,8 +107,8 @@ export class BillingService {
     )
   }
 
-  createInvoice(payload: InvoiceDto): Observable<any> {
-    return this.http.post(`${this.base}/billing/invoices`, payload).pipe(
+  createInvoice(payload: InvoiceDto): Observable<InvoiceResponse> {
+    return this.http.post<InvoiceResponse>(`${this.base}/billing/invoices`, payload).pipe(
       tap(() => this.alert.success('Éxito', 'Factura creada correctamente')),
       catchError(err => {
         this.errorService.handleError(err)
@@ -122,8 +148,8 @@ export class BillingService {
   }
 
   // Payment methods
-  addPayment(payload: PaymentDto): Observable<any> {
-    return this.http.post(`${this.base}/billing/payments`, payload).pipe(
+  addPayment(payload: PaymentDto): Observable<PaymentResponse> {
+    return this.http.post<PaymentResponse>(`${this.base}/billing/payments`, payload).pipe(
       tap(() => this.alert.success('Éxito', 'Pago registrado correctamente')),
       catchError(err => {
         this.errorService.handleError(err)

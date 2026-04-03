@@ -13,6 +13,13 @@ import {
   UpdateMedicationStockDto,
 } from '../interfaces/pharmacy.interfaces'
 
+export interface PaginatedResult<T> {
+  data: T[]
+  total: number
+  page: number
+  limit: number
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -28,13 +35,13 @@ export class InventoryService {
    * INVENTARIO (STOCK)
    */
   // Alias para compatibilidad con NewSaleComponent
-  getAllStock(clinicId: string): Observable<MedicationStock[]> {
-    return this.getProducts(clinicId)
+  getAllStock(clinicId: string, page = 1, limit = 100): Observable<PaginatedResult<MedicationStock>> {
+    return this.getProducts(clinicId, page, limit)
   }
 
-  getProducts(clinicId: string): Observable<MedicationStock[]> {
-    const params = new HttpParams().set('clinicId', clinicId)
-    return this.http.get<MedicationStock[]>(`${this.baseUrl}/stock`, { params }).pipe(
+  getProducts(clinicId: string, page = 1, limit = 100): Observable<PaginatedResult<MedicationStock>> {
+    const params = new HttpParams().set('page', page.toString()).set('limit', limit.toString())
+    return this.http.get<PaginatedResult<MedicationStock>>(`${this.baseUrl}/stock`, { params }).pipe(
       catchError(error => {
         this.errorService.handleError(error)
         return throwError(() => error)
@@ -111,8 +118,9 @@ export class InventoryService {
     )
   }
 
-  getAllMedications(): Observable<Medication[]> {
-    return this.http.get<Medication[]>(`${this.baseUrl}/medications`).pipe(
+  getAllMedications(page = 1, limit = 100): Observable<PaginatedResult<Medication>> {
+    const params = new HttpParams().set('page', page.toString()).set('limit', limit.toString())
+    return this.http.get<PaginatedResult<Medication>>(`${this.baseUrl}/medications`, { params }).pipe(
       catchError(error => {
         this.errorService.handleError(error)
         return throwError(() => error)

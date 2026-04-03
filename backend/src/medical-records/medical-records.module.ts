@@ -4,6 +4,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { MedicalRecordsService } from './medical-records.service';
+import { MedicalRecordsPdfService } from './services/medical-records-pdf.service';
 import { MedicalRecordsController } from './medical-records.controller';
 import { MedicalRecord, ConsentForm } from './entities';
 import { AuthModule } from '../auth/auth.module';
@@ -35,7 +36,7 @@ import { AuthModule } from '../auth/auth.module';
     }),
   ],
   controllers: [MedicalRecordsController],
-  providers: [MedicalRecordsService],
+  providers: [MedicalRecordsService, MedicalRecordsPdfService],
   exports: [MedicalRecordsService],
 })
 export class MedicalRecordsModule {}

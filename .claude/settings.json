@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test:*)",
+      "Bash(./node_modules/.bin/jest --no-coverage)",
+      "Bash(./node_modules/.bin/jest --no-coverage --testPathPattern=\"patients.service|create-patient.dto|auth.service|appointments.service|pharmacy-sales\")",
+      "Bash(./node_modules/.bin/jest --coverage --testPathPattern=\"patients.service|create-patient.dto|auth.service|appointments.service|pharmacy-sales\" --coverageReporters=text-summary)",
+      "Bash(node -e \"const bcrypt = require\\('bcrypt'\\); console.log\\(bcrypt.hashSync\\('Admin2026!', 10\\)\\);\")",
+      "Bash(node -e \"const bcrypt = require\\('bcryptjs'\\); console.log\\(bcrypt.hashSync\\('Admin2026!', 10\\)\\);\")",
+      "Bash(node_modules/.bin/ng build:*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('clinicId:', d.get\\('clinicId','N/A'\\)\\); print\\('userClinics:', [c.get\\('id'\\) for c in d.get\\('userClinics',[]\\)[:3]]\\)\")",
+      "Bash(python3 -c ':*)",
+      "Bash(identify /home/tecnocondordev/Projects/app-bartolomed/frontend/src/assets/images/logo-bartolomed.png)",
+      "Bash(identify /home/tecnocondordev/Projects/app-bartolomed/frontend/src/assets/images/logo-big-horizontal-bartolomed.png)",
+      "Bash(sed -i 's/currency: '\\\\''USD'\\\\'' : '\\\\''symbol'\\\\'' : '\\\\''1.2-2'\\\\''/currency: '\\\\''BOB'\\\\'' : '\\\\''symbol-narrow'\\\\'' : '\\\\''1.2-2'\\\\''/g' frontend/src/app/modules/dashboard/pages/assets-control/asset-inventory-control/asset-inventory-control.component.html)",
+      "Bash(sed -i 's/currency: '\\\\''USD'\\\\''/currency: '\\\\''BOB'\\\\''/g' frontend/src/app/modules/dashboard/pages/billing/payment-form.component.html)",
+      "Bash(xargs cat:*)"
+    ]
+  }
+}

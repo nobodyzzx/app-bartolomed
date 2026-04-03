@@ -114,6 +114,7 @@ export interface MedicalRecord {
 
 export interface CreateMedicalRecordDto {
   type: RecordType
+  status?: RecordStatus
   chiefComplaint: string
   historyOfPresentIllness?: string
   pastMedicalHistory?: string
@@ -181,23 +182,25 @@ export interface ConsentForm {
 }
 
 export enum ConsentType {
-  GENERAL_TREATMENT = 'general_treatment',
-  SURGERY = 'surgery',
-  ANESTHESIA = 'anesthesia',
+  TREATMENT       = 'treatment',
+  SURGERY         = 'surgery',
+  ANESTHESIA      = 'anesthesia',
   BLOOD_TRANSFUSION = 'blood_transfusion',
-  EXPERIMENTAL_TREATMENT = 'experimental_treatment',
-  PHOTOGRAPHY = 'photography',
-  DATA_SHARING = 'data_sharing',
-  OTHER = 'other',
+  IMAGING         = 'imaging',
+  LABORATORY      = 'laboratory',
+  DISCHARGE       = 'discharge',
+  GENERAL         = 'general',
+  OTHER           = 'other',
 }
 
 export interface CreateConsentDto {
-  medicalRecordId: string
+  medicalRecordId?: string
   patientId: string
   doctorId: string
-  consentType: ConsentType
+  type: ConsentType
+  title: string
   description: string
-  signedBy?: string
+  notes?: string
 }
 
 export interface MedicalRecordFilters {

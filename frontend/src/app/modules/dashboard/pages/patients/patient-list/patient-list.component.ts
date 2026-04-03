@@ -1,11 +1,14 @@
 import { Location } from '@angular/common'
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core'
-import { MatPaginator } from '@angular/material/paginator'
+import { AfterViewInit, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
+import { MatPaginator, PageEvent } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
 import { ActivatedRoute, Router } from '@angular/router'
+import { Subject } from 'rxjs'
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
 import { AlertService } from '@core/services/alert.service'
-import { Gender, Patient } from '../interfaces'
+import { Gender, Patient, PatientStatistics } from '../interfaces'
 import { PatientsService } from '../services'
 
 @Component({
@@ -14,6 +17,8 @@ import { PatientsService } from '../services'
   styleUrl: './patient-list.component.css',
 })
 export class PatientListComponent implements OnInit, AfterViewInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   displayedColumns: string[] = ['documentNumber', 'name', 'age', 'gender', 'phone', 'actions']
   dataSource: MatTableDataSource<Patient>
   isLoading = false
@@ -23,8 +28,13 @@ export class PatientListComponent implements OnInit, AfterViewInit {
   @ViewChild(MatSort) sort!: MatSort
 
   readonly Gender = Gender
-  patients: Patient[] = []
+  totalRecords = 0
+  pageSize = 25
+  currentPage = 0
   activeGenderFilter: Gender | null = null
+  statistics: PatientStatistics | null = null
+
+  private searchSubject = new Subject<string>()
 
   constructor(
     private patientsService: PatientsService,
@@ -34,72 +44,114 @@ export class PatientListComponent implements OnInit, AfterViewInit {
     private alert: AlertService,
   ) {
     this.dataSource = new MatTableDataSource<Patient>([])
-    this.dataSource.filterPredicate = (patient: Patient, filter: string) => {
-      const term = filter.toLowerCase()
-      const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase()
-      return (
-        fullName.includes(term) ||
-        patient.documentNumber.toLowerCase().includes(term) ||
-        (patient.phone ?? '').toLowerCase().includes(term) ||
-        (patient.email ?? '').toLowerCase().includes(term)
-      )
-    }
   }
 
   ngOnInit(): void {
-    this.route.queryParamMap.subscribe(params => {
+    this.loadStatistics()
+
+    this.searchSubject.pipe(
+      debounceTime(350),
+      distinctUntilChanged(),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(() => {
+      this.currentPage = 0
+      if (this.paginator) this.paginator.firstPage()
+      this.loadPatients()
+    })
+
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       const q = (params.get('q') || '').trim()
-      if (q) {
-        this.searchTerm = q
-        this.loadPatients(() => {
-          this.dataSource.filter = q.toLowerCase()
-        })
-      } else {
-        this.loadPatients()
-      }
+      this.searchTerm = q
+      this.loadPatients()
     })
   }
 
   ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator
     this.dataSource.sort = this.sort
   }
 
-  loadPatients(afterLoad?: () => void): void {
-    this.isLoading = true
-    this.patientsService.findAll().subscribe({
-      next: patients => {
-        this.patients = patients
-        this.applyFilters()
-        this.isLoading = false
-        afterLoad?.()
-      },
-      error: error => {
-        this.alert.error('Error al cargar pacientes', error?.message || 'Inténtalo de nuevo')
-        this.isLoading = false
-      },
+  loadStatistics(): void {
+    this.patientsService.getPatientStatistics().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: stats => { this.statistics = stats },
+      error: () => { /* non-critical */ },
     })
   }
 
-  applyFilter(event: Event): void {
-    this.searchTerm = (event.target as HTMLInputElement).value
-    this.applyFilters()
+  loadPatients(): void {
+    this.isLoading = true
+
+    if (this.searchTerm.trim()) {
+      this.patientsService.searchPatients(this.searchTerm).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: patients => {
+          this.dataSource.data = patients
+          this.totalRecords = patients.length
+          this.isLoading = false
+        },
+        error: error => {
+          this.alert.error('Error al buscar pacientes', error?.message || 'Inténtalo de nuevo')
+          this.isLoading = false
+        },
+      })
+    } else {
+      this.patientsService.findAll({
+        page: this.currentPage + 1,
+        limit: this.pageSize,
+        gender: this.activeGenderFilter ?? undefined,
+      }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: result => {
+          this.dataSource.data = result.data
+          this.totalRecords = result.total
+          this.isLoading = false
+        },
+        error: error => {
+          this.alert.error('Error al cargar pacientes', error?.message || 'Inténtalo de nuevo')
+          this.isLoading = false
+        },
+      })
+    }
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex
+    this.pageSize = event.pageSize
+    this.loadPatients()
+  }
+
+  applyFilter(value: string): void {
+    this.searchTerm = value
+    this.searchSubject.next(value)
+  }
+
+  clearFilters(): void {
+    this.searchTerm = ''
+    this.activeGenderFilter = null
+    this.currentPage = 0
+    if (this.paginator) this.paginator.firstPage()
+    this.loadPatients()
   }
 
   setGenderFilter(gender: Gender | null): void {
     this.activeGenderFilter = gender
-    this.applyFilters()
+    this.currentPage = 0
+    if (this.paginator) this.paginator.firstPage()
+    this.loadPatients()
   }
 
-  private applyFilters(): void {
-    const filtered = this.activeGenderFilter
-      ? this.patients.filter(p => p.gender === this.activeGenderFilter)
-      : this.patients
-    this.dataSource.data = filtered
-    this.dataSource.filter = this.searchTerm.trim().toLowerCase()
-    if (this.dataSource.paginator) {
-      this.dataSource.paginator.firstPage()
-    }
+  getMaleCount(): number {
+    return this.getGenderCount(Gender.MALE)
+  }
+
+  getFemaleCount(): number {
+    return this.getGenderCount(Gender.FEMALE)
+  }
+
+  private getGenderCount(gender: Gender): number {
+    const stat = this.statistics?.genderStats.find(s => s.gender === gender)
+    return stat ? Number(stat.count) : 0
+  }
+
+  getNewThisMonthCount(): number {
+    return this.statistics?.newThisMonth ?? 0
   }
 
   getPatientFullName(patient: Patient): string {
@@ -115,20 +167,6 @@ export class PatientListComponent implements OnInit, AfterViewInit {
       age--
     }
     return age
-  }
-
-  getAverageAge(): number {
-    if (!this.patients.length) return 0
-    const total = this.patients.reduce((sum, p) => sum + this.getPatientAge(p), 0)
-    return Math.round(total / this.patients.length)
-  }
-
-  getMaleCount(): number {
-    return this.patients.filter(p => p.gender === Gender.MALE).length
-  }
-
-  getFemaleCount(): number {
-    return this.patients.filter(p => p.gender === Gender.FEMALE).length
   }
 
   createPatient(): void {
@@ -159,10 +197,11 @@ export class PatientListComponent implements OnInit, AfterViewInit {
       })
       .then(result => {
         if (result.isConfirmed) {
-          this.patientsService.removePatient(patient.id).subscribe({
+          this.patientsService.removePatient(patient.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: () => {
-              this.patients = this.patients.filter(p => p.id !== patient.id)
-              this.applyFilters()
+              this.dataSource.data = this.dataSource.data.filter(p => p.id !== patient.id)
+              this.totalRecords--
+              this.loadStatistics()
               this.alert.success('Eliminado', 'El paciente ha sido eliminado.')
             },
             error: error => {

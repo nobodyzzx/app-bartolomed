@@ -1,24 +1,13 @@
 import { Location } from '@angular/common'
-import { Component, OnInit, ViewChild, inject } from '@angular/core'
+import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
-import { InvoiceStatus, Sale } from '../interfaces/pharmacy.interfaces'
+import { InvoiceStatus, PaginatedResult, Sale, SaleRow } from '../interfaces/pharmacy.interfaces'
 import { SalesDispensingService, SalesSummary } from '../services/sales-dispensing.service'
-
-// Tipado de fila mostrada en la tabla (derivada de una venta)
-interface SaleRow {
-  saleNumber: string
-  id: string
-  saleId: string
-  patientName: string
-  date: string
-  paymentMethod: string
-  total: number
-  status: InvoiceStatus
-}
 
 @Component({
   selector: 'app-invoicing',
@@ -26,6 +15,8 @@ interface SaleRow {
   styleUrls: ['./invoicing.component.css'],
 })
 export class InvoicingComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   @ViewChild(MatPaginator) paginator!: MatPaginator
   @ViewChild(MatSort) sort!: MatSort
 
@@ -76,9 +67,12 @@ export class InvoicingComponent implements OnInit {
         paymentMethod: this.selectedPaymentMethod || undefined,
         startDate: this.startDate || undefined,
         endDate: this.endDate || undefined,
+        limit: 200,
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (sales: Sale[]) => {
+        next: (result: PaginatedResult<Sale>) => {
+          const sales = result.data
           this.invoices = sales.map(
             (s: Sale): SaleRow => ({
               saleNumber: s.saleNumber,
@@ -104,6 +98,7 @@ export class InvoicingComponent implements OnInit {
   loadStats(): void {
     this.salesService
       .getSalesSummary(this.startDate || undefined, this.endDate || undefined)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (summary: SalesSummary) => {
           this.stats.totalInvoices = summary.totalSales
@@ -125,8 +120,8 @@ export class InvoicingComponent implements OnInit {
     this.loadStats()
   }
 
-  applyFilter(event: Event): void {
-    const filterValue = (event.target as HTMLInputElement).value
+  applyFilter(value: string): void {
+    const filterValue = value
     this.dataSource.filter = filterValue.trim().toLowerCase()
 
     if (this.dataSource.paginator) {

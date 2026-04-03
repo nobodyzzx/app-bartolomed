@@ -1,12 +1,13 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, ElementRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 import { AlertService } from '../../../../../core/services/alert.service'
 import { ClinicContextService } from '../../../../clinics/services/clinic-context.service'
-import { Clinic } from '../../clinics/interfaces/clinic.interface'
-import { ClinicsService } from '../../clinics/services'
+import { Clinic } from '../../admin/clinics/interfaces/clinic.interface'
+import { ClinicsService } from '../../admin/clinics/services'
 import { BloodType, CreatePatientDto, Gender, MaritalStatus, Patient } from '../interfaces'
 import { PatientsService } from '../services'
 
@@ -16,6 +17,9 @@ import { PatientsService } from '../services'
   styleUrl: './patient-form.component.css',
 })
 export class PatientFormComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+  private readonly elRef = inject(ElementRef)
+
   // Stepper form groups
   personalInfoForm!: FormGroup
   contactInfoForm!: FormGroup
@@ -66,7 +70,7 @@ export class PatientFormComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private router: Router,
+    public router: Router,
     private route: ActivatedRoute,
     private patientsService: PatientsService,
     private clinicsService: ClinicsService,
@@ -81,18 +85,6 @@ export class PatientFormComponent implements OnInit {
   ngOnInit(): void {
     this.loadClinics()
     this.checkEditMode()
-  }
-
-  getStepProgress(): number {
-    let completedSteps = 0
-    const totalSteps = 4
-
-    if (this.personalInfoForm.valid) completedSteps++
-    if (this.contactInfoForm.valid) completedSteps++
-    if (this.emergencyContactForm.valid) completedSteps++
-    if (this.insuranceForm.valid) completedSteps++
-
-    return (completedSteps / totalSteps) * 100
   }
 
   private initializeForms(): void {
@@ -149,6 +141,7 @@ export class PatientFormComponent implements OnInit {
     this.clinicsService
       .findAll(true)
       .pipe(
+        takeUntilDestroyed(this.destroyRef),
         catchError(err => {
           this.alert
             .fire({
@@ -188,15 +181,15 @@ export class PatientFormComponent implements OnInit {
           })
         }
 
-        // Prefijar clínica si hay contexto y existe en la lista
+        // Prefijar clínica del contexto solo en modo creación
         const ctxId = this.clinicCtx.clinicId
-        if (ctxId && this.clinics.some(c => c.id === ctxId)) {
+        if (!this.isEditMode && ctxId && this.clinics.some(c => c.id === ctxId)) {
           this.insuranceForm.patchValue({ clinicId: ctxId })
-        } else if (ctxId && !this.clinics.some(c => c.id === ctxId)) {
+        } else if (!this.isEditMode && ctxId && !this.clinics.some(c => c.id === ctxId)) {
           // Si el contexto apunta a una clínica que aún no está cargada (o filtrada), cargarla y agregarla
           this.clinicsService
             .findOne(ctxId)
-            .pipe(catchError(() => of(null as Clinic | null)))
+            .pipe(takeUntilDestroyed(this.destroyRef), catchError(() => of(null as Clinic | null)))
             .subscribe(c => {
               if (c) {
                 this.clinics = [...this.clinics, c]
@@ -211,6 +204,7 @@ export class PatientFormComponent implements OnInit {
     // Verificar si estamos en modo edición o vista
     this.route.paramMap
       .pipe(
+        takeUntilDestroyed(this.destroyRef),
         switchMap(params => {
           this.patientId = params.get('id')
           this.isEditMode = !!this.patientId && !this.route.snapshot.data['viewMode']
@@ -265,7 +259,7 @@ export class PatientFormComponent implements OnInit {
       lastName: patient.lastName,
       documentNumber: patient.documentNumber,
       documentType: patient.documentType,
-      birthDate: patient.birthDate,
+      birthDate: patient.birthDate ? new Date(patient.birthDate) : null,
       gender: patient.gender,
       bloodType: patient.bloodType,
       maritalStatus: patient.maritalStatus,
@@ -290,11 +284,31 @@ export class PatientFormComponent implements OnInit {
       emergencyContactRelationship: patient.emergencyContactRelationship,
     })
 
+    const patientClinicId = patient.clinic?.id ?? patient.clinicId
     this.insuranceForm.patchValue({
       insuranceProvider: patient.insuranceProvider,
       insuranceNumber: patient.insuranceNumber,
-      clinicId: patient.clinicId,
+      clinicId: patientClinicId,
     })
+
+    // Si la clínica del paciente no está en la lista (p.ej. está inactiva), agregarla
+    if (patientClinicId && !this.clinics.some(c => c.id === patientClinicId)) {
+      this.clinicsService
+        .findOne(patientClinicId)
+        .pipe(takeUntilDestroyed(this.destroyRef), catchError(() => of(null as Clinic | null)))
+        .subscribe(c => {
+          if (c) {
+            this.clinics = [...this.clinics, c]
+          }
+        })
+    }
+
+    if (this.isViewMode) {
+      this.personalInfoForm.disable()
+      this.contactInfoForm.disable()
+      this.emergencyContactForm.disable()
+      this.insuranceForm.disable()
+    }
   }
 
   onSubmit(): void {
@@ -309,8 +323,52 @@ export class PatientFormComponent implements OnInit {
         this.createPatient(patientData)
       }
     } else {
-      this.showError('Por favor complete todos los campos requeridos')
+      this.personalInfoForm.markAllAsTouched()
+      this.contactInfoForm.markAllAsTouched()
+      this.emergencyContactForm.markAllAsTouched()
+      this.insuranceForm.markAllAsTouched()
+      this.scrollToFirstError()
+      this.showValidationErrors()
     }
+  }
+
+  private showValidationErrors(): void {
+    const p = this.personalInfoForm.controls
+    const c = this.contactInfoForm.controls
+    const i = this.insuranceForm.controls
+
+    const missing: string[] = []
+
+    if (p['firstName']?.invalid)      missing.push('Nombres')
+    if (p['lastName']?.invalid)       missing.push('Apellidos')
+    if (p['documentNumber']?.invalid) missing.push('Número de documento (CI)')
+    if (p['birthDate']?.invalid)      missing.push('Fecha de nacimiento')
+    if (p['gender']?.invalid)         missing.push('Género')
+    if (c['email']?.invalid)          missing.push('Correo electrónico (formato inválido)')
+    if (c['phone']?.invalid)          missing.push('Teléfono (formato inválido)')
+    if (i['clinicId']?.invalid)       missing.push('Clínica asignada')
+
+    this.alert.fire({
+      icon: 'warning',
+      title: 'Campos requeridos',
+      html: `
+        <p style="margin-bottom:10px;color:#374151">Corrija los siguientes campos antes de continuar:</p>
+        <ul style="text-align:left;color:#dc2626;line-height:1.8">
+          ${missing.map(m => `<li>• ${m}</li>`).join('')}
+        </ul>
+      `,
+      confirmButtonText: 'Entendido',
+    })
+  }
+
+  private scrollToFirstError(): void {
+    requestAnimationFrame(() => {
+      const el = this.elRef.nativeElement as HTMLElement
+      const invalid = el.querySelector('.mat-form-field-invalid')
+      if (invalid) {
+        invalid.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    })
   }
 
   // Utilidad: calcular edad para mostrar junto a la fecha de nacimiento
@@ -339,7 +397,7 @@ export class PatientFormComponent implements OnInit {
 
     this.patientsService
       .findByDocument(doc)
-      .pipe(catchError(() => of(null as Patient | null)))
+      .pipe(takeUntilDestroyed(this.destroyRef), catchError(() => of(null as Patient | null)))
       .subscribe(p => {
         if (p && p.id) {
           this.alert
@@ -390,17 +448,21 @@ export class PatientFormComponent implements OnInit {
     const emergencyData = this.emergencyContactForm.value
     const insuranceData = this.insuranceForm.value
 
-    return {
+    const raw = {
       ...personalData,
       ...contactData,
-      // info médica omitida
       ...emergencyData,
       ...insuranceData,
     }
+
+    // Convertir strings vacíos a undefined para que el backend respete @IsOptional()
+    return Object.fromEntries(
+      Object.entries(raw).map(([k, v]) => [k, v === '' ? undefined : v]),
+    ) as unknown as CreatePatientDto
   }
 
   private createPatient(patientData: CreatePatientDto): void {
-    this.patientsService.createPatient(patientData).subscribe({
+    this.patientsService.createPatient(patientData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: patient => {
         this.isSaving = false
         this.alert
@@ -444,7 +506,7 @@ export class PatientFormComponent implements OnInit {
   }
 
   private updatePatient(patientData: CreatePatientDto): void {
-    this.patientsService.updatePatient(this.patientId!, patientData).subscribe({
+    this.patientsService.updatePatient(this.patientId!, patientData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: patient => {
         this.isSaving = false
         this.alert
@@ -491,8 +553,8 @@ export class PatientFormComponent implements OnInit {
         .then(result => {
           if (result.isConfirmed) {
             // Navegar a la lista con búsqueda del documento
-            this.router.navigate(['/dashboard/patients/list'], {
-              queryParams: { search: patientData.documentNumber },
+            this.router.navigate(['/dashboard/patients'], {
+              queryParams: { q: patientData.documentNumber },
             })
           }
         })
@@ -656,17 +718,6 @@ export class PatientFormComponent implements OnInit {
       })
   }
 
-  private showSuccess(message: string): void {
-    this.alert.fire({
-      title: '¡Éxito!',
-      text: message,
-      icon: 'success',
-      confirmButtonText: 'Aceptar',
-      timer: 3000,
-      timerProgressBar: true,
-    })
-  }
-
   private showError(message: string): void {
     this.alert.fire({
       title: 'Error',
@@ -676,22 +727,4 @@ export class PatientFormComponent implements OnInit {
     })
   }
 
-  getErrorMessage(fieldName: string): string {
-    const field =
-      this.personalInfoForm.get(fieldName) ||
-      this.contactInfoForm.get(fieldName) ||
-      this.emergencyContactForm.get(fieldName) ||
-      this.insuranceForm.get(fieldName)
-
-    if (field?.hasError('required')) {
-      return 'Este campo es requerido'
-    }
-    if (field?.hasError('email')) {
-      return 'Ingrese un email válido'
-    }
-    if (field?.hasError('minlength')) {
-      return `Mínimo ${field.getError('minlength').requiredLength} caracteres`
-    }
-    return ''
-  }
 }

@@ -1,6 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { FilterAssetsDto } from './dto/filter-assets.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
@@ -51,50 +58,45 @@ export class AssetsService {
     return await this.assetRepository.save(asset);
   }
 
-  async findAll(filters?: FilterAssetsDto, clinicId?: string): Promise<Asset[]> {
+  async findAll(filters?: FilterAssetsDto, clinicId?: string): Promise<PaginatedResult<Asset>> {
+    const page = filters?.page ?? 1;
+    const limit = filters?.limit ?? 25;
+
     const queryBuilder = this.assetRepository
       .createQueryBuilder('asset')
       .leftJoinAndSelect('asset.clinic', 'clinic')
       .leftJoinAndSelect('asset.createdBy', 'createdBy')
       .where('asset.isActive = :isActive', { isActive: true });
 
-    // Filtro por clínica si se proporciona
     if (clinicId) {
       queryBuilder.andWhere('clinic.id = :clinicId', { clinicId });
     }
 
-    // Aplicar filtros
     if (filters) {
       if (filters.status) {
         queryBuilder.andWhere('asset.status = :status', { status: filters.status });
       }
-
       if (filters.type) {
         queryBuilder.andWhere('asset.type = :type', { type: filters.type });
       }
-
       if (filters.condition) {
         queryBuilder.andWhere('asset.condition = :condition', { condition: filters.condition });
       }
-
       if (filters.manufacturer) {
         queryBuilder.andWhere('asset.manufacturer ILIKE :manufacturer', {
           manufacturer: `%${filters.manufacturer}%`,
         });
       }
-
       if (filters.location) {
         queryBuilder.andWhere('asset.location ILIKE :location', {
           location: `%${filters.location}%`,
         });
       }
-
       if (filters.category) {
         queryBuilder.andWhere('asset.category ILIKE :category', {
           category: `%${filters.category}%`,
         });
       }
-
       if (filters.purchaseDateFrom || filters.purchaseDateTo) {
         if (filters.purchaseDateFrom && filters.purchaseDateTo) {
           queryBuilder.andWhere('asset.purchaseDate BETWEEN :from AND :to', {
@@ -102,16 +104,11 @@ export class AssetsService {
             to: filters.purchaseDateTo,
           });
         } else if (filters.purchaseDateFrom) {
-          queryBuilder.andWhere('asset.purchaseDate >= :from', {
-            from: filters.purchaseDateFrom,
-          });
+          queryBuilder.andWhere('asset.purchaseDate >= :from', { from: filters.purchaseDateFrom });
         } else if (filters.purchaseDateTo) {
-          queryBuilder.andWhere('asset.purchaseDate <= :to', {
-            to: filters.purchaseDateTo,
-          });
+          queryBuilder.andWhere('asset.purchaseDate <= :to', { to: filters.purchaseDateTo });
         }
       }
-
       if (filters.search) {
         queryBuilder.andWhere(
           '(asset.name ILIKE :search OR asset.description ILIKE :search OR asset.serialNumber ILIKE :search OR asset.assetTag ILIKE :search)',
@@ -120,9 +117,10 @@ export class AssetsService {
       }
     }
 
-    queryBuilder.orderBy('asset.createdAt', 'DESC');
+    queryBuilder.orderBy('asset.createdAt', 'DESC').skip((page - 1) * limit).take(limit);
 
-    return await queryBuilder.getMany();
+    const [data, total] = await queryBuilder.getManyAndCount();
+    return { data, total, page, limit };
   }
 
   async findOne(id: string, clinicId?: string): Promise<Asset> {
@@ -347,10 +345,10 @@ export class AssetsService {
 
     return {
       total,
-      scheduled: records.filter(r => r.status === 'Programado').length,
-      completed: records.filter(r => r.status === 'Completado').length,
-      inProgress: records.filter(r => r.status === 'En Progreso').length,
-      cancelled: records.filter(r => r.status === 'Cancelado').length,
+      scheduled: records.filter(r => r.status === MaintenanceStatus.SCHEDULED).length,
+      completed: records.filter(r => r.status === MaintenanceStatus.COMPLETED).length,
+      inProgress: records.filter(r => r.status === MaintenanceStatus.IN_PROGRESS).length,
+      cancelled: records.filter(r => r.status === MaintenanceStatus.CANCELLED).length,
     };
   }
 

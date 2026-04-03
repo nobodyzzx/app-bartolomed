@@ -3,6 +3,8 @@ import { computed, inject, Injectable, signal } from '@angular/core'
 import { Router } from '@angular/router'
 
 import { catchError, map, Observable, of, throwError } from 'rxjs'
+import { ClinicContextService } from '../../clinics/services/clinic-context.service'
+import { RoleStateService } from '../../../core/services/role-state.service'
 import { SessionService } from '../../../core/services/session.service'
 import { environment } from '../../../environments/environments'
 
@@ -16,6 +18,9 @@ export class AuthService {
   private http = inject(HttpClient)
   private router = inject(Router)
   private session = inject(SessionService)
+  private roleState = inject(RoleStateService)
+
+  private clinicCtx = inject(ClinicContextService)
 
   private _currentUser = signal<User | null>(null)
   private _authStatus = signal<AuthStatus>(AuthStatus.checking)
@@ -34,6 +39,12 @@ export class AuthService {
   private setAuthentication(user: User, token: string, rememberMe = true): boolean {
     this._currentUser.set(user)
     this._authStatus.set(AuthStatus.authenticated)
+    // Sincronizar roles con RoleStateService (fuente de verdad de UI)
+    this.roleState.syncRoles(this.roleState.normalizeRoles(user.roles))
+    // Hidratar contexto de clínica con la clínica principal del usuario
+    if (user.clinic?.id) {
+      this.clinicCtx.setClinic(user.clinic.id)
+    }
     if (rememberMe) {
       localStorage.setItem('token', token)
       sessionStorage.removeItem('token')
@@ -106,12 +117,26 @@ export class AuthService {
     this.session.clearTimers()
     this._currentUser.set(null)
     this._authStatus.set(AuthStatus.notAuthenticated)
+    this.roleState.clearRoles()
+    this.clinicCtx.setClinic(null)
     localStorage.removeItem('token')
     sessionStorage.removeItem('token')
     localStorage.removeItem('refreshToken')
 
     // Redirigir a login
     this.router.navigateByUrl('/auth/login')
+  }
+
+  forgotPassword(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/auth/forgot-password`, { email }).pipe(
+      catchError(err => throwError(() => err?.error?.message || 'Error al procesar la solicitud')),
+    )
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/auth/reset-password`, { token, newPassword }).pipe(
+      catchError(err => throwError(() => err?.error?.message || 'Error al restablecer la contraseña')),
+    )
   }
 
   refreshAccessToken(): Observable<boolean> {

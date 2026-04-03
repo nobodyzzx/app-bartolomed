@@ -1,15 +1,17 @@
-import { BadRequestException, Injectable, InternalServerErrorException, Logger, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { createHash, randomUUID } from 'crypto';
+import { createHash, randomBytes, randomUUID } from 'crypto';
 
 import * as bcrypt from 'bcrypt';
 
 import { ValidRoles } from 'src/users/interfaces';
 import { CreateUserDto } from '../users/dto';
+import { Clinic } from '../clinics/entities/clinic.entity';
+import { UserClinic } from '../users/entities/user-clinic.entity';
 import { User } from '../users/entities/user.entity';
-import { LoginUserDto, RefreshTokenDto } from './dto';
+import { ForgotPasswordDto, LoginUserDto, RefreshTokenDto, ResetPasswordDto } from './dto';
 import { GodBootstrapDto } from './dto/god-bootstrap.dto';
 import { LoginResponse } from './interfaces';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
@@ -20,6 +22,10 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(UserClinic)
+    private readonly userClinicRepository: Repository<UserClinic>,
+    @InjectRepository(Clinic)
+    private readonly clinicRepository: Repository<Clinic>,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -55,16 +61,19 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('Credenciales no Validas (email)');
     if (!(await bcrypt.compare(password, user.password)))
       throw new UnauthorizedException('Credenciales no Validas (password)');
+    // Obtener clínicas del usuario para embeber en el token
+    const clinicIds = await this.getClinicIds(user.id);
+
     // Generar tokens
-    const token = this.getJwtToken({ id: user.id });
-    const refreshToken = await this.getRefreshToken({ id: user.id });
+    const token = this.getJwtToken({ id: user.id, clinicIds });
+    const refreshToken = await this.getRefreshToken({ id: user.id, clinicIds });
 
     // Guardar hash del refresh token para rotación
     const refreshTokenHash = await bcrypt.hash(this.fingerprintToken(refreshToken), 10);
     await this.userRepository.update({ id: user.id }, { refreshTokenHash });
 
-    // Cargar usuario completo con relaciones (sin password)
-    const safeUser = await this.userRepository.findOne({ where: { id: user.id } });
+    // Cargar usuario completo con clínica principal para que el frontend hidrate ClinicContextService
+    const safeUser = await this.userRepository.findOne({ where: { id: user.id }, relations: ['clinic'] });
     if (!safeUser) throw new InternalServerErrorException('Usuario no encontrado tras autenticación');
     return {
       user: safeUser,
@@ -75,11 +84,39 @@ export class AuthService {
   }
 
   async checkAuthStatus(user: User): Promise<LoginResponse> {
+    const clinicIds = await this.getClinicIds(user.id);
+    // Re-cargar con clínica principal (JwtStrategy no carga relaciones)
+    const userWithClinic = await this.userRepository.findOne({ where: { id: user.id }, relations: ['clinic'] });
     return {
-      user,
-      token: this.getJwtToken({ id: user.id }),
+      user: userWithClinic ?? user,
+      token: this.getJwtToken({ id: user.id, clinicIds }),
       permissions: permissionsForRoles(user.roles),
     };
+  }
+
+  private async getClinicIds(userId: string): Promise<string[]> {
+    const memberships = await this.userClinicRepository.find({
+      where: { user: { id: userId } },
+      relations: ['clinic'],
+      select: { id: true, clinic: { id: true } },
+    });
+    return memberships.map(m => m.clinic.id);
+  }
+
+  async getMyMemberships(userId: string, userRoles: string[]): Promise<{ id: string; name: string; address: string }[]> {
+    // Super-admin ve todas las clínicas activas sin necesidad de membresía
+    if (userRoles.includes(ValidRoles.SUPER_ADMIN)) {
+      const all = await this.clinicRepository.find({ where: { isActive: true }, order: { name: 'ASC' } });
+      return all.map(c => ({ id: c.id, name: c.name, address: c.address }));
+    }
+
+    const memberships = await this.userClinicRepository.find({
+      where: { user: { id: userId } },
+      relations: ['clinic'],
+    });
+    return memberships
+      .filter(m => m.clinic?.isActive)
+      .map(m => ({ id: m.clinic.id, name: m.clinic.name, address: m.clinic.address }));
   }
 
   private getJwtToken(payload: JwtPayload) {
@@ -125,13 +162,14 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token inválido');
     }
 
-    // Rotar tokens
-    const newAccessToken = this.getJwtToken({ id: user.id });
-    const newRefreshToken = await this.getRefreshToken({ id: user.id });
+    // Rotar tokens (preservar clinicIds del payload anterior o recalcular)
+    const clinicIds = payload.clinicIds ?? (await this.getClinicIds(user.id));
+    const newAccessToken = this.getJwtToken({ id: user.id, clinicIds });
+    const newRefreshToken = await this.getRefreshToken({ id: user.id, clinicIds });
     const newHash = await bcrypt.hash(this.fingerprintToken(newRefreshToken), 10);
     await this.userRepository.update({ id: user.id }, { refreshTokenHash: newHash });
 
-    const safeUser = await this.userRepository.findOne({ where: { id: user.id } });
+    const safeUser = await this.userRepository.findOne({ where: { id: user.id }, relations: ['clinic'] });
     if (!safeUser) throw new InternalServerErrorException('Usuario no encontrado tras refresh');
     return {
       user: safeUser,
@@ -143,6 +181,56 @@ export class AuthService {
 
   async logout(userId: string): Promise<void> {
     await this.userRepository.update({ id: userId }, { refreshTokenHash: null });
+  }
+
+  async requestPasswordReset(dto: ForgotPasswordDto): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({
+      where: { email: dto.email.toLowerCase().trim() },
+      select: { id: true, email: true, isActive: true },
+    });
+
+    // Respuesta genérica para no revelar si el email existe
+    if (!user || !user.isActive) {
+      return { message: 'Si el correo existe en el sistema, recibirás instrucciones para restablecer tu contraseña.' };
+    }
+
+    const rawToken = randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+    await this.userRepository.update(
+      { id: user.id },
+      { passwordResetToken: rawToken, passwordResetExpiresAt: expiresAt },
+    );
+
+    // TODO: enviar por email cuando se configure servicio SMTP
+    this.logger.log(`[PASSWORD RESET] Token para ${user.email}: ${rawToken} (expira: ${expiresAt.toISOString()})`);
+
+    return { message: 'Si el correo existe en el sistema, recibirás instrucciones para restablecer tu contraseña.' };
+  }
+
+  async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({
+      where: { passwordResetToken: dto.token },
+      select: { id: true, email: true, isActive: true, passwordResetToken: true, passwordResetExpiresAt: true },
+    });
+
+    if (!user || !user.isActive) {
+      throw new NotFoundException('Token inválido o expirado');
+    }
+
+    if (!user.passwordResetExpiresAt || user.passwordResetExpiresAt < new Date()) {
+      await this.userRepository.update({ id: user.id }, { passwordResetToken: null, passwordResetExpiresAt: null });
+      throw new BadRequestException('El token ha expirado. Solicita un nuevo enlace de recuperación.');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+    await this.userRepository.update(
+      { id: user.id },
+      { password: hashedPassword, passwordResetToken: null, passwordResetExpiresAt: null, refreshTokenHash: null },
+    );
+
+    this.logger.log(`[PASSWORD RESET] Contraseña restablecida para usuario ${user.email}`);
+    return { message: 'Contraseña restablecida exitosamente. Ya puedes iniciar sesión.' };
   }
 
   // Godmode: crea o promueve un SUPER_ADMIN, protegido por token de entorno
@@ -186,9 +274,13 @@ export class AuthService {
       return { user: safeUser, token: this.getJwtToken({ id: created.id }) };
     }
 
-    // Si existe y modo 'create', también promueve
+    // Si existe y modo 'create', promueve roles y resetea la contraseña
     const promoteRoles = new Set([...(user.roles || []), ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN]);
-    await this.userRepository.update({ id: user.id }, { roles: Array.from(promoteRoles) });
+    const newPasswordHash = await bcrypt.hash(dto.password, 10);
+    await this.userRepository.update(
+      { id: user.id },
+      { roles: Array.from(promoteRoles), password: newPasswordHash, isActive: true },
+    );
     const safeUser = await this.userRepository.findOne({ where: { id: user.id } });
     if (!safeUser) throw new InternalServerErrorException('Usuario no encontrado tras promoción godmode');
     return { user: safeUser, token: this.getJwtToken({ id: user.id }) };

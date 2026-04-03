@@ -1,12 +1,15 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Clinic } from '../../clinics/entities/clinic.entity';
 import { Patient } from '../../patients/entities/patient.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -28,6 +31,7 @@ export enum RecordStatus {
 }
 
 @Entity('medical_records')
+@Index(['clinic', 'createdAt'])
 export class MedicalRecord {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -160,6 +164,14 @@ export class MedicalRecord {
   @Column('boolean', { default: true })
   isActive: boolean;
 
+  @Index()
+  @ManyToOne(() => Clinic, { nullable: true, eager: false })
+  @JoinColumn({ name: 'clinic_id' })
+  clinic: Clinic;
+
+  @Column({ name: 'clinic_id', nullable: true })
+  clinicId: string;
+
   // Relación con registro médico previo (para seguimientos)
   @ManyToOne(() => MedicalRecord, { nullable: true })
   @JoinColumn({ name: 'related_record_id' })
@@ -186,6 +198,9 @@ export class MedicalRecord {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
 
   // Helper method para calcular BMI automáticamente
   calculateBMI(): number | null {

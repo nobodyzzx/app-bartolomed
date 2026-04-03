@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
-import { SidenavService } from '../../../../shared/components/services/sidenav.service'
 import {
   Appointment,
   AppointmentFilters,
@@ -15,21 +15,13 @@ import {
   styleUrls: ['./appointments.page.component.css'],
 })
 export class AppointmentsPageComponent implements OnInit {
-  isExpanded: boolean = true
+  private readonly destroyRef = inject(DestroyRef)
+
   appointments: Appointment[] = []
   filteredAppointments: Appointment[] = []
   loading: boolean = false
   searchTerm: string = ''
   selectedStatus: string = 'all'
-
-  readonly statusOptions = [
-    { value: 'all', label: 'Todos' },
-    { value: AppointmentStatus.SCHEDULED, label: 'Programadas' },
-    { value: AppointmentStatus.CONFIRMED, label: 'Confirmadas' },
-    { value: AppointmentStatus.IN_PROGRESS, label: 'En Curso' },
-    { value: AppointmentStatus.COMPLETED, label: 'Completadas' },
-    { value: AppointmentStatus.CANCELLED, label: 'Canceladas' },
-  ]
 
   readonly statusColors: { [key: string]: string } = {
     scheduled: 'bg-blue-100 text-blue-800',
@@ -67,15 +59,15 @@ export class AppointmentsPageComponent implements OnInit {
 
   constructor(
     private router: Router,
-    private sidenavService: SidenavService,
     private appointmentsService: AppointmentsService,
     private alert: AlertService,
   ) {}
 
+  goBack(): void {
+    this.router.navigate(['/dashboard'])
+  }
+
   ngOnInit() {
-    this.sidenavService.isExpanded$.subscribe(
-      (isExpanded: boolean) => (this.isExpanded = isExpanded),
-    )
     this.loadAppointments()
   }
 
@@ -86,7 +78,7 @@ export class AppointmentsPageComponent implements OnInit {
       startDate: today.toISOString(),
     }
 
-    this.appointmentsService.getAppointments(filters).subscribe({
+    this.appointmentsService.getAppointments(filters).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: appointments => {
         this.appointments = appointments.sort((a, b) => {
           return new Date(a.appointmentDate).getTime() - new Date(b.appointmentDate).getTime()
@@ -149,7 +141,7 @@ export class AppointmentsPageComponent implements OnInit {
     })
 
     if (result.isConfirmed) {
-      this.appointmentsService.confirmAppointment(appointment.id).subscribe({
+      this.appointmentsService.confirmAppointment(appointment.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.loadAppointments()
         },
@@ -179,7 +171,7 @@ export class AppointmentsPageComponent implements OnInit {
     })
 
     if (result.isConfirmed) {
-      this.appointmentsService.cancelAppointment(appointment.id, result.value).subscribe({
+      this.appointmentsService.cancelAppointment(appointment.id, result.value ?? '').pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.loadAppointments()
         },

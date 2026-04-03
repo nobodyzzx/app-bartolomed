@@ -1,21 +1,6 @@
 <div class="page-wrapper">
   <div class="page-inner">
 
-    <!-- Banner modo DEMO -->
-    <div *ngIf="isDemo" class="mb-8">
-      <div class="bg-amber-50 border-l-4 border-amber-500 p-5 rounded-xl shadow-md flex items-start gap-4">
-        <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-          <span class="material-symbols-outlined msz-20 text-amber-600">info</span>
-        </div>
-        <div>
-          <h3 class="font-bold text-amber-900 mb-1">Modo DEMO activo</h3>
-          <p class="text-sm text-amber-800 leading-relaxed">
-            No se realizarán llamadas al backend. Crear, editar y eliminar están deshabilitados.
-          </p>
-        </div>
-      </div>
-    </div>
-
     <app-page-header
       title="Expedientes Médicos"
       subtitle="Gestión completa de historiales clínicos"
@@ -24,7 +9,6 @@
       <button
         type="button"
         (click)="createNewRecord()"
-        [disabled]="isDemo"
         class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
       >
         <span class="material-symbols-outlined msz-18 leading-none">add</span>
@@ -80,7 +64,7 @@
         icon="folder_open"
         title="Sin expedientes médicos"
         subtitle="Comienza creando el primer expediente"
-        [actionLabel]="!isDemo ? 'Nuevo Expediente' : ''"
+        actionLabel="Nuevo Expediente"
         (action)="createNewRecord()"
       />
 
@@ -179,7 +163,7 @@
                   <span class="material-symbols-outlined msz-18">visibility</span>
                 </button>
                 <button type="button" (click)="editRecord(record); $event.stopPropagation()"
-                  matTooltip="Editar" [disabled]="isDemo"
+                  matTooltip="Editar"
                   class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0 disabled:opacity-40 disabled:cursor-not-allowed">
                   <span class="material-symbols-outlined msz-18">edit</span>
                 </button>
@@ -189,8 +173,8 @@
                   <span class="material-symbols-outlined msz-18">history</span>
                 </button>
                 <button type="button" (click)="deleteRecord(record); $event.stopPropagation()"
-                  matTooltip="Eliminar" [disabled]="isDemo"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0 disabled:opacity-40 disabled:cursor-not-allowed">
+                  matTooltip="Eliminar"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0">
                   <span class="material-symbols-outlined msz-18">delete</span>
                 </button>
               </div>

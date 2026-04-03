@@ -1,33 +1,34 @@
-import { StepperSelectionEvent } from '@angular/cdk/stepper'
 import { Location } from '@angular/common'
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  HostListener,
+  ElementRef,
   OnDestroy,
   OnInit,
 } from '@angular/core'
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms'
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete'
+import { ErrorStateMatcher } from '@angular/material/core'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { combineLatest, Observable, of, Subject } from 'rxjs'
-import { auditTime, map, startWith, takeUntil } from 'rxjs/operators'
-import { environment } from '../../../../../environments/environments'
+import { auditTime, catchError, map, startWith, takeUntil } from 'rxjs/operators'
 import { User } from '../../../../auth/interfaces/user.interface'
 import { Patient } from '../../patients/interfaces'
 import { PatientsService } from '../../patients/services/patients.service'
-import { UsersService } from '../../users/users.service'
+import { UsersService } from '../../admin/users/users.service'
 import {
   ConsentType,
   CreateConsentDto,
   CreateMedicalRecordDto,
   MedicalRecord,
+  RecordStatus,
   RecordType,
 } from '../interfaces'
 import { ConsentTemplatesService } from '../services/consent-templates.service'
 import { MedicalRecordDraftService } from '../services/medical-record-draft.service'
+import { MedicalRecordDtoBuilderService } from '../services/medical-record-dto-builder.service'
 import { MedicalRecordsService } from '../services/medical-records.service'
 import {
   getVitalSignClasses,
@@ -50,9 +51,6 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
   evaluationForm!: FormGroup // Combina examen físico + evaluación
   consentForm!: FormGroup
 
-  // Control del índice del stepper para evitar referencias a template variables no inicializadas
-  currentStepIndex = 0
-
   private readonly destroy$ = new Subject<void>()
 
   // Data for dropdowns
@@ -64,6 +62,20 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
   // Controles de búsqueda para autocompletes
   patientSearchCtrl = new FormControl<string>('')
   doctorSearchCtrl = new FormControl<string>('')
+
+  readonly patientErrorMatcher: ErrorStateMatcher = {
+    isErrorState: (): boolean => {
+      const c = this.patientInfoForm?.get('patientId')
+      return !!(c?.invalid && c?.touched)
+    },
+  }
+  readonly doctorErrorMatcher: ErrorStateMatcher = {
+    isErrorState: (): boolean => {
+      const c = this.patientInfoForm?.get('doctorId')
+      return !!(c?.invalid && c?.touched)
+    },
+  }
+
   // Copias locales para búsquedas síncronas
   private patientsList: Patient[] = []
   private doctorsList: User[] = []
@@ -109,6 +121,8 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private consentTemplates: ConsentTemplatesService,
     private draftService: MedicalRecordDraftService,
+    private dtoBuilder: MedicalRecordDtoBuilderService,
+    private elRef: ElementRef,
   ) {
     this.initializeForms()
   }
@@ -119,38 +133,45 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Capturar parámetros de query params
+    this.loadData()
+    this.checkEditMode()
+
+    // Capturar parámetros y decidir comportamiento del borrador en el mismo bloque
     this.route.queryParams.subscribe(params => {
       if (params['patientId']) {
         this.preselectedPatientId = params['patientId']
       }
 
-      // Si viene de un seguimiento (follow-up)
       if (params['relatedRecordId']) {
         this.handleFollowUpMode(params['relatedRecordId'], params['type'])
       } else if (params['type']) {
-        // Solo establecer el tipo sin seguimiento
         this.patientInfoForm.patchValue({ type: params['type'] })
+      }
+
+      if (!this.isEditMode) {
+        if (this.preselectedPatientId) {
+          // Viene desde la ficha de un paciente: restaurar borrador si existe
+          this.draftService.tryRestore(draft => {
+            this.patientInfoForm.patchValue(draft)
+            this.syncPatientSearchText()
+            this.syncDoctorSearchText()
+            this.cdr.markForCheck()
+          }, this.preselectedPatientId)
+        } else {
+          // Acceso directo: limpiar siempre y empezar vacío
+          this.draftService.clear()
+        }
       }
     })
 
-    this.loadData()
-    this.checkEditMode()
-
-    // Restaurar borrador si existe (solo en modo nuevo)
-    if (!this.isEditMode) {
-      this.draftService.tryRestore(draft => {
-        this.patientInfoForm.patchValue(draft)
-        this.syncPatientSearchText()
-        this.syncDoctorSearchText()
-        this.cdr.markForCheck()
-      })
-    }
-
-    // Guardado automático del Paso 1 (borrador local)
+    // Auto-guardado solo cuando viene de un paciente
     this.patientInfoForm.valueChanges
       .pipe(auditTime(800), takeUntil(this.destroy$))
-      .subscribe(val => this.draftService.save(val))
+      .subscribe(val => {
+        if (this.preselectedPatientId) {
+          this.draftService.save(val)
+        }
+      })
 
     // Sincronizar automáticamente consentType -> printTemplate (mejora UX)
     const printCtl = this.consentForm.get('printTemplate')
@@ -161,7 +182,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
     typeCtl?.valueChanges.subscribe((type: ConsentType) => {
       if (!printCtl) return
       if (this.userChangedPrintTemplate) return // respetar elección manual del usuario
-      const mapped = this.mapConsentTypeToTemplate(type)
+      const mapped = this.dtoBuilder.mapConsentTypeToTemplate(type)
       // Evitar bucles y no marcar como dirty al usuario
       printCtl.patchValue(mapped, { emitEvent: false })
     })
@@ -228,7 +249,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
     this.consentForm = this.fb.group({
       // Formato de impresión del documento (no afecta al backend)
       printTemplate: ['diagnostic'], // diagnostic | surgery | blood_transfusion | rejection
-      consentType: [ConsentType.GENERAL_TREATMENT],
+      consentType: [ConsentType.GENERAL],
       // Descripción libre y campos estructurados (todos opcionales para no bloquear el flujo)
       description: [''],
       procedureName: [''],
@@ -272,18 +293,17 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
 
   private loadData(): void {
     // Cargar pacientes
-    this.patients$ = this.patientsService.findAll()
+    this.patients$ = this.patientsService.findAll().pipe(
+      map(r => r.data),
+      catchError(() => of([] as Patient[])),
+    )
     this.patients$.pipe(takeUntil(this.destroy$)).subscribe(patients => {
       this.patientsList = patients
 
-      // Si hay un patientId preseleccionado del query param, usarlo
+      // Solo preseleccionar paciente si viene de la ficha de un paciente
       if (this.preselectedPatientId && patients.find(p => p.id === this.preselectedPatientId)) {
         this.patientInfoForm.patchValue({
           patientId: this.preselectedPatientId,
-        })
-      } else if (patients.length > 0 && !this.isEditMode) {
-        this.patientInfoForm.patchValue({
-          patientId: patients[0].id,
         })
       }
       // Sincronizar texto del autocomplete del paciente
@@ -318,11 +338,6 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
         )
       })
       this.doctorsList = filteredDoctors
-      if (filteredDoctors.length > 0 && !this.isEditMode) {
-        this.patientInfoForm.patchValue({
-          doctorId: filteredDoctors[0].id,
-        })
-      }
       // Sincronizar texto del autocomplete del doctor
       this.syncDoctorSearchText()
       this.cdr.markForCheck()
@@ -342,30 +357,6 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
         )
       }),
     )
-  }
-
-  // Sincronizar cambios del stepper con la UI compacta de navegación
-  onStepChange(event: StepperSelectionEvent) {
-    this.currentStepIndex = event.selectedIndex
-  }
-
-  // Atajos de teclado: Ctrl + ← / Ctrl + → para navegar pasos
-  @HostListener('window:keydown', ['$event'])
-  onKeydown(event: KeyboardEvent) {
-    if (this.isLoading) return
-    const ctrl = event.ctrlKey || event.metaKey
-    if (!ctrl) return
-    if (event.key === 'ArrowRight') {
-      event.preventDefault()
-      if (this.currentStepIndex === 0 && this.patientInfoForm.invalid) return
-      this.currentStepIndex = Math.min(3, this.currentStepIndex + 1)
-      this.cdr.markForCheck()
-    }
-    if (event.key === 'ArrowLeft') {
-      event.preventDefault()
-      this.currentStepIndex = Math.max(0, this.currentStepIndex - 1)
-      this.cdr.markForCheck()
-    }
   }
 
   // trackBy helpers para listas en *ngFor
@@ -531,9 +522,6 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
               </div>
             `,
             confirmButtonText: 'Entendido',
-            customClass: {
-              popup: 'swal-wide',
-            },
           })
 
           // Sincronizar autocompletes
@@ -612,149 +600,61 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
       followUpInstructions: record.followUpInstructions,
       patientEducation: record.patientEducation,
       notes: record.notes,
-      followUpDate: record.followUpDate,
+      followUpDate: record.followUpDate ? new Date(record.followUpDate) : null,
     })
 
     // Nota: syncPatientSearchText y syncDoctorSearchText se llaman después en loadMedicalRecord
   }
 
   getTypeText(type: RecordType): string {
-    const types = {
-      [RecordType.CONSULTATION]: 'Consulta',
-      [RecordType.EMERGENCY]: 'Emergencia',
-      [RecordType.SURGERY]: 'Cirugía',
-      [RecordType.FOLLOW_UP]: 'Seguimiento',
-      [RecordType.LABORATORY]: 'Laboratorio',
-      [RecordType.IMAGING]: 'Imagenología',
-      [RecordType.OTHER]: 'Otro',
-    }
-    return types[type] || type
+    return this.dtoBuilder.getTypeText(type)
   }
 
   getConsentTypeText(type: ConsentType): string {
-    const types = {
-      [ConsentType.GENERAL_TREATMENT]: 'Tratamiento General',
-      [ConsentType.SURGERY]: 'Cirugía',
-      [ConsentType.ANESTHESIA]: 'Anestesia',
-      [ConsentType.BLOOD_TRANSFUSION]: 'Transfusión Sanguínea',
-      [ConsentType.EXPERIMENTAL_TREATMENT]: 'Tratamiento Experimental',
-      [ConsentType.PHOTOGRAPHY]: 'Fotografías Médicas',
-      [ConsentType.DATA_SHARING]: 'Compartir Datos',
-      [ConsentType.OTHER]: 'Otro',
-    }
-    return types[type] || type
+    return this.dtoBuilder.getConsentTypeText(type)
   }
 
   onSubmit(): void {
     if (this.isAllFormsValid()) {
       this.isSaving = true
 
-      const medicalRecord = this.createMedicalRecordDto()
-
       if (this.isEditMode && this.recordId) {
-        this.updateMedicalRecord(medicalRecord)
+        this.updateMedicalRecord(this.createMedicalRecordDto())
       } else {
-        this.createMedicalRecord(medicalRecord)
+        this.createMedicalRecord(this.createMedicalRecordDto(RecordStatus.COMPLETED))
       }
     } else {
-      this.showError('Por favor complete todos los campos requeridos')
+      this.patientInfoForm.markAllAsTouched()
+      this.clinicalDataForm.markAllAsTouched()
+      this.evaluationForm.markAllAsTouched()
+      this.cdr.markForCheck()
+      this.scrollToFirstError()
     }
   }
 
   private isAllFormsValid(): boolean {
-    return this.patientInfoForm.valid
+    return this.patientInfoForm.valid && this.clinicalDataForm.valid && this.evaluationForm.valid
   }
 
-  private createMedicalRecordDto(): CreateMedicalRecordDto {
-    // Usar getRawValue() en lugar de value para incluir campos deshabilitados
-    const patientData = this.patientInfoForm.getRawValue()
-    const clinicalData = this.clinicalDataForm.getRawValue()
-    const evaluationData = this.evaluationForm.getRawValue()
-
-    const dto: CreateMedicalRecordDto = {
-      ...patientData,
-      ...clinicalData,
-      ...evaluationData,
-    }
-
-    // Si estamos en modo seguimiento, incluir el relatedRecordId
-    if (this.isFollowUpMode && this.relatedRecordId) {
-      dto.relatedRecordId = this.relatedRecordId
-    }
-
-    // Limpiar campos null, undefined o vacíos que puedan causar errores de validación
-    const cleanDto = this.cleanDto(dto)
-
-    // CRÍTICO: Asegurar que patientId y doctorId siempre estén presentes
-    // Estos son obligatorios y pueden estar deshabilitados en modo seguimiento
-    if (!cleanDto.patientId && patientData.patientId) {
-      cleanDto.patientId = patientData.patientId
-    }
-    if (!cleanDto.doctorId && patientData.doctorId) {
-      cleanDto.doctorId = patientData.doctorId
-    }
-
-    return cleanDto
+  private scrollToFirstError(): void {
+    requestAnimationFrame(() => {
+      const el = this.elRef.nativeElement as HTMLElement
+      const invalid = el.querySelector('.mat-form-field-invalid')
+      if (invalid) {
+        invalid.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    })
   }
 
-  /**
-   * Limpia el DTO eliminando propiedades null, undefined o strings vacíos
-   * Mantiene números 0 y booleanos false
-   * IMPORTANTE: patientId y doctorId se validan después de esta limpieza
-   */
-  private cleanDto(dto: any): CreateMedicalRecordDto {
-    const cleaned: any = {}
-
-    // Campos de signos vitales que deben ser números
-    const numericFields = [
-      'temperature',
-      'systolicBP',
-      'diastolicBP',
-      'heartRate',
-      'respiratoryRate',
-      'oxygenSaturation',
-      'weight',
-      'height',
-    ]
-
-    for (const key in dto) {
-      const value = dto[key]
-
-      // Skip null o undefined
-      if (value === null || value === undefined) {
-        continue
-      }
-
-      // Campos numéricos: convertir strings a números si es posible
-      if (numericFields.includes(key)) {
-        const numValue = typeof value === 'string' ? parseFloat(value) : value
-        if (!isNaN(numValue) && numValue !== 0) {
-          // Solo incluir si es un número válido y no es 0 (evitar enviar 0 por defecto)
-          cleaned[key] = numValue
-        }
-        continue
-      }
-
-      // Mantener valores válidos:
-      if (typeof value === 'string') {
-        // Mantener strings no vacíos O UUIDs (patientId, doctorId, etc)
-        if (value.trim() !== '' || this.isUUID(value)) {
-          cleaned[key] = value
-        }
-      } else if (typeof value === 'number' || typeof value === 'boolean' || value instanceof Date) {
-        cleaned[key] = value
-      }
-    }
-
-    return cleaned as CreateMedicalRecordDto
-  }
-
-  /**
-   * Verifica si un string es un UUID válido
-   */
-  private isUUID(str: string): boolean {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    return uuidRegex.test(str)
+  private createMedicalRecordDto(status?: RecordStatus): CreateMedicalRecordDto {
+    const dto = this.dtoBuilder.buildDto(
+      this.patientInfoForm.getRawValue(),
+      this.clinicalDataForm.getRawValue(),
+      this.evaluationForm.getRawValue(),
+      this.isFollowUpMode ? this.relatedRecordId : null,
+    )
+    if (status) dto.status = status
+    return dto
   }
 
   private createMedicalRecord(medicalRecord: CreateMedicalRecordDto): void {
@@ -808,13 +708,28 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
 
   private createConsentForm(medicalRecordId: string): void {
     const consentData = this.consentForm.value
+    const consentType: ConsentType = consentData.consentType ?? ConsentType.GENERAL
+
+    const titleMap: Record<ConsentType, string> = {
+      [ConsentType.TREATMENT]:         'Consentimiento de tratamiento',
+      [ConsentType.SURGERY]:           'Consentimiento quirúrgico',
+      [ConsentType.ANESTHESIA]:        'Consentimiento de anestesia',
+      [ConsentType.BLOOD_TRANSFUSION]: 'Consentimiento de transfusión sanguínea',
+      [ConsentType.IMAGING]:           'Consentimiento de diagnóstico por imagen',
+      [ConsentType.LABORATORY]:        'Consentimiento de laboratorio',
+      [ConsentType.DISCHARGE]:         'Consentimiento de alta médica',
+      [ConsentType.GENERAL]:           'Consentimiento general de tratamiento',
+      [ConsentType.OTHER]:             'Consentimiento informado',
+    }
+
     const consent: CreateConsentDto = {
       medicalRecordId,
       patientId: this.patientInfoForm.value.patientId,
-      doctorId: this.patientInfoForm.value.doctorId,
-      consentType: consentData.consentType,
-      description: consentData.description,
-      signedBy: consentData.signedBy,
+      doctorId:  this.patientInfoForm.value.doctorId,
+      type:        consentType,
+      title:       titleMap[consentType] ?? 'Consentimiento informado',
+      description: consentData.description || titleMap[consentType] || 'Consentimiento informado',
+      notes:       consentData.signedBy ? `Firmado por: ${consentData.signedBy}` : undefined,
     }
 
     this.medicalRecordsService.createConsentForm(consent).subscribe({
@@ -853,7 +768,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
         if (result.isConfirmed) {
           if (this.patientInfoForm.valid) {
             this.isSaving = true
-            const medicalRecord = this.createMedicalRecordDto()
+            const medicalRecord = this.createMedicalRecordDto(RecordStatus.DRAFT)
 
             this.medicalRecordsService.createMedicalRecord(medicalRecord).subscribe({
               next: record => {
@@ -963,42 +878,118 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Generar impresión/exportación del consentimiento informado (formato Bolivia)
+  // Genera PDF del consentimiento informado vía backend (PDFKit)
   printConsent(): void {
-    this.consentTemplates.printConsent(
-      this.getSelectedPatient(),
-      this.getSelectedDoctor(),
-      this.consentForm.value,
-    )
-  }
+    const patient = this.getSelectedPatient()
+    const doctor  = this.getSelectedDoctor()
+    const form    = this.consentForm.value
 
+    const dto = {
+      ...form,
+      patient: {
+        firstName:      patient?.firstName ?? '',
+        lastName:       patient?.lastName  ?? '',
+        documentNumber: patient?.documentNumber ?? '',
+        birthDate:      patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('es-BO') : '',
+        address:        patient?.address ?? '',
+        phone:          patient?.phone   ?? '',
+      },
+      doctor: {
+        firstName:      doctor?.personalInfo?.firstName ?? '',
+        lastName:       doctor?.personalInfo?.lastName  ?? '',
+        specialization: doctor?.professionalInfo?.specialization ?? '',
+      },
+    }
 
-  // Impresión de Resumen del Expediente Médico (consolidado de los pasos 1-3)
-  printMedicalRecordSummary(): void {
-    this.consentTemplates.printMedicalRecordSummary({
-      patient: this.getSelectedPatient(),
-      doctor: this.getSelectedDoctor(),
-      recordType: this.getTypeText(this.patientInfoForm.get('type')?.value),
-      isEmergency: !!this.patientInfoForm.get('isEmergency')?.value,
-      chiefComplaint: this.patientInfoForm.get('chiefComplaint')?.value || '',
-      clinicalData: this.clinicalDataForm.value,
-      evaluation: this.evaluationForm.value,
+    this.medicalRecordsService.downloadConsentPdf(dto).subscribe({
+      next: blob => this.openPdfBlob(blob, 'consentimiento.pdf'),
+      error: () => this.showError('No se pudo generar el PDF del consentimiento'),
     })
   }
 
-  // Helpers
-  private mapConsentTypeToTemplate(
-    type: ConsentType,
-  ): 'diagnostic' | 'surgery' | 'blood_transfusion' | 'rejection' {
-    switch (type) {
-      case ConsentType.SURGERY:
-      case ConsentType.ANESTHESIA:
-        return 'surgery'
-      case ConsentType.BLOOD_TRANSFUSION:
-        return 'blood_transfusion'
-      default:
-        return 'diagnostic'
+  // Genera PDF del resumen del expediente médico vía backend (PDFKit)
+  printMedicalRecordSummary(): void {
+    const patient  = this.getSelectedPatient()
+    const doctor   = this.getSelectedDoctor()
+    const clinical = this.clinicalDataForm.value
+    const evalData = this.evaluationForm.value
+
+    const dto = {
+      patient: {
+        firstName:      patient?.firstName ?? '',
+        lastName:       patient?.lastName  ?? '',
+        documentNumber: patient?.documentNumber ?? '',
+        birthDate:      patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('es-BO') : '',
+        address:        patient?.address ?? '',
+        phone:          patient?.phone   ?? '',
+      },
+      doctor: {
+        firstName:      doctor?.personalInfo?.firstName ?? '',
+        lastName:       doctor?.personalInfo?.lastName  ?? '',
+        specialization: doctor?.professionalInfo?.specialization ?? '',
+      },
+      recordType:    this.getTypeText(this.patientInfoForm.get('type')?.value),
+      isEmergency:   !!this.patientInfoForm.get('isEmergency')?.value,
+      chiefComplaint: this.patientInfoForm.get('chiefComplaint')?.value || '',
+      // historia clínica
+      historyOfPresentIllness: clinical.historyOfPresentIllness,
+      pastMedicalHistory:      clinical.pastMedicalHistory,
+      medications:             clinical.medications,
+      allergies:               clinical.allergies,
+      socialHistory:           clinical.socialHistory,
+      familyHistory:           clinical.familyHistory,
+      reviewOfSystems:         clinical.reviewOfSystems,
+      // signos vitales aplanados como objeto
+      vitalSigns: {
+        temperature:      clinical.temperature,
+        systolicBP:       clinical.systolicBP,
+        diastolicBP:      clinical.diastolicBP,
+        heartRate:        clinical.heartRate,
+        respiratoryRate:  clinical.respiratoryRate,
+        oxygenSaturation: clinical.oxygenSaturation,
+        weight:           clinical.weight,
+        height:           clinical.height,
+      },
+      // examen físico
+      physicalExamination: evalData.physicalExamination,
+      generalAppearance:   evalData.generalAppearance,
+      heent:               evalData.heent,
+      cardiovascular:      evalData.cardiovascular,
+      respiratory:         evalData.respiratory,
+      abdominal:           evalData.abdominal,
+      neurological:        evalData.neurological,
+      musculoskeletal:     evalData.musculoskeletal,
+      skin:                evalData.skin,
+      // evaluación y plan
+      assessment:           evalData.assessment,
+      plan:                 evalData.plan,
+      diagnosis:            evalData.diagnosis,
+      differentialDiagnosis:evalData.differentialDiagnosis,
+      treatmentPlan:        evalData.treatmentPlan,
+      followUpInstructions: evalData.followUpInstructions,
+      patientEducation:     evalData.patientEducation,
+      notes:                evalData.notes,
+      followUpDate:         evalData.followUpDate
+        ? new Date(evalData.followUpDate).toLocaleDateString('es-BO')
+        : undefined,
     }
+
+    this.medicalRecordsService.downloadSummaryPdf(dto).subscribe({
+      next: blob => this.openPdfBlob(blob, 'expediente-medico.pdf'),
+      error: () => this.showError('No se pudo generar el PDF del expediente'),
+    })
+  }
+
+  private openPdfBlob(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob)
+    const a   = document.createElement('a')
+    a.href    = url
+    a.target  = '_blank'
+    a.rel     = 'noopener'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 30_000)
   }
 
   private showSuccess(message: string): void {

@@ -19,7 +19,7 @@
     <!-- Stat cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <app-stat-card
-        label="Total Pacientes" [value]="patients.length" sublabel="Registrados"
+        label="Total Pacientes" [value]="statistics?.totalPatients ?? 0" sublabel="Registrados"
         icon="group" color="blue"
         [active]="activeGenderFilter === null" [clickable]="true"
         (cardClick)="setGenderFilter(null)"
@@ -37,8 +37,8 @@
         (cardClick)="setGenderFilter(Gender.FEMALE)"
       />
       <app-stat-card
-        label="Edad Promedio" [value]="getAverageAge()" sublabel="Años"
-        icon="cake" color="slate"
+        label="Nuevos este mes" [value]="getNewThisMonthCount()" sublabel="Registros del mes"
+        icon="person_add" color="green"
       />
     </div>
 
@@ -51,15 +51,15 @@
           placeholder="Nombre, documento, teléfono, email..."
           [value]="searchTerm"
           [showClear]="!!(searchTerm || activeGenderFilter)"
-          (valueChange)="searchTerm = $event; applyFilter($event)"
-          (cleared)="searchTerm = ''; setGenderFilter(null)"
+          (valueChange)="applyFilter($event)"
+          (cleared)="clearFilters()"
         >
           <!-- Filtros de género -->
           <div class="flex items-center gap-2 flex-wrap">
             <button type="button" (click)="setGenderFilter(null)"
               class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium transition-all border-0"
               [ngClass]="activeGenderFilter === null ? 'bg-blue-600 text-white shadow-md' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'">
-              Todos <span class="text-xs opacity-70">({{ patients.length }})</span>
+              Todos <span class="text-xs opacity-70">({{ statistics?.totalPatients ?? 0 }})</span>
             </button>
             <button type="button" (click)="setGenderFilter(Gender.MALE)"
               class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium transition-all border-0"
@@ -82,7 +82,7 @@
 
       <!-- Estado vacío -->
       <app-empty-state
-        *ngIf="!isLoading && dataSource.filteredData.length === 0"
+        *ngIf="!isLoading && dataSource.data.length === 0"
         icon="group"
         [title]="activeGenderFilter || searchTerm ? 'Sin resultados' : 'Sin pacientes registrados'"
         [subtitle]="activeGenderFilter || searchTerm ? 'Intenta con otro filtro o término de búsqueda' : 'Comienza registrando el primer paciente'"
@@ -91,7 +91,7 @@
       />
 
       <!-- Tabla de datos -->
-      <div *ngIf="!isLoading && dataSource.filteredData.length > 0" class="overflow-x-auto">
+      <div *ngIf="!isLoading && dataSource.data.length > 0" class="overflow-x-auto">
         <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
 
           <ng-container matColumnDef="documentNumber">
@@ -192,17 +192,24 @@
 
           <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedColumns"
-              (click)="viewPatient(row)"
+              (click)="editPatient(row)"
               class="table-row-hover"></tr>
         </table>
 
         <div class="table-footer">
           <span class="text-sm text-slate-500">
-            <span class="font-semibold text-slate-700">{{ dataSource.filteredData.length }}</span>
-            {{ dataSource.filteredData.length === 1 ? 'paciente' : 'pacientes' }}
+            <span class="font-semibold text-slate-700">{{ totalRecords }}</span>
+            {{ totalRecords === 1 ? 'paciente' : 'pacientes' }}
             {{ activeGenderFilter || searchTerm ? 'encontrados' : 'en total' }}
           </span>
-          <mat-paginator [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons class="bg-transparent" />
+          <mat-paginator
+            [length]="totalRecords"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="[10, 25, 50]"
+            showFirstLastButtons
+            class="bg-transparent"
+            (page)="onPageChange($event)"
+          />
         </div>
       </div>
 

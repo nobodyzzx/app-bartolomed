@@ -9,7 +9,7 @@ import { rolesSyncGuard } from '@core/guards/roles-sync.guard'
 import { authGuard } from '../auth/guards'
 import { DashboardLayoutComponent } from './layouts/dashboard-layout/dashboard-layout.component'
 import { MainDashboardComponent } from './pages/main-dashboard/main-dashboard.component'
-import { RolesManagementComponent } from './pages/roles/roles-management/roles-management.component'
+import { RolesManagementComponent } from './pages/admin/roles/roles-management/roles-management.component'
 
 const routes: Routes = [
   {
@@ -35,7 +35,7 @@ const routes: Routes = [
       },
       {
         path: 'users',
-        loadChildren: () => import('./pages/users/users.module').then(m => m.UsersModule),
+        loadChildren: () => import('./pages/admin/users/users.module').then(m => m.UsersModule),
         canActivate: [permissionsGuard, roleGuard],
         data: {
           allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
@@ -216,7 +216,7 @@ const routes: Routes = [
       // Rutas para funcionalidades administrativas
       {
         path: 'config',
-        loadChildren: () => import('./pages/config/config.module').then(m => m.ConfigModule),
+        loadChildren: () => import('./pages/admin/config/config.module').then(m => m.ConfigModule),
         canActivate: [permissionsGuard, roleGuard],
         data: {
           allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
@@ -225,7 +225,7 @@ const routes: Routes = [
       },
       {
         path: 'audit',
-        loadChildren: () => import('./pages/audit/audit.module').then(m => m.AuditModule),
+        loadChildren: () => import('./pages/admin/audit/audit.module').then(m => m.AuditModule),
         canActivate: [permissionsGuard, roleGuard],
         data: {
           allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
@@ -234,7 +234,7 @@ const routes: Routes = [
       },
       {
         path: 'backup',
-        loadChildren: () => import('./pages/backup/backup.module').then(m => m.BackupModule),
+        loadChildren: () => import('./pages/admin/backup/backup.module').then(m => m.BackupModule),
         canActivate: [permissionsGuard, roleGuard],
         data: {
           allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
@@ -243,7 +243,7 @@ const routes: Routes = [
       },
       {
         path: 'clinics',
-        loadChildren: () => import('./pages/clinics/clinics.module').then(m => m.ClinicsModule),
+        loadChildren: () => import('./pages/admin/clinics/clinics.module').then(m => m.ClinicsModule),
         canActivate: [permissionsGuard, roleGuard],
         data: {
           allowedRoles: [UserRoles.SUPER_ADMIN],

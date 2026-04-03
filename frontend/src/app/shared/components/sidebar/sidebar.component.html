@@ -5,22 +5,47 @@
   [ngClass]="{ 'w-72': isExpanded(), 'w-16': !isExpanded() }"
 >
   <!-- Items del menú -->
-  <div class="flex-1 overflow-y-auto pt-3" [class.px-2]="!isExpanded()" [class.space-y-2]="!isExpanded()">
-    <div *ngFor="let menuItem of filteredMenuItems(); trackBy: trackByLabel" [class.space-y-1]="isExpanded()">
-      <sidebar-menu-item
-        [item]="menuItem"
-        [isExpanded]="isExpanded()"
-        [isDemo]="isDemo"
-        (demoClick)="onDemoClick()"
-      ></sidebar-menu-item>
-    </div>
+  <div
+    class="flex-1 overflow-y-auto overflow-x-hidden pt-3"
+    [ngClass]="isExpanded() ? 'px-3 space-y-1' : 'px-2 space-y-2'"
+  >
+    <sidebar-menu-item
+      *ngFor="let menuItem of filteredMenuItems(); trackBy: trackByLabel"
+      [item]="menuItem"
+      [isExpanded]="isExpanded()"
+      [isDemo]="isDemo"
+      (demoClick)="onDemoClick()"
+    ></sidebar-menu-item>
   </div>
 
-  <!-- Footer con branding -->
-  <div class="mt-auto pb-4 px-2">
-    <mat-divider class="my-2"></mat-divider>
-    <div class="text-center" *ngIf="isExpanded()">
-      <span class="text-sm font-medium text-blue-600">PLATAFORMA DE GESTIÓN CLÍNICA</span>
-    </div>
+  <!-- Footer: info del usuario -->
+  <div class="border-t border-blue-200 bg-blue-100/50 flex-shrink-0"
+       [ngClass]="isExpanded() ? 'p-3' : 'py-3 px-2'">
+    <ng-container *ngIf="isExpanded(); else collapsedFooter">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <!-- Avatar -->
+        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white flex items-center justify-center text-sm font-bold flex-shrink-0 select-none shadow-sm ring-2 ring-white">
+          {{ userInitials() }}
+        </div>
+        <!-- Info -->
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-blue-900 truncate leading-tight">{{ userName() }}</p>
+          <span class="inline-block mt-0.5 px-2 py-px rounded-full text-[10px] font-semibold tracking-wide bg-blue-200 text-blue-700 uppercase">
+            {{ userRoleLabel() }}
+          </span>
+        </div>
+      </div>
+    </ng-container>
+    <ng-template #collapsedFooter>
+      <div class="flex justify-center">
+        <div
+          class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white flex items-center justify-center text-sm font-bold select-none cursor-default shadow-sm ring-2 ring-white"
+          [matTooltip]="userName() + ' — ' + userRoleLabel()"
+          matTooltipPosition="right"
+        >
+          {{ userInitials() }}
+        </div>
+      </div>
+    </ng-template>
   </div>
 </nav>

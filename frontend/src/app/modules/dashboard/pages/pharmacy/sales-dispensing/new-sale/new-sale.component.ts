@@ -305,9 +305,9 @@ export class NewSaleComponent implements OnInit {
   loadStocks(clinicId: string): void {
     this.loadingStocks.set(true)
     this.inventoryService.getAllStock(clinicId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (stocks: MedicationStock[]) => {
+      next: result => {
         this.cart.setStocks(
-          stocks.filter(s => (s.clinicId || s.clinic?.id) === clinicId && (s.availableQuantity || 0) > 0),
+          result.data.filter(s => (s.clinicId || s.clinic?.id) === clinicId && (s.availableQuantity || 0) > 0),
         )
         this.loadingStocks.set(false)
       },

@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
@@ -11,6 +12,8 @@ import { ReportsService } from '../services/reports.service'
   styleUrls: ['./financial-reports.component.css'],
 })
 export class FinancialReportsComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   financialReports: FinancialReport[] = []
   loading = false
   generating = false
@@ -53,7 +56,7 @@ export class FinancialReportsComponent implements OnInit {
 
   loadFinancialReports(): void {
     this.loading = true
-    this.reportsService.getFinancialReports().subscribe({
+    this.reportsService.getFinancialReports().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (reports: FinancialReport[]) => {
         this.financialReports = reports
         this.calculateStats()
@@ -111,7 +114,7 @@ export class FinancialReportsComponent implements OnInit {
         },
       }
 
-      this.reportsService.generateFinancialReport(params).subscribe({
+      this.reportsService.generateFinancialReport(params).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: async (newReport: FinancialReport) => {
           this.financialReports.unshift(newReport)
           this.calculateStats()
@@ -135,25 +138,38 @@ export class FinancialReportsComponent implements OnInit {
   }
 
   async downloadReport(report: FinancialReport): Promise<void> {
-    try {
-      await this.alert.fire({
-        icon: 'info',
-        title: 'Descargando reporte',
-        text: 'Generando archivo PDF...',
-        timer: 1500,
-        showConfirmButton: false,
-      })
+    const loading = this.alert.fire({
+      icon: 'info',
+      title: 'Generando PDF...',
+      text: 'Espere mientras se genera el reporte con Puppeteer',
+      allowOutsideClick: false,
+      showConfirmButton: false,
+      didOpen: () => (window as any).Swal?.showLoading?.(),
+    })
 
-      await this.alert.fire({
-        icon: 'success',
-        title: 'Descarga exitosa',
-        text: 'El reporte se descargó correctamente',
-        timer: 2000,
-        showConfirmButton: false,
-      })
-    } catch (error) {
-      this.alert.error('Error al descargar el reporte')
-    }
+    const params: Record<string, string> = {}
+    if (report.period?.startDate) params['startDate'] = report.period.startDate
+    if (report.period?.endDate) params['endDate'] = report.period.endDate
+
+    this.reportsService.downloadFinancialPdf(params).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: async () => {
+        await this.alert.fire({
+          icon: 'success',
+          title: 'PDF generado',
+          text: 'El reporte financiero se descargó correctamente',
+          timer: 2000,
+          showConfirmButton: false,
+        })
+      },
+      error: async () => {
+        await this.alert.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo generar el PDF. Verifique la conexión al servidor.',
+          confirmButtonText: 'Cerrar',
+        })
+      },
+    })
   }
 
   async deleteReport(report: FinancialReport): Promise<void> {
@@ -168,7 +184,7 @@ export class FinancialReportsComponent implements OnInit {
     })
 
     if (result.isConfirmed) {
-      this.reportsService.deleteReport(report.id).subscribe({
+      this.reportsService.deleteReport(report.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: async () => {
           this.financialReports = this.financialReports.filter(r => r.id !== report.id)
           this.calculateStats()
@@ -232,7 +248,7 @@ export class FinancialReportsComponent implements OnInit {
       this.loadFinancialReports()
     } else {
       this.loading = true
-      this.reportsService.getFinancialReportsByType(type).subscribe({
+      this.reportsService.getFinancialReportsByType(type).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (reports: FinancialReport[]) => {
           this.financialReports = reports
           this.calculateStats()

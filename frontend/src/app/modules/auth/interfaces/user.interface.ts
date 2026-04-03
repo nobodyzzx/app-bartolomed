@@ -18,4 +18,9 @@ export interface User {
     description?: string
   }
   startDate?: Date
+  clinic?: {
+    id: string
+    name: string
+    address?: string
+  }
 }

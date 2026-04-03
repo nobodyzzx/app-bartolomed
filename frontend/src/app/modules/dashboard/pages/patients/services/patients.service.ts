@@ -1,11 +1,11 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http'
 import { Injectable } from '@angular/core'
-import { Observable, of } from 'rxjs'
-import { catchError } from 'rxjs/operators'
+import { Observable } from 'rxjs'
 import { environment } from '../../../../../environments/environments'
 import {
   CreatePatientDto,
   Gender,
+  PaginatedResult,
   Patient,
   PatientStatistics,
   UpdatePatientDto,
@@ -24,112 +24,16 @@ export class PatientsService {
     return new HttpHeaders().set('Authorization', `Bearer ${token}`)
   }
 
-  get authHeaders(): HttpHeaders {
-    return new HttpHeaders().set('Authorization', `Bearer ${localStorage.getItem('token')}`)
-  }
-
   createPatient(createPatientDto: CreatePatientDto): Observable<Patient> {
     return this.http.post<Patient>(this.baseUrl, createPatientDto, { headers: this.getHeaders() })
   }
 
-  findAll(clinicId?: string): Observable<Patient[]> {
+  findAll(options: { page?: number; limit?: number; gender?: Gender } = {}): Observable<PaginatedResult<Patient>> {
     let params = new HttpParams()
-    if (clinicId) {
-      params = params.set('clinicId', clinicId)
-    }
-    return this.http.get<Patient[]>(this.baseUrl, { params, headers: this.getHeaders() }).pipe(
-      catchError(error => {
-        // Datos de ejemplo cuando el backend no está disponible
-        const mockPatients: Patient[] = [
-          {
-            id: '1',
-            firstName: 'María',
-            lastName: 'González',
-            email: 'maria.gonzalez@email.com',
-            phone: '+591-70123456',
-            birthDate: new Date('1985-03-15'),
-            gender: Gender.FEMALE,
-            address: 'Av. América #123, Zona Central',
-            documentNumber: '12345678',
-            emergencyContactName: 'Pedro González',
-            emergencyContactPhone: '+591-70654321',
-            clinicId: '1',
-            isActive: true,
-            createdAt: new Date('2024-01-10'),
-            updatedAt: new Date('2024-01-10'),
-          },
-          {
-            id: '2',
-            firstName: 'Carlos',
-            lastName: 'Mendoza',
-            email: 'carlos.mendoza@email.com',
-            phone: '+591-71234567',
-            birthDate: new Date('1978-07-22'),
-            gender: Gender.MALE,
-            address: 'Calle Sucre #456, Zona Sur',
-            documentNumber: '23456789',
-            emergencyContactName: 'Ana Mendoza',
-            emergencyContactPhone: '+591-71987654',
-            clinicId: '1',
-            isActive: true,
-            createdAt: new Date('2024-01-15'),
-            updatedAt: new Date('2024-01-15'),
-          },
-          {
-            id: '3',
-            firstName: 'Ana',
-            lastName: 'Rodríguez',
-            email: 'ana.rodriguez@email.com',
-            phone: '+591-72345678',
-            birthDate: new Date('1992-11-08'),
-            gender: Gender.FEMALE,
-            address: 'Av. Ballivián #789, Zona Norte',
-            documentNumber: '34567890',
-            emergencyContactName: 'Luis Rodríguez',
-            emergencyContactPhone: '+591-72876543',
-            clinicId: '1',
-            isActive: true,
-            createdAt: new Date('2024-01-20'),
-            updatedAt: new Date('2024-01-20'),
-          },
-          {
-            id: '4',
-            firstName: 'Roberto',
-            lastName: 'Vargas',
-            email: 'roberto.vargas@email.com',
-            phone: '+591-73456789',
-            birthDate: new Date('1965-05-12'),
-            gender: Gender.MALE,
-            address: 'Calle Comercio #321, Centro',
-            documentNumber: '45678901',
-            emergencyContactName: 'Elena Vargas',
-            emergencyContactPhone: '+591-73765432',
-            clinicId: '1',
-            isActive: true,
-            createdAt: new Date('2024-02-01'),
-            updatedAt: new Date('2024-02-01'),
-          },
-          {
-            id: '5',
-            firstName: 'Lucía',
-            lastName: 'Herrera',
-            email: 'lucia.herrera@email.com',
-            phone: '+591-74567890',
-            birthDate: new Date('1990-09-30'),
-            gender: Gender.FEMALE,
-            address: 'Av. 6 de Agosto #654, Zona Central',
-            documentNumber: '56789012',
-            emergencyContactName: 'Miguel Herrera',
-            emergencyContactPhone: '+591-74654321',
-            clinicId: '1',
-            isActive: true,
-            createdAt: new Date('2024-02-05'),
-            updatedAt: new Date('2024-02-05'),
-          },
-        ]
-        return of(mockPatients)
-      }),
-    )
+    if (options.page) params = params.set('page', options.page)
+    if (options.limit) params = params.set('limit', options.limit)
+    if (options.gender) params = params.set('gender', options.gender)
+    return this.http.get<PaginatedResult<Patient>>(this.baseUrl, { params, headers: this.getHeaders() })
   }
 
   findOne(id: string): Observable<Patient> {

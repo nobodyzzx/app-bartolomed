@@ -1,5 +1,6 @@
 import { Location } from '@angular/common'
-import { Component, computed, effect, OnInit, signal, ViewChild } from '@angular/core'
+import { Component, computed, DestroyRef, effect, inject, OnInit, signal, ViewChild } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
@@ -15,6 +16,8 @@ import { SuppliersService } from '../services/suppliers.service'
   styleUrls: ['./purchase-orders.component.css'],
 })
 export class PurchaseOrdersComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   @ViewChild(MatPaginator) paginator!: MatPaginator
   @ViewChild(MatSort) sort!: MatSort
 
@@ -122,7 +125,7 @@ export class PurchaseOrdersComponent implements OnInit {
 
   loadOrders(): void {
     this.loading.set(true)
-    this.ordersService.getAll().subscribe({
+    this.ordersService.getAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: list => {
         // Limpiar valores NaN en todas las órdenes
         const cleanOrders = list.map(order => ({
@@ -142,7 +145,7 @@ export class PurchaseOrdersComponent implements OnInit {
   }
 
   loadSuppliers(): void {
-    this.suppliersService.getAll().subscribe({
+    this.suppliersService.getAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: list => this.suppliers.set(list),
       error: () => {},
     })
@@ -171,7 +174,7 @@ export class PurchaseOrdersComponent implements OnInit {
     if (!result.isConfirmed) return
 
     this.loading.set(true)
-    this.ordersService.remove(order.id).subscribe({
+    this.ordersService.remove(order.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.alert.success('Eliminado', 'Orden eliminada correctamente')
         this.orders.set(this.orders().filter(o => o.id !== order.id))

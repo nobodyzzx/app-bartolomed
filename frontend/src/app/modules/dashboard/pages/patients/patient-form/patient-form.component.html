@@ -1,593 +1,330 @@
-<div class="min-h-screen bg-slate-50 p-8">
-  <div class="max-w-7xl mx-auto">
-    <div class="flex items-center justify-between mb-10">
-      <div class="flex items-center gap-4">
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      [title]="isViewMode ? 'Detalle del Paciente' : isEditMode ? 'Editar Paciente' : 'Nuevo Paciente'"
+      [subtitle]="isViewMode ? 'Información registrada del paciente' : isEditMode ? 'Actualiza la información del paciente' : 'Completa el formulario para registrar un nuevo paciente'"
+      (back)="cancel()"
+    >
+      <ng-container actions *ngIf="isViewMode">
         <button
           type="button"
-          (click)="cancel()"
-          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          matTooltip="Volver"
-          aria-label="Volver"
+          (click)="router.navigate(['/dashboard/patients/edit', patientId])"
+          class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all border-0 text-sm"
         >
-          <mat-icon class="!text-[20px] leading-none">arrow_back</mat-icon>
+          <span class="material-symbols-outlined msz-18">edit</span>
+          Editar
         </button>
-        <div class="text-left">
-          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">
-            {{ isEditMode ? 'Editar Paciente' : 'Nuevo Paciente' }}
-          </h1>
-          <p class="text-slate-600">Complete toda la información del paciente</p>
-        </div>
-      </div>
-      <div>
+      </ng-container>
+      <ng-container actions *ngIf="!isViewMode">
         <button
-          mat-stroked-button
           type="button"
           (click)="cancel()"
-          [disabled]="isSaving"
-          class="rounded-full h-10 px-4 bg-red-50 text-red-600 border-red-200 hover:bg-red-100 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:ring-offset-1"
-          matTooltip="Cancelar"
-          aria-label="Cancelar"
+          class="btn btn-danger-outline"
         >
-          <mat-icon>cancel</mat-icon>
+          <span class="material-symbols-outlined msz-18">cancel</span>
           Cancelar
         </button>
-      </div>
-    </div>
+      </ng-container>
+    </app-page-header>
 
-    <div class="">
-      <mat-stepper #stepper orientation="horizontal" [linear]="true">
-        <!-- Paso 1: Información Personal -->
-        <mat-step [stepControl]="personalInfoForm" [state]="'number'">
-          <ng-template matStepLabel>
-            <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px]">person</mat-icon>
-              <span>Personal</span>
-            </div>
-          </ng-template>
-          <form [formGroup]="personalInfoForm">
-            <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
-              <div class="flex items-center gap-3 mb-6">
-                <div
-                  class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
-                >
-                  <mat-icon class="!text-[20px]">person</mat-icon>
-                </div>
-                <h3 class="text-xl font-semibold text-slate-900 m-0">
-                  Datos Personales del Paciente
-                </h3>
-              </div>
+    <div class="space-y-6">
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <mat-form-field appearance="outline">
-                  <mat-label>Nombres</mat-label>
-                  <input matInput formControlName="firstName" placeholder="Ingrese nombres" />
-                  <mat-error *ngIf="personalInfoForm.get('firstName')?.hasError('required')">
-                    Los nombres son requeridos
-                  </mat-error>
-                  <mat-error *ngIf="personalInfoForm.get('firstName')?.hasError('minlength')">
-                    Mínimo 2 caracteres
-                  </mat-error>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Apellidos</mat-label>
-                  <input matInput formControlName="lastName" placeholder="Ingrese apellidos" />
-                  <mat-error *ngIf="personalInfoForm.get('lastName')?.hasError('required')">
-                    Los apellidos son requeridos
-                  </mat-error>
-                  <mat-error *ngIf="personalInfoForm.get('lastName')?.hasError('minlength')">
-                    Mínimo 2 caracteres
-                  </mat-error>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Tipo de Documento</mat-label>
-                  <mat-select formControlName="documentType">
-                    <mat-option value="CI">Cédula de Identidad</mat-option>
-                    <mat-option value="PASAPORTE">Pasaporte</mat-option>
-                    <mat-option value="CARNET_EXTRANJERO">Carnet de Extranjero</mat-option>
-                  </mat-select>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Número de Documento</mat-label>
-                  <input
-                    matInput
-                    formControlName="documentNumber"
-                    placeholder="Ingrese número de documento"
-                  />
-                  <button
-                    mat-icon-button
-                    matSuffix
-                    type="button"
-                    (click)="searchByDocument()"
-                    [disabled]="!personalInfoForm.get('documentNumber')?.valid"
-                    matTooltip="Buscar paciente por documento"
-                    aria-label="Buscar por documento"
-                  >
-                    <mat-icon>search</mat-icon>
-                  </button>
-                  <mat-error *ngIf="personalInfoForm.get('documentNumber')?.hasError('required')">
-                    El número de documento es requerido
-                  </mat-error>
-                  <mat-error *ngIf="personalInfoForm.get('documentNumber')?.hasError('minlength')">
-                    Mínimo 5 caracteres
-                  </mat-error>
-                  <mat-error *ngIf="personalInfoForm.get('documentNumber')?.hasError('pattern')">
-                    Formato inválido. Solo letras, números, guiones y puntos (5-20 caracteres)
-                  </mat-error>
-                  <mat-hint>Ej: 12345678, ABC123-9, LP.123456</mat-hint>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Fecha de Nacimiento</mat-label>
-                  <input matInput [matDatepicker]="picker" formControlName="birthDate" />
-                  <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-                  <mat-datepicker #picker></mat-datepicker>
-                  <mat-error *ngIf="personalInfoForm.get('birthDate')?.hasError('required')">
-                    La fecha de nacimiento es requerida
-                  </mat-error>
-                  <mat-hint *ngIf="getAge() !== null">Edad: {{ getAge() }} años</mat-hint>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Género</mat-label>
-                  <mat-select formControlName="gender">
-                    <mat-option *ngFor="let option of genderOptions" [value]="option.value">
-                      {{ option.label }}
-                    </mat-option>
-                  </mat-select>
-                  <mat-error *ngIf="personalInfoForm.get('gender')?.hasError('required')">
-                    El género es requerido
-                  </mat-error>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Grupo Sanguíneo</mat-label>
-                  <mat-select formControlName="bloodType">
-                    <mat-option [value]="null">No especificado</mat-option>
-                    <mat-option *ngFor="let option of bloodTypeOptions" [value]="option.value">
-                      {{ option.label }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Estado Civil</mat-label>
-                  <mat-select formControlName="maritalStatus">
-                    <mat-option *ngFor="let option of maritalStatusOptions" [value]="option.value">
-                      {{ option.label }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Ocupación</mat-label>
-                  <input matInput formControlName="occupation" placeholder="Ingrese ocupación" />
-                </mat-form-field>
-              </div>
-
-              <div class="flex justify-end mt-6">
-                <button
-                  mat-flat-button
-                  color="primary"
-                  matStepperNext
-                  [disabled]="!personalInfoForm.valid"
-                  class="rounded-full h-10 px-5 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
-                >
-                  Siguiente
-                  <mat-icon>keyboard_arrow_right</mat-icon>
-                </button>
-              </div>
-            </div>
-          </form>
-        </mat-step>
-
-        <!-- Paso 2: Información de Contacto -->
-        <mat-step [stepControl]="contactInfoForm" [state]="'number'">
-          <ng-template matStepLabel>
-            <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px]">contact_mail</mat-icon>
-              <span>Contacto</span>
-            </div>
-          </ng-template>
-          <form [formGroup]="contactInfoForm">
-            <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
-              <div class="flex items-center gap-3 mb-6">
-                <div
-                  class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
-                >
-                  <mat-icon class="!text-[20px]">contact_mail</mat-icon>
-                </div>
-                <h3 class="text-xl font-semibold text-slate-900 m-0">Información de Contacto</h3>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <mat-form-field appearance="outline">
-                  <mat-label>Email</mat-label>
-                  <input
-                    matInput
-                    type="email"
-                    formControlName="email"
-                    placeholder="correo@email.com"
-                  />
-                  <mat-icon matPrefix>email</mat-icon>
-                  <mat-error *ngIf="contactInfoForm.get('email')?.hasError('email')">
-                    Ingrese un email válido
-                  </mat-error>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Teléfono</mat-label>
-                  <input
-                    matInput
-                    formControlName="phone"
-                    placeholder="+591-xxxxxxxx"
-                    appPhoneMask
-                  />
-                  <mat-icon matPrefix>phone</mat-icon>
-                  <mat-error *ngIf="contactInfoForm.get('phone')?.hasError('pattern')">
-                    Formato inválido. Ej: +591-70123456
-                  </mat-error>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="md:col-span-2">
-                  <mat-label>Dirección</mat-label>
-                  <textarea
-                    matInput
-                    formControlName="address"
-                    rows="2"
-                    placeholder="Dirección completa"
-                  ></textarea>
-                  <mat-icon matPrefix>location_on</mat-icon>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Ciudad</mat-label>
-                  <input matInput formControlName="city" placeholder="Ciudad" />
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Estado/Departamento</mat-label>
-                  <input matInput formControlName="state" placeholder="Estado" />
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Código Postal</mat-label>
-                  <input matInput formControlName="zipCode" placeholder="Código postal" />
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>País</mat-label>
-                  <input matInput formControlName="country" placeholder="País" />
-                </mat-form-field>
-              </div>
-
-              <div class="flex items-center justify-between mt-6">
-                <button
-                  mat-stroked-button
-                  matStepperPrevious
-                  class="rounded-full h-10 px-4 bg-white text-slate-700 border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1"
-                >
-                  <mat-icon>keyboard_arrow_left</mat-icon>
-                  Anterior
-                </button>
-                <button
-                  mat-flat-button
-                  color="primary"
-                  matStepperNext
-                  class="rounded-full h-10 px-5 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
-                >
-                  Siguiente
-                  <mat-icon>keyboard_arrow_right</mat-icon>
-                </button>
-              </div>
-            </div>
-          </form>
-        </mat-step>
-
-        <!-- Paso 4: Contacto de Emergencia -->
-        <mat-step [stepControl]="emergencyContactForm" [state]="'number'">
-          <ng-template matStepLabel>
-            <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px]">contact_emergency</mat-icon>
-              <span>Emergencia</span>
-              <span
-                class="ml-2 text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200"
-                >Opcional</span
-              >
-            </div>
-          </ng-template>
-          <form [formGroup]="emergencyContactForm">
-            <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
-              <div class="flex items-center gap-3 mb-6">
-                <div
-                  class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
-                >
-                  <mat-icon class="!text-[20px]">contact_emergency</mat-icon>
-                </div>
-                <h3 class="text-xl font-semibold text-slate-900 m-0">Contacto de Emergencia</h3>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <mat-form-field appearance="outline">
-                  <mat-label>Nombre Completo</mat-label>
-                  <input
-                    matInput
-                    formControlName="emergencyContactName"
-                    placeholder="Nombre del contacto de emergencia"
-                  />
-                  <mat-icon matPrefix>contact_emergency</mat-icon>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Teléfono</mat-label>
-                  <input
-                    matInput
-                    formControlName="emergencyContactPhone"
-                    placeholder="+591-xxxxxxxx"
-                    appPhoneMask
-                  />
-                  <mat-icon matPrefix>phone</mat-icon>
-                  <mat-error
-                    *ngIf="emergencyContactForm.get('emergencyContactPhone')?.hasError('pattern')"
-                  >
-                    Formato inválido. Ej: +591-70654321
-                  </mat-error>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Relación</mat-label>
-                  <input
-                    matInput
-                    formControlName="emergencyContactRelationship"
-                    placeholder="Ej: Esposo/a, Hijo/a, Hermano/a"
-                  />
-                  <mat-icon matPrefix>family_restroom</mat-icon>
-                </mat-form-field>
-              </div>
-
-              <div class="flex items-center justify-between mt-6">
-                <button
-                  mat-stroked-button
-                  matStepperPrevious
-                  class="rounded-full h-10 px-4 bg-white text-slate-700 border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1"
-                >
-                  <mat-icon>keyboard_arrow_left</mat-icon>
-                  Anterior
-                </button>
-                <button
-                  mat-flat-button
-                  color="primary"
-                  matStepperNext
-                  class="rounded-full h-10 px-5 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
-                >
-                  Siguiente
-                  <mat-icon>keyboard_arrow_right</mat-icon>
-                </button>
-              </div>
-            </div>
-          </form>
-        </mat-step>
-
-        <!-- Paso 5: Información de Seguro -->
-        <mat-step [stepControl]="insuranceForm" [state]="'number'">
-          <ng-template matStepLabel>
-            <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px]">health_and_safety</mat-icon>
-              <span>Seguro</span>
-              <span
-                class="ml-2 text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200"
-                >Opcional</span
-              >
-            </div>
-          </ng-template>
-          <form [formGroup]="insuranceForm">
-            <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
-              <div class="flex items-center gap-3 mb-6">
-                <div
-                  class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
-                >
-                  <mat-icon class="!text-[20px]">health_and_safety</mat-icon>
-                </div>
-                <h3 class="text-xl font-semibold text-slate-900 m-0">Información de Seguro</h3>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <mat-form-field appearance="outline">
-                  <mat-label>Proveedor de Seguro</mat-label>
-                  <input
-                    matInput
-                    formControlName="insuranceProvider"
-                    placeholder="Nombre del seguro médico"
-                  />
-                  <mat-icon matPrefix>health_and_safety</mat-icon>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Número de Póliza</mat-label>
-                  <input
-                    matInput
-                    formControlName="insuranceNumber"
-                    placeholder="Número de la póliza de seguro"
-                  />
-                  <mat-icon matPrefix>badge</mat-icon>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Clínica</mat-label>
-                  <mat-select formControlName="clinicId" [disabled]="!!ctxClinicId">
-                    <mat-select-trigger>
-                      {{ getSelectedClinicName() || 'Seleccione una clínica' }}
-                    </mat-select-trigger>
-                    <mat-option *ngIf="isClinicsLoading" disabled>Cargando clínicas...</mat-option>
-                    <mat-option *ngFor="let c of clinics" [value]="c.id">{{ c.name }}</mat-option>
-                  </mat-select>
-                  <mat-error *ngIf="insuranceForm.get('clinicId')?.hasError('required')">
-                    Debe seleccionar una clínica
-                  </mat-error>
-                  <mat-hint *ngIf="ctxClinicId">Usando clínica del contexto</mat-hint>
-                </mat-form-field>
-              </div>
-
-              <div class="flex items-center justify-between mt-6">
-                <button
-                  mat-stroked-button
-                  matStepperPrevious
-                  class="rounded-full h-10 px-4 bg-white text-slate-700 border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1"
-                >
-                  <mat-icon>keyboard_arrow_left</mat-icon>
-                  Anterior
-                </button>
-                <button
-                  mat-flat-button
-                  color="primary"
-                  matStepperNext
-                  [disabled]="!insuranceForm.valid"
-                  class="rounded-full h-10 px-5 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
-                >
-                  Revisar
-                  <mat-icon>keyboard_arrow_right</mat-icon>
-                </button>
-              </div>
-            </div>
-          </form>
-        </mat-step>
-
-        <!-- Paso Final: Resumen -->
-        <mat-step [state]="'number'">
-          <ng-template matStepLabel>
-            <div class="flex items-center gap-2">
-              <mat-icon class="!text-[18px]">check_circle</mat-icon>
-              <span>Confirmar</span>
-            </div>
-          </ng-template>
-          <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
-            <div class="flex items-center gap-3 mb-6">
-              <div
-                class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm"
-              >
-                <mat-icon class="!text-[20px]">check_circle</mat-icon>
-              </div>
-              <h3 class="text-xl font-semibold text-slate-900 m-0">Resumen del Paciente</h3>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div class="bg-slate-50 rounded-2xl p-4">
-                <h4 class="font-semibold text-slate-800 flex items-center gap-2 mb-2">
-                  <mat-icon class="!text-[18px]">person</mat-icon> Información Personal
-                </h4>
-                <p>
-                  <strong>Nombre:</strong> {{ personalInfoForm.get('firstName')?.value }}
-                  {{ personalInfoForm.get('lastName')?.value }}
-                </p>
-                <p>
-                  <strong>Documento:</strong> {{ personalInfoForm.get('documentType')?.value }} -
-                  {{ personalInfoForm.get('documentNumber')?.value }}
-                </p>
-                <p>
-                  <strong>Fecha de Nacimiento:</strong>
-                  {{ personalInfoForm.get('birthDate')?.value | date: 'dd/MM/yyyy' }}
-                </p>
-              </div>
-
-              <div class="bg-slate-50 rounded-2xl p-4">
-                <h4 class="font-semibold text-slate-800 flex items-center gap-2 mb-2">
-                  <mat-icon class="!text-[18px]">contact_mail</mat-icon> Contacto
-                </h4>
-                <p><strong>Email:</strong> {{ contactInfoForm.get('email')?.value }}</p>
-                <p><strong>Teléfono:</strong> {{ contactInfoForm.get('phone')?.value }}</p>
-                <p><strong>Dirección:</strong> {{ contactInfoForm.get('address')?.value }}</p>
-                <p>
-                  <strong>Ciudad:</strong> {{ contactInfoForm.get('city')?.value }},
-                  {{ contactInfoForm.get('state')?.value }}
-                </p>
-              </div>
-
-              <div class="bg-slate-50 rounded-2xl p-4">
-                <h4 class="font-semibold text-slate-800 flex items-center gap-2 mb-2">
-                  <mat-icon class="!text-[18px]">contact_emergency</mat-icon> Contacto de Emergencia
-                </h4>
-                <p>
-                  <strong>Nombre:</strong>
-                  {{ emergencyContactForm.get('emergencyContactName')?.value }}
-                </p>
-                <p>
-                  <strong>Teléfono:</strong>
-                  {{ emergencyContactForm.get('emergencyContactPhone')?.value }}
-                </p>
-                <p>
-                  <strong>Relación:</strong>
-                  {{ emergencyContactForm.get('emergencyContactRelationship')?.value }}
-                </p>
-              </div>
-
-              <div class="bg-slate-50 rounded-2xl p-4">
-                <h4 class="font-semibold text-slate-800 flex items-center gap-2 mb-2">
-                  <mat-icon class="!text-[18px]">health_and_safety</mat-icon> Seguro
-                </h4>
-                <p>
-                  <strong>Proveedor:</strong> {{ insuranceForm.get('insuranceProvider')?.value }}
-                </p>
-                <p><strong>Número:</strong> {{ insuranceForm.get('insuranceNumber')?.value }}</p>
-                <p>
-                  <strong>Clínica:</strong>
-                  {{ getSelectedClinicName() || '—' }}
-                </p>
-              </div>
-            </div>
-
-            <div class="flex items-center justify-between mt-6">
-              <button
-                mat-stroked-button
-                matStepperPrevious
-                class="rounded-full h-10 px-4 bg-white text-slate-700 border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1"
-              >
-                <mat-icon>keyboard_arrow_left</mat-icon>
-                Anterior
-              </button>
-
-              <div class="flex items-center gap-3">
-                <button
-                  mat-stroked-button
-                  type="button"
-                  (click)="saveDraft()"
-                  [disabled]="isSaving"
-                  class="rounded-full h-10 px-4 bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1"
-                >
-                  <mat-icon>save</mat-icon>
-                  Guardar Borrador
-                </button>
-
-                <button
-                  mat-flat-button
-                  color="primary"
-                  (click)="onSubmit()"
-                  [disabled]="!isAllFormsValid() || isSaving"
-                  class="rounded-full h-10 px-5 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1"
-                >
-                  <mat-spinner *ngIf="isSaving" diameter="20"></mat-spinner>
-                  <mat-icon *ngIf="!isSaving">{{ isEditMode ? 'save' : 'person_add' }}</mat-icon>
-                  {{ isEditMode ? 'Actualizar Paciente' : 'Crear Paciente' }}
-                </button>
-              </div>
-            </div>
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 1 — Información Personal (azul)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-5 bg-blue-50 border-b border-blue-100">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">person</span>
           </div>
-        </mat-step>
-      </mat-stepper>
-    </div>
+          <div>
+            <h3 class="text-base font-semibold text-slate-900 leading-tight">Información Personal</h3>
+            <p class="text-sm text-slate-500 leading-tight">Datos de identificación del paciente</p>
+          </div>
+        </div>
 
-    <!-- Botones de acción fijos -->
+        <form [formGroup]="personalInfoForm" class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <mat-form-field appearance="outline">
+              <mat-label>Nombres</mat-label>
+              <mat-icon matPrefix class="text-blue-400">person</mat-icon>
+              <input matInput formControlName="firstName" placeholder="Ingrese nombres" />
+              <mat-error *ngIf="personalInfoForm.get('firstName')?.hasError('required')">Los nombres son requeridos</mat-error>
+              <mat-error *ngIf="personalInfoForm.get('firstName')?.hasError('minlength')">Mínimo 2 caracteres</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Apellidos</mat-label>
+              <mat-icon matPrefix class="text-blue-400">person</mat-icon>
+              <input matInput formControlName="lastName" placeholder="Ingrese apellidos" />
+              <mat-error *ngIf="personalInfoForm.get('lastName')?.hasError('required')">Los apellidos son requeridos</mat-error>
+              <mat-error *ngIf="personalInfoForm.get('lastName')?.hasError('minlength')">Mínimo 2 caracteres</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo de Documento</mat-label>
+              <mat-icon matPrefix class="text-blue-400">badge</mat-icon>
+              <mat-select formControlName="documentType">
+                <mat-option value="CI">Cédula de Identidad</mat-option>
+                <mat-option value="PASAPORTE">Pasaporte</mat-option>
+                <mat-option value="CARNET_EXTRANJERO">Carnet de Extranjero</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Número de Documento</mat-label>
+              <mat-icon matPrefix class="text-blue-400">pin</mat-icon>
+              <input matInput formControlName="documentNumber" placeholder="Ingrese número de documento" />
+              <button mat-icon-button matSuffix type="button"
+                (click)="searchByDocument()"
+                [disabled]="!personalInfoForm.get('documentNumber')?.valid"
+                matTooltip="Buscar paciente por documento">
+                <mat-icon>search</mat-icon>
+              </button>
+              <mat-error *ngIf="personalInfoForm.get('documentNumber')?.hasError('required')">El número de documento es requerido</mat-error>
+              <mat-error *ngIf="personalInfoForm.get('documentNumber')?.hasError('minlength')">Mínimo 5 caracteres</mat-error>
+              <mat-error *ngIf="personalInfoForm.get('documentNumber')?.hasError('pattern')">Solo letras, números y guiones (5-20 caracteres)</mat-error>
+              <mat-hint>Ej: 12345678, ABC123-9</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha de Nacimiento</mat-label>
+              <mat-icon matPrefix class="text-blue-400">calendar_today</mat-icon>
+              <input matInput [matDatepicker]="picker" formControlName="birthDate" />
+              <mat-datepicker-toggle matIconSuffix [for]="picker" />
+              <mat-datepicker #picker />
+              <mat-error *ngIf="personalInfoForm.get('birthDate')?.hasError('required')">La fecha de nacimiento es requerida</mat-error>
+              <mat-hint *ngIf="getAge() !== null">Edad: {{ getAge() }} años</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Género</mat-label>
+              <mat-icon matPrefix class="text-blue-400">wc</mat-icon>
+              <mat-select formControlName="gender">
+                <mat-option *ngFor="let opt of genderOptions" [value]="opt.value">{{ opt.label }}</mat-option>
+              </mat-select>
+              <mat-error *ngIf="personalInfoForm.get('gender')?.hasError('required')">El género es requerido</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Grupo Sanguíneo</mat-label>
+              <mat-icon matPrefix class="text-blue-400">water_drop</mat-icon>
+              <mat-select formControlName="bloodType">
+                <mat-option [value]="null">No especificado</mat-option>
+                <mat-option *ngFor="let opt of bloodTypeOptions" [value]="opt.value">{{ opt.label }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Estado Civil</mat-label>
+              <mat-icon matPrefix class="text-blue-400">people</mat-icon>
+              <mat-select formControlName="maritalStatus">
+                <mat-option *ngFor="let opt of maritalStatusOptions" [value]="opt.value">{{ opt.label }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="md:col-span-2">
+              <mat-label>Ocupación</mat-label>
+              <mat-icon matPrefix class="text-blue-400">work</mat-icon>
+              <input matInput formControlName="occupation" placeholder="Ingrese ocupación" />
+            </mat-form-field>
+
+          </div>
+        </form>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 2 — Contacto (verde)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-5 bg-green-50 border-b border-green-100">
+          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">contact_mail</span>
+          </div>
+          <div>
+            <h3 class="text-base font-semibold text-slate-900 leading-tight">Contacto</h3>
+            <p class="text-sm text-slate-500 leading-tight">Información de contacto y ubicación</p>
+          </div>
+        </div>
+
+        <form [formGroup]="contactInfoForm" class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <mat-form-field appearance="outline">
+              <mat-label>Email</mat-label>
+              <mat-icon matPrefix class="text-green-400">email</mat-icon>
+              <input matInput type="email" formControlName="email" placeholder="correo@email.com" />
+              <mat-error *ngIf="contactInfoForm.get('email')?.hasError('email')">Ingrese un email válido</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Teléfono</mat-label>
+              <mat-icon matPrefix class="text-green-400">phone</mat-icon>
+              <input matInput formControlName="phone" placeholder="+591-xxxxxxxx" appPhoneMask />
+              <mat-error *ngIf="contactInfoForm.get('phone')?.hasError('pattern')">Formato inválido. Ej: +591-70123456</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="md:col-span-2">
+              <mat-label>Dirección</mat-label>
+              <mat-icon matPrefix class="text-green-400">location_on</mat-icon>
+              <textarea matInput formControlName="address" rows="2" placeholder="Dirección completa"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Ciudad</mat-label>
+              <mat-icon matPrefix class="text-green-400">location_city</mat-icon>
+              <input matInput formControlName="city" placeholder="Ciudad" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Estado / Departamento</mat-label>
+              <mat-icon matPrefix class="text-green-400">map</mat-icon>
+              <input matInput formControlName="state" placeholder="Estado" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Código Postal</mat-label>
+              <mat-icon matPrefix class="text-green-400">local_post_office</mat-icon>
+              <input matInput formControlName="zipCode" placeholder="Código postal" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>País</mat-label>
+              <mat-icon matPrefix class="text-green-400">public</mat-icon>
+              <input matInput formControlName="country" placeholder="País" />
+            </mat-form-field>
+
+          </div>
+        </form>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 3 — Emergencia (naranja · opcional)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-5 bg-orange-50 border-b border-orange-100">
+          <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">contact_emergency</span>
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center gap-2">
+              <h3 class="text-base font-semibold text-slate-900 leading-tight">Contacto de Emergencia</h3>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">Opcional</span>
+            </div>
+            <p class="text-sm text-slate-500 leading-tight">Persona de contacto en caso de emergencia</p>
+          </div>
+        </div>
+
+        <form [formGroup]="emergencyContactForm" class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre Completo</mat-label>
+              <mat-icon matPrefix class="text-orange-400">contact_emergency</mat-icon>
+              <input matInput formControlName="emergencyContactName" placeholder="Nombre del contacto" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Teléfono</mat-label>
+              <mat-icon matPrefix class="text-orange-400">phone</mat-icon>
+              <input matInput formControlName="emergencyContactPhone" placeholder="+591-xxxxxxxx" appPhoneMask />
+              <mat-error *ngIf="emergencyContactForm.get('emergencyContactPhone')?.hasError('pattern')">Formato inválido. Ej: +591-70654321</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Relación</mat-label>
+              <mat-icon matPrefix class="text-orange-400">family_restroom</mat-icon>
+              <input matInput formControlName="emergencyContactRelationship" placeholder="Ej: Esposo/a, Hijo/a, Hermano/a" />
+            </mat-form-field>
+
+          </div>
+        </form>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 4 — Seguro Médico (morado · opcional)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-5 bg-purple-50 border-b border-purple-100">
+          <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">health_and_safety</span>
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center gap-2">
+              <h3 class="text-base font-semibold text-slate-900 leading-tight">Seguro Médico</h3>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">Opcional</span>
+            </div>
+            <p class="text-sm text-slate-500 leading-tight">Información de cobertura médica y clínica</p>
+          </div>
+        </div>
+
+        <form [formGroup]="insuranceForm" class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <mat-form-field appearance="outline">
+              <mat-label>Proveedor de Seguro</mat-label>
+              <mat-icon matPrefix class="text-purple-400">health_and_safety</mat-icon>
+              <input matInput formControlName="insuranceProvider" placeholder="Nombre del seguro médico" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Número de Póliza</mat-label>
+              <mat-icon matPrefix class="text-purple-400">badge</mat-icon>
+              <input matInput formControlName="insuranceNumber" placeholder="Número de la póliza" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Clínica</mat-label>
+              <mat-icon matPrefix class="text-purple-400">local_hospital</mat-icon>
+              <mat-select formControlName="clinicId" [disabled]="!!ctxClinicId">
+                <mat-select-trigger>{{ getSelectedClinicName() || 'Seleccione una clínica' }}</mat-select-trigger>
+                <mat-option *ngIf="isClinicsLoading" disabled>Cargando clínicas...</mat-option>
+                <mat-option *ngFor="let c of clinics" [value]="c.id">{{ c.name }}</mat-option>
+              </mat-select>
+              <mat-error *ngIf="insuranceForm.get('clinicId')?.hasError('required')">Debe seleccionar una clínica</mat-error>
+              <mat-hint *ngIf="ctxClinicId">Usando clínica del contexto</mat-hint>
+            </mat-form-field>
+
+          </div>
+        </form>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           ACCIONES FINALES
+      ══════════════════════════════════════════ -->
+      <div *ngIf="!isViewMode" class="form-action-bar">
+        <button
+          type="button"
+          (click)="saveDraft()"
+          [disabled]="isSaving"
+          class="btn btn-ghost">
+          <span class="material-symbols-outlined msz-18 leading-none">save</span>
+          Guardar Borrador
+        </button>
+
+        <button
+          type="button"
+          (click)="onSubmit()"
+          [disabled]="isSaving"
+          class="btn btn-primary">
+          <mat-spinner *ngIf="isSaving" diameter="18" class="!text-white" />
+          <span *ngIf="!isSaving" class="material-symbols-outlined msz-18 leading-none">{{ isEditMode ? 'save' : 'person_add' }}</span>
+          {{ isEditMode ? 'Actualizar Paciente' : 'Crear Paciente' }}
+        </button>
+      </div>
+
+    </div>
 
     <!-- Loading overlay -->
-    <div
-      *ngIf="isLoading"
-      class="fixed inset-0 bg-black/30 backdrop-blur-sm flex flex-col items-center justify-center z-50"
-    >
+    <div *ngIf="isLoading"
+      class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col items-center gap-3">
-        <mat-spinner diameter="50"></mat-spinner>
+        <mat-spinner diameter="50" />
         <p class="text-slate-700">Cargando información del paciente...</p>
       </div>
     </div>
+
   </div>
 </div>

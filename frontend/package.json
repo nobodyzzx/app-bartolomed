@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "generate-types": "curl -sf http://localhost:3000/api/docs-json -o src/generated/api-spec.json && npx openapi-typescript src/generated/api-spec.json -o src/generated/api-types.ts && echo 'Tipos generados OK'"
   },
   "private": true,
   "dependencies": {
@@ -21,7 +22,6 @@
     "@angular/platform-browser-dynamic": "^18.2.8",
     "@angular/router": "^18.2.8",
     "rxjs": "~7.8.0",
-    "sweetalert2": "^11.14.4",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.10"
   },
@@ -38,6 +38,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "openapi-typescript": "^7.13.0",
     "postcss": "^8.4.47",
     "prettier": "^3.3.3",
     "tailwindcss": "^3.4.14",

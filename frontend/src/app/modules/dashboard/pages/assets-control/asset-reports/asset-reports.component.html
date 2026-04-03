@@ -1,100 +1,59 @@
-<div class="min-h-screen bg-slate-50 p-8">
-  <div class="max-w-7xl mx-auto">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-10">
-      <div class="flex items-center gap-4">
-      <button
-        type="button"
-        (click)="goBack()"
-        class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-        aria-label="Volver"
-      >
-        <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
-      </button>
-      <div class="text-left">
-        <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Reportes de Activos</h1>
-        <p class="text-slate-600">Genere y gestione reportes del inventario de activos</p>
-      </div>
-      </div>
-    </div>
+<div class="page-wrapper">
+  <div class="page-inner">
 
-    <!-- Stats Cards -->
+    <app-page-header
+      title="Reportes de Activos"
+      subtitle="Genere y gestione reportes del inventario de activos"
+      (back)="goBack()"
+    />
+
+    <!-- Estadísticas -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <!-- Total Reportes -->
-      <div class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all select-none">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-blue-600 text-sm font-semibold">Total Reportes</p>
-            <p class="text-3xl font-bold text-blue-900 mt-1">{{ totalReports }}</p>
-            <p class="text-xs text-blue-500 mt-1">Registrados</p>
-          </div>
-          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px">assessment</span>
-        </div>
-      </div>
-
-      <!-- Completados -->
-      <div
-        class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        (click)="filterByStatus(reportStatuses[2])"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-green-600 text-sm font-semibold">Completados</p>
-            <p class="text-3xl font-bold text-green-900 mt-1">{{ completedReports }}</p>
-            <p class="text-xs text-green-500 mt-1">Listos para descargar</p>
-          </div>
-          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">check_circle</span>
-        </div>
-      </div>
-
-      <!-- En Proceso -->
-      <div
-        class="bg-amber-50 p-5 rounded-2xl border-l-4 border-amber-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        (click)="filterByStatus(reportStatuses[1])"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-amber-600 text-sm font-semibold">Generando</p>
-            <p class="text-3xl font-bold text-amber-900 mt-1">{{ generatingReports }}</p>
-            <p class="text-xs text-amber-500 mt-1">En proceso</p>
-          </div>
-          <span class="material-symbols-outlined text-amber-300" style="font-size: 40px">sync</span>
-        </div>
-      </div>
-
-      <!-- Fallidos -->
-      <div
-        class="bg-red-50 p-5 rounded-2xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-all cursor-pointer select-none"
-        (click)="filterByStatus(reportStatuses[3])"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-red-600 text-sm font-semibold">Fallidos</p>
-            <p class="text-3xl font-bold text-red-900 mt-1">{{ failedReports }}</p>
-            <p class="text-xs text-red-500 mt-1">Con errores</p>
-          </div>
-          <span class="material-symbols-outlined text-red-300" style="font-size: 40px">error</span>
-        </div>
-      </div>
+      <app-stat-card
+        label="Total Reportes"
+        [value]="totalReports"
+        sublabel="Registrados"
+        icon="assessment"
+        color="blue"
+      />
+      <app-stat-card
+        label="Completados"
+        [value]="completedReports"
+        sublabel="Listos para descargar"
+        icon="check_circle"
+        color="green"
+        [clickable]="true"
+        (cardClick)="filterByStatus(reportStatuses[2])"
+      />
+      <app-stat-card
+        label="Generando"
+        [value]="generatingReports"
+        sublabel="En proceso"
+        icon="sync"
+        color="amber"
+        [clickable]="true"
+        (cardClick)="filterByStatus(reportStatuses[1])"
+      />
+      <app-stat-card
+        label="Fallidos"
+        [value]="failedReports"
+        sublabel="Con errores"
+        icon="error"
+        color="red"
+        [clickable]="true"
+        (cardClick)="filterByStatus(reportStatuses[3])"
+      />
     </div>
 
     <!-- Generar Nuevo Reporte -->
-    <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
-      <div
-        class="bg-gradient-to-r from-purple-50 to-violet-50 px-6 py-4 border-b border-purple-100"
-      >
-        <div class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0"
-          >
-            <span class="material-symbols-outlined msz-24 text-white">add_circle</span>
-          </div>
-          <div>
-            <h2 class="text-lg font-semibold text-slate-800">Generar Nuevo Reporte</h2>
-            <p class="text-sm text-slate-600">
-              Configure los parámetros para generar un reporte personalizado
-            </p>
-          </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+      <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
+        <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">add_circle</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Generar Nuevo Reporte</h3>
+          <p class="text-sm text-slate-500 m-0">Configure los parámetros para generar un reporte personalizado</p>
         </div>
       </div>
 
@@ -103,10 +62,8 @@
           <!-- Título -->
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Título del Reporte</mat-label>
+            <mat-icon matPrefix class="text-purple-400">title</mat-icon>
             <input matInput formControlName="title" placeholder="Ej: Inventario General 2025" />
-            <span matPrefix class="material-symbols-outlined msz-20 text-slate-400 mr-2"
-              >title</span
-            >
             <mat-error *ngIf="reportsForm.get('title')?.hasError('required')">
               El título es requerido
             </mat-error>
@@ -118,33 +75,30 @@
           <!-- Tipo de Reporte -->
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Tipo de Reporte</mat-label>
+            <mat-icon matPrefix class="text-purple-400">category</mat-icon>
             <mat-select formControlName="reportType">
               <mat-option *ngFor="let type of reportTypes" [value]="type">
                 {{ type }}
               </mat-option>
             </mat-select>
-            <span matPrefix class="material-symbols-outlined msz-20 text-slate-400 mr-2"
-              >category</span
-            >
             <mat-error>Seleccione un tipo de reporte</mat-error>
           </mat-form-field>
 
           <!-- Formato -->
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Formato de Exportación</mat-label>
+            <mat-icon matPrefix class="text-purple-400">description</mat-icon>
             <mat-select formControlName="format">
               <mat-option value="pdf">PDF</mat-option>
               <mat-option value="excel">Excel</mat-option>
               <mat-option value="csv">CSV</mat-option>
             </mat-select>
-            <span matPrefix class="material-symbols-outlined msz-20 text-slate-400 mr-2"
-              >description</span
-            >
           </mat-form-field>
 
           <!-- Fecha Desde -->
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Fecha Desde</mat-label>
+            <mat-icon matPrefix class="text-purple-400">calendar_today</mat-icon>
             <input matInput [matDatepicker]="dateFromPicker" formControlName="dateFrom" />
             <mat-datepicker-toggle matIconSuffix [for]="dateFromPicker"></mat-datepicker-toggle>
             <mat-datepicker #dateFromPicker></mat-datepicker>
@@ -153,6 +107,7 @@
           <!-- Fecha Hasta -->
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Fecha Hasta</mat-label>
+            <mat-icon matPrefix class="text-purple-400">event</mat-icon>
             <input matInput [matDatepicker]="dateToPicker" formControlName="dateTo" />
             <mat-datepicker-toggle matIconSuffix [for]="dateToPicker"></mat-datepicker-toggle>
             <mat-datepicker #dateToPicker></mat-datepicker>
@@ -161,33 +116,28 @@
           <!-- Estado -->
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Filtrar por Estado</mat-label>
+            <mat-icon matPrefix class="text-purple-400">filter_list</mat-icon>
             <mat-select formControlName="status">
               <mat-option value="">Todos</mat-option>
               <mat-option *ngFor="let status of assetStatuses" [value]="status">
                 {{ status }}
               </mat-option>
             </mat-select>
-            <span matPrefix class="material-symbols-outlined msz-20 text-slate-400 mr-2"
-              >filter_list</span
-            >
           </mat-form-field>
 
-          <!-- Descripción (ocupa columnas completas) -->
+          <!-- Descripción -->
           <mat-form-field appearance="outline" class="w-full md:col-span-2 lg:col-span-3">
             <mat-label>Descripción (opcional)</mat-label>
+            <mat-icon matPrefix class="text-purple-400">notes</mat-icon>
             <textarea
               matInput
               formControlName="description"
               rows="2"
               placeholder="Descripción adicional del reporte"
             ></textarea>
-            <span matPrefix class="material-symbols-outlined msz-20 text-slate-400 mr-2"
-              >notes</span
-            >
           </mat-form-field>
         </div>
 
-        <!-- Botones -->
         <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-200">
           <button
             type="button"
@@ -212,34 +162,39 @@
     </div>
 
     <!-- Lista de Reportes Generados -->
-    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined msz-20 text-slate-600">folder_open</span>
-          <h3 class="text-lg font-semibold text-slate-800">Reportes Generados</h3>
-          <span
-            class="ml-2 px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium"
-          >
-            {{ reports.length }}
-          </span>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 bg-blue-50 border-b border-blue-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">folder_open</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Reportes Generados</h3>
+            <p class="text-sm text-slate-500 m-0">
+              <span class="font-semibold text-slate-700">{{ reports.length }}</span> reportes registrados
+            </p>
+          </div>
         </div>
         <button
           type="button"
           (click)="loadReports()"
           [disabled]="loading"
-          class="inline-flex items-center gap-2 px-4 h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors border-0 disabled:opacity-50"
+          class="inline-flex items-center gap-2 px-4 h-9 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-all border-0 disabled:opacity-50 text-sm font-medium"
         >
           <span class="material-symbols-outlined msz-18" [class.animate-spin]="loading">sync</span>
           Actualizar
         </button>
       </div>
 
-      <!-- Loading State -->
-      <div *ngIf="loading" class="flex justify-center items-center py-12">
-        <mat-spinner diameter="50"></mat-spinner>
-      </div>
+      <app-skeleton-table *ngIf="loading" [rows]="6" [columns]="5" />
 
-      <!-- Tabla de Reportes -->
+      <app-empty-state
+        *ngIf="!loading && reports.length === 0"
+        icon="description"
+        title="No hay reportes disponibles"
+        subtitle="Genere su primer reporte utilizando el formulario de arriba"
+      />
+
       <div *ngIf="!loading && reports.length > 0" class="overflow-x-auto">
         <table class="w-full">
           <thead class="bg-slate-100">
@@ -262,9 +217,7 @@
                 </div>
               </td>
               <td class="px-6 py-4">
-                <span
-                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
-                >
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
                   {{ report.type }}
                 </span>
               </td>
@@ -324,15 +277,6 @@
           </tbody>
         </table>
       </div>
-
-      <!-- Empty State -->
-      <div *ngIf="!loading && reports.length === 0" class="text-center py-12 px-6">
-        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">description</span>
-        <h3 class="text-slate-900 font-semibold text-lg mb-2">No hay reportes disponibles</h3>
-        <p class="text-slate-500 mb-6">
-          Genere su primer reporte utilizando el formulario de arriba
-        </p>
-      </div>
     </div>
 
     <!-- Modal de Detalles -->
@@ -345,7 +289,6 @@
         class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl animate-in fade-in zoom-in duration-200"
         (click)="$event.stopPropagation()"
       >
-        <!-- Header -->
         <div
           class="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50"
         >
@@ -369,62 +312,43 @@
           </button>
         </div>
 
-        <!-- Body -->
         <div class="px-6 py-5 space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                >Tipo de Reporte</label
-              >
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Tipo de Reporte</label>
               <p class="mt-1 text-sm font-medium text-slate-900">{{ selectedReport.type }}</p>
             </div>
             <div>
-              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                >Estado</label
-              >
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Estado</label>
               <div class="mt-1">
                 <span
                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
                   [ngClass]="getStatusClass(selectedReport.status)"
                 >
-                  <span class="material-symbols-outlined msz-14">{{
-                    getStatusIcon(selectedReport.status)
-                  }}</span>
+                  <span class="material-symbols-outlined msz-14">{{ getStatusIcon(selectedReport.status) }}</span>
                   {{ selectedReport.status }}
                 </span>
               </div>
             </div>
             <div>
-              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                >Fecha de Generación</label
-              >
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Fecha de Generación</label>
               <p class="mt-1 text-sm font-medium text-slate-900">
                 {{ selectedReport.date | date: 'dd/MM/yyyy HH:mm' }}
               </p>
             </div>
             <div *ngIf="selectedReport.generatedBy">
-              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                >Generado Por</label
-              >
-              <p class="mt-1 text-sm font-medium text-slate-900">
-                {{ selectedReport.generatedBy }}
-              </p>
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Generado Por</label>
+              <p class="mt-1 text-sm font-medium text-slate-900">{{ selectedReport.generatedBy }}</p>
             </div>
           </div>
 
           <div *ngIf="selectedReport.description">
-            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-              >Descripción</label
-            >
-            <p class="mt-1 text-sm text-slate-700 leading-relaxed">
-              {{ selectedReport.description }}
-            </p>
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Descripción</label>
+            <p class="mt-1 text-sm text-slate-700 leading-relaxed">{{ selectedReport.description }}</p>
           </div>
 
           <div *ngIf="selectedReport.filePath">
-            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-              >Archivo</label
-            >
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Archivo</label>
             <div class="mt-1 flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
               <span class="material-symbols-outlined msz-20 text-blue-600">description</span>
               <span class="text-sm text-slate-700 font-medium flex-1">{{
@@ -434,10 +358,7 @@
           </div>
         </div>
 
-        <!-- Footer -->
-        <div
-          class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50"
-        >
+        <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50">
           <button
             type="button"
             (click)="selectedReport = null"
@@ -457,5 +378,6 @@
         </div>
       </div>
     </div>
+
   </div>
 </div>

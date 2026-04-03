@@ -6,11 +6,13 @@ import {
   IsDateString,
   IsBoolean,
   IsArray,
+  IsEnum,
   ValidateNested,
   Min,
   Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { PrescriptionStatus } from '../entities/prescription.entity';
 
 export class CreatePrescriptionItemDto {
   @IsString()
@@ -119,4 +121,8 @@ export class CreatePrescriptionDto {
 
   @IsUUID()
   clinicId: string;
+
+  @IsOptional()
+  @IsEnum(PrescriptionStatus)
+  status?: PrescriptionStatus;
 }

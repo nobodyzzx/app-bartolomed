@@ -1,5 +1,6 @@
 import { Location } from '@angular/common'
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core'
+import { AfterViewInit, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
@@ -14,6 +15,8 @@ import { AssetRegistrationService } from '../services/asset-registration.service
   styleUrls: ['./asset-inventory-control.component.css'],
 })
 export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   displayedColumns: string[] = [
     'assetTag',
     'name',
@@ -90,9 +93,9 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
 
   loadAssets(): void {
     this.isLoading = true
-    this.assetService.getAssets().subscribe({
-      next: assets => {
-        this.assets = assets
+    this.assetService.getAssets().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: result => {
+        this.assets = result.data
         this.applyFilters()
         this.isLoading = false
       },
@@ -102,8 +105,8 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
     })
   }
 
-  applyFilter(event: Event): void {
-    this.searchTerm = (event.target as HTMLInputElement).value
+  applyFilter(value: string): void {
+    this.searchTerm = value
     this.applyFilters()
   }
 
@@ -151,7 +154,7 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
 
     if (result.isConfirmed) {
       this.isLoading = true
-      this.assetService.deleteAsset(asset.id).subscribe({
+      this.assetService.deleteAsset(asset.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.assets = this.assets.filter(a => a.id !== asset.id)
           this.applyFilters()

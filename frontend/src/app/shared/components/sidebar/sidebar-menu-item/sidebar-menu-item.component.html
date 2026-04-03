@@ -8,24 +8,22 @@
     <a
       *ngIf="!isDemo; else demoLeafExpanded"
       [routerLink]="item.route"
-      routerLinkActive="bg-blue-200"
-      #rla="routerLinkActive"
-      [class.bg-blue-200]="rla.isActive"
-      [attr.aria-current]="rla.isActive ? 'page' : null"
-      class="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-blue-900 hover:bg-blue-100 transition-colors no-underline"
+      routerLinkActive="!bg-blue-200 !font-medium"
+      [attr.aria-current]="isLeafActive ? 'page' : null"
+      class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-blue-900 hover:bg-blue-100 transition-colors no-underline"
     >
-      <span class="material-symbols-outlined text-2xl text-blue-600 flex-shrink-0">{{ item.icon }}</span>
-      <span class="font-normal leading-tight">{{ item.label }}</span>
+      <span class="material-symbols-outlined text-xl flex-shrink-0" [class.text-blue-800]="isLeafActive" [class.text-blue-500]="!isLeafActive">{{ item.icon }}</span>
+      <span class="text-sm leading-tight">{{ item.label }}</span>
     </a>
     <ng-template #demoLeafExpanded>
       <button
         type="button"
         (click)="demoClick.emit()"
         matTooltip="Inicia sesión para acceder"
-        class="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-blue-900 hover:bg-blue-100 transition-colors opacity-75"
+        class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-blue-400 hover:bg-blue-100 transition-colors opacity-60"
       >
-        <span class="material-symbols-outlined text-2xl text-blue-600 flex-shrink-0">{{ item.icon }}</span>
-        <span class="font-normal leading-tight">{{ item.label }}</span>
+        <span class="material-symbols-outlined text-xl flex-shrink-0">{{ item.icon }}</span>
+        <span class="text-sm leading-tight">{{ item.label }}</span>
       </button>
     </ng-template>
   </ng-container>
@@ -33,51 +31,55 @@
   <!-- Parent item con hijos (expansion panel) -->
   <mat-expansion-panel
     *ngIf="hasChildren"
-    class="!bg-blue-50 shadow-none mat-elevation-z0"
+    class="!shadow-none mat-elevation-z0"
     hideToggle
+    [expanded]="isParentActive"
   >
     <mat-expansion-panel-header
-      class="px-3 py-1 hover:bg-blue-100 rounded-lg transition-colors !bg-blue-50"
+      class="!px-3 !rounded-lg transition-colors"
       [class.!bg-blue-200]="isParentActive"
-      [attr.aria-current]="isParentActive ? 'true' : null"
     >
       <mat-panel-title class="flex items-center gap-3">
         <span
-          class="material-symbols-outlined text-2xl flex-shrink-0"
+          class="material-symbols-outlined text-xl flex-shrink-0"
           [class.text-blue-800]="isParentActive"
-          [class.text-blue-600]="!isParentActive"
+          [class.text-blue-500]="!isParentActive"
         >{{ item.icon }}</span>
         <span
-          class="leading-tight"
+          class="text-sm leading-tight"
+          [class.font-medium]="isParentActive"
           [class.text-blue-900]="!isParentActive"
-          [class.font-semibold]="isParentActive"
+          [class.text-blue-800]="isParentActive"
         >{{ item.label }}</span>
       </mat-panel-title>
     </mat-expansion-panel-header>
 
-    <div class="pl-8 pr-4 py-2 space-y-1 bg-blue-50">
+    <div class="pl-7 pr-2 py-1 space-y-0.5">
       <ng-container *ngFor="let child of item.children; trackBy: trackByLabel">
         <a
           *ngIf="!isDemo; else demoChildExpanded"
           [routerLink]="child.route"
-          routerLinkActive="bg-blue-200"
+          routerLinkActive="!bg-blue-200 !font-medium"
           #rlaChild="routerLinkActive"
-          [class.bg-blue-200]="rlaChild.isActive"
           [attr.aria-current]="rlaChild.isActive ? 'page' : null"
-          class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-blue-900 hover:bg-blue-100 transition-colors no-underline"
+          class="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-blue-900 hover:bg-blue-100 transition-colors no-underline"
         >
-          <span class="material-symbols-outlined text-2xl text-blue-600 flex-shrink-0">{{ child.icon }}</span>
-          <span class="leading-tight">{{ child.label }}</span>
+          <span
+            class="material-symbols-outlined text-lg flex-shrink-0"
+            [class.text-blue-800]="rlaChild.isActive"
+            [class.text-blue-500]="!rlaChild.isActive"
+          >{{ child.icon }}</span>
+          <span class="text-sm leading-tight">{{ child.label }}</span>
         </a>
         <ng-template #demoChildExpanded>
           <button
             type="button"
             (click)="demoClick.emit()"
             matTooltip="Inicia sesión para acceder"
-            class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-blue-900 hover:bg-blue-100 transition-colors opacity-75"
+            class="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-blue-400 hover:bg-blue-100 transition-colors opacity-60"
           >
-            <span class="material-symbols-outlined text-2xl text-blue-600 flex-shrink-0">{{ child.icon }}</span>
-            <span class="leading-tight">{{ child.label }}</span>
+            <span class="material-symbols-outlined text-lg flex-shrink-0">{{ child.icon }}</span>
+            <span class="text-sm leading-tight">{{ child.label }}</span>
           </button>
         </ng-template>
       </ng-container>
@@ -86,8 +88,9 @@
 
 </ng-container>
 
+
 <!-- ============================================================ -->
-<!-- MODO COLAPSADO                                              -->
+<!-- MODO COLAPSADO                                               -->
 <!-- ============================================================ -->
 <ng-container *ngIf="!isExpanded">
 
@@ -96,25 +99,23 @@
     <a
       *ngIf="!isDemo; else demoLeafCollapsed"
       [routerLink]="item.route"
-      routerLinkActive="bg-blue-200"
-      #rlaCompact="routerLinkActive"
-      [class.bg-blue-200]="rlaCompact.isActive"
-      [attr.aria-current]="rlaCompact.isActive ? 'page' : null"
+      routerLinkActive="!bg-blue-200"
+      [attr.aria-current]="isLeafActive ? 'page' : null"
       [matTooltip]="item.label"
       matTooltipPosition="right"
-      class="flex items-center justify-center w-12 h-12 text-blue-600 hover:bg-blue-100 transition-colors no-underline rounded-lg border-0"
+      class="sidebar-collapsed-btn flex items-center justify-center w-12 h-11 rounded-lg text-blue-500 transition-colors no-underline mx-auto"
     >
-      <span class="material-symbols-outlined text-2xl">{{ item.icon }}</span>
+      <span class="material-symbols-outlined text-xl">{{ item.icon }}</span>
     </a>
     <ng-template #demoLeafCollapsed>
       <button
         type="button"
         (click)="demoClick.emit()"
-        [matTooltip]="item.label + ' (requiere iniciar sesión)'"
+        [matTooltip]="item.label + ' (requiere sesión)'"
         matTooltipPosition="right"
-        class="flex items-center justify-center w-12 h-12 text-blue-600 hover:bg-blue-100 transition-colors opacity-75 rounded-lg border-0"
+        class="sidebar-collapsed-btn flex items-center justify-center w-12 h-11 rounded-lg text-blue-300 transition-colors mx-auto"
       >
-        <span class="material-symbols-outlined text-2xl">{{ item.icon }}</span>
+        <span class="material-symbols-outlined text-xl">{{ item.icon }}</span>
       </button>
     </ng-template>
   </ng-container>
@@ -126,41 +127,44 @@
       [matMenuTriggerFor]="flyout"
       [matTooltip]="item.label"
       matTooltipPosition="right"
-      [class.bg-blue-200]="isParentActive"
-      [attr.aria-current]="isParentActive ? 'true' : null"
-      class="flex items-center justify-center w-12 h-12 text-blue-600 hover:bg-blue-100 transition-colors rounded-lg border-0"
+      [class.!bg-blue-200]="isParentActive"
+      [attr.aria-expanded]="isParentActive"
+      class="sidebar-collapsed-btn flex items-center justify-center w-12 h-11 rounded-lg text-blue-500 transition-colors mx-auto"
     >
-      <span class="material-symbols-outlined text-2xl">{{ item.icon }}</span>
+      <span class="material-symbols-outlined text-xl">{{ item.icon }}</span>
     </button>
 
     <mat-menu
       #flyout="matMenu"
       xPosition="after"
       [overlapTrigger]="false"
-      panelClass="sidebar-menu-panel"
+      panelClass="sidebar-flyout-panel"
     >
+      <!-- Encabezado de sección -->
+      <div class="px-4 py-2 border-b border-slate-100" (click)="$event.stopPropagation()">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">{{ item.label }}</span>
+      </div>
+
       <ng-container *ngFor="let child of item.children; trackBy: trackByLabel">
         <a
           *ngIf="!isDemo; else demoChildCollapsed"
           mat-menu-item
           [routerLink]="child.route"
-          routerLinkActive="bg-blue-200"
+          routerLinkActive="flyout-active"
           #rlaFlyout="routerLinkActive"
           [attr.aria-current]="rlaFlyout.isActive ? 'page' : null"
-          class="hover:bg-blue-100 no-underline flex items-center"
+          class="no-underline"
         >
-          <span class="material-symbols-outlined text-2xl text-blue-600 mr-2 flex-shrink-0">{{ child.icon }}</span>
-          <span class="text-blue-900 leading-tight">{{ child.label }}</span>
+          <span class="material-symbols-outlined text-xl mr-2 flex-shrink-0"
+            [class.text-blue-700]="rlaFlyout.isActive"
+            [class.text-blue-500]="!rlaFlyout.isActive"
+          >{{ child.icon }}</span>
+          <span [class.font-medium]="rlaFlyout.isActive" [class.text-blue-900]="rlaFlyout.isActive" class="text-sm">{{ child.label }}</span>
         </a>
         <ng-template #demoChildCollapsed>
-          <button
-            mat-menu-item
-            type="button"
-            (click)="demoClick.emit()"
-            class="opacity-75 flex items-center"
-          >
-            <span class="material-symbols-outlined text-2xl text-blue-600 mr-2 flex-shrink-0">{{ child.icon }}</span>
-            <span class="text-blue-900 leading-tight">{{ child.label }}</span>
+          <button mat-menu-item type="button" (click)="demoClick.emit()" class="opacity-60">
+            <span class="material-symbols-outlined text-xl text-blue-400 mr-2 flex-shrink-0">{{ child.icon }}</span>
+            <span class="text-sm text-blue-400">{{ child.label }}</span>
           </button>
         </ng-template>
       </ng-container>

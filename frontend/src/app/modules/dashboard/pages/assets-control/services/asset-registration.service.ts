@@ -5,7 +5,7 @@ import { catchError, tap } from 'rxjs/operators'
 import { AlertService } from '../../../../../core/services/alert.service'
 import { environment } from '../../../../../environments/environments'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
-import { AssetFilters, BaseAsset, CreateAssetDto } from '../interfaces/assets.interfaces'
+import { AssetFilters, BaseAsset, CreateAssetDto, PaginatedResult } from '../interfaces/assets.interfaces'
 
 export interface AssetStats {
   total: number
@@ -39,8 +39,8 @@ export class AssetRegistrationService {
     return throwError(() => error)
   }
 
-  getAssets(filters?: AssetFilters): Observable<BaseAsset[]> {
-    let params = new HttpParams()
+  getAssets(filters?: AssetFilters, page = 1, limit = 25): Observable<PaginatedResult<BaseAsset>> {
+    let params = new HttpParams().set('page', page.toString()).set('limit', limit.toString())
 
     if (filters) {
       if (filters.status) params = params.set('status', filters.status)
@@ -56,7 +56,7 @@ export class AssetRegistrationService {
     }
 
     return this.http
-      .get<BaseAsset[]>(this.apiUrl, { params })
+      .get<PaginatedResult<BaseAsset>>(this.apiUrl, { params })
       .pipe(catchError(this.handleHttpError))
   }
 

@@ -1,44 +1,36 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
-import { AlertService } from '@core/services/alert.service'
+import { UserRoles } from '@core/enums/user-roles.enum'
+import { RoleStateService } from '@core/services/role-state.service'
+import { StatCardColor } from '@shared/components/stat-card/stat-card.component'
+import { forkJoin } from 'rxjs'
+import { AuthService } from '../../../auth/services/auth.service'
+import { DashboardService } from './dashboard.service'
+import { DashboardStats, RecentAppointment, RecentPatient, StockAlert } from './interfaces/dashboard-ui.interfaces'
 
-interface DashboardStats {
-  totalPatients: number
-  totalAppointments: number
-  totalDoctors: number
-  monthlyRevenue: number
-  pendingAppointments: number
-  lowStockItems: number
+interface StatCardDef {
+  label: string
+  sublabel: string
+  icon: string
+  color: StatCardColor
+  route: string
+  value: string | number
+  roles: string[]
 }
 
-interface RecentAppointment {
-  id: number
-  patientName: string
-  doctorName: string
-  time: string
-  date: string
-  status: 'confirmed' | 'pending' | 'cancelled' | 'completed'
-  type: string
+interface QuickActionDef {
+  label: string
+  icon: string
+  route: string
+  color: string
+  roles: string[]
 }
 
-interface StockAlert {
-  id: number
-  medication: string
-  currentStock: number
-  minimumStock: number
-  category: string
-  expiryDate?: string
-}
-
-interface RecentPatient {
-  id: number
-  name: string
-  age: number
-  lastVisit: string
-  nextAppointment?: string
-  status: 'active' | 'inactive'
-  phone?: string
-}
+const ALL_ROLES: string[] = Object.values(UserRoles)
+const CLINICAL:   string[] = [UserRoles.DOCTOR, UserRoles.NURSE, UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
+const ADMIN_ONLY: string[] = [UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
+const PHARMACY:   string[] = [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
 
 @Component({
   selector: 'app-main-dashboard',
@@ -46,6 +38,10 @@ interface RecentPatient {
   styleUrls: ['./main-dashboard.component.css'],
 })
 export class MainDashboardComponent implements OnInit {
+  private readonly destroyRef  = inject(DestroyRef)
+  private readonly authService = inject(AuthService)
+  private readonly roleState   = inject(RoleStateService)
+
   stats: DashboardStats = {
     totalPatients: 0,
     totalAppointments: 0,
@@ -56,8 +52,10 @@ export class MainDashboardComponent implements OnInit {
   }
 
   recentAppointments: RecentAppointment[] = []
+  todayAppointments: RecentAppointment[] = []
   stockAlerts: StockAlert[] = []
   recentPatients: RecentPatient[] = []
+
   loading = false
   loadingStats = false
   loadingAppointments = false
@@ -65,365 +63,279 @@ export class MainDashboardComponent implements OnInit {
   loadingPatients = false
 
   permissionError: string | null = null
+  showAlertBanner = true
+
+  readonly today          = new Date()
+  readonly greeting       = this.buildGreeting()
+  readonly todayFormatted = new Intl.DateTimeFormat('es-BO', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  }).format(this.today)
+
+  // ── Rol del usuario autenticado ──────────────────────────────────────────
+
+  /** Rol de mayor jerarquía del usuario actual (usa RoleStateService — fuente de verdad de UI) */
+  get userRole(): string {
+    const roles = this.roleState.currentUserRoles()
+    const priority: UserRoles[] = [
+      UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.DOCTOR,
+      UserRoles.PHARMACIST,  UserRoles.NURSE, UserRoles.RECEPTIONIST,
+    ]
+    return priority.find(r => roles.includes(r)) ?? 'user'
+  }
+
+  get userName(): string {
+    const u = this.authService.currentUser()
+    if (!u) return 'Bartolomé'
+    return u.personalInfo.firstName ?? u.email.split('@')[0] ?? 'Bartolomé'
+  }
+
+  // ── KPI Cards filtrados por rol ──────────────────────────────────────────
+
+  get visibleStatCards(): StatCardDef[] {
+    const cards: StatCardDef[] = [
+      {
+        label: 'Total Pacientes', sublabel: 'Registrados',
+        icon: 'people', color: 'blue', route: '/dashboard/patients',
+        value: this.stats.totalPatients,
+        roles: CLINICAL,
+      },
+      {
+        label: 'Citas Hoy', sublabel: 'Programadas',
+        icon: 'calendar_today', color: 'green', route: '/dashboard/appointments',
+        value: this.stats.totalAppointments,
+        roles: [...CLINICAL, UserRoles.PHARMACIST],
+      },
+      {
+        label: 'Por Confirmar', sublabel: 'Citas pendientes',
+        icon: 'pending_actions', color: 'amber', route: '/dashboard/appointments',
+        value: this.stats.pendingAppointments,
+        roles: CLINICAL,
+      },
+      {
+        label: 'Doctores', sublabel: 'Personal activo',
+        icon: 'medical_services', color: 'purple', route: '/dashboard/users',
+        value: this.stats.totalDoctors,
+        roles: ADMIN_ONLY,
+      },
+      {
+        label: 'Stock Bajo', sublabel: 'Medicamentos',
+        icon: 'inventory_2', color: 'red', route: '/dashboard/pharmacy/inventory',
+        value: this.stats.lowStockItems,
+        roles: PHARMACY,
+      },
+      {
+        label: 'Ingresos Mes', sublabel: 'Facturación',
+        icon: 'attach_money', color: 'orange', route: '/dashboard/reports/financial-reports',
+        value: this.formatCurrency(this.stats.monthlyRevenue),
+        roles: PHARMACY,
+      },
+    ]
+    return cards.filter(c => c.roles.includes(this.userRole))
+  }
+
+  // ── Accesos Rápidos filtrados por rol ────────────────────────────────────
+
+  get visibleQuickActions(): QuickActionDef[] {
+    const actions: QuickActionDef[] = [
+      {
+        label: 'Registrar Paciente', icon: 'person_add',
+        route: '/dashboard/patients/new',
+        color: 'bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-100',
+        roles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN, UserRoles.RECEPTIONIST, UserRoles.NURSE],
+      },
+      {
+        label: 'Nueva Cita', icon: 'event_available',
+        route: '/dashboard/appointments/new',
+        color: 'bg-green-50 text-green-600 hover:bg-green-100 border-green-100',
+        roles: [...CLINICAL],
+      },
+      {
+        label: 'Nueva Venta', icon: 'point_of_sale',
+        route: '/dashboard/pharmacy/sales-dispensing/new',
+        color: 'bg-purple-50 text-purple-600 hover:bg-purple-100 border-purple-100',
+        roles: PHARMACY,
+      },
+      {
+        label: 'Expediente Médico', icon: 'note_add',
+        route: '/dashboard/medical-records/new',
+        color: 'bg-teal-50 text-teal-600 hover:bg-teal-100 border-teal-100',
+        roles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN, UserRoles.DOCTOR, UserRoles.NURSE],
+      },
+      {
+        label: 'Nueva Receta', icon: 'receipt_long',
+        route: '/dashboard/prescriptions/new',
+        color: 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border-indigo-100',
+        roles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN, UserRoles.DOCTOR, UserRoles.PHARMACIST],
+      },
+      {
+        label: 'Nueva Factura', icon: 'request_quote',
+        route: '/dashboard/billing/invoices/new',
+        color: 'bg-amber-50 text-amber-600 hover:bg-amber-100 border-amber-100',
+        roles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN, UserRoles.RECEPTIONIST],
+      },
+      {
+        label: 'Reportes', icon: 'analytics',
+        route: '/dashboard/reports',
+        color: 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-100',
+        roles: ALL_ROLES,
+      },
+      {
+        label: 'Ver Inventario', icon: 'inventory',
+        route: '/dashboard/pharmacy/inventory',
+        color: 'bg-orange-50 text-orange-600 hover:bg-orange-100 border-orange-100',
+        roles: PHARMACY,
+      },
+    ]
+    return actions.filter(a => a.roles.includes(this.userRole))
+  }
+
+  // ── Visibilidad de secciones por rol ─────────────────────────────────────
+
+  get showAppointmentsSection(): boolean {
+    return CLINICAL.includes(this.userRole)
+  }
+
+  get showStockSection(): boolean {
+    return PHARMACY.includes(this.userRole)
+  }
+
+  get showPatientsSection(): boolean {
+    return CLINICAL.includes(this.userRole)
+  }
+
+  // ── Alertas críticas (solo si el rol las ve) ─────────────────────────────
+
+  get hasCriticalAlerts(): boolean {
+    const stockAlert = this.showStockSection && this.stats.lowStockItems > 0
+    const apptAlert  = this.showAppointmentsSection && this.stats.pendingAppointments > 0
+    return stockAlert || apptAlert
+  }
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private alert: AlertService,
+    private dashboardService: DashboardService,
   ) {}
 
   ngOnInit(): void {
-    // Verificar si hay error de permisos en los query params
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       if (params['error'] === 'insufficient_permissions') {
         const required = params['required']?.split(',') || []
-        this.permissionError = `No tienes permisos para acceder a ese módulo. Permisos requeridos: ${required.join(', ')}`
-
-        // Limpiar la URL después de 8 segundos
-        setTimeout(() => {
-          this.permissionError = null
-        }, 8000)
+        this.permissionError = `No tienes permisos para acceder a ese módulo. Requeridos: ${required.join(', ')}`
+        setTimeout(() => (this.permissionError = null), 8000)
       }
     })
-
     this.loadDashboardData()
   }
 
   loadDashboardData(): void {
     this.loading = true
-    this.loadStats()
-    this.loadRecentAppointments()
-    this.loadStockAlerts()
-    this.loadRecentPatients()
-  }
-
-  loadStats(): void {
     this.loadingStats = true
-    // TODO: Reemplazar con servicio real cuando esté disponible
-    // Simulamos una llamada asíncrona
-    setTimeout(() => {
-      this.stats = {
-        totalPatients: 1247,
-        totalAppointments: 89,
-        totalDoctors: 23,
-        monthlyRevenue: 125670,
-        pendingAppointments: 12,
-        lowStockItems: 3,
-      }
-      this.loadingStats = false
-      this.checkLoadingComplete()
-    }, 800)
-  }
-
-  loadRecentAppointments(): void {
     this.loadingAppointments = true
-    // TODO: Reemplazar con servicio real cuando esté disponible
-    setTimeout(() => {
-      this.recentAppointments = [
-        {
-          id: 1,
-          patientName: 'María García López',
-          doctorName: 'Dr. Rodríguez Pérez',
-          time: '09:00',
-          date: new Date().toISOString(),
-          status: 'confirmed',
-          type: 'Consulta General',
-        },
-        {
-          id: 2,
-          patientName: 'Juan Pérez Mamani',
-          doctorName: 'Dr. López Quispe',
-          time: '10:30',
-          date: new Date().toISOString(),
-          status: 'pending',
-          type: 'Cardiología',
-        },
-        {
-          id: 3,
-          patientName: 'Ana Martínez Condori',
-          doctorName: 'Dr. González Vargas',
-          time: '11:15',
-          date: new Date().toISOString(),
-          status: 'confirmed',
-          type: 'Dermatología',
-        },
-        {
-          id: 4,
-          patientName: 'Carlos Ruiz Flores',
-          doctorName: 'Dr. Hernández Castro',
-          time: '12:00',
-          date: new Date().toISOString(),
-          status: 'cancelled',
-          type: 'Neurología',
-        },
-        {
-          id: 5,
-          patientName: 'Laura Sánchez Morales',
-          doctorName: 'Dr. Torres Gutiérrez',
-          time: '14:30',
-          date: new Date().toISOString(),
-          status: 'completed',
-          type: 'Pediatría',
-        },
-      ]
-      this.loadingAppointments = false
-      this.checkLoadingComplete()
-    }, 600)
-  }
-
-  loadStockAlerts(): void {
     this.loadingStock = true
-    // TODO: Reemplazar con servicio real cuando esté disponible
-    setTimeout(() => {
-      this.stockAlerts = [
-        {
-          id: 1,
-          medication: 'Paracetamol 500mg',
-          currentStock: 12,
-          minimumStock: 50,
-          category: 'Analgésicos',
-          expiryDate: '2025-03-15',
+    this.loadingPatients = true
+
+    forkJoin({
+      patientStats: this.dashboardService.getPatientStats(),
+      appointments: this.dashboardService.getTodayAppointments(),
+      pending:      this.dashboardService.getPendingAppointmentsCount(),
+      stock:        this.dashboardService.getLowStockAlerts(),
+      patients:     this.dashboardService.getRecentPatients(),
+    }).pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ patientStats, appointments, pending, stock, patients }) => {
+          this.stats = {
+            totalPatients:       patientStats.total,
+            totalAppointments:   appointments.length,
+            pendingAppointments: pending,
+            totalDoctors:        0,
+            monthlyRevenue:      0,
+            lowStockItems:       stock.length,
+          }
+          this.recentAppointments  = appointments
+          this.todayAppointments   = appointments
+          this.stockAlerts         = stock
+          this.recentPatients      = patients
         },
-        {
-          id: 2,
-          medication: 'Amoxicilina 250mg',
-          currentStock: 8,
-          minimumStock: 30,
-          category: 'Antibióticos',
-          expiryDate: '2025-06-20',
+        complete: () => {
+          this.loading = false
+          this.loadingStats = false
+          this.loadingAppointments = false
+          this.loadingStock = false
+          this.loadingPatients = false
         },
-        {
-          id: 3,
-          medication: 'Ibuprofeno 400mg',
-          currentStock: 15,
-          minimumStock: 40,
-          category: 'Antiinflamatorios',
-          expiryDate: '2025-05-10',
-        },
-      ]
-      this.loadingStock = false
-      this.checkLoadingComplete()
-    }, 700)
+      })
   }
 
-  loadRecentPatients(): void {
-    this.loadingPatients = true
-    // TODO: Reemplazar con servicio real cuando esté disponible
-    setTimeout(() => {
-      this.recentPatients = [
-        {
-          id: 1,
-          name: 'Ana Morales Quispe',
-          age: 34,
-          lastVisit: '2025-01-15',
-          nextAppointment: '2025-01-25',
-          status: 'active',
-          phone: '71234567',
-        },
-        {
-          id: 2,
-          name: 'Pedro Ruiz Mamani',
-          age: 67,
-          lastVisit: '2025-01-14',
-          nextAppointment: '2025-01-28',
-          status: 'active',
-          phone: '72345678',
-        },
-        {
-          id: 3,
-          name: 'Sofia Herrera Condori',
-          age: 28,
-          lastVisit: '2025-01-13',
-          status: 'active',
-          phone: '73456789',
-        },
-        {
-          id: 4,
-          name: 'Miguel Torres López',
-          age: 45,
-          lastVisit: '2025-01-10',
-          nextAppointment: '2025-01-30',
-          status: 'active',
-          phone: '74567890',
-        },
-      ]
-      this.loadingPatients = false
-      this.checkLoadingComplete()
-    }, 500)
+  refreshDashboard(): void {
+    this.loadDashboardData()
   }
 
   checkLoadingComplete(): void {
-    if (
-      !this.loadingStats &&
-      !this.loadingAppointments &&
-      !this.loadingStock &&
-      !this.loadingPatients
-    ) {
+    if (!this.loadingStats && !this.loadingAppointments && !this.loadingStock && !this.loadingPatients) {
       this.loading = false
     }
   }
 
-  async refreshDashboard(): Promise<void> {
-    this.loading = true
-    await this.alert.fire({
-      icon: 'info',
-      title: 'Actualizando datos',
-      text: 'Cargando información del dashboard...',
-      timer: 1000,
-      showConfirmButton: false,
-    })
-    this.loadDashboardData()
+  // ── Helpers de UI ──────────────────────────────────────────────────────────
+
+  stockPercent(alert: StockAlert): number {
+    return Math.min(100, Math.round((alert.currentStock / alert.minimumStock) * 100))
+  }
+
+  stockBarColor(alert: StockAlert): string {
+    const pct = this.stockPercent(alert)
+    if (pct <= 25) return 'bg-red-500'
+    if (pct <= 50) return 'bg-amber-400'
+    return 'bg-green-500'
+  }
+
+  stockUrgencyBadge(alert: StockAlert): { text: string; cls: string } {
+    const pct = this.stockPercent(alert)
+    if (pct <= 25) return { text: 'Crítico', cls: 'bg-red-100 text-red-700' }
+    if (pct <= 50) return { text: 'Bajo', cls: 'bg-amber-100 text-amber-700' }
+    return { text: 'Normal', cls: 'bg-green-100 text-green-700' }
+  }
+
+  appointmentStatusCfg(status: string): { icon: string; dot: string; badge: string; text: string } {
+    const map: Record<string, { icon: string; dot: string; badge: string; text: string }> = {
+      confirmed: { icon: 'check_circle', dot: 'bg-green-400',  badge: 'bg-green-100 text-green-700', text: 'Confirmada' },
+      pending:   { icon: 'schedule',     dot: 'bg-amber-400',  badge: 'bg-amber-100 text-amber-700', text: 'Pendiente' },
+      cancelled: { icon: 'cancel',       dot: 'bg-red-400',    badge: 'bg-red-100 text-red-700',     text: 'Cancelada' },
+      completed: { icon: 'task_alt',     dot: 'bg-blue-300',   badge: 'bg-blue-100 text-blue-600',   text: 'Completada' },
+    }
+    return map[status] ?? { icon: 'info', dot: 'bg-slate-300', badge: 'bg-slate-100 text-slate-600', text: status }
+  }
+
+  patientInitials(name: string): string {
+    return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+  }
+
+  patientAvatarColor(id: number): string {
+    const colors = [
+      'bg-blue-100 text-blue-700',   'bg-purple-100 text-purple-700',
+      'bg-green-100 text-green-700', 'bg-amber-100 text-amber-700',
+      'bg-pink-100 text-pink-700',   'bg-teal-100 text-teal-700',
+    ]
+    return colors[id % colors.length]
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('es-BO', {
-      style: 'currency',
-      currency: 'BOB',
-      minimumFractionDigits: 0,
-    }).format(value)
+    return new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB', minimumFractionDigits: 0 }).format(value)
   }
 
-  goToPatientsList(): void {
-    this.router.navigate(['/dashboard/patients/list'])
+  navigate(route: string): void {
+    this.router.navigate([route])
   }
 
-  goToAppointmentsList(): void {
-    this.router.navigate(['/dashboard/appointments'])
+  navigateWithPatient(patientId: number, route: string): void {
+    this.router.navigate([route], { queryParams: { patientId } })
   }
 
-  goToUsersList(): void {
-    this.router.navigate(['/dashboard/users/list'])
-  }
-
-  goToReports(): void {
-    this.router.navigate(['/dashboard/reports'])
-  }
-
-  goToPharmacy(): void {
-    this.router.navigate(['/dashboard/pharmacy/inventory'])
-  }
-
-  getStatusClass(status: string): string {
-    const classes: { [key: string]: string } = {
-      confirmed: 'bg-green-100 text-green-700 border-green-200',
-      pending: 'bg-amber-100 text-amber-700 border-amber-200',
-      cancelled: 'bg-red-100 text-red-700 border-red-200',
-      completed: 'bg-blue-100 text-blue-700 border-blue-200',
-      active: 'bg-green-100 text-green-700 border-green-200',
-      inactive: 'bg-slate-100 text-slate-700 border-slate-200',
-    }
-    return classes[status] || 'bg-slate-100 text-slate-700 border-slate-200'
-  }
-
-  getStatusIcon(status: string): string {
-    const icons: { [key: string]: string } = {
-      confirmed: 'check_circle',
-      pending: 'schedule',
-      cancelled: 'cancel',
-      completed: 'task_alt',
-      active: 'check_circle',
-      inactive: 'block',
-    }
-    return icons[status] || 'info'
-  }
-
-  getStatusText(status: string): string {
-    const texts: { [key: string]: string } = {
-      confirmed: 'Confirmada',
-      pending: 'Pendiente',
-      cancelled: 'Cancelada',
-      completed: 'Completada',
-      active: 'Activo',
-      inactive: 'Inactivo',
-    }
-    return texts[status] || status
-  }
-
-  async viewAppointmentDetails(appointment: RecentAppointment): Promise<void> {
-    await this.alert.fire({
-      icon: 'info',
-      title: 'Detalles de la Cita',
-      html: `
-        <div class="text-left space-y-2">
-          <p><strong>Paciente:</strong> ${appointment.patientName}</p>
-          <p><strong>Doctor:</strong> ${appointment.doctorName}</p>
-          <p><strong>Tipo:</strong> ${appointment.type}</p>
-          <p><strong>Hora:</strong> ${appointment.time}</p>
-          <p><strong>Estado:</strong> ${this.getStatusText(appointment.status)}</p>
-        </div>
-      `,
-      confirmButtonText: 'Cerrar',
-    })
-  }
-
-  async editAppointment(appointment: RecentAppointment): Promise<void> {
-    const result = await this.alert.fire({
-      icon: 'question',
-      title: 'Editar Cita',
-      text: `¿Desea editar la cita de ${appointment.patientName}?`,
-      showCancelButton: true,
-      confirmButtonText: 'Ir a editar',
-      cancelButtonText: 'Cancelar',
-    })
-
-    if (result.isConfirmed) {
-      // TODO: Navegar a la página de edición cuando esté implementada
-      this.router.navigate(['/dashboard/appointments', appointment.id, 'edit'])
-    }
-  }
-
-  async restockMedication(alert: StockAlert): Promise<void> {
-    const result = await this.alert.fire({
-      icon: 'question',
-      title: 'Reabastecer Medicamento',
-      text: `¿Desea proceder con el reabastecimiento de ${alert.medication}?`,
-      showCancelButton: true,
-      confirmButtonText: 'Ir a inventario',
-      cancelButtonText: 'Cancelar',
-    })
-
-    if (result.isConfirmed) {
-      this.router.navigate(['/dashboard/pharmacy/inventory'])
-    }
-  }
-
-  async viewPatientDetails(patient: RecentPatient): Promise<void> {
-    const result = await this.alert.fire({
-      icon: 'info',
-      title: 'Perfil del Paciente',
-      html: `
-        <div class="text-left space-y-2">
-          <p><strong>Nombre:</strong> ${patient.name}</p>
-          <p><strong>Edad:</strong> ${patient.age} años</p>
-          <p><strong>Última visita:</strong> ${new Date(patient.lastVisit).toLocaleDateString('es-BO')}</p>
-          ${patient.nextAppointment ? `<p><strong>Próxima cita:</strong> ${new Date(patient.nextAppointment).toLocaleDateString('es-BO')}</p>` : ''}
-          ${patient.phone ? `<p><strong>Teléfono:</strong> ${patient.phone}</p>` : ''}
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'Ver expediente completo',
-      cancelButtonText: 'Cerrar',
-    })
-
-    if (result.isConfirmed) {
-      this.router.navigate(['/dashboard/patients', patient.id])
-    }
-  }
-
-  async scheduleAppointment(patient: RecentPatient): Promise<void> {
-    const result = await this.alert.fire({
-      icon: 'question',
-      title: 'Programar Nueva Cita',
-      text: `¿Desea programar una cita para ${patient.name}?`,
-      showCancelButton: true,
-      confirmButtonText: 'Programar',
-      cancelButtonText: 'Cancelar',
-    })
-
-    if (result.isConfirmed) {
-      this.router.navigate(['/dashboard/appointments/new'], {
-        queryParams: { patientId: patient.id },
-      })
-    }
+  private buildGreeting(): string {
+    const h = new Date().getHours()
+    if (h < 12) return 'Buenos días'
+    if (h < 19) return 'Buenas tardes'
+    return 'Buenas noches'
   }
 }

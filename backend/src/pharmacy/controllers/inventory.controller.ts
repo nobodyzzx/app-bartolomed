@@ -27,8 +27,11 @@ export class InventoryController {
   }
 
   @Get('medications')
-  findAllMedications() {
-    return this.inventoryService.findAllMedications();
+  findAllMedications(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.inventoryService.findAllMedications(page ? +page : 1, limit ? +limit : 100);
   }
 
   @Get('medications/search')
@@ -59,10 +62,14 @@ export class InventoryController {
   }
 
   @Get('stock')
-  findAllStock(@Req() req: Request) {
+  findAllStock(
+    @Req() req: Request,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
     const clinicId = resolveClinicId(req);
     if (!clinicId) throw new BadRequestException('Contexto de clínica requerido');
-    return this.inventoryService.findAllStock(clinicId);
+    return this.inventoryService.findAllStock(clinicId, page ? +page : 1, limit ? +limit : 100);
   }
 
   @Get('stock/low-stock')

@@ -11,10 +11,11 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -33,18 +34,24 @@ import {
 } from './dto';
 import { ConsentStatus } from './entities';
 import { MedicalRecordFilters, MedicalRecordsService, PaginationOptions } from './medical-records.service';
+import { MedicalRecordsPdfService } from './services/medical-records-pdf.service';
+import { ConsentPdfDto, SummaryPdfDto } from './dto/pdf.dto';
 
 @Controller('medical-records')
 @AuthClinic()
 @RequirePermissions(Permission.RecordsRead, Permission.RecordsWrite, Permission.RecordsWriteVitals)
 export class MedicalRecordsController {
-  constructor(private readonly medicalRecordsService: MedicalRecordsService) {}
+  constructor(
+    private readonly medicalRecordsService: MedicalRecordsService,
+    private readonly pdfService: MedicalRecordsPdfService,
+  ) {}
 
   // Medical Records Endpoints
   @Post()
   @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
-  create(@Body() createMedicalRecordDto: CreateMedicalRecordDto, @GetUser() user: User) {
-    return this.medicalRecordsService.create(createMedicalRecordDto, user);
+  create(@Body() createMedicalRecordDto: CreateMedicalRecordDto, @GetUser() user: User, @Req() req: Request) {
+    const clinicId = resolveClinicId(req)!;
+    return this.medicalRecordsService.create(createMedicalRecordDto, user, clinicId);
   }
 
   @Get()
@@ -79,7 +86,7 @@ export class MedicalRecordsController {
       limit: limit ? parseInt(limit, 10) : 10,
     };
 
-    return this.medicalRecordsService.findAll(filters, pagination);
+    return this.medicalRecordsService.findAll(filters, pagination, clinicId);
   }
 
   @Get('stats')
@@ -102,8 +109,9 @@ export class MedicalRecordsController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.medicalRecordsService.findOne(id);
+  findOne(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
+    const clinicId = resolveClinicId(req);
+    return this.medicalRecordsService.findOne(id, clinicId);
   }
 
   @Patch(':id')
@@ -112,22 +120,47 @@ export class MedicalRecordsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateMedicalRecordDto: UpdateMedicalRecordDto,
     @GetUser() user: User,
+    @Req() req: Request,
   ) {
-    return this.medicalRecordsService.update(id, updateMedicalRecordDto, user);
+    const clinicId = resolveClinicId(req);
+    return this.medicalRecordsService.update(id, updateMedicalRecordDto, user, clinicId);
   }
 
   @Delete(':id')
   @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.medicalRecordsService.remove(id);
+  remove(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
+    const clinicId = resolveClinicId(req);
+    return this.medicalRecordsService.remove(id, clinicId);
+  }
+
+  // PDF Generation Endpoints
+  @Post('pdf/consent')
+  @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
+  async generateConsentPdf(@Body() dto: ConsentPdfDto, @Res() res: Response): Promise<void> {
+    const buffer = await this.pdfService.generateConsentPdf(dto);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="consentimiento.pdf"');
+    res.setHeader('Content-Length', buffer.length);
+    res.end(buffer);
+  }
+
+  @Post('pdf/summary')
+  @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
+  async generateSummaryPdf(@Body() dto: SummaryPdfDto, @Res() res: Response): Promise<void> {
+    const buffer = await this.pdfService.generateSummaryPdf(dto);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="expediente-medico.pdf"');
+    res.setHeader('Content-Length', buffer.length);
+    res.end(buffer);
   }
 
   // Consent Forms Endpoints
   @Post('consent-forms')
   @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
-  createConsentForm(@Body() createConsentFormDto: CreateConsentFormDto) {
-    return this.medicalRecordsService.createConsentForm(createConsentFormDto);
+  createConsentForm(@Body() createConsentFormDto: CreateConsentFormDto, @Req() req: Request) {
+    const clinicId = resolveClinicId(req)!;
+    return this.medicalRecordsService.createConsentForm(createConsentFormDto, clinicId);
   }
 
   @Get('consent-forms')
@@ -135,11 +168,14 @@ export class MedicalRecordsController {
     @Query('patientId') patientId?: string,
     @Query('medicalRecordId') medicalRecordId?: string,
     @Query('status') status?: ConsentStatus,
+    @Req() req?: Request,
   ) {
+    const clinicId = req ? resolveClinicId(req) : undefined;
     return this.medicalRecordsService.findAllConsentForms({
       patientId,
       medicalRecordId,
       status,
+      clinicId,
     });
   }
 

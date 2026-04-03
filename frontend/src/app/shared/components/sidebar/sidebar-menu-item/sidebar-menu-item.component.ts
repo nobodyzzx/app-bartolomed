@@ -22,6 +22,11 @@ export class SidebarMenuItemComponent {
     return item.label
   }
 
+  get isLeafActive(): boolean {
+    if (this.hasChildren) return false
+    return !!this.item.route && this.router.url.startsWith(this.item.route)
+  }
+
   get isParentActive(): boolean {
     if (!this.hasChildren) return false
     const url = this.router.url

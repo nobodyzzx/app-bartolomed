@@ -23,12 +23,22 @@ export class MedicalRecordDraftService {
     }
   }
 
-  tryRestore(onRestore: (draft: Record<string, unknown>) => void): void {
+  tryRestore(
+    onRestore: (draft: Record<string, unknown>) => void,
+    currentPatientId?: string,
+  ): void {
     try {
       const raw = localStorage.getItem(this.DRAFT_KEY)
       if (!raw) return
       const draft = JSON.parse(raw)
       if (!draft || typeof draft !== 'object') return
+
+      // Si hay un paciente preseleccionado y el borrador es de otro paciente, descartarlo
+      const draftPatientId = (draft as Record<string, unknown>)['patientId']
+      if (currentPatientId && draftPatientId !== currentPatientId) {
+        this.clear()
+        return
+      }
 
       this.alert
         .fire({
@@ -36,23 +46,14 @@ export class MedicalRecordDraftService {
           text: 'Encontramos un borrador sin enviar. ¿Desea restaurarlo?',
           icon: 'question',
           showCancelButton: true,
-          showDenyButton: false,
-          showCloseButton: false,
           confirmButtonText: 'Sí, restaurar',
           cancelButtonText: 'No, descartar',
-          reverseButtons: true,
-          allowOutsideClick: false,
-          didOpen: (popup: HTMLElement) => {
-            // TODO: El botón gris "deny" de SweetAlert2 aparece a pesar de showDenyButton: false
-            const denyBtn = popup.querySelector('.swal2-deny')
-            if (denyBtn) {
-              ;(denyBtn as HTMLElement).style.display = 'none'
-            }
-          },
         })
         .then(res => {
           if (res.isConfirmed) {
             onRestore(draft)
+          } else {
+            this.clear()
           }
         })
     } catch (_) {

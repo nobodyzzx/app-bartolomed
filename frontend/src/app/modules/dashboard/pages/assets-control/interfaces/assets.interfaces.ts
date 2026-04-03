@@ -1,3 +1,10 @@
+export interface PaginatedResult<T> {
+  data: T[]
+  total: number
+  page: number
+  limit: number
+}
+
 export interface BaseAsset {
   id: string
   name: string
@@ -53,6 +60,16 @@ export interface AssetInventory {
   responsiblePerson?: string
   notes?: string
   updatedAt?: Date
+}
+
+export interface UpdateInventoryDto {
+  location?: string
+  department?: string
+  quantity?: number
+  condition?: AssetCondition
+  status?: AssetStatus
+  responsiblePerson?: string
+  notes?: string
 }
 
 export interface AssetReport {
@@ -155,4 +172,62 @@ export interface GenerateReportDto {
   description?: string
   filters?: any
   format?: 'pdf' | 'excel' | 'csv'
+}
+
+// ─── Traslados de activos entre clínicas ──────────────────────────────────────
+
+export enum AssetTransferStatus {
+  REQUESTED = 'requested',
+  IN_TRANSIT = 'in_transit',
+  COMPLETED = 'completed',
+  REJECTED = 'rejected',
+  RETURNED = 'returned',
+}
+
+export interface AssetTransferItem {
+  id: string
+  assetId: string
+  asset?: BaseAsset
+  notes?: string
+}
+
+export interface AssetTransfer {
+  id: string
+  transferNumber: string
+  sourceClinicId: string
+  sourceClinic?: { id: string; name: string }
+  targetClinicId: string
+  targetClinic?: { id: string; name: string }
+  status: AssetTransferStatus
+  notes?: string
+  requestedById: string
+  requestedBy?: { id: string; personalInfo?: { firstName: string; lastName: string } }
+  dispatchedById?: string
+  dispatchedBy?: { id: string; personalInfo?: { firstName: string; lastName: string } }
+  dispatchedAt?: Date
+  receivedById?: string
+  receivedBy?: { id: string; personalInfo?: { firstName: string; lastName: string } }
+  receivedAt?: Date
+  rejectionReason?: string
+  items: AssetTransferItem[]
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export interface CreateAssetTransferDto {
+  targetClinicId: string
+  notes?: string
+  items: { assetId: string; notes?: string }[]
+}
+
+export interface AssetTransferAuditLog {
+  id: string
+  transferId: string
+  action: string
+  actorId: string
+  actor?: { id: string; personalInfo?: { firstName: string; lastName: string } }
+  actorClinicId: string
+  actorClinic?: { id: string; name: string }
+  snapshot?: Record<string, any>
+  createdAt: Date
 }

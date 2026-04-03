@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MaterialModule } from '../../../../material/material.module';
+import { SharedModule } from '../../../../shared/shared.module';
 
 import { FinancialReportsComponent } from './financial-reports/financial-reports.component';
 import { MedicalReportsComponent } from './medical-reports/medical-reports.component';
@@ -21,6 +22,7 @@ import { StockControlComponent } from './stock-control/stock-control.component';
     ReactiveFormsModule,
     FormsModule,
     MaterialModule,
+    SharedModule,
     ReportsRoutingModule
   ]
 })

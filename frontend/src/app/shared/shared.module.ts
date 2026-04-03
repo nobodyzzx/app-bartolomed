@@ -3,11 +3,11 @@ import { NgModule } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { RouterModule } from '@angular/router'
 import { MaterialModule } from '../material/material.module'
+import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component'
 import { EmptyStateComponent } from './components/empty-state/empty-state.component'
 import { NavbarComponent } from './components/navbar/navbar.component'
 import { PageHeaderComponent } from './components/page-header/page-header.component'
 import { PlaceholderComponent } from './components/placeholder/placeholder.component'
-import { RoleSimulatorDialogComponent } from './components/role-simulator-dialog/role-simulator-dialog.component'
 import { SearchBarComponent } from './components/search-bar/search-bar.component'
 import { SidebarMenuItemComponent } from './components/sidebar/sidebar-menu-item/sidebar-menu-item.component'
 import { SidebarComponent } from './components/sidebar/sidebar.component'
@@ -22,8 +22,8 @@ import { PhoneMaskDirective } from './directives/phone-mask.directive'
     SidebarMenuItemComponent,
     NavbarComponent,
     PlaceholderComponent,
-    RoleSimulatorDialogComponent,
     PhoneMaskDirective,
+    ConfirmDialogComponent,
   ],
   imports: [
     CommonModule,
@@ -45,6 +45,7 @@ import { PhoneMaskDirective } from './directives/phone-mask.directive'
     CommonModule,
     MaterialModule,
     PhoneMaskDirective,
+    ConfirmDialogComponent,
     // Componentes compartidos (disponibles para todos los módulos que importen SharedModule)
     StatCardComponent,
     PageHeaderComponent,

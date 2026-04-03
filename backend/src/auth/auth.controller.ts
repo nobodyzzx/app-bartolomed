@@ -4,8 +4,8 @@ import { AuthService } from './auth.service';
 
 import { CreateUserDto } from '../users/dto';
 import { User } from '../users/entities/user.entity';
-import { Auth, GetUser, RawHeaders } from './decorators';
-import { LoginUserDto, RefreshTokenDto } from './dto';
+import { Auth, GetUser } from './decorators';
+import { ForgotPasswordDto, LoginUserDto, RefreshTokenDto, ResetPasswordDto } from './dto';
 import { GodBootstrapDto } from './dto/god-bootstrap.dto';
 import { LoginResponse, ValidRoles } from './interfaces';
 
@@ -107,6 +107,22 @@ export class AuthController {
     return this.authService.checkAuthStatus(user);
   }
 
+  @Get('my-clinics')
+  @Auth()
+  getMyMemberships(@GetUser() user: User) {
+    return this.authService.getMyMemberships(user.id, user.roles);
+  }
+
+  @Post('forgot-password')
+  requestPasswordReset(@Body() dto: ForgotPasswordDto) {
+    return this.authService.requestPasswordReset(dto);
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+
   // GODMODE: crear o promover SUPER_ADMIN mediante token de entorno
   @Post('godmode/super-admin')
   async godmodeBootstrap(
@@ -121,38 +137,4 @@ export class AuthController {
     return { user: result.user, token: result.token };
   }
 
-  @Get('private')
-  @Auth()
-  testingPrivateRoute(
-    @Req() request: Request,
-    @GetUser() user: User,
-    @GetUser('email') userEmail: string,
-    @RawHeaders() rawHeaders: string[],
-  ) {
-    return {
-      ok: true,
-      message: 'This is a private route',
-      user,
-      userEmail,
-      rawHeaders,
-    };
-  }
-  @Get('private2')
-  @Auth(ValidRoles.SUPER_ADMIN)
-  privateRoute2(@GetUser() user: User) {
-    return {
-      ok: true,
-      message: 'This is a private route dos',
-      user,
-    };
-  }
-  @Get('private3')
-  @Auth()
-  privateRoute3(@GetUser() user: User) {
-    return {
-      ok: true,
-      message: 'This is a private route tres',
-      user,
-    };
-  }
 }

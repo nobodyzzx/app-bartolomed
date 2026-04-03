@@ -1,5 +1,6 @@
 import { Location } from '@angular/common'
-import { Component, computed, OnInit, signal } from '@angular/core'
+import { Component, DestroyRef, computed, inject, OnInit, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { Medication } from '../interfaces/pharmacy.interfaces'
@@ -11,6 +12,8 @@ import { InventoryService } from '../services/inventory.service'
   styleUrls: ['./medications.component.css'],
 })
 export class MedicationsComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   loading = signal(false)
   medications = signal<Medication[]>([])
   search = signal('')
@@ -49,9 +52,9 @@ export class MedicationsComponent implements OnInit {
 
   loadMedications(): void {
     this.loading.set(true)
-    this.inventoryService.getAllMedications().subscribe({
-      next: medications => {
-        this.medications.set(medications)
+    this.inventoryService.getAllMedications().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: result => {
+        this.medications.set(result.data)
         this.loading.set(false)
       },
       error: () => {
@@ -80,7 +83,7 @@ export class MedicationsComponent implements OnInit {
     if (!result.isConfirmed) return
 
     this.loading.set(true)
-    this.inventoryService.deleteMedication(medication.id).subscribe({
+    this.inventoryService.deleteMedication(medication.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.alert.success('Eliminado', 'Medicamento eliminado correctamente')
         this.medications.set(this.medications().filter(m => m.id !== medication.id))

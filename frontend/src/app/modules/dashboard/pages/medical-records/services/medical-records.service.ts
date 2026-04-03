@@ -117,6 +117,15 @@ export class MedicalRecordsService {
     return this.http.get(`${this.apiUrl}/stats`)
   }
 
+  // Generación de PDFs (backend)
+  downloadConsentPdf(dto: Record<string, any>): Observable<Blob> {
+    return this.http.post(`${this.apiUrl}/pdf/consent`, dto, { responseType: 'blob' })
+  }
+
+  downloadSummaryPdf(dto: Record<string, any>): Observable<Blob> {
+    return this.http.post(`${this.apiUrl}/pdf/summary`, dto, { responseType: 'blob' })
+  }
+
   // Obtener consentimientos por expediente médico
   getConsentFormsByMedicalRecord(medicalRecordId: string): Observable<ConsentForm[]> {
     return this.http.get<ConsentForm[]>(`${this.apiUrl}/${medicalRecordId}/consent-forms`)

@@ -1,12 +1,11 @@
 import { Location } from '@angular/common'
-import { AfterViewInit, Component, OnInit, ViewChild, inject } from '@angular/core'
+import { AfterViewInit, Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
-import { AuthStatus } from '../../../auth/interfaces/auth-status.enum'
-import { AuthService as AppAuthService } from '../../../auth/services/auth.service'
 import { MedicalRecord, MedicalRecordFilters, RecordStatus, RecordType } from './interfaces'
 import { MedicalRecordsService } from './services/medical-records.service'
 
@@ -16,7 +15,7 @@ import { MedicalRecordsService } from './services/medical-records.service'
   styleUrls: ['./medical-records-dashboard.component.css'],
 })
 export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
-  private appAuth = inject(AppAuthService)
+  private readonly destroyRef = inject(DestroyRef)
   private alert = inject(AlertService)
 
   displayedColumns: string[] = ['date', 'patient', 'type', 'chiefComplaint', 'doctor', 'status', 'actions']
@@ -49,10 +48,8 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
   ) {}
 
   ngOnInit(): void {
-    if (this.isAuthenticated()) {
-      this.loadMedicalRecords()
-      this.loadStats()
-    }
+    this.loadMedicalRecords()
+    this.loadStats()
   }
 
   ngAfterViewInit(): void {
@@ -61,9 +58,8 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
   }
 
   loadMedicalRecords(): void {
-    if (!this.isAuthenticated()) return
     this.loading = true
-    this.medicalRecordsService.getMedicalRecords(this.filters).subscribe({
+    this.medicalRecordsService.getMedicalRecords(this.filters).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: response => {
         this.dataSource.data = response.data
         this.totalRecords = response.total
@@ -76,16 +72,22 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
   }
 
   loadStats(): void {
-    if (!this.isAuthenticated()) return
-    this.medicalRecordsService.getMedicalRecordsStats().subscribe({
-      next: stats => { this.stats = stats },
+    this.medicalRecordsService.getMedicalRecordsStats().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (res: any) => {
+        this.stats = {
+          total:       res.total       ?? 0,
+          drafts:      res.byStatus?.draft    ?? 0,
+          completed:   res.byStatus?.completed ?? 0,
+          emergencies: res.emergencies ?? 0,
+        }
+      },
       error: () => {},
     })
   }
 
-  applyFilter(event: Event): void {
-    this.searchTerm = (event.target as HTMLInputElement).value
-    this.dataSource.filter = this.searchTerm.trim().toLowerCase()
+  applyFilter(value: string): void {
+    this.searchTerm = value
+    this.dataSource.filter = value.trim().toLowerCase()
     if (this.dataSource.paginator) this.dataSource.paginator.firstPage()
   }
 
@@ -113,7 +115,7 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
     this.filters = {}
     this.searchTerm = ''
     this.dataSource.filter = ''
-    if (this.isAuthenticated()) this.loadMedicalRecords()
+    this.loadMedicalRecords()
   }
 
   createNewRecord(): void {
@@ -133,7 +135,6 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
   }
 
   deleteRecord(record: MedicalRecord): void {
-    if (!this.isAuthenticated()) return
     this.alert
       .fire({
         title: '¿Eliminar expediente?',
@@ -147,7 +148,7 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
       })
       .then(result => {
         if (result.isConfirmed) {
-          this.medicalRecordsService.deleteMedicalRecord(record.id!).subscribe({
+          this.medicalRecordsService.deleteMedicalRecord(record.id!).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: () => {
               this.alert.success('Eliminado', 'El expediente médico ha sido eliminado.')
               this.loadMedicalRecords()
@@ -211,15 +212,4 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
     return icons[type] ?? 'description'
   }
 
-  get isDemo(): boolean {
-    return !this.isAuthenticated()
-  }
-
-  private isAuthenticated(): boolean {
-    try {
-      return this.appAuth.authStatus() === AuthStatus.authenticated
-    } catch {
-      return false
-    }
-  }
 }

@@ -1,6 +1,14 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Prescription, PrescriptionStatus } from '../../prescriptions/entities/prescription.entity';
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
 import { CreatePharmacySaleDto, UpdatePharmacySaleDto, UpdatePharmacySaleStatusDto } from '../dto/pharmacy-sale.dto';
 import { PharmacySale, PharmacySaleItem, SaleStatus } from '../entities/pharmacy-sale.entity';
 import { MedicationStock, MovementType, StockMovement } from '../entities/pharmacy.entity';
@@ -17,10 +25,12 @@ export class PharmacySalesService {
     private medicationStockRepository: Repository<MedicationStock>,
     @InjectRepository(StockMovement)
     private stockMovementRepository: Repository<StockMovement>,
+    @InjectRepository(Prescription)
+    private prescriptionRepository: Repository<Prescription>,
     private inventoryService: InventoryService,
   ) {}
 
-  async create(createPharmacySaleDto: CreatePharmacySaleDto, soldById: string): Promise<PharmacySale> {
+  async create(createPharmacySaleDto: CreatePharmacySaleDto, soldById: string, clinicId: string): Promise<PharmacySale> {
     const saleNumber = await this.generateSaleNumber();
 
     // Validate stock availability for all items and cache results
@@ -43,6 +53,19 @@ export class PharmacySalesService {
       }
 
       stockCache.set(itemDto.medicationStockId, stock);
+    }
+
+    // Validar receta si se proporciona (cross-clinic + estado ACTIVE)
+    if (createPharmacySaleDto.prescriptionId) {
+      const prescription = await this.prescriptionRepository.findOne({
+        where: { id: createPharmacySaleDto.prescriptionId, clinic: { id: clinicId } },
+      });
+      if (!prescription) {
+        throw new NotFoundException('Receta no encontrada o no pertenece a esta clínica');
+      }
+      if (prescription.status !== PrescriptionStatus.ACTIVE) {
+        throw new BadRequestException(`La receta no está activa (estado actual: ${prescription.status})`);
+      }
     }
 
     // Calculate totals
@@ -70,7 +93,7 @@ export class PharmacySalesService {
     const pharmacySale = new PharmacySale();
     pharmacySale.saleNumber = saleNumber;
     pharmacySale.patientId = createPharmacySaleDto.patientId ?? undefined;
-    pharmacySale.patientName = createPharmacySaleDto.patientId || 'Cliente';
+    pharmacySale.patientName = createPharmacySaleDto.patientName || 'Cliente';
     pharmacySale.prescriptionNumber = createPharmacySaleDto.prescriptionNumber ?? undefined;
     pharmacySale.saleDate = new Date();
     pharmacySale.paymentMethod = createPharmacySaleDto.paymentMethod;
@@ -82,25 +105,51 @@ export class PharmacySalesService {
     pharmacySale.change = changeAmount;
     pharmacySale.notes = createPharmacySaleDto.notes ?? undefined;
     pharmacySale.soldById = soldById;
-    pharmacySale.status = SaleStatus.PENDING;
+    pharmacySale.clinicId = clinicId;
+    pharmacySale.prescriptionId = createPharmacySaleDto.prescriptionId;
+    pharmacySale.status = SaleStatus.COMPLETED;
 
     const savedSale = await this.pharmacySaleRepository.save(pharmacySale);
 
-    // Create sale items
+    // Create sale items and reduce stock immediately
     for (const itemDto of items) {
       const item = new PharmacySaleItem();
-      const stock = stockCache.get(itemDto.medicationStockId);
+      const stock = stockCache.get(itemDto.medicationStockId)!;
       item.sale = pharmacySale;
       item.saleId = savedSale.id;
       item.medicationStockId = itemDto.medicationStockId;
-      item.productName = stock?.medication?.name || 'Producto';
-      item.batchNumber = itemDto.batchNumber || stock?.batchNumber || '';
+      item.productName = stock.medication?.name || 'Producto';
+      item.batchNumber = itemDto.batchNumber || stock.batchNumber || '';
       item.quantity = itemDto.quantity;
       item.unitPrice = itemDto.unitPrice;
       item.discount = itemDto.discountAmount || 0;
       item.subtotal = itemDto.totalPrice;
-      item.expiryDate = itemDto.expiryDate ? new Date(itemDto.expiryDate) : (stock?.expiryDate ?? undefined);
+      item.expiryDate = itemDto.expiryDate ? new Date(itemDto.expiryDate) : (stock.expiryDate ?? undefined);
       await this.pharmacySaleItemRepository.save(item);
+
+      // Reduce stock
+      stock.quantity = stock.quantity - itemDto.quantity;
+      await this.medicationStockRepository.save(stock);
+
+      const movement = new StockMovement();
+      movement.stock = stock;
+      movement.type = MovementType.SALE;
+      movement.quantity = itemDto.quantity;
+      movement.unitPrice = itemDto.unitPrice;
+      movement.totalAmount = itemDto.totalPrice;
+      movement.reference = saleNumber;
+      movement.reason = `Venta ${saleNumber}`;
+      movement.notes = createPharmacySaleDto.notes ?? undefined;
+      movement.movementDate = new Date();
+      await this.stockMovementRepository.save(movement);
+    }
+
+    // Marcar la receta como DISPENSED tras la venta exitosa
+    if (createPharmacySaleDto.prescriptionId) {
+      await this.prescriptionRepository.update(
+        createPharmacySaleDto.prescriptionId,
+        { status: PrescriptionStatus.DISPENSED },
+      );
     }
 
     return await this.findOne(savedSale.id);
@@ -121,25 +170,26 @@ export class PharmacySalesService {
     paymentMethod?: string;
     startDate?: Date;
     endDate?: Date;
-  }): Promise<PharmacySale[]> {
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedResult<PharmacySale>> {
     if (!options.clinicId) {
       throw new BadRequestException('clinicId is required');
     }
+
+    const page = options.page ?? 1;
+    const limit = options.limit ?? 25;
 
     const qb = this.pharmacySaleRepository
       .createQueryBuilder('sale')
       .leftJoinAndSelect('sale.items', 'items')
       .leftJoinAndSelect('sale.soldBy', 'soldBy')
-      .leftJoin('soldBy.clinic', 'clinic')
       .orderBy('sale.createdAt', 'DESC');
 
-    qb.andWhere('clinic.id = :clinicId', { clinicId: options.clinicId });
+    qb.andWhere('sale.clinicId = :clinicId', { clinicId: options.clinicId });
 
     if (options.status) {
       qb.andWhere('sale.status = :status', { status: options.status });
-    } else {
-      // modo lectura: por defecto sólo completadas
-      qb.andWhere('sale.status = :status', { status: SaleStatus.COMPLETED });
     }
 
     if (options.paymentMethod) {
@@ -157,7 +207,9 @@ export class PharmacySalesService {
       qb.andWhere('sale.saleDate <= :end', { end });
     }
 
-    return await qb.getMany();
+    qb.skip((page - 1) * limit).take(limit);
+    const [data, total] = await qb.getManyAndCount();
+    return { data, total, page, limit };
   }
 
   async findOne(id: string): Promise<PharmacySale> {
@@ -241,18 +293,14 @@ export class PharmacySalesService {
     const previousStatus = pharmacySale.status;
     const newStatus = updateStatusDto.status;
 
-    // If completing a sale, reduce stock and register movements
-    if (newStatus === SaleStatus.COMPLETED && previousStatus !== SaleStatus.COMPLETED) {
+    // If cancelling a sale, restore stock
+    if (newStatus === SaleStatus.CANCELLED && previousStatus !== SaleStatus.CANCELLED) {
       const saleWithItems = await this.pharmacySaleRepository.findOne({
         where: { id },
         relations: ['items'],
       });
 
-      if (!saleWithItems?.items?.length) {
-        throw new NotFoundException('Sale items not found');
-      }
-
-      for (const item of saleWithItems.items) {
+      for (const item of saleWithItems?.items ?? []) {
         if (!item.medicationStockId) continue;
 
         const stock = await this.medicationStockRepository.findOne({
@@ -260,31 +308,20 @@ export class PharmacySalesService {
           relations: ['medication'],
         });
 
-        if (!stock) {
-          throw new NotFoundException(
-            `Stock with ID ${item.medicationStockId} not found for item ${item.productName}`,
-          );
-        }
+        if (!stock) continue;
 
-        const availableQty = (stock.quantity || 0) - (stock.reservedQuantity || 0);
-        if (availableQty < item.quantity) {
-          throw new BadRequestException(
-            `Stock insuficiente para ${stock.medication?.name || item.productName}. Disponible: ${availableQty}, Requerido: ${item.quantity}`,
-          );
-        }
-
-        stock.quantity = stock.quantity - item.quantity;
+        stock.quantity = stock.quantity + item.quantity;
         await this.medicationStockRepository.save(stock);
 
         const movement = new StockMovement();
         movement.stock = stock;
-        movement.type = MovementType.SALE;
+        movement.type = MovementType.ADJUSTMENT;
         movement.quantity = item.quantity;
         movement.unitPrice = item.unitPrice;
         movement.totalAmount = item.subtotal;
         movement.reference = pharmacySale.saleNumber;
-        movement.reason = `Venta ${pharmacySale.saleNumber}`;
-        movement.notes = pharmacySale.notes ?? undefined;
+        movement.reason = `Cancelación venta ${pharmacySale.saleNumber}`;
+        movement.notes = updateStatusDto.notes ?? pharmacySale.notes ?? undefined;
         movement.movementDate = new Date();
         await this.stockMovementRepository.save(movement);
       }
@@ -349,13 +386,11 @@ export class PharmacySalesService {
 
     const result = await this.pharmacySaleRepository
       .createQueryBuilder('sale')
-      .leftJoin('sale.soldBy', 'soldBy')
-      .leftJoin('soldBy.clinic', 'clinic')
       .select('SUM(sale.total)', 'total')
       .where('sale.saleDate >= :startOfDay', { startOfDay })
       .andWhere('sale.saleDate <= :endOfDay', { endOfDay })
       .andWhere('sale.status = :status', { status: SaleStatus.COMPLETED })
-      .andWhere('clinic.id = :clinicId', { clinicId })
+      .andWhere('sale.clinicId = :clinicId', { clinicId })
       .getRawOne();
 
     return parseFloat(result.total) || 0;
@@ -374,14 +409,12 @@ export class PharmacySalesService {
     dateRange?: { startDate: Date; endDate: Date };
   }> {
     const qb = this.pharmacySaleRepository
-      .createQueryBuilder('sale')
-      .leftJoin('sale.soldBy', 'soldBy')
-      .leftJoin('soldBy.clinic', 'clinic');
+      .createQueryBuilder('sale');
 
     if (!clinicId) {
       throw new BadRequestException('clinicId is required');
     }
-    qb.andWhere('clinic.id = :clinicId', { clinicId });
+    qb.andWhere('sale.clinicId = :clinicId', { clinicId });
 
     if (startDate) {
       const start = new Date(startDate);

@@ -1,0 +1,395 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <!-- Header -->
+    <app-page-header
+      title="Traslados de Activos"
+      subtitle="Gestione el movimiento de activos entre clínicas"
+      [showBack]="true"
+      (back)="goBack()"
+    >
+      <button
+        type="button"
+        (click)="showNewTransferForm.set(true)"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <span class="material-symbols-outlined msz-18 leading-none">add</span>
+        Nuevo Traslado
+      </button>
+    </app-page-header>
+
+    <!-- Stat cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <app-stat-card
+        label="Solicitados"
+        [value]="getCountByStatus(AssetTransferStatus.REQUESTED)"
+        sublabel="Esperando despacho"
+        icon="schedule"
+        color="amber"
+        [clickable]="true"
+        [active]="activeFilter() === AssetTransferStatus.REQUESTED"
+        (cardClick)="setFilter(AssetTransferStatus.REQUESTED)"
+      />
+      <app-stat-card
+        label="En Tránsito"
+        [value]="getCountByStatus(AssetTransferStatus.IN_TRANSIT)"
+        sublabel="Enviados, sin confirmar"
+        icon="local_shipping"
+        color="blue"
+        [clickable]="true"
+        [active]="activeFilter() === AssetTransferStatus.IN_TRANSIT"
+        (cardClick)="setFilter(AssetTransferStatus.IN_TRANSIT)"
+      />
+      <app-stat-card
+        label="Completados"
+        [value]="getCountByStatus(AssetTransferStatus.COMPLETED)"
+        sublabel="Recibidos correctamente"
+        icon="check_circle"
+        color="green"
+        [clickable]="true"
+        [active]="activeFilter() === AssetTransferStatus.COMPLETED"
+        (cardClick)="setFilter(AssetTransferStatus.COMPLETED)"
+      />
+      <app-stat-card
+        label="Total"
+        [value]="transfers().length"
+        sublabel="Todos los traslados"
+        icon="sync_alt"
+        color="slate"
+        [clickable]="true"
+        [active]="activeFilter() === null"
+        (cardClick)="setFilter(null)"
+      />
+    </div>
+
+    <!-- ══════════════════════════════════════
+         FORMULARIO NUEVO TRASLADO (colapsable)
+    ══════════════════════════════════════ -->
+    @if (showNewTransferForm()) {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+        <div class="flex items-center justify-between px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined msz-20">local_shipping</span>
+            </div>
+            <div>
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Nueva solicitud de traslado</h3>
+              <p class="text-sm text-slate-500 m-0">Seleccione activos y clínica destino</p>
+            </div>
+          </div>
+          <button type="button" (click)="cancelNewTransfer()" class="text-slate-400 hover:text-slate-600 transition-colors">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="submitNewTransfer()" class="p-6 space-y-6">
+
+          <!-- Selección de clínica destino -->
+          <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div class="flex items-center gap-3 px-4 py-3 bg-green-50 border-b border-green-100">
+              <span class="material-symbols-outlined msz-18 text-green-600">domain</span>
+              <h4 class="font-semibold text-slate-800 m-0 text-sm">Clínica destino</h4>
+            </div>
+            <div class="p-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Seleccionar clínica destino</mat-label>
+                <mat-icon matPrefix class="text-green-400">domain</mat-icon>
+                @if (loadingClinics()) {
+                  <mat-spinner matSuffix diameter="18"></mat-spinner>
+                }
+                <mat-select formControlName="targetClinicId" required>
+                  <mat-option value="">-- Seleccione clínica --</mat-option>
+                  @for (clinic of clinics(); track clinic.id) {
+                    <mat-option [value]="clinic.id">{{ clinic.name }}</mat-option>
+                  }
+                </mat-select>
+                <mat-error>Debe seleccionar una clínica de destino</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full mt-2">
+                <mat-label>Notas del traslado (opcional)</mat-label>
+                <mat-icon matPrefix class="text-slate-400">notes</mat-icon>
+                <textarea matInput formControlName="notes" rows="2" placeholder="Observaciones adicionales..."></textarea>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Selección de activos -->
+          <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 bg-blue-50 border-b border-blue-100">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined msz-18 text-blue-600">inventory_2</span>
+                <h4 class="font-semibold text-slate-800 m-0 text-sm">Activos a trasladar</h4>
+              </div>
+              @if (selectedAssetIds().length > 0) {
+                <span class="text-xs font-semibold text-blue-700 bg-blue-100 px-2.5 py-1 rounded-full">
+                  {{ selectedAssetIds().length }} seleccionado(s)
+                </span>
+              }
+            </div>
+
+            @if (loadingAssets()) {
+              <div class="flex justify-center py-8">
+                <mat-spinner diameter="36"></mat-spinner>
+              </div>
+            } @else if (availableAssets().length === 0) {
+              <div class="flex flex-col items-center py-8 text-slate-400">
+                <span class="material-symbols-outlined text-4xl mb-2">inventory_2</span>
+                <p class="text-sm m-0">No hay activos disponibles para trasladar</p>
+              </div>
+            } @else {
+              <div class="divide-y divide-slate-100 max-h-64 overflow-y-auto">
+                @for (asset of availableAssets(); track asset.id) {
+                  <div
+                    class="flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors"
+                    [class.bg-blue-50]="isSelected(asset.id)"
+                    [class.hover:bg-slate-50]="!isSelected(asset.id)"
+                    (click)="toggleAssetSelection(asset.id)"
+                  >
+                    <div
+                      class="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors"
+                      [class.bg-blue-600]="isSelected(asset.id)"
+                      [class.border-blue-600]="isSelected(asset.id)"
+                      [class.border-slate-300]="!isSelected(asset.id)"
+                    >
+                      @if (isSelected(asset.id)) {
+                        <span class="material-symbols-outlined text-white" style="font-size:14px">check</span>
+                      }
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-semibold text-slate-900 m-0 truncate">{{ asset.name }}</p>
+                      <p class="text-xs text-slate-500 m-0">{{ asset.assetTag }} · {{ asset.type }}</p>
+                    </div>
+                    <span class="text-xs text-slate-400">{{ asset.location || '—' }}</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Sticky action bar -->
+          <div class="sticky bottom-0 flex justify-end gap-3 pt-4 border-t border-slate-100 bg-white">
+            <button type="button" (click)="cancelNewTransfer()" class="btn btn-secondary-outline">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              [disabled]="loading() || form.invalid || selectedAssetIds().length === 0"
+              class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0"
+            >
+              @if (loading()) {
+                <mat-spinner diameter="18" color="accent"></mat-spinner>
+              } @else {
+                <span class="material-symbols-outlined msz-18 leading-none">send</span>
+              }
+              Solicitar traslado
+            </button>
+          </div>
+
+        </form>
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════
+         TABLA DE TRASLADOS
+    ══════════════════════════════════════ -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="flex items-center gap-4 px-6 py-4 border-b border-slate-100">
+        <span class="material-symbols-outlined text-slate-400">sync_alt</span>
+        <h3 class="font-semibold text-slate-800 m-0">Historial de traslados</h3>
+      </div>
+
+      @if (loading()) {
+        <div class="flex justify-center py-12">
+          <mat-spinner diameter="48"></mat-spinner>
+        </div>
+      } @else if (transfers().length === 0) {
+        <div class="flex flex-col items-center py-16 text-slate-400">
+          <span class="material-symbols-outlined text-5xl mb-3">local_shipping</span>
+          <p class="font-medium m-0">No hay traslados registrados</p>
+          <p class="text-sm m-0 mt-1">Cree una nueva solicitud con el botón superior</p>
+        </div>
+      } @else {
+        <div class="overflow-x-auto">
+          <table mat-table [dataSource]="transfers()" class="w-full">
+
+            <!-- Número -->
+            <ng-container matColumnDef="transferNumber">
+              <th mat-header-cell *matHeaderCellDef class="font-semibold text-slate-600 text-xs uppercase tracking-wide">Número</th>
+              <td mat-cell *matCellDef="let t">
+                <span class="font-mono text-sm font-semibold text-slate-800">{{ t.transferNumber }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Ruta -->
+            <ng-container matColumnDef="route">
+              <th mat-header-cell *matHeaderCellDef class="font-semibold text-slate-600 text-xs uppercase tracking-wide">Ruta</th>
+              <td mat-cell *matCellDef="let t">
+                <div class="flex items-center gap-2 text-sm">
+                  <span class="font-medium text-slate-700">{{ t.sourceClinic?.name || '—' }}</span>
+                  <span class="material-symbols-outlined msz-16 text-slate-400">arrow_forward</span>
+                  <span class="font-medium text-slate-700">{{ t.targetClinic?.name || '—' }}</span>
+                </div>
+                <p class="text-xs text-slate-400 m-0 mt-0.5">
+                  @if (isSourceClinic(t)) { Clínica origen (esta) }
+                  @else if (isTargetClinic(t)) { Clínica destino (esta) }
+                </p>
+              </td>
+            </ng-container>
+
+            <!-- Activos -->
+            <ng-container matColumnDef="assets">
+              <th mat-header-cell *matHeaderCellDef class="font-semibold text-slate-600 text-xs uppercase tracking-wide">Activos</th>
+              <td mat-cell *matCellDef="let t">
+                <div class="flex flex-wrap gap-1">
+                  @for (item of t.items.slice(0, 2); track item.id) {
+                    <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                      {{ item.asset?.name || item.assetId }}
+                    </span>
+                  }
+                  @if (t.items.length > 2) {
+                    <span class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
+                      +{{ t.items.length - 2 }} más
+                    </span>
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Estado -->
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef class="font-semibold text-slate-600 text-xs uppercase tracking-wide">Estado</th>
+              <td mat-cell *matCellDef="let t">
+                <span
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                  [ngClass]="getStatusClasses(t.status)"
+                >
+                  <span class="material-symbols-outlined" style="font-size:14px">{{ getStatusIcon(t.status) }}</span>
+                  {{ getStatusLabel(t.status) }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Fecha -->
+            <ng-container matColumnDef="date">
+              <th mat-header-cell *matHeaderCellDef class="font-semibold text-slate-600 text-xs uppercase tracking-wide">Fecha</th>
+              <td mat-cell *matCellDef="let t">
+                <span class="text-sm text-slate-600">{{ t.createdAt | date:'dd/MM/yyyy' }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Acciones -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let t">
+                <div class="flex items-center gap-1 justify-end">
+
+                  <!-- Origen: despachar si está SOLICITADO -->
+                  @if (t.status === AssetTransferStatus.REQUESTED && isSourceClinic(t)) {
+                    <button
+                      mat-icon-button
+                      (click)="dispatch(t)"
+                      matTooltip="Despachar activos"
+                      class="text-blue-600 hover:bg-blue-50"
+                    >
+                      <span class="material-symbols-outlined msz-20">local_shipping</span>
+                    </button>
+                    <button
+                      mat-icon-button
+                      (click)="reject(t)"
+                      matTooltip="Rechazar solicitud"
+                      class="text-red-500 hover:bg-red-50"
+                    >
+                      <span class="material-symbols-outlined msz-20">cancel</span>
+                    </button>
+                  }
+
+                  <!-- Destino: confirmar recepción o devolver si está EN TRÁNSITO -->
+                  @if (t.status === AssetTransferStatus.IN_TRANSIT && isTargetClinic(t)) {
+                    <button
+                      mat-icon-button
+                      (click)="confirmReceipt(t)"
+                      matTooltip="Confirmar recepción"
+                      class="text-green-600 hover:bg-green-50"
+                    >
+                      <span class="material-symbols-outlined msz-20">check_circle</span>
+                    </button>
+                    <button
+                      mat-icon-button
+                      (click)="returnTransfer(t)"
+                      matTooltip="Devolver activos"
+                      class="text-amber-600 hover:bg-amber-50"
+                    >
+                      <span class="material-symbols-outlined msz-20">undo</span>
+                    </button>
+                  }
+
+                  <!-- Ver historial de auditoría -->
+                  <button
+                    mat-icon-button
+                    (click)="viewAudit(t)"
+                    matTooltip="Ver historial"
+                    class="text-slate-500 hover:bg-slate-50"
+                  >
+                    <span class="material-symbols-outlined msz-20">history</span>
+                  </button>
+
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="['transferNumber','route','assets','status','date','actions']"></tr>
+            <tr mat-row *matRowDef="let row; columns: ['transferNumber','route','assets','status','date','actions'];"
+              class="hover:bg-slate-50 transition-colors"></tr>
+          </table>
+        </div>
+      }
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL AUDITORÍA
+══════════════════════════════════════ -->
+@if (showAuditModal() && selectedTransfer()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" (click)="showAuditModal.set(false)">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-200">
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0">Historial de auditoría</h3>
+          <p class="text-sm text-slate-500 m-0">{{ selectedTransfer()!.transferNumber }}</p>
+        </div>
+        <button type="button" (click)="showAuditModal.set(false)" class="text-slate-400 hover:text-slate-600 transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="p-6 max-h-96 overflow-y-auto">
+        @if (loadingAudit()) {
+          <div class="flex justify-center py-8"><mat-spinner diameter="36"></mat-spinner></div>
+        } @else if (auditLogs().length === 0) {
+          <p class="text-center text-slate-400 text-sm">Sin registros de auditoría</p>
+        } @else {
+          <ol class="relative border-l border-slate-200 ml-3 space-y-6">
+            @for (log of auditLogs(); track log.id) {
+              <li class="ml-6">
+                <span class="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 ring-4 ring-white">
+                  <span class="material-symbols-outlined text-blue-600" style="font-size:14px">{{ getStatusIcon(log.action as any) }}</span>
+                </span>
+                <p class="font-semibold text-slate-800 text-sm m-0">{{ getAuditActionLabel(log.action) }}</p>
+                <p class="text-xs text-slate-500 m-0 mt-0.5">
+                  {{ log.createdAt | date:'dd/MM/yyyy HH:mm' }} ·
+                  {{ log.actorClinic?.name || '—' }}
+                </p>
+                @if (log.snapshot?.['reason']) {
+                  <p class="text-xs text-red-600 mt-1 m-0">Motivo: {{ log.snapshot!['reason'] }}</p>
+                }
+              </li>
+            }
+          </ol>
+        }
+      </div>
+    </div>
+  </div>
+}

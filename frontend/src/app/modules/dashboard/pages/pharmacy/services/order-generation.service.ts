@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core'
 import { Observable, of } from 'rxjs'
-import { PurchaseOrder, PurchaseOrderStatus, Supplier } from '../interfaces/pharmacy.interfaces'
+import { PurchaseOrder, PurchaseOrderStatus, Supplier, SupplierStatus, SupplierType } from '../interfaces/pharmacy.interfaces'
 
 @Injectable({
   providedIn: 'root',
@@ -9,36 +9,45 @@ export class OrderGenerationService {
   private suppliers: Supplier[] = [
     {
       id: 'supplier-001',
-      name: 'Proveedor Farmacéutico del Centro',
+      nombreComercial: 'Proveedor Farmacéutico del Centro',
+      razonSocial: 'Proveedor Farmacéutico del Centro S.R.L.',
+      idTributario: '1234567',
+      tipoProveedor: SupplierType.MEDICAMENTOS,
       contactPerson: 'Juan Sánchez',
       email: 'contacto@pfc.com',
       phone: '+591-4-4234567',
       address: 'Av. América #123',
       city: 'Cochabamba',
       country: 'Bolivia',
-      isActive: true,
+      status: SupplierStatus.ACTIVE,
     },
     {
       id: 'supplier-002',
-      name: 'Distribuidora Médica del Norte',
+      nombreComercial: 'Distribuidora Médica del Norte',
+      razonSocial: 'Distribuidora Médica del Norte S.A.',
+      idTributario: '2345678',
+      tipoProveedor: SupplierType.MEDICAMENTOS,
       contactPerson: 'María López',
       email: 'pedidos@dmn.com',
       phone: '+591-2-2456789',
       address: 'Calle Comercio #456',
       city: 'La Paz',
       country: 'Bolivia',
-      isActive: true,
+      status: SupplierStatus.ACTIVE,
     },
     {
       id: 'supplier-003',
-      name: 'Laboratorios Unidos S.A.',
+      nombreComercial: 'Laboratorios Unidos S.A.',
+      razonSocial: 'Laboratorios Unidos S.A.',
+      idTributario: '3456789',
+      tipoProveedor: SupplierType.MEDICAMENTOS,
       contactPerson: 'Carlos Rodriguez',
       email: 'info@laboratoriosunidos.com',
       phone: '+591-3-3345678',
       address: 'Zona Industrial',
       city: 'Santa Cruz',
       country: 'Bolivia',
-      isActive: true,
+      status: SupplierStatus.ACTIVE,
     },
   ]
 

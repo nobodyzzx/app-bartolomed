@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 // Entities
 import { Clinic } from '../clinics/entities/clinic.entity';
+import { Prescription } from '../prescriptions/entities/prescription.entity';
 import { PharmacyInvoice } from './entities/pharmacy-invoice.entity';
 import { PharmacySale, PharmacySaleItem } from './entities/pharmacy-sale.entity';
 import { Medication, MedicationStock, StockMovement } from './entities/pharmacy.entity';
@@ -29,6 +30,7 @@ import { SuppliersService } from './services/suppliers.service';
   imports: [
     TypeOrmModule.forFeature([
       Clinic,
+      Prescription,
       Supplier,
       PurchaseOrder,
       PurchaseOrderItem,

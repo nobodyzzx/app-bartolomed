@@ -1,0 +1,98 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      title="Auditoría y Logs"
+      subtitle="Registro de acciones, eventos y actividad del sistema"
+      [showBack]="false"
+    />
+
+    <!-- Stats placeholder -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 opacity-60">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-blue-600 text-sm font-semibold">Eventos hoy</p>
+            <p class="text-3xl font-bold text-slate-400 mt-1">—</p>
+            <p class="text-xs text-slate-400 mt-1">Acciones registradas</p>
+          </div>
+          <span class="material-symbols-outlined text-blue-200" style="font-size:40px">event_note</span>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 opacity-60">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-amber-600 text-sm font-semibold">Advertencias</p>
+            <p class="text-3xl font-bold text-slate-400 mt-1">—</p>
+            <p class="text-xs text-slate-400 mt-1">Requieren revisión</p>
+          </div>
+          <span class="material-symbols-outlined text-amber-200" style="font-size:40px">warning</span>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 opacity-60">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-red-600 text-sm font-semibold">Errores</p>
+            <p class="text-3xl font-bold text-slate-400 mt-1">—</p>
+            <p class="text-xs text-slate-400 mt-1">Fallos del sistema</p>
+          </div>
+          <span class="material-symbols-outlined text-red-200" style="font-size:40px">error</span>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 opacity-60">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-green-600 text-sm font-semibold">Usuarios activos</p>
+            <p class="text-3xl font-bold text-slate-400 mt-1">—</p>
+            <p class="text-xs text-slate-400 mt-1">Sesiones abiertas</p>
+          </div>
+          <span class="material-symbols-outlined text-green-200" style="font-size:40px">person_check</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección de logs placeholder -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 border-b border-slate-100">
+        <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">history</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Registro de Actividad</h3>
+          <p class="text-sm text-slate-500 m-0">Historial de acciones de usuarios y sistema</p>
+        </div>
+      </div>
+
+      <!-- Coming soon state -->
+      <div class="py-16 px-6 flex flex-col items-center text-center">
+        <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+          <span class="material-symbols-outlined text-slate-400" style="font-size:32px">gavel</span>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-700 mb-2">Módulo en desarrollo</h3>
+        <p class="text-sm text-slate-500 max-w-md mb-6">
+          El módulo de auditoría permitirá registrar y consultar todas las acciones realizadas
+          en el sistema: creación de registros, modificaciones, inicios de sesión y eventos de seguridad.
+        </p>
+        <div class="flex flex-wrap gap-3 justify-center">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
+            <span class="material-symbols-outlined msz-14">check</span>
+            Log de accesos
+          </span>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+            <span class="material-symbols-outlined msz-14">check</span>
+            Cambios en datos
+          </span>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-100 text-purple-700 text-xs font-medium">
+            <span class="material-symbols-outlined msz-14">check</span>
+            Filtros avanzados
+          </span>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
+            <span class="material-symbols-outlined msz-14">check</span>
+            Exportar a CSV
+          </span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -23,6 +23,13 @@ RUN ls -la /app/dist && echo "Build successful - dist folder exists"
 
 # Etapa de desarrollo
 FROM node:20-slim AS development
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    procps \
+    chromium \
+    fonts-liberation \
+    && rm -rf /var/lib/apt/lists/*
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
@@ -36,8 +43,10 @@ FROM node:20-slim AS production
 
 # Instala dumb-init para manejo de señales y wget para health checks (usar apt en vez de apk)
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends dumb-init wget ca-certificates && \
+    apt-get install -y --no-install-recommends dumb-init wget ca-certificates chromium fonts-liberation && \
     rm -rf /var/lib/apt/lists/*
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Crear usuario no-root para seguridad
 RUN groupadd -g 1001 nodejs || true

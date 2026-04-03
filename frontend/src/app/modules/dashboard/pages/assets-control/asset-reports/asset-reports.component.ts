@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
@@ -17,6 +18,8 @@ import { AssetReportsService } from '../services/asset-reports.service'
   styleUrls: ['./asset-reports.component.css'],
 })
 export class AssetReportsComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
   reportsForm: FormGroup
   reports: AssetReport[] = []
   loading = false
@@ -56,7 +59,7 @@ export class AssetReportsComponent implements OnInit {
 
   loadReports(): void {
     this.loading = true
-    this.assetReportsService.getReports().subscribe({
+    this.assetReportsService.getReports().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: reports => {
         this.reports = reports
         this.calculateStats()
@@ -113,7 +116,7 @@ export class AssetReportsComponent implements OnInit {
       },
     }
 
-    this.assetReportsService.generateReport(reportData).subscribe({
+    this.assetReportsService.generateReport(reportData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: async (report: AssetReport) => {
         this.reports.unshift(report)
         this.calculateStats()
@@ -145,7 +148,7 @@ export class AssetReportsComponent implements OnInit {
     }
 
     this.loading = true
-    this.assetReportsService.downloadReport(report.id).subscribe({
+    this.assetReportsService.downloadReport(report.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: async (blob: Blob) => {
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -190,7 +193,7 @@ export class AssetReportsComponent implements OnInit {
     if (!result.isConfirmed) return
 
     this.loading = true
-    this.assetReportsService.deleteReport(report.id).subscribe({
+    this.assetReportsService.deleteReport(report.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: async () => {
         this.reports = this.reports.filter(r => r.id !== report.id)
         this.calculateStats()
@@ -267,7 +270,7 @@ export class AssetReportsComponent implements OnInit {
       this.loadReports()
     } else {
       this.loading = true
-      this.assetReportsService.getReportsByStatus(status).subscribe({
+      this.assetReportsService.getReportsByStatus(status).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (reports: AssetReport[]) => {
           this.reports = reports
           this.calculateStats()
@@ -286,7 +289,7 @@ export class AssetReportsComponent implements OnInit {
       this.loadReports()
     } else {
       this.loading = true
-      this.assetReportsService.getReportsByType(type).subscribe({
+      this.assetReportsService.getReportsByType(type).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (reports: AssetReport[]) => {
           this.reports = reports
           this.calculateStats()

@@ -2,5 +2,21 @@
 mat-expansion-panel {
   --mat-expansion-container-background-color: #eff6ff; /* blue-50 */
   --mat-expansion-header-hover-state-layer-color: #dbeafe; /* blue-100 */
+  --mat-expansion-header-focus-state-layer-color: #dbeafe;
   box-shadow: none !important;
+}
+
+/* Flyout panel del menú colapsado */
+.sidebar-flyout-panel {
+  min-width: 220px !important;
+
+  .mat-mdc-menu-item {
+    &.flyout-active {
+      background-color: #dbeafe; /* blue-100 */
+    }
+
+    &:hover {
+      background-color: #eff6ff; /* blue-50 */
+    }
+  }
 }

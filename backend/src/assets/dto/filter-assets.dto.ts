@@ -1,4 +1,5 @@
-import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 import { AssetCondition, AssetStatus, AssetType } from '../entities/asset.entity';
 
 export class FilterAssetsDto {
@@ -37,4 +38,17 @@ export class FilterAssetsDto {
   @IsOptional()
   @IsString()
   search?: string; // Búsqueda general (nombre, descripción, serial)
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
 }

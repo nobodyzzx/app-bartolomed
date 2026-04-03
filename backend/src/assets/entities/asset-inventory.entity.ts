@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -109,6 +110,7 @@ export class AssetInventory {
   @Column({ name: 'asset_id' })
   assetId: string;
 
+  @Index()
   @ManyToOne(() => Clinic, { nullable: true })
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic;

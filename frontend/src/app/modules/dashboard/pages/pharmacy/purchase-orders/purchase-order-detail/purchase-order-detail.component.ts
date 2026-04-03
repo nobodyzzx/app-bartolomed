@@ -1,5 +1,6 @@
 import { Location } from '@angular/common'
-import { Component, computed, inject, OnInit, signal } from '@angular/core'
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { PurchaseOrder, PurchaseOrderStatus, Supplier } from '../../interfaces/pharmacy.interfaces'
@@ -12,6 +13,7 @@ import { SuppliersService } from '../../services/suppliers.service'
   styleUrls: ['./purchase-order-detail.component.css'],
 })
 export class PurchaseOrderDetailComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
   private route = inject(ActivatedRoute)
   private router = inject(Router)
   private location = inject(Location)
@@ -49,7 +51,7 @@ export class PurchaseOrderDetailComponent implements OnInit {
 
   ngOnInit(): void {
     // Suscribirse a cambios por si se reutiliza el componente
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       const id = params.get('id')
       if (id) {
         this.loadSuppliers()
@@ -62,7 +64,7 @@ export class PurchaseOrderDetailComponent implements OnInit {
 
   loadOrder(id: string): void {
     this.loading.set(true)
-    this.purchaseOrdersService.getById(id).subscribe({
+    this.purchaseOrdersService.getById(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: raw => {
         const order = this.adaptOrder(raw)
         this.order.set(order)
@@ -119,7 +121,7 @@ export class PurchaseOrderDetailComponent implements OnInit {
     })
 
     if (result.isConfirmed && this.order()) {
-      this.purchaseOrdersService.updateStatus(this.order()!.id, { status: newStatus }).subscribe({
+      this.purchaseOrdersService.updateStatus(this.order()!.id, { status: newStatus }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: updated => {
           this.alertService.success(
             'Estado actualizado',
@@ -253,7 +255,7 @@ export class PurchaseOrderDetailComponent implements OnInit {
   }
 
   private loadSuppliers(): void {
-    this.suppliersService.getAll().subscribe({
+    this.suppliersService.getAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: list => this.suppliers.set(list),
       error: () => {},
     })
