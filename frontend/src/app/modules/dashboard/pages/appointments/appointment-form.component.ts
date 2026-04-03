@@ -136,8 +136,8 @@ export class AppointmentFormComponent implements OnInit {
 
     // Cargar doctores (usuarios con rol doctor)
     this.usersService.getUsers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: users => {
-        this.doctors = users.filter(u => u.isActive && u.roles.includes('doctor'))
+      next: result => {
+        this.doctors = result.data.filter(u => u.isActive && u.roles.includes('doctor'))
       },
       error: () => {},
     })

@@ -327,7 +327,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
     )
 
     // Cargar doctores (usuarios con rol médico)
-    this.doctors$ = this.usersService.getUsers()
+    this.doctors$ = this.usersService.getUsers().pipe(map(r => r.data))
     this.doctors$.pipe(takeUntil(this.destroy$)).subscribe(doctors => {
       // Filtrar solo los usuarios con rol de doctor (defensivo por si roles viene undefined)
       const filteredDoctors = doctors.filter(user => {

@@ -144,7 +144,6 @@ export class FinancialReportsComponent implements OnInit {
       text: 'Espere mientras se genera el reporte con Puppeteer',
       allowOutsideClick: false,
       showConfirmButton: false,
-      didOpen: () => (window as any).Swal?.showLoading?.(),
     })
 
     const params: Record<string, string> = {}

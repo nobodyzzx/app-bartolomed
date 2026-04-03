@@ -104,8 +104,8 @@ export class AssetTransfersComponent implements OnInit {
       .getAssets({ status: 'active' as any })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: assets => {
-          this.availableAssets.set(assets)
+        next: result => {
+          this.availableAssets.set(result.data)
           this.loadingAssets.set(false)
         },
         error: () => this.loadingAssets.set(false),
@@ -327,8 +327,8 @@ export class AssetTransfersComponent implements OnInit {
     return map[status] ?? 'bg-slate-100 text-slate-600'
   }
 
-  getStatusIcon(status: AssetTransferStatus): string {
-    const map: Record<AssetTransferStatus, string> = {
+  getStatusIcon(status: string): string {
+    const map: Record<string, string> = {
       [AssetTransferStatus.REQUESTED]: 'schedule',
       [AssetTransferStatus.IN_TRANSIT]: 'local_shipping',
       [AssetTransferStatus.COMPLETED]: 'check_circle',

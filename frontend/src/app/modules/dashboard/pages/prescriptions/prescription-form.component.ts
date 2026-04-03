@@ -224,7 +224,7 @@ export class PrescriptionFormComponent {
     })
     // Médicos (filtrar usuarios con rol doctor)
     this.usersService.getUsers().subscribe({
-      next: users => (this.doctors = (users || []).filter((u: any) => (u.roles || []).includes('doctor'))),
+      next: result => (this.doctors = (result.data || []).filter((u: any) => (u.roles || []).includes('doctor'))),
       error: () => (this.doctors = []),
     })
     // Clínicas

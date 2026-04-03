@@ -14,7 +14,8 @@
       "Bash(identify /home/tecnocondordev/Projects/app-bartolomed/frontend/src/assets/images/logo-big-horizontal-bartolomed.png)",
       "Bash(sed -i 's/currency: '\\\\''USD'\\\\'' : '\\\\''symbol'\\\\'' : '\\\\''1.2-2'\\\\''/currency: '\\\\''BOB'\\\\'' : '\\\\''symbol-narrow'\\\\'' : '\\\\''1.2-2'\\\\''/g' frontend/src/app/modules/dashboard/pages/assets-control/asset-inventory-control/asset-inventory-control.component.html)",
       "Bash(sed -i 's/currency: '\\\\''USD'\\\\''/currency: '\\\\''BOB'\\\\''/g' frontend/src/app/modules/dashboard/pages/billing/payment-form.component.html)",
-      "Bash(xargs cat:*)"
+      "Bash(xargs cat:*)",
+      "Bash(git push:*)"
     ]
   }
 }

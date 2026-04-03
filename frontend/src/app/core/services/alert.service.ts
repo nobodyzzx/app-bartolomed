@@ -66,6 +66,27 @@ export class AlertService {
     return Promise.resolve({ isConfirmed: false })
   }
 
+  prompt(options: {
+    title?: string
+    inputLabel?: string
+    inputPlaceholder?: string
+    confirmButtonText?: string
+    cancelButtonText?: string
+    inputValidator?: (value: string) => string | null
+  }): Promise<AlertResult> {
+    const label = [options.title, options.inputLabel].filter(Boolean).join('\n')
+    const value = window.prompt(label || 'Ingrese un valor:')
+    if (value === null) return Promise.resolve({ isConfirmed: false, isDismissed: true })
+    if (options.inputValidator) {
+      const error = options.inputValidator(value)
+      if (error) {
+        this.notifications.error(error)
+        return Promise.resolve({ isConfirmed: false, isDismissed: true })
+      }
+    }
+    return Promise.resolve({ isConfirmed: true, value })
+  }
+
   private _openConfirmDialog(options: AlertOptions): Promise<AlertResult> {
     const isDestructive =
       options.isDestructive === true ||

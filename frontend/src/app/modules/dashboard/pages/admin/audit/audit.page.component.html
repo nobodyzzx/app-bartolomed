@@ -1,98 +1,401 @@
 <div class="page-wrapper">
   <div class="page-inner">
 
+    <!-- Header -->
     <app-page-header
       title="Auditoría y Logs"
       subtitle="Registro de acciones, eventos y actividad del sistema"
       [showBack]="false"
     />
 
-    <!-- Stats placeholder -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 opacity-60">
+    <!-- ── Stats ──────────────────────────────────────────────────────────── -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-blue-600 text-sm font-semibold">Eventos hoy</p>
-            <p class="text-3xl font-bold text-slate-400 mt-1">—</p>
-            <p class="text-xs text-slate-400 mt-1">Acciones registradas</p>
+            <p class="text-3xl font-bold text-slate-800 mt-1">
+              {{ statsLoading ? '…' : (stats?.totalToday ?? 0) }}
+            </p>
+            <p class="text-xs text-slate-500 mt-1">Acciones registradas</p>
           </div>
-          <span class="material-symbols-outlined text-blue-200" style="font-size:40px">event_note</span>
+          <span class="material-symbols-outlined text-blue-200" style="font-size:44px">event_note</span>
         </div>
       </div>
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 opacity-60">
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-amber-600 text-sm font-semibold">Advertencias</p>
-            <p class="text-3xl font-bold text-slate-400 mt-1">—</p>
-            <p class="text-xs text-slate-400 mt-1">Requieren revisión</p>
+            <p class="text-green-600 text-sm font-semibold">Inicios de sesión</p>
+            <p class="text-3xl font-bold text-slate-800 mt-1">
+              {{ statsLoading ? '…' : (stats?.loginsToday ?? 0) }}
+            </p>
+            <p class="text-xs text-slate-500 mt-1">Hoy</p>
           </div>
-          <span class="material-symbols-outlined text-amber-200" style="font-size:40px">warning</span>
+          <span class="material-symbols-outlined text-green-200" style="font-size:44px">login</span>
         </div>
       </div>
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 opacity-60">
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-red-600 text-sm font-semibold">Errores</p>
-            <p class="text-3xl font-bold text-slate-400 mt-1">—</p>
-            <p class="text-xs text-slate-400 mt-1">Fallos del sistema</p>
+            <p class="text-purple-600 text-sm font-semibold">Operaciones</p>
+            <p class="text-3xl font-bold text-slate-800 mt-1">
+              {{ statsLoading ? '…' : (stats?.mutationsToday ?? 0) }}
+            </p>
+            <p class="text-xs text-slate-500 mt-1">Crear · Editar · Eliminar</p>
           </div>
-          <span class="material-symbols-outlined text-red-200" style="font-size:40px">error</span>
+          <span class="material-symbols-outlined text-purple-200" style="font-size:44px">edit_note</span>
         </div>
       </div>
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 opacity-60">
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-green-600 text-sm font-semibold">Usuarios activos</p>
-            <p class="text-3xl font-bold text-slate-400 mt-1">—</p>
-            <p class="text-xs text-slate-400 mt-1">Sesiones abiertas</p>
+            <p class="text-red-600 text-sm font-semibold">Errores hoy</p>
+            <p class="text-3xl font-bold text-slate-800 mt-1">
+              {{ statsLoading ? '…' : (stats?.errorsToday ?? 0) }}
+            </p>
+            <p class="text-xs text-slate-500 mt-1">Solicitudes fallidas</p>
           </div>
-          <span class="material-symbols-outlined text-green-200" style="font-size:40px">person_check</span>
+          <span class="material-symbols-outlined text-red-200" style="font-size:44px">error</span>
         </div>
+      </div>
+
+    </div>
+
+    <!-- ── Top usuarios / recursos (solo si hay datos) ───────────────────── -->
+    <div
+      *ngIf="stats && (stats.topUsers.length > 0 || stats.topResources.length > 0)"
+      class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8"
+    >
+      <!-- Top usuarios -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-3 px-5 py-3 bg-blue-50 border-b border-blue-100">
+          <span class="material-symbols-outlined text-blue-500 msz-20">people</span>
+          <h3 class="font-semibold text-slate-800 text-sm m-0">Usuarios más activos hoy</h3>
+        </div>
+        <ul class="divide-y divide-slate-100">
+          <li
+            *ngFor="let u of stats.topUsers; let i = index"
+            class="flex items-center justify-between px-5 py-2.5"
+          >
+            <span class="text-sm text-slate-700 truncate mr-2">
+              <span class="text-slate-400 mr-2 font-mono text-xs">{{ i + 1 }}.</span>
+              {{ u.email }}
+            </span>
+            <span class="shrink-0 text-xs font-bold bg-blue-100 text-blue-700 rounded-full px-2.5 py-0.5">
+              {{ u.count }}
+            </span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Top recursos -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-3 px-5 py-3 bg-purple-50 border-b border-purple-100">
+          <span class="material-symbols-outlined text-purple-500 msz-20">folder_open</span>
+          <h3 class="font-semibold text-slate-800 text-sm m-0">Recursos más accedidos hoy</h3>
+        </div>
+        <ul class="divide-y divide-slate-100">
+          <li
+            *ngFor="let r of stats.topResources; let i = index"
+            class="flex items-center justify-between px-5 py-2.5"
+          >
+            <span class="text-sm text-slate-700 mr-2">
+              <span class="text-slate-400 mr-2 font-mono text-xs">{{ i + 1 }}.</span>
+              {{ r.resource }}
+            </span>
+            <span class="shrink-0 text-xs font-bold bg-purple-100 text-purple-700 rounded-full px-2.5 py-0.5">
+              {{ r.count }}
+            </span>
+          </li>
+        </ul>
       </div>
     </div>
 
-    <!-- Sección de logs placeholder -->
+    <!-- ── Tabla principal ────────────────────────────────────────────────── -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 border-b border-slate-100">
-        <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center flex-shrink-0">
-          <span class="material-symbols-outlined msz-20">history</span>
+
+      <!-- Cabecera de sección -->
+      <div class="flex items-center justify-between gap-4 px-6 py-4 bg-slate-50 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">history</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Registro de Actividad</h3>
+            <p class="text-xs text-slate-500 m-0">{{ total | number:'1.0-0' }} eventos encontrados</p>
+          </div>
         </div>
-        <div>
-          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Registro de Actividad</h3>
-          <p class="text-sm text-slate-500 m-0">Historial de acciones de usuarios y sistema</p>
+        <button
+          (click)="exportCsv()"
+          class="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+        >
+          <span class="material-symbols-outlined msz-18">download</span>
+          Exportar CSV
+        </button>
+      </div>
+
+      <!-- Filtros -->
+      <div class="px-6 py-4 border-b border-slate-100 bg-white" [formGroup]="filterForm">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 items-end">
+
+          <!-- Búsqueda -->
+          <div class="sm:col-span-2">
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-label>Buscar</mat-label>
+              <span matPrefix class="material-symbols-outlined text-slate-400 msz-20 ml-2 mr-1">search</span>
+              <input
+                matInput
+                formControlName="search"
+                placeholder="Usuario, recurso, ruta…"
+                (input)="onSearch($any($event.target).value)"
+              />
+            </mat-form-field>
+          </div>
+
+          <!-- Acción -->
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Acción</mat-label>
+            <mat-select formControlName="action" (selectionChange)="onFilterChange()">
+              <mat-option value="">Todas</mat-option>
+              <mat-option *ngFor="let a of actionOptions" [value]="a.value">{{ a.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Recurso -->
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Recurso</mat-label>
+            <mat-select formControlName="resource" (selectionChange)="onFilterChange()">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let r of distinctValues.resources" [value]="r">{{ r }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Estado -->
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Estado</mat-label>
+            <mat-select formControlName="status" (selectionChange)="onFilterChange()">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Limpiar -->
+          <div class="flex items-center pb-0.5">
+            <button
+              (click)="resetFilters()"
+              class="flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-sm transition-colors whitespace-nowrap"
+            >
+              <span class="material-symbols-outlined msz-18">filter_alt_off</span>
+              Limpiar filtros
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Rango de fechas -->
+        <div class="grid grid-cols-2 gap-3 mt-3 max-w-sm">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Desde</mat-label>
+            <input matInput type="date" formControlName="startDate" (change)="onFilterChange()" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Hasta</mat-label>
+            <input matInput type="date" formControlName="endDate" (change)="onFilterChange()" />
+          </mat-form-field>
         </div>
       </div>
 
-      <!-- Coming soon state -->
-      <div class="py-16 px-6 flex flex-col items-center text-center">
-        <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-          <span class="material-symbols-outlined text-slate-400" style="font-size:32px">gavel</span>
-        </div>
-        <h3 class="text-lg font-semibold text-slate-700 mb-2">Módulo en desarrollo</h3>
-        <p class="text-sm text-slate-500 max-w-md mb-6">
-          El módulo de auditoría permitirá registrar y consultar todas las acciones realizadas
-          en el sistema: creación de registros, modificaciones, inicios de sesión y eventos de seguridad.
-        </p>
-        <div class="flex flex-wrap gap-3 justify-center">
-          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
-            <span class="material-symbols-outlined msz-14">check</span>
-            Log de accesos
-          </span>
-          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">
-            <span class="material-symbols-outlined msz-14">check</span>
-            Cambios en datos
-          </span>
-          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-100 text-purple-700 text-xs font-medium">
-            <span class="material-symbols-outlined msz-14">check</span>
-            Filtros avanzados
-          </span>
-          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
-            <span class="material-symbols-outlined msz-14">check</span>
-            Exportar a CSV
-          </span>
-        </div>
+      <!-- Skeleton -->
+      <div *ngIf="loading" class="p-6">
+        <app-skeleton-table [rows]="10" [columns]="8"></app-skeleton-table>
       </div>
+
+      <!-- Tabla -->
+      <div *ngIf="!loading" class="overflow-x-auto">
+        <table mat-table [dataSource]="logs" class="w-full">
+
+          <!-- Fecha/hora -->
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef class="whitespace-nowrap !pl-6">Fecha y hora</th>
+            <td mat-cell *matCellDef="let log" class="whitespace-nowrap text-xs text-slate-600 !pl-6">
+              {{ formatDate(log.createdAt) }}
+            </td>
+          </ng-container>
+
+          <!-- Usuario -->
+          <ng-container matColumnDef="userEmail">
+            <th mat-header-cell *matHeaderCellDef>Usuario</th>
+            <td mat-cell *matCellDef="let log">
+              <div class="max-w-[160px]">
+                <p class="text-xs text-slate-700 truncate m-0" [title]="log.userEmail">
+                  {{ log.userEmail || '—' }}
+                </p>
+                <p *ngIf="log.userName" class="text-xs text-slate-400 truncate m-0">
+                  {{ log.userName }}
+                </p>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Acción -->
+          <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef>Acción</th>
+            <td mat-cell *matCellDef="let log">
+              <span
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+                [ngClass]="getActionClass(log.action)"
+              >
+                <span class="material-symbols-outlined" style="font-size:12px">{{ getActionIcon(log.action) }}</span>
+                {{ log.action }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Recurso -->
+          <ng-container matColumnDef="resource">
+            <th mat-header-cell *matHeaderCellDef>Recurso</th>
+            <td mat-cell *matCellDef="let log">
+              <span class="text-sm text-slate-700">{{ log.resource }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Método HTTP -->
+          <ng-container matColumnDef="method">
+            <th mat-header-cell *matHeaderCellDef>Método</th>
+            <td mat-cell *matCellDef="let log">
+              <span class="text-xs font-mono font-bold" [ngClass]="getMethodClass(log.method)">
+                {{ log.method }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Código HTTP -->
+          <ng-container matColumnDef="statusCode">
+            <th mat-header-cell *matHeaderCellDef>HTTP</th>
+            <td mat-cell *matCellDef="let log">
+              <span class="text-xs font-mono font-bold" [ngClass]="getHttpCodeClass(log.statusCode)">
+                {{ log.statusCode }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Estado -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let log">
+              <span
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+                [ngClass]="getStatusClass(log.status)"
+              >
+                <span class="material-symbols-outlined" style="font-size:11px">
+                  {{ log.status === 'success' ? 'check_circle' : 'cancel' }}
+                </span>
+                {{ log.status === 'success' ? 'OK' : 'Error' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- IP -->
+          <ng-container matColumnDef="ipAddress">
+            <th mat-header-cell *matHeaderCellDef>IP</th>
+            <td mat-cell *matCellDef="let log">
+              <span class="text-xs font-mono text-slate-400">{{ log.ipAddress || '—' }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Expandir detalles -->
+          <ng-container matColumnDef="expand">
+            <th mat-header-cell *matHeaderCellDef class="!pr-4 w-12"></th>
+            <td mat-cell *matCellDef="let log" class="!pr-4">
+              <button
+                *ngIf="hasExpandableContent(log)"
+                (click)="toggleExpand(log.id)"
+                class="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                [title]="expandedLogId === log.id ? 'Ocultar detalles' : 'Ver detalles'"
+              >
+                <span class="material-symbols-outlined msz-20">
+                  {{ expandedLogId === log.id ? 'expand_less' : 'expand_more' }}
+                </span>
+              </button>
+            </td>
+          </ng-container>
+
+          <!-- Fila de detalle expandido -->
+          <ng-container matColumnDef="expandedDetail">
+            <td
+              mat-cell
+              *matCellDef="let log"
+              [attr.colspan]="displayedColumns.length"
+              class="!p-0 border-0"
+            >
+              <div
+                *ngIf="expandedLogId === log.id"
+                class="px-6 py-4 bg-slate-50 border-t border-slate-100"
+              >
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div *ngIf="log.path">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Ruta completa</p>
+                    <p class="font-mono text-xs text-slate-700 break-all bg-white rounded px-2 py-1.5 border border-slate-200">
+                      {{ log.method }} {{ log.path }}
+                    </p>
+                  </div>
+                  <div *ngIf="log.resourceId">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">ID del registro</p>
+                    <p class="font-mono text-xs text-slate-700 break-all bg-white rounded px-2 py-1.5 border border-slate-200">
+                      {{ log.resourceId }}
+                    </p>
+                  </div>
+                  <div *ngIf="log.details">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Detalles</p>
+                    <pre class="text-xs text-slate-700 bg-white rounded px-2 py-1.5 border border-slate-200 overflow-x-auto whitespace-pre-wrap">{{ log.details | json }}</pre>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-slate-50"></tr>
+          <tr
+            mat-row
+            *matRowDef="let log; columns: displayedColumns"
+            class="hover:bg-blue-50/30 transition-colors cursor-default"
+            [class.bg-red-50]="log.status === 'failure'"
+          ></tr>
+          <tr
+            mat-row
+            *matRowDef="let log; columns: ['expandedDetail']"
+            class="!min-h-0"
+          ></tr>
+
+          <!-- Sin resultados -->
+          <tr class="mat-row" *matNoDataRow>
+            <td [attr.colspan]="displayedColumns.length">
+              <app-empty-state
+                icon="manage_search"
+                title="Sin resultados"
+                message="No se encontraron registros con los filtros seleccionados"
+              />
+            </td>
+          </tr>
+
+        </table>
+      </div>
+
+      <!-- Paginador -->
+      <mat-paginator
+        [length]="total"
+        [pageSize]="pageSize"
+        [pageIndex]="page - 1"
+        [pageSizeOptions]="[25, 50, 100, 200]"
+        (page)="onPageChange($event)"
+        showFirstLastButtons
+        aria-label="Navegar por registros de auditoría"
+      ></mat-paginator>
+
     </div>
-
   </div>
 </div>
