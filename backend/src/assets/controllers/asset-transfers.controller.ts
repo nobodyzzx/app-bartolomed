@@ -32,31 +32,31 @@ export class AssetTransfersController {
   @Post()
   @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
   create(@Body() dto: CreateAssetTransferDto, @GetUser() user: User, @Req() req: Request) {
-    return this.service.create(dto, user.id, resolveClinicId(req));
+    return this.service.create(dto, user.id, resolveClinicId(req)!);
   }
 
   @Get()
   @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
   findAll(@Query() filters: FilterAssetTransfersDto, @Req() req: Request) {
-    return this.service.findAll(resolveClinicId(req), filters);
+    return this.service.findAll(resolveClinicId(req)!, filters);
   }
 
   @Get('pending-count')
   @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
   getPendingCount(@Req() req: Request) {
-    return this.service.getPendingCount(resolveClinicId(req));
+    return this.service.getPendingCount(resolveClinicId(req)!);
   }
 
   @Get(':id')
   @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
   findOne(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
-    return this.service.findOne(id, resolveClinicId(req));
+    return this.service.findOne(id, resolveClinicId(req)!);
   }
 
   @Get(':id/audit')
   @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
   getAuditLog(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
-    return this.service.getAuditLog(id, resolveClinicId(req));
+    return this.service.getAuditLog(id, resolveClinicId(req)!);
   }
 
   @Patch(':id/dispatch')
@@ -67,7 +67,7 @@ export class AssetTransfersController {
     @GetUser() user: User,
     @Req() req: Request,
   ) {
-    return this.service.dispatch(id, dto, user.id, resolveClinicId(req));
+    return this.service.dispatch(id, dto, user.id, resolveClinicId(req)!);
   }
 
   @Patch(':id/confirm-receipt')
@@ -78,7 +78,7 @@ export class AssetTransfersController {
     @GetUser() user: User,
     @Req() req: Request,
   ) {
-    return this.service.confirmReceipt(id, dto, user.id, resolveClinicId(req));
+    return this.service.confirmReceipt(id, dto, user.id, resolveClinicId(req)!);
   }
 
   @Patch(':id/reject')
@@ -89,7 +89,7 @@ export class AssetTransfersController {
     @GetUser() user: User,
     @Req() req: Request,
   ) {
-    return this.service.reject(id, dto, user.id, resolveClinicId(req));
+    return this.service.reject(id, dto, user.id, resolveClinicId(req)!);
   }
 
   @Patch(':id/return')
@@ -100,6 +100,6 @@ export class AssetTransfersController {
     @GetUser() user: User,
     @Req() req: Request,
   ) {
-    return this.service.returnTransfer(id, dto, user.id, resolveClinicId(req));
+    return this.service.returnTransfer(id, dto, user.id, resolveClinicId(req)!);
   }
 }

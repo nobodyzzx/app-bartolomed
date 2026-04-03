@@ -82,6 +82,7 @@ export const AppDataSource = new DataSource({
     StockTransferItem,
     TransferAuditLog,
   ],
-  migrations: ['src/migrations/*.ts'],
+  // Funciona en dev (ts-node → src/migrations/*.ts) y en prod (node → dist/migrations/*.js)
+  migrations: [path.join(__dirname, '..', 'migrations', '*.{ts,js}')],
   synchronize: false,
 });
