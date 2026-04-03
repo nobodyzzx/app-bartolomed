@@ -50,9 +50,8 @@ export class LoginPageComponent {
         } else {
           localStorage.removeItem('rememberedEmail')
         }
-        // Los roles ya fueron sincronizados en AuthService.setAuthentication()
         this.notificationService.success('¡Bienvenido! Inicio de sesión exitoso')
-        this.router.navigateByUrl('/auth/select-clinic')
+        this.router.navigateByUrl('/dashboard')
       },
       error: error => {
         this.isLoading = false

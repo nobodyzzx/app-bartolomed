@@ -12,18 +12,15 @@ export const authGuard: CanActivateFn = () => {
   // Si ya está resuelto, responder inmediatamente sin crear un Observable
   if (authService.authStatus() !== AuthStatus.checking) {
     if (authService.authStatus() === AuthStatus.authenticated) return true
-    router.navigateByUrl('/auth/login')
-    return false
+    return router.createUrlTree(['/auth/login'])
   }
 
   // Si está en checking, esperar a que se resuelva
   return toObservable(authService.authStatus).pipe(
     filter(status => status !== AuthStatus.checking),
     take(1),
-    map(status => {
-      if (status === AuthStatus.authenticated) return true
-      router.navigateByUrl('/auth/login')
-      return false
-    }),
+    map(status =>
+      status === AuthStatus.authenticated ? true : router.createUrlTree(['/auth/login']),
+    ),
   )
 }

@@ -61,14 +61,12 @@ export class AuditInterceptor implements NestInterceptor {
     };
 
     return next.handle().pipe(
-      tap(async () => {
+      tap(() => {
         const res = context.switchToHttp().getResponse();
-        await this.auditService.log(buildEntry((res as { statusCode: number }).statusCode));
+        this.auditService.log(buildEntry((res as { statusCode: number }).statusCode)).catch(() => {});
       }),
-      catchError(async (error: { status?: number; message?: string }) => {
-        await this.auditService.log(
-          buildEntry(error.status ?? 500, { error: error.message }),
-        );
+      catchError((error: { status?: number; message?: string }) => {
+        this.auditService.log(buildEntry(error.status ?? 500, { error: error.message })).catch(() => {});
         return throwError(() => error);
       }),
     );

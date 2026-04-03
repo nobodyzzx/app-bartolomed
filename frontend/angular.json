@@ -36,7 +36,15 @@
               "src/favicon.ico",
               "src/assets"
             ],
-            "styles": ["@angular/material/prebuilt-themes/azure-blue.css", "src/styles.css"],
+            "styles": [
+              "@angular/material/prebuilt-themes/azure-blue.css",
+              "@fontsource/roboto/300.css",
+              "@fontsource/roboto/400.css",
+              "@fontsource/roboto/500.css",
+              "material-icons/iconfont/material-icons.css",
+              "material-symbols/index.css",
+              "src/styles.css"
+            ],
             "scripts": []
           },
           "configurations": {
@@ -107,7 +115,15 @@
                 "input": "public"
               }
             ],
-            "styles": ["@angular/material/prebuilt-themes/azure-blue.css", "src/styles.css"],
+            "styles": [
+              "@angular/material/prebuilt-themes/azure-blue.css",
+              "@fontsource/roboto/300.css",
+              "@fontsource/roboto/400.css",
+              "@fontsource/roboto/500.css",
+              "material-icons/iconfont/material-icons.css",
+              "material-symbols/index.css",
+              "src/styles.css"
+            ],
             "scripts": []
           }
         }

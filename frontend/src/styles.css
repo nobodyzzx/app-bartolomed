@@ -439,12 +439,11 @@ p, h1, h2, h3, h4, h5, h6 {
   color: #ef4444 !important; /* red-500 */
 }
 
-/* Borde del outline en estado de error — más grueso y rojo */
-.mat-mdc-form-field.mat-form-field-invalid .mdc-notched-outline__leading,
-.mat-mdc-form-field.mat-form-field-invalid .mdc-notched-outline__notch,
-.mat-mdc-form-field.mat-form-field-invalid .mdc-notched-outline__trailing {
-  border-color: #ef4444 !important;
-  border-width: 2px !important;
+/* Borde del outline en estado de error — color rojo vía variables MDC (evita doble línea) */
+.mat-mdc-form-field.mat-form-field-invalid {
+  --mdc-outlined-text-field-error-outline-color: #ef4444;
+  --mdc-outlined-text-field-error-hover-outline-color: #ef4444;
+  --mdc-outlined-text-field-error-focus-outline-color: #ef4444;
 }
 
 /* Icono matPrefix en estado de error — se vuelve rojo */
