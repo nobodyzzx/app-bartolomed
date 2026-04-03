@@ -54,18 +54,21 @@ export class PharmacyInvoicesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.pharmacyInvoicesService.findOne(id);
+  findOne(@Param('id') id: string, @Request() req: any) {
+    const clinicId = resolveClinicId(req);
+    return this.pharmacyInvoicesService.findOne(id, clinicId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePharmacyInvoiceDto: UpdatePharmacyInvoiceDto) {
-    return this.pharmacyInvoicesService.update(id, updatePharmacyInvoiceDto);
+  update(@Param('id') id: string, @Body() updatePharmacyInvoiceDto: UpdatePharmacyInvoiceDto, @Request() req: any) {
+    const clinicId = resolveClinicId(req);
+    return this.pharmacyInvoicesService.update(id, updatePharmacyInvoiceDto, clinicId);
   }
 
   @Patch(':id/status')
-  updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdatePharmacyInvoiceStatusDto) {
-    return this.pharmacyInvoicesService.updateStatus(id, updateStatusDto);
+  updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdatePharmacyInvoiceStatusDto, @Request() req: any) {
+    const clinicId = resolveClinicId(req);
+    return this.pharmacyInvoicesService.updateStatus(id, updateStatusDto, clinicId);
   }
 
   @Post('mark-overdue')
@@ -75,7 +78,8 @@ export class PharmacyInvoicesController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.pharmacyInvoicesService.remove(id);
+  remove(@Param('id') id: string, @Request() req: any) {
+    const clinicId = resolveClinicId(req);
+    return this.pharmacyInvoicesService.remove(id, clinicId);
   }
 }

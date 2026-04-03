@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -79,7 +79,11 @@ export class PharmacyInvoicesService {
     return await qb.getMany();
   }
 
-  async findOne(id: string): Promise<PharmacyInvoice> {
+  async findOne(id: string, clinicId?: string): Promise<PharmacyInvoice> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+
     const pharmacyInvoice = await this.pharmacyInvoiceRepository.findOne({
       where: { id },
       relations: ['sale', 'sale.items', 'createdBy'],
@@ -89,11 +93,15 @@ export class PharmacyInvoicesService {
       throw new NotFoundException(`Pharmacy invoice with ID ${id} not found`);
     }
 
+    if (pharmacyInvoice.sale?.clinicId !== clinicId) {
+      throw new ForbiddenException('Access denied to this invoice');
+    }
+
     return pharmacyInvoice;
   }
 
-  async update(id: string, updatePharmacyInvoiceDto: UpdatePharmacyInvoiceDto): Promise<PharmacyInvoice> {
-    const pharmacyInvoice = await this.findOne(id);
+  async update(id: string, updatePharmacyInvoiceDto: UpdatePharmacyInvoiceDto, clinicId?: string): Promise<PharmacyInvoice> {
+    const pharmacyInvoice = await this.findOne(id, clinicId);
 
     if (pharmacyInvoice.status === InvoiceStatus.PAID) {
       throw new BadRequestException('Cannot update paid invoice');
@@ -102,11 +110,11 @@ export class PharmacyInvoicesService {
     Object.assign(pharmacyInvoice, updatePharmacyInvoiceDto);
 
     await this.pharmacyInvoiceRepository.save(pharmacyInvoice);
-    return await this.findOne(id);
+    return await this.findOne(id, clinicId);
   }
 
-  async updateStatus(id: string, updateStatusDto: UpdatePharmacyInvoiceStatusDto): Promise<PharmacyInvoice> {
-    const pharmacyInvoice = await this.findOne(id);
+  async updateStatus(id: string, updateStatusDto: UpdatePharmacyInvoiceStatusDto, clinicId?: string): Promise<PharmacyInvoice> {
+    const pharmacyInvoice = await this.findOne(id, clinicId);
 
     pharmacyInvoice.status = updateStatusDto.status;
 
@@ -136,11 +144,11 @@ export class PharmacyInvoicesService {
     }
 
     await this.pharmacyInvoiceRepository.save(pharmacyInvoice);
-    return await this.findOne(id);
+    return await this.findOne(id, clinicId);
   }
 
-  async remove(id: string): Promise<void> {
-    const pharmacyInvoice = await this.findOne(id);
+  async remove(id: string, clinicId?: string): Promise<void> {
+    const pharmacyInvoice = await this.findOne(id, clinicId);
 
     if (pharmacyInvoice.status === InvoiceStatus.PAID) {
       throw new BadRequestException('Cannot delete paid invoice');
