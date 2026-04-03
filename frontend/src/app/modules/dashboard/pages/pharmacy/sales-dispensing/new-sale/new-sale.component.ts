@@ -439,25 +439,23 @@ export class NewSaleComponent implements OnInit {
     }
 
     if (paid < total) {
-      const result = await this.alert.fire({
-        icon: 'warning',
+      await this.alert.fire({
+        icon: 'error',
         title: 'Pago insuficiente',
         html: `
           <div class="text-left">
-            <p class="mb-2">El monto pagado es menor al total:</p>
+            <p class="mb-2">El monto pagado no cubre el total de la venta:</p>
             <div class="bg-slate-100 p-3 rounded">
               <p class="mb-1"><strong>Total:</strong> Bs ${total.toFixed(2)}</p>
               <p class="mb-1"><strong>Pagado:</strong> Bs ${paid.toFixed(2)}</p>
-              <p class="text-red-600"><strong>Falta:</strong> Bs ${(total - paid).toFixed(2)}</p>
+              <p class="text-red-600 font-semibold"><strong>Falta:</strong> Bs ${(total - paid).toFixed(2)}</p>
             </div>
-            <p class="mt-3">La venta se registrará como deuda pendiente de cobro. ¿Continuar?</p>
+            <p class="mt-3 text-slate-600">Ingrese el monto completo para registrar la venta.</p>
           </div>
         `,
-        showCancelButton: true,
-        confirmButtonText: 'Continuar',
-        cancelButtonText: 'Cancelar',
+        confirmButtonText: 'Entendido',
       })
-      if (!result.isConfirmed) return
+      return
     }
 
     const confirmation = await this.alert.fire({

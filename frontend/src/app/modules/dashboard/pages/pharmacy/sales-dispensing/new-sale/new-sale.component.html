@@ -329,6 +329,15 @@
                   <mat-error>El monto pagado es requerido</mat-error>
                 </mat-form-field>
 
+                @if (amountPaid() > 0 && amountPaid() < totalAmount()) {
+                  <div class="p-3 bg-red-50 border border-red-300 rounded-xl flex items-center gap-2">
+                    <span class="material-symbols-outlined text-red-600">error</span>
+                    <span class="text-sm text-red-800">
+                      <strong>Falta:</strong> Bs {{ (totalAmount() - amountPaid()) | number: '1.2-2' }} para completar el pago
+                    </span>
+                  </div>
+                }
+
                 @if (changeAmount() > 0) {
                   <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2">
                     <span class="material-symbols-outlined text-amber-700">info</span>
@@ -405,7 +414,7 @@
           </button>
           <button
             type="submit"
-            [disabled]="loading() || cart.items().length === 0"
+            [disabled]="loading() || cart.items().length === 0 || (amountPaid() > 0 && amountPaid() < totalAmount())"
             class="inline-flex items-center gap-2 px-8 h-10 rounded-full font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 border-0 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             @if (loading()) {
