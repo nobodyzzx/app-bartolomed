@@ -10,7 +10,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instala las dependencias
-RUN npm ci && npm cache clean --force
+RUN npm ci --legacy-peer-deps && npm cache clean --force
 
 # Instala Angular CLI globalmente
 RUN npm install -g @angular/cli
