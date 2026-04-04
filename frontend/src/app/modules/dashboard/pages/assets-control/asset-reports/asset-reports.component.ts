@@ -13,9 +13,10 @@ import {
 import { AssetReportsService } from '../services/asset-reports.service'
 
 @Component({
-  selector: 'app-asset-reports',
-  templateUrl: './asset-reports.component.html',
-  styleUrls: ['./asset-reports.component.css'],
+    selector: 'app-asset-reports',
+    templateUrl: './asset-reports.component.html',
+    styleUrls: ['./asset-reports.component.css'],
+    standalone: false
 })
 export class AssetReportsComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

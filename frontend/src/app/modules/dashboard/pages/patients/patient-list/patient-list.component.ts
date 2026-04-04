@@ -12,9 +12,10 @@ import { Gender, Patient, PatientStatistics } from '../interfaces'
 import { PatientsService } from '../services'
 
 @Component({
-  selector: 'app-patient-list',
-  templateUrl: './patient-list.component.html',
-  styleUrl: './patient-list.component.css',
+    selector: 'app-patient-list',
+    templateUrl: './patient-list.component.html',
+    styleUrl: './patient-list.component.css',
+    standalone: false
 })
 export class PatientListComponent implements OnInit, AfterViewInit {
   private readonly destroyRef = inject(DestroyRef)

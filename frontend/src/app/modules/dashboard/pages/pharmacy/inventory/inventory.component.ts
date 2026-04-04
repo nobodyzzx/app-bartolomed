@@ -8,9 +8,10 @@ import { MedicationStock } from '../interfaces/pharmacy.interfaces'
 import { InventoryService } from '../services/inventory.service'
 
 @Component({
-  selector: 'app-inventory',
-  templateUrl: './inventory.component.html',
-  styleUrls: ['./inventory.component.css'],
+    selector: 'app-inventory',
+    templateUrl: './inventory.component.html',
+    styleUrls: ['./inventory.component.css'],
+    standalone: false
 })
 export class InventoryComponent implements OnInit, OnDestroy {
   products: MedicationStock[] = []

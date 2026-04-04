@@ -12,9 +12,10 @@ import { BloodType, CreatePatientDto, Gender, MaritalStatus, Patient } from '../
 import { PatientsService } from '../services'
 
 @Component({
-  selector: 'app-patient-form',
-  templateUrl: './patient-form.component.html',
-  styleUrl: './patient-form.component.css',
+    selector: 'app-patient-form',
+    templateUrl: './patient-form.component.html',
+    styleUrl: './patient-form.component.css',
+    standalone: false
 })
 export class PatientFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

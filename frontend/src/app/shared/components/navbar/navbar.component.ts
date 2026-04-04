@@ -30,9 +30,10 @@ const ROLE_PRIORITY: UserRoles[] = [
 ]
 
 @Component({
-  selector: 'share-navbar',
-  templateUrl: './navbar.component.html',
-  styles: ``,
+    selector: 'share-navbar',
+    templateUrl: './navbar.component.html',
+    styles: ``,
+    standalone: false
 })
 export class NavbarComponent implements OnInit {
   private authService = inject(AuthService)

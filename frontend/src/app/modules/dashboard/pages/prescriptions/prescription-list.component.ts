@@ -15,9 +15,10 @@ const STATUS_MAP: Record<string, { label: string; classes: string }> = {
 }
 
 @Component({
-  selector: 'app-prescription-list',
-  templateUrl: './prescription-list.component.html',
-  styleUrls: ['./prescription-list.component.css'],
+    selector: 'app-prescription-list',
+    templateUrl: './prescription-list.component.html',
+    styleUrls: ['./prescription-list.component.css'],
+    standalone: false
 })
 export class PrescriptionListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

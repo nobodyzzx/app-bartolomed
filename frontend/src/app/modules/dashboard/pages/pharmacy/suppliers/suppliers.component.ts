@@ -7,9 +7,10 @@ import { Supplier, SupplierType } from '../interfaces/pharmacy.interfaces'
 import { SuppliersService } from '../services/suppliers.service'
 
 @Component({
-  selector: 'app-suppliers',
-  templateUrl: './suppliers.component.html',
-  styleUrls: ['./suppliers.component.css'],
+    selector: 'app-suppliers',
+    templateUrl: './suppliers.component.html',
+    styleUrls: ['./suppliers.component.css'],
+    standalone: false
 })
 export class SuppliersComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

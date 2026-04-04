@@ -14,9 +14,10 @@ import {
 } from './interfaces/audit-log.interface'
 
 @Component({
-  selector: 'app-audit-page',
-  templateUrl: './audit.page.component.html',
-  styleUrls: ['./audit.page.component.css'],
+    selector: 'app-audit-page',
+    templateUrl: './audit.page.component.html',
+    styleUrls: ['./audit.page.component.css'],
+    standalone: false
 })
 export class AuditPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

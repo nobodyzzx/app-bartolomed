@@ -13,9 +13,10 @@ import { PatientsService } from '../patients/services/patients.service'
 import { BillingService, InvoiceResponse, PaymentResponse } from './billing.service'
 
 @Component({
-  selector: 'app-payment-form',
-  templateUrl: './payment-form.component.html',
-  styleUrls: ['./payment-form.component.css'],
+    selector: 'app-payment-form',
+    templateUrl: './payment-form.component.html',
+    styleUrls: ['./payment-form.component.css'],
+    standalone: false
 })
 export class PaymentFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

@@ -88,9 +88,10 @@ const COUNTRIES: Country[] = [
 ]
 
 @Component({
-  selector: 'app-supplier-form',
-  templateUrl: './supplier-form.component.html',
-  styleUrls: ['./supplier-form.component.css'],
+    selector: 'app-supplier-form',
+    templateUrl: './supplier-form.component.html',
+    styleUrls: ['./supplier-form.component.css'],
+    standalone: false
 })
 export class SupplierFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

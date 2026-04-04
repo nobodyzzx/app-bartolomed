@@ -9,9 +9,10 @@ import { CreateClinicDto, UpdateClinicDto } from '../interfaces'
 import { ClinicsService } from '../services'
 
 @Component({
-  selector: 'app-clinic-form',
-  templateUrl: './clinic-form.component.html',
-  styleUrl: './clinic-form.component.css',
+    selector: 'app-clinic-form',
+    templateUrl: './clinic-form.component.html',
+    styleUrl: './clinic-form.component.css',
+    standalone: false
 })
 export class ClinicFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

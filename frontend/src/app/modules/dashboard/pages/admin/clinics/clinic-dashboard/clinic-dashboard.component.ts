@@ -6,9 +6,10 @@ import { Clinic, ClinicStatistics } from '../interfaces'
 import { ClinicsService } from '../services'
 
 @Component({
-  selector: 'app-clinic-dashboard',
-  templateUrl: './clinic-dashboard.component.html',
-  styleUrl: './clinic-dashboard.component.css',
+    selector: 'app-clinic-dashboard',
+    templateUrl: './clinic-dashboard.component.html',
+    styleUrl: './clinic-dashboard.component.css',
+    standalone: false
 })
 export class ClinicDashboardComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

@@ -11,9 +11,10 @@ import {
 import { AssetMaintenanceService } from '../services/asset-maintenance.service'
 
 @Component({
-  selector: 'app-asset-maintenance',
-  templateUrl: './asset-maintenance.component.html',
-  styleUrls: ['./asset-maintenance.component.css'],
+    selector: 'app-asset-maintenance',
+    templateUrl: './asset-maintenance.component.html',
+    styleUrls: ['./asset-maintenance.component.css'],
+    standalone: false
 })
 export class AssetMaintenanceComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

@@ -9,9 +9,10 @@ import { environment } from '../../../../environments/environments'
 import { Appointment, CalendarDay } from './interfaces/appointment-calendar.interfaces'
 
 @Component({
-  selector: 'app-appointment-calendar',
-  templateUrl: './appointment-calendar.component.html',
-  styleUrls: ['./appointment-calendar.component.css'],
+    selector: 'app-appointment-calendar',
+    templateUrl: './appointment-calendar.component.html',
+    styleUrls: ['./appointment-calendar.component.css'],
+    standalone: false
 })
 export class AppointmentCalendarComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

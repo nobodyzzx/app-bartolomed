@@ -38,8 +38,9 @@ export interface Clinic {
 }
 
 @Component({
-  selector: 'app-register',
-  templateUrl: './register.component.html',
+    selector: 'app-register',
+    templateUrl: './register.component.html',
+    standalone: false
 })
 export class UserRegisterComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

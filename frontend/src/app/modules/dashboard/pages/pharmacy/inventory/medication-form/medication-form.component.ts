@@ -12,9 +12,10 @@ import {
 import { InventoryService } from '../../services/inventory.service'
 
 @Component({
-  selector: 'app-medication-form',
-  templateUrl: './medication-form.component.html',
-  styleUrls: ['./medication-form.component.css'],
+    selector: 'app-medication-form',
+    templateUrl: './medication-form.component.html',
+    styleUrls: ['./medication-form.component.css'],
+    standalone: false
 })
 export class MedicationFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

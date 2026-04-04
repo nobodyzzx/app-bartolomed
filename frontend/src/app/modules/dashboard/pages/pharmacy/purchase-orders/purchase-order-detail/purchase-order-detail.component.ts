@@ -8,9 +8,10 @@ import { PurchaseOrdersService } from '../../services/purchase-orders.service'
 import { SuppliersService } from '../../services/suppliers.service'
 
 @Component({
-  selector: 'app-purchase-order-detail',
-  templateUrl: './purchase-order-detail.component.html',
-  styleUrls: ['./purchase-order-detail.component.css'],
+    selector: 'app-purchase-order-detail',
+    templateUrl: './purchase-order-detail.component.html',
+    styleUrls: ['./purchase-order-detail.component.css'],
+    standalone: false
 })
 export class PurchaseOrderDetailComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

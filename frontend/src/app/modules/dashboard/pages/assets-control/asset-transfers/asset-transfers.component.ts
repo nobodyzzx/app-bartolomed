@@ -17,8 +17,9 @@ import {
 } from '../interfaces/assets.interfaces'
 
 @Component({
-  selector: 'app-asset-transfers',
-  templateUrl: './asset-transfers.component.html',
+    selector: 'app-asset-transfers',
+    templateUrl: './asset-transfers.component.html',
+    standalone: false
 })
 export class AssetTransfersComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

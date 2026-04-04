@@ -10,9 +10,10 @@ import { AssetStatus, BaseAsset } from '../interfaces/assets.interfaces'
 import { AssetRegistrationService } from '../services/asset-registration.service'
 
 @Component({
-  selector: 'app-asset-inventory-control',
-  templateUrl: './asset-inventory-control.component.html',
-  styleUrls: ['./asset-inventory-control.component.css'],
+    selector: 'app-asset-inventory-control',
+    templateUrl: './asset-inventory-control.component.html',
+    styleUrls: ['./asset-inventory-control.component.css'],
+    standalone: false
 })
 export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
   private readonly destroyRef = inject(DestroyRef)

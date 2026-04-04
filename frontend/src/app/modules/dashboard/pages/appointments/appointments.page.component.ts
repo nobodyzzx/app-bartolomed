@@ -10,9 +10,10 @@ import {
 } from './services/appointments.service'
 
 @Component({
-  selector: 'app-appointments-page',
-  templateUrl: './appointments.page.component.html',
-  styleUrls: ['./appointments.page.component.css'],
+    selector: 'app-appointments-page',
+    templateUrl: './appointments.page.component.html',
+    styleUrls: ['./appointments.page.component.css'],
+    standalone: false
 })
 export class AppointmentsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

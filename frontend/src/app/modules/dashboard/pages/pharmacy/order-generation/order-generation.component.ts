@@ -10,9 +10,10 @@ import { PurchaseOrdersService } from '../services/purchase-orders.service'
 import { SuppliersService } from '../services/suppliers.service'
 
 @Component({
-  selector: 'app-order-generation',
-  templateUrl: './order-generation.component.html',
-  styleUrls: ['./order-generation.component.css'],
+    selector: 'app-order-generation',
+    templateUrl: './order-generation.component.html',
+    styleUrls: ['./order-generation.component.css'],
+    standalone: false
 })
 export class OrderGenerationComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

@@ -5,9 +5,10 @@ import { AlertService } from '@core/services/alert.service'
 import { PrescriptionsService } from './prescriptions.service'
 
 @Component({
-  selector: 'app-prescription-detail',
-  templateUrl: './prescription-detail.component.html',
-  styleUrls: ['./prescription-detail.component.css'],
+    selector: 'app-prescription-detail',
+    templateUrl: './prescription-detail.component.html',
+    styleUrls: ['./prescription-detail.component.css'],
+    standalone: false
 })
 export class PrescriptionDetailComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

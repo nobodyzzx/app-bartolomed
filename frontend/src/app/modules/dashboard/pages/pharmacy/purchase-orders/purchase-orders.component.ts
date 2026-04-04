@@ -11,9 +11,10 @@ import { PurchaseOrdersService } from '../services/purchase-orders.service'
 import { SuppliersService } from '../services/suppliers.service'
 
 @Component({
-  selector: 'app-purchase-orders',
-  templateUrl: './purchase-orders.component.html',
-  styleUrls: ['./purchase-orders.component.css'],
+    selector: 'app-purchase-orders',
+    templateUrl: './purchase-orders.component.html',
+    styleUrls: ['./purchase-orders.component.css'],
+    standalone: false
 })
 export class PurchaseOrdersComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

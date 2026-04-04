@@ -9,9 +9,10 @@ import { Sale, SaleStatus } from '../interfaces/pharmacy.interfaces'
 import { SalesDispensingService, SalesSummary } from '../services/sales-dispensing.service'
 
 @Component({
-  selector: 'app-sales-dispensing',
-  templateUrl: './sales-dispensing.component.html',
-  styleUrls: ['./sales-dispensing.component.css'],
+    selector: 'app-sales-dispensing',
+    templateUrl: './sales-dispensing.component.html',
+    styleUrls: ['./sales-dispensing.component.css'],
+    standalone: false
 })
 export class SalesDispensingComponent implements OnInit, AfterViewInit {
   private readonly destroyRef = inject(DestroyRef)

@@ -21,10 +21,9 @@ const COLOR_MAP: Record<StatCardColor, {
 }
 
 @Component({
-  selector: 'app-stat-card',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './stat-card.component.html',
+    selector: 'app-stat-card',
+    imports: [CommonModule],
+    templateUrl: './stat-card.component.html'
 })
 export class StatCardComponent {
   @Input() label = ''

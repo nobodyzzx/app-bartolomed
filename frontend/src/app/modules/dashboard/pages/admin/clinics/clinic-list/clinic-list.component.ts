@@ -13,9 +13,10 @@ import { Clinic } from '../interfaces'
 import { ClinicsService } from '../services'
 
 @Component({
-  selector: 'app-clinic-list',
-  templateUrl: './clinic-list.component.html',
-  styleUrl: './clinic-list.component.css',
+    selector: 'app-clinic-list',
+    templateUrl: './clinic-list.component.html',
+    styleUrl: './clinic-list.component.css',
+    standalone: false
 })
 export class ClinicListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
