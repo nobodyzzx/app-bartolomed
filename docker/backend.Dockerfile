@@ -1,7 +1,7 @@
 # Multi-stage build para optimizar la imagen de producción
 
 # Etapa de construcción
-FROM node:20-slim AS builder
+FROM node:22-slim AS builder
 
 # Establece el directorio de trabajo
 WORKDIR /app
@@ -22,7 +22,7 @@ RUN npm run build
 RUN ls -la /app/dist && echo "Build successful - dist folder exists"
 
 # Etapa de desarrollo
-FROM node:20-slim AS development
+FROM node:22-slim AS development
 RUN apt-get update && apt-get install -y --no-install-recommends \
     procps \
     chromium \
@@ -39,7 +39,7 @@ EXPOSE 3000
 CMD ["npm", "run", "start:dev"]
 
 # Etapa de producción
-FROM node:20-slim AS production
+FROM node:22-slim AS production
 
 # Instala dumb-init para manejo de señales y wget para health checks (usar apt en vez de apk)
 RUN apt-get update && \

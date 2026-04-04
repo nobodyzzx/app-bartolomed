@@ -1,7 +1,7 @@
 # Multi-stage build para optimizar la imagen de producción
 
 # Etapa de construcción
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 # Establece el directorio de trabajo
 WORKDIR /app
@@ -22,7 +22,7 @@ COPY . .
 RUN ng build --configuration=production
 
 # Etapa de desarrollo (para desarrollo local)
-FROM node:20-alpine AS development
+FROM node:22-alpine AS development
 WORKDIR /app
 
 # Instalar dependencias del sistema
@@ -45,7 +45,7 @@ EXPOSE 4200
 CMD sh -c "[ ! -d node_modules ] && npm install --legacy-peer-deps; npx ng serve --host 0.0.0.0"
 
 # Etapa de producción - usando Node.js para servir archivos estáticos
-FROM node:20-alpine AS production
+FROM node:22-alpine AS production
 
 # Instala "serve" para servir archivos estáticos y wget para health checks
 RUN npm install -g serve && \
