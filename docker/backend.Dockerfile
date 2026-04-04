@@ -79,4 +79,5 @@ USER nestjs
 EXPOSE 3000
 
 # Comando para iniciar la aplicación en modo de producción
-CMD ["dumb-init", "node", "dist/main"]
+# Corre migraciones pendientes antes de arrancar
+CMD ["dumb-init", "sh", "-c", "node node_modules/typeorm/cli.js migration:run -d dist/config/data-source.js && node dist/main"]
