@@ -1,27 +1,19 @@
 import { NestFactory } from '@nestjs/core';
-import { DataSource } from 'typeorm';
+import { SeedModule } from '../src/seed/seed.module';
+import { SeedService } from '../src/seed/seed.service';
 import { AppModule } from '../src/app.module';
-import { seedAppointments, seedClinics, seedDoctors, seedPatients, seedPrescriptions, seedUsers } from '../src/seed';
 
 async function run() {
   const app = await NestFactory.createApplicationContext(AppModule);
 
   try {
-    const dataSource = app.get(DataSource) as DataSource;
+    const seedService = app.get(SeedService);
 
-    console.log('🔁 Running seeds in order...');
-
-    // Run seeds in explicit order
-    await seedClinics(dataSource);
-    await seedUsers(dataSource);
-    await seedPatients(dataSource);
-    await seedDoctors(dataSource);
-    await seedAppointments(dataSource);
-    await seedPrescriptions(dataSource);
-
-    console.log('✅ All seeds executed');
+    console.log('🔁 Running global seed...');
+    const result = await seedService.seedDemo();
+    console.log('✅ Seed completed:', JSON.stringify(result, null, 2));
   } catch (err) {
-    console.error('❌ Error running seeds:', err);
+    console.error('❌ Error running seed:', err);
     process.exitCode = 1;
   } finally {
     await app.close();
