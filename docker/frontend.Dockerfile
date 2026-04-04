@@ -24,15 +24,25 @@ RUN ng build --configuration=production
 # Etapa de desarrollo (para desarrollo local)
 FROM node:20-alpine AS development
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
-RUN npm install -g @angular/cli
+
+# Instalar dependencias del sistema
 RUN apk add --no-cache chromium && \
     if [ -x /usr/bin/chromium-browser ] && [ ! -e /usr/bin/chromium ]; then ln -s /usr/bin/chromium-browser /usr/bin/chromium; fi
+RUN npm install -g @angular/cli
+
 ENV CHROME_BIN=/usr/bin/chromium
-COPY . .
+
+# Copiar manifiestos primero (para cache de capas)
+COPY package*.json ./
+
+# Instalar dependencias dentro de la imagen (quedan en /app/node_modules de la imagen)
+RUN npm install --legacy-peer-deps && npm cache clean --force
+
+# El código fuente se monta vía volumen en runtime; node_modules queda en la imagen
 EXPOSE 4200
-CMD ["npx", "ng", "serve", "--host", "0.0.0.0"]
+
+# Al arrancar: si el volumen sobreescribió node_modules, reinstalar; luego servir
+CMD sh -c "[ ! -d node_modules ] && npm install --legacy-peer-deps; npx ng serve --host 0.0.0.0"
 
 # Etapa de producción - usando Node.js para servir archivos estáticos
 FROM node:20-alpine AS production
