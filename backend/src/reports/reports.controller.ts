@@ -413,6 +413,201 @@ export class ReportsController {
     );
   }
 
+  // ─── A1: Ventas por farmacéutico ──────────────────────────────────────────
+
+  @Get('pharmacy/by-pharmacist')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getSalesByPharmacist(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getSalesByPharmacist(this.scope(filters, req));
+  }
+
+  @Get('export/pdf/pharmacy-by-pharmacist')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportSalesByPharmacistPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getSalesByPharmacist(this.scope(filters, req));
+    const buf  = await this.reportsPdfService.generateSalesByPharmacistPdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="ventas-por-farmaceutico-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.end(buf);
+  }
+
+  @Get('export/excel/pharmacy-by-pharmacist')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportSalesByPharmacistExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getSalesByPharmacist(this.scope(filters, req));
+    await this.exportService.streamExcel(
+      res,
+      [{ name: 'Por Farmacéutico', build: ws => this.exportService.buildSalesByPharmacistSheet(ws, data) }],
+      `ventas-farmaceutico-${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
+  }
+
+  // ─── A2: Encargado × Día × Medicamento ───────────────────────────────────
+
+  @Get('pharmacy/pharmacist-medication-day')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getSalesByPharmacistMedicationDay(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getSalesByPharmacistMedicationDay(this.scope(filters, req));
+  }
+
+  @Get('export/pdf/pharmacy-pharmacist-day')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportPharmacistDayPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getSalesByPharmacistMedicationDay(this.scope(filters, req));
+    const buf  = await this.reportsPdfService.generatePharmacistDayMedicationPdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="detalle-encargado-dia-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.end(buf);
+  }
+
+  @Get('export/excel/pharmacy-pharmacist-day')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportPharmacistDayExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getSalesByPharmacistMedicationDay(this.scope(filters, req));
+    await this.exportService.streamExcel(
+      res,
+      [{ name: 'Encargado×Día×Med.', build: ws => this.exportService.buildPharmacistDayMedicationSheet(ws, data) }],
+      `encargado-dia-medicamento-${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
+  }
+
+  // ─── B1: Inventario valorizado ────────────────────────────────────────────
+
+  @Get('pharmacy/inventory-valorized')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getValorizedInventory(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getValorizedInventory(this.scope(filters, req));
+  }
+
+  @Get('export/pdf/pharmacy-inventory-valorized')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportValorizedInventoryPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getValorizedInventory(this.scope(filters, req));
+    const buf  = await this.reportsPdfService.generateValorizedInventoryPdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="inventario-valorizado-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.end(buf);
+  }
+
+  @Get('export/excel/pharmacy-inventory-valorized')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportValorizedInventoryExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getValorizedInventory(this.scope(filters, req));
+    await this.exportService.streamExcel(
+      res,
+      [{ name: 'Inventario Valorizado', build: ws => this.exportService.buildValorizedInventorySheet(ws, data) }],
+      `inventario-valorizado-${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
+  }
+
+  // ─── B2: Inventario por categoría ────────────────────────────────────────
+
+  @Get('pharmacy/inventory-by-category')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getInventoryByCategory(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getInventoryByCategory(this.scope(filters, req));
+  }
+
+  @Get('export/pdf/pharmacy-inventory-by-category')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportInventoryByCategoryPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getInventoryByCategory(this.scope(filters, req));
+    const buf  = await this.reportsPdfService.generateInventoryByCategoryPdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="inventario-categorias-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.end(buf);
+  }
+
+  // ─── B3: Sin movimiento ───────────────────────────────────────────────────
+
+  @Get('pharmacy/no-movement')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getMedicationsWithoutMovement(
+    @Query() filters: ReportFilters,
+    @Query('days', new DefaultValuePipe(30), ParseIntPipe) days: number,
+    @Req() req: Request,
+  ) {
+    return this.advancedReportsService.getMedicationsWithoutMovement(this.scope(filters, req), days);
+  }
+
+  @Get('export/pdf/pharmacy-no-movement')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportNoMovementPdf(
+    @Query() filters: ReportFilters,
+    @Query('days', new DefaultValuePipe(30), ParseIntPipe) days: number,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const data = await this.advancedReportsService.getMedicationsWithoutMovement(this.scope(filters, req), days);
+    const buf  = await this.reportsPdfService.generateNoMovementPdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="sin-movimiento-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.end(buf);
+  }
+
+  @Get('export/excel/pharmacy-no-movement')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportNoMovementExcel(
+    @Query() filters: ReportFilters,
+    @Query('days', new DefaultValuePipe(30), ParseIntPipe) days: number,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const data = await this.advancedReportsService.getMedicationsWithoutMovement(this.scope(filters, req), days);
+    await this.exportService.streamExcel(
+      res,
+      [{ name: 'Sin Movimiento', build: ws => this.exportService.buildNoMovementSheet(ws, data) }],
+      `sin-movimiento-${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
+  }
+
+  // ─── C1: Ventas por medicamento detalle ──────────────────────────────────
+
+  @Get('pharmacy/medication-detail')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getSalesByMedicationDetail(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getSalesByMedicationDetail(this.scope(filters, req));
+  }
+
+  @Get('export/pdf/pharmacy-medication-detail')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportMedicationDetailPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getSalesByMedicationDetail(this.scope(filters, req));
+    const buf  = await this.reportsPdfService.generateMedicationDetailPdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="ventas-por-medicamento-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.end(buf);
+  }
+
+  @Get('export/excel/pharmacy-medication-detail')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportMedicationDetailExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getSalesByMedicationDetail(this.scope(filters, req));
+    await this.exportService.streamExcel(
+      res,
+      [{ name: 'Ventas por Medicamento', build: ws => this.exportService.buildMedicationDetailSheet(ws, data) }],
+      `ventas-medicamento-${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
+  }
+
+  // ─── C2: Receta vs Venta libre ────────────────────────────────────────────
+
+  @Get('pharmacy/prescription-vs-free')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getPrescriptionVsFreeSales(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getPrescriptionVsFreeSales(this.scope(filters, req));
+  }
+
+  @Get('export/pdf/pharmacy-prescription-vs-free')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportPrescriptionVsFreePdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getPrescriptionVsFreeSales(this.scope(filters, req));
+    const buf  = await this.reportsPdfService.generatePrescriptionVsFreePdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="receta-vs-libre-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.end(buf);
+  }
+
   // ─── Exportación Puppeteer HTML→PDF (R-P1..R-P5) ─────────────────────────
 
   /**

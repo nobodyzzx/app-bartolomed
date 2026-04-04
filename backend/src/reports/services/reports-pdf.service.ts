@@ -940,10 +940,13 @@ export class ReportsPdfService {
 
     const maxRevenue = Math.max(...daily.map((d: any) => Number(d.totalRevenue ?? 0)), 1);
 
+    const fmtDate = (d: any): string =>
+      d instanceof Date ? d.toISOString().slice(0, 10) : String(d ?? '-');
+
     const revenueChartHtml = daily.length > 0
       ? this.inlineChart('bar', {
           data: {
-            labels: daily.map((d: any) => d.date ?? '-'),
+            labels: daily.map((d: any) => fmtDate(d.date)),
             datasets: [{ label: 'Ingresos (Bs)', data: daily.map((d: any) => Number(d.totalRevenue ?? 0)), backgroundColor: '#f97316', borderRadius: 4 }],
           },
           options: { responsive: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
@@ -951,7 +954,7 @@ export class ReportsPdfService {
       : this.noData();
 
     const dailyRows = daily.map((d: any) => [
-      this.esc(d.date ?? '-'),
+      this.esc(fmtDate(d.date)),
       `<span class="num">${this.fmtBs(d.totalRevenue)}</span>`,
       `<span class="num">${this.fmtNum(d.ticketCount)}</span>`,
       `<span class="num">${this.fmtBs(d.avgTicket)}</span>`,
@@ -1046,6 +1049,413 @@ export class ReportsPdfService {
 
   async generateProfitabilityPdf(data: any[]): Promise<Buffer> {
     return this.render(this.profitabilityHtml(data));
+  }
+
+  // ─── A1: PDF Ventas por Farmacéutico ─────────────────────────────────────
+
+  async generateSalesByPharmacistPdf(data: any[]): Promise<Buffer> {
+    return this.render(this.salesByPharmacistHtml(data));
+  }
+
+  private salesByPharmacistHtml(data: any[]): string {
+    const totalRevenue = data.reduce((s, r) => s + Number(r.totalRevenue ?? 0), 0);
+    const totalUnits   = data.reduce((s, r) => s + Number(r.totalUnits ?? 0), 0);
+    const totalSales   = data.reduce((s, r) => s + Number(r.salesCount ?? 0), 0);
+
+    const chartHtml = data.length > 0
+      ? this.inlineChart('bar', {
+          data: {
+            labels: data.map(r => this.esc(r.pharmacistName ?? '-')),
+            datasets: [{ label: 'Ingresos (Bs)', data: data.map(r => Number(r.totalRevenue ?? 0)), backgroundColor: '#8b5cf6', borderRadius: 4 }],
+          },
+          options: { responsive: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+        }, 540, 200)
+      : this.noData();
+
+    const rows = data.map(r => [
+      `<b>${this.esc(r.pharmacistName ?? '-')}</b>`,
+      `<span class="num">${this.fmtNum(r.salesCount)}</span>`,
+      `<span class="num">${this.fmtNum(r.totalUnits)}</span>`,
+      `<span class="num">${this.fmtBs(r.totalRevenue)}</span>`,
+      `<span class="num">${this.fmtBs(r.avgTicket)}</span>`,
+      `<span class="num">${this.fmtNum(r.workDays)}</span>`,
+      `<span class="num">${this.fmtPct(r.revenuePct)}</span>`,
+    ]);
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style>${this.chartJsTag()}</head><body>
+      ${this.header('Ventas por Farmacéutico')}
+      ${this.meta([
+        ['Generado', this.nowBO()],
+        ['Total Ingresos', this.fmtBs(totalRevenue)],
+        ['Total Tickets', this.fmtNum(totalSales)],
+        ['Total Unidades', this.fmtNum(totalUnits)],
+      ])}
+      <div class="cnt">
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+          ${this.kpiCard('Total Ingresos', this.fmtBs(totalRevenue), 'Período seleccionado', 'purple')}
+          ${this.kpiCard('Total Ventas', this.fmtNum(totalSales), 'Tickets emitidos', 'blue')}
+          ${this.kpiCard('Farmacéuticos', this.fmtNum(data.length), 'Con ventas en el período', 'green')}
+        </div>
+        ${this.section('Ingresos por Farmacéutico', chartHtml)}
+        ${data.length > 0 ? this.section('Detalle por Encargado',
+          this.table(
+            ['Farmacéutico', 'Ventas', 'Unidades', 'Ingresos', 'Ticket Prom.', 'Días trab.', '% del total'],
+            rows,
+            ['', 'num', 'num', 'num', 'num', 'num', 'center'],
+          )
+        ) : ''}
+      </div>
+    </body></html>`;
+  }
+
+  // ─── A2: PDF Encargado × Día × Medicamento ────────────────────────────────
+
+  async generatePharmacistDayMedicationPdf(data: any): Promise<Buffer> {
+    return this.render(this.pharmacistDayMedicationHtml(data));
+  }
+
+  private pharmacistDayMedicationHtml(data: any): string {
+    const rows: any[] = data.rows ?? [];
+    const byPharmacist: any[] = data.byPharmacist ?? [];
+
+    const totalRevenue = rows.reduce((s: number, r: any) => s + Number(r.totalRevenue ?? 0), 0);
+    const totalUnits   = rows.reduce((s: number, r: any) => s + Number(r.qtySold ?? 0), 0);
+
+    const tableRows = rows.slice(0, 200).map((r: any) => [
+      this.esc(r.pharmacistName ?? '-'),
+      this.esc(r.saleDay ?? '-'),
+      `<b>${this.esc(r.medicationName ?? '-')}</b>`,
+      this.esc(r.category ?? '-'),
+      `<span class="num">${this.fmtNum(r.qtySold)}</span>`,
+      `<span class="num">${this.fmtBs(r.totalRevenue)}</span>`,
+      `<span class="num">${this.fmtBs(r.unitPrice)}</span>`,
+    ]);
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style>${this.readyTag()}</head><body>
+      ${this.header('Detalle Encargado × Día × Medicamento')}
+      ${this.meta([
+        ['Generado', this.nowBO()],
+        ['Total Ingresos', this.fmtBs(totalRevenue)],
+        ['Total Unidades', this.fmtNum(totalUnits)],
+        ['Farmacéuticos', this.fmtNum(byPharmacist.length)],
+      ])}
+      <div class="cnt">
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+          ${this.kpiCard('Total Ingresos', this.fmtBs(totalRevenue), 'Período seleccionado', 'purple')}
+          ${this.kpiCard('Total Unidades', this.fmtNum(totalUnits), 'Dispensadas', 'orange')}
+          ${this.kpiCard('Farmacéuticos', this.fmtNum(byPharmacist.length), 'Con actividad', 'blue')}
+        </div>
+        ${rows.length > 0 ? this.section('Detalle Completo (máx. 200 filas)',
+          this.table(
+            ['Farmacéutico', 'Fecha', 'Medicamento', 'Categoría', 'Unidades', 'Ingresos', 'Precio Unit.'],
+            tableRows,
+            ['', 'center', '', '', 'num', 'num', 'num'],
+          )
+        ) : this.noData()}
+      </div>
+    </body></html>`;
+  }
+
+  // ─── B1: PDF Inventario Valorizado ───────────────────────────────────────
+
+  async generateValorizedInventoryPdf(data: any): Promise<Buffer> {
+    return this.render(this.valorizedInventoryHtml(data));
+  }
+
+  private valorizedInventoryHtml(data: any): string {
+    const rows: any[] = data.rows ?? [];
+    const summary     = data.summary ?? {};
+
+    const statusLabel: Record<string, string> = {
+      ok: 'Normal', critico: 'Crítico', sin_stock: 'Sin Stock', por_vencer: 'Por Vencer',
+    };
+    const statusClass: Record<string, string> = {
+      ok: 'badge-green', critico: 'badge-red', sin_stock: 'badge-red', por_vencer: 'badge-amber',
+    };
+
+    const tableRows = rows.map((r: any) => [
+      `<b>${this.esc(r.medicationName ?? '-')}</b>`,
+      this.esc(r.genericName ?? '-'),
+      this.esc(r.category ?? '-'),
+      this.esc(r.batchNumber ?? '-'),
+      `<span class="num">${this.fmtNum(r.availableQuantity)}</span>`,
+      `<span class="num">${this.fmtNum(r.minimumStock)}</span>`,
+      `<span class="num">${this.fmtBs(r.unitCost)}</span>`,
+      `<span class="num">${this.fmtBs(r.sellingPrice)}</span>`,
+      `<span class="num">${this.fmtBs(r.costValue)}</span>`,
+      `<span class="badge ${statusClass[r.status] ?? 'badge-green'}">${statusLabel[r.status] ?? r.status}</span>`,
+    ]);
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style>${this.readyTag()}</head><body>
+      ${this.header('Inventario General Valorizado')}
+      ${this.meta([
+        ['Generado', this.nowBO()],
+        ['Productos', this.fmtNum(summary.totalProducts)],
+        ['Valor Costo', this.fmtBs(summary.totalCostValue)],
+        ['Valor Venta', this.fmtBs(summary.totalSaleValue)],
+        ['Margen Potencial', this.fmtBs(summary.potentialMargin)],
+      ])}
+      <div class="cnt">
+        <div class="kpi-grid">
+          ${this.kpiCard('Valor a Costo', this.fmtBs(summary.totalCostValue), `${this.fmtNum(summary.totalProducts)} SKUs`, 'blue')}
+          ${this.kpiCard('Valor Venta', this.fmtBs(summary.totalSaleValue), 'Precio de venta', 'green')}
+          ${this.kpiCard('Margen Potencial', this.fmtBs(summary.potentialMargin), 'Si se vende todo', 'purple')}
+          ${this.kpiCard('Alertas', this.fmtNum((summary.sinStock ?? 0) + (summary.critico ?? 0) + (summary.porVencer ?? 0)), 'Sin stock + crítico + por vencer', 'red')}
+        </div>
+        ${rows.length > 0 ? this.section('Detalle de Inventario',
+          this.table(
+            ['Medicamento', 'Genérico', 'Categoría', 'Lote', 'Disponible', 'Mínimo', 'Costo', 'Precio', 'Valor Costo', 'Estado'],
+            tableRows,
+            ['', '', '', '', 'num', 'num', 'num', 'num', 'num', 'center'],
+          )
+        ) : this.noData()}
+      </div>
+    </body></html>`;
+  }
+
+  // ─── B2: PDF Inventario por Categoría ────────────────────────────────────
+
+  async generateInventoryByCategoryPdf(data: any[]): Promise<Buffer> {
+    return this.render(this.inventoryByCategoryHtml(data));
+  }
+
+  private inventoryByCategoryHtml(data: any[]): string {
+    const totalCost  = data.reduce((s, r) => s + Number(r.totalCostValue ?? 0), 0);
+    const totalSale  = data.reduce((s, r) => s + Number(r.totalSaleValue ?? 0), 0);
+    const totalUnits = data.reduce((s, r) => s + Number(r.totalUnits ?? 0), 0);
+
+    const chartHtml = data.length > 0
+      ? this.inlineChart('doughnut', {
+          data: {
+            labels: data.map(r => this.esc(r.category ?? 'Sin categoría')),
+            datasets: [{
+              data: data.map(r => Number(r.totalCostValue ?? 0)),
+              backgroundColor: this.PALETTE_MIXED,
+              borderWidth: 2,
+            }],
+          },
+          options: { responsive: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } } },
+        }, 320, 220)
+      : this.noData();
+
+    const rows = data.map(r => [
+      `<b>${this.esc(r.category ?? 'Sin categoría')}</b>`,
+      `<span class="num">${this.fmtNum(r.productCount)}</span>`,
+      `<span class="num">${this.fmtNum(r.totalUnits)}</span>`,
+      `<span class="num">${this.fmtBs(r.totalCostValue)}</span>`,
+      `<span class="num">${this.fmtBs(r.totalSaleValue)}</span>`,
+      `<span class="num ${Number(r.lowStockCount) > 0 ? 'badge badge-amber' : ''}">${this.fmtNum(r.lowStockCount)}</span>`,
+      `<span class="num ${Number(r.expiringSoonCount) > 0 ? 'badge badge-red' : ''}">${this.fmtNum(r.expiringSoonCount)}</span>`,
+    ]);
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}
+      .chart-row{display:flex;gap:20px;align-items:flex-start;margin-bottom:8px}
+    </style>${this.chartJsTag()}</head><body>
+      ${this.header('Inventario por Categoría')}
+      ${this.meta([
+        ['Generado', this.nowBO()],
+        ['Categorías', this.fmtNum(data.length)],
+        ['Total SKUs', this.fmtNum(data.reduce((s, r) => s + Number(r.productCount ?? 0), 0))],
+        ['Valor Total Costo', this.fmtBs(totalCost)],
+        ['Valor Total Venta', this.fmtBs(totalSale)],
+      ])}
+      <div class="cnt">
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+          ${this.kpiCard('Categorías', this.fmtNum(data.length), 'Activas con stock', 'blue')}
+          ${this.kpiCard('Total Unidades', this.fmtNum(totalUnits), 'En stock', 'green')}
+          ${this.kpiCard('Valor Costo Total', this.fmtBs(totalCost), 'Inversión en inventario', 'orange')}
+        </div>
+        ${this.section('Distribución por Categoría (valor costo)', chartHtml)}
+        ${data.length > 0 ? this.section('Resumen por Categoría',
+          this.table(
+            ['Categoría', 'Productos', 'Unidades', 'Valor Costo', 'Valor Venta', 'Bajo Mínimo', 'Por Vencer'],
+            rows,
+            ['', 'num', 'num', 'num', 'num', 'center', 'center'],
+          )
+        ) : this.noData()}
+      </div>
+    </body></html>`;
+  }
+
+  // ─── B3: PDF Medicamentos sin Movimiento ─────────────────────────────────
+
+  async generateNoMovementPdf(data: any): Promise<Buffer> {
+    return this.render(this.noMovementHtml(data));
+  }
+
+  private noMovementHtml(data: any): string {
+    const rows: any[] = data.rows ?? [];
+    const days: number = data.days ?? 30;
+    const totalStockValue: number = data.totalStockValue ?? 0;
+
+    const tableRows = rows.map((r: any) => {
+      const expiry = r.expiryDate ? new Date(r.expiryDate).toLocaleDateString('es-BO') : '-';
+      const lastSale = r.lastSaleDate
+        ? (r.lastSaleDate instanceof Date ? r.lastSaleDate : new Date(r.lastSaleDate)).toLocaleDateString('es-BO')
+        : 'Sin ventas';
+      return [
+        `<b>${this.esc(r.medicationName ?? '-')}</b>`,
+        this.esc(r.genericName ?? '-'),
+        this.esc(r.category ?? '-'),
+        this.esc(r.batchNumber ?? '-'),
+        `<span class="num">${this.fmtNum(r.availableQuantity)}</span>`,
+        `<span class="num">${this.fmtBs(r.stockValue)}</span>`,
+        expiry,
+        lastSale,
+      ];
+    });
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style>${this.readyTag()}</head><body>
+      ${this.header(`Medicamentos Sin Movimiento (>${days} días)`)}
+      ${this.meta([
+        ['Generado', this.nowBO()],
+        ['Sin movimiento', this.fmtNum(rows.length)],
+        ['Valor inmovilizado', this.fmtBs(totalStockValue)],
+        ['Umbral', `${days} días`],
+      ])}
+      <div class="cnt">
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+          ${this.kpiCard('Sin Movimiento', this.fmtNum(rows.length), `Más de ${days} días`, 'red')}
+          ${this.kpiCard('Valor Inmovilizado', this.fmtBs(totalStockValue), 'A precio de costo', 'amber')}
+          ${this.kpiCard('Acción Recomendada', 'Revisión', 'Promocionar o devolver', 'purple')}
+        </div>
+        ${rows.length > 0 ? this.section('Detalle de Medicamentos Inactivos',
+          this.table(
+            ['Medicamento', 'Genérico', 'Categoría', 'Lote', 'Disponible', 'Valor', 'Vencimiento', 'Última Venta'],
+            tableRows,
+            ['', '', '', '', 'num', 'num', 'center', 'center'],
+          )
+        ) : this.noData()}
+      </div>
+    </body></html>`;
+  }
+
+  // ─── C1: PDF Ventas por Medicamento Detalle ───────────────────────────────
+
+  async generateMedicationDetailPdf(data: any[]): Promise<Buffer> {
+    return this.render(this.medicationDetailHtml(data));
+  }
+
+  private medicationDetailHtml(data: any[]): string {
+    const totalRevenue = data.reduce((s, r) => s + Number(r.totalRevenue ?? 0), 0);
+    const totalUnits   = data.reduce((s, r) => s + Number(r.qtySold ?? 0), 0);
+    const totalMargin  = data.reduce((s, r) => s + Number(r.grossMargin ?? 0), 0);
+
+    const chartHtml = data.slice(0, 15).length > 0
+      ? this.inlineChart('bar', {
+          data: {
+            labels: data.slice(0, 15).map(r => this.esc(r.medicationName ?? '-')),
+            datasets: [
+              { label: 'Ingresos', data: data.slice(0, 15).map(r => Number(r.totalRevenue ?? 0)), backgroundColor: '#3b82f6', borderRadius: 4 },
+              { label: 'Margen',   data: data.slice(0, 15).map(r => Number(r.grossMargin ?? 0)),  backgroundColor: '#10b981', borderRadius: 4 },
+            ],
+          },
+          options: { responsive: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } },
+        }, 540, 220)
+      : this.noData();
+
+    const rows = data.map(r => [
+      `<b>${this.esc(r.medicationName ?? '-')}</b>`,
+      this.esc(r.category ?? '-'),
+      this.esc(r.dosageForm ?? '-'),
+      `<span class="num">${this.fmtNum(r.qtySold)}</span>`,
+      `<span class="num">${this.fmtBs(r.avgUnitPrice)}</span>`,
+      `<span class="num">${this.fmtBs(r.totalRevenue)}</span>`,
+      `<span class="num">${this.fmtBs(r.grossMargin)}</span>`,
+      `<span class="num ${Number(r.marginPct) >= 20 ? 'badge badge-green' : Number(r.marginPct) >= 10 ? 'badge badge-amber' : 'badge badge-red'}">${this.fmtPct(r.marginPct)}</span>`,
+    ]);
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style>${this.chartJsTag()}</head><body>
+      ${this.header('Ventas por Medicamento — Detalle')}
+      ${this.meta([
+        ['Generado', this.nowBO()],
+        ['Productos vendidos', this.fmtNum(data.length)],
+        ['Total Ingresos', this.fmtBs(totalRevenue)],
+        ['Margen Bruto', this.fmtBs(totalMargin)],
+      ])}
+      <div class="cnt">
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+          ${this.kpiCard('Total Ingresos', this.fmtBs(totalRevenue), 'Período seleccionado', 'blue')}
+          ${this.kpiCard('Total Unidades', this.fmtNum(totalUnits), 'Dispensadas', 'orange')}
+          ${this.kpiCard('Margen Bruto', this.fmtBs(totalMargin), 'Ganancia bruta', 'green')}
+        </div>
+        ${this.section('Top 15 Medicamentos por Ingresos', chartHtml)}
+        ${data.length > 0 ? this.section('Detalle Completo',
+          this.table(
+            ['Medicamento', 'Categoría', 'Forma', 'Unidades', 'Precio Prom.', 'Ingresos', 'Margen Bs', 'Margen %'],
+            rows,
+            ['', '', '', 'num', 'num', 'num', 'num', 'center'],
+          )
+        ) : this.noData()}
+      </div>
+    </body></html>`;
+  }
+
+  // ─── C2: PDF Ventas con Receta vs Libres ─────────────────────────────────
+
+  async generatePrescriptionVsFreePdf(data: any): Promise<Buffer> {
+    return this.render(this.prescriptionVsFreeHtml(data));
+  }
+
+  private prescriptionVsFreeHtml(data: any): string {
+    const summary: any[]     = data.summary ?? [];
+    const byMedication: any[] = data.byMedication ?? [];
+
+    const typeLabel: Record<string, string> = { con_receta: 'Con Receta', libre: 'Venta Libre' };
+    const conReceta = summary.find(r => r.type === 'con_receta') ?? {};
+    const libre     = summary.find(r => r.type === 'libre') ?? {};
+
+    const chartHtml = summary.length > 0
+      ? this.inlineChart('doughnut', {
+          data: {
+            labels: summary.map(r => typeLabel[r.type] ?? r.type),
+            datasets: [{
+              data: summary.map(r => Number(r.totalRevenue ?? 0)),
+              backgroundColor: ['#3b82f6', '#10b981'],
+              borderWidth: 2,
+            }],
+          },
+          options: { responsive: false, plugins: { legend: { position: 'bottom' } } },
+        }, 280, 200)
+      : this.noData();
+
+    const medCR = byMedication.filter((r: any) => r.type === 'con_receta').slice(0, 15);
+    const medLib = byMedication.filter((r: any) => r.type === 'libre').slice(0, 15);
+    const medTable = (items: any[]) => items.length > 0
+      ? this.table(
+          ['Medicamento', 'Unidades', 'Ingresos'],
+          items.map((r: any) => [
+            this.esc(r.medicationName ?? '-'),
+            `<span class="num">${this.fmtNum(r.qtySold)}</span>`,
+            `<span class="num">${this.fmtBs(r.revenue)}</span>`,
+          ]),
+          ['', 'num', 'num'],
+        )
+      : this.noData();
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}
+      .chart-row{display:flex;gap:20px;align-items:flex-start;margin-bottom:8px}
+    </style>${this.chartJsTag()}</head><body>
+      ${this.header('Ventas con Receta vs. Ventas Libres')}
+      ${this.meta([
+        ['Generado', this.nowBO()],
+        ['Con receta', `${this.fmtBs(conReceta.totalRevenue)} (${conReceta.pct ?? 0}%)`],
+        ['Libre', `${this.fmtBs(libre.totalRevenue)} (${libre.pct ?? 0}%)`],
+      ])}
+      <div class="cnt">
+        <div class="kpi-grid">
+          ${this.kpiCard('Con Receta', this.fmtBs(conReceta.totalRevenue), `${conReceta.pct ?? 0}% del total`, 'blue')}
+          ${this.kpiCard('Venta Libre', this.fmtBs(libre.totalRevenue), `${libre.pct ?? 0}% del total`, 'green')}
+          ${this.kpiCard('Tickets CR', this.fmtNum(conReceta.salesCount), 'Ventas con receta', 'purple')}
+          ${this.kpiCard('Tickets Libres', this.fmtNum(libre.salesCount), 'Ventas sin receta', 'orange')}
+        </div>
+        <div class="chart-row">
+          <div>${this.section('Distribución de Ingresos', chartHtml)}</div>
+        </div>
+        ${this.section('Top Medicamentos — Con Receta', medTable(medCR))}
+        ${this.section('Top Medicamentos — Venta Libre', medTable(medLib))}
+      </div>
+    </body></html>`;
   }
 
   private profitabilityHtml(data: any[]): string {

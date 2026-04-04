@@ -54,21 +54,21 @@
         {{ q.label }}
       </button>
       <button
-        (click)="filterForm.patchValue({ status: 'failure' }); onFilterChange()"
+        (click)="filterForm.patchValue({ status: 'failure' })"
         class="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
       >
         <span class="material-symbols-outlined msz-14 align-middle mr-0.5">error</span>
         Solo errores
       </button>
       <button
-        (click)="filterForm.patchValue({ action: 'LOGIN' }); onFilterChange()"
+        (click)="filterForm.patchValue({ action: 'LOGIN' })"
         class="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
       >
         <span class="material-symbols-outlined msz-14 align-middle mr-0.5">login</span>
         Solo logins
       </button>
       <button
-        (click)="filterForm.patchValue({ action: 'DELETE' }); onFilterChange()"
+        (click)="filterForm.patchValue({ action: 'DELETE' })"
         class="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
       >
         <span class="material-symbols-outlined msz-14 align-middle mr-0.5">delete</span>
@@ -92,7 +92,7 @@
         </p>
       </div>
       <button
-        (click)="filterForm.patchValue({ status: 'failure' }); onFilterChange()"
+        (click)="filterForm.patchValue({ status: 'failure' })"
         class="text-xs font-medium text-red-700 underline underline-offset-2 hover:text-red-900 whitespace-nowrap"
       >
         Ver errores
@@ -286,65 +286,83 @@
       </div>
 
       <!-- Panel de filtros colapsable -->
-      <div *ngIf="showFilters" class="px-6 py-4 border-b border-slate-100 bg-white" [formGroup]="filterForm">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3 items-end">
+      <div *ngIf="showFilters" class="px-6 py-5 border-b border-slate-100 bg-white" [formGroup]="filterForm">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-          <div class="sm:col-span-2">
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <mat-label>Buscar</mat-label>
-              <span matPrefix class="material-symbols-outlined text-slate-400 msz-20 ml-2 mr-1">search</span>
-              <input
-                matInput formControlName="search"
-                placeholder="Usuario, recurso, ruta…"
-                (input)="onSearch($any($event.target).value)"
-              />
-            </mat-form-field>
-          </div>
+          <!-- Búsqueda -->
+          <mat-form-field appearance="outline" class="lg:col-span-3">
+            <mat-label>Buscar</mat-label>
+            <mat-icon matPrefix class="text-blue-400">search</mat-icon>
+            <input
+              matInput formControlName="search"
+              placeholder="Usuario, recurso, ruta…"
+              (input)="onSearch($any($event.target).value)"
+            />
+            <mat-hint>Busca por email, nombre de usuario, recurso o ruta</mat-hint>
+          </mat-form-field>
 
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <!-- Acción -->
+          <mat-form-field appearance="outline">
             <mat-label>Acción</mat-label>
-            <mat-select formControlName="action" (selectionChange)="onFilterChange()">
-              <mat-option value="">Todas</mat-option>
+            <mat-icon matPrefix class="text-blue-400">bolt</mat-icon>
+            <mat-select formControlName="action">
+              <mat-option [value]="null">Todas</mat-option>
               <mat-option *ngFor="let a of actionOptions" [value]="a.value">{{ a.label }}</mat-option>
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <!-- Recurso -->
+          <mat-form-field appearance="outline">
             <mat-label>Recurso</mat-label>
-            <mat-select formControlName="resource" (selectionChange)="onFilterChange()">
-              <mat-option value="">Todos</mat-option>
+            <mat-icon matPrefix class="text-blue-400">folder_open</mat-icon>
+            <mat-select formControlName="resource">
+              <mat-option [value]="null">Todos</mat-option>
               <mat-option *ngFor="let r of distinctValues.resources" [value]="r">{{ r }}</mat-option>
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <!-- Estado -->
+          <mat-form-field appearance="outline">
             <mat-label>Estado</mat-label>
-            <mat-select formControlName="status" (selectionChange)="onFilterChange()">
-              <mat-option value="">Todos</mat-option>
+            <mat-icon matPrefix class="text-blue-400">verified</mat-icon>
+            <mat-select formControlName="status">
+              <mat-option [value]="null">Todos</mat-option>
               <mat-option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</mat-option>
             </mat-select>
           </mat-form-field>
 
-          <button
-            (click)="resetFilters()"
-            class="flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-sm transition-colors whitespace-nowrap"
-          >
-            <span class="material-symbols-outlined msz-18">filter_alt_off</span>
-            Limpiar
-          </button>
+          <!-- Desde -->
+          <mat-form-field appearance="outline">
+            <mat-label>Desde</mat-label>
+            <mat-icon matPrefix class="text-blue-400">calendar_today</mat-icon>
+            <input matInput [matDatepicker]="pickerStart" formControlName="startDate" />
+            <mat-datepicker-toggle matIconSuffix [for]="pickerStart"></mat-datepicker-toggle>
+            <mat-datepicker #pickerStart></mat-datepicker>
+            <mat-hint>Fecha de inicio del rango</mat-hint>
+          </mat-form-field>
+
+          <!-- Hasta -->
+          <mat-form-field appearance="outline">
+            <mat-label>Hasta</mat-label>
+            <mat-icon matPrefix class="text-blue-400">event</mat-icon>
+            <input matInput [matDatepicker]="pickerEnd" formControlName="endDate" />
+            <mat-datepicker-toggle matIconSuffix [for]="pickerEnd"></mat-datepicker-toggle>
+            <mat-datepicker #pickerEnd></mat-datepicker>
+            <mat-hint>Fecha de fin del rango</mat-hint>
+          </mat-form-field>
 
         </div>
 
-        <!-- Rango de fechas -->
-        <div class="grid grid-cols-2 gap-3 mt-3 max-w-xs">
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Desde</mat-label>
-            <input matInput type="date" formControlName="startDate" (change)="onFilterChange()" />
-          </mat-form-field>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Hasta</mat-label>
-            <input matInput type="date" formControlName="endDate" (change)="onFilterChange()" />
-          </mat-form-field>
+        <!-- Botón limpiar -->
+        <div class="flex justify-end mt-4">
+          <button
+            type="button"
+            (click)="resetFilters()"
+            class="btn btn-danger-outline"
+          >
+            <span class="material-symbols-outlined msz-18 leading-none">filter_alt_off</span>
+            Limpiar filtros
+          </button>
         </div>
       </div>
 

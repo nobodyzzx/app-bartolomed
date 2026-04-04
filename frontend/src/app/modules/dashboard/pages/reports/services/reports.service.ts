@@ -426,6 +426,80 @@ export class ReportsService {
     return this.downloadBlob('export/excel/pharmacy-stock-movements', `kardex-${date}.xlsx`, params)
   }
 
+  // ─── A1: Ventas por farmacéutico ─────────────────────────────────────────
+
+  downloadSalesByPharmacistPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadPuppeteerPdf('pharmacy-by-pharmacist', `ventas-farmaceutico-${date}.pdf`, params)
+  }
+
+  downloadSalesByPharmacistExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-by-pharmacist', `ventas-farmaceutico-${date}.xlsx`, params)
+  }
+
+  // ─── A2: Encargado × Día × Medicamento ───────────────────────────────────
+
+  downloadPharmacistDayMedicationPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadPuppeteerPdf('pharmacy-pharmacist-day', `encargado-dia-medicamento-${date}.pdf`, params)
+  }
+
+  downloadPharmacistDayMedicationExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-pharmacist-day', `encargado-dia-medicamento-${date}.xlsx`, params)
+  }
+
+  // ─── B1: Inventario valorizado ────────────────────────────────────────────
+
+  downloadValorizedInventoryPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadPuppeteerPdf('pharmacy-inventory-valorized', `inventario-valorizado-${date}.pdf`, params)
+  }
+
+  downloadValorizedInventoryExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-inventory-valorized', `inventario-valorizado-${date}.xlsx`, params)
+  }
+
+  // ─── B2: Inventario por categoría ────────────────────────────────────────
+
+  downloadInventoryByCategoryPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadPuppeteerPdf('pharmacy-inventory-by-category', `inventario-categorias-${date}.pdf`, params)
+  }
+
+  // ─── B3: Sin movimiento ───────────────────────────────────────────────────
+
+  downloadNoMovementPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadPuppeteerPdf('pharmacy-no-movement', `sin-movimiento-${date}.pdf`, params)
+  }
+
+  downloadNoMovementExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-no-movement', `sin-movimiento-${date}.xlsx`, params)
+  }
+
+  // ─── C1: Ventas por medicamento detalle ──────────────────────────────────
+
+  downloadMedicationDetailPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadPuppeteerPdf('pharmacy-medication-detail', `ventas-medicamento-${date}.pdf`, params)
+  }
+
+  downloadMedicationDetailExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-medication-detail', `ventas-medicamento-${date}.xlsx`, params)
+  }
+
+  // ─── C2: Receta vs Venta libre ────────────────────────────────────────────
+
+  downloadPrescriptionVsFreePdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadPuppeteerPdf('pharmacy-prescription-vs-free', `receta-vs-libre-${date}.pdf`, params)
+  }
+
   // ─── Datos reales para el hub de reportes ─────────────────────────────────
 
   getPatientStats(params: Record<string, string> = {}): Observable<any> {

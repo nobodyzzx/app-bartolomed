@@ -272,8 +272,12 @@ export class SeedService implements OnModuleInit {
     const suppliersIru = await this.createDemoSuppliers(clinicIru, staffIru.pharmacist);
     await this.createDemoPurchaseOrders(clinicChu, suppliersChu, stocksChu, staffChu.pharmacist);
     await this.createDemoPurchaseOrders(clinicIru, suppliersIru, stocksIru, staffIru.pharmacist);
-    await this.createDemoPharmacySales(clinicChu, stocksChu, patsChu, staffChu.pharmacist, 'CHU');
-    await this.createDemoPharmacySales(clinicIru, stocksIru, patsIru, staffIru.pharmacist, 'IRU');
+    const auxPharmChu = await this.createAuxPharmacist(clinicChu, 'chu');
+    const auxPharmIru = await this.createAuxPharmacist(clinicIru, 'iru');
+    await this.createDemoPharmacySales(clinicChu, stocksChu, patsChu, [staffChu.pharmacist, auxPharmChu], 'CHU');
+    await this.createDemoPharmacySales(clinicIru, stocksIru, patsIru, [staffIru.pharmacist, auxPharmIru], 'IRU');
+    await this.createInactiveStocks(clinicChu, medMapChu, 'CHU');
+    await this.createInactiveStocks(clinicIru, medMapIru, 'IRU');
 
     // Vincular admin a San Bartolomé
     await this.ensureAdminClinicAccess(clinicChu, admin);
@@ -362,6 +366,7 @@ export class SeedService implements OnModuleInit {
       'pharmacy_invoices',
       'purchase_order_items',
       'purchase_orders',
+      'suppliers',
       'prescription_items',
       'prescriptions',
       'payments',
@@ -465,6 +470,17 @@ export class SeedService implements OnModuleInit {
         clinic,
       }),
     );
+    return user;
+  }
+
+  private async createAuxPharmacist(clinic: Clinic, prefix: 'chu' | 'iru'): Promise<User> {
+    const defs = {
+      chu: { email: 'farm2.mamani@sanbartolome.local', firstName: 'Luisa', lastName: 'Mamani Condori', title: 'Farm.', role: ProfessionalRoles.PHARMACIST, specialization: 'Farmacia', license: 'FARM-CHU-002', phone: '72345609', roles: ['pharmacist', 'user'] },
+      iru: { email: 'farm2.apaza@sanjorge.local',      firstName: 'Jorge', lastName: 'Apaza Cruz',     title: 'Farm.', role: ProfessionalRoles.PHARMACIST, specialization: 'Farmacia', license: 'FARM-IRU-002', phone: '72345709', roles: ['pharmacist', 'user'] },
+    };
+    const def = defs[prefix];
+    const user = await this.createUser(clinic, def);
+    await this.createUserClinic(user, clinic, def.roles);
     return user;
   }
 
@@ -829,8 +845,14 @@ export class SeedService implements OnModuleInit {
   // Ventas de farmacia demo (120 ventas por clínica)
   // ---------------------------------------------------------------------------
 
-  private async createDemoPharmacySales(clinic: Clinic, stocks: MedicationStock[], patients: Patient[], soldBy: User, clinicTag: 'CHU' | 'IRU') {
-    if (!stocks.length) return;
+  private async createDemoPharmacySales(clinic: Clinic, stocks: MedicationStock[], patients: Patient[], sellers: User[], clinicTag: 'CHU' | 'IRU') {
+    if (!stocks.length || !sellers.length) return;
+
+    // Fetch existing prescription IDs for this clinic (for linking ~25% of sales)
+    const prescRows = await this.dataSource.query(
+      `SELECT id FROM prescriptions WHERE clinic_id = $1 ORDER BY "prescriptionDate" DESC`, [clinic.id],
+    );
+    const prescriptionIds: string[] = prescRows.map((r: any) => r.id);
 
     const randomDaysAgo = (maxDays: number) => {
       const d = new Date();
@@ -857,6 +879,11 @@ export class SeedService implements OnModuleInit {
       const status = statuses[i % statuses.length];
       const paymentMethod = paymentMethods[i % paymentMethods.length];
       const numItems = 2 + (i % 4); // 2–5 items
+      const soldBy = sellers[i % sellers.length];
+      // Link ~25% of sales to a prescription
+      const prescriptionId = (i % 4 === 0 && prescriptionIds.length > 0)
+        ? prescriptionIds[i % prescriptionIds.length]
+        : null;
 
       // Build sale items
       let subtotal = 0;
@@ -889,13 +916,13 @@ export class SeedService implements OnModuleInit {
         INSERT INTO pharmacy_sales (
           "saleNumber", "patientName", "saleDate", status, "paymentMethod",
           subtotal, discount, tax, total, "amountPaid", change,
-          clinic_id, patient_id, "soldById", "createdAt", "updatedAt"
-        ) VALUES ($1,$2,$3,$4,$5,$6,0,0,$7,$8,$9,$10,$11,$12,NOW(),NOW())
+          clinic_id, patient_id, "soldById", prescription_id, "createdAt", "updatedAt"
+        ) VALUES ($1,$2,$3,$4,$5,$6,0,0,$7,$8,$9,$10,$11,$12,$13,NOW(),NOW())
         RETURNING id
       `, [
         saleNumber, patientName, saleDate, status, paymentMethod,
         subtotal, subtotal, amountPaid, change,
-        clinic.id, patient.id, soldBy.id,
+        clinic.id, patient.id, soldBy.id, prescriptionId,
       ]);
 
       const saleId = saleResult[0].id;
@@ -953,6 +980,58 @@ export class SeedService implements OnModuleInit {
           ]);
         }
       }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Stocks inactivos / sin movimiento (para reportes B1, B2, B3)
+  // ---------------------------------------------------------------------------
+
+  private async createInactiveStocks(clinic: Clinic, medMap: Map<string, Medication>, clinicTag: 'CHU' | 'IRU') {
+    const today = new Date();
+    const daysAgo = (d: number) => { const x = new Date(today); x.setDate(x.getDate() - d); return x; };
+    const daysFromNow = (d: number) => { const x = new Date(today); x.setDate(x.getDate() + d); return x; };
+
+    // Pick the first available medication from the map for variety
+    const meds = [...medMap.values()];
+    if (!meds.length) return;
+
+    const inactiveDefs = [
+      // Sin movimiento (qty normal, caducidad futura lejana) — aparece en B3
+      { batchSuffix: 'INACT-01', medIdx: 0, qty: 50,  unitCost: 3,  sellingPrice: 6,  expiryDate: daysFromNow(365), minStock: 10 },
+      { batchSuffix: 'INACT-02', medIdx: 1 % meds.length, qty: 30,  unitCost: 5,  sellingPrice: 9,  expiryDate: daysFromNow(400), minStock: 10 },
+      { batchSuffix: 'INACT-03', medIdx: 2 % meds.length, qty: 20,  unitCost: 8,  sellingPrice: 15, expiryDate: daysFromNow(500), minStock:  5 },
+      // Stock crítico (qty ≤ minimumStock) — aparece en B1 como crítico
+      { batchSuffix: 'CRIT-01', medIdx: 3 % meds.length, qty:  3,  unitCost: 10, sellingPrice: 18, expiryDate: daysFromNow(300), minStock: 10 },
+      { batchSuffix: 'CRIT-02', medIdx: 4 % meds.length, qty:  1,  unitCost: 7,  sellingPrice: 12, expiryDate: daysFromNow(280), minStock: 15 },
+      // Por vencer (caducidad < 60 días) — aparece en B1 como por_vencer
+      { batchSuffix: 'EXPRY-01', medIdx: 5 % meds.length, qty: 25, unitCost: 4,  sellingPrice: 8,  expiryDate: daysFromNow(20),  minStock: 5 },
+      { batchSuffix: 'EXPRY-02', medIdx: 6 % meds.length, qty: 12, unitCost: 6,  sellingPrice: 11, expiryDate: daysFromNow(45),  minStock: 5 },
+      // Caducado (sin movimiento, caducidad pasada)
+      { batchSuffix: 'EXPD-01',  medIdx: 7 % meds.length, qty: 8,  unitCost: 3,  sellingPrice: 6,  expiryDate: daysAgo(30),      minStock: 5 },
+    ];
+
+    for (const d of inactiveDefs) {
+      const batchNumber = `LOTE-${clinicTag}-INACTIVE-${d.batchSuffix}`;
+      const exists = await this.medicationStockRepository.findOne({ where: { batchNumber } });
+      if (exists) continue;
+
+      const med = meds[d.medIdx];
+      const stock = this.medicationStockRepository.create({
+        batchNumber,
+        quantity: d.qty,
+        reservedQuantity: 0,
+        unitCost: d.unitCost,
+        sellingPrice: d.sellingPrice,
+        expiryDate: d.expiryDate,
+        receivedDate: daysAgo(90),
+        location: 'Almacén B',
+        minimumStock: d.minStock,
+        isActive: true,
+        medication: med,
+        clinic,
+      });
+      await this.medicationStockRepository.save(stock);
     }
   }
 

@@ -939,4 +939,328 @@ export class AdvancedReportsService {
       fullyDispensed,
     };
   }
+
+  // ─── A1: Ventas por farmacéutico ──────────────────────────────────────────
+
+  async getSalesByPharmacist(filters: ReportFilters) {
+    const { clinicId, dateRange } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const startDate = dateRange?.startDate;
+    const endDate   = dateRange?.endDate;
+    const dateFilter = `
+      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
+      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+    `;
+
+    const rows: Array<Record<string, unknown>> = await this.dataSource.query(`
+      SELECT
+        u.id                                                              AS "userId",
+        pi."firstName" || ' ' || COALESCE(pi."lastName", '')             AS "pharmacistName",
+        COUNT(DISTINCT ps.id)::int                                        AS "salesCount",
+        ROUND(SUM(ps.total)::numeric, 2)                                  AS "totalRevenue",
+        ROUND(AVG(ps.total)::numeric, 2)                                  AS "avgTicket",
+        COUNT(DISTINCT DATE(ps."saleDate"))::int                          AS "workDays",
+        SUM(psi.quantity)::int                                            AS "totalUnits",
+        MIN(ps."saleDate")                                                AS "firstSale",
+        MAX(ps."saleDate")                                                AS "lastSale"
+      FROM pharmacy_sales ps
+      JOIN users u          ON u.id  = ps."soldById"
+      JOIN personal_info pi ON pi.id = u."personalInfoId"
+      JOIN pharmacy_sale_items psi ON psi.sale_id = ps.id
+      WHERE ps.clinic_id = $1
+        AND ps.status = 'completed'
+        ${dateFilter}
+      GROUP BY u.id, pi."firstName", pi."lastName"
+      ORDER BY "totalRevenue" DESC
+    `, [clinicId]);
+
+    const grandTotal = rows.reduce((s, r) => s + Number(r['totalRevenue'] ?? 0), 0);
+    return rows.map(r => ({
+      ...r,
+      revenuePct: grandTotal > 0 ? Math.round((Number(r['totalRevenue'] ?? 0) / grandTotal) * 1000) / 10 : 0,
+    }));
+  }
+
+  // ─── A2: Ventas encargado × día × medicamento ─────────────────────────────
+
+  async getSalesByPharmacistMedicationDay(filters: ReportFilters) {
+    const { clinicId, dateRange } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const startDate = dateRange?.startDate;
+    const endDate   = dateRange?.endDate;
+    const dateFilter = `
+      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
+      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+    `;
+
+    const rows: Array<Record<string, unknown>> = await this.dataSource.query(`
+      SELECT
+        pi."firstName" || ' ' || COALESCE(pi."lastName", '')  AS "pharmacistName",
+        DATE(ps."saleDate")                                    AS "saleDay",
+        med.name                                               AS "medicationName",
+        med."genericName"                                      AS "genericName",
+        med.category                                           AS category,
+        SUM(psi.quantity)::int                                 AS "qtySold",
+        ROUND(SUM(psi.subtotal)::numeric, 2)                   AS "totalRevenue",
+        ROUND(AVG(psi."unitPrice")::numeric, 2)                AS "unitPrice"
+      FROM pharmacy_sales ps
+      JOIN users u               ON u.id  = ps."soldById"
+      JOIN personal_info pi      ON pi.id = u."personalInfoId"
+      JOIN pharmacy_sale_items psi ON psi.sale_id = ps.id
+      JOIN medication_stock ms   ON ms.id = psi.medication_stock_id
+      JOIN medications med       ON med.id = ms.medication_id
+      WHERE ps.clinic_id = $1
+        AND ps.status = 'completed'
+        ${dateFilter}
+      GROUP BY pi."firstName", pi."lastName", DATE(ps."saleDate"),
+               med.id, med.name, med."genericName", med.category
+      ORDER BY "saleDay" DESC, "pharmacistName", "totalRevenue" DESC
+    `, [clinicId]);
+
+    // Agrupar por farmacéutico para la vista de resumen
+    const byPharmacist = new Map<string, { pharmacistName: string; days: Map<string, any[]> }>();
+    for (const r of rows) {
+      const name = r['pharmacistName'] as string;
+      const day  = r['saleDay'] instanceof Date
+        ? (r['saleDay'] as Date).toISOString().slice(0, 10)
+        : String(r['saleDay'] ?? '-');
+      if (!byPharmacist.has(name)) byPharmacist.set(name, { pharmacistName: name, days: new Map() });
+      const ph = byPharmacist.get(name)!;
+      if (!ph.days.has(day)) ph.days.set(day, []);
+      ph.days.get(day)!.push({ ...r, saleDay: day });
+    }
+
+    return {
+      rows: rows.map(r => ({
+        ...r,
+        saleDay: r['saleDay'] instanceof Date
+          ? (r['saleDay'] as Date).toISOString().slice(0, 10)
+          : String(r['saleDay'] ?? '-'),
+      })),
+      byPharmacist: [...byPharmacist.values()].map(ph => ({
+        pharmacistName: ph.pharmacistName,
+        days: [...ph.days.entries()].map(([day, items]) => ({
+          day,
+          totalRevenue: Math.round(items.reduce((s, i) => s + Number(i.totalRevenue ?? 0), 0) * 100) / 100,
+          totalUnits: items.reduce((s, i) => s + Number(i.qtySold ?? 0), 0),
+          medications: items,
+        })),
+      })),
+    };
+  }
+
+  // ─── B1: Inventario general valorizado ───────────────────────────────────
+
+  async getValorizedInventory(filters: ReportFilters) {
+    const { clinicId } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const rows: Array<Record<string, unknown>> = await this.dataSource.query(`
+      SELECT
+        med.name                                                          AS "medicationName",
+        med."genericName"                                                 AS "genericName",
+        med.category                                                      AS category,
+        med."dosageForm"                                                  AS "dosageForm",
+        ms."batchNumber"                                                  AS "batchNumber",
+        ms."availableQuantity"                                            AS "availableQuantity",
+        ms."minimumStock"                                                 AS "minimumStock",
+        ROUND(ms."unitCost"::numeric, 2)                                  AS "unitCost",
+        ROUND(ms."sellingPrice"::numeric, 2)                              AS "sellingPrice",
+        ROUND((ms."availableQuantity" * ms."unitCost")::numeric, 2)       AS "costValue",
+        ROUND((ms."availableQuantity" * ms."sellingPrice")::numeric, 2)   AS "saleValue",
+        ms."expiryDate"                                                   AS "expiryDate",
+        CASE
+          WHEN ms."availableQuantity" <= 0                                   THEN 'sin_stock'
+          WHEN ms."availableQuantity" <= ms."minimumStock"                   THEN 'critico'
+          WHEN ms."expiryDate" IS NOT NULL
+               AND ms."expiryDate" < NOW() + INTERVAL '30 days'             THEN 'por_vencer'
+          ELSE 'ok'
+        END                                                               AS status
+      FROM medication_stock ms
+      JOIN medications med ON med.id = ms.medication_id
+      WHERE ms.clinic_id = $1
+        AND ms."isActive" = true
+      ORDER BY med.category, med.name
+    `, [clinicId]);
+
+    const totalCostValue = rows.reduce((s, r) => s + Number(r['costValue'] ?? 0), 0);
+    const totalSaleValue = rows.reduce((s, r) => s + Number(r['saleValue'] ?? 0), 0);
+    return {
+      rows,
+      summary: {
+        totalProducts: rows.length,
+        totalCostValue:  Math.round(totalCostValue * 100) / 100,
+        totalSaleValue:  Math.round(totalSaleValue * 100) / 100,
+        potentialMargin: Math.round((totalSaleValue - totalCostValue) * 100) / 100,
+        sinStock:   rows.filter(r => r['status'] === 'sin_stock').length,
+        critico:    rows.filter(r => r['status'] === 'critico').length,
+        porVencer:  rows.filter(r => r['status'] === 'por_vencer').length,
+        ok:         rows.filter(r => r['status'] === 'ok').length,
+      },
+    };
+  }
+
+  // ─── B2: Inventario por categoría ────────────────────────────────────────
+
+  async getInventoryByCategory(filters: ReportFilters) {
+    const { clinicId } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    return this.dataSource.query(`
+      SELECT
+        COALESCE(med.category, 'Sin categoría')                              AS category,
+        COUNT(DISTINCT med.id)::int                                          AS "productCount",
+        SUM(ms."availableQuantity")::int                                     AS "totalUnits",
+        ROUND(SUM(ms."availableQuantity" * ms."unitCost")::numeric, 2)       AS "totalCostValue",
+        ROUND(SUM(ms."availableQuantity" * ms."sellingPrice")::numeric, 2)   AS "totalSaleValue",
+        COUNT(CASE WHEN ms."availableQuantity" <= ms."minimumStock" THEN 1 END)::int
+                                                                             AS "lowStockCount",
+        COUNT(CASE WHEN ms."expiryDate" IS NOT NULL
+                        AND ms."expiryDate" < NOW() + INTERVAL '30 days'
+                        AND ms."expiryDate" > NOW() THEN 1 END)::int         AS "expiringSoonCount"
+      FROM medication_stock ms
+      JOIN medications med ON med.id = ms.medication_id
+      WHERE ms.clinic_id = $1
+        AND ms."isActive" = true
+      GROUP BY med.category
+      ORDER BY "totalCostValue" DESC
+    `, [clinicId]);
+  }
+
+  // ─── B3: Medicamentos sin movimiento ─────────────────────────────────────
+
+  async getMedicationsWithoutMovement(filters: ReportFilters, days = 30) {
+    const { clinicId } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const rows: Array<Record<string, unknown>> = await this.dataSource.query(`
+      SELECT
+        med.name                                                           AS "medicationName",
+        med."genericName"                                                  AS "genericName",
+        med.category                                                       AS category,
+        ms."batchNumber"                                                   AS "batchNumber",
+        ms."availableQuantity"                                             AS "availableQuantity",
+        ROUND((ms."availableQuantity" * ms."unitCost")::numeric, 2)        AS "stockValue",
+        ms."expiryDate"                                                    AS "expiryDate",
+        MAX(ps."saleDate")                                                 AS "lastSaleDate"
+      FROM medication_stock ms
+      JOIN medications med        ON med.id = ms.medication_id
+      LEFT JOIN pharmacy_sale_items psi ON psi.medication_stock_id = ms.id
+      LEFT JOIN pharmacy_sales ps       ON ps.id = psi.sale_id AND ps.status = 'completed'
+      WHERE ms.clinic_id = $1
+        AND ms."isActive" = true
+        AND ms."availableQuantity" > 0
+      GROUP BY med.id, med.name, med."genericName", med.category,
+               ms.id, ms."batchNumber", ms."availableQuantity", ms."unitCost", ms."expiryDate"
+      HAVING MAX(ps."saleDate") < NOW() - INTERVAL '${days} days'
+          OR MAX(ps."saleDate") IS NULL
+      ORDER BY "stockValue" DESC
+    `, [clinicId]);
+
+    const totalStockValue = rows.reduce((s, r) => s + Number(r['stockValue'] ?? 0), 0);
+    return { days, rows, totalStockValue: Math.round(totalStockValue * 100) / 100 };
+  }
+
+  // ─── C1: Detalle de ventas por medicamento ────────────────────────────────
+
+  async getSalesByMedicationDetail(filters: ReportFilters) {
+    const { clinicId, dateRange } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const startDate = dateRange?.startDate;
+    const endDate   = dateRange?.endDate;
+    const dateFilter = `
+      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
+      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+    `;
+
+    return this.dataSource.query(`
+      SELECT
+        med.name                                                              AS "medicationName",
+        med."genericName"                                                     AS "genericName",
+        med.category                                                          AS category,
+        med."dosageForm"                                                      AS "dosageForm",
+        SUM(psi.quantity)::int                                                AS "qtySold",
+        ROUND(SUM(psi.subtotal)::numeric, 2)                                  AS "totalRevenue",
+        ROUND(AVG(psi."unitPrice")::numeric, 2)                               AS "avgUnitPrice",
+        ROUND(AVG(ms."unitCost")::numeric, 2)                                 AS "avgUnitCost",
+        ROUND((SUM(psi.subtotal) - SUM(psi.quantity * ms."unitCost"))::numeric, 2)
+                                                                              AS "grossMargin",
+        CASE WHEN SUM(psi.subtotal) > 0
+             THEN ROUND(((SUM(psi.subtotal) - SUM(psi.quantity * ms."unitCost"))
+                         / SUM(psi.subtotal) * 100)::numeric, 2)
+             ELSE 0 END                                                       AS "marginPct",
+        COUNT(DISTINCT ps.id)::int                                            AS "saleCount"
+      FROM pharmacy_sale_items psi
+      JOIN pharmacy_sales ps     ON ps.id  = psi.sale_id
+      JOIN medication_stock ms   ON ms.id  = psi.medication_stock_id
+      JOIN medications med       ON med.id = ms.medication_id
+      WHERE ps.clinic_id = $1
+        AND ps.status = 'completed'
+        ${dateFilter}
+      GROUP BY med.id, med.name, med."genericName", med.category, med."dosageForm"
+      ORDER BY "totalRevenue" DESC
+    `, [clinicId]);
+  }
+
+  // ─── C2: Ventas con receta vs ventas libres ───────────────────────────────
+
+  async getPrescriptionVsFreeSales(filters: ReportFilters) {
+    const { clinicId, dateRange } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const startDate = dateRange?.startDate;
+    const endDate   = dateRange?.endDate;
+    const dateFilter = `
+      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
+      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+    `;
+
+    const [summary, byMedication]: [Array<Record<string, unknown>>, Array<Record<string, unknown>>] =
+      await Promise.all([
+        this.dataSource.query(`
+          SELECT
+            CASE WHEN ps.prescription_id IS NOT NULL THEN 'con_receta' ELSE 'libre' END AS type,
+            COUNT(DISTINCT ps.id)::int           AS "salesCount",
+            ROUND(SUM(ps.total)::numeric, 2)     AS "totalRevenue",
+            ROUND(AVG(ps.total)::numeric, 2)     AS "avgTicket",
+            SUM(psi.quantity)::int               AS "totalUnits"
+          FROM pharmacy_sales ps
+          JOIN pharmacy_sale_items psi ON psi.sale_id = ps.id
+          WHERE ps.clinic_id = $1
+            AND ps.status = 'completed'
+            ${dateFilter}
+          GROUP BY type
+        `, [clinicId]),
+
+        this.dataSource.query(`
+          SELECT
+            CASE WHEN ps.prescription_id IS NOT NULL THEN 'con_receta' ELSE 'libre' END AS type,
+            med.name                                AS "medicationName",
+            SUM(psi.quantity)::int                  AS "qtySold",
+            ROUND(SUM(psi.subtotal)::numeric, 2)    AS revenue
+          FROM pharmacy_sale_items psi
+          JOIN pharmacy_sales ps     ON ps.id  = psi.sale_id
+          JOIN medication_stock ms   ON ms.id  = psi.medication_stock_id
+          JOIN medications med       ON med.id = ms.medication_id
+          WHERE ps.clinic_id = $1
+            AND ps.status = 'completed'
+            ${dateFilter}
+          GROUP BY type, med.id, med.name
+          ORDER BY type, revenue DESC
+          LIMIT 40
+        `, [clinicId]),
+      ]);
+
+    const grandTotal = summary.reduce((s, r) => s + Number(r['totalRevenue'] ?? 0), 0);
+    return {
+      summary: summary.map(r => ({
+        ...r,
+        pct: grandTotal > 0 ? Math.round((Number(r['totalRevenue'] ?? 0) / grandTotal) * 1000) / 10 : 0,
+      })),
+      byMedication,
+    };
+  }
 }

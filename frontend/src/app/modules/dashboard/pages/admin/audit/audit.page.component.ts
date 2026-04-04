@@ -1,6 +1,6 @@
 import { Component, DestroyRef, OnInit, inject } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
-import { FormControl, FormGroup } from '@angular/forms'
+import { FormBuilder, FormGroup } from '@angular/forms'
 import { PageEvent } from '@angular/material/paginator'
 import { ChartData, ChartOptions } from 'chart.js'
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs'
@@ -59,14 +59,7 @@ export class AuditPageComponent implements OnInit {
     'method', 'statusCode', 'status', 'ipAddress', 'expand',
   ]
 
-  filterForm = new FormGroup({
-    search: new FormControl(''),
-    action: new FormControl(''),
-    resource: new FormControl(''),
-    status: new FormControl(''),
-    startDate: new FormControl(''),
-    endDate: new FormControl(''),
-  })
+  filterForm!: FormGroup
 
   readonly actionOptions = [
     { value: 'LOGIN',   label: 'Inicio de sesión' },
@@ -90,7 +83,15 @@ export class AuditPageComponent implements OnInit {
     { label: 'Este mes',     days: 30 },
   ]
 
-  constructor(private readonly auditService: AuditService) {
+  constructor(private readonly auditService: AuditService, private readonly fb: FormBuilder) {
+    this.filterForm = this.fb.group({
+      search:    [null],
+      action:    [null],
+      resource:  [null],
+      status:    [null],
+      startDate: [null],
+      endDate:   [null],
+    })
     this.destroyRef.onDestroy(() => {
       if (this.refreshTimer) clearInterval(this.refreshTimer)
     })
@@ -100,9 +101,17 @@ export class AuditPageComponent implements OnInit {
     // Rango por defecto: últimos 7 días
     this.applyQuickFilter(7)
 
+    // Búsqueda con debounce
     this.searchSubject
       .pipe(debounceTime(400), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => { this.page = 1; this.loadLogs() })
+
+    // Dropdowns y fechas: recargar al cambiar cualquier valor
+    ;['action', 'resource', 'status', 'startDate', 'endDate'].forEach(field => {
+      this.filterForm.get(field)!.valueChanges
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => { this.page = 1; this.loadAll() })
+    })
 
     this.auditService
       .getDistinctValues()
@@ -131,7 +140,7 @@ export class AuditPageComponent implements OnInit {
   loadStats(): void {
     this.statsLoading = true
     const { startDate, endDate } = this.filterForm.value
-    this.auditService.getStats(startDate || undefined, endDate || undefined)
+    this.auditService.getStats(this.toIso(startDate), this.toIso(endDate))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: s => { this.stats = s; this.statsLoading = false },
@@ -142,7 +151,7 @@ export class AuditPageComponent implements OnInit {
   loadActivity(): void {
     this.activityLoading = true
     const { startDate, endDate } = this.filterForm.value
-    this.auditService.getDailyActivity(startDate || undefined, endDate || undefined)
+    this.auditService.getDailyActivity(this.toIso(startDate), this.toIso(endDate))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: data => { this.dailyActivity = data; this.buildChart(data); this.activityLoading = false },
@@ -177,29 +186,23 @@ export class AuditPageComponent implements OnInit {
 
   applyQuickFilter(days: number): void {
     const end = new Date()
+    end.setHours(23, 59, 59, 999)
     const start = new Date()
+    start.setHours(0, 0, 0, 0)
     if (days === -1) {
-      // Ayer
       start.setDate(start.getDate() - 1)
       end.setDate(end.getDate() - 1)
     } else {
       start.setDate(start.getDate() - (days - 1))
     }
-    this.filterForm.patchValue({
-      startDate: start.toISOString().split('T')[0],
-      endDate: end.toISOString().split('T')[0],
-    })
+    // patchValue sin emitir para evitar doble carga — loadAll() explícito abajo
+    this.filterForm.patchValue({ startDate: start, endDate: end }, { emitEvent: false })
     this.page = 1
     this.loadAll()
   }
 
   onSearch(value: string): void {
     this.searchSubject.next(value)
-  }
-
-  onFilterChange(): void {
-    this.page = 1
-    this.loadAll()
   }
 
   onPageChange(event: PageEvent): void {
@@ -209,7 +212,10 @@ export class AuditPageComponent implements OnInit {
   }
 
   resetFilters(): void {
-    this.filterForm.reset({ search: '', action: '', resource: '', status: '', startDate: '', endDate: '' })
+    this.filterForm.reset(
+      { search: null, action: null, resource: null, status: null, startDate: null, endDate: null },
+      { emitEvent: false },
+    )
     this.page = 1
     this.loadAll()
   }
@@ -254,9 +260,16 @@ export class AuditPageComponent implements OnInit {
     if (v.action)    filters.action    = v.action
     if (v.resource)  filters.resource  = v.resource
     if (v.status)    filters.status    = v.status
-    if (v.startDate) filters.startDate = new Date(v.startDate).toISOString().split('T')[0]
-    if (v.endDate)   filters.endDate   = new Date(v.endDate).toISOString().split('T')[0]
+    const sd = this.toIso(v.startDate); if (sd) filters.startDate = sd
+    const ed = this.toIso(v.endDate);   if (ed) filters.endDate   = ed
     return filters
+  }
+
+  private toIso(date: Date | string | null | undefined): string | undefined {
+    if (!date) return undefined
+    const d = date instanceof Date ? date : new Date(date)
+    if (isNaN(d.getTime())) return undefined
+    return d.toISOString().split('T')[0]
   }
 
   private downloadCsv(items: AuditLog[]): void {
@@ -294,10 +307,12 @@ export class AuditPageComponent implements OnInit {
 
   get rangeLabel(): string {
     const { startDate, endDate } = this.filterForm.value
+    const fmt = (d: Date | null | undefined) =>
+      d ? d.toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' }) : ''
     if (!startDate && !endDate) return 'en total'
-    if (startDate && endDate) return `del ${startDate} al ${endDate}`
-    if (startDate) return `desde ${startDate}`
-    return `hasta ${endDate}`
+    if (startDate && endDate) return `del ${fmt(startDate)} al ${fmt(endDate)}`
+    if (startDate) return `desde ${fmt(startDate)}`
+    return `hasta ${fmt(endDate)}`
   }
 
   // ─── Helpers de template ───────────────────────────────────────────────────

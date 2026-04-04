@@ -136,6 +136,32 @@ export class ReportsComponent implements OnInit {
   downloadProfitabilityPdf()    { this.download('profPdf',   () => this.reportsService.downloadProfitabilityPdf(this.buildParams())) }
   downloadStockMovementsExcel() { this.download('movXls',    () => this.reportsService.downloadStockMovementsExcel(this.buildParams())) }
 
+  // ── A1: Ventas por farmacéutico ───────────────────────────────────────────
+  downloadSalesByPharmacistPdf()   { this.download('pharmPdf',  () => this.reportsService.downloadSalesByPharmacistPdf(this.buildParams())) }
+  downloadSalesByPharmacistExcel() { this.download('pharmXls',  () => this.reportsService.downloadSalesByPharmacistExcel(this.buildParams())) }
+
+  // ── A2: Encargado × Día × Medicamento ────────────────────────────────────
+  downloadPharmacistDayPdf()   { this.download('pharmDayPdf', () => this.reportsService.downloadPharmacistDayMedicationPdf(this.buildParams())) }
+  downloadPharmacistDayExcel() { this.download('pharmDayXls', () => this.reportsService.downloadPharmacistDayMedicationExcel(this.buildParams())) }
+
+  // ── B1: Inventario valorizado ─────────────────────────────────────────────
+  downloadValorizedInventoryPdf()   { this.download('invValPdf', () => this.reportsService.downloadValorizedInventoryPdf(this.buildParams())) }
+  downloadValorizedInventoryExcel() { this.download('invValXls', () => this.reportsService.downloadValorizedInventoryExcel(this.buildParams())) }
+
+  // ── B2: Inventario por categoría ──────────────────────────────────────────
+  downloadInventoryByCategoryPdf() { this.download('invCatPdf', () => this.reportsService.downloadInventoryByCategoryPdf(this.buildParams())) }
+
+  // ── B3: Sin movimiento ────────────────────────────────────────────────────
+  downloadNoMovementPdf()   { this.download('noMovPdf', () => this.reportsService.downloadNoMovementPdf(this.buildParams())) }
+  downloadNoMovementExcel() { this.download('noMovXls', () => this.reportsService.downloadNoMovementExcel(this.buildParams())) }
+
+  // ── C1: Ventas por medicamento detalle ────────────────────────────────────
+  downloadMedicationDetailPdf()   { this.download('medDetPdf', () => this.reportsService.downloadMedicationDetailPdf(this.buildParams())) }
+  downloadMedicationDetailExcel() { this.download('medDetXls', () => this.reportsService.downloadMedicationDetailExcel(this.buildParams())) }
+
+  // ── C2: Receta vs Venta libre ─────────────────────────────────────────────
+  downloadPrescriptionVsFreePdf() { this.download('rxFreePdf', () => this.reportsService.downloadPrescriptionVsFreePdf(this.buildParams())) }
+
   goBack(): void { this.router.navigateByUrl('/dashboard/home') }
 
   repopulateDemo(): void {
