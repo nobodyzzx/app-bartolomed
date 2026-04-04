@@ -1515,4 +1515,150 @@ export class ReportsPdfService {
       </div>
     </body></html>`;
   }
+
+  // ─── C3: PDF Ventas por método de pago ───────────────────────────────────
+
+  async generateSalesByPaymentMethodPdf(data: any): Promise<Buffer> {
+    return this.render(this.salesByPaymentMethodHtml(data));
+  }
+
+  private salesByPaymentMethodHtml(data: any): string {
+    const summary: any[] = data.summary ?? [];
+    const daily: any[]   = data.daily ?? [];
+    const grandTotal: number = data.grandTotal ?? 0;
+
+    const methodLabel: Record<string, string> = {
+      cash: 'Efectivo', card: 'Tarjeta', transfer: 'Transferencia', qr: 'QR', other: 'Otro',
+    };
+    const methodColor: Record<string, string> = {
+      cash: '#22c55e', card: '#3b82f6', transfer: '#f59e0b', qr: '#8b5cf6', other: '#6b7280',
+    };
+
+    const chartHtml = summary.length > 0
+      ? this.inlineChart('doughnut', {
+          labels: summary.map(r => methodLabel[r.method as string] ?? r.method),
+          datasets: [{ data: summary.map(r => Number(r.totalRevenue ?? 0)), backgroundColor: summary.map(r => methodColor[r.method as string] ?? '#6b7280') }],
+        }, 320, 200)
+      : this.noData();
+
+    const summaryRows = summary.map(r => [
+      `<b>${methodLabel[r.method as string] ?? this.esc(r.method as string)}</b>`,
+      `<span class="num">${this.fmtNum(r.salesCount)}</span>`,
+      `<span class="num">${this.fmtBs(r.totalRevenue)}</span>`,
+      `<span class="num">${this.fmtBs(r.avgTicket)}</span>`,
+      `<span class="num">${r.pct ?? 0}%</span>`,
+      `<span class="num">${this.fmtBs(r.totalChange)}</span>`,
+    ]);
+
+    const dailyRows = daily.slice(0, 150).map(r => [
+      this.esc(r.saleDay as string),
+      `<b>${methodLabel[r.method as string] ?? this.esc(r.method as string)}</b>`,
+      `<span class="num">${this.fmtNum(r.salesCount)}</span>`,
+      `<span class="num">${this.fmtBs(r.totalRevenue)}</span>`,
+    ]);
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style>${this.chartJsTag()}</head><body>
+      ${this.header('Ventas por Método de Pago')}
+      ${this.meta([
+        ['Generado', this.nowBO()],
+        ['Total Ingresos', this.fmtBs(grandTotal)],
+        ['Métodos', this.fmtNum(summary.length)],
+      ])}
+      <div class="cnt">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            ${this.section('Distribución por Método', chartHtml)}
+          </div>
+          <div>
+            <div class="kpi-grid" style="grid-template-columns:1fr 1fr">
+              ${summary.slice(0, 4).map(r =>
+                this.kpiCard(methodLabel[r.method as string] ?? r.method, this.fmtBs(r.totalRevenue), `${r.pct ?? 0}% · ${this.fmtNum(r.salesCount)} ventas`, 'blue')
+              ).join('')}
+            </div>
+          </div>
+        </div>
+        ${this.section('Resumen por Método',
+          this.table(
+            ['Método', 'N° Ventas', 'Total', 'Ticket Prom.', '% Total', 'Vuelto Total'],
+            summaryRows,
+            ['', 'num', 'num', 'num', 'center', 'num'],
+          )
+        )}
+        ${daily.length > 0 ? this.section('Detalle Diario por Método (máx. 150)',
+          this.table(
+            ['Fecha', 'Método', 'N° Ventas', 'Total'],
+            dailyRows,
+            ['center', '', 'num', 'num'],
+          )
+        ) : ''}
+      </div>
+    </body></html>`;
+  }
+
+  // ─── C6: PDF Comparativo mensual ─────────────────────────────────────────
+
+  async generateMonthlySalesComparisonPdf(data: any): Promise<Buffer> {
+    return this.render(this.monthlySalesComparisonHtml(data));
+  }
+
+  private monthlySalesComparisonHtml(data: any): string {
+    const rows: any[]   = data.rows ?? [];
+    const summary: any  = data.summary ?? {};
+
+    const months  = rows.map(r => r.month as string);
+    const revenues = rows.map(r => Number(r.totalRevenue ?? 0));
+    const counts   = rows.map(r => Number(r.salesCount ?? 0));
+
+    const barChart = rows.length > 0
+      ? this.inlineChart('bar', {
+          labels: months,
+          datasets: [
+            { label: 'Ingresos (Bs)', data: revenues, backgroundColor: '#3b82f6' },
+            { label: 'N° Ventas',     data: counts,   backgroundColor: '#22c55e' },
+          ],
+        }, 560, 220)
+      : this.noData();
+
+    const tableRows = rows.map(r => {
+      const growth = r.revenueGrowth;
+      const growthHtml = growth === null
+        ? '—'
+        : `<span style="color:${Number(growth) >= 0 ? '#16a34a' : '#dc2626'}">${Number(growth) >= 0 ? '▲' : '▼'} ${Math.abs(Number(growth))}%</span>`;
+      return [
+        `<b>${r.month}</b>`,
+        `<span class="num">${this.fmtNum(r.salesCount)}</span>`,
+        `<span class="num">${this.fmtNum(r.totalUnits)}</span>`,
+        `<span class="num">${this.fmtBs(r.totalRevenue)}</span>`,
+        `<span class="num">${this.fmtBs(r.avgTicket)}</span>`,
+        `<span class="num">${this.fmtNum(r.uniquePatients)}</span>`,
+        `<span class="num">${this.fmtNum(r.prescriptionSales)}</span>`,
+        growthHtml,
+      ];
+    });
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style>${this.chartJsTag()}</head><body>
+      ${this.header('Comparativo Mensual de Ventas — Últimos 6 Meses')}
+      ${this.meta([
+        ['Generado', this.nowBO()],
+        ['Ingresos Totales', this.fmtBs(summary.totalRevenue)],
+        ['Promedio Mensual', this.fmtBs(summary.avgMonthlyRevenue)],
+        ['Mejor Mes', this.esc(summary.bestMonth)],
+      ])}
+      <div class="cnt">
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+          ${this.kpiCard('Ingresos Totales', this.fmtBs(summary.totalRevenue), '6 meses', 'blue')}
+          ${this.kpiCard('Promedio Mensual', this.fmtBs(summary.avgMonthlyRevenue), 'Por mes', 'green')}
+          ${this.kpiCard('Mejor Mes', this.esc(summary.bestMonth), 'Mayor ingreso', 'purple')}
+        </div>
+        ${this.section('Evolución Mensual', barChart)}
+        ${rows.length > 0 ? this.section('Detalle por Mes',
+          this.table(
+            ['Mes', 'N° Ventas', 'Unidades', 'Ingresos', 'Ticket Prom.', 'Pacientes', 'Con Receta', 'Variación'],
+            tableRows,
+            ['center', 'num', 'num', 'num', 'num', 'num', 'num', 'center'],
+          )
+        ) : this.noData()}
+      </div>
+    </body></html>`;
+  }
 }

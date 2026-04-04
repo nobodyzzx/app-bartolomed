@@ -527,6 +527,30 @@ export class ReportsService {
     return this.http.get<any>(`${this.apiUrl}/financial/payment-methods${query ? '?' + query : ''}`)
   }
 
+  // ─── C3: Ventas por método de pago ───────────────────────────────────────
+
+  downloadSalesByPaymentPdf(params: Record<string, string> = {}): Observable<void> {
+    return this.downloadPuppeteerPdf(`/reports/export/pdf/pharmacy-sales-by-payment`, 'ventas-metodo-pago', params);
+  }
+
+  downloadSalesByPaymentExcel(params: Record<string, string> = {}): Observable<void> {
+    const query = new URLSearchParams(params).toString();
+    const url = `${this.apiUrl}/reports/export/excel/pharmacy-sales-by-payment${query ? '?' + query : ''}`;
+    return this.downloadBlob(url, `ventas-metodo-pago-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+
+  // ─── C6: Comparativo mensual ─────────────────────────────────────────────
+
+  downloadMonthlySalesComparisonPdf(params: Record<string, string> = {}): Observable<void> {
+    return this.downloadPuppeteerPdf(`/reports/export/pdf/pharmacy-monthly-comparison`, 'comparativo-mensual', params);
+  }
+
+  downloadMonthlySalesComparisonExcel(params: Record<string, string> = {}): Observable<void> {
+    const query = new URLSearchParams(params).toString();
+    const url = `${this.apiUrl}/reports/export/excel/pharmacy-monthly-comparison${query ? '?' + query : ''}`;
+    return this.downloadBlob(url, `comparativo-mensual-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+
   // ─── Seed / reset de datos demo ──────────────────────────────────────────
 
   resetAllData(): Observable<any> {

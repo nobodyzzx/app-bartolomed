@@ -1263,4 +1263,115 @@ export class AdvancedReportsService {
       byMedication,
     };
   }
+
+  // ─── C3: Ventas por método de pago (detallado) ───────────────────────────
+
+  async getSalesByPaymentDetailed(filters: ReportFilters) {
+    const { clinicId, dateRange } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const startDate = dateRange?.startDate;
+    const endDate   = dateRange?.endDate;
+    const dateFilter = `
+      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
+      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+    `;
+
+    const [summary, daily]: [Array<Record<string, unknown>>, Array<Record<string, unknown>>] =
+      await Promise.all([
+        this.dataSource.query(`
+          SELECT
+            ps."paymentMethod"                          AS method,
+            COUNT(DISTINCT ps.id)::int                 AS "salesCount",
+            ROUND(SUM(ps.total)::numeric, 2)           AS "totalRevenue",
+            ROUND(AVG(ps.total)::numeric, 2)           AS "avgTicket",
+            ROUND(SUM(ps.change)::numeric, 2)          AS "totalChange"
+          FROM pharmacy_sales ps
+          WHERE ps.clinic_id = $1
+            AND ps.status = 'completed'
+            ${dateFilter}
+          GROUP BY ps."paymentMethod"
+          ORDER BY "totalRevenue" DESC
+        `, [clinicId]),
+
+        this.dataSource.query(`
+          SELECT
+            DATE(ps."saleDate")                         AS "saleDay",
+            ps."paymentMethod"                          AS method,
+            COUNT(DISTINCT ps.id)::int                 AS "salesCount",
+            ROUND(SUM(ps.total)::numeric, 2)           AS "totalRevenue"
+          FROM pharmacy_sales ps
+          WHERE ps.clinic_id = $1
+            AND ps.status = 'completed'
+            ${dateFilter}
+          GROUP BY DATE(ps."saleDate"), ps."paymentMethod"
+          ORDER BY "saleDay" DESC, "totalRevenue" DESC
+        `, [clinicId]),
+      ]);
+
+    const grandTotal = summary.reduce((s, r) => s + Number(r['totalRevenue'] ?? 0), 0);
+    const fmtDay = (d: any) => d instanceof Date ? d.toISOString().slice(0, 10) : String(d ?? '-');
+
+    return {
+      summary: summary.map(r => ({
+        ...r,
+        pct: grandTotal > 0 ? Math.round((Number(r['totalRevenue'] ?? 0) / grandTotal) * 1000) / 10 : 0,
+      })),
+      daily: daily.map(r => ({ ...r, saleDay: fmtDay(r['saleDay']) })),
+      grandTotal: Math.round(grandTotal * 100) / 100,
+    };
+  }
+
+  // ─── C6: Comparativo mensual (últimos 6 meses) ────────────────────────────
+
+  async getMonthlySalesComparison(filters: ReportFilters) {
+    const { clinicId } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const rows: Array<Record<string, unknown>> = await this.dataSource.query(`
+      SELECT
+        TO_CHAR(DATE_TRUNC('month', ps."saleDate"), 'YYYY-MM') AS month,
+        COUNT(DISTINCT ps.id)::int                             AS "salesCount",
+        SUM(psi.quantity)::int                                 AS "totalUnits",
+        ROUND(SUM(ps.total)::numeric, 2)                       AS "totalRevenue",
+        ROUND(AVG(ps.total)::numeric, 2)                       AS "avgTicket",
+        COUNT(DISTINCT ps."soldById")::int                     AS "activePharmacists",
+        COUNT(DISTINCT ps.patient_id)::int                     AS "uniquePatients",
+        COUNT(DISTINCT CASE WHEN ps.prescription_id IS NOT NULL THEN ps.id END)::int AS "prescriptionSales"
+      FROM pharmacy_sales ps
+      JOIN pharmacy_sale_items psi ON psi.sale_id = ps.id
+      WHERE ps.clinic_id = $1
+        AND ps.status = 'completed'
+        AND ps."saleDate" >= DATE_TRUNC('month', NOW()) - INTERVAL '5 months'
+      GROUP BY DATE_TRUNC('month', ps."saleDate")
+      ORDER BY month ASC
+    `, [clinicId]);
+
+    // Calcular variación mes a mes
+    const enriched = rows.map((r, i) => {
+      const prev = i > 0 ? rows[i - 1] : null;
+      const rev = Number(r['totalRevenue'] ?? 0);
+      const prevRev = prev ? Number(prev['totalRevenue'] ?? 0) : null;
+      const growth = prevRev && prevRev > 0 ? Math.round(((rev - prevRev) / prevRev) * 1000) / 10 : null;
+      return { ...r, revenueGrowth: growth };
+    });
+
+    const totalRevenue = enriched.reduce((s, r) => s + Number(r['totalRevenue'] ?? 0), 0);
+    const totalSales   = enriched.reduce((s, r) => s + Number(r['salesCount'] ?? 0), 0);
+    const bestMonth    = enriched.reduce((best, r) =>
+      Number(r['totalRevenue'] ?? 0) > Number(best['totalRevenue'] ?? 0) ? r : best,
+      enriched[0] ?? {},
+    );
+
+    return {
+      rows: enriched,
+      summary: {
+        totalRevenue: Math.round(totalRevenue * 100) / 100,
+        totalSales,
+        avgMonthlyRevenue: enriched.length > 0
+          ? Math.round((totalRevenue / enriched.length) * 100) / 100 : 0,
+        bestMonth: bestMonth?.['month'] ?? '-',
+      },
+    };
+  }
 }

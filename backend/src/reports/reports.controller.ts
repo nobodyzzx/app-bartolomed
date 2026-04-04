@@ -608,6 +608,64 @@ export class ReportsController {
     res.end(buf);
   }
 
+  // ─── C3: Ventas por método de pago (detallado) ───────────────────────────
+
+  @Get('pharmacy/sales-by-payment')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getSalesByPaymentDetailed(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getSalesByPaymentDetailed(this.scope(filters, req));
+  }
+
+  @Get('export/pdf/pharmacy-sales-by-payment')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportSalesByPaymentPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getSalesByPaymentDetailed(this.scope(filters, req));
+    const buf  = await this.reportsPdfService.generateSalesByPaymentMethodPdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="ventas-metodo-pago-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.end(buf);
+  }
+
+  @Get('export/excel/pharmacy-sales-by-payment')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportSalesByPaymentExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getSalesByPaymentDetailed(this.scope(filters, req));
+    await this.exportService.streamExcel(
+      res,
+      [{ name: 'Método de Pago', build: ws => this.exportService.buildSalesByPaymentMethodSheet(ws, data) }],
+      `ventas-metodo-pago-${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
+  }
+
+  // ─── C6: Comparativo mensual ─────────────────────────────────────────────
+
+  @Get('pharmacy/monthly-comparison')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getMonthlySalesComparison(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getMonthlySalesComparison(this.scope(filters, req));
+  }
+
+  @Get('export/pdf/pharmacy-monthly-comparison')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportMonthlySalesComparisonPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getMonthlySalesComparison(this.scope(filters, req));
+    const buf  = await this.reportsPdfService.generateMonthlySalesComparisonPdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="comparativo-mensual-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.end(buf);
+  }
+
+  @Get('export/excel/pharmacy-monthly-comparison')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportMonthlySalesComparisonExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getMonthlySalesComparison(this.scope(filters, req));
+    await this.exportService.streamExcel(
+      res,
+      [{ name: 'Comparativo Mensual', build: ws => this.exportService.buildMonthlySalesComparisonSheet(ws, data) }],
+      `comparativo-mensual-${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
+  }
+
   // ─── Exportación Puppeteer HTML→PDF (R-P1..R-P5) ─────────────────────────
 
   /**

@@ -404,6 +404,16 @@
             <span class="material-symbols-outlined text-cyan-600">{{downloading['rxFreePdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
             Receta vs Libre PDF
           </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadSalesByPaymentPdf()" [disabled]="downloading['payPdf']">
+            <span class="material-symbols-outlined text-cyan-600">{{downloading['payPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            Método de Pago PDF
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadMonthlySalesComparisonPdf()" [disabled]="downloading['monthlyPdf']">
+            <span class="material-symbols-outlined text-cyan-600">{{downloading['monthlyPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            Comparativo Mensual PDF
+          </button>
         </div>
 
         <p class="text-xs text-slate-400 font-medium mb-2">Excel</p>
@@ -412,6 +422,16 @@
             (click)="downloadMedicationDetailExcel()" [disabled]="downloading['medDetXls']">
             <span class="material-symbols-outlined text-cyan-600">{{downloading['medDetXls'] ? 'hourglass_top' : 'table_chart'}}</span>
             Ventas por Med. Excel
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadSalesByPaymentExcel()" [disabled]="downloading['payXls']">
+            <span class="material-symbols-outlined text-cyan-600">{{downloading['payXls'] ? 'hourglass_top' : 'table_chart'}}</span>
+            Método de Pago Excel
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadMonthlySalesComparisonExcel()" [disabled]="downloading['monthlyXls']">
+            <span class="material-symbols-outlined text-cyan-600">{{downloading['monthlyXls'] ? 'hourglass_top' : 'table_chart'}}</span>
+            Comparativo Mensual Excel
           </button>
         </div>
       </div>

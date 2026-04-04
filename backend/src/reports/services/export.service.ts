@@ -588,4 +588,81 @@ export class ExportService {
       });
     }
   }
+
+  // ─── C3: Excel Ventas por método de pago ─────────────────────────────────
+
+  buildSalesByPaymentMethodSheet(ws: ExcelJS.Worksheet, data: any) {
+    const methodLabel: Record<string, string> = {
+      cash: 'Efectivo', card: 'Tarjeta', transfer: 'Transferencia', qr: 'QR', other: 'Otro',
+    };
+
+    // Hoja 1: Resumen
+    ws.columns = [
+      { header: 'Método',          key: 'method',        width: 18 },
+      { header: 'N° Ventas',       key: 'salesCount',    width: 12 },
+      { header: 'Total (Bs)',      key: 'totalRevenue',  width: 16 },
+      { header: 'Ticket Prom.',    key: 'avgTicket',     width: 16 },
+      { header: '% del Total',     key: 'pct',           width: 12 },
+      { header: 'Vuelto Total',    key: 'totalChange',   width: 16 },
+    ];
+    ws.getRow(1).eachCell(cell => Object.assign(cell, { font: { bold: true, color: { argb: 'FFFFFFFF' } }, fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } } } as Partial<ExcelJS.Style>));
+
+    for (const r of data.summary ?? []) {
+      ws.addRow({
+        method:       methodLabel[r.method] ?? r.method,
+        salesCount:   Number(r.salesCount ?? 0),
+        totalRevenue: Number(r.totalRevenue ?? 0),
+        avgTicket:    Number(r.avgTicket ?? 0),
+        pct:          Number(r.pct ?? 0),
+        totalChange:  Number(r.totalChange ?? 0),
+      });
+    }
+
+    // Hoja 2: Detalle diario (se añade desde el controller como segunda sheet)
+    // Por ahora incluimos el detalle diario al final de la misma hoja
+    if ((data.daily ?? []).length > 0) {
+      ws.addRow([]);
+      ws.addRow(['Detalle Diario']);
+      ws.addRow(['Fecha', 'Método', 'N° Ventas', 'Total (Bs)']);
+      for (const r of data.daily) {
+        ws.addRow([r.saleDay, methodLabel[r.method] ?? r.method, Number(r.salesCount ?? 0), Number(r.totalRevenue ?? 0)]);
+      }
+    }
+  }
+
+  // ─── C6: Excel Comparativo mensual ───────────────────────────────────────
+
+  buildMonthlySalesComparisonSheet(ws: ExcelJS.Worksheet, data: any) {
+    ws.columns = [
+      { header: 'Mes',              key: 'month',               width: 14 },
+      { header: 'N° Ventas',        key: 'salesCount',          width: 12 },
+      { header: 'Unidades',         key: 'totalUnits',          width: 12 },
+      { header: 'Ingresos (Bs)',    key: 'totalRevenue',        width: 16 },
+      { header: 'Ticket Prom.',     key: 'avgTicket',           width: 16 },
+      { header: 'Pacientes únicos', key: 'uniquePatients',      width: 18 },
+      { header: 'Con Receta',       key: 'prescriptionSales',   width: 14 },
+      { header: 'Variación %',      key: 'revenueGrowth',       width: 14 },
+    ];
+    ws.getRow(1).eachCell(cell => Object.assign(cell, { font: { bold: true, color: { argb: 'FFFFFFFF' } }, fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } } } as Partial<ExcelJS.Style>));
+
+    for (const r of data.rows ?? []) {
+      const row = ws.addRow({
+        month:             r.month,
+        salesCount:        Number(r.salesCount ?? 0),
+        totalUnits:        Number(r.totalUnits ?? 0),
+        totalRevenue:      Number(r.totalRevenue ?? 0),
+        avgTicket:         Number(r.avgTicket ?? 0),
+        uniquePatients:    Number(r.uniquePatients ?? 0),
+        prescriptionSales: Number(r.prescriptionSales ?? 0),
+        revenueGrowth:     r.revenueGrowth !== null ? Number(r.revenueGrowth ?? 0) : null,
+      });
+      const growth = r.revenueGrowth;
+      if (growth !== null) {
+        const fill = Number(growth) >= 0 ? 'FFF0FFF4' : 'FFFEF2F2';
+        row.eachCell(cell => {
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill } };
+        });
+      }
+    }
+  }
 }

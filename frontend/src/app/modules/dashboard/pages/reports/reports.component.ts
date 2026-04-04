@@ -162,6 +162,14 @@ export class ReportsComponent implements OnInit {
   // ── C2: Receta vs Venta libre ─────────────────────────────────────────────
   downloadPrescriptionVsFreePdf() { this.download('rxFreePdf', () => this.reportsService.downloadPrescriptionVsFreePdf(this.buildParams())) }
 
+  // ── C3: Ventas por método de pago ─────────────────────────────────────────
+  downloadSalesByPaymentPdf()   { this.download('payPdf', () => this.reportsService.downloadSalesByPaymentPdf(this.buildParams())) }
+  downloadSalesByPaymentExcel() { this.download('payXls', () => this.reportsService.downloadSalesByPaymentExcel(this.buildParams())) }
+
+  // ── C6: Comparativo mensual ───────────────────────────────────────────────
+  downloadMonthlySalesComparisonPdf()   { this.download('monthlyPdf', () => this.reportsService.downloadMonthlySalesComparisonPdf(this.buildParams())) }
+  downloadMonthlySalesComparisonExcel() { this.download('monthlyXls', () => this.reportsService.downloadMonthlySalesComparisonExcel(this.buildParams())) }
+
   goBack(): void { this.router.navigateByUrl('/dashboard/home') }
 
   repopulateDemo(): void {
