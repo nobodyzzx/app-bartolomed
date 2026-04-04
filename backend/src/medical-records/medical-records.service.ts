@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
+import { AuditService } from '../audit/audit.service';
 import { Clinic } from '../clinics/entities/clinic.entity';
 import { User } from '../users/entities/user.entity';
 import {
@@ -44,6 +45,7 @@ export class MedicalRecordsService {
     private medicalRecordRepository: Repository<MedicalRecord>,
     @InjectRepository(ConsentForm)
     private consentFormRepository: Repository<ConsentForm>,
+    private readonly auditService: AuditService,
   ) {}
 
   // Medical Records Methods
@@ -226,6 +228,16 @@ export class MedicalRecordsService {
   async update(id: string, updateMedicalRecordDto: UpdateMedicalRecordDto, user: User, clinicId?: string): Promise<MedicalRecord> {
     const medicalRecord = await this.findOne(id, clinicId);
 
+    // Capturar campos clínicos antes de modificar
+    const before = {
+      diagnosis: medicalRecord.diagnosis,
+      plan: medicalRecord.plan,
+      notes: medicalRecord.notes,
+      status: medicalRecord.status,
+      weight: medicalRecord.weight,
+      height: medicalRecord.height,
+    };
+
     Object.assign(medicalRecord, updateMedicalRecordDto);
     medicalRecord.updatedBy = user;
 
@@ -236,7 +248,34 @@ export class MedicalRecordsService {
       }
     }
 
-    return await this.medicalRecordRepository.save(medicalRecord);
+    const saved = await this.medicalRecordRepository.save(medicalRecord);
+
+    await this.auditService.log({
+      action: 'UPDATE',
+      resource: 'Historial Médico',
+      resourceId: id,
+      userId: user.id,
+      userEmail: user.email,
+      clinicId,
+      method: 'PATCH',
+      path: `/api/medical-records/${id}`,
+      statusCode: 200,
+      status: 'success',
+      details: {
+        before,
+        after: {
+          diagnosis: saved.diagnosis,
+          plan: saved.plan,
+          notes: saved.notes,
+          status: saved.status,
+          weight: saved.weight,
+          height: saved.height,
+        },
+        recordId: id,
+      },
+    });
+
+    return saved;
   }
 
   async remove(id: string, clinicId?: string): Promise<void> {

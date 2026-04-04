@@ -9,7 +9,8 @@ export interface PaginatedResult<T> {
   page: number;
   limit: number;
 }
-import { CreatePharmacySaleDto, UpdatePharmacySaleDto, UpdatePharmacySaleStatusDto } from '../dto/pharmacy-sale.dto';
+import { AuditService } from '../../audit/audit.service';
+import { AdjustPaymentDto, CreatePharmacySaleDto, UpdatePharmacySaleDto, UpdatePharmacySaleStatusDto } from '../dto/pharmacy-sale.dto';
 import { PharmacySale, PharmacySaleItem, SaleStatus } from '../entities/pharmacy-sale.entity';
 import { MedicationStock, MovementType, StockMovement } from '../entities/pharmacy.entity';
 import { InventoryService } from './inventory.service';
@@ -28,6 +29,7 @@ export class PharmacySalesService {
     @InjectRepository(Prescription)
     private prescriptionRepository: Repository<Prescription>,
     private inventoryService: InventoryService,
+    private auditService: AuditService,
   ) {}
 
   async create(createPharmacySaleDto: CreatePharmacySaleDto, soldById: string, clinicId: string): Promise<PharmacySale> {
@@ -468,5 +470,66 @@ export class PharmacySalesService {
     const saleNumber = (count + 1).toString().padStart(4, '0');
 
     return `SAL-${year}${month}${day}-${saleNumber}`;
+  }
+
+  /**
+   * Corrige el método de pago y/o monto de una venta completada.
+   * Solo cambia datos de cobro — nunca modifica los ítems ni el total.
+   * Registra un log de auditoría con los valores anteriores y nuevos.
+   */
+  async adjustPayment(
+    id: string,
+    dto: AdjustPaymentDto,
+    actor: { id: string; email: string; name?: string; clinicId?: string; ip?: string },
+  ): Promise<PharmacySale> {
+    const sale = await this.findOne(id);
+
+    if (sale.status === SaleStatus.CANCELLED) {
+      throw new BadRequestException('No se puede corregir el pago de una venta cancelada');
+    }
+
+    const before = {
+      paymentMethod: sale.paymentMethod,
+      amountPaid: Number(sale.amountPaid),
+      change: Number(sale.change),
+    };
+
+    sale.paymentMethod = dto.paymentMethod as any;
+    sale.amountPaid    = dto.amountPaid;
+    sale.change        = Math.max(0, dto.amountPaid - Number(sale.total));
+    if (!sale.notes) {
+      sale.notes = dto.reason;
+    } else {
+      sale.notes = `${sale.notes} | Corrección: ${dto.reason}`;
+    }
+
+    await this.pharmacySaleRepository.save(sale);
+
+    await this.auditService.log({
+      action: 'PAYMENT_ADJUSTED',
+      resource: 'Farmacia — Ventas',
+      resourceId: id,
+      userId: actor.id,
+      userEmail: actor.email,
+      userName: actor.name,
+      clinicId: actor.clinicId,
+      ipAddress: actor.ip,
+      method: 'PATCH',
+      path: `/api/pharmacy-sales/${id}/adjust-payment`,
+      statusCode: 200,
+      status: 'success',
+      details: {
+        saleNumber: sale.saleNumber,
+        before,
+        after: {
+          paymentMethod: sale.paymentMethod,
+          amountPaid: Number(sale.amountPaid),
+          change: Number(sale.change),
+        },
+        reason: dto.reason,
+      },
+    });
+
+    return await this.findOne(id);
   }
 }

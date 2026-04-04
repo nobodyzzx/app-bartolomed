@@ -89,6 +89,9 @@ export class AuditInterceptor implements NestInterceptor {
     if (path.includes('/auth/login')) return 'LOGIN';
     if (path.includes('/auth/logout')) return 'LOGOUT';
     if (path.includes('/auth/refresh')) return 'REFRESH';
+    if (path.includes('/adjust-payment')) return 'PAYMENT_ADJUSTED';
+    if (path.includes('/status') && method === 'PATCH') return 'STATUS_CHANGED';
+    if (path.includes('/cancel') && method === 'PATCH') return 'CANCELLED';
     const map: Record<string, string> = {
       POST: 'CREATE',
       PATCH: 'UPDATE',
@@ -100,10 +103,19 @@ export class AuditInterceptor implements NestInterceptor {
   }
 
   private mapResource(path: string): string {
-    const segment = path.replace('/api/', '').split('/')[0] ?? '';
+    const stripped = path.replace('/api/', '');
+    // Recursos compuestos más específicos primero
+    if (stripped.startsWith('pharmacy-sales')) return 'Farmacia — Ventas';
+    if (stripped.startsWith('pharmacy/invoices')) return 'Farmacia — Facturas';
+    if (stripped.startsWith('pharmacy/sales')) return 'Farmacia — Ventas';
+    if (stripped.startsWith('pharmacy/inventory')) return 'Farmacia — Inventario';
+    if (stripped.startsWith('pharmacy/purchase-orders')) return 'Farmacia — Órdenes de Compra';
+    if (stripped.startsWith('medical-records')) return 'Historial Médico';
+    if (stripped.startsWith('asset-transfers')) return 'Traslados de Activos';
+
+    const segment = stripped.split('/')[0] ?? '';
     const map: Record<string, string> = {
       patients: 'Pacientes',
-      'medical-records': 'Historial Médico',
       appointments: 'Citas',
       billing: 'Facturación',
       pharmacy: 'Farmacia',
@@ -113,7 +125,7 @@ export class AuditInterceptor implements NestInterceptor {
       clinics: 'Clínicas',
       assets: 'Activos',
       roles: 'Roles',
-      transfers: 'Traslados',
+      transfers: 'Traslados de Stock',
       reports: 'Reportes',
       seed: 'Seeds',
     };

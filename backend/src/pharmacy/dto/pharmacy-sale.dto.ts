@@ -132,3 +132,17 @@ export class UpdatePharmacySaleDto {
   @Type(() => CreatePharmacySaleItemDto)
   items?: CreatePharmacySaleItemDto[];
 }
+
+export class AdjustPaymentDto {
+  @IsNotEmpty()
+  @IsEnum(PaymentMethod)
+  paymentMethod: PaymentMethod;
+
+  @IsNotEmpty()
+  @IsNumber()
+  amountPaid: number;
+
+  @IsNotEmpty()
+  @IsString()
+  reason: string;
+}

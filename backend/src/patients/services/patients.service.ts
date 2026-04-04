@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { AuditService } from '../../audit/audit.service';
 import { Patient, Gender } from '../entities/patient.entity';
 import { CreatePatientDto, UpdatePatientDto } from '../dto';
 import { User } from '../../users/entities/user.entity';
@@ -20,6 +21,7 @@ export class PatientsService {
     private readonly patientRepository: Repository<Patient>,
     @InjectRepository(Clinic)
     private readonly clinicRepository: Repository<Clinic>,
+    private readonly auditService: AuditService,
   ) {}
 
   private ensureBirthDateNotFuture(birthDate: string | Date) {
@@ -126,8 +128,14 @@ export class PatientsService {
     return patient;
   }
 
-  async update(id: string, updatePatientDto: UpdatePatientDto, clinicId?: string): Promise<Patient> {
+  async update(
+    id: string,
+    updatePatientDto: UpdatePatientDto,
+    clinicId?: string,
+    actor?: { id: string; email: string; clinicId?: string; ip?: string },
+  ): Promise<Patient> {
     const patient = await this.findOne(id, clinicId);
+    const before = { firstName: patient.firstName, lastName: patient.lastName, documentNumber: patient.documentNumber, phone: patient.phone, email: patient.email, insuranceProvider: patient.insuranceProvider };
 
     if (updatePatientDto.birthDate) {
       this.ensureBirthDateNotFuture(updatePatientDto.birthDate);
@@ -159,15 +167,57 @@ export class PatientsService {
       Object.assign(patient, updatePatientDto);
     }
 
-    return await this.patientRepository.save(patient);
+    const saved = await this.patientRepository.save(patient);
+
+    if (actor?.id) {
+      const after = { firstName: saved.firstName, lastName: saved.lastName, documentNumber: saved.documentNumber, phone: saved.phone, email: saved.email, insuranceProvider: saved.insuranceProvider };
+      await this.auditService.log({
+        action: 'UPDATE',
+        resource: 'Pacientes',
+        resourceId: id,
+        userId: actor.id,
+        userEmail: actor.email,
+        clinicId: actor.clinicId,
+        ipAddress: actor.ip,
+        method: 'PATCH',
+        path: `/api/patients/${id}`,
+        statusCode: 200,
+        status: 'success',
+        details: { before, after, patientName: `${saved.firstName} ${saved.lastName}` },
+      });
+    }
+
+    return saved;
   }
 
-  async remove(id: string, clinicId?: string): Promise<void> {
+  async remove(
+    id: string,
+    clinicId?: string,
+    actor?: { id: string; email: string; clinicId?: string; ip?: string },
+  ): Promise<void> {
     const patient = await this.findOne(id, clinicId);
+    const patientName = `${patient.firstName} ${patient.lastName}`;
     patient.isActive = false;
     // Liberar el documentNumber para que el mismo CI pueda registrarse de nuevo
     patient.documentNumber = `DEL_${Date.now()}_${patient.documentNumber}`;
     await this.patientRepository.save(patient);
+
+    if (actor?.id) {
+      await this.auditService.log({
+        action: 'DELETE',
+        resource: 'Pacientes',
+        resourceId: id,
+        userId: actor.id,
+        userEmail: actor.email,
+        clinicId: actor.clinicId,
+        ipAddress: actor.ip,
+        method: 'DELETE',
+        path: `/api/patients/${id}`,
+        statusCode: 200,
+        status: 'success',
+        details: { patientName, documentNumber: patient.documentNumber },
+      });
+    }
   }
 
   async searchPatients(searchTerm: string, clinicId?: string, limit = 10): Promise<Patient[]> {

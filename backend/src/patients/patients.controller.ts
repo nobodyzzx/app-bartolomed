@@ -87,13 +87,17 @@ export class PatientsController {
     if (updatePatientDto.clinicId && clinicId && updatePatientDto.clinicId !== clinicId) {
       throw new BadRequestException('clinicId mismatch with current clinic context');
     }
-    return this.patientsService.update(id, updatePatientDto, clinicId);
+    const user = (req as any).user;
+    const actor = { id: user?.id, email: user?.email ?? '', clinicId: clinicId ?? undefined, ip: (req as any).ip };
+    return this.patientsService.update(id, updatePatientDto, clinicId, actor);
   }
 
   @Delete(':id')
   @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN, ValidRoles.DOCTOR)
   remove(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const clinicId = resolveClinicId(req);
-    return this.patientsService.remove(id, clinicId);
+    const user = (req as any).user;
+    const actor = { id: user?.id, email: user?.email ?? '', clinicId: clinicId ?? undefined, ip: (req as any).ip };
+    return this.patientsService.remove(id, clinicId, actor);
   }
 }

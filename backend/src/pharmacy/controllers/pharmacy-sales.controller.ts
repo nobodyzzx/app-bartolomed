@@ -4,7 +4,7 @@ import { resolveClinicId } from '../../auth/decorators/clinic-roles.decorator';
 import { RequirePermissions } from '../../auth/permissions/permissions.decorator';
 import { Permission } from '../../auth/permissions/permissions.enum';
 import { ValidRoles } from '../../auth/interfaces';
-import { CreatePharmacySaleDto, UpdatePharmacySaleDto, UpdatePharmacySaleStatusDto } from '../dto/pharmacy-sale.dto';
+import { AdjustPaymentDto, CreatePharmacySaleDto, UpdatePharmacySaleDto, UpdatePharmacySaleStatusDto } from '../dto/pharmacy-sale.dto';
 import { SaleStatus } from '../entities/pharmacy-sale.entity';
 import { PharmacySalesService } from '../services/pharmacy-sales.service';
 
@@ -73,6 +73,18 @@ export class PharmacySalesController {
   @Patch(':id/status')
   updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdatePharmacySaleStatusDto) {
     return this.pharmacySalesService.updateStatus(id, updateStatusDto);
+  }
+
+  @Patch(':id/adjust-payment')
+  adjustPayment(@Param('id') id: string, @Body() dto: AdjustPaymentDto, @Request() req: any) {
+    const user = req.user;
+    return this.pharmacySalesService.adjustPayment(id, dto, {
+      id: user?.id ?? user?.sub,
+      email: user?.email ?? '',
+      name: user?.personalInfo ? `${user.personalInfo.firstName ?? ''} ${user.personalInfo.lastName ?? ''}`.trim() : undefined,
+      clinicId: resolveClinicId(req) ?? undefined,
+      ip: req.ip,
+    });
   }
 
   @Delete(':id')
