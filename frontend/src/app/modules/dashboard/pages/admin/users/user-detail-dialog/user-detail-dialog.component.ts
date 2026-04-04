@@ -3,8 +3,9 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog'
 import { User } from '../../../../../auth/interfaces'
 
 @Component({
-  selector: 'app-user-detail-dialog',
-  templateUrl: './user-detail-dialog.component.html',
+    selector: 'app-user-detail-dialog',
+    templateUrl: './user-detail-dialog.component.html',
+    standalone: false
 })
 export class UserDetailDialogComponent {
   readonly roleColors: Record<string, string> = {

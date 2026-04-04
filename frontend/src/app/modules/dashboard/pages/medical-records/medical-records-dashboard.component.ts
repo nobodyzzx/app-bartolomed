@@ -10,9 +10,10 @@ import { MedicalRecord, MedicalRecordFilters, RecordStatus, RecordType } from '.
 import { MedicalRecordsService } from './services/medical-records.service'
 
 @Component({
-  selector: 'app-medical-records-dashboard',
-  templateUrl: './medical-records-dashboard.component.html',
-  styleUrls: ['./medical-records-dashboard.component.css'],
+    selector: 'app-medical-records-dashboard',
+    templateUrl: './medical-records-dashboard.component.html',
+    styleUrls: ['./medical-records-dashboard.component.css'],
+    standalone: false
 })
 export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
   private readonly destroyRef = inject(DestroyRef)

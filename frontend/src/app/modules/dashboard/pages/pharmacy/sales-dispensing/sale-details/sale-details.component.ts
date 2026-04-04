@@ -7,9 +7,10 @@ import { Sale, SaleStatus } from '../../interfaces/pharmacy.interfaces'
 import { SalesDispensingService } from '../../services/sales-dispensing.service'
 
 @Component({
-  selector: 'app-sale-details',
-  templateUrl: './sale-details.component.html',
-  styleUrls: ['./sale-details.component.css'],
+    selector: 'app-sale-details',
+    templateUrl: './sale-details.component.html',
+    styleUrls: ['./sale-details.component.css'],
+    standalone: false
 })
 export class SaleDetailsComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

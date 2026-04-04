@@ -4,7 +4,8 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { AuthService } from '../../services/auth.service'
 
 @Component({
-  templateUrl: './reset-password-page.component.html',
+    templateUrl: './reset-password-page.component.html',
+    standalone: false
 })
 export class ResetPasswordPageComponent implements OnInit {
   private fb = inject(FormBuilder)

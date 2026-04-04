@@ -33,9 +33,10 @@ const ADMIN_ONLY: string[] = [UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
 const PHARMACY:   string[] = [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
 
 @Component({
-  selector: 'app-main-dashboard',
-  templateUrl: './main-dashboard.component.html',
-  styleUrls: ['./main-dashboard.component.css'],
+    selector: 'app-main-dashboard',
+    templateUrl: './main-dashboard.component.html',
+    styleUrls: ['./main-dashboard.component.css'],
+    standalone: false
 })
 export class MainDashboardComponent implements OnInit {
   private readonly destroyRef  = inject(DestroyRef)

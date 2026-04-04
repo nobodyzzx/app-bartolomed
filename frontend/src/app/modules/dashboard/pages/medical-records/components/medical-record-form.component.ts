@@ -39,10 +39,11 @@ import {
 } from '../validators/vital-signs.validators'
 
 @Component({
-  selector: 'app-medical-record-form',
-  templateUrl: './medical-record-form.component.html',
-  styleUrls: ['./medical-record-form.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-medical-record-form',
+    templateUrl: './medical-record-form.component.html',
+    styleUrls: ['./medical-record-form.component.css'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class MedicalRecordFormComponent implements OnInit, OnDestroy {
   // Stepper form groups (reducido de 6 a 4 pasos)

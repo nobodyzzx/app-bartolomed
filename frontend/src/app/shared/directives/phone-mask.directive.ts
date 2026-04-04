@@ -1,7 +1,8 @@
 import { Directive, ElementRef, HostListener } from '@angular/core'
 
 @Directive({
-  selector: '[appPhoneMask]',
+    selector: '[appPhoneMask]',
+    standalone: false
 })
 export class PhoneMaskDirective {
   constructor(private el: ElementRef<HTMLInputElement>) {}

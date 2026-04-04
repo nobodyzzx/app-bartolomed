@@ -17,10 +17,11 @@ import { MedicalRecord, RecordType } from '../interfaces'
 import { MedicalRecordsService } from '../services/medical-records.service'
 
 @Component({
-  selector: 'app-patient-medical-history',
-  templateUrl: './patient-medical-history.component.html',
-  styleUrls: ['./patient-medical-history.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-patient-medical-history',
+    templateUrl: './patient-medical-history.component.html',
+    styleUrls: ['./patient-medical-history.component.css'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class PatientMedicalHistoryComponent implements OnInit, OnDestroy {
   readonly RecordType = RecordType

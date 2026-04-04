@@ -8,9 +8,10 @@ import { PurchaseOrder, ReceiveItemForm } from '../../interfaces/pharmacy.interf
 import { PurchaseOrdersService } from '../../services/purchase-orders.service'
 
 @Component({
-  selector: 'app-purchase-order-receive',
-  templateUrl: './purchase-order-receive.component.html',
-  styleUrls: ['./purchase-order-receive.component.css'],
+    selector: 'app-purchase-order-receive',
+    templateUrl: './purchase-order-receive.component.html',
+    styleUrls: ['./purchase-order-receive.component.css'],
+    standalone: false
 })
 export class PurchaseOrderReceiveComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

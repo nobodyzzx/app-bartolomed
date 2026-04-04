@@ -4,7 +4,8 @@ import { MatDialogRef } from '@angular/material/dialog'
 import { AuthService } from '../../services/auth.service'
 
 @Component({
-  templateUrl: './forgot-password-dialog.component.html',
+    templateUrl: './forgot-password-dialog.component.html',
+    standalone: false
 })
 export class ForgotPasswordDialogComponent {
   private fb = inject(FormBuilder)

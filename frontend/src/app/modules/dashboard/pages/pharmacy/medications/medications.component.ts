@@ -7,9 +7,10 @@ import { Medication } from '../interfaces/pharmacy.interfaces'
 import { InventoryService } from '../services/inventory.service'
 
 @Component({
-  selector: 'app-medications',
-  templateUrl: './medications.component.html',
-  styleUrls: ['./medications.component.css'],
+    selector: 'app-medications',
+    templateUrl: './medications.component.html',
+    styleUrls: ['./medications.component.css'],
+    standalone: false
 })
 export class MedicationsComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

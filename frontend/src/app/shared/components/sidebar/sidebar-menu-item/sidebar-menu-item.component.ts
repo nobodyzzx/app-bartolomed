@@ -3,8 +3,9 @@ import { Router } from '@angular/router'
 import { MenuItem } from '@core/interfaces/menu-item.interface'
 
 @Component({
-  selector: 'sidebar-menu-item',
-  templateUrl: './sidebar-menu-item.component.html',
+    selector: 'sidebar-menu-item',
+    templateUrl: './sidebar-menu-item.component.html',
+    standalone: false
 })
 export class SidebarMenuItemComponent {
   @Input() item!: MenuItem

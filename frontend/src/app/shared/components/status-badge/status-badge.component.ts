@@ -17,10 +17,9 @@ const BADGE_CLASSES: Record<BadgeColor, string> = {
 }
 
 @Component({
-  selector: 'app-status-badge',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './status-badge.component.html',
+    selector: 'app-status-badge',
+    imports: [CommonModule],
+    templateUrl: './status-badge.component.html'
 })
 export class StatusBadgeComponent {
   @Input() label = ''

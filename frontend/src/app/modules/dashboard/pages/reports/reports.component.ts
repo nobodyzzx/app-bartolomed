@@ -7,8 +7,9 @@ import { finalize } from 'rxjs/operators'
 import { ReportsService } from './services/reports.service'
 
 @Component({
-  selector: 'app-reports',
-  templateUrl: './reports.component.html',
+    selector: 'app-reports',
+    templateUrl: './reports.component.html',
+    standalone: false
 })
 export class ReportsComponent implements OnInit {
   private router = inject(Router)

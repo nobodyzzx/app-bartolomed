@@ -14,9 +14,10 @@ import { SalesDispensingService } from '../../services/sales-dispensing.service'
 import { CartItem, SaleCartService } from './sale-cart.service'
 
 @Component({
-  selector: 'app-new-sale',
-  templateUrl: './new-sale.component.html',
-  providers: [SaleCartService],
+    selector: 'app-new-sale',
+    templateUrl: './new-sale.component.html',
+    providers: [SaleCartService],
+    standalone: false
 })
 export class NewSaleComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

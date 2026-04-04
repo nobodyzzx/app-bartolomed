@@ -31,28 +31,27 @@ import { NotificationService } from '../../../../../../shared/services/notificat
 import { Role, RolesService } from '../services/roles.service'
 
 @Component({
-  selector: 'app-roles-management',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
-    MatButtonModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatTableModule,
-    MatIconModule,
-    MatChipsModule,
-    MatPaginatorModule,
-    MatProgressSpinnerModule,
-    MatTooltipModule,
-    MatAutocompleteModule,
-    PageHeaderComponent,
-    SkeletonTableComponent,
-    EmptyStateComponent,
-  ],
-  template: `
+    selector: 'app-roles-management',
+    imports: [
+        CommonModule,
+        FormsModule,
+        ReactiveFormsModule,
+        MatButtonModule,
+        MatCardModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatTableModule,
+        MatIconModule,
+        MatChipsModule,
+        MatPaginatorModule,
+        MatProgressSpinnerModule,
+        MatTooltipModule,
+        MatAutocompleteModule,
+        PageHeaderComponent,
+        SkeletonTableComponent,
+        EmptyStateComponent,
+    ],
+    template: `
     <div class="page-wrapper">
       <div class="page-inner">
 
@@ -258,7 +257,7 @@ import { Role, RolesService } from '../services/roles.service'
       </div>
     </div>
   `,
-  styles: [],
+    styles: []
 })
 export class RolesManagementComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

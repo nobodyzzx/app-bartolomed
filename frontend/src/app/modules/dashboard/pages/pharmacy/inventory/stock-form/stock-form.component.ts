@@ -9,9 +9,10 @@ import { CreateMedicationStockDto, Medication } from '../../interfaces/pharmacy.
 import { InventoryService } from '../../services/inventory.service'
 
 @Component({
-  selector: 'app-stock-form',
-  templateUrl: './stock-form.component.html',
-  styleUrls: ['./stock-form.component.css'],
+    selector: 'app-stock-form',
+    templateUrl: './stock-form.component.html',
+    styleUrls: ['./stock-form.component.css'],
+    standalone: false
 })
 export class StockFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

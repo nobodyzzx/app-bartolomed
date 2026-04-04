@@ -28,9 +28,10 @@ const ROLE_PRIORITY: UserRoles[] = [
 ]
 
 @Component({
-  selector: 'shared-sidebar',
-  templateUrl: './sidebar.component.html',
-  styleUrls: ['./sidebar.component.scss'],
+    selector: 'shared-sidebar',
+    templateUrl: './sidebar.component.html',
+    styleUrls: ['./sidebar.component.scss'],
+    standalone: false
 })
 export class SidebarComponent {
   private sidenavService = inject(SidenavService)

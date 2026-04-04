@@ -3,9 +3,10 @@ import { AuthService } from '../../../auth/services/auth.service'
 import { SidenavService } from '../../../../shared/components/services/sidenav.service'
 
 @Component({
-  selector: 'app-dashboard-layout',
-  templateUrl: './dashboard-layout.component.html',
-  styleUrl: './dashboard-layout.component.css',
+    selector: 'app-dashboard-layout',
+    templateUrl: './dashboard-layout.component.html',
+    styleUrl: './dashboard-layout.component.css',
+    standalone: false
 })
 export class DashboardLayoutComponent implements OnInit {
   private authService = inject(AuthService)

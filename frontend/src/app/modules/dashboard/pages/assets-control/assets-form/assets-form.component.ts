@@ -8,9 +8,10 @@ import { CreateAssetDto } from '../interfaces/assets.interfaces'
 import { AssetRegistrationService } from '../services/asset-registration.service'
 
 @Component({
-  selector: 'app-assets-form',
-  templateUrl: './assets-form.component.html',
-  styleUrls: ['./assets-form.component.css'],
+    selector: 'app-assets-form',
+    templateUrl: './assets-form.component.html',
+    styleUrls: ['./assets-form.component.css'],
+    standalone: false
 })
 export class AssetsFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

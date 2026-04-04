@@ -48,9 +48,10 @@ function dateOrderValidator(group: AbstractControl): ValidationErrors | null {
 
 
 @Component({
-  selector: 'app-prescription-form',
-  templateUrl: './prescription-form.component.html',
-  styleUrls: ['./prescription-form.component.css'],
+    selector: 'app-prescription-form',
+    templateUrl: './prescription-form.component.html',
+    styleUrls: ['./prescription-form.component.css'],
+    standalone: false
 })
 export class PrescriptionFormComponent {
   route = inject(ActivatedRoute)

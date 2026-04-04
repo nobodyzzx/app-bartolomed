@@ -7,8 +7,9 @@ import { ForgotPasswordDialogComponent } from '../forgot-password-dialog/forgot-
 import { AuthService } from '../../services/auth.service'
 
 @Component({
-  templateUrl: './login-page.component.html',
-  styleUrl: './login-page.component.css',
+    templateUrl: './login-page.component.html',
+    styleUrl: './login-page.component.css',
+    standalone: false
 })
 export class LoginPageComponent {
   hidePassword = true

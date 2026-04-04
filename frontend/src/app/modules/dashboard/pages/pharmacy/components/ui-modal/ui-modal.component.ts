@@ -5,9 +5,10 @@ import { Component, EventEmitter, Input, Output } from '@angular/core'
  * Patrón visual alineado con GUIA-DISENO-UI.md
  */
 @Component({
-  selector: 'pharmacy-ui-modal',
-  templateUrl: './ui-modal.component.html',
-  styleUrls: ['./ui-modal.component.css'],
+    selector: 'pharmacy-ui-modal',
+    templateUrl: './ui-modal.component.html',
+    styleUrls: ['./ui-modal.component.css'],
+    standalone: false
 })
 export class UiModalComponent {
   @Input() open = false

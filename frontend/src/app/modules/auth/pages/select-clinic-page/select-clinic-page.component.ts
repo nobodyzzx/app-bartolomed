@@ -13,7 +13,8 @@ interface ClinicOption {
 }
 
 @Component({
-  templateUrl: './select-clinic-page.component.html',
+    templateUrl: './select-clinic-page.component.html',
+    standalone: false
 })
 export class SelectClinicPageComponent implements OnInit {
   private http = inject(HttpClient)

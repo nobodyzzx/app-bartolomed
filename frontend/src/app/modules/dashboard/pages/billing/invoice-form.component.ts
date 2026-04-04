@@ -10,9 +10,10 @@ import { BillingService, InvoiceDto, InvoiceItemDto, InvoiceResponse } from './b
 import { ClinicOption, PatientOption } from './interfaces/billing-ui.interfaces'
 
 @Component({
-  selector: 'app-invoice-form',
-  templateUrl: './invoice-form.component.html',
-  styleUrls: ['./invoice-form.component.css'],
+    selector: 'app-invoice-form',
+    templateUrl: './invoice-form.component.html',
+    styleUrls: ['./invoice-form.component.css'],
+    standalone: false
 })
 export class InvoiceFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

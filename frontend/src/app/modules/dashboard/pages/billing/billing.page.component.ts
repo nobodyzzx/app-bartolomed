@@ -7,9 +7,10 @@ import { BillingService } from './billing.service'
 import { BillingStatistics, RecentInvoice } from './interfaces/billing-ui.interfaces'
 
 @Component({
-  selector: 'app-billing-page',
-  templateUrl: './billing.page.component.html',
-  styleUrls: ['./billing.page.component.css'],
+    selector: 'app-billing-page',
+    templateUrl: './billing.page.component.html',
+    styleUrls: ['./billing.page.component.css'],
+    standalone: false
 })
 export class BillingPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

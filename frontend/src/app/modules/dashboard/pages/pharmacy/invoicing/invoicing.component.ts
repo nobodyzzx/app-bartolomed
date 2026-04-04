@@ -10,9 +10,10 @@ import { InvoiceStatus, PaginatedResult, Sale, SaleRow } from '../interfaces/pha
 import { SalesDispensingService, SalesSummary } from '../services/sales-dispensing.service'
 
 @Component({
-  selector: 'app-invoicing',
-  templateUrl: './invoicing.component.html',
-  styleUrls: ['./invoicing.component.css'],
+    selector: 'app-invoicing',
+    templateUrl: './invoicing.component.html',
+    styleUrls: ['./invoicing.component.css'],
+    standalone: false
 })
 export class InvoicingComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

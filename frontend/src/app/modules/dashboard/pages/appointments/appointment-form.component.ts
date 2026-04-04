@@ -17,8 +17,9 @@ import {
 } from './services/appointments.service'
 
 @Component({
-  selector: 'app-appointment-form',
-  templateUrl: './appointment-form.component.html',
+    selector: 'app-appointment-form',
+    templateUrl: './appointment-form.component.html',
+    standalone: false
 })
 export class AppointmentFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)

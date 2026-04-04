@@ -11,8 +11,9 @@ import { MedicationStock } from '../../interfaces/pharmacy.interfaces'
 import { InventoryService } from '../../services/inventory.service'
 
 @Component({
-  selector: 'app-transfer-stock',
-  templateUrl: './transfer-stock.component.html',
+    selector: 'app-transfer-stock',
+    templateUrl: './transfer-stock.component.html',
+    standalone: false
 })
 export class TransferStockComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
