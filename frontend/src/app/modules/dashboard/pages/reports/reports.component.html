@@ -31,16 +31,6 @@
           <span class="material-symbols-outlined">{{ loadingStats ? 'hourglass_top' : 'refresh' }}</span>
           {{ loadingStats ? 'Cargando...' : 'Actualizar' }}
         </button>
-        <button class="h-14 px-4 rounded-xl border border-emerald-200 text-emerald-700 hover:bg-emerald-50 flex items-center gap-2 text-sm font-medium transition-colors"
-          (click)="repopulateDemo()" [disabled]="seeding">
-          <span class="material-symbols-outlined text-lg">{{ seeding ? 'hourglass_top' : 'dataset' }}</span>
-          {{ seeding ? 'Poblando...' : 'Repoblar demo' }}
-        </button>
-        <button class="h-14 px-4 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 flex items-center gap-2 text-sm font-medium transition-colors"
-          (click)="resetDemoData()" [disabled]="resetting">
-          <span class="material-symbols-outlined text-lg">{{ resetting ? 'hourglass_top' : 'delete_sweep' }}</span>
-          {{ resetting ? 'Eliminando...' : 'Resetear datos' }}
-        </button>
       </div>
     </div>
 

@@ -184,25 +184,11 @@ export const MENU_ITEMS: MenuItem[] = [
         requiredPermissions: [Permission.RolesManage],
       },
       {
-        label: 'Configuración del Sistema',
-        icon: 'settings',
-        route: '/dashboard/config',
-        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-        requiredPermissions: [Permission.SettingsManage],
-      },
-      {
         label: 'Auditoría y Logs',
         icon: 'history',
         route: '/dashboard/audit',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
         requiredPermissions: [Permission.AuditRead],
-      },
-      {
-        label: 'Respaldos y Restauración',
-        icon: 'backup',
-        route: '/dashboard/backup',
-        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-        requiredPermissions: [Permission.BackupManage],
       },
       {
         label: 'Gestión de Clínicas',
