@@ -3,6 +3,7 @@ import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http'
 import localeEsBo from '@angular/common/locales/es-BO'
 import { LOCALE_ID, NgModule } from '@angular/core'
 import { BrowserModule } from '@angular/platform-browser'
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts'
 
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async'
 import { AppRoutingModule } from './app-routing.module'
@@ -20,6 +21,7 @@ registerLocaleData(localeEsBo)
   imports: [BrowserModule, AppRoutingModule, HttpClientModule, SharedModule, MaterialModule],
   providers: [
     provideAnimationsAsync(),
+    provideCharts(withDefaultRegisterables()),
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: ClinicContextInterceptor, multi: true },
     { provide: LOCALE_ID, useValue: 'es-BO' },

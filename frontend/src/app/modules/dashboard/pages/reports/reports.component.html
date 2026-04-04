@@ -1,1 +1,304 @@
-<router-outlet></router-outlet>
+<div class="min-h-screen bg-slate-50">
+  <div class="max-w-7xl mx-auto p-6">
+
+    <!-- Encabezado -->
+    <app-page-header
+      title="Reportes"
+      subtitle="Estadísticas y descarga de informes del período seleccionado"
+      (back)="goBack()"
+    />
+
+    <!-- Filtro de período -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-6">
+      <div class="flex flex-wrap items-end gap-4">
+        <form [formGroup]="rangeForm" class="flex flex-wrap gap-4 flex-1">
+          <mat-form-field appearance="outline" class="flex-1 min-w-[180px]">
+            <mat-label>Desde</mat-label>
+            <span matPrefix class="material-symbols-outlined text-slate-400 ml-1 mr-1">calendar_today</span>
+            <input matInput [matDatepicker]="pickerStart" formControlName="startDate" />
+            <mat-datepicker-toggle matSuffix [for]="pickerStart" />
+            <mat-datepicker #pickerStart />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="flex-1 min-w-[180px]">
+            <mat-label>Hasta</mat-label>
+            <span matPrefix class="material-symbols-outlined text-slate-400 ml-1 mr-1">event</span>
+            <input matInput [matDatepicker]="pickerEnd" formControlName="endDate" />
+            <mat-datepicker-toggle matSuffix [for]="pickerEnd" />
+            <mat-datepicker #pickerEnd />
+          </mat-form-field>
+        </form>
+        <button class="btn btn-primary h-14 px-6" (click)="loadStats()" [disabled]="loadingStats">
+          <span class="material-symbols-outlined">{{ loadingStats ? 'hourglass_top' : 'refresh' }}</span>
+          {{ loadingStats ? 'Cargando...' : 'Actualizar' }}
+        </button>
+        <button class="h-14 px-4 rounded-xl border border-emerald-200 text-emerald-700 hover:bg-emerald-50 flex items-center gap-2 text-sm font-medium transition-colors"
+          (click)="repopulateDemo()" [disabled]="seeding">
+          <span class="material-symbols-outlined text-lg">{{ seeding ? 'hourglass_top' : 'dataset' }}</span>
+          {{ seeding ? 'Poblando...' : 'Repoblar demo' }}
+        </button>
+        <button class="h-14 px-4 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 flex items-center gap-2 text-sm font-medium transition-colors"
+          (click)="resetDemoData()" [disabled]="resetting">
+          <span class="material-symbols-outlined text-lg">{{ resetting ? 'hourglass_top' : 'delete_sweep' }}</span>
+          {{ resetting ? 'Eliminando...' : 'Resetear datos' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- ── SECCIÓN CLÍNICA ── -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+      <div class="bg-emerald-600 px-6 py-4 flex items-center gap-3">
+        <span class="material-symbols-outlined text-white text-2xl">local_hospital</span>
+        <h2 class="text-lg font-semibold text-white">Clínica</h2>
+      </div>
+
+      <div class="p-6">
+        <!-- Stats -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <app-stat-card label="Pacientes registrados"
+            [value]="loadingStats ? '...' : (patientStats?.totalPatients ?? '—')"
+            icon="group" color="green" />
+          <app-stat-card label="Citas en el período"
+            [value]="loadingStats ? '...' : (appointmentStats?.totalAppointments ?? '—')"
+            icon="calendar_month" color="green" />
+          <app-stat-card label="Tasa de asistencia"
+            [value]="loadingStats ? '...' : (appointmentStats ? attendanceRate + '%' : '—')"
+            icon="task_alt" color="green" />
+        </div>
+
+        <!-- Gráficos clínica -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <!-- Género -->
+          <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Pacientes por género</p>
+            <div class="h-48 flex items-center justify-center">
+              <canvas *ngIf="genderChart; else skeletonTpl"
+                baseChart [type]="'doughnut'" [data]="genderChart" [options]="doughnutOptions">
+              </canvas>
+              <ng-template #skeletonTpl>
+                <div class="w-32 h-32 rounded-full skeleton-shimmer"></div>
+              </ng-template>
+            </div>
+          </div>
+
+          <!-- Grupos de edad -->
+          <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Distribución por edad</p>
+            <div class="h-48 flex items-center justify-center">
+              <canvas *ngIf="ageChart; else skeletonBar"
+                baseChart [type]="'bar'" [data]="ageChart" [options]="barOptions">
+              </canvas>
+              <ng-template #skeletonBar>
+                <div class="w-full h-32 rounded-lg skeleton-shimmer"></div>
+              </ng-template>
+            </div>
+          </div>
+
+          <!-- Estado de citas -->
+          <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Estado de citas</p>
+            <div class="h-48 flex items-center justify-center">
+              <canvas *ngIf="appointmentStatusChart; else skeletonTpl2"
+                baseChart [type]="'doughnut'" [data]="appointmentStatusChart" [options]="doughnutOptions">
+              </canvas>
+              <ng-template #skeletonTpl2>
+                <div class="w-32 h-32 rounded-full skeleton-shimmer"></div>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+
+        <!-- Descargas clínica -->
+        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Descargar reportes</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadDemographics()" [disabled]="downloading['demographics']">
+            <span class="material-symbols-outlined text-emerald-600">{{downloading['demographics'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            Demografía
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadAppointments()" [disabled]="downloading['appointments']">
+            <span class="material-symbols-outlined text-emerald-600">{{downloading['appointments'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            Citas
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadMedicalRecords()" [disabled]="downloading['medicalRecords']">
+            <span class="material-symbols-outlined text-emerald-600">{{downloading['medicalRecords'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            Historial médico
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadDoctorPerformance()" [disabled]="downloading['performance']">
+            <span class="material-symbols-outlined text-emerald-600">{{downloading['performance'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            Desempeño médicos
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadDashboard()" [disabled]="downloading['dashboard']">
+            <span class="material-symbols-outlined text-emerald-600">{{downloading['dashboard'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            Dashboard general
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECCIÓN FINANZAS ── -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+      <div class="bg-blue-600 px-6 py-4 flex items-center gap-3">
+        <span class="material-symbols-outlined text-white text-2xl">payments</span>
+        <h2 class="text-lg font-semibold text-white">Finanzas</h2>
+      </div>
+
+      <div class="p-6">
+        <!-- Stats -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <app-stat-card label="Total facturado"
+            [value]="loadingStats ? '...' : formatCurrency(financialStats?.summary?.totalBilled)"
+            icon="receipt_long" color="blue" />
+          <app-stat-card label="Total recaudado"
+            [value]="loadingStats ? '...' : formatCurrency(financialStats?.summary?.totalPaid)"
+            icon="payments" color="blue" />
+          <app-stat-card label="Tasa de cobro"
+            [value]="loadingStats ? '...' : (financialStats ? collectionRate + '%' : '—')"
+            icon="trending_up" color="blue" />
+        </div>
+
+        <!-- Gráficos finanzas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <!-- Ingresos por mes -->
+          <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Ingresos por mes</p>
+            <div class="h-52 flex items-center justify-center">
+              <canvas *ngIf="revenueChart; else skeletonRevenue"
+                baseChart [type]="'bar'" [data]="revenueChart" [options]="revenueOptions">
+              </canvas>
+              <ng-template #skeletonRevenue>
+                <div class="w-full h-40 rounded-lg skeleton-shimmer"></div>
+              </ng-template>
+            </div>
+          </div>
+
+          <!-- Métodos de pago -->
+          <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Métodos de pago</p>
+            <div class="h-52 flex items-center justify-center">
+              <canvas *ngIf="paymentMethodsChart; else skeletonPayments"
+                baseChart [type]="'doughnut'" [data]="paymentMethodsChart" [options]="doughnutOptions">
+              </canvas>
+              <ng-template #skeletonPayments>
+                <div class="w-36 h-36 rounded-full skeleton-shimmer"></div>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+
+        <!-- Descargas finanzas -->
+        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Descargar reportes</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadFinancial()" [disabled]="downloading['financial']">
+            <span class="material-symbols-outlined text-blue-600">{{downloading['financial'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            Resumen financiero
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECCIÓN FARMACIA ── -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+      <div class="bg-orange-500 px-6 py-4 flex items-center gap-3">
+        <span class="material-symbols-outlined text-white text-2xl">medication</span>
+        <h2 class="text-lg font-semibold text-white">Farmacia</h2>
+      </div>
+
+      <div class="p-6">
+        <!-- Stats -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <app-stat-card label="Productos con stock bajo"
+            [value]="loadingStats ? '...' : (stockStats?.lowStockMedications?.length ?? '—')"
+            icon="warning" color="orange" />
+          <app-stat-card label="Por vencer (30 días)"
+            [value]="loadingStats ? '...' : (stockStats?.expiringMedications?.length ?? '—')"
+            icon="schedule" color="orange" />
+          <app-stat-card label="Valor del inventario"
+            [value]="loadingStats ? '...' : formatCurrency(stockStats?.stockValue)"
+            icon="inventory_2" color="orange" />
+        </div>
+
+        <!-- Descargas farmacia -->
+        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Descargar reportes</p>
+
+        <p class="text-xs text-slate-400 font-medium mb-2">PDFs</p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadCriticalStockPdf()" [disabled]="downloading['critStockPdf']">
+            <span class="material-symbols-outlined text-orange-500">{{downloading['critStockPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            Stock crítico PDF
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadTransfersPdf()" [disabled]="downloading['transfers']">
+            <span class="material-symbols-outlined text-orange-500">{{downloading['transfers'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            Eficiencia traslados
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadRotationPdf()" [disabled]="downloading['rotPdf']">
+            <span class="material-symbols-outlined text-orange-500">{{downloading['rotPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            Rotación stock PDF
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadMarginsPdf()" [disabled]="downloading['margPdf']">
+            <span class="material-symbols-outlined text-orange-500">{{downloading['margPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            Márgenes PDF
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadDailySalesPdf()" [disabled]="downloading['dailyPdf']">
+            <span class="material-symbols-outlined text-orange-500">{{downloading['dailyPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            Ventas diarias PDF
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadExpiryBucketsPdf()" [disabled]="downloading['expBktPdf']">
+            <span class="material-symbols-outlined text-orange-500">{{downloading['expBktPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            Vencimientos PDF
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadProfitabilityPdf()" [disabled]="downloading['profPdf']">
+            <span class="material-symbols-outlined text-orange-500">{{downloading['profPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            Rentabilidad PDF
+          </button>
+        </div>
+
+        <p class="text-xs text-slate-400 font-medium mb-2">Excel</p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadCriticalStockExcel()" [disabled]="downloading['critStockXls']">
+            <span class="material-symbols-outlined text-orange-500">{{downloading['critStockXls'] ? 'hourglass_top' : 'table_chart'}}</span>
+            Stock crítico Excel
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadConsumptionExcel()" [disabled]="downloading['consumption']">
+            <span class="material-symbols-outlined text-orange-500">{{downloading['consumption'] ? 'hourglass_top' : 'table_chart'}}</span>
+            Consumo farmacia
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadRotationExcel()" [disabled]="downloading['rotXls']">
+            <span class="material-symbols-outlined text-orange-500">{{downloading['rotXls'] ? 'hourglass_top' : 'table_chart'}}</span>
+            Rotación Excel
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadMarginsExcel()" [disabled]="downloading['margXls']">
+            <span class="material-symbols-outlined text-orange-500">{{downloading['margXls'] ? 'hourglass_top' : 'table_chart'}}</span>
+            Márgenes Excel
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadTopSellingExcel()" [disabled]="downloading['topXls']">
+            <span class="material-symbols-outlined text-orange-500">{{downloading['topXls'] ? 'hourglass_top' : 'table_chart'}}</span>
+            Top vendidos Excel
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadStockMovementsExcel()" [disabled]="downloading['movXls']">
+            <span class="material-symbols-outlined text-orange-500">{{downloading['movXls'] ? 'hourglass_top' : 'table_chart'}}</span>
+            Movimientos Excel
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -2,6 +2,7 @@ import { Component, DestroyRef, OnInit, inject } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormControl, FormGroup } from '@angular/forms'
 import { PageEvent } from '@angular/material/paginator'
+import { ChartData, ChartOptions } from 'chart.js'
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs'
 import { AuditService } from './audit.service'
 import {
@@ -9,6 +10,7 @@ import {
   AuditFilters,
   AuditLog,
   AuditStats,
+  DailyActivity,
 } from './interfaces/audit-log.interface'
 
 @Component({
@@ -19,28 +21,42 @@ import {
 export class AuditPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
   private readonly searchSubject = new Subject<string>()
+  private refreshTimer: ReturnType<typeof setInterval> | null = null
 
   logs: AuditLog[] = []
   stats: AuditStats | null = null
   distinctValues: AuditDistinctValues = { resources: [], actions: [] }
+  dailyActivity: DailyActivity[] = []
 
   total = 0
   page = 1
   pageSize = 50
   loading = false
   statsLoading = false
+  activityLoading = false
   expandedLogId: string | null = null
+  autoRefresh = false
+  showFilters = true
+
+  activityChart: ChartData<'bar'> | null = null
+
+  readonly barOptions: ChartOptions<'bar'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+      tooltip: { callbacks: { title: (items) => `Día: ${items[0].label}` } },
+    },
+    scales: {
+      x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+      y: { beginAtZero: true, ticks: { font: { size: 10 }, stepSize: 1 } },
+    },
+  }
 
   displayedColumns = [
-    'createdAt',
-    'userEmail',
-    'action',
-    'resource',
-    'method',
-    'statusCode',
-    'status',
-    'ipAddress',
-    'expand',
+    'createdAt', 'userEmail', 'action', 'resource',
+    'method', 'statusCode', 'status', 'ipAddress', 'expand',
   ]
 
   filterForm = new FormGroup({
@@ -53,13 +69,13 @@ export class AuditPageComponent implements OnInit {
   })
 
   readonly actionOptions = [
-    { value: 'LOGIN', label: 'Inicio de sesión' },
-    { value: 'LOGOUT', label: 'Cierre de sesión' },
+    { value: 'LOGIN',   label: 'Inicio de sesión' },
+    { value: 'LOGOUT',  label: 'Cierre de sesión' },
     { value: 'REFRESH', label: 'Renovar token' },
-    { value: 'CREATE', label: 'Crear' },
-    { value: 'UPDATE', label: 'Actualizar' },
-    { value: 'DELETE', label: 'Eliminar' },
-    { value: 'VIEW', label: 'Consultar' },
+    { value: 'CREATE',  label: 'Crear' },
+    { value: 'UPDATE',  label: 'Actualizar' },
+    { value: 'DELETE',  label: 'Eliminar' },
+    { value: 'VIEW',    label: 'Consultar' },
   ]
 
   readonly statusOptions = [
@@ -67,59 +83,114 @@ export class AuditPageComponent implements OnInit {
     { value: 'failure', label: 'Fallido' },
   ]
 
-  constructor(private readonly auditService: AuditService) {}
+  readonly quickFilters = [
+    { label: 'Hoy',          days: 1  },
+    { label: 'Ayer',         days: -1 },
+    { label: 'Últimos 7 días', days: 7 },
+    { label: 'Este mes',     days: 30 },
+  ]
+
+  constructor(private readonly auditService: AuditService) {
+    this.destroyRef.onDestroy(() => {
+      if (this.refreshTimer) clearInterval(this.refreshTimer)
+    })
+  }
 
   ngOnInit(): void {
-    this.loadStats()
-    this.loadLogs()
-    this.loadFilters()
+    // Rango por defecto: últimos 7 días
+    this.applyQuickFilter(7)
 
     this.searchSubject
       .pipe(debounceTime(400), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        this.page = 1
-        this.loadLogs()
-      })
+      .subscribe(() => { this.page = 1; this.loadLogs() })
+
+    this.auditService
+      .getDistinctValues()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: v => (this.distinctValues = v) })
+  }
+
+  // ─── Carga de datos ────────────────────────────────────────────────────────
+
+  loadAll(): void {
+    this.loadLogs()
+    this.loadStats()
+    this.loadActivity()
   }
 
   loadLogs(): void {
     this.loading = true
-    this.auditService
-      .findAll(this.buildFilters())
+    this.auditService.findAll(this.buildFilters())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: response => {
-          this.logs = response.items
-          this.total = response.total
-          this.loading = false
-        },
-        error: () => {
-          this.loading = false
-        },
+        next: r => { this.logs = r.items; this.total = r.total; this.loading = false },
+        error: () => { this.loading = false },
       })
   }
 
   loadStats(): void {
     this.statsLoading = true
-    this.auditService
-      .getStats()
+    const { startDate, endDate } = this.filterForm.value
+    this.auditService.getStats(startDate || undefined, endDate || undefined)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: stats => {
-          this.stats = stats
-          this.statsLoading = false
-        },
-        error: () => {
-          this.statsLoading = false
-        },
+        next: s => { this.stats = s; this.statsLoading = false },
+        error: () => { this.statsLoading = false },
       })
   }
 
-  loadFilters(): void {
-    this.auditService
-      .getDistinctValues()
+  loadActivity(): void {
+    this.activityLoading = true
+    const { startDate, endDate } = this.filterForm.value
+    this.auditService.getDailyActivity(startDate || undefined, endDate || undefined)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({ next: values => (this.distinctValues = values) })
+      .subscribe({
+        next: data => { this.dailyActivity = data; this.buildChart(data); this.activityLoading = false },
+        error: () => { this.activityLoading = false },
+      })
+  }
+
+  private buildChart(data: DailyActivity[]): void {
+    if (!data.length) { this.activityChart = null; return }
+    this.activityChart = {
+      labels: data.map(d =>
+        new Date(d.date + 'T12:00:00').toLocaleDateString('es-BO', { day: '2-digit', month: 'short' })
+      ),
+      datasets: [
+        {
+          label: 'Total eventos',
+          data: data.map(d => d.total),
+          backgroundColor: '#3b82f6',
+          borderRadius: 5,
+        },
+        {
+          label: 'Errores',
+          data: data.map(d => d.errors),
+          backgroundColor: '#ef4444',
+          borderRadius: 5,
+        },
+      ],
+    }
+  }
+
+  // ─── Filtros y navegación ──────────────────────────────────────────────────
+
+  applyQuickFilter(days: number): void {
+    const end = new Date()
+    const start = new Date()
+    if (days === -1) {
+      // Ayer
+      start.setDate(start.getDate() - 1)
+      end.setDate(end.getDate() - 1)
+    } else {
+      start.setDate(start.getDate() - (days - 1))
+    }
+    this.filterForm.patchValue({
+      startDate: start.toISOString().split('T')[0],
+      endDate: end.toISOString().split('T')[0],
+    })
+    this.page = 1
+    this.loadAll()
   }
 
   onSearch(value: string): void {
@@ -128,7 +199,7 @@ export class AuditPageComponent implements OnInit {
 
   onFilterChange(): void {
     this.page = 1
-    this.loadLogs()
+    this.loadAll()
   }
 
   onPageChange(event: PageEvent): void {
@@ -140,6 +211,13 @@ export class AuditPageComponent implements OnInit {
   resetFilters(): void {
     this.filterForm.reset({ search: '', action: '', resource: '', status: '', startDate: '', endDate: '' })
     this.page = 1
+    this.loadAll()
+  }
+
+  filterByUser(email: string | undefined): void {
+    if (!email) return
+    this.filterForm.patchValue({ search: email })
+    this.page = 1
     this.loadLogs()
   }
 
@@ -147,23 +225,37 @@ export class AuditPageComponent implements OnInit {
     this.expandedLogId = this.expandedLogId === id ? null : id
   }
 
+  toggleAutoRefresh(): void {
+    this.autoRefresh = !this.autoRefresh
+    if (this.autoRefresh) {
+      this.refreshTimer = setInterval(() => this.loadAll(), 30000)
+    } else {
+      if (this.refreshTimer) { clearInterval(this.refreshTimer); this.refreshTimer = null }
+    }
+  }
+
+  manualRefresh(): void {
+    this.loadAll()
+  }
+
+  // ─── Exportar CSV ──────────────────────────────────────────────────────────
+
   exportCsv(): void {
     const filters = { ...this.buildFilters(), page: 1, pageSize: 5000 }
-    this.auditService
-      .findAll(filters)
+    this.auditService.findAll(filters)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({ next: response => this.downloadCsv(response.items) })
+      .subscribe({ next: r => this.downloadCsv(r.items) })
   }
 
   private buildFilters(): AuditFilters {
     const v = this.filterForm.value
     const filters: AuditFilters = { page: this.page, pageSize: this.pageSize }
-    if (v.search) filters.search = v.search
-    if (v.action) filters.action = v.action
-    if (v.resource) filters.resource = v.resource
-    if (v.status) filters.status = v.status
+    if (v.search)    filters.search    = v.search
+    if (v.action)    filters.action    = v.action
+    if (v.resource)  filters.resource  = v.resource
+    if (v.status)    filters.status    = v.status
     if (v.startDate) filters.startDate = new Date(v.startDate).toISOString().split('T')[0]
-    if (v.endDate) filters.endDate = new Date(v.endDate).toISOString().split('T')[0]
+    if (v.endDate)   filters.endDate   = new Date(v.endDate).toISOString().split('T')[0]
     return filters
   }
 
@@ -193,30 +285,45 @@ export class AuditPageComponent implements OnInit {
     URL.revokeObjectURL(url)
   }
 
-  // ─── helpers de template ────────────────────────────────────────────────────
+  // ─── Computed ─────────────────────────────────────────────────────────────
+
+  get securityAlert(): boolean {
+    if (!this.stats) return false
+    return this.stats.errorsToday > 10 || this.stats.failedLogins > 3
+  }
+
+  get rangeLabel(): string {
+    const { startDate, endDate } = this.filterForm.value
+    if (!startDate && !endDate) return 'en total'
+    if (startDate && endDate) return `del ${startDate} al ${endDate}`
+    if (startDate) return `desde ${startDate}`
+    return `hasta ${endDate}`
+  }
+
+  // ─── Helpers de template ───────────────────────────────────────────────────
 
   getActionClass(action: string): string {
     const map: Record<string, string> = {
-      LOGIN: 'bg-blue-100 text-blue-700',
-      LOGOUT: 'bg-slate-100 text-slate-600',
+      LOGIN:   'bg-blue-100 text-blue-700',
+      LOGOUT:  'bg-slate-100 text-slate-600',
       REFRESH: 'bg-slate-100 text-slate-400',
-      CREATE: 'bg-green-100 text-green-700',
-      UPDATE: 'bg-amber-100 text-amber-700',
-      DELETE: 'bg-red-100 text-red-700',
-      VIEW: 'bg-purple-100 text-purple-700',
+      CREATE:  'bg-green-100 text-green-700',
+      UPDATE:  'bg-amber-100 text-amber-700',
+      DELETE:  'bg-red-100 text-red-700',
+      VIEW:    'bg-purple-100 text-purple-700',
     }
     return map[action] ?? 'bg-slate-100 text-slate-600'
   }
 
   getActionIcon(action: string): string {
     const map: Record<string, string> = {
-      LOGIN: 'login',
-      LOGOUT: 'logout',
+      LOGIN:   'login',
+      LOGOUT:  'logout',
       REFRESH: 'refresh',
-      CREATE: 'add_circle',
-      UPDATE: 'edit',
-      DELETE: 'delete',
-      VIEW: 'visibility',
+      CREATE:  'add_circle',
+      UPDATE:  'edit',
+      DELETE:  'delete',
+      VIEW:    'visibility',
     }
     return map[action] ?? 'radio_button_unchecked'
   }
@@ -227,11 +334,11 @@ export class AuditPageComponent implements OnInit {
 
   getMethodClass(method: string): string {
     const map: Record<string, string> = {
-      POST: 'text-green-600',
-      PATCH: 'text-amber-600',
-      PUT: 'text-amber-600',
+      POST:   'text-green-600',
+      PATCH:  'text-amber-600',
+      PUT:    'text-amber-600',
       DELETE: 'text-red-600',
-      GET: 'text-blue-600',
+      GET:    'text-blue-600',
     }
     return map[method] ?? 'text-slate-600'
   }
@@ -244,13 +351,14 @@ export class AuditPageComponent implements OnInit {
 
   formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleString('es-BO', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
     })
+  }
+
+  formatDetails(details: Record<string, unknown> | undefined): string {
+    if (!details) return ''
+    return JSON.stringify(details, null, 2)
   }
 
   hasExpandableContent(log: AuditLog): boolean {

@@ -40,19 +40,19 @@ export class AdvancedReportsService {
       .createQueryBuilder('item')
       .select('med.id',              'medicationId')
       .addSelect('med.name',         'medicationName')
-      .addSelect('med.generic_name', 'genericName')
-      .addSelect('SUM(item.quantity)',              'totalDispensed')
-      .addSelect('SUM(item.quantity * item.unit_price)', 'totalRevenue')
+      .addSelect('med."genericName"', 'genericName')
+      .addSelect('SUM(item.quantity)',                          'totalDispensed')
+      .addSelect('SUM(item.quantity * item."unitPrice")',       'totalRevenue')
       .innerJoin('medication_stock', 'ms',  'ms.id = item.medication_stock_id')
       .innerJoin('medications',      'med', 'med.id = ms.medication_id')
       .innerJoin('pharmacy_sales',   'ps',  'ps.id = item.sale_id')
       .where('ps.clinic_id = :clinicId', { clinicId })
       .andWhere("ps.status = 'completed'")
-      .groupBy('med.id, med.name, med.generic_name')
+      .groupBy('med.id, med.name, med."genericName"')
       .orderBy('SUM(item.quantity)', 'DESC');
 
-    if (dateRange?.startDate) dispatchQb.andWhere('ps.sale_date >= :startDate', { startDate: dateRange.startDate });
-    if (dateRange?.endDate)   dispatchQb.andWhere('ps.sale_date <= :endDate',   { endDate: dateRange.endDate });
+    if (dateRange?.startDate) dispatchQb.andWhere('ps."saleDate" >= :startDate', { startDate: dateRange.startDate });
+    if (dateRange?.endDate)   dispatchQb.andWhere('ps."saleDate" <= :endDate',   { endDate: dateRange.endDate });
 
     const dispensed = await dispatchQb.getRawMany();
 
@@ -61,7 +61,7 @@ export class AdvancedReportsService {
       .createQueryBuilder()
       .select('med.id',              'medicationId')
       .addSelect('med.name',         'medicationName')
-      .addSelect('SUM(sti.received_quantity)', 'totalReceived')
+      .addSelect('SUM(sti."receivedQuantity")', 'totalReceived')
       .from('stock_transfer_items', 'sti')
       .innerJoin('stock_transfers',  'st',  'st.id = sti.transfer_id')
       .innerJoin('medication_stock', 'ms',  'ms.id = sti.source_stock_id')
@@ -70,19 +70,19 @@ export class AdvancedReportsService {
       .andWhere("st.status = 'completed'")
       .groupBy('med.id, med.name');
 
-    if (dateRange?.startDate) receivedQb.andWhere('st.received_at >= :startDate', { startDate: dateRange.startDate });
-    if (dateRange?.endDate)   receivedQb.andWhere('st.received_at <= :endDate',   { endDate: dateRange.endDate });
+    if (dateRange?.startDate) receivedQb.andWhere('st."receivedAt" >= :startDate', { startDate: dateRange.startDate });
+    if (dateRange?.endDate)   receivedQb.andWhere('st."receivedAt" <= :endDate',   { endDate: dateRange.endDate });
 
     const received = await receivedQb.getRawMany();
 
     // Total de stock actual por clínica
     const currentStockRaw = await this.stockRepo
       .createQueryBuilder('ms')
-      .select('SUM(ms.available_quantity * ms.unit_cost)', 'totalStockValue')
-      .addSelect('SUM(ms.available_quantity)',             'totalUnits')
+      .select('SUM(ms.availableQuantity * ms.unitCost)', 'totalStockValue')
+      .addSelect('SUM(ms.availableQuantity)',             'totalUnits')
       .innerJoin('ms.clinic', 'clinic')
       .where('clinic.id = :clinicId', { clinicId })
-      .andWhere('ms.is_active = true')
+      .andWhere('ms.isActive = true')
       .getRawOne();
 
     return {
@@ -186,8 +186,8 @@ export class AdvancedReportsService {
     if (!clinicId) throw new BadRequestException('clinicId es requerido');
 
     const dateFilter = `
-      ${dateRange?.startDate ? `AND t.created_at >= '${dateRange.startDate}'` : ''}
-      ${dateRange?.endDate   ? `AND t.created_at <= '${dateRange.endDate}'`   : ''}
+      ${dateRange?.startDate ? `AND t."createdAt" >= '${dateRange.startDate}'` : ''}
+      ${dateRange?.endDate   ? `AND t."createdAt" <= '${dateRange.endDate}'`   : ''}
     `;
 
     // KPI por par origen-destino
@@ -198,16 +198,16 @@ export class AdvancedReportsService {
         t.target_clinic_id,
         tc.name                                                          AS target_clinic_name,
         COUNT(*)                                                         AS total_completed,
-        ROUND(AVG(EXTRACT(EPOCH FROM (t."dispatchedAt" - t.created_at))/3600)::numeric, 2)
+        ROUND(AVG(EXTRACT(EPOCH FROM (t."dispatchedAt" - t."createdAt"))/3600)::numeric, 2)
                                                                          AS avg_hrs_to_dispatch,
         ROUND(AVG(EXTRACT(EPOCH FROM (t."receivedAt"   - t."dispatchedAt"))/3600)::numeric, 2)
                                                                          AS avg_hrs_in_transit,
-        ROUND(AVG(EXTRACT(EPOCH FROM (t."receivedAt"   - t.created_at))/3600)::numeric, 2)
+        ROUND(AVG(EXTRACT(EPOCH FROM (t."receivedAt"   - t."createdAt"))/3600)::numeric, 2)
                                                                          AS avg_total_hrs,
         PERCENTILE_CONT(0.95) WITHIN GROUP (
           ORDER BY EXTRACT(EPOCH FROM (t."receivedAt" - t."dispatchedAt"))/3600
         )                                                                AS p95_hrs_in_transit,
-        COALESCE(SUM(sti.dispatched_quantity - sti.received_quantity), 0) AS total_discrepancy_units,
+        COALESCE(SUM(sti."dispatchedQuantity" - sti."receivedQuantity"), 0) AS total_discrepancy_units,
         COUNT(CASE WHEN t."receivedAt" - t."dispatchedAt" > INTERVAL '48 hours' THEN 1 END)
                                                                          AS delayed_count
       FROM stock_transfers t
@@ -231,7 +231,7 @@ export class AdvancedReportsService {
         t.target_clinic_id,
         tc.name                                                          AS target_clinic_name,
         t."dispatchedAt",
-        ROUND(EXTRACT(EPOCH FROM (NOW() - t."dispatchedAt"))/3600 ::numeric, 1)
+        ROUND((EXTRACT(EPOCH FROM (NOW() - t."dispatchedAt"))/3600)::numeric, 1)
                                                                          AS hrs_waiting
       FROM stock_transfers t
       JOIN clinics sc ON sc.id = t.source_clinic_id
@@ -263,29 +263,29 @@ export class AdvancedReportsService {
       .leftJoinAndSelect('ms.medication', 'med')
       .innerJoin('ms.clinic', 'clinic')
       .where('clinic.id = :clinicId', { clinicId })
-      .andWhere('ms.is_active = true');
+      .andWhere('ms.isActive = true');
 
     const [belowMinimum, expiringSoon, expired] = await Promise.all([
       // Stock bajo el mínimo
       qb.clone()
-        .andWhere('ms.available_quantity <= ms.minimum_stock * :multiplier',
+        .andWhere('ms.availableQuantity <= ms.minimumStock * CAST(:multiplier AS numeric)',
           { multiplier: criticalThresholdMultiplier })
-        .orderBy('ms.available_quantity', 'ASC')
+        .orderBy('ms.availableQuantity', 'ASC')
         .getMany(),
 
       // Próximos a vencer (dentro de expiryDays días)
       qb.clone()
-        .andWhere('ms.expiry_date <= :expiryThreshold', { expiryThreshold })
-        .andWhere('ms.expiry_date > NOW()')
-        .andWhere('ms.available_quantity > 0')
-        .orderBy('ms.expiry_date', 'ASC')
+        .andWhere('ms.expiryDate <= :expiryThreshold', { expiryThreshold })
+        .andWhere('ms.expiryDate > NOW()')
+        .andWhere('ms.availableQuantity > 0')
+        .orderBy('ms.expiryDate', 'ASC')
         .getMany(),
 
       // Ya vencidos con stock positivo (no se han dado de baja)
       qb.clone()
-        .andWhere('ms.expiry_date < NOW()')
-        .andWhere('ms.available_quantity > 0')
-        .orderBy('ms.expiry_date', 'ASC')
+        .andWhere('ms.expiryDate < NOW()')
+        .andWhere('ms.availableQuantity > 0')
+        .orderBy('ms.expiryDate', 'ASC')
         .getMany(),
     ]);
 
@@ -303,6 +303,581 @@ export class AdvancedReportsService {
         totalAtRiskValue:  Math.round(totalAtRiskValue * 100) / 100,
       },
     };
+  }
+
+  // ─── F1-R1: Rotación y días de stock ─────────────────────────────────────
+
+  async getRotationReport(filters: ReportFilters) {
+    const { clinicId, dateRange } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const startDate = dateRange?.startDate ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const endDate   = dateRange?.endDate   ?? new Date().toISOString().slice(0, 10);
+
+    const rows: Array<Record<string, unknown>> = await this.dataSource.query(`
+      SELECT
+        med.name                            AS "medicationName",
+        med."genericName"                   AS "genericName",
+        med.category                        AS category,
+        ms."availableQuantity"              AS "availableQty",
+        ms."unitCost"                       AS "unitCost",
+        COALESCE(sold.total_sold, 0)        AS "totalSold30d",
+        ROUND(COALESCE(sold.total_sold, 0) / 30.0, 4) AS "avgDailySales",
+        CASE
+          WHEN COALESCE(sold.total_sold, 0) = 0 THEN 9999
+          ELSE ROUND(ms."availableQuantity" / (COALESCE(sold.total_sold, 0) / 30.0), 1)
+        END                                 AS "daysRemaining"
+      FROM medication_stock ms
+      JOIN medications med ON med.id = ms.medication_id
+      LEFT JOIN (
+        SELECT psi."medicationStockId", SUM(psi.quantity) AS total_sold
+        FROM pharmacy_sale_items psi
+        JOIN pharmacy_sales ps ON ps.id = psi.sale_id
+        WHERE ps.clinic_id = $1
+          AND ps.status = 'completed'
+          AND ps."saleDate" >= $2
+          AND ps."saleDate" <= $3
+        GROUP BY psi."medicationStockId"
+      ) sold ON sold."medicationStockId" = ms.id
+      WHERE ms.clinic_id = $1
+        AND ms."isActive" = true
+        AND ms."availableQuantity" > 0
+      ORDER BY "daysRemaining" ASC
+    `, [clinicId, startDate, endDate]);
+
+    return rows.map(r => ({
+      ...r,
+      alertLevel: Number(r['daysRemaining']) < 7 ? 'critical'
+        : Number(r['daysRemaining']) < 30 ? 'warning'
+        : 'ok',
+    }));
+  }
+
+  // ─── F1-R2: Top medicamentos vendidos ────────────────────────────────────
+
+  async getTopSellingMedications(filters: ReportFilters) {
+    const { clinicId, dateRange } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const startDate = dateRange?.startDate;
+    const endDate   = dateRange?.endDate;
+
+    const dateFilter = `
+      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
+      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+    `;
+
+    return this.dataSource.query(`
+      SELECT
+        med.name                          AS "medicationName",
+        med."genericName"                 AS "genericName",
+        med.category                      AS category,
+        SUM(psi.quantity)                 AS "totalQty",
+        SUM(psi.subtotal)                 AS "totalRevenue",
+        ROUND(AVG(psi."unitPrice"), 2)    AS "avgUnitPrice"
+      FROM pharmacy_sale_items psi
+      JOIN pharmacy_sales ps   ON ps.id  = psi.sale_id
+      JOIN medication_stock ms ON ms.id  = psi.medication_stock_id
+      JOIN medications med     ON med.id = ms.medication_id
+      WHERE ps.clinic_id = $1
+        AND ps.status = 'completed'
+        ${dateFilter}
+      GROUP BY med.id, med.name, med."genericName", med.category
+      ORDER BY SUM(psi.quantity) DESC
+      LIMIT 30
+    `, [clinicId]);
+  }
+
+  // ─── F1-R3: Margen bruto por producto ────────────────────────────────────
+
+  async getProductMarginReport(filters: ReportFilters) {
+    const { clinicId, dateRange } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const startDate = dateRange?.startDate;
+    const endDate   = dateRange?.endDate;
+
+    const dateFilter = `
+      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
+      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+    `;
+
+    return this.dataSource.query(`
+      SELECT
+        med.name                                                          AS "medicationName",
+        med."genericName"                                                 AS "genericName",
+        ROUND(AVG(ms."unitCost"), 2)                                      AS "unitCost",
+        ROUND(AVG(psi."unitPrice"), 2)                                    AS "sellingPrice",
+        SUM(psi.quantity)                                                 AS "qtySold",
+        ROUND(SUM((psi."unitPrice" - ms."unitCost") * psi.quantity), 2)   AS "marginAbs",
+        CASE
+          WHEN SUM(psi."unitPrice" * psi.quantity) = 0 THEN 0
+          ELSE ROUND(SUM((psi."unitPrice" - ms."unitCost") * psi.quantity)
+               / SUM(psi."unitPrice" * psi.quantity) * 100, 2)
+        END                                                               AS "marginPct"
+      FROM pharmacy_sale_items psi
+      JOIN pharmacy_sales ps   ON ps.id  = psi.sale_id
+      JOIN medication_stock ms ON ms.id  = psi.medication_stock_id
+      JOIN medications med     ON med.id = ms.medication_id
+      WHERE ps.clinic_id = $1
+        AND ps.status = 'completed'
+        ${dateFilter}
+      GROUP BY med.id, med.name, med."genericName"
+      ORDER BY "marginAbs" DESC
+    `, [clinicId]);
+  }
+
+  // ─── F1-R4: Resumen ventas por día ───────────────────────────────────────
+
+  async getDailySalesSummary(filters: ReportFilters) {
+    const { clinicId, dateRange } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const startDate = dateRange?.startDate;
+    const endDate   = dateRange?.endDate;
+
+    const dateFilter = `
+      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
+      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+    `;
+
+    const [dailySales, paymentBreakdown]: [Array<Record<string, unknown>>, Array<Record<string, unknown>>] = await Promise.all([
+      this.dataSource.query(`
+        SELECT
+          DATE(ps."saleDate")          AS date,
+          SUM(ps.total)                AS "totalRevenue",
+          COUNT(*)                     AS "ticketCount",
+          ROUND(AVG(ps.total), 2)      AS "avgTicket"
+        FROM pharmacy_sales ps
+        WHERE ps.clinic_id = $1
+          AND ps.status = 'completed'
+          ${dateFilter}
+        GROUP BY DATE(ps."saleDate")
+        ORDER BY DATE(ps."saleDate") ASC
+      `, [clinicId]),
+
+      this.dataSource.query(`
+        SELECT
+          ps."paymentMethod"           AS method,
+          SUM(ps.total)                AS total,
+          COUNT(*)                     AS count
+        FROM pharmacy_sales ps
+        WHERE ps.clinic_id = $1
+          AND ps.status = 'completed'
+          ${dateFilter}
+        GROUP BY ps."paymentMethod"
+        ORDER BY SUM(ps.total) DESC
+      `, [clinicId]),
+    ]);
+
+    return { dailySales, paymentBreakdown };
+  }
+
+  // ─── F1-R5: Vencimientos por bucket ──────────────────────────────────────
+
+  async getExpiryBucketReport(filters: ReportFilters) {
+    const { clinicId } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const rows: Array<Record<string, unknown>> = await this.dataSource.query(`
+      SELECT
+        ms.id,
+        med.name                   AS "medicationName",
+        med."genericName"          AS "genericName",
+        med.category               AS category,
+        ms."batchNumber"           AS "batchNumber",
+        ms."expiryDate"            AS "expiryDate",
+        ms."availableQuantity"     AS "availableQuantity",
+        ms."unitCost"              AS "unitCost",
+        ms."availableQuantity" * ms."unitCost" AS "stockValue",
+        CASE
+          WHEN ms."expiryDate" < NOW()                                THEN 'already_expired'
+          WHEN ms."expiryDate" < NOW() + INTERVAL '30 days'          THEN 'expires_lt30'
+          WHEN ms."expiryDate" < NOW() + INTERVAL '60 days'          THEN 'expires_30_60'
+          WHEN ms."expiryDate" < NOW() + INTERVAL '90 days'          THEN 'expires_60_90'
+          ELSE                                                             'ok'
+        END                        AS bucket
+      FROM medication_stock ms
+      JOIN medications med ON med.id = ms.medication_id
+      WHERE ms.clinic_id = $1
+        AND ms."isActive" = true
+        AND ms."availableQuantity" > 0
+        AND ms."expiryDate" IS NOT NULL
+      ORDER BY ms."expiryDate" ASC
+    `, [clinicId]);
+
+    const buckets: Record<string, typeof rows> = {
+      already_expired: [],
+      expires_lt30:    [],
+      expires_30_60:   [],
+      expires_60_90:   [],
+    };
+    for (const r of rows) {
+      const b = r['bucket'] as string;
+      if (buckets[b]) buckets[b].push(r);
+    }
+
+    const valueOf = (items: typeof rows) =>
+      items.reduce((s, r) => s + Number(r['stockValue'] ?? 0), 0);
+
+    return {
+      already_expired: buckets.already_expired,
+      expires_lt30:    buckets.expires_lt30,
+      expires_30_60:   buckets.expires_30_60,
+      expires_60_90:   buckets.expires_60_90,
+      summary: {
+        alreadyExpiredCount: buckets.already_expired.length,
+        lt30Count:           buckets.expires_lt30.length,
+        bt30_60Count:        buckets.expires_30_60.length,
+        bt60_90Count:        buckets.expires_60_90.length,
+        alreadyExpiredValue: Math.round(valueOf(buckets.already_expired) * 100) / 100,
+        lt30Value:           Math.round(valueOf(buckets.expires_lt30) * 100) / 100,
+        bt30_60Value:        Math.round(valueOf(buckets.expires_30_60) * 100) / 100,
+        bt60_90Value:        Math.round(valueOf(buckets.expires_60_90) * 100) / 100,
+      },
+    };
+  }
+
+  // ─── F2-R6: Compras vs consumo mensual ───────────────────────────────────
+
+  async getPurchaseVsConsumption(filters: ReportFilters) {
+    const { clinicId, dateRange } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const startDate = dateRange?.startDate;
+    const endDate   = dateRange?.endDate;
+
+    const dateFilterPO = `
+      ${startDate ? `AND po."orderDate" >= '${startDate}'` : ''}
+      ${endDate   ? `AND po."orderDate" <= '${endDate}'`   : ''}
+    `;
+    const dateFilterPS = `
+      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
+      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+    `;
+
+    const [purchased, sold]: [Array<Record<string, unknown>>, Array<Record<string, unknown>>] = await Promise.all([
+      this.dataSource.query(`
+        SELECT
+          TO_CHAR(po."orderDate", 'YYYY-MM')  AS month,
+          med.name                             AS "medicationName",
+          SUM(poi."receivedQuantity")          AS "qtyPurchased"
+        FROM purchase_orders po
+        JOIN purchase_order_items poi ON poi.order_id = po.id
+        JOIN medications med          ON med.id = poi."medicationId"
+        WHERE po.clinic_id = $1
+          AND po.status = 'received'
+          ${dateFilterPO}
+        GROUP BY TO_CHAR(po."orderDate", 'YYYY-MM'), med.id, med.name
+        ORDER BY month, med.name
+      `, [clinicId]),
+
+      this.dataSource.query(`
+        SELECT
+          TO_CHAR(ps."saleDate", 'YYYY-MM')  AS month,
+          med.name                            AS "medicationName",
+          SUM(psi.quantity)                   AS "qtySold"
+        FROM pharmacy_sale_items psi
+        JOIN pharmacy_sales ps   ON ps.id  = psi.sale_id
+        JOIN medication_stock ms ON ms.id  = psi.medication_stock_id
+        JOIN medications med     ON med.id = ms.medication_id
+        WHERE ps.clinic_id = $1
+          AND ps.status = 'completed'
+          ${dateFilterPS}
+        GROUP BY TO_CHAR(ps."saleDate", 'YYYY-MM'), med.id, med.name
+        ORDER BY month, med.name
+      `, [clinicId]),
+    ]);
+
+    // Merge by month + medicationName
+    const key = (month: string, name: string) => `${month}||${name}`;
+    const map = new Map<string, { month: string; medicationName: string; qtyPurchased: number; qtySold: number }>();
+
+    for (const r of purchased) {
+      const k = key(r['month'] as string, r['medicationName'] as string);
+      map.set(k, { month: r['month'] as string, medicationName: r['medicationName'] as string, qtyPurchased: Number(r['qtyPurchased'] ?? 0), qtySold: 0 });
+    }
+    for (const r of sold) {
+      const k = key(r['month'] as string, r['medicationName'] as string);
+      const existing = map.get(k);
+      if (existing) {
+        existing.qtySold = Number(r['qtySold'] ?? 0);
+      } else {
+        map.set(k, { month: r['month'] as string, medicationName: r['medicationName'] as string, qtyPurchased: 0, qtySold: Number(r['qtySold'] ?? 0) });
+      }
+    }
+
+    return [...map.values()].map(v => ({ ...v, balance: v.qtyPurchased - v.qtySold }))
+      .sort((a, b) => a.month.localeCompare(b.month) || a.medicationName.localeCompare(b.medicationName));
+  }
+
+  // ─── F2-R7: Ventas por categoría ─────────────────────────────────────────
+
+  async getSalesByCategory(filters: ReportFilters) {
+    const { clinicId, dateRange } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const startDate = dateRange?.startDate;
+    const endDate   = dateRange?.endDate;
+
+    const dateFilter = `
+      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
+      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+    `;
+
+    return this.dataSource.query(`
+      SELECT
+        med.category                                                          AS category,
+        SUM(psi.quantity)                                                     AS "totalQty",
+        SUM(psi.subtotal)                                                     AS "totalRevenue",
+        COUNT(DISTINCT med.id)                                                AS "itemCount",
+        CASE
+          WHEN SUM(psi."unitPrice" * psi.quantity) = 0 THEN 0
+          ELSE ROUND(SUM((psi."unitPrice" - ms."unitCost") * psi.quantity)
+               / SUM(psi."unitPrice" * psi.quantity) * 100, 2)
+        END                                                                   AS "marginPct"
+      FROM pharmacy_sale_items psi
+      JOIN pharmacy_sales ps   ON ps.id  = psi.sale_id
+      JOIN medication_stock ms ON ms.id  = psi.medication_stock_id
+      JOIN medications med     ON med.id = ms.medication_id
+      WHERE ps.clinic_id = $1
+        AND ps.status = 'completed'
+        ${dateFilter}
+      GROUP BY med.category
+      ORDER BY SUM(psi.subtotal) DESC
+    `, [clinicId]);
+  }
+
+  // ─── F2-R8: Movimientos de stock (kardex simplificado) ───────────────────
+
+  async getStockMovementsReport(filters: ReportFilters & { medicationId?: string }) {
+    const { clinicId, dateRange, medicationId } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const startDate = dateRange?.startDate;
+    const endDate   = dateRange?.endDate;
+
+    const params: unknown[] = [clinicId];
+    const dateFilter = `
+      ${startDate ? `AND sm."movementDate" >= '${startDate}'` : ''}
+      ${endDate   ? `AND sm."movementDate" <= '${endDate}'`   : ''}
+    `;
+    const medFilter = medicationId ? `AND ms.medication_id = '${medicationId}'` : '';
+
+    return this.dataSource.query(`
+      SELECT
+        sm."movementDate"              AS date,
+        sm.type,
+        med.name                       AS "medicationName",
+        med."genericName"              AS "genericName",
+        ms."batchNumber"               AS "batchNumber",
+        sm.quantity,
+        sm."unitPrice"                 AS "unitPrice",
+        sm."totalAmount"               AS "totalAmount",
+        sm.reason,
+        sm.reference
+      FROM stock_movements sm
+      JOIN medication_stock ms ON ms.id  = sm.stock_id
+      JOIN medications med     ON med.id = ms.medication_id
+      WHERE ms.clinic_id = $1
+        ${dateFilter}
+        ${medFilter}
+      ORDER BY sm."movementDate" DESC
+    `, params);
+  }
+
+  // ─── F2-R9: Análisis de proveedores ──────────────────────────────────────
+
+  async getSupplierAnalysis(filters: ReportFilters) {
+    const { clinicId } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    return this.dataSource.query(`
+      SELECT
+        COALESCE(med.supplier, med.manufacturer, 'Sin proveedor')   AS supplier,
+        COUNT(DISTINCT med.id)                                       AS "skuCount",
+        SUM(ms."availableQuantity" * ms."unitCost")                  AS "totalStockValue",
+        ROUND(AVG(ms."unitCost"), 2)                                 AS "avgUnitCost",
+        MAX(ms."receivedDate")                                       AS "lastReceived"
+      FROM medication_stock ms
+      JOIN medications med ON med.id = ms.medication_id
+      WHERE ms.clinic_id = $1
+        AND ms."isActive" = true
+      GROUP BY COALESCE(med.supplier, med.manufacturer, 'Sin proveedor')
+      ORDER BY SUM(ms."availableQuantity" * ms."unitCost") DESC
+    `, [clinicId]);
+  }
+
+  // ─── F2-R10: Resumen despacho de recetas (KPI simplificado) ──────────────
+
+  async getPrescriptionDispensingSummary(filters: ReportFilters) {
+    const { clinicId } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const [row]: Array<Record<string, unknown>> = await this.dataSource.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE p.status NOT IN ('dispensed','cancelled')) AS "totalActive",
+        COUNT(*) FILTER (WHERE p.status = 'dispensed')                   AS "totalDispensed",
+        COUNT(*) FILTER (
+          WHERE p.status NOT IN ('dispensed','cancelled')
+            AND p.prescription_date < NOW() - INTERVAL '30 days'
+        )                                                                  AS "totalExpiredUndispensed"
+      FROM prescriptions p
+      WHERE p.clinic_id = $1
+        AND p.deleted_at IS NULL
+    `, [clinicId]);
+
+    const totalActive     = Number(row?.['totalActive'] ?? 0);
+    const totalDispensed  = Number(row?.['totalDispensed'] ?? 0);
+    const totalExpired    = Number(row?.['totalExpiredUndispensed'] ?? 0);
+    const total           = totalActive + totalDispensed;
+
+    return {
+      totalActive,
+      totalDispensed,
+      totalExpiredUndispensed: totalExpired,
+      dispensingRate: total > 0 ? Math.round((totalDispensed / total) * 100) : 0,
+    };
+  }
+
+  // ─── F3-R11: Ventas al crédito pendientes ────────────────────────────────
+
+  async getCreditSales(filters: ReportFilters) {
+    const { clinicId } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const rows: Array<Record<string, unknown>> = await this.dataSource.query(`
+      SELECT
+        ps.id,
+        ps."saleNumber"               AS "saleNumber",
+        ps."patientName"              AS "patientName",
+        ps."saleDate"                 AS "saleDate",
+        ps.total,
+        ps."amountPaid"               AS "amountPaid",
+        ps.total - ps."amountPaid"    AS "pendingAmount",
+        ps.status,
+        CASE
+          WHEN ps."saleDate" >= NOW() - INTERVAL '7 days'  THEN '0-7d'
+          WHEN ps."saleDate" >= NOW() - INTERVAL '30 days' THEN '7-30d'
+          ELSE '+30d'
+        END                           AS bucket
+      FROM pharmacy_sales ps
+      WHERE ps.clinic_id = $1
+        AND ps.status != 'completed'
+        AND ps."amountPaid" < ps.total
+      ORDER BY ps."saleDate" ASC
+    `, [clinicId]);
+
+    const buckets: Record<string, typeof rows> = { '0-7d': [], '7-30d': [], '+30d': [] };
+    for (const r of rows) {
+      const b = r['bucket'] as string;
+      if (buckets[b]) buckets[b].push(r);
+    }
+
+    const totalOf = (items: typeof rows) =>
+      items.reduce((s, r) => s + Number(r['pendingAmount'] ?? 0), 0);
+
+    return [
+      { bucket: '0-7d',  count: buckets['0-7d'].length,  totalPending: Math.round(totalOf(buckets['0-7d']) * 100) / 100,  sales: buckets['0-7d'] },
+      { bucket: '7-30d', count: buckets['7-30d'].length, totalPending: Math.round(totalOf(buckets['7-30d']) * 100) / 100, sales: buckets['7-30d'] },
+      { bucket: '+30d',  count: buckets['+30d'].length,  totalPending: Math.round(totalOf(buckets['+30d']) * 100) / 100,  sales: buckets['+30d'] },
+    ];
+  }
+
+  // ─── F3-R12: Ventas por método de pago ───────────────────────────────────
+
+  async getSalesByPaymentMethod(filters: ReportFilters) {
+    const { clinicId, dateRange } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const startDate = dateRange?.startDate;
+    const endDate   = dateRange?.endDate;
+
+    const dateFilter = `
+      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
+      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+    `;
+
+    const [byMethod, monthly]: [Array<Record<string, unknown>>, Array<Record<string, unknown>>] = await Promise.all([
+      this.dataSource.query(`
+        SELECT
+          ps."paymentMethod"        AS method,
+          SUM(ps.total)             AS total,
+          COUNT(*)                  AS count
+        FROM pharmacy_sales ps
+        WHERE ps.clinic_id = $1
+          AND ps.status = 'completed'
+          ${dateFilter}
+        GROUP BY ps."paymentMethod"
+        ORDER BY SUM(ps.total) DESC
+      `, [clinicId]),
+
+      this.dataSource.query(`
+        SELECT
+          TO_CHAR(ps."saleDate", 'YYYY-MM')  AS month,
+          ps."paymentMethod"                 AS method,
+          SUM(ps.total)                      AS total,
+          COUNT(*)                           AS count
+        FROM pharmacy_sales ps
+        WHERE ps.clinic_id = $1
+          AND ps.status = 'completed'
+          ${dateFilter}
+        GROUP BY TO_CHAR(ps."saleDate", 'YYYY-MM'), ps."paymentMethod"
+        ORDER BY month, method
+      `, [clinicId]),
+    ]);
+
+    const grandTotal = byMethod.reduce((s, r) => s + Number(r['total'] ?? 0), 0);
+    const byMethodWithPct = byMethod.map(r => ({
+      ...r,
+      pct: grandTotal > 0 ? Math.round((Number(r['total'] ?? 0) / grandTotal) * 100 * 10) / 10 : 0,
+    }));
+
+    return { byMethod: byMethodWithPct, monthly };
+  }
+
+  // ─── F3-R13: Rentabilidad mensual farmacia ────────────────────────────────
+
+  async getMonthlyProfitability(filters: ReportFilters) {
+    const { clinicId, dateRange } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+
+    const startDate = dateRange?.startDate;
+    const endDate   = dateRange?.endDate;
+
+    const dateFilter = `
+      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
+      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+    `;
+
+    const rows: Array<Record<string, unknown>> = await this.dataSource.query(`
+      SELECT
+        TO_CHAR(ps."saleDate", 'YYYY-MM')               AS month,
+        SUM(ps.total)                                    AS revenue,
+        SUM(psi.quantity * ms."unitCost")                AS cogs,
+        SUM(ps.total) - SUM(psi.quantity * ms."unitCost") AS "grossMargin"
+      FROM pharmacy_sales ps
+      JOIN pharmacy_sale_items psi ON psi.sale_id = ps.id
+      JOIN medication_stock ms     ON ms.id = psi.medication_stock_id
+      WHERE ps.clinic_id = $1
+        AND ps.status = 'completed'
+        ${dateFilter}
+      GROUP BY TO_CHAR(ps."saleDate", 'YYYY-MM')
+      ORDER BY month ASC
+    `, [clinicId]);
+
+    return rows.map(r => {
+      const revenue     = Number(r['revenue'] ?? 0);
+      const cogs        = Number(r['cogs'] ?? 0);
+      const grossMargin = Number(r['grossMargin'] ?? 0);
+      return {
+        month: r['month'],
+        revenue:          Math.round(revenue * 100) / 100,
+        cogs:             Math.round(cogs * 100) / 100,
+        grossMargin:      Math.round(grossMargin * 100) / 100,
+        grossMarginPct:   revenue > 0 ? Math.round((grossMargin / revenue) * 100 * 10) / 10 : 0,
+      };
+    });
   }
 
   // ─── R-13: Auditoría Recetado vs Entregado ────────────────────────────────

@@ -18,8 +18,19 @@ export class AuditController {
   }
 
   @Get('stats')
-  getStats() {
-    return this.auditService.getStats();
+  getStats(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.auditService.getStats(startDate, endDate);
+  }
+
+  @Get('activity')
+  getDailyActivity(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.auditService.getDailyActivity(startDate, endDate);
   }
 
   @Get('filters')

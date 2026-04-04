@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common'
 import { NgModule } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { RouterModule } from '@angular/router'
+import { BaseChartDirective } from 'ng2-charts'
 import { MaterialModule } from '../material/material.module'
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component'
 import { EmptyStateComponent } from './components/empty-state/empty-state.component'
@@ -30,7 +31,8 @@ import { PhoneMaskDirective } from './directives/phone-mask.directive'
     FormsModule,
     MaterialModule,
     RouterModule,
-    // Componentes standalone
+    // Componentes standalone y directivas de terceros
+    BaseChartDirective,
     StatCardComponent,
     PageHeaderComponent,
     SearchBarComponent,
@@ -46,7 +48,8 @@ import { PhoneMaskDirective } from './directives/phone-mask.directive'
     MaterialModule,
     PhoneMaskDirective,
     ConfirmDialogComponent,
-    // Componentes compartidos (disponibles para todos los módulos que importen SharedModule)
+    // Componentes compartidos y directivas de terceros
+    BaseChartDirective,
     StatCardComponent,
     PageHeaderComponent,
     SearchBarComponent,

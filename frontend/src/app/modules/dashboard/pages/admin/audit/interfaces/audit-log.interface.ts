@@ -30,8 +30,16 @@ export interface AuditStats {
   errorsToday: number;
   loginsToday: number;
   mutationsToday: number;
+  failedLogins: number;
+  topIp: { ip: string; count: number } | null;
   topUsers: { email: string; count: number }[];
   topResources: { resource: string; count: number }[];
+}
+
+export interface DailyActivity {
+  date: string;
+  total: number;
+  errors: number;
 }
 
 export interface AuditFilters {

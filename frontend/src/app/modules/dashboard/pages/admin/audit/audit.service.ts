@@ -7,6 +7,7 @@ import {
   AuditFilters,
   AuditLogsResponse,
   AuditStats,
+  DailyActivity,
 } from './interfaces/audit-log.interface';
 
 @Injectable({ providedIn: 'root' })
@@ -29,8 +30,18 @@ export class AuditService {
     return this.http.get<AuditLogsResponse>(this.base, { params });
   }
 
-  getStats(): Observable<AuditStats> {
-    return this.http.get<AuditStats>(`${this.base}/stats`);
+  getStats(startDate?: string, endDate?: string): Observable<AuditStats> {
+    let params = new HttpParams();
+    if (startDate) params = params.set('startDate', startDate);
+    if (endDate) params = params.set('endDate', endDate);
+    return this.http.get<AuditStats>(`${this.base}/stats`, { params });
+  }
+
+  getDailyActivity(startDate?: string, endDate?: string): Observable<DailyActivity[]> {
+    let params = new HttpParams();
+    if (startDate) params = params.set('startDate', startDate);
+    if (endDate) params = params.set('endDate', endDate);
+    return this.http.get<DailyActivity[]>(`${this.base}/activity`, { params });
   }
 
   getDistinctValues(): Observable<AuditDistinctValues> {

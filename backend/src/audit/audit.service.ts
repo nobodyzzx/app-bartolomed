@@ -70,56 +70,107 @@ export class AuditService {
     return { items, total, page, pageSize };
   }
 
-  async getStats() {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  async getStats(startDate?: string, endDate?: string) {
+    const start = startDate
+      ? new Date(startDate)
+      : (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })();
 
-    const [totalToday, errorsToday, loginsToday] = await Promise.all([
-      this.auditLogRepository
-        .createQueryBuilder('log')
-        .where('log.createdAt >= :startOfDay', { startOfDay })
+    const end = endDate
+      ? (() => { const d = new Date(endDate); d.setHours(23, 59, 59, 999); return d; })()
+      : (() => { const d = new Date(); d.setHours(23, 59, 59, 999); return d; })();
+
+    const [total, errors, logins, failedLogins] = await Promise.all([
+      this.auditLogRepository.createQueryBuilder('log')
+        .where('log.createdAt >= :start', { start })
+        .andWhere('log.createdAt <= :end', { end })
         .getCount(),
-      this.auditLogRepository
-        .createQueryBuilder('log')
+      this.auditLogRepository.createQueryBuilder('log')
         .where('log.status = :status', { status: 'failure' })
-        .andWhere('log.createdAt >= :startOfDay', { startOfDay })
+        .andWhere('log.createdAt >= :start', { start })
+        .andWhere('log.createdAt <= :end', { end })
         .getCount(),
-      this.auditLogRepository
-        .createQueryBuilder('log')
+      this.auditLogRepository.createQueryBuilder('log')
         .where('log.action = :action', { action: 'LOGIN' })
-        .andWhere('log.createdAt >= :startOfDay', { startOfDay })
+        .andWhere('log.createdAt >= :start', { start })
+        .andWhere('log.createdAt <= :end', { end })
+        .getCount(),
+      this.auditLogRepository.createQueryBuilder('log')
+        .where('log.action = :action', { action: 'LOGIN' })
+        .andWhere('log.status = :status', { status: 'failure' })
+        .andWhere('log.createdAt >= :start', { start })
+        .andWhere('log.createdAt <= :end', { end })
         .getCount(),
     ]);
 
-    const topUsersRaw = await this.auditLogRepository
-      .createQueryBuilder('log')
-      .select('log.userEmail', 'email')
-      .addSelect('COUNT(*)', 'count')
-      .where('log.createdAt >= :startOfDay', { startOfDay })
-      .andWhere('log.userEmail IS NOT NULL')
-      .groupBy('log.userEmail')
-      .orderBy('count', 'DESC')
-      .limit(5)
-      .getRawMany();
-
-    const topResourcesRaw = await this.auditLogRepository
-      .createQueryBuilder('log')
-      .select('log.resource', 'resource')
-      .addSelect('COUNT(*)', 'count')
-      .where('log.createdAt >= :startOfDay', { startOfDay })
-      .groupBy('log.resource')
-      .orderBy('count', 'DESC')
-      .limit(5)
-      .getRawMany();
+    const [topUsersRaw, topResourcesRaw, topIpRaw] = await Promise.all([
+      this.auditLogRepository.createQueryBuilder('log')
+        .select('log.userEmail', 'email')
+        .addSelect('COUNT(*)', 'count')
+        .where('log.createdAt >= :start', { start })
+        .andWhere('log.createdAt <= :end', { end })
+        .andWhere('log.userEmail IS NOT NULL')
+        .groupBy('log.userEmail')
+        .orderBy('count', 'DESC')
+        .limit(5)
+        .getRawMany(),
+      this.auditLogRepository.createQueryBuilder('log')
+        .select('log.resource', 'resource')
+        .addSelect('COUNT(*)', 'count')
+        .where('log.createdAt >= :start', { start })
+        .andWhere('log.createdAt <= :end', { end })
+        .groupBy('log.resource')
+        .orderBy('count', 'DESC')
+        .limit(5)
+        .getRawMany(),
+      this.auditLogRepository.createQueryBuilder('log')
+        .select('log.ipAddress', 'ip')
+        .addSelect('COUNT(*)', 'count')
+        .where('log.createdAt >= :start', { start })
+        .andWhere('log.createdAt <= :end', { end })
+        .andWhere('log.ipAddress IS NOT NULL')
+        .groupBy('log.ipAddress')
+        .orderBy('count', 'DESC')
+        .limit(1)
+        .getRawOne(),
+    ]);
 
     return {
-      totalToday,
-      errorsToday,
-      loginsToday,
-      mutationsToday: totalToday - loginsToday,
-      topUsers: topUsersRaw.map(r => ({ email: r.email, count: Number(r.count) })),
-      topResources: topResourcesRaw.map(r => ({ resource: r.resource, count: Number(r.count) })),
+      totalToday: total,
+      errorsToday: errors,
+      loginsToday: logins,
+      mutationsToday: total - logins,
+      failedLogins,
+      topIp: topIpRaw ? { ip: topIpRaw.ip as string, count: Number(topIpRaw.count) } : null,
+      topUsers: topUsersRaw.map(r => ({ email: r.email as string, count: Number(r.count) })),
+      topResources: topResourcesRaw.map(r => ({ resource: r.resource as string, count: Number(r.count) })),
     };
+  }
+
+  async getDailyActivity(startDate?: string, endDate?: string) {
+    const start = startDate
+      ? new Date(startDate)
+      : (() => { const d = new Date(); d.setDate(d.getDate() - 6); d.setHours(0, 0, 0, 0); return d; })();
+
+    const end = endDate
+      ? (() => { const d = new Date(endDate); d.setHours(23, 59, 59, 999); return d; })()
+      : (() => { const d = new Date(); d.setHours(23, 59, 59, 999); return d; })();
+
+    const raw = await this.auditLogRepository
+      .createQueryBuilder('log')
+      .select("TO_CHAR(log.createdAt, 'YYYY-MM-DD')", 'date')
+      .addSelect('COUNT(*)', 'total')
+      .addSelect("SUM(CASE WHEN log.status = 'failure' THEN 1 ELSE 0 END)", 'errors')
+      .where('log.createdAt >= :start', { start })
+      .andWhere('log.createdAt <= :end', { end })
+      .groupBy("TO_CHAR(log.createdAt, 'YYYY-MM-DD')")
+      .orderBy('date', 'ASC')
+      .getRawMany();
+
+    return raw.map(r => ({
+      date: r.date as string,
+      total: Number(r.total),
+      errors: Number(r.errors),
+    }));
   }
 
   async getDistinctValues() {

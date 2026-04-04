@@ -6,6 +6,7 @@ import puppeteer from 'puppeteer-core';
 @Injectable()
 export class ReportsPdfService {
   private readonly logo64: string;
+  private readonly chartJs: string;
 
   constructor() {
     try {
@@ -14,6 +15,14 @@ export class ReportsPdfService {
       ).toString('base64');
     } catch {
       this.logo64 = '';
+    }
+    try {
+      this.chartJs = readFileSync(
+        join(process.cwd(), 'node_modules', 'chart.js', 'dist', 'chart.umd.js'),
+        'utf8',
+      );
+    } catch {
+      this.chartJs = '';
     }
   }
 
@@ -43,6 +52,14 @@ export class ReportsPdfService {
     return this.render(this.dashboardHtml(data));
   }
 
+  async generateCriticalStockPdf(data: any): Promise<Buffer> {
+    return this.render(this.criticalStockHtml(data));
+  }
+
+  async generateTransferEfficiencyPdf(data: any): Promise<Buffer> {
+    return this.render(this.transferEfficiencyHtml(data));
+  }
+
   // ─── Puppeteer ────────────────────────────────────────────────────────────
 
   private async render(html: string): Promise<Buffer> {
@@ -60,7 +77,9 @@ export class ReportsPdfService {
     });
     try {
       const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: 'networkidle0' });
+      await page.setContent(html, { waitUntil: 'load' });
+      // Esperar a que todos los charts terminen de renderizar
+      await page.waitForFunction(() => (window as any).__chartsReady === true, { timeout: 8000 }).catch(() => {});
       const buf = await page.pdf({
         format: 'A4',
         printBackground: true,
@@ -235,6 +254,46 @@ export class ReportsPdfService {
     return `<p style="color:#9ca3af;font-size:8.5pt;text-align:center;padding:12px 0;">Sin datos disponibles para el período seleccionado</p>`;
   }
 
+  // ─── Chart helpers (Chart.js inline via Puppeteer) ────────────────────────
+
+  private static _chartCounter = 0;
+
+  /** Genera un <canvas> + <script> que dibuja un gráfico Chart.js inline.
+   *  chartJs se carga una sola vez por página vía `chartJsTag()`.
+   */
+  private inlineChart(type: 'doughnut' | 'bar', config: object, width = 320, height = 200): string {
+    const id = `ch_${++ReportsPdfService._chartCounter}_${Date.now()}`;
+    return `<canvas id="${id}" width="${width}" height="${height}" style="max-width:100%;display:block"></canvas>
+    <script>
+      (function(){
+        var ctx = document.getElementById('${id}').getContext('2d');
+        new Chart(ctx, ${JSON.stringify({ type, ...config })});
+      })();
+    </script>`;
+  }
+
+  /** Script mínimo para páginas sin gráficos — marca la página como lista. */
+  private readyTag(): string {
+    return `<script>document.addEventListener('DOMContentLoaded',function(){window.__chartsReady=true;});</script>`;
+  }
+
+  /** Script tag con Chart.js embebido (sin red). Incluir 1 vez por página. */
+  private chartJsTag(): string {
+    if (!this.chartJs) return '';
+    return `<script>${this.chartJs}</script>
+    <script>
+      // Marcar como listo cuando todos los charts del DOM hayan renderizado
+      document.addEventListener('DOMContentLoaded', function() {
+        requestAnimationFrame(function() { setTimeout(function(){ window.__chartsReady = true; }, 400); });
+      });
+    </script>`;
+  }
+
+  private readonly PALETTE_BLUE   = ['#3b82f6','#93c5fd','#1d4ed8','#60a5fa','#2563eb','#bfdbfe'];
+  private readonly PALETTE_GREEN  = ['#10b981','#6ee7b7','#059669','#34d399','#047857','#a7f3d0'];
+  private readonly PALETTE_ORANGE = ['#f97316','#fdba74','#ea580c','#fb923c','#c2410c','#fed7aa'];
+  private readonly PALETTE_MIXED  = ['#3b82f6','#10b981','#f97316','#8b5cf6','#ef4444','#06b6d4'];
+
   // ─── Financial Report HTML ────────────────────────────────────────────────
 
   private financialHtml(data: any): string {
@@ -256,58 +315,65 @@ export class ReportsPdfService {
       ? ((summary.totalCollected / summary.totalBilled) * 100).toFixed(1)
       : '0.0';
 
-    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style></head><body>
+    // Gráfico barras: facturado vs cobrado por mes
+    const revenueChartHtml = monthly.length > 0
+      ? this.inlineChart('bar', {
+          data: {
+            labels: monthly.map((m: any) => m.month ?? '-'),
+            datasets: [
+              { label: 'Facturado', data: monthly.map((m: any) => Number(m.totalBilled ?? m.revenue ?? 0)), backgroundColor: '#3b82f6', borderRadius: 4 },
+              { label: 'Recaudado', data: monthly.map((m: any) => Number(m.totalPaid ?? m.collected ?? 0)), backgroundColor: '#10b981', borderRadius: 4 },
+            ],
+          },
+          options: { responsive: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } },
+        }, 520, 200)
+      : this.noData();
+
+    // Gráfico dona: métodos de pago
+    const methodLabels: Record<string, string> = { cash: 'Efectivo', card: 'Tarjeta', transfer: 'Transferencia', insurance: 'Seguro' };
+    const paymentChartHtml = payments.length > 0
+      ? this.inlineChart('doughnut', {
+          data: {
+            labels: payments.map((p: any) => methodLabels[p.method] ?? p.method ?? '-'),
+            datasets: [{ data: payments.map((p: any) => Number(p.totalAmount ?? p.total ?? 0)), backgroundColor: this.PALETTE_BLUE, borderWidth: 2 }],
+          },
+          options: { responsive: false, plugins: { legend: { position: 'bottom' } } },
+        }, 260, 180)
+      : this.noData();
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}
+      .chart-row{display:flex;gap:20px;align-items:flex-start;margin-bottom:12px}
+      .chart-full{flex:1}
+      .chart-side{width:280px;flex-shrink:0}
+    </style>${this.chartJsTag()}</head><body>
       ${this.header('Reporte Financiero')}
       ${this.meta([
         ['Generado', this.nowBO()],
         ['Total facturado', this.fmtBs(summary.totalBilled)],
-        ['Total cobrado', this.fmtBs(summary.totalCollected)],
+        ['Total cobrado', this.fmtBs(summary.totalCollected ?? summary.totalPaid)],
         ['Tasa de cobro', `${collectionRate}%`],
       ])}
       <div class="cnt">
         <div class="kpi-grid">
           ${this.kpiCard('Total Facturado', this.fmtBs(summary.totalBilled), 'Facturas emitidas', 'blue')}
-          ${this.kpiCard('Total Cobrado', this.fmtBs(summary.totalCollected), 'Pagos recibidos', 'green')}
-          ${this.kpiCard('Pendiente de Cobro', this.fmtBs((summary.totalBilled ?? 0) - (summary.totalCollected ?? 0)), 'Por cobrar', 'amber')}
+          ${this.kpiCard('Total Cobrado', this.fmtBs(summary.totalCollected ?? summary.totalPaid), 'Pagos recibidos', 'green')}
+          ${this.kpiCard('Pendiente de Cobro', this.fmtBs((Number(summary.totalBilled ?? 0)) - (Number(summary.totalCollected ?? summary.totalPaid ?? 0))), 'Por cobrar', 'amber')}
           ${this.kpiCard('Tasa de Cobro', `${collectionRate}%`, 'Eficiencia de cobranza', 'purple')}
         </div>
 
         ${this.section('Ingresos Mensuales',
-          monthly.length > 0
-            ? `${this.barChart(monthly.map((m: any) => ({
-                label: m.month ?? '-',
-                value: Number(m.revenue ?? 0),
-                max: maxRevenue,
-                color: 'green',
-                suffix: ' Bs',
-              })))}
-              <div style="margin-top:12px">${this.table(
-                ['Mes', 'Facturado', 'Cobrado', 'Facturas'],
-                monthlyRows,
-                ['', 'num', 'num', 'num'],
-              )}</div>`
-            : this.noData()
-        )}
-
-        ${this.section('Métodos de Pago',
-          payments.length > 0
-            ? `${this.barChart(payments.map((p: any) => ({
-                label: p.method ?? '-',
-                value: Number(p.total ?? 0),
-                max: maxPayment,
-                color: 'blue',
-                suffix: ' Bs',
-              })))}
-              <div style="margin-top:12px">${this.table(
-                ['Método', 'Total Bs', 'Transacciones'],
-                payments.map((p: any) => [
-                  this.esc(p.method ?? '-'),
-                  `<span class="num">${this.fmtBs(p.total)}</span>`,
-                  `<span class="num">${this.fmtNum(p.count)}</span>`,
-                ]),
-                ['', 'num', 'num'],
-              )}</div>`
-            : this.noData()
+          `<div class="chart-row">
+            <div class="chart-full">${revenueChartHtml}</div>
+            <div class="chart-side">
+              <p style="font-size:7.5pt;font-weight:bold;color:#374151;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Métodos de Pago</p>
+              ${paymentChartHtml}
+            </div>
+          </div>
+          ${monthly.length > 0 ? `<div style="margin-top:10px">${this.table(
+            ['Mes', 'Facturado', 'Cobrado', 'Facturas'],
+            monthlyRows,
+            ['', 'num', 'num', 'num'],
+          )}</div>` : ''}`
         )}
       </div>
     </body></html>`;
@@ -321,11 +387,33 @@ export class ReportsPdfService {
     const ages = data.ageGroupDistribution ?? [];
     const blood = data.bloodTypeDistribution ?? [];
 
-    const maxGender = Math.max(...genders.map((g: any) => Number(g.count ?? 0)), 1);
-    const maxAge = Math.max(...ages.map((a: any) => Number(a.count ?? 0)), 1);
-    const maxBlood = Math.max(...blood.map((b: any) => Number(b.count ?? 0)), 1);
+    const genderLabels = (g: any) => g.gender === 'M' ? 'Masculino' : g.gender === 'F' ? 'Femenino' : (g.gender ?? 'No especificado');
+    const ageOrder = ['Under 18','18-30','31-50','51-70','Over 70'];
+    const sortedAges = [...ages].sort((a: any, b: any) => ageOrder.indexOf(a.ageGroup) - ageOrder.indexOf(b.ageGroup));
 
-    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style></head><body>
+    const genderChartHtml = genders.length > 0
+      ? this.inlineChart('doughnut', {
+          data: {
+            labels: genders.map(genderLabels),
+            datasets: [{ data: genders.map((g: any) => Number(g.count ?? 0)), backgroundColor: this.PALETTE_BLUE, borderWidth: 2 }],
+          },
+          options: { responsive: false, plugins: { legend: { position: 'bottom' } } },
+        }, 240, 180)
+      : this.noData();
+
+    const ageChartHtml = sortedAges.length > 0
+      ? this.inlineChart('bar', {
+          data: {
+            labels: sortedAges.map((a: any) => a.ageGroup ?? '-'),
+            datasets: [{ label: 'Pacientes', data: sortedAges.map((a: any) => Number(a.count ?? 0)), backgroundColor: '#10b981', borderRadius: 4 }],
+          },
+          options: { responsive: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+        }, 280, 180)
+      : this.noData();
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}
+      .chart-row{display:flex;gap:20px;align-items:flex-start;margin-bottom:8px}
+    </style>${this.chartJsTag()}</head><body>
       ${this.header('Demografía de Pacientes')}
       ${this.meta([
         ['Generado', this.nowBO()],
@@ -338,26 +426,17 @@ export class ReportsPdfService {
           ${this.kpiCard('Tipos de Sangre', this.fmtNum(blood.length), 'Grupos registrados', 'purple')}
         </div>
 
-        ${this.section('Distribución por Género',
-          genders.length > 0
-            ? this.barChart(genders.map((g: any) => ({
-                label: g.gender === 'male' ? 'Masculino' : g.gender === 'female' ? 'Femenino' : (g.gender ?? 'No especificado'),
-                value: Number(g.count ?? 0),
-                max: maxGender,
-                color: g.gender === 'male' ? 'blue' : 'purple',
-              })))
-            : this.noData()
-        )}
-
-        ${this.section('Distribución por Grupos de Edad',
-          ages.length > 0
-            ? this.barChart(ages.map((a: any) => ({
-                label: a.ageGroup ?? '-',
-                value: Number(a.count ?? 0),
-                max: maxAge,
-                color: 'green',
-              })))
-            : this.noData()
+        ${this.section('Distribución por Género y Grupos de Edad',
+          `<div class="chart-row">
+            <div style="flex:1">
+              <p style="font-size:7.5pt;font-weight:bold;color:#374151;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Por Género</p>
+              ${genderChartHtml}
+            </div>
+            <div style="flex:1">
+              <p style="font-size:7.5pt;font-weight:bold;color:#374151;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Por Edad</p>
+              ${ageChartHtml}
+            </div>
+          </div>`
         )}
 
         ${this.section('Distribución por Tipo de Sangre',
@@ -381,26 +460,28 @@ export class ReportsPdfService {
 
   private doctorPerformanceHtml(data: any): string {
     const doctors = data.doctorPerformance ?? [];
-    const maxCompleted = Math.max(...doctors.map((d: any) => Number(d.completedAppointments ?? 0)), 1);
 
-    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style></head><body>
+    const perfChartHtml = doctors.length > 0
+      ? this.inlineChart('bar', {
+          data: {
+            labels: doctors.map((d: any) => d.doctorName ?? '-'),
+            datasets: [
+              { label: 'Completadas', data: doctors.map((d: any) => Number(d.completedAppointments ?? 0)), backgroundColor: '#10b981', borderRadius: 4 },
+              { label: 'Canceladas',  data: doctors.map((d: any) => Number(d.cancelledAppointments ?? 0)), backgroundColor: '#ef4444', borderRadius: 4 },
+            ],
+          },
+          options: { responsive: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } },
+        }, 540, 200)
+      : this.noData();
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style>${this.chartJsTag()}</head><body>
       ${this.header('Rendimiento de Médicos')}
       ${this.meta([
         ['Generado', this.nowBO()],
         ['Total médicos', this.fmtNum(doctors.length)],
       ])}
       <div class="cnt">
-        ${this.section('Citas Completadas por Médico',
-          doctors.length > 0
-            ? this.barChart(doctors.map((d: any) => ({
-                label: `Dr. ${d.doctorName ?? '-'}`,
-                value: Number(d.completedAppointments ?? 0),
-                max: maxCompleted,
-                color: 'blue',
-                suffix: ' citas',
-              })))
-            : this.noData()
-        )}
+        ${this.section('Citas por Médico', perfChartHtml)}
 
         ${this.section('Detalle de Rendimiento por Médico',
           doctors.length > 0
@@ -452,7 +533,29 @@ export class ReportsPdfService {
       in_progress: 'En progreso',
     };
 
-    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style></head><body>
+    const statusChartHtml = statusDist.length > 0
+      ? this.inlineChart('doughnut', {
+          data: {
+            labels: statusDist.map((s: any) => statusLabels[s.status] ?? s.status),
+            datasets: [{ data: statusDist.map((s: any) => Number(s.count ?? 0)), backgroundColor: this.PALETTE_MIXED, borderWidth: 2 }],
+          },
+          options: { responsive: false, plugins: { legend: { position: 'bottom' } } },
+        }, 240, 180)
+      : this.noData();
+
+    const trendChartHtml = monthly.length > 0
+      ? this.inlineChart('bar', {
+          data: {
+            labels: monthly.map((m: any) => m.month ?? '-'),
+            datasets: [{ label: 'Citas', data: monthly.map((m: any) => Number(m.count ?? 0)), backgroundColor: '#3b82f6', borderRadius: 4 }],
+          },
+          options: { responsive: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+        }, 310, 180)
+      : this.noData();
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}
+      .chart-row{display:flex;gap:20px;align-items:flex-start;margin-bottom:8px}
+    </style>${this.chartJsTag()}</head><body>
       ${this.header('Estadísticas de Citas')}
       ${this.meta([
         ['Generado', this.nowBO()],
@@ -467,30 +570,26 @@ export class ReportsPdfService {
           ${this.kpiCard('Duración Prom.', `${this.fmtNum(summary.avgDuration)} min`, 'Por consulta', 'purple')}
         </div>
 
-        ${this.section('Distribución por Estado',
-          statusDist.length > 0
-            ? this.table(
-                ['Estado', 'Cantidad', '% del Total'],
-                statusDist.map((s: any) => [
-                  `<span class="badge ${statusColors[s.status] ?? 'badge-gray'}">${statusLabels[s.status] ?? this.esc(s.status)}</span>`,
-                  `<span class="num">${this.fmtNum(s.count)}</span>`,
-                  `<span class="num">${this.fmtPct(summary.totalAppointments > 0 ? (Number(s.count) / summary.totalAppointments) * 100 : 0)}</span>`,
-                ]),
-                ['', 'num', 'num'],
-              )
-            : this.noData()
-        )}
-
-        ${this.section('Tendencia Mensual',
-          monthly.length > 0
-            ? this.barChart(monthly.map((m: any) => ({
-                label: m.month ?? '-',
-                value: Number(m.count ?? 0),
-                max: maxMonthly,
-                color: 'blue',
-                suffix: ' citas',
-              })))
-            : this.noData()
+        ${this.section('Distribución por Estado y Tendencia Mensual',
+          `<div class="chart-row">
+            <div style="flex:1">
+              <p style="font-size:7.5pt;font-weight:bold;color:#374151;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Por Estado</p>
+              ${statusChartHtml}
+            </div>
+            <div style="flex:1">
+              <p style="font-size:7.5pt;font-weight:bold;color:#374151;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Tendencia Mensual</p>
+              ${trendChartHtml}
+            </div>
+          </div>
+          ${statusDist.length > 0 ? `<div style="margin-top:10px">${this.table(
+            ['Estado', 'Cantidad', '% del Total'],
+            statusDist.map((s: any) => [
+              `<span class="badge ${statusColors[s.status] ?? 'badge-gray'}">${statusLabels[s.status] ?? this.esc(s.status)}</span>`,
+              `<span class="num">${this.fmtNum(s.count)}</span>`,
+              `<span class="num">${this.fmtPct(summary.totalAppointments > 0 ? (Number(s.count) / summary.totalAppointments) * 100 : 0)}</span>`,
+            ]),
+            ['', 'num', 'num'],
+          )}</div>` : ''}`
         )}
       </div>
     </body></html>`;
@@ -505,7 +604,7 @@ export class ReportsPdfService {
 
     const typeColors = ['blue', 'green', 'purple', 'amber', 'red'];
 
-    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style></head><body>
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style>${this.readyTag()}</head><body>
       ${this.header('Registros Médicos')}
       ${this.meta([
         ['Generado', this.nowBO()],
@@ -553,6 +652,114 @@ export class ReportsPdfService {
     </body></html>`;
   }
 
+  // ─── Critical Stock Report HTML ───────────────────────────────────────────
+
+  private criticalStockHtml(data: any): string {
+    const { belowMinimum = [], expiringSoon = [], expired = [], summary = {} } = data;
+
+    const stockTable = (items: any[]) => {
+      if (!items.length) return this.noData();
+      return this.table(
+        ['Medicamento', 'Lote', 'Disponible', 'Mínimo', 'Vencimiento', 'Costo Unit.'],
+        items.map((s: any) => [
+          `<b>${this.esc(s.medication?.name ?? '-')}</b>`,
+          this.esc(s.batchNumber ?? '-'),
+          `<span class="num">${this.fmtNum(s.availableQuantity)}</span>`,
+          `<span class="num">${this.fmtNum(s.minimumStock)}</span>`,
+          s.expiryDate ? new Date(s.expiryDate).toLocaleDateString('es-BO') : '-',
+          `<span class="num">${this.fmtBs(s.unitCost)}</span>`,
+        ]),
+        ['', '', 'num', 'num', 'center', 'num'],
+      );
+    };
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style>${this.readyTag()}</head><body>
+      ${this.header('Stock Crítico — Farmacia')}
+      ${this.meta([
+        ['Generado', this.nowBO()],
+        ['Bajo mínimo', this.fmtNum(summary.belowMinimumCount)],
+        ['Próx. a vencer', this.fmtNum(summary.expiringSoonCount)],
+        ['Vencidos', this.fmtNum(summary.expiredCount)],
+        ['Valor en riesgo', this.fmtBs(summary.totalAtRiskValue)],
+      ])}
+      <div class="cnt">
+        <div class="kpi-grid">
+          ${this.kpiCard('Bajo Mínimo', this.fmtNum(summary.belowMinimumCount), 'Requieren reposición', 'amber')}
+          ${this.kpiCard('Próx. a Vencer', this.fmtNum(summary.expiringSoonCount), 'Próximos 60 días', 'amber')}
+          ${this.kpiCard('Ya Vencidos', this.fmtNum(summary.expiredCount), 'Acción inmediata', 'red')}
+          ${this.kpiCard('Valor en Riesgo', this.fmtBs(summary.totalAtRiskValue), 'Total comprometido', 'red')}
+        </div>
+
+        ${expired.length > 0 ? this.section('⚠ Ya Vencidos — Acción Inmediata', stockTable(expired)) : ''}
+        ${this.section('Stock Bajo Mínimo', stockTable(belowMinimum))}
+        ${this.section('Próximos a Vencer (60 días)', stockTable(expiringSoon))}
+      </div>
+    </body></html>`;
+  }
+
+  // ─── Transfer Efficiency Report HTML ──────────────────────────────────────
+
+  private transferEfficiencyHtml(data: any): string {
+    const { kpiByRoute = [], stalledTransfers = [], stalledCount = 0 } = data;
+
+    const stalledAlert = stalledCount > 0
+      ? `<div style="background:#fee2e2;border:1.5px solid #dc2626;border-radius:6px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+           <span style="font-size:12pt">⚠</span>
+           <span style="font-size:9pt;font-weight:bold;color:#991b1b">${stalledCount} traslado(s) detenido(s) hace más de 48 horas</span>
+         </div>`
+      : '';
+
+    const kpiTable = kpiByRoute.length > 0
+      ? this.table(
+          ['Origen', 'Destino', 'Completados', 'Hrs prom. despacho', 'Hrs prom. total', 'P95 tránsito', 'Merma (u.)'],
+          kpiByRoute.map((r: any) => [
+            this.esc(r.source_clinic_name ?? '-'),
+            this.esc(r.target_clinic_name ?? '-'),
+            `<span class="num">${this.fmtNum(r.total_completed)}</span>`,
+            `<span class="num">${this.fmtNum(r.avg_hrs_to_dispatch, 1)}</span>`,
+            `<span class="num">${this.fmtNum(r.avg_total_hrs, 1)}</span>`,
+            `<span class="num">${this.fmtNum(r.p95_hrs_in_transit, 1)}</span>`,
+            `<span class="num">${this.fmtNum(r.total_discrepancy_units)}</span>`,
+          ]),
+          ['', '', 'num', 'num', 'num', 'num', 'num'],
+        )
+      : this.noData();
+
+    const stalledTable = stalledTransfers.length > 0
+      ? this.table(
+          ['N° Traspaso', 'Origen', 'Destino', 'Despachado', 'Hrs esperando'],
+          stalledTransfers.map((t: any) => [
+            this.esc(t.transferNumber ?? '-'),
+            this.esc(t.source_clinic_name ?? '-'),
+            this.esc(t.target_clinic_name ?? '-'),
+            t.dispatchedAt ? new Date(t.dispatchedAt).toLocaleString('es-BO') : '-',
+            `<span class="num badge badge-red">${this.fmtNum(t.hrs_waiting, 1)} hrs</span>`,
+          ]),
+          ['', '', '', 'center', 'num'],
+        )
+      : this.noData();
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style>${this.readyTag()}</head><body>
+      ${this.header('Eficiencia de Traspasos')}
+      ${this.meta([
+        ['Generado', this.nowBO()],
+        ['Rutas analizadas', this.fmtNum(kpiByRoute.length)],
+        ['Detenidos +48h', this.fmtNum(stalledCount)],
+      ])}
+      <div class="cnt">
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+          ${this.kpiCard('Rutas Analizadas', this.fmtNum(kpiByRoute.length), 'Pares origen-destino', 'blue')}
+          ${this.kpiCard('Detenidos +48h', this.fmtNum(stalledCount), 'Requieren atención', stalledCount > 0 ? 'red' : 'green')}
+          ${this.kpiCard('Merma Total', this.fmtNum(kpiByRoute.reduce((s: number, r: any) => s + Number(r.total_discrepancy_units ?? 0), 0)), 'Unidades con discrepancia', 'amber')}
+        </div>
+
+        ${stalledAlert}
+        ${this.section('KPI por Ruta de Traspaso', kpiTable)}
+        ${stalledCount > 0 ? this.section('Traslados Detenidos (+48 horas)', stalledTable) : ''}
+      </div>
+    </body></html>`;
+  }
+
   // ─── Dashboard Report HTML ────────────────────────────────────────────────
 
   private dashboardHtml(data: any): string {
@@ -561,7 +768,7 @@ export class ReportsPdfService {
     const financial = data.financial ?? {};
     const stock = data.stock ?? {};
 
-    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style></head><body>
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style>${this.readyTag()}</head><body>
       ${this.header('Resumen General — Dashboard')}
       ${this.meta([
         ['Generado', this.nowBO()],
@@ -607,6 +814,294 @@ export class ReportsPdfService {
             <div style="flex:1">${this.kpiCard('Valor Total', this.fmtBs(stock.totalValue), 'En inventario', 'green')}</div>
           </div>`
         )}
+      </div>
+    </body></html>`;
+  }
+
+  // ─── Pharmacy Rotation PDF ────────────────────────────────────────────────
+
+  async generateRotationPdf(data: any): Promise<Buffer> {
+    return this.render(this.rotationHtml(data));
+  }
+
+  private rotationHtml(data: any[]): string {
+    const critical = data.filter(r => r.alertLevel === 'critical');
+    const warning  = data.filter(r => r.alertLevel === 'warning');
+    const ok       = data.filter(r => r.alertLevel === 'ok');
+
+    const alertBadge = (level: string) => {
+      if (level === 'critical') return `<span class="badge badge-red">CRÍTICO</span>`;
+      if (level === 'warning')  return `<span class="badge badge-amber">ATENCIÓN</span>`;
+      return `<span class="badge badge-green">OK</span>`;
+    };
+
+    const rotTable = (items: any[]) => {
+      if (!items.length) return this.noData();
+      return this.table(
+        ['Medicamento', 'Genérico', 'Categoría', 'Stock Disp.', 'Venta Diaria', 'Días Restantes', 'Alerta'],
+        items.map(r => [
+          `<b>${this.esc(r.medicationName ?? '-')}</b>`,
+          this.esc(r.genericName ?? '-'),
+          this.esc(r.category ?? '-'),
+          `<span class="num">${this.fmtNum(r.availableQty)}</span>`,
+          `<span class="num">${this.fmtNum(r.avgDailySales, 2)}</span>`,
+          `<span class="num">${Number(r.daysRemaining) >= 9999 ? '∞' : this.fmtNum(r.daysRemaining, 1)}</span>`,
+          alertBadge(r.alertLevel),
+        ]),
+        ['', '', '', 'num', 'num', 'num', 'center'],
+      );
+    };
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style>${this.readyTag()}</head><body>
+      ${this.header('Rotación y Días de Stock — Farmacia')}
+      ${this.meta([
+        ['Generado', this.nowBO()],
+        ['Total ítems', this.fmtNum(data.length)],
+        ['Críticos (<7d)', this.fmtNum(critical.length)],
+        ['Atención (<30d)', this.fmtNum(warning.length)],
+      ])}
+      <div class="cnt">
+        <div class="kpi-grid">
+          ${this.kpiCard('Total Ítems', this.fmtNum(data.length), 'Con stock activo', 'blue')}
+          ${this.kpiCard('Estado Crítico', this.fmtNum(critical.length), 'Menos de 7 días', 'red')}
+          ${this.kpiCard('Requieren Atención', this.fmtNum(warning.length), 'Menos de 30 días', 'amber')}
+          ${this.kpiCard('Estado Normal', this.fmtNum(ok.length), 'Más de 30 días', 'green')}
+        </div>
+
+        ${critical.length > 0 ? this.section('Estado Crítico — Menos de 7 días', rotTable(critical)) : ''}
+        ${warning.length  > 0 ? this.section('Requieren Atención — Menos de 30 días', rotTable(warning)) : ''}
+        ${ok.length       > 0 ? this.section('Estado Normal', rotTable(ok)) : ''}
+      </div>
+    </body></html>`;
+  }
+
+  // ─── Pharmacy Margins PDF ─────────────────────────────────────────────────
+
+  async generateMarginsPdf(data: any): Promise<Buffer> {
+    return this.render(this.marginsHtml(data));
+  }
+
+  private marginsHtml(data: any[]): string {
+    const totalMarginAbs = data.reduce((s, r) => s + Number(r.marginAbs ?? 0), 0);
+    const totalRevenue   = data.reduce((s, r) => s + Number(r.sellingPrice ?? 0) * Number(r.qtySold ?? 0), 0);
+    const avgMarginPct   = totalRevenue > 0 ? (totalMarginAbs / totalRevenue) * 100 : 0;
+
+    const rows = data.map(r => [
+      `<b>${this.esc(r.medicationName ?? '-')}</b>`,
+      this.esc(r.genericName ?? '-'),
+      `<span class="num">${this.fmtBs(r.unitCost)}</span>`,
+      `<span class="num">${this.fmtBs(r.sellingPrice)}</span>`,
+      `<span class="num">${this.fmtNum(r.qtySold)}</span>`,
+      `<span class="num">${this.fmtBs(r.marginAbs)}</span>`,
+      `<span class="num ${Number(r.marginPct) >= 20 ? 'badge badge-green' : Number(r.marginPct) >= 10 ? 'badge badge-amber' : 'badge badge-red'}">${this.fmtPct(r.marginPct)}</span>`,
+    ]);
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style>${this.readyTag()}</head><body>
+      ${this.header('Márgenes por Producto — Farmacia')}
+      ${this.meta([
+        ['Generado', this.nowBO()],
+        ['Productos', this.fmtNum(data.length)],
+        ['Margen Bruto Total', this.fmtBs(totalMarginAbs)],
+        ['Margen Promedio', this.fmtPct(avgMarginPct)],
+      ])}
+      <div class="cnt">
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+          ${this.kpiCard('Productos Analizados', this.fmtNum(data.length), 'Con ventas', 'blue')}
+          ${this.kpiCard('Margen Bruto Total', this.fmtBs(totalMarginAbs), 'Ganancia bruta', 'green')}
+          ${this.kpiCard('Margen % Promedio', this.fmtPct(avgMarginPct), 'Ponderado por ventas', 'purple')}
+        </div>
+
+        ${this.section('Detalle de Márgenes por Producto',
+          data.length > 0
+            ? this.table(
+                ['Medicamento', 'Genérico', 'Costo Unit.', 'Precio Venta', 'Qty Vendida', 'Margen Bs', 'Margen %'],
+                rows,
+                ['', '', 'num', 'num', 'num', 'num', 'center'],
+              )
+            : this.noData()
+        )}
+      </div>
+    </body></html>`;
+  }
+
+  // ─── Pharmacy Daily Sales PDF ─────────────────────────────────────────────
+
+  async generateDailySalesPdf(data: any): Promise<Buffer> {
+    return this.render(this.dailySalesHtml(data));
+  }
+
+  private dailySalesHtml(data: any): string {
+    const daily   = data.dailySales ?? [];
+    const payment = data.paymentBreakdown ?? [];
+
+    const totalRevenue = daily.reduce((s: number, r: any) => s + Number(r.totalRevenue ?? 0), 0);
+    const totalTickets = daily.reduce((s: number, r: any) => s + Number(r.ticketCount ?? 0), 0);
+    const avgTicket    = totalTickets > 0 ? totalRevenue / totalTickets : 0;
+
+    const maxRevenue = Math.max(...daily.map((d: any) => Number(d.totalRevenue ?? 0)), 1);
+
+    const revenueChartHtml = daily.length > 0
+      ? this.inlineChart('bar', {
+          data: {
+            labels: daily.map((d: any) => d.date ?? '-'),
+            datasets: [{ label: 'Ingresos (Bs)', data: daily.map((d: any) => Number(d.totalRevenue ?? 0)), backgroundColor: '#f97316', borderRadius: 4 }],
+          },
+          options: { responsive: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+        }, 540, 200)
+      : this.noData();
+
+    const dailyRows = daily.map((d: any) => [
+      this.esc(d.date ?? '-'),
+      `<span class="num">${this.fmtBs(d.totalRevenue)}</span>`,
+      `<span class="num">${this.fmtNum(d.ticketCount)}</span>`,
+      `<span class="num">${this.fmtBs(d.avgTicket)}</span>`,
+    ]);
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style>${this.chartJsTag()}</head><body>
+      ${this.header('Ventas Diarias — Farmacia')}
+      ${this.meta([
+        ['Generado', this.nowBO()],
+        ['Total Ingresos', this.fmtBs(totalRevenue)],
+        ['Total Tickets', this.fmtNum(totalTickets)],
+        ['Ticket Promedio', this.fmtBs(avgTicket)],
+      ])}
+      <div class="cnt">
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+          ${this.kpiCard('Total Ingresos', this.fmtBs(totalRevenue), 'Período seleccionado', 'orange')}
+          ${this.kpiCard('Total Tickets', this.fmtNum(totalTickets), 'Ventas completadas', 'blue')}
+          ${this.kpiCard('Ticket Promedio', this.fmtBs(avgTicket), 'Por transacción', 'green')}
+        </div>
+
+        ${this.section('Ingresos por Día', revenueChartHtml)}
+
+        ${daily.length > 0 ? this.section('Detalle Diario',
+          this.table(['Fecha', 'Ingresos', 'Tickets', 'Ticket Promedio'], dailyRows, ['', 'num', 'num', 'num'])
+        ) : ''}
+
+        ${payment.length > 0 ? this.section('Desglose por Método de Pago',
+          this.table(
+            ['Método', 'Total (Bs)', 'Transacciones'],
+            payment.map((p: any) => [
+              this.esc(p.method ?? '-'),
+              `<span class="num">${this.fmtBs(p.total)}</span>`,
+              `<span class="num">${this.fmtNum(p.count)}</span>`,
+            ]),
+            ['', 'num', 'num'],
+          )
+        ) : ''}
+      </div>
+    </body></html>`;
+  }
+
+  // ─── Pharmacy Expiry Buckets PDF ──────────────────────────────────────────
+
+  async generateExpiryBucketsPdf(data: any): Promise<Buffer> {
+    return this.render(this.expiryBucketsHtml(data));
+  }
+
+  private expiryBucketsHtml(data: any): string {
+    const { already_expired = [], expires_lt30 = [], expires_30_60 = [], expires_60_90 = [], summary = {} } = data;
+
+    const bucketTable = (items: any[]) => {
+      if (!items.length) return this.noData();
+      return this.table(
+        ['Medicamento', 'Lote', 'Vencimiento', 'Unidades', 'Valor (Bs)'],
+        items.map((r: any) => [
+          `<b>${this.esc(r.medicationName ?? '-')}</b>`,
+          this.esc(r.batchNumber ?? '-'),
+          r.expiryDate ? new Date(r.expiryDate).toLocaleDateString('es-BO') : '-',
+          `<span class="num">${this.fmtNum(r.availableQuantity)}</span>`,
+          `<span class="num">${this.fmtBs(r.stockValue)}</span>`,
+        ]),
+        ['', '', 'center', 'num', 'num'],
+      );
+    };
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style>${this.readyTag()}</head><body>
+      ${this.header('Vencimientos por Período — Farmacia')}
+      ${this.meta([
+        ['Generado', this.nowBO()],
+        ['Ya vencidos', this.fmtNum(summary.alreadyExpiredCount)],
+        ['Vencen <30d', this.fmtNum(summary.lt30Count)],
+        ['Vencen 30-60d', this.fmtNum(summary.bt30_60Count)],
+        ['Vencen 60-90d', this.fmtNum(summary.bt60_90Count)],
+      ])}
+      <div class="cnt">
+        <div class="kpi-grid">
+          ${this.kpiCard('Ya Vencidos', this.fmtNum(summary.alreadyExpiredCount), this.fmtBs(summary.alreadyExpiredValue), 'red')}
+          ${this.kpiCard('Vencen <30 días', this.fmtNum(summary.lt30Count), this.fmtBs(summary.lt30Value), 'red')}
+          ${this.kpiCard('Vencen 30-60 días', this.fmtNum(summary.bt30_60Count), this.fmtBs(summary.bt30_60Value), 'amber')}
+          ${this.kpiCard('Vencen 60-90 días', this.fmtNum(summary.bt60_90Count), this.fmtBs(summary.bt60_90Value), 'amber')}
+        </div>
+
+        ${already_expired.length > 0 ? this.section('Ya Vencidos — Acción Inmediata', bucketTable(already_expired)) : ''}
+        ${expires_lt30.length    > 0 ? this.section('Vencen en Menos de 30 Días', bucketTable(expires_lt30)) : ''}
+        ${expires_30_60.length   > 0 ? this.section('Vencen en 30-60 Días', bucketTable(expires_30_60)) : ''}
+        ${expires_60_90.length   > 0 ? this.section('Vencen en 60-90 Días', bucketTable(expires_60_90)) : ''}
+      </div>
+    </body></html>`;
+  }
+
+  // ─── Pharmacy Profitability PDF ───────────────────────────────────────────
+
+  async generateProfitabilityPdf(data: any[]): Promise<Buffer> {
+    return this.render(this.profitabilityHtml(data));
+  }
+
+  private profitabilityHtml(data: any[]): string {
+    const totalRevenue = data.reduce((s, r) => s + Number(r.revenue ?? 0), 0);
+    const totalCogs    = data.reduce((s, r) => s + Number(r.cogs ?? 0), 0);
+    const totalMargin  = totalRevenue - totalCogs;
+    const avgMarginPct = totalRevenue > 0 ? (totalMargin / totalRevenue) * 100 : 0;
+
+    const profitChartHtml = data.length > 0
+      ? this.inlineChart('bar', {
+          data: {
+            labels: data.map(r => r.month ?? '-'),
+            datasets: [
+              { label: 'Ingresos', data: data.map(r => Number(r.revenue ?? 0)), backgroundColor: '#3b82f6', borderRadius: 4 },
+              { label: 'COGS',     data: data.map(r => Number(r.cogs ?? 0)),    backgroundColor: '#ef4444', borderRadius: 4 },
+              { label: 'Margen',   data: data.map(r => Number(r.grossMargin ?? 0)), backgroundColor: '#10b981', borderRadius: 4 },
+            ],
+          },
+          options: { responsive: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } },
+        }, 540, 220)
+      : this.noData();
+
+    const tableRows = data.map(r => [
+      this.esc(r.month ?? '-'),
+      `<span class="num">${this.fmtBs(r.revenue)}</span>`,
+      `<span class="num">${this.fmtBs(r.cogs)}</span>`,
+      `<span class="num">${this.fmtBs(r.grossMargin)}</span>`,
+      `<span class="num ${Number(r.grossMarginPct) >= 20 ? 'badge badge-green' : Number(r.grossMarginPct) >= 10 ? 'badge badge-amber' : 'badge badge-red'}">${this.fmtPct(r.grossMarginPct)}</span>`,
+    ]);
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>${this.css()}</style>${this.chartJsTag()}</head><body>
+      ${this.header('Rentabilidad Mensual — Farmacia')}
+      ${this.meta([
+        ['Generado', this.nowBO()],
+        ['Ingresos Totales', this.fmtBs(totalRevenue)],
+        ['COGS Total', this.fmtBs(totalCogs)],
+        ['Margen Bruto', this.fmtBs(totalMargin)],
+        ['Margen %', this.fmtPct(avgMarginPct)],
+      ])}
+      <div class="cnt">
+        <div class="kpi-grid">
+          ${this.kpiCard('Ingresos Totales', this.fmtBs(totalRevenue), 'Ventas completadas', 'blue')}
+          ${this.kpiCard('COGS Total', this.fmtBs(totalCogs), 'Costo de mercadería vendida', 'red')}
+          ${this.kpiCard('Margen Bruto', this.fmtBs(totalMargin), 'Ganancia bruta', 'green')}
+          ${this.kpiCard('Margen %', this.fmtPct(avgMarginPct), 'Del período total', 'purple')}
+        </div>
+
+        ${this.section('Evolución Mensual', profitChartHtml)}
+
+        ${data.length > 0 ? this.section('Detalle por Mes',
+          this.table(
+            ['Mes', 'Ingresos', 'COGS', 'Margen Bruto', 'Margen %'],
+            tableRows,
+            ['', 'num', 'num', 'num', 'center'],
+          )
+        ) : ''}
       </div>
     </body></html>`;
   }

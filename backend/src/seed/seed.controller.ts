@@ -11,4 +11,10 @@ export class SeedController {
   async seedDemo() {
     return this.seedService.seedDemo();
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('reset')
+  async resetAll() {
+    return this.seedService.resetAll();
+  }
 }

@@ -236,6 +236,137 @@ export class ExportService {
     addSection(data.expiringSoon,  'PRÓXIMO A VENCER',  'FFFEF9C3');
   }
 
+  buildRotationSheet(ws: ExcelJS.Worksheet, data: any[]): void {
+    const headerStyle: Partial<ExcelJS.Style> = {
+      font: { bold: true, color: { argb: 'FFFFFFFF' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF97316' } },
+    };
+
+    ws.columns = [
+      { header: 'Medicamento',       key: 'medicationName', width: 32 },
+      { header: 'Genérico',          key: 'genericName',    width: 24 },
+      { header: 'Categoría',         key: 'category',       width: 16 },
+      { header: 'Stock Disp.',       key: 'availableQty',   width: 14 },
+      { header: 'Venta Diaria Prom.',key: 'avgDailySales',  width: 18 },
+      { header: 'Días Restantes',    key: 'daysRemaining',  width: 16 },
+      { header: 'Alerta',            key: 'alertLevel',     width: 14 },
+    ];
+
+    ws.getRow(1).eachCell(cell => Object.assign(cell, headerStyle));
+
+    for (const r of data) {
+      const row = ws.addRow({
+        medicationName: r.medicationName ?? '-',
+        genericName:    r.genericName ?? '-',
+        category:       r.category ?? '-',
+        availableQty:   Number(r.availableQty ?? 0),
+        avgDailySales:  Number(r.avgDailySales ?? 0),
+        daysRemaining:  Number(r.daysRemaining) >= 9999 ? 'Sin ventas' : Number(r.daysRemaining ?? 0),
+        alertLevel:     (r.alertLevel ?? 'ok').toUpperCase(),
+      });
+
+      const fillColor = r.alertLevel === 'critical' ? 'FFFECACA' : r.alertLevel === 'warning' ? 'FFFFF3CD' : 'FFFFFFFF';
+      row.eachCell(cell => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillColor } };
+      });
+    }
+  }
+
+  buildMarginsSheet(ws: ExcelJS.Worksheet, data: any[]): void {
+    const headerStyle: Partial<ExcelJS.Style> = {
+      font: { bold: true, color: { argb: 'FFFFFFFF' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF7C3AED' } },
+    };
+
+    ws.columns = [
+      { header: 'Medicamento',  key: 'medicationName', width: 32 },
+      { header: 'Genérico',     key: 'genericName',    width: 24 },
+      { header: 'Costo Unit.',  key: 'unitCost',       width: 14 },
+      { header: 'Precio Venta', key: 'sellingPrice',   width: 14 },
+      { header: 'Qty Vendida',  key: 'qtySold',        width: 14 },
+      { header: 'Margen Bs',    key: 'marginAbs',      width: 16 },
+      { header: 'Margen %',     key: 'marginPct',      width: 12 },
+    ];
+
+    ws.getRow(1).eachCell(cell => Object.assign(cell, headerStyle));
+
+    for (const r of data) {
+      ws.addRow({
+        medicationName: r.medicationName ?? '-',
+        genericName:    r.genericName ?? '-',
+        unitCost:       Number(r.unitCost ?? 0),
+        sellingPrice:   Number(r.sellingPrice ?? 0),
+        qtySold:        Number(r.qtySold ?? 0),
+        marginAbs:      Number(r.marginAbs ?? 0),
+        marginPct:      Number(r.marginPct ?? 0),
+      });
+    }
+  }
+
+  buildTopSellingSheet(ws: ExcelJS.Worksheet, data: any[]): void {
+    const headerStyle: Partial<ExcelJS.Style> = {
+      font: { bold: true, color: { argb: 'FFFFFFFF' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } },
+    };
+
+    ws.columns = [
+      { header: 'Medicamento',  key: 'medicationName', width: 32 },
+      { header: 'Genérico',     key: 'genericName',    width: 24 },
+      { header: 'Categoría',    key: 'category',       width: 16 },
+      { header: 'Qty Total',    key: 'totalQty',       width: 14 },
+      { header: 'Ingresos Bs',  key: 'totalRevenue',   width: 16 },
+      { header: 'Precio Prom.', key: 'avgUnitPrice',   width: 14 },
+    ];
+
+    ws.getRow(1).eachCell(cell => Object.assign(cell, headerStyle));
+
+    for (const r of data) {
+      ws.addRow({
+        medicationName: r.medicationName ?? '-',
+        genericName:    r.genericName ?? '-',
+        category:       r.category ?? '-',
+        totalQty:       Number(r.totalQty ?? 0),
+        totalRevenue:   Number(r.totalRevenue ?? 0),
+        avgUnitPrice:   Number(r.avgUnitPrice ?? 0),
+      });
+    }
+  }
+
+  buildStockMovementsSheet(ws: ExcelJS.Worksheet, data: any[]): void {
+    const headerStyle: Partial<ExcelJS.Style> = {
+      font: { bold: true, color: { argb: 'FFFFFFFF' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF059669' } },
+    };
+
+    ws.columns = [
+      { header: 'Fecha',       key: 'date',            width: 20 },
+      { header: 'Tipo',        key: 'type',            width: 14 },
+      { header: 'Medicamento', key: 'medicationName',  width: 32 },
+      { header: 'Lote',        key: 'batchNumber',     width: 16 },
+      { header: 'Cantidad',    key: 'quantity',        width: 12 },
+      { header: 'Precio Unit.',key: 'unitPrice',       width: 14 },
+      { header: 'Total',       key: 'totalAmount',     width: 14 },
+      { header: 'Motivo',      key: 'reason',          width: 24 },
+      { header: 'Referencia',  key: 'reference',       width: 20 },
+    ];
+
+    ws.getRow(1).eachCell(cell => Object.assign(cell, headerStyle));
+
+    for (const r of data) {
+      ws.addRow({
+        date:           r.date ? new Date(r.date as string).toLocaleString('es-BO') : '-',
+        type:           r.type ?? '-',
+        medicationName: r.medicationName ?? '-',
+        batchNumber:    r.batchNumber ?? '-',
+        quantity:       Number(r.quantity ?? 0),
+        unitPrice:      Number(r.unitPrice ?? 0),
+        totalAmount:    Number(r.totalAmount ?? 0),
+        reason:         r.reason ?? '-',
+        reference:      r.reference ?? '-',
+      });
+    }
+  }
+
   buildConsumptionSheet(ws: ExcelJS.Worksheet, data: any): void {
     ws.columns = [
       { header: 'Medicamento',    key: 'name',     width: 30 },

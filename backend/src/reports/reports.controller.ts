@@ -159,13 +159,17 @@ export class ReportsController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const data = await this.advancedReportsService.getCriticalStockReport(this.scope(filters, req), expiryDays);
-    this.exportService.streamPdf(
-      res,
-      'Reporte de Stock Crítico',
-      doc => this.exportService.buildCriticalStockPdf(doc, data),
-      `stock-critico-${new Date().toISOString().slice(0, 10)}.pdf`,
-    );
+    try {
+      const data = await this.advancedReportsService.getCriticalStockReport(this.scope(filters, req), expiryDays);
+      const buf = await this.reportsPdfService.generateCriticalStockPdf(data);
+      const filename = `stock-critico-${new Date().toISOString().slice(0, 10)}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.end(buf);
+    } catch (e) {
+      console.error('[CriticalStockPdf ERROR]', e);
+      res.status(500).json({ error: String(e) });
+    }
   }
 
   /**
@@ -179,13 +183,17 @@ export class ReportsController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const data = await this.advancedReportsService.getTransferEfficiencyReport(this.scope(filters, req));
-    this.exportService.streamPdf(
-      res,
-      'Reporte de Eficiencia de Traspasos',
-      doc => this.exportService.buildTransferEfficiencyPdf(doc, data),
-      `eficiencia-traspasos-${new Date().toISOString().slice(0, 10)}.pdf`,
-    );
+    try {
+      const data = await this.advancedReportsService.getTransferEfficiencyReport(this.scope(filters, req));
+      const buf = await this.reportsPdfService.generateTransferEfficiencyPdf(data);
+      const filename = `eficiencia-traspasos-${new Date().toISOString().slice(0, 10)}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.end(buf);
+    } catch (e) {
+      console.error('[TransferEfficiencyPdf ERROR]', e);
+      res.status(500).json({ error: String(e) });
+    }
   }
 
   /**
@@ -224,6 +232,184 @@ export class ReportsController {
       res,
       [{ name: 'Consumo', build: ws => this.exportService.buildConsumptionSheet(ws, data) }],
       `consumo-farmacia-${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
+  }
+
+  // ─── Farmacia: reportes JSON (F1-R1..F3-R13) ─────────────────────────────
+
+  @Get('pharmacy/rotation')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getRotationReport(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getRotationReport(this.scope(filters, req));
+  }
+
+  @Get('pharmacy/top-selling')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getTopSellingMedications(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getTopSellingMedications(this.scope(filters, req));
+  }
+
+  @Get('pharmacy/margins')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getProductMarginReport(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getProductMarginReport(this.scope(filters, req));
+  }
+
+  @Get('pharmacy/daily-sales')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getDailySalesSummary(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getDailySalesSummary(this.scope(filters, req));
+  }
+
+  @Get('pharmacy/expiry-buckets')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getExpiryBucketReport(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getExpiryBucketReport(this.scope(filters, req));
+  }
+
+  @Get('pharmacy/purchase-vs-consumption')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getPurchaseVsConsumption(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getPurchaseVsConsumption(this.scope(filters, req));
+  }
+
+  @Get('pharmacy/by-category')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getSalesByCategory(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getSalesByCategory(this.scope(filters, req));
+  }
+
+  @Get('pharmacy/stock-movements')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getStockMovementsReport(@Query() filters: ReportFilters & { medicationId?: string }, @Req() req: Request) {
+    return this.advancedReportsService.getStockMovementsReport(this.scope(filters, req) as any);
+  }
+
+  @Get('pharmacy/suppliers')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getSupplierAnalysis(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getSupplierAnalysis(this.scope(filters, req));
+  }
+
+  @Get('pharmacy/prescription-summary')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getPrescriptionDispensingSummary(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getPrescriptionDispensingSummary(this.scope(filters, req));
+  }
+
+  @Get('pharmacy/credit-sales')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getCreditSales(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getCreditSales(this.scope(filters, req));
+  }
+
+  @Get('pharmacy/payment-methods')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getSalesByPaymentMethod(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getSalesByPaymentMethod(this.scope(filters, req));
+  }
+
+  @Get('pharmacy/profitability')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  getMonthlyProfitability(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.advancedReportsService.getMonthlyProfitability(this.scope(filters, req));
+  }
+
+  // ─── Farmacia: PDF exports ─────────────────────────────────────────────────
+
+  @Get('export/pdf/pharmacy-rotation')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportRotationPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getRotationReport(this.scope(filters, req));
+    const buf  = await this.reportsPdfService.generateRotationPdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="rotacion-stock-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.end(buf);
+  }
+
+  @Get('export/pdf/pharmacy-margins')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportMarginsPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getProductMarginReport(this.scope(filters, req));
+    const buf  = await this.reportsPdfService.generateMarginsPdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="margenes-producto-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.end(buf);
+  }
+
+  @Get('export/pdf/pharmacy-daily-sales')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportDailySalesPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getDailySalesSummary(this.scope(filters, req));
+    const buf  = await this.reportsPdfService.generateDailySalesPdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="ventas-diarias-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.end(buf);
+  }
+
+  @Get('export/pdf/pharmacy-expiry-buckets')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportExpiryBucketsPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getExpiryBucketReport(this.scope(filters, req));
+    const buf  = await this.reportsPdfService.generateExpiryBucketsPdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="vencimientos-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.end(buf);
+  }
+
+  @Get('export/pdf/pharmacy-profitability')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportProfitabilityPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getMonthlyProfitability(this.scope(filters, req));
+    const buf  = await this.reportsPdfService.generateProfitabilityPdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="rentabilidad-mensual-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.end(buf);
+  }
+
+  // ─── Farmacia: Excel exports ───────────────────────────────────────────────
+
+  @Get('export/excel/pharmacy-rotation')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportRotationExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getRotationReport(this.scope(filters, req));
+    await this.exportService.streamExcel(
+      res,
+      [{ name: 'Rotación Stock', build: ws => this.exportService.buildRotationSheet(ws, data) }],
+      `rotacion-stock-${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
+  }
+
+  @Get('export/excel/pharmacy-margins')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportMarginsExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getProductMarginReport(this.scope(filters, req));
+    await this.exportService.streamExcel(
+      res,
+      [{ name: 'Márgenes', build: ws => this.exportService.buildMarginsSheet(ws, data) }],
+      `margenes-producto-${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
+  }
+
+  @Get('export/excel/pharmacy-top-selling')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportTopSellingExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getTopSellingMedications(this.scope(filters, req));
+    await this.exportService.streamExcel(
+      res,
+      [{ name: 'Top Vendidos', build: ws => this.exportService.buildTopSellingSheet(ws, data) }],
+      `top-vendidos-${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
+  }
+
+  @Get('export/excel/pharmacy-stock-movements')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportStockMovementsExcel(@Query() filters: ReportFilters & { medicationId?: string }, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getStockMovementsReport(this.scope(filters, req) as any);
+    await this.exportService.streamExcel(
+      res,
+      [{ name: 'Kardex', build: ws => this.exportService.buildStockMovementsSheet(ws, data) }],
+      `kardex-${new Date().toISOString().slice(0, 10)}.xlsx`,
     );
   }
 

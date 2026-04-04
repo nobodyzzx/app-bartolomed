@@ -84,20 +84,18 @@ export class ReportsService {
       .getRawMany();
 
     // Distribución por grupos de edad
+    const ageExpr = `CASE
+          WHEN EXTRACT(YEAR FROM AGE(patient."birthDate")) < 18 THEN 'Under 18'
+          WHEN EXTRACT(YEAR FROM AGE(patient."birthDate")) BETWEEN 18 AND 30 THEN '18-30'
+          WHEN EXTRACT(YEAR FROM AGE(patient."birthDate")) BETWEEN 31 AND 50 THEN '31-50'
+          WHEN EXTRACT(YEAR FROM AGE(patient."birthDate")) BETWEEN 51 AND 70 THEN '51-70'
+          ELSE 'Over 70'
+        END`;
     const ageDistribution = await queryBuilder
       .clone()
-      .select(
-        `CASE 
-          WHEN EXTRACT(YEAR FROM AGE(patient.birthDate)) < 18 THEN 'Under 18'
-          WHEN EXTRACT(YEAR FROM AGE(patient.birthDate)) BETWEEN 18 AND 30 THEN '18-30'
-          WHEN EXTRACT(YEAR FROM AGE(patient.birthDate)) BETWEEN 31 AND 50 THEN '31-50'
-          WHEN EXTRACT(YEAR FROM AGE(patient.birthDate)) BETWEEN 51 AND 70 THEN '51-70'
-          ELSE 'Over 70'
-        END`,
-        'ageGroup',
-      )
+      .select(ageExpr, 'ageGroup')
       .addSelect('COUNT(*)', 'count')
-      .groupBy('ageGroup')
+      .groupBy(ageExpr)
       .getRawMany();
 
     // Distribución por tipo de sangre

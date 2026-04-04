@@ -11,6 +11,18 @@ export class AuditInterceptor implements NestInterceptor {
   /** Solo se loguean mutaciones y endpoints de autenticación */
   private readonly loggedMethods = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
 
+  /** GETs sobre recursos sensibles que también se auditan como VIEW */
+  private readonly sensitiveGetPrefixes = [
+    '/api/patients',
+    '/api/medical-records',
+    '/api/prescriptions',
+    '/api/pharmacy/sales',
+    '/api/pharmacy/invoices',
+    '/api/invoices',
+    '/api/assets',
+    '/api/users',
+  ];
+
   constructor(private readonly auditService: AuditService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
@@ -27,8 +39,9 @@ export class AuditInterceptor implements NestInterceptor {
 
     const isAuthPath = (path as string).startsWith('/api/auth');
     const isMutation = this.loggedMethods.has(method);
+    const isSensitiveGet = method === 'GET' && this.sensitiveGetPrefixes.some(p => (path as string).startsWith(p));
 
-    if (!isMutation && !isAuthPath) return next.handle();
+    if (!isMutation && !isAuthPath && !isSensitiveGet) return next.handle();
     if (this.skipPaths.some(p => (path as string).startsWith(p))) return next.handle();
 
     const ipAddress =

@@ -9,12 +9,13 @@ import {
   ReportFilters,
   StockReport,
 } from '../interfaces/reports.interfaces'
+import { environment } from '../../../../../environments/environments'
 
 @Injectable({
   providedIn: 'root',
 })
 export class ReportsService {
-  private apiUrl = '/api/reports'
+  private apiUrl = `${environment.baseUrl}/reports`
 
   constructor(private http: HttpClient) {}
 
@@ -339,5 +340,126 @@ export class ReportsService {
   downloadDashboardPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
     return this.downloadPuppeteerPdf('dashboard', `dashboard-${date}.pdf`, params)
+  }
+
+  downloadCriticalStockPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadPuppeteerPdf('critical-stock', `stock-critico-${date}.pdf`, params)
+  }
+
+  downloadTransferEfficiencyPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadPuppeteerPdf('transfer-efficiency', `eficiencia-traslados-${date}.pdf`, params)
+  }
+
+  private downloadBlob(path: string, filename: string, params: Record<string, string> = {}): Observable<Blob> {
+    const query = new URLSearchParams(params).toString()
+    const url = `${this.apiUrl}/${path}${query ? '?' + query : ''}`
+    return this.http.get(url, { responseType: 'blob' }).pipe(
+      tap(blob => {
+        const objUrl = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = objUrl
+        a.download = filename
+        a.click()
+        URL.revokeObjectURL(objUrl)
+      }),
+    )
+  }
+
+  downloadCriticalStockExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/critical-stock', `stock-critico-${date}.xlsx`, params)
+  }
+
+  downloadPharmacyConsumptionExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-consumption', `consumo-farmacia-${date}.xlsx`, params)
+  }
+
+  // ─── Farmacia: nuevos PDFs (F1-R1..F3-R13) ───────────────────────────────
+
+  downloadRotationPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadPuppeteerPdf('pharmacy-rotation', `rotacion-stock-${date}.pdf`, params)
+  }
+
+  downloadMarginsPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadPuppeteerPdf('pharmacy-margins', `margenes-producto-${date}.pdf`, params)
+  }
+
+  downloadDailySalesPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadPuppeteerPdf('pharmacy-daily-sales', `ventas-diarias-${date}.pdf`, params)
+  }
+
+  downloadExpiryBucketsPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadPuppeteerPdf('pharmacy-expiry-buckets', `vencimientos-${date}.pdf`, params)
+  }
+
+  downloadProfitabilityPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadPuppeteerPdf('pharmacy-profitability', `rentabilidad-mensual-${date}.pdf`, params)
+  }
+
+  // ─── Farmacia: nuevos Excels ──────────────────────────────────────────────
+
+  downloadRotationExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-rotation', `rotacion-stock-${date}.xlsx`, params)
+  }
+
+  downloadMarginsExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-margins', `margenes-producto-${date}.xlsx`, params)
+  }
+
+  downloadTopSellingExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-top-selling', `top-vendidos-${date}.xlsx`, params)
+  }
+
+  downloadStockMovementsExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-stock-movements', `kardex-${date}.xlsx`, params)
+  }
+
+  // ─── Datos reales para el hub de reportes ─────────────────────────────────
+
+  getPatientStats(params: Record<string, string> = {}): Observable<any> {
+    const query = new URLSearchParams(params).toString()
+    return this.http.get<any>(`${this.apiUrl}/patients/demographics${query ? '?' + query : ''}`)
+  }
+
+  getAppointmentStats(params: Record<string, string> = {}): Observable<any> {
+    const query = new URLSearchParams(params).toString()
+    return this.http.get<any>(`${this.apiUrl}/appointments/statistics${query ? '?' + query : ''}`)
+  }
+
+  getFinancialStats(params: Record<string, string> = {}): Observable<any> {
+    const query = new URLSearchParams(params).toString()
+    return this.http.get<any>(`${this.apiUrl}/financial/summary${query ? '?' + query : ''}`)
+  }
+
+  getStockStats(params: Record<string, string> = {}): Observable<any> {
+    const query = new URLSearchParams(params).toString()
+    return this.http.get<any>(`${this.apiUrl}/inventory/stock${query ? '?' + query : ''}`)
+  }
+
+  getPaymentMethodStats(params: Record<string, string> = {}): Observable<any> {
+    const query = new URLSearchParams(params).toString()
+    return this.http.get<any>(`${this.apiUrl}/financial/payment-methods${query ? '?' + query : ''}`)
+  }
+
+  // ─── Seed / reset de datos demo ──────────────────────────────────────────
+
+  resetAllData(): Observable<any> {
+    return this.http.get<any>(`${environment.baseUrl}/seed/reset`)
+  }
+
+  repopulateData(): Observable<any> {
+    return this.http.get<any>(`${environment.baseUrl}/seed`)
   }
 }

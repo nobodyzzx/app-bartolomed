@@ -260,18 +260,90 @@ export class SeedService implements OnModuleInit {
     // Medicamentos y stock
     const medMapChu = await this.createMedications(MEDS_CHULUMANI);
     const medMapIru = await this.createMedications(MEDS_IRUPANA);
-    await this.createStock(clinicChu, medMapChu, STOCK_CHULUMANI, 'CHU');
-    await this.createStock(clinicIru, medMapIru, STOCK_IRUPANA, 'IRU');
+    const stocksChu = await this.createStock(clinicChu, medMapChu, STOCK_CHULUMANI, 'CHU');
+    const stocksIru = await this.createStock(clinicIru, medMapIru, STOCK_IRUPANA, 'IRU');
 
     // Recetas demo con medicamentos reales
     await this.createDemoPrescriptions(clinicChu, staffChu.doctor, patsChu);
     await this.createDemoPrescriptions(clinicIru, staffIru.doctor, patsIru);
 
+    // Datos ricos de farmacia: proveedores, órdenes de compra, ventas, movimientos
+    const suppliersChu = await this.createDemoSuppliers(clinicChu, staffChu.pharmacist);
+    const suppliersIru = await this.createDemoSuppliers(clinicIru, staffIru.pharmacist);
+    await this.createDemoPurchaseOrders(clinicChu, suppliersChu, stocksChu, staffChu.pharmacist);
+    await this.createDemoPurchaseOrders(clinicIru, suppliersIru, stocksIru, staffIru.pharmacist);
+    await this.createDemoPharmacySales(clinicChu, stocksChu, patsChu, staffChu.pharmacist, 'CHU');
+    await this.createDemoPharmacySales(clinicIru, stocksIru, patsIru, staffIru.pharmacist, 'IRU');
+
     // Vincular admin a San Bartolomé
     await this.ensureAdminClinicAccess(clinicChu, admin);
 
+    // -----------------------------------------------------------------------
+    // Datos adicionales: pacientes, citas, facturas, pagos, activos, traslados
+    // -----------------------------------------------------------------------
+
+    // Pacientes adicionales
+    let addPatsChu: { id: string; firstName: string; lastName: string; email: string; phone: string }[] = [];
+    let addPatsIru: { id: string; firstName: string; lastName: string; email: string; phone: string }[] = [];
+    try {
+      addPatsChu = await this.createAdditionalPatients(clinicChu, staffChu.doctor, 'CHU');
+      addPatsIru = await this.createAdditionalPatients(clinicIru, staffIru.doctor, 'IRU');
+    } catch (e) {
+      this.logger.warn('createAdditionalPatients falló: ' + e.message);
+    }
+
+    // Citas adicionales
+    let addApptsChu: { id: string }[] = [];
+    let addApptsIru: { id: string }[] = [];
+    try {
+      addApptsChu = await this.createAdditionalAppointments(clinicChu, staffChu.doctor, addPatsChu, 'CHU');
+      addApptsIru = await this.createAdditionalAppointments(clinicIru, staffIru.doctor, addPatsIru, 'IRU');
+    } catch (e) {
+      this.logger.warn('createAdditionalAppointments falló: ' + e.message);
+    }
+
+    // Facturas de facturación
+    try {
+      await this.createDemoBillingInvoices(clinicChu, [...patsChu.map(p => ({ id: p.id })), ...addPatsChu], staffChu.doctor, addApptsChu, 'CHU');
+      await this.createDemoBillingInvoices(clinicIru, [...patsIru.map(p => ({ id: p.id })), ...addPatsIru], staffIru.doctor, addApptsIru, 'IRU');
+    } catch (e) {
+      this.logger.warn('createDemoBillingInvoices falló: ' + e.message);
+    }
+
+    // Pagos para facturas pagadas
+    try {
+      await this.createDemoPayments(clinicChu, staffChu.receptionist, 'CHU');
+      await this.createDemoPayments(clinicIru, staffIru.receptionist, 'IRU');
+    } catch (e) {
+      this.logger.warn('createDemoPayments falló: ' + e.message);
+    }
+
+    // Activos
+    try {
+      await this.createDemoAssets(clinicChu, staffChu.doctor, 'CHU');
+      await this.createDemoAssets(clinicIru, staffIru.doctor, 'IRU');
+    } catch (e) {
+      this.logger.warn('createDemoAssets falló: ' + e.message);
+    }
+
+    // Traslados de stock entre clínicas
+    try {
+      await this.createDemoStockTransfers(clinicChu, clinicIru, stocksChu, stocksIru, staffChu.pharmacist, staffIru.pharmacist);
+    } catch (e) {
+      this.logger.warn('createDemoStockTransfers falló: ' + e.message);
+    }
+
     this.logger.log('✅ Seed completado: San Bartolomé (Chulumani) + San Jorge (Irupana)');
     return { ok: true };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Reset público (limpia todo sin repoblar)
+  // ---------------------------------------------------------------------------
+
+  async resetAll(): Promise<{ message: string }> {
+    await this.cleanAll();
+    return { message: 'Todos los datos han sido eliminados. Use /api/seed para repoblar.' };
   }
 
   // ---------------------------------------------------------------------------
@@ -292,6 +364,8 @@ export class SeedService implements OnModuleInit {
       'purchase_orders',
       'prescription_items',
       'prescriptions',
+      'payments',
+      'invoices',
       'appointments',
       'medical_records',
       'medical_reports',
@@ -300,6 +374,7 @@ export class SeedService implements OnModuleInit {
       'user_clinics',
       'medication_stock',
       'medications',
+      'assets',
     ];
 
     for (const table of tables) {
@@ -500,14 +575,15 @@ export class SeedService implements OnModuleInit {
   // Stock
   // ---------------------------------------------------------------------------
 
-  private async createStock(clinic: Clinic, medMap: Map<string, Medication>, defs: StockDef[], clinicPrefix: string) {
+  private async createStock(clinic: Clinic, medMap: Map<string, Medication>, defs: StockDef[], clinicPrefix: string): Promise<MedicationStock[]> {
+    const created: MedicationStock[] = [];
     for (const d of defs) {
       const med = medMap.get(d.code);
       if (!med) continue;
 
       const batchNumber = `LOTE-${clinicPrefix}-2024-${d.batchSuffix}`;
       const exists = await this.medicationStockRepository.findOne({ where: { batchNumber } });
-      if (exists) continue;
+      if (exists) { created.push(exists); continue; }
 
       const stock = this.medicationStockRepository.create({
         batchNumber,
@@ -523,8 +599,10 @@ export class SeedService implements OnModuleInit {
         medication: med,
         clinic,
       });
-      await this.medicationStockRepository.save(stock);
+      const saved = await this.medicationStockRepository.save(stock);
+      created.push(saved);
     }
+    return created;
   }
 
   // ---------------------------------------------------------------------------
@@ -636,6 +714,785 @@ export class SeedService implements OnModuleInit {
         this.prescriptionItemsRepository.create({ prescription: rx, medicationName: 'Amoxicilina', strength: '500mg', dosageForm: 'capsule', quantity: '21', dosage: '1 cápsula', frequency: 'cada 8h', duration: 7, instructions: 'Completar tratamiento', unitPrice: 3, totalPrice: 63, isControlled: false }),
       ];
       await this.prescriptionItemsRepository.save(items);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Proveedores demo
+  // ---------------------------------------------------------------------------
+
+  private async createDemoSuppliers(clinic: Clinic, createdBy: User): Promise<{ id: string }[]> {
+    const supplierDefs = [
+      { code: `PROV-${clinic.id.slice(0, 4)}-001`, name: 'Distribuidora Farmacéutica Andina S.R.L.',  contactPerson: 'Luis Mamani',    email: 'ventas@farmandina.bo',   phone: '22301234', city: 'La Paz',       country: 'BO' },
+      { code: `PROV-${clinic.id.slice(0, 4)}-002`, name: 'Laboratorios Inti Bolivia',                 contactPerson: 'María Quispe',   email: 'pedidos@labinti.bo',     phone: '22305678', city: 'Cochabamba',   country: 'BO' },
+      { code: `PROV-${clinic.id.slice(0, 4)}-003`, name: 'MedSupply Yungas',                          contactPerson: 'Pedro Condori',  email: 'info@medsupply.bo',      phone: '72399001', city: 'Chulumani',    country: 'BO' },
+    ];
+
+    const suppliers: { id: string }[] = [];
+    for (const s of supplierDefs) {
+      const existing = await this.dataSource.query(
+        `SELECT id FROM suppliers WHERE code = $1 LIMIT 1`, [s.code],
+      );
+      if (existing.length > 0) { suppliers.push(existing[0]); continue; }
+
+      const result = await this.dataSource.query(`
+        INSERT INTO suppliers (code, name, "contactPerson", email, phone, city, country, status, "paymentTerms", "discountRate", clinic_id, created_by, "createdAt", "updatedAt")
+        VALUES ($1,$2,$3,$4,$5,$6,$7,'active',30,0,$8,$9,NOW(),NOW())
+        RETURNING id
+      `, [s.code, s.name, s.contactPerson, s.email, s.phone, s.city, s.country, clinic.id, createdBy.id]);
+      suppliers.push(result[0]);
+    }
+    return suppliers;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Órdenes de compra demo
+  // ---------------------------------------------------------------------------
+
+  private async createDemoPurchaseOrders(clinic: Clinic, suppliers: { id: string }[], stocks: MedicationStock[], createdBy: User) {
+    if (!stocks.length) return;
+
+    const randomDate = (maxDaysAgo: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() - Math.floor(Math.random() * maxDaysAgo));
+      return d.toISOString().slice(0, 10);
+    };
+
+    const statuses = ['received', 'received', 'received', 'approved', 'pending'];
+    const clinicTag = clinic.name === 'San Bartolomé' ? 'CHU' : 'IRU';
+
+    for (let i = 1; i <= 10; i++) {
+      const orderNumber = `OC-${clinicTag}-DEMO-${String(i).padStart(3, '0')}`;
+      const existing = await this.dataSource.query(
+        `SELECT id FROM purchase_orders WHERE "orderNumber" = $1 LIMIT 1`, [orderNumber],
+      );
+      if (existing.length > 0) continue;
+
+      const orderDate = randomDate(180);
+      const status = statuses[i % statuses.length];
+      const supplier = suppliers[i % suppliers.length];
+      const numItems = 4 + (i % 4); // 4–7 items
+
+      // Calcular ítems y total
+      let subtotal = 0;
+      const itemsData: { stockId: string; medName: string; medCode: string; qty: number; unitPrice: number; total: number }[] = [];
+
+      for (let j = 0; j < numItems; j++) {
+        const stock = stocks[(i + j) % stocks.length];
+        const qty = 50 + Math.floor(Math.random() * 200);
+        const unitPrice = parseFloat((+stock.unitCost * (0.85 + Math.random() * 0.10)).toFixed(2));
+        const total = parseFloat((qty * unitPrice).toFixed(2));
+        subtotal += total;
+        itemsData.push({
+          stockId: stock.id,
+          medName: stock.medication?.name ?? 'Medicamento',
+          medCode: stock.medication?.code ?? '',
+          qty,
+          unitPrice,
+          total,
+        });
+      }
+
+      subtotal = parseFloat(subtotal.toFixed(2));
+
+      const orderResult = await this.dataSource.query(`
+        INSERT INTO purchase_orders (
+          "orderNumber", "supplierId", "clinicId", "orderDate", "expectedDeliveryDate",
+          status, subtotal, "taxRate", "taxAmount", "discountAmount", "shippingCost",
+          "totalAmount", tax, total, "createdById", "createdAt", "updatedAt"
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,0,0,0,0,$8,$9,$10,$11,NOW(),NOW())
+        RETURNING id
+      `, [
+        orderNumber, supplier.id, clinic.id, orderDate,
+        new Date(new Date(orderDate).getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        status, subtotal, subtotal, 0, subtotal, createdBy.id,
+      ]);
+
+      const orderId = orderResult[0].id;
+
+      for (const item of itemsData) {
+        await this.dataSource.query(`
+          INSERT INTO purchase_order_items (
+            "productName", "productCode", "medicationId", "medicationName",
+            quantity, "receivedQuantity", "unitPrice", "totalPrice", subtotal, order_id, "createdAt", "updatedAt"
+          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW(),NOW())
+        `, [
+          item.medName, item.medCode, null, item.medName,
+          item.qty, status === 'received' ? item.qty : 0,
+          item.unitPrice, item.total, item.total, orderId,
+        ]);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Ventas de farmacia demo (120 ventas por clínica)
+  // ---------------------------------------------------------------------------
+
+  private async createDemoPharmacySales(clinic: Clinic, stocks: MedicationStock[], patients: Patient[], soldBy: User, clinicTag: 'CHU' | 'IRU') {
+    if (!stocks.length) return;
+
+    const randomDaysAgo = (maxDays: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() - Math.floor(Math.random() * maxDays));
+      d.setHours(8 + Math.floor(Math.random() * 10), Math.floor(Math.random() * 60), 0, 0);
+      return d;
+    };
+
+    const paymentMethods: string[] = ['cash', 'cash', 'cash', 'card', 'transfer', 'qr'];
+    const statuses: string[] = ['completed', 'completed', 'completed', 'completed', 'completed', 'completed', 'completed', 'completed', 'completed', 'pending'];
+
+    const TOTAL_SALES = 120;
+
+    for (let i = 1; i <= TOTAL_SALES; i++) {
+      const saleNumber = `VTA-${clinicTag}-DEMO-${String(i).padStart(4, '0')}`;
+      const existing = await this.dataSource.query(
+        `SELECT id FROM pharmacy_sales WHERE "saleNumber" = $1 LIMIT 1`, [saleNumber],
+      );
+      if (existing.length > 0) continue;
+
+      const patient = patients[i % patients.length];
+      const patientName = `${patient.firstName} ${patient.lastName}`;
+      const saleDate = randomDaysAgo(180);
+      const status = statuses[i % statuses.length];
+      const paymentMethod = paymentMethods[i % paymentMethods.length];
+      const numItems = 2 + (i % 4); // 2–5 items
+
+      // Build sale items
+      let subtotal = 0;
+      const saleItemsData: { stockId: string; name: string; code: string; batchNumber: string; qty: number; unitPrice: number; lineTotal: number; expiryDate: string }[] = [];
+
+      for (let j = 0; j < numItems; j++) {
+        const stock = stocks[(i * 3 + j * 7) % stocks.length];
+        const qty = 1 + Math.floor(Math.random() * 3);
+        const unitPrice = parseFloat((+stock.sellingPrice).toFixed(2));
+        const lineTotal = parseFloat((qty * unitPrice).toFixed(2));
+        subtotal += lineTotal;
+        saleItemsData.push({
+          stockId: stock.id,
+          name: stock.medication?.name ?? 'Medicamento',
+          code: stock.medication?.code ?? '',
+          batchNumber: stock.batchNumber,
+          qty,
+          unitPrice,
+          lineTotal,
+          expiryDate: stock.expiryDate ? new Date(stock.expiryDate).toISOString().slice(0, 10) : '2027-12-31',
+        });
+      }
+
+      subtotal = parseFloat(subtotal.toFixed(2));
+      // Round up amountPaid to nearest 5 or 10
+      const amountPaid = parseFloat((Math.ceil(subtotal / 5) * 5).toFixed(2));
+      const change = parseFloat((amountPaid - subtotal).toFixed(2));
+
+      const saleResult = await this.dataSource.query(`
+        INSERT INTO pharmacy_sales (
+          "saleNumber", "patientName", "saleDate", status, "paymentMethod",
+          subtotal, discount, tax, total, "amountPaid", change,
+          clinic_id, patient_id, "soldById", "createdAt", "updatedAt"
+        ) VALUES ($1,$2,$3,$4,$5,$6,0,0,$7,$8,$9,$10,$11,$12,NOW(),NOW())
+        RETURNING id
+      `, [
+        saleNumber, patientName, saleDate, status, paymentMethod,
+        subtotal, subtotal, amountPaid, change,
+        clinic.id, patient.id, soldBy.id,
+      ]);
+
+      const saleId = saleResult[0].id;
+
+      // Insert sale items
+      for (const item of saleItemsData) {
+        await this.dataSource.query(`
+          INSERT INTO pharmacy_sale_items (
+            sale_id, "saleId", medication_stock_id, "medicationStockId",
+            "productName", "productCode", "batchNumber",
+            quantity, "unitPrice", discount, subtotal, "expiryDate",
+            "createdAt", "updatedAt"
+          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,0,$10,$11,NOW(),NOW())
+        `, [
+          saleId, saleId, item.stockId, item.stockId,
+          item.name, item.code, item.batchNumber,
+          item.qty, item.unitPrice, item.lineTotal, item.expiryDate,
+        ]);
+      }
+
+      // Create stock movement for each sale item
+      for (const item of saleItemsData) {
+        await this.dataSource.query(`
+          INSERT INTO stock_movements (
+            type, quantity, "unitPrice", "totalAmount", reference,
+            reason, "movementDate", "isActive", stock_id, processed_by,
+            "createdAt", "updatedAt"
+          ) VALUES ('sale',$1,$2,$3,$4,'Venta farmacia',$5,true,$6,$7,NOW(),NOW())
+        `, [
+          item.qty, item.unitPrice, item.lineTotal, saleNumber,
+          saleDate, item.stockId, soldBy.id,
+        ]);
+      }
+
+      // Create invoice for completed sales
+      if (status === 'completed') {
+        const invoiceNumber = `FAC-${clinicTag}-DEMO-${String(i).padStart(4, '0')}`;
+        const existingInv = await this.dataSource.query(
+          `SELECT id FROM pharmacy_invoices WHERE "invoiceNumber" = $1 LIMIT 1`, [invoiceNumber],
+        );
+        if (existingInv.length === 0) {
+          await this.dataSource.query(`
+            INSERT INTO pharmacy_invoices (
+              "invoiceNumber", "saleId", "patientName", "invoiceDate", "dueDate",
+              status, subtotal, discount, tax, total, "amountPaid", balance,
+              "paymentDate", "paymentMethod", "createdById", "createdAt", "updatedAt"
+            ) VALUES ($1,$2,$3,$4,$5,'paid',$6,0,0,$7,$8,0,$9,$10,$11,NOW(),NOW())
+          `, [
+            invoiceNumber, saleId, patientName,
+            saleDate.toISOString().slice(0, 10),
+            saleDate.toISOString().slice(0, 10),
+            subtotal, subtotal, amountPaid,
+            saleDate.toISOString().slice(0, 10),
+            paymentMethod, soldBy.id,
+          ]);
+        }
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pacientes adicionales (25 por clínica)
+  // ---------------------------------------------------------------------------
+
+  private async createAdditionalPatients(
+    clinic: Clinic,
+    createdBy: User,
+    prefix: 'CHU' | 'IRU',
+  ): Promise<{ id: string; firstName: string; lastName: string; email: string; phone: string }[]> {
+    const bloodTypes = ['A+', 'B+', 'O+', 'AB+', 'O-', 'A-'];
+    const insurers = ['COSSMIL', 'CNS', 'CAJA PETROLERA', null, null, null];
+    const cities = prefix === 'CHU'
+      ? ['Chulumani', 'Irupana', 'Yanacachi', 'Ocobaya', 'Coripata']
+      : ['Irupana', 'Chulumani', 'Cajuata', 'Chicaloma', 'La Paz'];
+
+    const nameDefs = [
+      { fn: 'Sofía',       ln: 'Mamani Quispe',   g: 'female', b: '1990-03-12' },
+      { fn: 'Alejandro',   ln: 'Torrez Condori',  g: 'male',   b: '1975-07-22' },
+      { fn: 'Valentina',   ln: 'Flores Cruz',     g: 'female', b: '2018-11-05' },
+      { fn: 'Luis',        ln: 'Quispe Mamani',   g: 'male',   b: '1955-01-30' },
+      { fn: 'Andrea',      ln: 'Condori Apaza',   g: 'female', b: '2001-09-14' },
+      { fn: 'Carlos',      ln: 'Choque Limachi',  g: 'male',   b: '1982-04-18' },
+      { fn: 'Daniela',     ln: 'Apaza Torrez',    g: 'female', b: '1967-12-03' },
+      { fn: 'Fernando',    ln: 'Cruz Flores',     g: 'male',   b: '1993-06-27' },
+      { fn: 'Gabriela',    ln: 'Limachi Choque',  g: 'female', b: '1948-08-15' },
+      { fn: 'Hugo',        ln: 'Vargas Quispe',   g: 'male',   b: '2010-02-09' },
+      { fn: 'Isabela',     ln: 'Mamani Cruz',     g: 'female', b: '1985-10-21' },
+      { fn: 'Joaquín',     ln: 'Condori Flores',  g: 'male',   b: '1972-05-16' },
+      { fn: 'Karla',       ln: 'Torrez Mamani',   g: 'female', b: '1999-01-07' },
+      { fn: 'Leonardo',    ln: 'Flores Apaza',    g: 'male',   b: '1964-11-25' },
+      { fn: 'María',       ln: 'Choque Condori',  g: 'female', b: '2005-07-13' },
+      { fn: 'Nicolás',     ln: 'Apaza Cruz',      g: 'male',   b: '1958-03-04' },
+      { fn: 'Olivia',      ln: 'Cruz Torrez',     g: 'female', b: '1995-09-30' },
+      { fn: 'Pablo',       ln: 'Limachi Flores',  g: 'male',   b: '1980-12-18' },
+      { fn: 'Quintina',    ln: 'Vargas Mamani',   g: 'female', b: '1943-06-08' },
+      { fn: 'Rodrigo',     ln: 'Quispe Torrez',   g: 'male',   b: '1988-04-22' },
+      { fn: 'Sara',        ln: 'Mamani Apaza',    g: 'female', b: '2015-10-11' },
+      { fn: 'Tomás',       ln: 'Condori Cruz',    g: 'male',   b: '1970-02-14' },
+      { fn: 'Úrsula',      ln: 'Flores Limachi',  g: 'female', b: '1953-08-27' },
+      { fn: 'Valentín',    ln: 'Choque Vargas',   g: 'male',   b: '2002-12-01' },
+      { fn: 'Wendy',       ln: 'Apaza Quispe',    g: 'female', b: '1977-05-19' },
+    ];
+
+    const created: { id: string; firstName: string; lastName: string; email: string; phone: string }[] = [];
+    for (let i = 0; i < nameDefs.length; i++) {
+      const d = nameDefs[i];
+      const docNum = `${prefix}-ADD-${String(i + 1).padStart(5, '0')}`;
+      const phone = `7${prefix === 'CHU' ? '3' : '4'}${String(100200 + i)}`;
+      const email = `${d.fn.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}.${prefix.toLowerCase()}add${i + 1}@demo.local`;
+      const insurer = insurers[i % insurers.length];
+
+      const existing = await this.dataSource.query(
+        `SELECT id FROM patients WHERE "documentNumber" = $1 LIMIT 1`, [docNum],
+      );
+      if (existing.length > 0) {
+        created.push({ id: existing[0].id, firstName: d.fn, lastName: d.ln, email, phone });
+        continue;
+      }
+
+      const result = await this.dataSource.query(`
+        INSERT INTO patients (
+          "firstName", "lastName", "documentNumber", "documentType", "birthDate", gender,
+          email, phone, address, city, state, country,
+          "bloodType", "insuranceProvider", "isActive",
+          clinic_id, "createdBy", "createdAt", "updatedAt"
+        ) VALUES ($1,$2,$3,'CI',$4,$5,$6,$7,'Plaza Principal s/n',$8,'La Paz','BO',
+                  $9,$10,true,$11,$12,NOW(),NOW())
+        RETURNING id
+      `, [
+        d.fn, d.ln, docNum, d.b, d.g === 'female' ? 'female' : 'male',
+        email, phone,
+        cities[i % cities.length],
+        bloodTypes[i % bloodTypes.length],
+        insurer,
+        clinic.id, createdBy.id,
+      ]);
+      created.push({ id: result[0].id, firstName: d.fn, lastName: d.ln, email, phone });
+    }
+    return created;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Citas adicionales (80 por clínica)
+  // ---------------------------------------------------------------------------
+
+  private async createAdditionalAppointments(
+    clinic: Clinic,
+    doctor: User,
+    patients: { id: string; firstName: string; lastName: string; email: string; phone: string }[],
+    clinicTag: 'CHU' | 'IRU',
+  ): Promise<{ id: string }[]> {
+    if (!patients.length) return [];
+
+    const statuses = [
+      'completed', 'completed', 'completed', 'completed', 'completed',
+      'scheduled', 'scheduled',
+      'cancelled', 'cancelled', 'cancelled',
+      'no_show', 'no_show',
+      'rescheduled',
+    ];
+    const types = ['consultation', 'consultation', 'consultation', 'follow_up', 'follow_up', 'emergency', 'laboratory'];
+    const created: { id: string }[] = [];
+
+    for (let i = 1; i <= 80; i++) {
+      const apptNumber = `APPT-${clinicTag}-ADD-${String(i).padStart(4, '0')}`;
+      const existing = await this.dataSource.query(
+        `SELECT id FROM appointments WHERE reason = $1 AND clinic_id = $2 LIMIT 1`,
+        [`REF:${apptNumber}`, clinic.id],
+      );
+      if (existing.length > 0) {
+        created.push({ id: existing[0].id });
+        continue;
+      }
+
+      const daysAgo = Math.floor(Math.random() * 90);
+      const apptDate = new Date();
+      apptDate.setDate(apptDate.getDate() - daysAgo);
+      apptDate.setHours(8 + Math.floor(Math.random() * 9), Math.floor(Math.random() * 4) * 15, 0, 0);
+
+      const status = statuses[i % statuses.length];
+      const type = types[i % types.length];
+      const patient = patients[i % patients.length];
+      const isCompleted = status === 'completed';
+      const finalCost = isCompleted ? (50 + Math.floor(Math.random() * 350)) : null;
+
+      const result = await this.dataSource.query(`
+        INSERT INTO appointments (
+          "appointmentDate", duration, type, status, priority, reason, notes,
+          "isEmergency", "isRecurring", "isActive",
+          "patientEmail", "patientPhone",
+          "finalCost", "isPaid", "paymentMethod",
+          "completedAt",
+          patient_id, doctor_id, clinic_id, created_by,
+          "createdAt", "updatedAt"
+        ) VALUES (
+          $1, 30, $2::appointments_type_enum, $3::appointments_status_enum,
+          'normal', $4, 'Cita demo adicional',
+          false, false, true,
+          $5, $6,
+          $7, $8, $9,
+          $10,
+          $11, $12, $13, $14,
+          NOW(), NOW()
+        ) RETURNING id
+      `, [
+        apptDate,
+        type,
+        status,
+        `REF:${apptNumber}`,
+        patient.email,
+        patient.phone,
+        finalCost,
+        isCompleted,
+        isCompleted ? 'cash' : null,
+        isCompleted ? apptDate : null,
+        patient.id,
+        doctor.id,
+        clinic.id,
+        doctor.id,
+      ]);
+      created.push({ id: result[0].id });
+    }
+    return created;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Facturas de facturación (60 por clínica)
+  // ---------------------------------------------------------------------------
+
+  private async createDemoBillingInvoices(
+    clinic: Clinic,
+    patients: { id: string }[],
+    createdBy: User,
+    appointments: { id: string }[],
+    clinicTag: 'CHU' | 'IRU',
+  ): Promise<void> {
+    if (!patients.length) return;
+
+    const statuses = ['paid', 'paid', 'paid', 'pending', 'pending', 'overdue', 'partially_paid', 'cancelled'];
+    const insurers = ['COSSMIL', 'CNS', 'CAJA PETROLERA', 'PRIVADO'];
+
+    for (let i = 1; i <= 60; i++) {
+      const invoiceNum = `BILL-${clinicTag}-${String(i).padStart(4, '0')}`;
+      const existing = await this.dataSource.query(
+        `SELECT id FROM invoices WHERE "invoiceNumber" = $1 LIMIT 1`, [invoiceNum],
+      );
+      if (existing.length > 0) continue;
+
+      const daysAgo = Math.floor(Math.random() * 180);
+      const issueDate = new Date();
+      issueDate.setDate(issueDate.getDate() - daysAgo);
+      const dueDate = new Date(issueDate);
+      dueDate.setDate(dueDate.getDate() + 30);
+
+      const subtotal = parseFloat((150 + Math.floor(Math.random() * 1851)).toFixed(2));
+      const totalAmount = subtotal;
+      const status = statuses[i % statuses.length];
+      const paidAmount = status === 'paid' ? totalAmount
+        : status === 'partially_paid' ? parseFloat((totalAmount * 0.5).toFixed(2))
+        : 0;
+      const remainingAmount = parseFloat((totalAmount - paidAmount).toFixed(2));
+      const isInsuranceClaim = Math.random() < 0.2;
+      const patient = patients[i % patients.length];
+      const appt = appointments.length > 0 && i % 3 === 0
+        ? appointments[i % appointments.length]
+        : null;
+
+      await this.dataSource.query(`
+        INSERT INTO invoices (
+          id, "invoiceNumber", status, "issueDate", "dueDate",
+          subtotal, "taxAmount", "taxRate", "discountAmount", "discountRate",
+          "totalAmount", "paidAmount", "remainingAmount",
+          "isInsuranceClaim", "insuranceProvider", "isActive",
+          "createdAt", "updatedAt", patient_id, clinic_id, appointment_id, created_by
+        ) VALUES (
+          gen_random_uuid(), $1, $2::invoices_status_enum, $3, $4,
+          $5, 0, 0, 0, 0,
+          $6, $7, $8,
+          $9, $10, true,
+          NOW(), NOW(), $11, $12, $13, $14
+        )
+      `, [
+        invoiceNum,
+        status,
+        issueDate.toISOString().slice(0, 10),
+        dueDate.toISOString().slice(0, 10),
+        subtotal,
+        totalAmount,
+        paidAmount,
+        remainingAmount,
+        isInsuranceClaim,
+        isInsuranceClaim ? insurers[i % insurers.length] : null,
+        patient.id,
+        clinic.id,
+        appt ? appt.id : null,
+        createdBy.id,
+      ]);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pagos para facturas pagadas y parcialmente pagadas
+  // ---------------------------------------------------------------------------
+
+  private async createDemoPayments(
+    clinic: Clinic,
+    processedBy: User,
+    clinicTag: 'CHU' | 'IRU',
+  ): Promise<void> {
+    const paidInvoices = await this.dataSource.query(`
+      SELECT id, "totalAmount", "paidAmount", status, "issueDate"
+      FROM invoices
+      WHERE clinic_id = $1
+        AND status IN ('paid', 'partially_paid')
+        AND "isActive" = true
+      ORDER BY "createdAt"
+    `, [clinic.id]);
+
+    const methods = ['cash', 'cash', 'cash', 'credit_card', 'debit_card', 'bank_transfer'];
+    let payCounter = 1;
+
+    for (const inv of paidInvoices) {
+      const payNumber = `PAY-${clinicTag}-${String(payCounter++).padStart(4, '0')}`;
+      const existing = await this.dataSource.query(
+        `SELECT id FROM payments WHERE "paymentNumber" = $1 LIMIT 1`, [payNumber],
+      );
+      if (existing.length > 0) continue;
+
+      const amount = parseFloat(inv.paidAmount);
+      const payDate = new Date(inv.issueDate);
+      payDate.setDate(payDate.getDate() + Math.floor(Math.random() * 5));
+      const method = methods[payCounter % methods.length];
+
+      await this.dataSource.query(`
+        INSERT INTO payments (
+          id, "paymentNumber", amount, method, status,
+          "paymentDate", notes, "isActive",
+          "createdAt", "updatedAt", invoice_id, processed_by
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3::payments_method_enum, 'completed'::payments_status_enum,
+          $4, 'Pago demo', true,
+          NOW(), NOW(), $5, $6
+        )
+      `, [
+        payNumber,
+        amount,
+        method,
+        payDate.toISOString().slice(0, 10),
+        inv.id,
+        processedBy.id,
+      ]);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Activos (20 por clínica)
+  // ---------------------------------------------------------------------------
+
+  private async createDemoAssets(
+    clinic: Clinic,
+    createdBy: User,
+    clinicTag: 'CHU' | 'IRU',
+  ): Promise<void> {
+    const assetDefs = [
+      { tag: `${clinicTag}-MED-001`, name: 'Tensiómetro digital', type: 'medical_equipment', category: 'Diagnóstico', manufacturer: 'Omron', model: 'M2', price: 350, life: 7, condition: 'good', status: 'active', location: 'Consultorio 1' },
+      { tag: `${clinicTag}-MED-002`, name: 'Estetoscopio', type: 'medical_equipment', category: 'Diagnóstico', manufacturer: 'Littmann', model: 'Classic III', price: 280, life: 10, condition: 'good', status: 'active', location: 'Consultorio 1' },
+      { tag: `${clinicTag}-MED-003`, name: 'Glucómetro', type: 'medical_equipment', category: 'Diagnóstico', manufacturer: 'Accu-Chek', model: 'Active', price: 180, life: 5, condition: 'excellent', status: 'active', location: 'Farmacia' },
+      { tag: `${clinicTag}-MED-004`, name: 'Termómetro digital', type: 'medical_equipment', category: 'Diagnóstico', manufacturer: 'Microlife', model: 'MT 850', price: 80, life: 5, condition: 'good', status: 'active', location: 'Consultorio 1' },
+      { tag: `${clinicTag}-MED-005`, name: 'Oxímetro de pulso', type: 'medical_equipment', category: 'Diagnóstico', manufacturer: 'Nonin', model: '9590', price: 250, life: 7, condition: 'excellent', status: 'active', location: 'Emergencias' },
+      { tag: `${clinicTag}-MED-006`, name: 'Balanza médica', type: 'medical_equipment', category: 'Diagnóstico', manufacturer: 'Seca', model: '700', price: 650, life: 15, condition: 'good', status: 'active', location: 'Sala de espera' },
+      { tag: `${clinicTag}-MED-007`, name: 'Refrigerador de medicamentos', type: 'medical_equipment', category: 'Almacenamiento', manufacturer: 'Haier', model: 'HYC-68', price: 2200, life: 10, condition: 'good', status: 'active', location: 'Farmacia' },
+      { tag: `${clinicTag}-MED-008`, name: 'Nebulizador', type: 'medical_equipment', category: 'Tratamiento', manufacturer: 'Omron', model: 'NE-C28', price: 320, life: 7, condition: 'fair', status: 'active', location: 'Consultorio 2' },
+      { tag: `${clinicTag}-MED-009`, name: 'Equipo de inyección', type: 'medical_equipment', category: 'Tratamiento', manufacturer: 'BD', model: 'Kit Básico', price: 150, life: 5, condition: 'good', status: 'active', location: 'Enfermería' },
+      { tag: `${clinicTag}-MED-010`, name: 'Camilla médica', type: 'medical_equipment', category: 'Mobiliario médico', manufacturer: 'Local', model: 'Est-01', price: 800, life: 20, condition: 'good', status: 'active', location: 'Consultorio 1' },
+      { tag: `${clinicTag}-MED-011`, name: 'Tensiómetro manual', type: 'medical_equipment', category: 'Diagnóstico', manufacturer: 'Welch Allyn', model: 'Tycos', price: 220, life: 10, condition: 'fair', status: 'maintenance', location: 'Consultorio 2' },
+      { tag: `${clinicTag}-MED-012`, name: 'Lámpara de examinación', type: 'medical_equipment', category: 'Iluminación médica', manufacturer: 'Luxor', model: 'LED-500', price: 420, life: 10, condition: 'good', status: 'active', location: 'Consultorio 1' },
+      { tag: `${clinicTag}-OFC-001`, name: 'Computadora de escritorio', type: 'computer', category: 'Tecnología', manufacturer: 'HP', model: 'ProDesk 400', price: 3500, life: 5, condition: 'good', status: 'active', location: 'Recepción' },
+      { tag: `${clinicTag}-OFC-002`, name: 'Impresora multifuncional', type: 'computer', category: 'Tecnología', manufacturer: 'Epson', model: 'L3250', price: 1200, life: 5, condition: 'good', status: 'active', location: 'Recepción' },
+      { tag: `${clinicTag}-OFC-003`, name: 'Computadora farmacia', type: 'computer', category: 'Tecnología', manufacturer: 'Lenovo', model: 'ThinkCentre', price: 3200, life: 5, condition: 'excellent', status: 'active', location: 'Farmacia' },
+      { tag: `${clinicTag}-MOB-001`, name: 'Escritorio médico', type: 'furniture', category: 'Mobiliario', manufacturer: 'Local', model: 'Esc-01', price: 600, life: 15, condition: 'good', status: 'active', location: 'Consultorio 1' },
+      { tag: `${clinicTag}-MOB-002`, name: 'Silla médica ergonómica', type: 'furniture', category: 'Mobiliario', manufacturer: 'Local', model: 'Sil-01', price: 350, life: 10, condition: 'good', status: 'active', location: 'Consultorio 1' },
+      { tag: `${clinicTag}-MOB-003`, name: 'Archivador metálico', type: 'furniture', category: 'Mobiliario', manufacturer: 'Local', model: 'Arch-02', price: 450, life: 20, condition: 'good', status: 'active', location: 'Administración' },
+      { tag: `${clinicTag}-MOB-004`, name: 'Sillas sala de espera (set 4)', type: 'furniture', category: 'Mobiliario', manufacturer: 'Local', model: 'Set-04', price: 800, life: 10, condition: 'fair', status: 'active', location: 'Sala de espera' },
+      { tag: `${clinicTag}-MED-013`, name: 'Balanza pediátrica', type: 'medical_equipment', category: 'Diagnóstico', manufacturer: 'Seca', model: '354', price: 1200, life: 15, condition: 'good', status: 'active', location: 'Consultorio 2' },
+    ];
+
+    for (let i = 0; i < assetDefs.length; i++) {
+      const d = assetDefs[i];
+      const existingTag = await this.dataSource.query(
+        `SELECT id FROM assets WHERE "assetTag" = $1 LIMIT 1`, [d.tag],
+      );
+      if (existingTag.length > 0) continue;
+
+      const purchaseDaysAgo = 180 + Math.floor(Math.random() * 730);
+      const purchaseDate = new Date();
+      purchaseDate.setDate(purchaseDate.getDate() - purchaseDaysAgo);
+
+      const warrantyExpiry = new Date(purchaseDate);
+      warrantyExpiry.setFullYear(warrantyExpiry.getFullYear() + 1);
+
+      const monthlyDep = parseFloat(((d.price * 0.9) / (d.life * 12)).toFixed(2));
+      const monthsElapsed = Math.floor(purchaseDaysAgo / 30);
+      const accumulated = parseFloat(Math.min(monthlyDep * monthsElapsed, d.price * 0.9).toFixed(2));
+      const currentValue = parseFloat((d.price - accumulated).toFixed(2));
+
+      const nextMaint = new Date();
+      nextMaint.setMonth(nextMaint.getMonth() + 6);
+
+      await this.dataSource.query(`
+        INSERT INTO assets (
+          id, "assetTag", name, type, category,
+          manufacturer, model,
+          status, condition,
+          "purchasePrice", "purchaseDate",
+          vendor, "warrantyExpiry",
+          "depreciationMethod", "usefulLifeYears", "salvageValue",
+          "currentValue", "accumulatedDepreciation", "monthlyDepreciation",
+          location,
+          "maintenanceIntervalMonths", "totalMaintenanceCost",
+          "nextMaintenanceDate",
+          "isActive", "createdAt", "updatedAt",
+          clinic_id, created_by
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3::assets_type_enum, $4,
+          $5, $6,
+          $7::assets_status_enum, $8::assets_condition_enum,
+          $9, $10,
+          'Proveedor Demo', $11,
+          'straight_line'::assets_depreciationmethod_enum, $12, 0,
+          $13, $14, $15,
+          $16,
+          12, 0,
+          $17,
+          true, NOW(), NOW(),
+          $18, $19
+        )
+      `, [
+        d.tag, d.name, d.type, d.category,
+        d.manufacturer, d.model,
+        d.status, d.condition,
+        d.price, purchaseDate.toISOString().slice(0, 10),
+        warrantyExpiry.toISOString().slice(0, 10),
+        d.life,
+        currentValue, accumulated, monthlyDep,
+        d.location,
+        nextMaint.toISOString().slice(0, 10),
+        clinic.id, createdBy.id,
+      ]);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Traslados de stock entre clínicas (15 traslados)
+  // ---------------------------------------------------------------------------
+
+  private async createDemoStockTransfers(
+    clinicChu: Clinic,
+    clinicIru: Clinic,
+    stocksChu: MedicationStock[],
+    stocksIru: MedicationStock[],
+    pharmacistChu: User,
+    pharmacistIru: User,
+  ): Promise<void> {
+    if (!stocksChu.length || !stocksIru.length) return;
+
+    const transferDefs: {
+      num: string;
+      fromClinic: Clinic;
+      toClinic: Clinic;
+      fromStocks: MedicationStock[];
+      toStocks: MedicationStock[];
+      requestedBy: User;
+      dispatchedBy: User | null;
+      receivedBy: User | null;
+      status: string;
+      numItems: number;
+    }[] = [];
+
+    // 8 completed (CHU→IRU and IRU→CHU alternating)
+    for (let i = 1; i <= 8; i++) {
+      const chuToIru = i % 2 === 0;
+      transferDefs.push({
+        num: `TRF-2026-${String(i).padStart(4, '0')}`,
+        fromClinic: chuToIru ? clinicChu : clinicIru,
+        toClinic: chuToIru ? clinicIru : clinicChu,
+        fromStocks: chuToIru ? stocksChu : stocksIru,
+        toStocks: chuToIru ? stocksIru : stocksChu,
+        requestedBy: chuToIru ? pharmacistChu : pharmacistIru,
+        dispatchedBy: chuToIru ? pharmacistChu : pharmacistIru,
+        receivedBy: chuToIru ? pharmacistIru : pharmacistChu,
+        status: 'completed',
+        numItems: 3 + (i % 4),
+      });
+    }
+    // 4 in_transit
+    for (let i = 9; i <= 12; i++) {
+      const chuToIru = i % 2 === 0;
+      transferDefs.push({
+        num: `TRF-2026-${String(i).padStart(4, '0')}`,
+        fromClinic: chuToIru ? clinicChu : clinicIru,
+        toClinic: chuToIru ? clinicIru : clinicChu,
+        fromStocks: chuToIru ? stocksChu : stocksIru,
+        toStocks: [],
+        requestedBy: chuToIru ? pharmacistChu : pharmacistIru,
+        dispatchedBy: chuToIru ? pharmacistChu : pharmacistIru,
+        receivedBy: null,
+        status: 'in_transit',
+        numItems: 3 + (i % 4),
+      });
+    }
+    // 3 requested
+    for (let i = 13; i <= 15; i++) {
+      transferDefs.push({
+        num: `TRF-2026-${String(i).padStart(4, '0')}`,
+        fromClinic: clinicIru,
+        toClinic: clinicChu,
+        fromStocks: stocksIru,
+        toStocks: [],
+        requestedBy: pharmacistIru,
+        dispatchedBy: null,
+        receivedBy: null,
+        status: 'requested',
+        numItems: 3 + (i % 4),
+      });
+    }
+
+    for (const td of transferDefs) {
+      const existing = await this.dataSource.query(
+        `SELECT id FROM stock_transfers WHERE "transferNumber" = $1 LIMIT 1`, [td.num],
+      );
+      if (existing.length > 0) continue;
+
+      const daysAgo = 10 + Math.floor(Math.random() * 60);
+      const createdAt = new Date();
+      createdAt.setDate(createdAt.getDate() - daysAgo);
+
+      const dispatchedAt = td.dispatchedBy
+        ? new Date(createdAt.getTime() + 1 * 24 * 60 * 60 * 1000)
+        : null;
+      const receivedAt = td.receivedBy && dispatchedAt
+        ? new Date(dispatchedAt.getTime() + 2 * 24 * 60 * 60 * 1000)
+        : null;
+
+      const result = await this.dataSource.query(`
+        INSERT INTO stock_transfers (
+          id, "transferNumber", source_clinic_id, target_clinic_id, status,
+          notes, requested_by_id, dispatched_by_id, "dispatchedAt",
+          received_by_id, "receivedAt",
+          "createdAt", "updatedAt"
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3, $4::stock_transfers_status_enum,
+          $5, $6, $7, $8,
+          $9, $10,
+          $11, $11
+        ) RETURNING id
+      `, [
+        td.num,
+        td.fromClinic.id,
+        td.toClinic.id,
+        td.status,
+        `Traslado demo ${td.num}`,
+        td.requestedBy.id,
+        td.dispatchedBy ? td.dispatchedBy.id : null,
+        dispatchedAt,
+        td.receivedBy ? td.receivedBy.id : null,
+        receivedAt,
+        createdAt,
+      ]);
+
+      const transferId = result[0].id;
+
+      // Insert transfer items
+      for (let j = 0; j < td.numItems; j++) {
+        const sourceStock = td.fromStocks[j % td.fromStocks.length];
+        const targetStock = td.toStocks.length > 0
+          ? td.toStocks[j % td.toStocks.length]
+          : null;
+        const reqQty = 5 + Math.floor(Math.random() * 20);
+        const dispatchedQty = td.dispatchedBy ? reqQty : null;
+        const receivedQty = td.receivedBy ? reqQty : null;
+
+        await this.dataSource.query(`
+          INSERT INTO stock_transfer_items (
+            id, transfer_id, source_stock_id, target_stock_id,
+            "requestedQuantity", "dispatchedQuantity", "receivedQuantity"
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, $4, $5, $6
+          )
+        `, [
+          transferId,
+          sourceStock.id,
+          targetStock ? targetStock.id : null,
+          reqQty,
+          dispatchedQty,
+          receivedQty,
+        ]);
+      }
     }
   }
 
