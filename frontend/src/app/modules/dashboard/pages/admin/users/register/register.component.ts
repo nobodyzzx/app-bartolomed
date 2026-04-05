@@ -78,27 +78,36 @@ export class UserRegisterComponent implements OnInit {
     'Otra',
   ]
 
+  /** Política de contraseña: mayúscula + minúscula + número o símbolo */
+  private readonly PASSWORD_REGEX = /(?=.*[A-Z])(?=.*[a-z])(?:(?=.*\d)|(?=.*\W))/
+
+  hidePassword = true
+
   public registerForm: FormGroup = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email]),
-    password: new FormControl('', [Validators.required, Validators.minLength(6)]),
+    password: new FormControl('', [
+      Validators.required,
+      Validators.minLength(6),
+      Validators.pattern(this.PASSWORD_REGEX),
+    ]),
     roles: new FormControl([], [Validators.required]),
     clinicId: new FormControl(''),
 
     personalInfo: new FormGroup({
       firstName: new FormControl('', Validators.required),
-      lastName: new FormControl('', Validators.required),
-      phone: new FormControl(''),
-      address: new FormControl(''),
-      birthDate: new FormControl('', Validators.required),
+      lastName:  new FormControl('', Validators.required),
+      phone:     new FormControl(''),
+      address:   new FormControl(''),
+      birthDate: new FormControl(null),   // opcional
     }),
     professionalInfo: new FormGroup({
-      title: new FormControl('', Validators.required),
+      title:          new FormControl('', Validators.required),
       specialization: new FormControl('', Validators.required),
-      license: new FormControl('', Validators.required),
+      license:        new FormControl('', Validators.required),
       certifications: new FormControl([]),
-      startDate: new FormControl('', Validators.required),
-      description: new FormControl(''),
-      areas: new FormControl([]),
+      startDate:      new FormControl(null, Validators.required),
+      description:    new FormControl(''),
+      areas:          new FormControl([]),
     }),
   })
 
@@ -210,13 +219,35 @@ export class UserRegisterComponent implements OnInit {
     passwordControl?.setValue('')
   }
 
+  /** Formatea un valor del datepicker a YYYY-MM-DD (ISO 8601 date) o null */
+  private toISODate(value: any): string | null {
+    if (!value) return null
+    try {
+      return new Date(value).toISOString().slice(0, 10)
+    } catch {
+      return null
+    }
+  }
+
   onSubmit() {
     if (this.registerForm.invalid) {
       this.registerForm.markAllAsTouched()
       return
     }
 
-    const userData = this.registerForm.value
+    const raw = this.registerForm.value
+
+    const userData = {
+      ...raw,
+      personalInfo: {
+        ...raw.personalInfo,
+        birthDate: this.toISODate(raw.personalInfo?.birthDate),
+      },
+      professionalInfo: {
+        ...raw.professionalInfo,
+        startDate: this.toISODate(raw.professionalInfo?.startDate),
+      },
+    }
 
     // Si no se seleccionó clínica, eliminar el campo
     if (!userData.clinicId) {

@@ -43,11 +43,18 @@
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>{{ isEditMode ? 'Contraseña (opcional)' : 'Contraseña' }}</mat-label>
             <mat-icon matPrefix class="text-blue-400">lock</mat-icon>
-            <input matInput formControlName="password" type="password"
-              [placeholder]="isEditMode ? 'Dejar vacío para no cambiar' : 'Ingrese contraseña'" />
+            <input matInput formControlName="password"
+              [type]="hidePassword ? 'password' : 'text'"
+              [placeholder]="isEditMode ? 'Dejar vacío para no cambiar' : 'Mín. 6 caracteres, mayúscula y número'" />
+            <button type="button" mat-icon-button matSuffix (click)="hidePassword = !hidePassword"
+              [attr.aria-label]="hidePassword ? 'Mostrar contraseña' : 'Ocultar contraseña'">
+              <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
             <mat-hint *ngIf="isEditMode">Deje en blanco para mantener la contraseña actual</mat-hint>
-            <mat-error *ngIf="registerForm.get('password')?.hasError('required') && !isEditMode">La contraseña es obligatoria</mat-error>
+            <mat-hint *ngIf="!isEditMode">Debe tener mayúscula, minúscula y al menos un número o símbolo</mat-hint>
+            <mat-error *ngIf="registerForm.get('password')?.hasError('required')">La contraseña es obligatoria</mat-error>
             <mat-error *ngIf="registerForm.get('password')?.hasError('minlength')">Mínimo 6 caracteres</mat-error>
+            <mat-error *ngIf="registerForm.get('password')?.hasError('pattern')">Debe incluir mayúscula, minúscula y un número o símbolo</mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
