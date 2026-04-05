@@ -5,8 +5,9 @@ export class ProfessionalInfoDto {
   @IsString()
   title: string;
 
+  @IsOptional()
   @IsEnum(ProfessionalRoles)
-  role: ProfessionalRoles;
+  role?: ProfessionalRoles;
 
   @IsString()
   specialization: string;
@@ -14,9 +15,10 @@ export class ProfessionalInfoDto {
   @IsString()
   license: string;
 
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  certifications: string[];
+  certifications?: string[];
 
   @IsDateString()
   startDate: Date;
