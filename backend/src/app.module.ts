@@ -3,6 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuditModule } from './audit/audit.module';
 import { AuditLog } from './audit/entities/audit-log.entity';
+import { MailModule } from './mail/mail.module';
+import { SmtpConfig } from './mail/entities/smtp-config.entity';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { Appointment } from './appointments/entities/appointment.entity';
 import { AssetsModule } from './assets/assets.module';
@@ -96,6 +98,7 @@ import { UsersModule } from './users/users.module';
         StockTransferItem,
         TransferAuditLog,
         AuditLog,
+        SmtpConfig,
       ],
       synchronize: false,
       migrations: ['dist/migrations/*.js'],
@@ -117,6 +120,7 @@ import { UsersModule } from './users/users.module';
     AssetsModule,
     TransfersModule,
     AuditModule,
+    MailModule,
   ],
 })
 export class AppModule {}

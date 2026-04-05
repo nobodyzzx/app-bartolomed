@@ -15,6 +15,7 @@ import { ChangePasswordDto, ForgotPasswordDto, LoginUserDto, RefreshTokenDto, Re
 import { GodBootstrapDto } from './dto/god-bootstrap.dto';
 import { LoginResponse } from './interfaces';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { MailService } from '../mail/mail.service';
 import { permissionsForRoles } from './permissions/role-permissions.map';
 
 @Injectable()
@@ -27,6 +28,7 @@ export class AuthService {
     @InjectRepository(Clinic)
     private readonly clinicRepository: Repository<Clinic>,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -202,8 +204,16 @@ export class AuthService {
       { passwordResetToken: rawToken, passwordResetExpiresAt: expiresAt },
     );
 
-    // TODO: enviar por email cuando se configure servicio SMTP
-    this.logger.log(`[PASSWORD RESET] Token para ${user.email}: ${rawToken} (expira: ${expiresAt.toISOString()})`);
+    const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:4200';
+    const resetLink = `${frontendUrl}/auth/reset-password?token=${rawToken}`;
+
+    await this.mailService.send({
+      to: user.email,
+      subject: 'Recuperación de contraseña — Bartolomed',
+      html: this.buildResetEmailHtml(resetLink),
+    });
+
+    this.logger.log(`[PASSWORD RESET] Email enviado a ${user.email} (expira: ${expiresAt.toISOString()})`);
 
     return { message: 'Si el correo existe en el sistema, recibirás instrucciones para restablecer tu contraseña.' };
   }
@@ -340,5 +350,54 @@ export class AuthService {
     if (error.code === '23505') throw new BadRequestException(error.detail);
     this.logger.error(error.message, error.stack);
     throw new InternalServerErrorException('Something went wrong');
+  }
+
+  private buildResetEmailHtml(resetLink: string): string {
+    return `
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 0;">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#1d4ed8,#3b82f6);padding:36px 40px;text-align:center;">
+            <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px;">Bartolomed</h1>
+            <p style="margin:6px 0 0;color:#bfdbfe;font-size:13px;">Sistema de Gestión Clínica</p>
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="padding:40px;">
+            <h2 style="margin:0 0 12px;color:#0f172a;font-size:20px;font-weight:700;">Recuperación de contraseña</h2>
+            <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.6;">
+              Recibimos una solicitud para restablecer la contraseña de tu cuenta. Haz clic en el botón de abajo para crear una nueva contraseña. Este enlace es válido por <strong>1 hora</strong>.
+            </p>
+            <div style="text-align:center;margin:32px 0;">
+              <a href="${resetLink}"
+                style="display:inline-block;background:#1d4ed8;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:10px;font-size:15px;font-weight:600;letter-spacing:0.2px;">
+                Restablecer contraseña
+              </a>
+            </div>
+            <p style="margin:24px 0 0;color:#94a3b8;font-size:13px;line-height:1.6;">
+              Si no solicitaste este cambio, ignora este correo. Tu contraseña permanecerá igual.<br><br>
+              Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
+              <a href="${resetLink}" style="color:#3b82f6;word-break:break-all;">${resetLink}</a>
+            </p>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="background:#f8fafc;padding:20px 40px;border-top:1px solid #e2e8f0;text-align:center;">
+            <p style="margin:0;color:#94a3b8;font-size:12px;">© ${new Date().getFullYear()} Bartolomed · Sistema de Gestión Clínica</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
   }
 }

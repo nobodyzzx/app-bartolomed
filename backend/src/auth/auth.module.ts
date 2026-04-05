@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Clinic } from '../clinics/entities/clinic.entity';
+import { MailModule } from '../mail/mail.module';
 import { UserClinic } from '../users/entities/user-clinic.entity';
 import { User } from '../users/entities/user.entity';
 import { AuthController } from './auth.controller';
@@ -19,6 +20,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   imports: [
     ConfigModule,
     TypeOrmModule.forFeature([User, UserClinic, Clinic]),
+    forwardRef(() => MailModule),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

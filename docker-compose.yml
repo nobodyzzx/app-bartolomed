@@ -41,6 +41,7 @@ services:
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your-refresh-secret-change-me}
       - GOD_MODE_TOKEN=${GOD_MODE_TOKEN:-change-me-very-strong}
       - NODE_ENV=development
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:4200}
     command: sh -lc "npm install --no-audit --no-fund && npm run start:dev"
     security_opt:
       - label=disable

@@ -1,28 +1,153 @@
-<div class="min-h-screen bg-slate-50 p-8">
-  <div class="max-w-7xl mx-auto space-y-6">
-    <div class="flex items-center justify-between mb-10">
-      <div class="flex items-center gap-4">
-        <button
-          type="button"
-          routerLink="/dashboard"
-          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
-          aria-label="Volver"
-        >
-          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
-        </button>
-        <div class="text-left">
-          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Parámetros del sistema</h1>
-          <p class="text-slate-600">Valores globales y opciones avanzadas</p>
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      title="Parámetros del Sistema"
+      subtitle="Configuración global y conexión de correo electrónico"
+      (back)="goBack()"
+    />
+
+    <!-- Skeleton -->
+    <div *ngIf="loading" class="space-y-6">
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 animate-pulse">
+        <div class="h-4 bg-slate-200 rounded w-1/3 mb-6"></div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="h-14 bg-slate-200 rounded-lg"></div>
+          <div class="h-14 bg-slate-200 rounded-lg"></div>
+          <div class="h-14 bg-slate-200 rounded-lg"></div>
+          <div class="h-14 bg-slate-200 rounded-lg"></div>
+          <div class="h-14 bg-slate-200 rounded-lg col-span-2"></div>
         </div>
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-md p-6 text-slate-600">
-      <div class="flex items-center gap-2 mb-2">
-        <span class="material-symbols-outlined msz-20">tune</span>
-        <h2 class="text-lg font-semibold text-slate-800">Parámetros</h2>
+    <div *ngIf="!loading" class="space-y-6">
+
+      <!-- ── Configuración SMTP ── -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+
+        <div class="flex items-center gap-4 px-6 py-5 bg-indigo-50 border-b border-indigo-100">
+          <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">mail</span>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-base font-semibold text-slate-900 leading-tight">Correo saliente (SMTP)</h3>
+            <p class="text-sm text-slate-500 leading-tight">Para envío de recuperación de contraseña y notificaciones</p>
+          </div>
+          <!-- Toggle habilitado -->
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <span class="text-sm text-slate-500">{{ form.get('enabled')?.value ? 'Activo' : 'Desactivado' }}</span>
+            <mat-slide-toggle [formControl]="$any(form.get('enabled'))" color="primary" />
+          </div>
+        </div>
+
+        <div class="p-6">
+          <form [formGroup]="form">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <!-- Host -->
+              <mat-form-field appearance="outline" class="md:col-span-2">
+                <mat-label>Servidor SMTP</mat-label>
+                <mat-icon matPrefix class="text-indigo-400">dns</mat-icon>
+                <input matInput formControlName="host" placeholder="smtp.gmail.com" />
+                <mat-error>El servidor es obligatorio</mat-error>
+              </mat-form-field>
+
+              <!-- Puerto -->
+              <mat-form-field appearance="outline">
+                <mat-label>Puerto</mat-label>
+                <mat-icon matPrefix class="text-indigo-400">lan</mat-icon>
+                <input matInput type="number" formControlName="port" placeholder="587" />
+                <mat-hint>587 = STARTTLS · 465 = TLS</mat-hint>
+                <mat-error>Puerto inválido (1–65535)</mat-error>
+              </mat-form-field>
+
+              <!-- Secure -->
+              <div class="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 self-start mt-1">
+                <mat-slide-toggle formControlName="secure" color="accent" />
+                <div>
+                  <p class="text-sm font-medium text-slate-700 leading-tight">TLS implícito</p>
+                  <p class="text-xs text-slate-500 leading-tight">Activar para puerto 465</p>
+                </div>
+              </div>
+
+              <!-- Usuario -->
+              <mat-form-field appearance="outline">
+                <mat-label>Usuario / Email</mat-label>
+                <mat-icon matPrefix class="text-indigo-400">person</mat-icon>
+                <input matInput formControlName="user" placeholder="correo@dominio.com" autocomplete="username" />
+                <mat-error>El usuario es obligatorio</mat-error>
+              </mat-form-field>
+
+              <!-- Contraseña -->
+              <mat-form-field appearance="outline">
+                <mat-label>Contraseña</mat-label>
+                <mat-icon matPrefix class="text-indigo-400">key</mat-icon>
+                <input matInput [type]="hidePass ? 'password' : 'text'" formControlName="pass"
+                  placeholder="Dejar vacío para no cambiar" autocomplete="current-password" />
+                <button type="button" mat-icon-button matSuffix (click)="hidePass = !hidePass">
+                  <mat-icon>{{ hidePass ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+                <mat-hint>Dejar vacío para conservar la contraseña actual</mat-hint>
+              </mat-form-field>
+
+              <!-- Nombre remitente -->
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre del remitente</mat-label>
+                <mat-icon matPrefix class="text-indigo-400">badge</mat-icon>
+                <input matInput formControlName="fromName" placeholder="Bartolomed" />
+                <mat-error>El nombre es obligatorio</mat-error>
+              </mat-form-field>
+
+              <!-- Email remitente -->
+              <mat-form-field appearance="outline">
+                <mat-label>Email del remitente</mat-label>
+                <mat-icon matPrefix class="text-indigo-400">alternate_email</mat-icon>
+                <input matInput formControlName="fromEmail" placeholder="noreply@miclinica.com" />
+                <mat-error *ngIf="form.get('fromEmail')?.hasError('required')">Obligatorio</mat-error>
+                <mat-error *ngIf="form.get('fromEmail')?.hasError('email')">Email inválido</mat-error>
+              </mat-form-field>
+
+            </div>
+          </form>
+
+          <!-- Info rápida para Gmail/Brevo -->
+          <div class="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100 text-sm text-blue-800">
+            <p class="font-semibold mb-1 flex items-center gap-1.5">
+              <span class="material-symbols-outlined msz-16">info</span>
+              Configuraciones rápidas
+            </p>
+            <ul class="space-y-1 text-xs text-blue-700">
+              <li><strong>Gmail:</strong> smtp.gmail.com · Puerto 587 · TLS OFF · Usa una "contraseña de aplicación"</li>
+              <li><strong>Brevo (recomendado):</strong> smtp-relay.brevo.com · Puerto 587 · TLS OFF</li>
+              <li><strong>Outlook/365:</strong> smtp.office365.com · Puerto 587 · TLS OFF</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="form-action-bar flex gap-3 justify-end">
+          <button
+            type="button"
+            (click)="testConnection()"
+            [disabled]="testing || saving"
+            class="btn btn-outline">
+            <mat-spinner *ngIf="testing" diameter="16" />
+            <span *ngIf="!testing" class="material-symbols-outlined msz-16 leading-none">wifi_tethering</span>
+            {{ testing ? 'Verificando...' : 'Probar conexión' }}
+          </button>
+          <button
+            type="button"
+            (click)="save()"
+            [disabled]="form.invalid || saving"
+            class="btn btn-primary">
+            <mat-spinner *ngIf="saving" diameter="18" class="!text-white" />
+            <span *ngIf="!saving" class="material-symbols-outlined msz-18 leading-none">save</span>
+            {{ saving ? 'Guardando...' : 'Guardar configuración' }}
+          </button>
+        </div>
+
       </div>
-      <p>Gestión de parámetros del sistema. (Placeholder)</p>
+
     </div>
   </div>
 </div>

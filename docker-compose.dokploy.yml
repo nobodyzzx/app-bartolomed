@@ -60,6 +60,7 @@ services:
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - GOD_MODE_TOKEN=${GOD_MODE_TOKEN}
       - FRONTEND_DOMAIN=${FRONTEND_DOMAIN:-bartolomed.tecnocondor.dev}
+      - FRONTEND_URL=${FRONTEND_URL:-https://bartolomed.tecnocondor.dev}
     volumes:
       - bartolomed_uploads:/app/uploads
     depends_on:
