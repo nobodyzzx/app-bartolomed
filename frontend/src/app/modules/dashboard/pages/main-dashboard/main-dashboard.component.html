@@ -89,6 +89,104 @@
       }
     </div>
 
+    <!-- ── Gráficos ──────────────────────────────────────────────────────────── -->
+    @if (showSalesCharts || showAppointmentChart) {
+      <div class="grid grid-cols-1 gap-6 mb-8"
+           [ngClass]="{
+             'xl:grid-cols-3': showSalesCharts && showAppointmentChart,
+             'xl:grid-cols-2': showSalesCharts && !showAppointmentChart
+           }">
+
+        <!-- Ventas últimos 7 días — Bar -->
+        @if (showSalesCharts) {
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="flex items-center gap-3 px-6 py-4 bg-blue-50 border-b border-blue-100">
+              <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined msz-18">bar_chart</span>
+              </div>
+              <div>
+                <h2 class="font-semibold text-slate-900 m-0 leading-tight">Ventas — Últimos 7 días</h2>
+                <p class="text-xs text-slate-500 m-0">Ingresos diarios de farmacia</p>
+              </div>
+            </div>
+            <div class="p-5">
+              @if (loadingCharts) {
+                <div class="h-52 bg-slate-50 rounded-xl animate-pulse"></div>
+              } @else {
+                <div class="h-52">
+                  <canvas baseChart
+                    [data]="weeklyChartData"
+                    [type]="'bar'"
+                    [options]="weeklyChartOptions">
+                  </canvas>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Comparativo mensual 6 meses — Line -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="flex items-center gap-3 px-6 py-4 bg-indigo-50 border-b border-indigo-100">
+              <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined msz-18">show_chart</span>
+              </div>
+              <div>
+                <h2 class="font-semibold text-slate-900 m-0 leading-tight">Comparativo Mensual</h2>
+                <p class="text-xs text-slate-500 m-0">Ingresos de los últimos 6 meses</p>
+              </div>
+            </div>
+            <div class="p-5">
+              @if (loadingCharts) {
+                <div class="h-52 bg-slate-50 rounded-xl animate-pulse"></div>
+              } @else {
+                <div class="h-52">
+                  <canvas baseChart
+                    [data]="monthlyChartData"
+                    [type]="'line'"
+                    [options]="monthlyChartOptions">
+                  </canvas>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Distribución de citas — Doughnut -->
+        @if (showAppointmentChart) {
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="flex items-center gap-3 px-6 py-4 bg-green-50 border-b border-green-100">
+              <div class="w-9 h-9 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined msz-18">donut_large</span>
+              </div>
+              <div>
+                <h2 class="font-semibold text-slate-900 m-0 leading-tight">Citas de Hoy</h2>
+                <p class="text-xs text-slate-500 m-0">Distribución por estado</p>
+              </div>
+            </div>
+            <div class="p-5">
+              @if (loadingAppointments) {
+                <div class="h-52 bg-slate-50 rounded-xl animate-pulse"></div>
+              } @else if (todayAppointments.length === 0) {
+                <div class="h-52 flex flex-col items-center justify-center text-slate-300">
+                  <span class="material-symbols-outlined text-5xl mb-2">event_busy</span>
+                  <p class="text-sm text-slate-400">Sin citas hoy</p>
+                </div>
+              } @else {
+                <div class="h-52">
+                  <canvas baseChart
+                    [data]="appointmentChartData"
+                    [type]="'doughnut'"
+                    [options]="appointmentChartOptions">
+                  </canvas>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+      </div>
+    }
+
     <!-- ── Contenido principal: secciones según rol ────────────────────────── -->
     @if (showAppointmentsSection || showStockSection) {
       <div class="grid grid-cols-1 gap-6 mb-8"
@@ -256,7 +354,7 @@
               <button
                 type="button"
                 (click)="navigate(action.route)"
-                class="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all hover:shadow-md active:scale-95 border-0 cursor-pointer"
+                class="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-0 transition-all hover:shadow-md active:scale-95 cursor-pointer"
                 [ngClass]="action.color"
               >
                 <span class="material-symbols-outlined text-3xl leading-none">{{ action.icon }}</span>

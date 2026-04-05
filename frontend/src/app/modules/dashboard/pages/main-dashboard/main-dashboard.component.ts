@@ -4,8 +4,10 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { UserRoles } from '@core/enums/user-roles.enum'
 import { RoleStateService } from '@core/services/role-state.service'
 import { StatCardColor } from '@shared/components/stat-card/stat-card.component'
-import { forkJoin } from 'rxjs'
+import { ChartData, ChartOptions } from 'chart.js'
+import { forkJoin, of } from 'rxjs'
 import { AuthService } from '../../../auth/services/auth.service'
+import { ClinicContextService } from '../../../clinics/services/clinic-context.service'
 import { DashboardService } from './dashboard.service'
 import { DashboardStats, RecentAppointment, RecentPatient, StockAlert } from './interfaces/dashboard-ui.interfaces'
 
@@ -39,9 +41,10 @@ const PHARMACY:   string[] = [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.S
     standalone: false
 })
 export class MainDashboardComponent implements OnInit {
-  private readonly destroyRef  = inject(DestroyRef)
-  private readonly authService = inject(AuthService)
-  private readonly roleState   = inject(RoleStateService)
+  private readonly destroyRef     = inject(DestroyRef)
+  private readonly authService    = inject(AuthService)
+  private readonly roleState      = inject(RoleStateService)
+  private readonly clinicContext  = inject(ClinicContextService)
 
   stats: DashboardStats = {
     totalPatients: 0,
@@ -62,6 +65,56 @@ export class MainDashboardComponent implements OnInit {
   loadingAppointments = false
   loadingStock = false
   loadingPatients = false
+  loadingCharts = false
+
+  // ── Chart data ────────────────────────────────────────────────────────────
+
+  weeklyChartData: ChartData<'bar'> = { labels: [], datasets: [] }
+  monthlyChartData: ChartData<'line'> = { labels: [], datasets: [] }
+  appointmentChartData: ChartData<'doughnut'> = { labels: [], datasets: [] }
+
+  weeklyChartOptions: ChartOptions<'bar'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` Bs ${Number(ctx.parsed.y).toLocaleString('es-BO')}` } },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: '#f1f5f9' },
+        ticks: { callback: v => `Bs ${Number(v).toLocaleString('es-BO')}` },
+      },
+      x: { grid: { display: false } },
+    },
+  }
+
+  monthlyChartOptions: ChartOptions<'line'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` Bs ${Number(ctx.parsed.y).toLocaleString('es-BO')}` } },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: '#f1f5f9' },
+        ticks: { callback: v => `Bs ${Number(v).toLocaleString('es-BO')}` },
+      },
+      x: { grid: { display: false } },
+    },
+  }
+
+  appointmentChartOptions: ChartOptions<'doughnut'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '65%',
+    plugins: {
+      legend: { position: 'bottom', labels: { padding: 16, boxWidth: 12, font: { size: 12 } } },
+    },
+  }
 
   permissionError: string | null = null
   showAlertBanner = true
@@ -104,7 +157,7 @@ export class MainDashboardComponent implements OnInit {
         label: 'Citas Hoy', sublabel: 'Programadas',
         icon: 'calendar_today', color: 'green', route: '/dashboard/appointments',
         value: this.stats.totalAppointments,
-        roles: [...CLINICAL, UserRoles.PHARMACIST],
+        roles: CLINICAL,
       },
       {
         label: 'Por Confirmar', sublabel: 'Citas pendientes',
@@ -142,7 +195,7 @@ export class MainDashboardComponent implements OnInit {
         label: 'Registrar Paciente', icon: 'person_add',
         route: '/dashboard/patients/new',
         color: 'bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-100',
-        roles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN, UserRoles.RECEPTIONIST, UserRoles.NURSE],
+        roles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN, UserRoles.DOCTOR, UserRoles.RECEPTIONIST, UserRoles.NURSE],
       },
       {
         label: 'Nueva Cita', icon: 'event_available',
@@ -178,7 +231,7 @@ export class MainDashboardComponent implements OnInit {
         label: 'Reportes', icon: 'analytics',
         route: '/dashboard/reports',
         color: 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-100',
-        roles: ALL_ROLES,
+        roles: [UserRoles.DOCTOR, UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
       },
       {
         label: 'Ver Inventario', icon: 'inventory',
@@ -201,6 +254,14 @@ export class MainDashboardComponent implements OnInit {
   }
 
   get showPatientsSection(): boolean {
+    return CLINICAL.includes(this.userRole)
+  }
+
+  get showSalesCharts(): boolean {
+    return PHARMACY.includes(this.userRole)
+  }
+
+  get showAppointmentChart(): boolean {
     return CLINICAL.includes(this.userRole)
   }
 
@@ -235,13 +296,17 @@ export class MainDashboardComponent implements OnInit {
     this.loadingAppointments = true
     this.loadingStock = true
     this.loadingPatients = true
+    this.loadingCharts = true
+
+    const needsClinical = this.showAppointmentsSection || this.showPatientsSection
+    const needsStock    = this.showStockSection
 
     forkJoin({
-      patientStats: this.dashboardService.getPatientStats(),
-      appointments: this.dashboardService.getTodayAppointments(),
-      pending:      this.dashboardService.getPendingAppointmentsCount(),
-      stock:        this.dashboardService.getLowStockAlerts(),
-      patients:     this.dashboardService.getRecentPatients(),
+      patientStats: needsClinical ? this.dashboardService.getPatientStats()            : of({ total: 0 }),
+      appointments: needsClinical ? this.dashboardService.getTodayAppointments()        : of([] as RecentAppointment[]),
+      pending:      needsClinical ? this.dashboardService.getPendingAppointmentsCount() : of(0),
+      stock:        needsStock    ? this.dashboardService.getLowStockAlerts()           : of([] as StockAlert[]),
+      patients:     needsClinical ? this.dashboardService.getRecentPatients()           : of([] as RecentPatient[]),
     }).pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ patientStats, appointments, pending, stock, patients }) => {
@@ -257,6 +322,7 @@ export class MainDashboardComponent implements OnInit {
           this.todayAppointments   = appointments
           this.stockAlerts         = stock
           this.recentPatients      = patients
+          this.buildAppointmentChart(appointments)
         },
         complete: () => {
           this.loading = false
@@ -264,7 +330,64 @@ export class MainDashboardComponent implements OnInit {
           this.loadingAppointments = false
           this.loadingStock = false
           this.loadingPatients = false
+          this.loadSalesCharts()
         },
+      })
+  }
+
+  private buildAppointmentChart(appointments: RecentAppointment[]): void {
+    const counts: Record<string, number> = { scheduled: 0, confirmed: 0, completed: 0, cancelled: 0 }
+    appointments.forEach(a => {
+      const s = a.status in counts ? a.status : 'scheduled'
+      counts[s]++
+    })
+    this.appointmentChartData = {
+      labels: ['Programadas', 'Confirmadas', 'Completadas', 'Canceladas'],
+      datasets: [{
+        data: [counts['scheduled'], counts['confirmed'], counts['completed'], counts['cancelled']],
+        backgroundColor: ['#fbbf24', '#34d399', '#60a5fa', '#f87171'],
+        borderWidth: 0,
+        hoverOffset: 6,
+      }],
+    }
+  }
+
+  private loadSalesCharts(): void {
+    if (!this.showSalesCharts) {
+      this.loadingCharts = false
+      return
+    }
+    const clinicId = this.clinicContext.clinicId ?? ''
+    forkJoin({
+      weekly:  this.dashboardService.getWeeklySales(clinicId),
+      monthly: this.dashboardService.getMonthlySales(clinicId),
+    }).pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ weekly, monthly }) => {
+          this.weeklyChartData = {
+            labels: weekly.labels,
+            datasets: [{
+              data: weekly.values,
+              backgroundColor: '#3b82f6',
+              hoverBackgroundColor: '#2563eb',
+              borderRadius: 6,
+              borderSkipped: false,
+            }],
+          }
+          this.monthlyChartData = {
+            labels: monthly.labels,
+            datasets: [{
+              data: monthly.values,
+              borderColor: '#6366f1',
+              backgroundColor: 'rgba(99,102,241,0.12)',
+              pointBackgroundColor: '#6366f1',
+              pointRadius: 4,
+              tension: 0.4,
+              fill: true,
+            }],
+          }
+        },
+        complete: () => { this.loadingCharts = false },
       })
   }
 
