@@ -89,8 +89,10 @@ export class ProfilePageComponent implements OnInit {
       next: () => {
         this.savingPassword = false
         this.passwordForm.reset()
-        this.passwordForm.markAsPristine()
-        this.passwordForm.markAsUntouched()
+        Object.keys(this.passwordForm.controls).forEach(key => {
+          this.passwordForm.get(key)?.markAsPristine()
+          this.passwordForm.get(key)?.markAsUntouched()
+        })
         this.alert.fire({ icon: 'success', title: 'Contraseña actualizada', timer: 2000, showConfirmButton: false })
       },
       error: (err) => {
