@@ -6,7 +6,6 @@ import { clinicContextGuard } from './core/guards/clinic-context.guard';
 const routes: Routes = [
   {
     path: 'auth',
-    canActivate: [guestGuard],
     loadChildren: () => import('./modules/auth/auth.module').then((m) => m.AuthModule),
   },
   {
