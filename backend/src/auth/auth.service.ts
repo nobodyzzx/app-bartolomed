@@ -11,7 +11,7 @@ import { CreateUserDto } from '../users/dto';
 import { Clinic } from '../clinics/entities/clinic.entity';
 import { UserClinic } from '../users/entities/user-clinic.entity';
 import { User } from '../users/entities/user.entity';
-import { ForgotPasswordDto, LoginUserDto, RefreshTokenDto, ResetPasswordDto } from './dto';
+import { ChangePasswordDto, ForgotPasswordDto, LoginUserDto, RefreshTokenDto, ResetPasswordDto, UpdateProfileDto } from './dto';
 import { GodBootstrapDto } from './dto/god-bootstrap.dto';
 import { LoginResponse } from './interfaces';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
@@ -231,6 +231,45 @@ export class AuthService {
 
     this.logger.log(`[PASSWORD RESET] Contraseña restablecida para usuario ${user.email}`);
     return { message: 'Contraseña restablecida exitosamente. Ya puedes iniciar sesión.' };
+  }
+
+  async getProfile(user: User): Promise<User> {
+    return this.userRepository.findOne({
+      where: { id: user.id },
+      relations: ['personalInfo', 'professionalInfo'],
+    }) as Promise<User>;
+  }
+
+  async updateProfile(user: User, dto: UpdateProfileDto): Promise<User> {
+    const found = await this.userRepository.findOne({
+      where: { id: user.id },
+      relations: ['personalInfo'],
+    });
+
+    if (found?.personalInfo) {
+      await this.userRepository.manager.getRepository('personal_info').update(
+        { id: found.personalInfo.id },
+        { ...dto },
+      );
+    }
+
+    return this.getProfile(user);
+  }
+
+  async changePassword(user: User, dto: ChangePasswordDto): Promise<{ message: string }> {
+    const found = await this.userRepository.findOne({
+      where: { id: user.id },
+      select: { id: true, password: true },
+    });
+
+    if (!found) throw new NotFoundException('Usuario no encontrado.');
+
+    const valid = await bcrypt.compare(dto.currentPassword, found.password);
+    if (!valid) throw new BadRequestException('La contraseña actual es incorrecta.');
+
+    await this.userRepository.update({ id: found.id }, { password: await bcrypt.hash(dto.newPassword, 10) });
+
+    return { message: 'Contraseña actualizada correctamente.' };
   }
 
   // Godmode: crea o promueve un SUPER_ADMIN, protegido por token de entorno

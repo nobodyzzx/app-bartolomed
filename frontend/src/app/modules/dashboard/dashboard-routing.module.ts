@@ -224,6 +224,11 @@ const routes: Routes = [
         },
       },
       {
+        path: 'profile',
+        loadChildren: () => import('./pages/profile/profile.module').then(m => m.ProfileModule),
+        canActivate: [authGuard],
+      },
+      {
         path: 'audit',
         loadChildren: () => import('./pages/admin/audit/audit.module').then(m => m.AuditModule),
         canActivate: [permissionsGuard, roleGuard],

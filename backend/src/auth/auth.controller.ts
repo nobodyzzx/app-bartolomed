@@ -1,11 +1,11 @@
-import { Body, Controller, Get, Headers, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Patch, Post, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 
 import { CreateUserDto } from '../users/dto';
 import { User } from '../users/entities/user.entity';
 import { Auth, GetUser } from './decorators';
-import { ForgotPasswordDto, LoginUserDto, RefreshTokenDto, ResetPasswordDto } from './dto';
+import { ChangePasswordDto, ForgotPasswordDto, LoginUserDto, RefreshTokenDto, ResetPasswordDto, UpdateProfileDto } from './dto';
 import { GodBootstrapDto } from './dto/god-bootstrap.dto';
 import { LoginResponse, ValidRoles } from './interfaces';
 
@@ -111,6 +111,24 @@ export class AuthController {
   @Auth()
   getMyMemberships(@GetUser() user: User) {
     return this.authService.getMyMemberships(user.id, user.roles);
+  }
+
+  @Get('profile')
+  @Auth()
+  getProfile(@GetUser() user: User) {
+    return this.authService.getProfile(user);
+  }
+
+  @Patch('profile')
+  @Auth()
+  updateProfile(@GetUser() user: User, @Body() dto: UpdateProfileDto) {
+    return this.authService.updateProfile(user, dto);
+  }
+
+  @Patch('change-password')
+  @Auth()
+  changePassword(@GetUser() user: User, @Body() dto: ChangePasswordDto) {
+    return this.authService.changePassword(user, dto);
   }
 
   @Post('forgot-password')
