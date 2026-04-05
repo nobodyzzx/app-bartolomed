@@ -88,11 +88,11 @@ export class ProfilePageComponent implements OnInit {
     this.http.patch(`${environment.baseUrl}/auth/change-password`, { currentPassword, newPassword }).subscribe({
       next: () => {
         this.savingPassword = false
-        this.passwordForm.reset()
-        Object.keys(this.passwordForm.controls).forEach(key => {
-          this.passwordForm.get(key)?.markAsPristine()
-          this.passwordForm.get(key)?.markAsUntouched()
-        })
+        this.passwordForm = this.fb.group({
+          currentPassword: ['', Validators.required],
+          newPassword:     ['', [Validators.required, Validators.minLength(6)]],
+          confirmPassword: ['', Validators.required],
+        }, { validators: this.passwordsMatch })
         this.alert.fire({ icon: 'success', title: 'Contraseña actualizada', timer: 2000, showConfirmButton: false })
       },
       error: (err) => {
