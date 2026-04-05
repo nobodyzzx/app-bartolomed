@@ -22,30 +22,36 @@ export class ProfilePageComponent implements OnInit {
   hideCurrentPwd = true
   hideNewPwd = true
   hideConfirmPwd = true
-
   profile: any = null
 
   ngOnInit() {
-    this.profileForm = this.fb.group({
+    this.profileForm = this.buildProfileForm()
+    this.passwordForm = this.buildPasswordForm()
+    this.loadProfile()
+  }
+
+  private buildProfileForm(): FormGroup {
+    return this.fb.group({
       firstName: ['', [Validators.required, Validators.minLength(2)]],
       lastName:  ['', [Validators.required, Validators.minLength(2)]],
       phone:     [''],
       address:   [''],
       birthDate: [''],
     })
+  }
 
-    this.passwordForm = this.fb.group({
+  private buildPasswordForm(): FormGroup {
+    return this.fb.group({
       currentPassword: ['', Validators.required],
       newPassword:     ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', Validators.required],
     }, { validators: this.passwordsMatch })
-
-    this.loadProfile()
   }
 
   private passwordsMatch(g: FormGroup) {
-    return g.get('newPassword')?.value === g.get('confirmPassword')?.value
-      ? null : { mismatch: true }
+    const a = g.get('newPassword')?.value
+    const b = g.get('confirmPassword')?.value
+    return a && b && a !== b ? { mismatch: true } : null
   }
 
   loadProfile() {
@@ -66,8 +72,11 @@ export class ProfilePageComponent implements OnInit {
     })
   }
 
-  async saveProfile() {
-    if (this.profileForm.invalid) return
+  saveProfile() {
+    if (this.profileForm.invalid) {
+      this.profileForm.markAllAsTouched()
+      return
+    }
     this.savingProfile = true
     this.http.patch(`${environment.baseUrl}/auth/profile`, this.profileForm.value).subscribe({
       next: () => {
@@ -81,18 +90,18 @@ export class ProfilePageComponent implements OnInit {
     })
   }
 
-  async savePassword() {
-    if (this.passwordForm.invalid) return
+  savePassword() {
+    if (this.passwordForm.invalid) {
+      this.passwordForm.markAllAsTouched()
+      return
+    }
     this.savingPassword = true
     const { currentPassword, newPassword } = this.passwordForm.value
     this.http.patch(`${environment.baseUrl}/auth/change-password`, { currentPassword, newPassword }).subscribe({
       next: () => {
         this.savingPassword = false
-        this.passwordForm = this.fb.group({
-          currentPassword: ['', Validators.required],
-          newPassword:     ['', [Validators.required, Validators.minLength(6)]],
-          confirmPassword: ['', Validators.required],
-        }, { validators: this.passwordsMatch })
+        // Reconstruir el formulario desde cero para evitar estados residuales
+        this.passwordForm = this.buildPasswordForm()
         this.alert.fire({ icon: 'success', title: 'Contraseña actualizada', timer: 2000, showConfirmButton: false })
       },
       error: (err) => {

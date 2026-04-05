@@ -1,128 +1,156 @@
-<div class="min-h-screen bg-slate-50">
-  <div class="max-w-3xl mx-auto p-6">
+<div class="page-wrapper">
+  <div class="page-inner">
 
-    <header class="mb-6 flex items-center gap-4">
-      <button (click)="goBack()" class="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors">
-        <span class="material-symbols-outlined text-slate-600">arrow_back</span>
-      </button>
-      <div>
-        <h1 class="text-2xl font-bold text-slate-900">Mi Perfil</h1>
-        <p class="text-sm text-slate-500">{{ profile?.email }}</p>
-      </div>
-    </header>
+    <app-page-header
+      title="Mi Perfil"
+      subtitle="Edita tu información personal y contraseña"
+      (back)="goBack()"
+    />
 
     <!-- Skeleton -->
-    <div *ngIf="loading" class="space-y-4">
-      <div class="bg-white rounded-2xl p-6 animate-pulse">
-        <div class="h-4 bg-slate-200 rounded w-1/3 mb-4"></div>
+    <div *ngIf="loading" class="space-y-6">
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 animate-pulse">
+        <div class="h-4 bg-slate-200 rounded w-1/4 mb-6"></div>
         <div class="grid grid-cols-2 gap-4">
-          <div class="h-12 bg-slate-200 rounded"></div>
-          <div class="h-12 bg-slate-200 rounded"></div>
-          <div class="h-12 bg-slate-200 rounded"></div>
-          <div class="h-12 bg-slate-200 rounded"></div>
+          <div class="h-14 bg-slate-200 rounded-lg"></div>
+          <div class="h-14 bg-slate-200 rounded-lg"></div>
+          <div class="h-14 bg-slate-200 rounded-lg"></div>
+          <div class="h-14 bg-slate-200 rounded-lg"></div>
+          <div class="h-14 bg-slate-200 rounded-lg col-span-2"></div>
         </div>
       </div>
     </div>
 
     <div *ngIf="!loading" class="space-y-6">
 
-      <!-- Datos personales -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="bg-blue-600 px-6 py-4 flex items-center gap-3">
-          <span class="material-symbols-outlined text-white">person</span>
-          <h2 class="text-base font-semibold text-white">Datos Personales</h2>
+      <!-- ── Datos Personales ── -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-5 bg-blue-50 border-b border-blue-100">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">person</span>
+          </div>
+          <div>
+            <h3 class="text-base font-semibold text-slate-900 leading-tight">Datos Personales</h3>
+            <p class="text-sm text-slate-500 leading-tight">{{ profile?.email }}</p>
+          </div>
         </div>
+
         <div class="p-6">
-          <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <mat-form-field appearance="outline" class="w-full">
+          <form [formGroup]="profileForm">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <mat-form-field appearance="outline">
                 <mat-label>Nombre</mat-label>
+                <mat-icon matPrefix class="text-blue-400">person</mat-icon>
                 <input matInput formControlName="firstName" />
-                <mat-error *ngIf="profileForm.get('firstName')?.hasError('required')">Requerido</mat-error>
+                <mat-error>Mínimo 2 caracteres</mat-error>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field appearance="outline">
                 <mat-label>Apellido</mat-label>
+                <mat-icon matPrefix class="text-blue-400">person</mat-icon>
                 <input matInput formControlName="lastName" />
-                <mat-error *ngIf="profileForm.get('lastName')?.hasError('required')">Requerido</mat-error>
+                <mat-error>Mínimo 2 caracteres</mat-error>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field appearance="outline">
                 <mat-label>Teléfono</mat-label>
-                <span matPrefix class="material-symbols-outlined text-slate-400 ml-1 mr-1">phone</span>
+                <mat-icon matPrefix class="text-blue-400">phone</mat-icon>
                 <input matInput formControlName="phone" />
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field appearance="outline">
                 <mat-label>Fecha de nacimiento</mat-label>
+                <mat-icon matPrefix class="text-blue-400">cake</mat-icon>
                 <input matInput [matDatepicker]="picker" formControlName="birthDate" />
                 <mat-datepicker-toggle matSuffix [for]="picker" />
                 <mat-datepicker #picker />
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full sm:col-span-2">
+              <mat-form-field appearance="outline" class="md:col-span-2">
                 <mat-label>Dirección</mat-label>
-                <span matPrefix class="material-symbols-outlined text-slate-400 ml-1 mr-1">home</span>
+                <mat-icon matPrefix class="text-blue-400">home</mat-icon>
                 <input matInput formControlName="address" />
               </mat-form-field>
-            </div>
 
-            <div class="flex justify-end pt-2">
-              <button type="submit" [disabled]="profileForm.invalid || savingProfile"
-                class="flex items-center gap-2 px-5 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
-                <span class="material-symbols-outlined text-base">{{ savingProfile ? 'hourglass_top' : 'save' }}</span>
-                {{ savingProfile ? 'Guardando...' : 'Guardar cambios' }}
-              </button>
             </div>
           </form>
         </div>
+
+        <div class="form-action-bar">
+          <button
+            type="button"
+            (click)="saveProfile()"
+            [disabled]="profileForm.invalid || savingProfile"
+            class="btn btn-primary">
+            <mat-spinner *ngIf="savingProfile" diameter="18" class="!text-white" />
+            <span *ngIf="!savingProfile" class="material-symbols-outlined msz-18 leading-none">save</span>
+            {{ savingProfile ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+        </div>
       </div>
 
-      <!-- Cambiar contraseña -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="bg-amber-500 px-6 py-4 flex items-center gap-3">
-          <span class="material-symbols-outlined text-white">lock</span>
-          <h2 class="text-base font-semibold text-white">Cambiar Contraseña</h2>
+      <!-- ── Cambiar Contraseña ── -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-5 bg-amber-50 border-b border-amber-100">
+          <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">lock</span>
+          </div>
+          <div>
+            <h3 class="text-base font-semibold text-slate-900 leading-tight">Cambiar Contraseña</h3>
+            <p class="text-sm text-slate-500 leading-tight">Mínimo 6 caracteres</p>
+          </div>
         </div>
-        <div class="p-6">
-          <form [formGroup]="passwordForm" (ngSubmit)="savePassword()" class="space-y-4">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Contraseña actual</mat-label>
-              <input matInput [type]="hideCurrentPwd ? 'password' : 'text'" formControlName="currentPassword" />
-              <button type="button" mat-icon-button matSuffix (click)="hideCurrentPwd = !hideCurrentPwd">
-                <mat-icon>{{ hideCurrentPwd ? 'visibility_off' : 'visibility' }}</mat-icon>
-              </button>
-              <mat-error *ngIf="passwordForm.get('currentPassword')?.hasError('required')">Requerido</mat-error>
-            </mat-form-field>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <mat-form-field appearance="outline" class="w-full">
+        <div class="p-6">
+          <form [formGroup]="passwordForm">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <mat-form-field appearance="outline" class="md:col-span-2">
+                <mat-label>Contraseña actual</mat-label>
+                <mat-icon matPrefix class="text-amber-400">lock</mat-icon>
+                <input matInput [type]="hideCurrentPwd ? 'password' : 'text'" formControlName="currentPassword" />
+                <button type="button" mat-icon-button matSuffix (click)="hideCurrentPwd = !hideCurrentPwd">
+                  <mat-icon>{{ hideCurrentPwd ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+                <mat-error>Requerido</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
                 <mat-label>Nueva contraseña</mat-label>
+                <mat-icon matPrefix class="text-amber-400">lock_reset</mat-icon>
                 <input matInput [type]="hideNewPwd ? 'password' : 'text'" formControlName="newPassword" />
                 <button type="button" mat-icon-button matSuffix (click)="hideNewPwd = !hideNewPwd">
                   <mat-icon>{{ hideNewPwd ? 'visibility_off' : 'visibility' }}</mat-icon>
                 </button>
                 <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('minlength')">Mínimo 6 caracteres</mat-error>
+                <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('required')">Requerido</mat-error>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field appearance="outline">
                 <mat-label>Confirmar contraseña</mat-label>
+                <mat-icon matPrefix class="text-amber-400">lock_reset</mat-icon>
                 <input matInput [type]="hideConfirmPwd ? 'password' : 'text'" formControlName="confirmPassword" />
                 <button type="button" mat-icon-button matSuffix (click)="hideConfirmPwd = !hideConfirmPwd">
                   <mat-icon>{{ hideConfirmPwd ? 'visibility_off' : 'visibility' }}</mat-icon>
                 </button>
-                <mat-error *ngIf="passwordForm.hasError('mismatch')">Las contraseñas no coinciden</mat-error>
+                <mat-error>Las contraseñas no coinciden</mat-error>
               </mat-form-field>
-            </div>
 
-            <div class="flex justify-end pt-2">
-              <button type="submit" [disabled]="passwordForm.invalid || savingPassword"
-                class="flex items-center gap-2 px-5 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 disabled:opacity-50 transition-colors">
-                <span class="material-symbols-outlined text-base">{{ savingPassword ? 'hourglass_top' : 'lock_reset' }}</span>
-                {{ savingPassword ? 'Guardando...' : 'Cambiar contraseña' }}
-              </button>
             </div>
           </form>
+        </div>
+
+        <div class="form-action-bar">
+          <button
+            type="button"
+            (click)="savePassword()"
+            [disabled]="passwordForm.invalid || savingPassword"
+            class="btn btn-primary">
+            <mat-spinner *ngIf="savingPassword" diameter="18" class="!text-white" />
+            <span *ngIf="!savingPassword" class="material-symbols-outlined msz-18 leading-none">lock_reset</span>
+            {{ savingPassword ? 'Guardando...' : 'Cambiar contraseña' }}
+          </button>
         </div>
       </div>
 
