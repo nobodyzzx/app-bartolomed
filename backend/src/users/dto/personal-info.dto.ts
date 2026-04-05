@@ -18,5 +18,5 @@ export class PersonalInfoDto {
 
   @IsOptional()
   @IsDateString()
-  birthDate?: Date;
+  birthDate?: string;
 }

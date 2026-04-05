@@ -21,7 +21,7 @@ export class ProfessionalInfoDto {
   certifications?: string[];
 
   @IsDateString()
-  startDate: Date;
+  startDate: string;
 
   @IsString()
   @IsOptional()
