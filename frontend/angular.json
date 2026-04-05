@@ -41,8 +41,7 @@
               "@fontsource/roboto/300.css",
               "@fontsource/roboto/400.css",
               "@fontsource/roboto/500.css",
-              "material-icons/iconfont/material-icons.css",
-              "material-symbols/index.css",
+              "src/assets/fonts/material-fonts.css",
               "src/styles.css"
             ],
             "scripts": []
@@ -72,9 +71,9 @@
                 "scripts": true,
                 "styles": {
                   "minify": true,
-                  "inlineCritical": true
+                  "inlineCritical": false
                 },
-                "fonts": true
+                "fonts": false
               },
               "aot": true,
               "extractLicenses": true,
@@ -120,8 +119,7 @@
               "@fontsource/roboto/300.css",
               "@fontsource/roboto/400.css",
               "@fontsource/roboto/500.css",
-              "material-icons/iconfont/material-icons.css",
-              "material-symbols/index.css",
+              "src/assets/fonts/material-fonts.css",
               "src/styles.css"
             ],
             "scripts": []
