@@ -1,0 +1,182 @@
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Encabezado -->
+    <div class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
+        <button
+          type="button"
+          (click)="goBack()"
+          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          matTooltip="Volver"
+          aria-label="Volver"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
+        </button>
+        <div class="text-left">
+          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">Prescripciones</h1>
+          <p class="text-slate-600">Gestión completa de recetas médicas</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          (click)="navigateToPrescriptionsList()"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+          aria-label="Ver lista de prescripciones"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">list</span>
+          Lista de Prescripciones
+        </button>
+        <button
+          type="button"
+          (click)="navigateToNewPrescription()"
+          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+          aria-label="Crear nueva prescripción"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">add</span>
+          Nueva Prescripción
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra de búsqueda -->
+    <div class="flex items-center gap-4 mb-8">
+      <div class="flex-1 max-w-2xl">
+        <div class="relative">
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            (keyup.enter)="performSearch()"
+            placeholder="Número de prescripción, paciente..."
+            class="w-full h-11 rounded-full bg-blue-50 px-5 pr-12 text-slate-900 placeholder-blue-400/70 shadow-md hover:bg-blue-100 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-1 focus:bg-white transition border-0"
+          />
+          <span class="material-symbols-outlined absolute right-3 top-2.5 text-blue-400"
+            >search</span
+          >
+        </div>
+      </div>
+
+      <button
+        type="button"
+        (click)="performSearch()"
+        [disabled]="!searchTerm.trim()"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
+      >
+        <span class="material-symbols-outlined msz-18">search</span>
+        Buscar
+      </button>
+    </div>
+
+    <!-- Prescripciones Recientes -->
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+      <div class="p-6 border-b border-slate-100">
+        <h2 class="text-xl font-bold text-slate-900">Prescripciones Recientes</h2>
+      </div>
+
+      <div class="overflow-x-auto" *ngIf="recentPrescriptions.length > 0">
+        <table mat-table [dataSource]="recentPrescriptions" class="w-full bg-transparent">
+          <ng-container matColumnDef="number">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Número</span>
+            </th>
+            <td mat-cell *matCellDef="let prescription" class="px-6 py-4 text-slate-900 font-medium">
+              {{ prescription.prescriptionNumber }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="patient">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</span>
+            </th>
+            <td mat-cell *matCellDef="let prescription" class="px-6 py-4 text-slate-900">
+              {{ getPatientFullName(prescription) }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="doctor">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Doctor</span>
+            </th>
+            <td mat-cell *matCellDef="let prescription" class="px-6 py-4 text-slate-600">
+              {{ getDoctorName(prescription) }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="date">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</span>
+            </th>
+            <td mat-cell *matCellDef="let prescription" class="px-6 py-4 text-slate-600">
+              {{ formatDate(prescription.prescriptionDate) }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="expiry">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Vencimiento</span>
+            </th>
+            <td mat-cell *matCellDef="let prescription" class="px-6 py-4 text-slate-600">
+              {{ formatDate(prescription.expiryDate) }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
+            </th>
+            <td mat-cell *matCellDef="let prescription" class="px-6 py-4">
+              <span
+                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
+                [ngClass]="getStatusClass(prescription.status)"
+              >
+                {{ getStatusLabel(prescription.status) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4 text-right">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span>
+            </th>
+            <td mat-cell *matCellDef="let prescription" class="px-6 py-4">
+              <div class="flex justify-end">
+                <button
+                  type="button"
+                  (click)="viewPrescription(prescription); $event.stopPropagation()"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors border-0"
+                  matTooltip="Ver prescripción"
+                  aria-label="Ver prescripción"
+                >
+                  <span class="material-symbols-outlined msz-18 leading-none">visibility</span>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            class="border-b border-slate-100 hover:bg-blue-50/40 cursor-pointer transition-colors"
+            (click)="viewPrescription(row)"
+          ></tr>
+        </table>
+      </div>
+
+      <!-- Estado Vacío -->
+      <div
+        *ngIf="recentPrescriptions.length === 0 && !isLoading"
+        class="text-center py-12 px-6"
+      >
+        <span class="material-symbols-outlined text-6xl text-slate-400 mb-4 block">description</span>
+        <p class="text-lg font-medium text-slate-500 mb-2">No hay prescripciones recientes</p>
+        <p class="text-sm text-slate-400">Crea tu primera prescripción para comenzar</p>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="isLoading && recentPrescriptions.length === 0" class="flex justify-center items-center py-12">
+        <mat-spinner diameter="50"></mat-spinner>
+      </div>
+    </div>
+  </div>
+</div>

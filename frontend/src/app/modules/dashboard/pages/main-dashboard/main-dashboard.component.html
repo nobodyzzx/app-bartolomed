@@ -1,258 +1,440 @@
-<div class="main-dashboard-container">
-  <div class="main-dashboard-content">
-    <!-- Encabezado del Dashboard -->
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-blue-900 mb-4">Dashboard Principal</h1>
-      <div class="w-24 h-1 bg-blue-600 mx-auto rounded-full mb-4"></div>
-      <p class="text-lg text-blue-600">Centro de control del sistema médico - Vista general</p>
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <!-- ── Error de permisos ──────────────────────────────────────────────── -->
+    @if (permissionError) {
+      <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-xl flex items-start gap-3 shadow-sm">
+        <span class="material-symbols-outlined text-red-500 mt-0.5 flex-shrink-0">warning</span>
+        <div>
+          <p class="font-semibold text-red-900 text-sm">Acceso denegado</p>
+          <p class="text-red-700 text-sm">{{ permissionError }}</p>
+        </div>
+      </div>
+    }
+
+    <!-- ── Cabecera personalizada ─────────────────────────────────────────── -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900 leading-tight">
+          {{ greeting }},
+          <span class="text-blue-600">{{ userName }}</span>
+        </h1>
+        <p class="text-slate-500 text-sm mt-0.5 capitalize">{{ todayFormatted }}</p>
+      </div>
+      <button
+        type="button"
+        (click)="refreshDashboard()"
+        [disabled]="loading"
+        class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0 self-start sm:self-auto"
+      >
+        <span class="material-symbols-outlined msz-18" [class.animate-spin]="loading">
+          {{ loading ? 'sync' : 'refresh' }}
+        </span>
+        Actualizar
+      </button>
     </div>
 
-    <!-- Métricas Principales -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <!-- Total Pacientes -->
-      <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-blue-100 text-sm font-medium">Total Pacientes</p>
-            <p class="text-3xl font-bold">{{stats.totalPatients}}</p>
-            <p class="text-blue-100 text-xs mt-1">
-              Registrados en el sistema
-            </p>
-          </div>
-          <mat-icon class="text-blue-200">people</mat-icon>
+    <!-- ── Banner de alertas críticas ────────────────────────────────────── -->
+    @if (hasCriticalAlerts && showAlertBanner && !loading) {
+      <div class="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-2xl flex items-start gap-3 shadow-sm">
+        <div class="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined text-amber-600 msz-18">notifications_active</span>
         </div>
-      </div>
-
-      <!-- Citas Hoy -->
-      <div class="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-green-100 text-sm font-medium">Citas Programadas</p>
-            <p class="text-3xl font-bold">{{stats.totalAppointments}}</p>
-            <p class="text-green-100 text-xs mt-1">
-              Este mes
-            </p>
-          </div>
-          <mat-icon class="text-green-200">calendar_today</mat-icon>
+        <div class="flex-1 min-w-0">
+          <p class="font-semibold text-amber-900 text-sm">Atención requerida</p>
+          <p class="text-amber-700 text-sm mt-0.5">
+            @if (showStockSection && stats.lowStockItems > 0) {
+              <span class="inline-flex items-center gap-1 mr-3">
+                <span class="material-symbols-outlined text-sm">inventory_2</span>
+                {{ stats.lowStockItems }} medicamento(s) con stock bajo
+              </span>
+            }
+            @if (showAppointmentsSection && stats.pendingAppointments > 0) {
+              <span class="inline-flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">schedule</span>
+                {{ stats.pendingAppointments }} cita(s) por confirmar hoy
+              </span>
+            }
+          </p>
         </div>
-      </div>
-
-      <!-- Total Doctores -->
-      <div class="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-purple-100 text-sm font-medium">Doctores Activos</p>
-            <p class="text-3xl font-bold">{{stats.totalDoctors}}</p>
-            <p class="text-purple-100 text-xs mt-1">
-              Personal médico
-            </p>
-          </div>
-          <mat-icon class="text-purple-200">medical_services</mat-icon>
-        </div>
-      </div>
-
-      <!-- Ingresos del Mes -->
-      <div class="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-2xl text-white shadow-lg">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-orange-100 text-sm font-medium">Ingresos del Mes</p>
-            <p class="text-3xl font-bold">${{stats.monthlyRevenue | number}}</p>
-            <p class="text-orange-100 text-xs mt-1">
-              Facturación mensual
-            </p>
-          </div>
-          <mat-icon class="text-orange-200">attach_money</mat-icon>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sección de contenido principal -->
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-      
-      <!-- Citas Recientes -->
-      <div class="bg-white p-6 rounded-2xl shadow-lg">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-bold text-blue-900">Citas Recientes</h2>
-          <button mat-button color="primary" routerLink="/dashboard/appointments">
-            Ver todas
-          </button>
-        </div>
-        
-        <div class="table-container">
-          <table mat-table [dataSource]="recentAppointments" class="w-full">
-            <!-- Columna Paciente -->
-            <ng-container matColumnDef="patient">
-              <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Paciente</th>
-              <td mat-cell *matCellDef="let appointment">{{appointment.patientName}}</td>
-            </ng-container>
-
-            <!-- Columna Doctor -->
-            <ng-container matColumnDef="doctor">
-              <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Doctor</th>
-              <td mat-cell *matCellDef="let appointment">{{appointment.doctorName}}</td>
-            </ng-container>
-
-            <!-- Columna Hora -->
-            <ng-container matColumnDef="time">
-              <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Hora</th>
-              <td mat-cell *matCellDef="let appointment">{{appointment.time}}</td>
-            </ng-container>
-
-            <!-- Columna Tipo -->
-            <ng-container matColumnDef="type">
-              <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Tipo</th>
-              <td mat-cell *matCellDef="let appointment">{{appointment.type}}</td>
-            </ng-container>
-
-            <!-- Columna Estado -->
-            <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Estado</th>
-              <td mat-cell *matCellDef="let appointment">
-                <mat-chip [color]="getStatusColor(appointment.status)">
-                  {{getStatusText(appointment.status)}}
-                </mat-chip>
-              </td>
-            </ng-container>
-
-            <!-- Columna Acciones -->
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Acciones</th>
-              <td mat-cell *matCellDef="let appointment">
-                <div class="table-actions">
-                  <button mat-icon-button (click)="viewAppointmentDetails(appointment)" matTooltip="Ver detalles">
-                    <mat-icon>visibility</mat-icon>
-                  </button>
-                  <button mat-icon-button (click)="editAppointment(appointment)" matTooltip="Editar">
-                    <mat-icon>edit</mat-icon>
-                  </button>
-                </div>
-              </td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-          </table>
-        </div>
-      </div>
-
-      <!-- Alertas de Stock -->
-      <div class="bg-white p-6 rounded-2xl shadow-lg">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-bold text-blue-900">Alertas de Stock</h2>
-          <button mat-button color="warn" routerLink="/dashboard/pharmacy-inventory">
-            Ver inventario
-          </button>
-        </div>
-        
-        <div class="space-y-4">
-          <div *ngFor="let alert of stockAlerts" class="p-4 bg-red-50 border-l-4 border-red-400 rounded-lg">
-            <div class="flex justify-between items-start">
-              <div>
-                <h3 class="font-semibold text-red-800">{{alert.medication}}</h3>
-                <p class="text-sm text-red-600">{{alert.category}}</p>
-                <p class="text-sm text-red-700 mt-1">
-                  Stock actual: <span class="font-bold">{{alert.currentStock}}</span> 
-                  / Mínimo: <span class="font-bold">{{alert.minimumStock}}</span>
-                </p>
-              </div>
-              <button mat-mini-fab color="warn" (click)="restockMedication(alert)" matTooltip="Reabastecer">
-                <mat-icon>add</mat-icon>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Pacientes Recientes -->
-    <div class="bg-white p-6 rounded-2xl shadow-lg">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-blue-900">Pacientes Recientes</h2>
-        <button mat-button color="primary" routerLink="/dashboard/patients">
-          Ver todos los pacientes
+        <button
+          type="button"
+          (click)="showAlertBanner = false"
+          class="w-7 h-7 flex items-center justify-center rounded-full text-amber-600 hover:bg-amber-100 transition-colors border-0 flex-shrink-0"
+          aria-label="Cerrar alerta"
+        >
+          <span class="material-symbols-outlined text-lg">close</span>
         </button>
       </div>
-      
-      <div class="table-container">
-        <table mat-table [dataSource]="recentPatients" class="w-full">
-          <!-- Columna Nombre -->
-          <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Nombre</th>
-            <td mat-cell *matCellDef="let patient">{{patient.name}}</td>
-          </ng-container>
+    }
 
-          <!-- Columna Edad -->
-          <ng-container matColumnDef="age">
-            <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Edad</th>
-            <td mat-cell *matCellDef="let patient">{{patient.age}} años</td>
-          </ng-container>
+    <!-- ── KPIs — siempre 3 columnas (3+3 para admin, 3 para otros roles) ── -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+      @if (loadingStats) {
+        @for (_ of [1,2,3,4,5,6]; track $index) {
+          <div class="h-28 bg-slate-100 rounded-2xl animate-pulse"></div>
+        }
+      } @else {
+        @for (card of visibleStatCards; track card.label) {
+          <app-stat-card
+            [label]="card.label"
+            [value]="card.value"
+            [sublabel]="card.sublabel"
+            [icon]="card.icon"
+            [color]="card.color"
+            [clickable]="true"
+            (cardClick)="navigate(card.route)"
+          />
+        }
+      }
+    </div>
 
-          <!-- Columna Última Visita -->
-          <ng-container matColumnDef="lastVisit">
-            <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Última Visita</th>
-            <td mat-cell *matCellDef="let patient">{{patient.lastVisit | date:'short'}}</td>
-          </ng-container>
+    <!-- ── Gráficos ──────────────────────────────────────────────────────────── -->
+    @if (showSalesCharts || showAppointmentChart) {
+      <div class="grid grid-cols-1 gap-6 mb-8"
+           [ngClass]="{
+             'xl:grid-cols-3': showSalesCharts && showAppointmentChart,
+             'xl:grid-cols-2': showSalesCharts && !showAppointmentChart
+           }">
 
-          <!-- Columna Próxima Cita -->
-          <ng-container matColumnDef="nextAppointment">
-            <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Próxima Cita</th>
-            <td mat-cell *matCellDef="let patient">
-              {{patient.nextAppointment ? (patient.nextAppointment | date:'short') : 'No programada'}}
-            </td>
-          </ng-container>
-
-          <!-- Columna Estado -->
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Estado</th>
-            <td mat-cell *matCellDef="let patient">
-              <mat-chip [color]="getStatusColor(patient.status)">
-                {{getStatusText(patient.status)}}
-              </mat-chip>
-            </td>
-          </ng-container>
-
-          <!-- Columna Acciones -->
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="text-left font-semibold">Acciones</th>
-            <td mat-cell *matCellDef="let patient">
-              <div class="table-actions">
-                <button mat-icon-button (click)="viewPatientDetails(patient)" matTooltip="Ver perfil">
-                  <mat-icon>person</mat-icon>
-                </button>
-                <button mat-icon-button (click)="scheduleAppointment(patient)" matTooltip="Programar cita">
-                  <mat-icon>event_available</mat-icon>
-                </button>
+        <!-- Ventas últimos 7 días — Bar -->
+        @if (showSalesCharts) {
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="flex items-center gap-3 px-6 py-4 bg-blue-50 border-b border-blue-100">
+              <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined msz-18">bar_chart</span>
               </div>
-            </td>
-          </ng-container>
+              <div>
+                <h2 class="font-semibold text-slate-900 m-0 leading-tight">Ventas — Últimos 7 días</h2>
+                <p class="text-xs text-slate-500 m-0">Ingresos diarios de farmacia</p>
+              </div>
+            </div>
+            <div class="p-5">
+              @if (loadingCharts) {
+                <div class="h-52 bg-slate-50 rounded-xl animate-pulse"></div>
+              } @else {
+                <div class="h-52">
+                  <canvas baseChart
+                    [data]="weeklyChartData"
+                    [type]="'bar'"
+                    [options]="weeklyChartOptions">
+                  </canvas>
+                </div>
+              }
+            </div>
+          </div>
 
-          <tr mat-header-row *matHeaderRowDef="patientColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: patientColumns;"></tr>
-        </table>
+          <!-- Comparativo mensual 6 meses — Line -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="flex items-center gap-3 px-6 py-4 bg-indigo-50 border-b border-indigo-100">
+              <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined msz-18">show_chart</span>
+              </div>
+              <div>
+                <h2 class="font-semibold text-slate-900 m-0 leading-tight">Comparativo Mensual</h2>
+                <p class="text-xs text-slate-500 m-0">Ingresos de los últimos 6 meses</p>
+              </div>
+            </div>
+            <div class="p-5">
+              @if (loadingCharts) {
+                <div class="h-52 bg-slate-50 rounded-xl animate-pulse"></div>
+              } @else {
+                <div class="h-52">
+                  <canvas baseChart
+                    [data]="monthlyChartData"
+                    [type]="'line'"
+                    [options]="monthlyChartOptions">
+                  </canvas>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Distribución de citas — Doughnut -->
+        @if (showAppointmentChart) {
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="flex items-center gap-3 px-6 py-4 bg-green-50 border-b border-green-100">
+              <div class="w-9 h-9 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined msz-18">donut_large</span>
+              </div>
+              <div>
+                <h2 class="font-semibold text-slate-900 m-0 leading-tight">Citas de Hoy</h2>
+                <p class="text-xs text-slate-500 m-0">Distribución por estado</p>
+              </div>
+            </div>
+            <div class="p-5">
+              @if (loadingAppointments) {
+                <div class="h-52 bg-slate-50 rounded-xl animate-pulse"></div>
+              } @else if (todayAppointments.length === 0) {
+                <div class="h-52 flex flex-col items-center justify-center text-slate-300">
+                  <span class="material-symbols-outlined text-5xl mb-2">event_busy</span>
+                  <p class="text-sm text-slate-400">Sin citas hoy</p>
+                </div>
+              } @else {
+                <div class="h-52">
+                  <canvas baseChart
+                    [data]="appointmentChartData"
+                    [type]="'doughnut'"
+                    [options]="appointmentChartOptions">
+                  </canvas>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
       </div>
-    </div>
+    }
 
-    <!-- Acciones Rápidas -->
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <button mat-raised-button color="primary" routerLink="/dashboard/patients/new" class="quick-action-button">
-        <mat-icon>person_add</mat-icon>
-        <div>Registrar Paciente</div>
-      </button>
-      
-      <button mat-raised-button color="accent" routerLink="/dashboard/appointments/new" class="quick-action-button">
-        <mat-icon>event_available</mat-icon>
-        <div>Nueva Cita</div>
-      </button>
-      
-      <button mat-raised-button color="warn" routerLink="/dashboard/pharmacy/inventory" class="quick-action-button">
-        <mat-icon>inventory</mat-icon>
-        <div>Inventario</div>
-      </button>
-      
-      <button mat-raised-button routerLink="/dashboard/medical-records" class="quick-action-button">
-        <mat-icon>folder_shared</mat-icon>
-        <div>Expedientes Médicos</div>
-      </button>
-    </div>
+    <!-- ── Contenido principal: secciones según rol ────────────────────────── -->
+    @if (showAppointmentsSection || showStockSection) {
+      <div class="grid grid-cols-1 gap-6 mb-8"
+           [ngClass]="{'xl:grid-cols-5': showAppointmentsSection && showStockSection}">
+
+        <!-- Citas de hoy — timeline (visible para roles clínicos) -->
+        @if (showAppointmentsSection) {
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
+               [ngClass]="{'xl:col-span-3': showAppointmentsSection && showStockSection}">
+            <div class="flex items-center justify-between px-6 py-4 bg-green-50 border-b border-green-100">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined msz-18">today</span>
+                </div>
+                <div>
+                  <h2 class="font-semibold text-slate-900 m-0 leading-tight">Citas de Hoy</h2>
+                  <p class="text-xs text-slate-500 m-0">{{ todayAppointments.length }} programadas</p>
+                </div>
+              </div>
+              <a routerLink="/dashboard/appointments"
+                class="inline-flex items-center gap-1 px-3 h-8 rounded-full text-xs font-medium bg-green-100 text-green-700 hover:bg-green-200 transition-colors border-0">
+                Ver todas
+                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+              </a>
+            </div>
+
+            @if (loadingAppointments) {
+              <div class="p-6 space-y-3">
+                @for (_ of [1,2,3,4]; track $index) {
+                  <div class="h-14 bg-slate-50 rounded-xl animate-pulse"></div>
+                }
+              </div>
+            } @else {
+              <div class="divide-y divide-slate-50 max-h-[420px] overflow-y-auto">
+                @for (appt of todayAppointments; track appt.id) {
+                  @let cfg = appointmentStatusCfg(appt.status);
+                  <div class="flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50/60 transition-colors group">
+                    <div class="w-12 text-center flex-shrink-0">
+                      <span class="text-sm font-bold text-slate-700">{{ appt.time }}</span>
+                    </div>
+                    <div class="relative flex-shrink-0">
+                      <div [class]="'w-3 h-3 rounded-full ' + cfg.dot"></div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="font-medium text-slate-900 text-sm truncate leading-tight">{{ appt.patientName }}</p>
+                      <p class="text-xs text-slate-500 truncate">{{ appt.doctorName }} · {{ appt.type }}</p>
+                    </div>
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0" [ngClass]="cfg.badge">
+                      <span class="material-symbols-outlined" style="font-size:12px">{{ cfg.icon }}</span>
+                      {{ cfg.text }}
+                    </span>
+                    <button
+                      type="button"
+                      (click)="navigate('/dashboard/appointments')"
+                      class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-green-50 hover:text-green-600 opacity-0 group-hover:opacity-100 transition-all border-0 flex-shrink-0"
+                      matTooltip="Ver cita"
+                    >
+                      <span class="material-symbols-outlined msz-16">open_in_new</span>
+                    </button>
+                  </div>
+                }
+                @if (todayAppointments.length === 0) {
+                  <div class="py-12 text-center text-slate-400">
+                    <span class="material-symbols-outlined text-4xl mb-2 block text-slate-200">event_busy</span>
+                    <p class="text-sm">Sin citas programadas hoy</p>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Alertas de stock (visible para farmacéuticos y admins) -->
+        @if (showStockSection) {
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
+               [ngClass]="{'xl:col-span-2': showAppointmentsSection && showStockSection}">
+            <div class="flex items-center justify-between px-6 py-4 bg-red-50 border-b border-red-100">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined msz-18">inventory_2</span>
+                </div>
+                <div>
+                  <h2 class="font-semibold text-slate-900 m-0 leading-tight">Stock Bajo</h2>
+                  <p class="text-xs text-slate-500 m-0">{{ stockAlerts.length }} alertas activas</p>
+                </div>
+              </div>
+              <a routerLink="/dashboard/pharmacy/inventory"
+                class="inline-flex items-center gap-1 px-3 h-8 rounded-full text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors border-0">
+                Inventario
+                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+              </a>
+            </div>
+
+            @if (loadingStock) {
+              <div class="p-6 space-y-4">
+                @for (_ of [1,2,3]; track $index) {
+                  <div class="h-16 bg-slate-50 rounded-xl animate-pulse"></div>
+                }
+              </div>
+            } @else {
+              <div class="p-4 space-y-3 max-h-[420px] overflow-y-auto">
+                @for (alert of stockAlerts; track alert.id) {
+                  @let badge = stockUrgencyBadge(alert);
+                  @let pct = stockPercent(alert);
+                  <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-100 hover:shadow-sm transition-shadow">
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                      <div class="min-w-0">
+                        <p class="font-semibold text-slate-900 text-sm leading-tight truncate">{{ alert.medication }}</p>
+                        <p class="text-xs text-slate-500 mt-0.5">{{ alert.category }}</p>
+                      </div>
+                      <span class="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0" [ngClass]="badge.cls">
+                        {{ badge.text }}
+                      </span>
+                    </div>
+                    <div class="mb-1.5">
+                      <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div
+                          class="h-full rounded-full transition-all"
+                          [ngClass]="stockBarColor(alert)"
+                          [style.width.%]="pct"
+                        ></div>
+                      </div>
+                    </div>
+                    <div class="flex items-center justify-between text-xs text-slate-500">
+                      <span>{{ alert.currentStock }} / {{ alert.minimumStock }} uds.</span>
+                      <button
+                        type="button"
+                        (click)="navigate('/dashboard/pharmacy/inventory')"
+                        class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium border-0 bg-transparent p-0 cursor-pointer"
+                      >
+                        <span class="material-symbols-outlined" style="font-size:14px">add_circle</span>
+                        Reabastecer
+                      </button>
+                    </div>
+                  </div>
+                }
+                @if (stockAlerts.length === 0) {
+                  <div class="py-10 text-center text-slate-400">
+                    <span class="material-symbols-outlined text-4xl mb-2 block text-slate-200">inventory</span>
+                    <p class="text-sm">Todo el inventario en orden</p>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── Accesos Rápidos ─────────────────────────────────────────────────── -->
+    @if (visibleQuickActions.length > 0) {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+        <div class="flex items-center gap-3 px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-18">flash_on</span>
+          </div>
+          <div>
+            <h2 class="font-semibold text-slate-900 m-0 leading-tight">Accesos Rápidos</h2>
+            <p class="text-xs text-slate-500 m-0">Operaciones frecuentes al alcance</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-8 gap-3">
+            @for (action of visibleQuickActions; track action.route) {
+              <button
+                type="button"
+                (click)="navigate(action.route)"
+                class="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-0 transition-all hover:shadow-md active:scale-95 cursor-pointer"
+                [ngClass]="action.color"
+              >
+                <span class="material-symbols-outlined text-3xl leading-none">{{ action.icon }}</span>
+                <span class="text-xs font-semibold text-center leading-tight">{{ action.label }}</span>
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ── Pacientes Recientes (roles clínicos) ────────────────────────────── -->
+    @if (showPatientsSection) {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-200">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined msz-18">people</span>
+            </div>
+            <div>
+              <h2 class="font-semibold text-slate-900 m-0 leading-tight">Pacientes Recientes</h2>
+              <p class="text-xs text-slate-500 m-0">Última actividad registrada</p>
+            </div>
+          </div>
+          <a routerLink="/dashboard/patients"
+            class="inline-flex items-center gap-1 px-3 h-8 rounded-full text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors border-0">
+            Ver todos
+            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+          </a>
+        </div>
+
+        @if (loadingPatients) {
+          <div class="p-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            @for (_ of [1,2,3,4,5,6]; track $index) {
+              <div class="h-20 bg-slate-50 rounded-xl animate-pulse"></div>
+            }
+          </div>
+        } @else {
+          <div class="p-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            @for (patient of recentPatients; track patient.id) {
+              <div class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50 hover:bg-white hover:shadow-sm transition-all group">
+                <div
+                  class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
+                  [ngClass]="patientAvatarColor(patient.id)"
+                >
+                  {{ patientInitials(patient.name) }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="font-semibold text-slate-900 text-sm leading-tight truncate">{{ patient.name }}</p>
+                  <p class="text-xs text-slate-500 mt-0.5">
+                    {{ patient.age }} años
+                    @if (patient.nextAppointment) {
+                      · próx. {{ patient.nextAppointment | date: 'dd/MM' }}
+                    }
+                  </p>
+                </div>
+                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    type="button"
+                    (click)="navigate('/dashboard/patients/' + patient.id)"
+                    class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
+                    matTooltip="Ver paciente"
+                  >
+                    <span class="material-symbols-outlined msz-16">person</span>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="navigateWithPatient(patient.id, '/dashboard/appointments/new')"
+                    class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-green-50 hover:text-green-600 transition-colors border-0"
+                    matTooltip="Programar cita"
+                  >
+                    <span class="material-symbols-outlined msz-16">event_available</span>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
   </div>
 </div>

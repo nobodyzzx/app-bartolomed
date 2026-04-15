@@ -2,12 +2,17 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Clinic } from '../../clinics/entities/clinic.entity';
+import { Patient } from '../../patients/entities/patient.entity';
+import { Prescription } from '../../prescriptions/entities/prescription.entity';
+import { MedicationStock } from './pharmacy.entity';
 import { User } from '../../users/entities/user.entity';
 
 export enum SaleStatus {
@@ -21,9 +26,12 @@ export enum PaymentMethod {
   CARD = 'card',
   TRANSFER = 'transfer',
   INSURANCE = 'insurance',
+  MIXED = 'mixed',
+  QR = 'qr',
 }
 
 @Entity('pharmacy_sales')
+@Index(['clinic', 'createdAt'])
 export class PharmacySale {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -34,14 +42,33 @@ export class PharmacySale {
   @Column('text')
   patientName: string;
 
-  @Column('text', { nullable: true })
-  patientId: string;
+  @Index()
+  @ManyToOne(() => Clinic, { nullable: true, eager: false })
+  @JoinColumn({ name: 'clinic_id' })
+  clinic: Clinic;
+
+  @Column({ name: 'clinic_id', nullable: true })
+  clinicId: string | undefined;
+
+  @ManyToOne(() => Patient, { nullable: true, eager: false })
+  @JoinColumn({ name: 'patient_id' })
+  patient: Patient | undefined;
+
+  @Column({ name: 'patient_id', nullable: true })
+  patientId: string | undefined;
+
+  @ManyToOne(() => Prescription, { nullable: true, eager: false })
+  @JoinColumn({ name: 'prescription_id' })
+  prescription: Prescription | undefined;
+
+  @Column({ name: 'prescription_id', nullable: true })
+  prescriptionId: string | undefined;
 
   @Column('text', { nullable: true })
-  prescriptionNumber: string;
+  prescriptionNumber: string | undefined;
 
   @Column('text', { nullable: true })
-  doctorName: string;
+  doctorName: string | undefined;
 
   @Column('timestamp')
   saleDate: Date;
@@ -78,7 +105,7 @@ export class PharmacySale {
   change: number;
 
   @Column('text', { nullable: true })
-  notes: string;
+  notes: string | undefined;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'sold_by' })
@@ -109,6 +136,13 @@ export class PharmacySaleItem {
   @Column('uuid')
   saleId: string;
 
+  @ManyToOne(() => MedicationStock, { nullable: true, eager: false })
+  @JoinColumn({ name: 'medication_stock_id' })
+  medicationStock: MedicationStock;
+
+  @Column('uuid', { nullable: true })
+  medicationStockId: string;
+
   @Column('text')
   productName: string;
 
@@ -134,10 +168,10 @@ export class PharmacySaleItem {
   subtotal: number;
 
   @Column('date', { nullable: true })
-  expiryDate: Date;
+  expiryDate: Date | undefined;
 
   @Column('text', { nullable: true })
-  instructions: string;
+  instructions: string | undefined;
 
   @CreateDateColumn()
   createdAt: Date;

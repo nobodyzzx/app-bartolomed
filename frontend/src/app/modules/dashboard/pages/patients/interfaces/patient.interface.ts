@@ -98,8 +98,16 @@ export interface UpdatePatientDto extends Partial<CreatePatientDto> {
   isActive?: boolean;
 }
 
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export interface PatientStatistics {
   totalPatients: number;
+  newThisMonth: number;
   genderStats: {
     gender: Gender;
     count: number;

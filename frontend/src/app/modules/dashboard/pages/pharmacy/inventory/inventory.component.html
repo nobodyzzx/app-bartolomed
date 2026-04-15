@@ -1,183 +1,217 @@
-<div class="inventory-container">
-  <!-- Header -->
-  <div class="page-header">
-    <h1 class="page-title">
-      <mat-icon>inventory</mat-icon>
-      Inventario de Farmacia
-    </h1>
-    <p class="page-subtitle">Gestión y control de medicamentos e insumos</p>
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      title="Inventario de Farmacia"
+      subtitle="Gestión y control de medicamentos e insumos"
+      (back)="goBack()"
+    >
+      <button type="button" (click)="goToMedications()"
+        class="inline-flex items-center gap-2 px-4 h-10 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-sm hover:shadow-md transition-all border-0">
+        <span class="material-symbols-outlined msz-18 leading-none">library_books</span>
+        Catálogo
+      </button>
+      <button type="button" routerLink="/dashboard/pharmacy/inventory/transfer"
+        class="inline-flex items-center gap-2 px-4 h-10 rounded-full font-medium bg-amber-50 text-amber-600 hover:bg-amber-100 shadow-sm hover:shadow-md transition-all border-0">
+        <span class="material-symbols-outlined msz-18 leading-none">local_shipping</span>
+        Transferir
+      </button>
+      <button type="button" (click)="openImportModal()"
+        class="inline-flex items-center gap-2 px-4 h-10 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-sm hover:shadow-md transition-all border-0">
+        <span class="material-symbols-outlined msz-18 leading-none">upload_file</span>
+        Importar
+      </button>
+      <button type="button" (click)="createMedication()"
+        class="inline-flex items-center gap-2 px-4 h-10 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-sm hover:shadow-md transition-all border-0">
+        <span class="material-symbols-outlined msz-18 leading-none">medication</span>
+        Crear Medicamento
+      </button>
+      <button type="button" (click)="addProduct()"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0">
+        <span class="material-symbols-outlined msz-18 leading-none">add</span>
+        Agregar Stock
+      </button>
+    </app-page-header>
+
+    <!-- Stat cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <app-stat-card
+        label="Total Productos" [value]="stats.totalProducts" sublabel="En inventario"
+        icon="inventory_2" color="blue"
+        [active]="statFilter() === 'all'" [clickable]="true"
+        (cardClick)="setStatFilter('all')"
+      />
+      <app-stat-card
+        label="Stock Bajo" [value]="stats.lowStock" sublabel="Requieren reabastecimiento"
+        icon="warning" color="orange"
+        [active]="statFilter() === 'low'" [clickable]="true"
+        (cardClick)="setStatFilter('low')"
+      />
+      <app-stat-card
+        label="Por Vencer" [value]="stats.expiring" sublabel="Próximos a caducar"
+        icon="schedule" color="red"
+        [active]="statFilter() === 'expiring'" [clickable]="true"
+        (cardClick)="setStatFilter('expiring')"
+      />
+      <app-stat-card
+        label="Valor Total" [value]="'$' + (stats.totalValue | number: '1.2-2')" sublabel="Valor del inventario"
+        icon="attach_money" color="green"
+      />
+    </div>
+
+    <!-- Tabla -->
+    <div class="table-container">
+
+      <div class="table-toolbar">
+        <app-search-bar
+          placeholder="Nombre, marca, categoría..."
+          [value]="searchTermRaw"
+          [showClear]="!!searchTermRaw"
+          (valueChange)="searchTermRaw = $event; applyFilterManual()"
+          (cleared)="searchTermRaw = ''; applyFilterManual()"
+        />
+      </div>
+
+      <app-skeleton-table *ngIf="loading()" [rows]="6" [columns]="7" />
+
+      <app-empty-state
+        *ngIf="!loading() && filteredProducts.length === 0"
+        icon="inventory_2"
+        title="Sin productos en inventario"
+        [subtitle]="searchTermRaw ? 'Intenta ajustar la búsqueda' : 'Agrega el primer producto al inventario'"
+        [actionLabel]="!searchTermRaw ? 'Agregar Stock' : ''"
+        (action)="addProduct()"
+      />
+
+      <div *ngIf="!loading() && filteredProducts.length > 0" class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-100">
+            <tr>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Lote</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Medicamento</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Marca</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Stock</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Precio Venta</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Vencimiento</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
+              <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr *ngFor="let product of filteredProducts; trackBy: trackById" class="hover:bg-blue-50/40 transition-colors">
+              <td class="px-6 py-4 text-blue-700 font-medium text-xs">{{ product.batchNumber }}</td>
+              <td class="px-6 py-4">
+                <div class="flex flex-col">
+                  <span class="font-medium text-slate-900">{{ product.medication?.name || 'Sin nombre' }}</span>
+                  <span class="text-xs text-slate-500">{{ product.medication?.strength }} - {{ product.medication?.dosageForm }}</span>
+                </div>
+              </td>
+              <td class="px-6 py-4 text-sm text-slate-600">{{ product.medication?.brandName || '—' }}</td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="isLowStock(product) ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'">
+                  <span class="w-1.5 h-1.5 rounded-full" [ngClass]="isLowStock(product) ? 'bg-red-500' : 'bg-green-500'"></span>
+                  {{ product.quantity }} unidades
+                </span>
+              </td>
+              <td class="px-6 py-4 text-green-700 font-semibold">Bs {{ product.sellingPrice | number: '1.2-2' }}</td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="isExpiring(product) ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-700'">
+                  {{ product.expiryDate | date: 'dd/MM/yyyy' }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="productStatus(product).classes">
+                  <span class="w-1.5 h-1.5 rounded-full" [ngClass]="productStatus(product).dot"></span>
+                  {{ productStatus(product).label }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex gap-1 items-center justify-end">
+                  <button type="button" (click)="editProduct(product)" matTooltip="Editar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">edit</span>
+                  </button>
+                  <button type="button" (click)="deleteProduct(product)" matTooltip="Eliminar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="table-footer">
+          <span class="text-sm text-slate-500">
+            Mostrando <span class="font-semibold text-slate-700">{{ filteredProducts.length }}</span> productos
+          </span>
+        </div>
+      </div>
+
+    </div>
   </div>
+</div>
 
-  <!-- Estadísticas -->
-  <div class="stats-grid">
-    <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-blue-600 text-sm font-medium">Total Productos</p>
-          <p class="text-2xl font-bold text-blue-900">{{stats.totalProducts}}</p>
-        </div>
-        <mat-icon class="text-blue-500 text-3xl">inventory_2</mat-icon>
+<!-- Modal: Importar desde CSV -->
+<pharmacy-ui-modal
+  [open]="importOpen()"
+  (closed)="importOpen.set(false)"
+  (submitted)="confirmImportPreview()"
+  [loading]="importLoading()"
+  [title]="'Importar listado'"
+  [size]="'xl'"
+  [confirmText]="'Confirmar'"
+  [cancelText]="'Cancelar'"
+>
+  <div class="space-y-6">
+    <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+      <p class="text-sm text-slate-700 mb-3">
+        Selecciona un archivo <strong>.csv</strong> (separado por coma o punto y coma).
+      </p>
+      <input
+        type="file"
+        accept=".csv"
+        (change)="onFileSelected($event)"
+        class="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+      />
+      <div *ngIf="importFileName()" class="mt-3 text-xs text-slate-600 flex items-center gap-2">
+        <span class="material-symbols-outlined msz-18 text-blue-500">description</span>
+        {{ importFileName() }}
       </div>
     </div>
-    
-    <div class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-orange-600 text-sm font-medium">Stock Bajo</p>
-          <p class="text-2xl font-bold text-orange-900">{{stats.lowStock}}</p>
-        </div>
-        <mat-icon class="text-orange-500 text-3xl">warning</mat-icon>
-      </div>
-    </div>
-    
-    <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-500">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-red-600 text-sm font-medium">Por Vencer</p>
-          <p class="text-2xl font-bold text-red-900">{{stats.expiring}}</p>
-        </div>
-        <mat-icon class="text-red-500 text-3xl">schedule</mat-icon>
-      </div>
-    </div>
-    
-    <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-green-600 text-sm font-medium">Valor Total</p>
-          <p class="text-2xl font-bold text-green-900">${{stats.totalValue | number:'1.2-2'}}</p>
-        </div>
-        <mat-icon class="text-green-500 text-3xl">attach_money</mat-icon>
-      </div>
-    </div>
-  </div>
 
-  <!-- Contenido Principal -->
-  <mat-card class="content-card">
-    <mat-card-header>
-      <mat-card-title>
-        <mat-icon>list</mat-icon>
-        Lista de Productos
-      </mat-card-title>
-    </mat-card-header>
-
-    <mat-card-content>
-      <!-- Filtros y Acciones -->
-      <div class="filter-actions">
-        <mat-form-field appearance="outline" class="search-field">
-          <mat-label>Buscar productos</mat-label>
-          <input matInput (keyup)="applyFilter($event)" placeholder="Nombre, marca, categoría...">
-          <mat-icon matSuffix>search</mat-icon>
-        </mat-form-field>
-        
-        <div class="action-buttons">
-          <button mat-raised-button color="primary" (click)="addProduct()">
-            <mat-icon>add</mat-icon>
-            Nuevo Producto
-          </button>
-          <button mat-stroked-button color="accent">
-            <mat-icon>download</mat-icon>
-            Exportar
-          </button>
-        </div>
-      </div>
-
-      <!-- Tabla de Productos -->
-      <div class="table-container">
-        <table mat-table [dataSource]="dataSource" matSort class="w-full">
-          
-          <!-- Columna ID -->
-          <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">ID</th>
-            <td mat-cell *matCellDef="let product" class="text-blue-700 font-medium">{{product.id}}</td>
-          </ng-container>
-
-          <!-- Columna Nombre -->
-          <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">Producto</th>
-            <td mat-cell *matCellDef="let product">
-              <div class="product-info">
-                <div class="product-name">{{product.name}}</div>
-                <div class="product-category">{{product.category}}</div>
-              </div>
-            </td>
-          </ng-container>
-
-          <!-- Columna Marca -->
-          <ng-container matColumnDef="brand">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">Marca</th>
-            <td mat-cell *matCellDef="let product">{{product.brand}}</td>
-          </ng-container>
-
-          <!-- Columna Stock -->
-          <ng-container matColumnDef="stock">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">Stock</th>
-            <td mat-cell *matCellDef="let product">
-              <mat-chip-set>
-                <mat-chip [ngClass]="{
-                  'low-stock-chip': isLowStock(product),
-                  'normal-stock-chip': !isLowStock(product)
-                }">
-                  {{product.stock}} unidades
-                </mat-chip>
-              </mat-chip-set>
-            </td>
-          </ng-container>
-
-          <!-- Columna Precio -->
-          <ng-container matColumnDef="price">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">Precio</th>
-            <td mat-cell *matCellDef="let product" class="text-green-700 font-semibold">
-              ${{product.price | number:'1.2-2'}}
-            </td>
-          </ng-container>
-
-          <!-- Columna Fecha de Vencimiento -->
-          <ng-container matColumnDef="expirationDate">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">Vencimiento</th>
-            <td mat-cell *matCellDef="let product">
-              <mat-chip-set>
-                <mat-chip [ngClass]="{
-                  'expiring-chip': isExpiring(product),
-                  'normal-date-chip': !isExpiring(product)
-                }">
-                  {{product.expirationDate | date:'dd/MM/yyyy'}}
-                </mat-chip>
-              </mat-chip-set>
-            </td>
-          </ng-container>
-
-          <!-- Columna Ubicación -->
-          <ng-container matColumnDef="location">
-            <th mat-header-cell *matHeaderCellDef class="table-header">Ubicación</th>
-            <td mat-cell *matCellDef="let product">{{product.location}}</td>
-          </ng-container>
-
-          <!-- Columna Acciones -->
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="table-header">Acciones</th>
-            <td mat-cell *matCellDef="let product">
-              <div class="action-buttons">
-                <button mat-icon-button color="primary" (click)="editProduct(product)" matTooltip="Editar">
-                  <mat-icon>edit</mat-icon>
-                </button>
-                <button mat-icon-button color="warn" (click)="deleteProduct(product)" matTooltip="Eliminar">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </div>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    <div *ngIf="importRows.length" class="border rounded-lg overflow-hidden">
+      <div class="overflow-auto max-h-72 custom-scroll">
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-100 sticky top-0">
+            <tr>
+              <th *ngFor="let h of importHeaders" class="px-3 py-2 text-left font-semibold text-slate-600 border-b">{{ h }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of importRows" class="odd:bg-white even:bg-slate-50">
+              <td *ngFor="let h of importHeaders" class="px-3 py-1 border-b border-slate-200 align-top">{{ r[h] }}</td>
+            </tr>
+          </tbody>
         </table>
       </div>
+      <div class="px-3 py-2 bg-slate-50 text-xs text-slate-500 border-t flex justify-between">
+        <span>{{ importRows.length }} filas</span>
+        <button type="button"
+          class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100"
+          (click)="resetImport()">
+          <span class="material-symbols-outlined msz-18">delete</span>
+          Limpiar
+        </button>
+      </div>
+    </div>
 
-      <!-- Paginador -->
-      <mat-paginator 
-        [pageSizeOptions]="[10, 25, 50, 100]" 
-        showFirstLastButtons
-        aria-label="Seleccionar página de productos"
-      ></mat-paginator>
-    </mat-card-content>
-  </mat-card>
-</div>
+    <div *ngIf="!importRows.length" class="text-center py-10 text-slate-400">
+      <span class="material-symbols-outlined msz-48 mb-3 block">upload_file</span>
+      <p class="text-sm">Aún no hay datos cargados</p>
+    </div>
+  </div>
+</pharmacy-ui-modal>

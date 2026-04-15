@@ -1,12 +1,15 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
+  DeleteDateColumn,
+  Entity,
+  Index,
   JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
+import { Clinic } from '../../clinics/entities/clinic.entity';
 import { Patient } from '../../patients/entities/patient.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -28,6 +31,7 @@ export enum RecordStatus {
 }
 
 @Entity('medical_records')
+@Index(['clinic', 'createdAt'])
 export class MedicalRecord {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -160,6 +164,19 @@ export class MedicalRecord {
   @Column('boolean', { default: true })
   isActive: boolean;
 
+  @Index()
+  @ManyToOne(() => Clinic, { nullable: true, eager: false })
+  @JoinColumn({ name: 'clinic_id' })
+  clinic: Clinic;
+
+  @Column({ name: 'clinic_id', nullable: true })
+  clinicId: string;
+
+  // Relación con registro médico previo (para seguimientos)
+  @ManyToOne(() => MedicalRecord, { nullable: true })
+  @JoinColumn({ name: 'related_record_id' })
+  relatedRecord: MedicalRecord;
+
   @ManyToOne(() => Patient, { eager: true })
   @JoinColumn({ name: 'patient_id' })
   patient: Patient;
@@ -172,14 +189,21 @@ export class MedicalRecord {
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'updated_by' })
+  updatedBy: User;
+
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
 
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
+
   // Helper method para calcular BMI automáticamente
-  calculateBMI(): number {
+  calculateBMI(): number | null {
     if (this.weight && this.height) {
       const heightInMeters = this.height / 100;
       return this.weight / (heightInMeters * heightInMeters);

@@ -1,138 +1,225 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { MatPaginator } from '@angular/material/paginator';
-import { MatSort } from '@angular/material/sort';
-import { MatTableDataSource } from '@angular/material/table';
-import { Router } from '@angular/router';
-import Swal from 'sweetalert2';
-import { ErrorService } from '../../../../../shared/components/services/error.service';
-import { Patient } from '../interfaces';
-import { PatientsService } from '../services';
+import { Location } from '@angular/common'
+import { AfterViewInit, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
+import { MatPaginator, PageEvent } from '@angular/material/paginator'
+import { MatSort } from '@angular/material/sort'
+import { MatTableDataSource } from '@angular/material/table'
+import { ActivatedRoute, Router } from '@angular/router'
+import { Subject } from 'rxjs'
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
+import { AlertService } from '@core/services/alert.service'
+import { Gender, Patient, PatientStatistics } from '../interfaces'
+import { PatientsService } from '../services'
 
 @Component({
-  selector: 'app-patient-list',
-  templateUrl: './patient-list.component.html',
-  styleUrl: './patient-list.component.css'
+    selector: 'app-patient-list',
+    templateUrl: './patient-list.component.html',
+    styleUrl: './patient-list.component.css',
+    standalone: false
 })
-export class PatientListComponent implements OnInit {
-  displayedColumns: string[] = ['documentNumber', 'name', 'age', 'gender', 'phone', 'email', 'clinic', 'actions'];
-  dataSource: MatTableDataSource<Patient>;
-  isLoading = false;
+export class PatientListComponent implements OnInit, AfterViewInit {
+  private readonly destroyRef = inject(DestroyRef)
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
+  displayedColumns: string[] = ['documentNumber', 'name', 'age', 'gender', 'phone', 'actions']
+  dataSource: MatTableDataSource<Patient>
+  isLoading = false
+  searchTerm = ''
 
-  patients: Patient[] = [];
+  @ViewChild(MatPaginator) paginator!: MatPaginator
+  @ViewChild(MatSort) sort!: MatSort
+
+  readonly Gender = Gender
+  totalRecords = 0
+  pageSize = 25
+  currentPage = 0
+  activeGenderFilter: Gender | null = null
+  statistics: PatientStatistics | null = null
+
+  private searchSubject = new Subject<string>()
 
   constructor(
     private patientsService: PatientsService,
     private router: Router,
-    private errorService: ErrorService
+    private location: Location,
+    private route: ActivatedRoute,
+    private alert: AlertService,
   ) {
-    this.dataSource = new MatTableDataSource(this.patients);
+    this.dataSource = new MatTableDataSource<Patient>([])
   }
 
   ngOnInit(): void {
-    this.loadPatients();
+    this.loadStatistics()
+
+    this.searchSubject.pipe(
+      debounceTime(350),
+      distinctUntilChanged(),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(() => {
+      this.currentPage = 0
+      if (this.paginator) this.paginator.firstPage()
+      this.loadPatients()
+    })
+
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      const q = (params.get('q') || '').trim()
+      this.searchTerm = q
+      this.loadPatients()
+    })
   }
 
-  ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
+  ngAfterViewInit(): void {
+    this.dataSource.sort = this.sort
   }
 
-  loadPatients() {
-    this.isLoading = true;
-    this.patientsService.findAll().subscribe({
-      next: (patients) => {
-        this.patients = patients;
-        this.dataSource.data = this.patients;
-        this.isLoading = false;
-      },
-      error: (error) => {
-        this.errorService.handleError(error);
-        this.isLoading = false;
-      }
-    });
+  loadStatistics(): void {
+    this.patientsService.getPatientStatistics().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: stats => { this.statistics = stats },
+      error: () => { /* non-critical */ },
+    })
   }
 
-  applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
+  loadPatients(): void {
+    this.isLoading = true
 
-    if (this.dataSource.paginator) {
-      this.dataSource.paginator.firstPage();
-    }
-  }
-
-  searchPatients(searchTerm: string) {
-    if (searchTerm.trim()) {
-      this.isLoading = true;
-      this.patientsService.searchPatients(searchTerm).subscribe({
-        next: (patients) => {
-          this.dataSource.data = patients;
-          this.isLoading = false;
+    if (this.searchTerm.trim()) {
+      this.patientsService.searchPatients(this.searchTerm).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: patients => {
+          this.dataSource.data = patients
+          this.totalRecords = patients.length
+          this.isLoading = false
         },
-        error: (error) => {
-          this.errorService.handleError(error);
-          this.isLoading = false;
-        }
-      });
+        error: error => {
+          this.alert.error('Error al buscar pacientes', error?.message || 'Inténtalo de nuevo')
+          this.isLoading = false
+        },
+      })
     } else {
-      this.loadPatients();
+      this.patientsService.findAll({
+        page: this.currentPage + 1,
+        limit: this.pageSize,
+        gender: this.activeGenderFilter ?? undefined,
+      }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: result => {
+          this.dataSource.data = result.data
+          this.totalRecords = result.total
+          this.isLoading = false
+        },
+        error: error => {
+          this.alert.error('Error al cargar pacientes', error?.message || 'Inténtalo de nuevo')
+          this.isLoading = false
+        },
+      })
     }
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex
+    this.pageSize = event.pageSize
+    this.loadPatients()
+  }
+
+  applyFilter(value: string): void {
+    this.searchTerm = value
+    this.searchSubject.next(value)
+  }
+
+  clearFilters(): void {
+    this.searchTerm = ''
+    this.activeGenderFilter = null
+    this.currentPage = 0
+    if (this.paginator) this.paginator.firstPage()
+    this.loadPatients()
+  }
+
+  setGenderFilter(gender: Gender | null): void {
+    this.activeGenderFilter = gender
+    this.currentPage = 0
+    if (this.paginator) this.paginator.firstPage()
+    this.loadPatients()
+  }
+
+  getMaleCount(): number {
+    return this.getGenderCount(Gender.MALE)
+  }
+
+  getFemaleCount(): number {
+    return this.getGenderCount(Gender.FEMALE)
+  }
+
+  private getGenderCount(gender: Gender): number {
+    const stat = this.statistics?.genderStats.find(s => s.gender === gender)
+    return stat ? Number(stat.count) : 0
+  }
+
+  getNewThisMonthCount(): number {
+    return this.statistics?.newThisMonth ?? 0
   }
 
   getPatientFullName(patient: Patient): string {
-    return `${patient.firstName} ${patient.lastName}`;
+    return `${patient.firstName} ${patient.lastName}`
   }
 
   getPatientAge(patient: Patient): number {
-    const today = new Date();
-    const birthDate = new Date(patient.birthDate);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    
+    const today = new Date()
+    const birthDate = new Date(patient.birthDate)
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
+      age--
     }
-    
-    return age;
+    return age
   }
 
-  createPatient() {
-    this.router.navigate(['/dashboard/patients/new']);
+  createPatient(): void {
+    this.router.navigate(['/dashboard/patients/new'])
   }
 
-  editPatient(patient: Patient) {
-    this.router.navigate(['/dashboard/patients/edit', patient.id]);
+  goBack(): void {
+    this.location.back()
   }
 
-  viewPatient(patient: Patient) {
-    this.router.navigate(['/dashboard/patients/view', patient.id]);
+  viewPatient(patient: Patient): void {
+    this.router.navigate(['/dashboard/patients/view', patient.id])
   }
 
-  deletePatient(patient: Patient) {
-    Swal.fire({
-      title: '¿Estás seguro?',
-      text: `¿Deseas eliminar al paciente ${this.getPatientFullName(patient)}?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.patientsService.removePatient(patient.id).subscribe({
-          next: () => {
-            Swal.fire('Eliminado', 'El paciente ha sido eliminado.', 'success');
-            this.loadPatients();
-          },
-          error: (error) => {
-            this.errorService.handleError(error);
-          }
-        });
-      }
-    });
+  editPatient(patient: Patient): void {
+    this.router.navigate(['/dashboard/patients/edit', patient.id])
+  }
+
+  deletePatient(patient: Patient): void {
+    this.alert
+      .fire({
+        title: '¿Eliminar paciente?',
+        text: `¿Está seguro de eliminar a ${this.getPatientFullName(patient)}? Esta acción no se puede deshacer.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+      })
+      .then(result => {
+        if (result.isConfirmed) {
+          this.patientsService.removePatient(patient.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+            next: () => {
+              this.dataSource.data = this.dataSource.data.filter(p => p.id !== patient.id)
+              this.totalRecords--
+              this.loadStatistics()
+              this.alert.success('Eliminado', 'El paciente ha sido eliminado.')
+            },
+            error: error => {
+              this.alert.error('No se pudo eliminar', error?.message || 'Inténtalo de nuevo')
+            },
+          })
+        }
+      })
+  }
+
+  createMedicalRecord(patient: Patient): void {
+    this.router.navigate(['/dashboard/medical-records/new'], {
+      queryParams: { patientId: patient.id },
+    })
+  }
+
+  viewMedicalHistory(patient: Patient): void {
+    this.router.navigate(['/dashboard/medical-records/patient', patient.id, 'history'])
   }
 }

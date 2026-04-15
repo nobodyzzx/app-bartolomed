@@ -1,0 +1,247 @@
+/* Contenedor principal con fondo degradado */
+.register-container {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+/* Animación de blobs */
+@keyframes blob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Contenido con transición suave */
+.register-content {
+  position: relative;
+  z-index: 10;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: 0;
+}
+
+.register-content.sidebar-expanded {
+  margin-left: 0;
+}
+
+.register-content.sidebar-collapsed {
+  margin-left: 0;
+}
+
+/* Ajustes responsivos para el sidebar */
+@media (min-width: 768px) {
+  .register-content.sidebar-expanded {
+    padding-left: 1rem;
+  }
+
+  .register-content.sidebar-collapsed {
+    padding-left: 1rem;
+  }
+}
+
+/* Material form fields */
+::ng-deep .mat-mdc-form-field {
+  width: 100%;
+}
+
+::ng-deep .mat-mdc-form-field-error {
+  font-size: 0.875rem;
+}
+
+/* Iconos en form fields */
+::ng-deep .mat-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  font-size: 1.25rem !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}
+
+/* Slide toggle personalizado */
+::ng-deep .mat-mdc-slide-toggle {
+  display: flex;
+  align-items: center;
+}
+
+::ng-deep .mat-mdc-slide-toggle .mdc-switch {
+  margin-right: 12px;
+}
+
+/* Botones */
+button {
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Spinner en botón */
+::ng-deep .mat-mdc-progress-spinner {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Transiciones suaves */
+* {
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* Sombras y hover effects */
+.hover\:shadow-xl:hover {
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.hover\:shadow-lg:hover {
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.hover\:shadow-md:hover {
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Animaciones de entrada */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.register-content > * {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .register-container {
+    padding: 1rem;
+  }
+
+  .register-content form {
+    padding: 1.5rem;
+  }
+}
+
+.cancel-btn {
+  min-width: 100px;
+}
+
+.submit-btn {
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.button-spinner {
+  margin-right: 8px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .clinic-form {
+    padding: 16px;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .half-width {
+    width: 100%;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .cancel-btn,
+  .submit-btn {
+    width: 100%;
+  }
+}
+
+/* Form field customizations */
+.mat-mdc-form-field {
+  width: 100%;
+}
+
+.mat-mdc-form-field + .mat-mdc-form-field {
+  margin-left: 0;
+}
+
+/* Error styles */
+.mat-mdc-form-field-error {
+  font-size: 0.85rem;
+}
+
+/* Slide toggle customizations */
+.mat-mdc-slide-toggle {
+  margin: 8px 0;
+}
+
+.mat-mdc-slide-toggle .mdc-form-field {
+  align-items: center;
+}
+
+/* Card content spacing */
+.mat-mdc-card-content {
+  padding: 24px;
+}
+
+/* Disabled button state */
+.submit-btn:disabled {
+  opacity: 0.6;
+}
+
+/* Focus styles */
+.mat-mdc-form-field.mat-focused .mat-mdc-floating-label {
+  color: #2196f3;
+}
+
+/* Required field indicator */
+.mat-mdc-form-field-required-marker {
+  color: #f44336;
+}

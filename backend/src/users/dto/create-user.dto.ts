@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import {
   IsArray,
   IsEmail,
@@ -5,24 +6,25 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   Matches,
   MaxLength,
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { PersonalInfoDto, ProfessionalInfoDto } from './';
-import { Type } from 'class-transformer';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, PASSWORD_POLICY_MESSAGE, PASSWORD_POLICY_REGEX } from '../../auth/constants/password-policy';
 import { ValidRoles } from '../interfaces';
+import { PersonalInfoDto, ProfessionalInfoDto } from './';
 
 export class CreateUserDto {
   @IsEmail()
   email: string;
 
   @IsString()
-  @MinLength(6)
-  @MaxLength(50)
-  @Matches(/(?:(?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
-    message: 'The password must have a Uppercase, lowercase letter and a number',
+  @MinLength(PASSWORD_MIN_LENGTH)
+  @MaxLength(PASSWORD_MAX_LENGTH)
+  @Matches(PASSWORD_POLICY_REGEX, {
+    message: PASSWORD_POLICY_MESSAGE,
   })
   password: string;
 
@@ -38,4 +40,8 @@ export class CreateUserDto {
   @IsEnum(ValidRoles, { each: true })
   @IsOptional()
   roles?: ValidRoles[] = [ValidRoles.USER];
+
+  @IsOptional()
+  @IsUUID()
+  clinicId?: string;
 }

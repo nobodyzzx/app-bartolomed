@@ -3,7 +3,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { AuditModule } from '../audit/audit.module';
 import { MedicalRecordsService } from './medical-records.service';
+import { MedicalRecordsPdfService } from './services/medical-records-pdf.service';
 import { MedicalRecordsController } from './medical-records.controller';
 import { MedicalRecord, ConsentForm } from './entities';
 import { AuthModule } from '../auth/auth.module';
@@ -12,6 +14,7 @@ import { AuthModule } from '../auth/auth.module';
   imports: [
     TypeOrmModule.forFeature([MedicalRecord, ConsentForm]),
     AuthModule,
+    AuditModule,
     MulterModule.register({
       storage: diskStorage({
         destination: './uploads/consent-forms',
@@ -35,7 +38,7 @@ import { AuthModule } from '../auth/auth.module';
     }),
   ],
   controllers: [MedicalRecordsController],
-  providers: [MedicalRecordsService],
+  providers: [MedicalRecordsService, MedicalRecordsPdfService],
   exports: [MedicalRecordsService],
 })
 export class MedicalRecordsModule {}

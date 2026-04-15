@@ -1,0 +1,161 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      title="Citas Médicas"
+      subtitle="Gestión de citas y calendario"
+      (back)="goBack()"
+    >
+      <button
+        type="button"
+        (click)="viewCalendar()"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <span class="material-symbols-outlined msz-18 leading-none">calendar_month</span>
+        Calendario
+      </button>
+      <button
+        type="button"
+        (click)="createAppointment()"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <span class="material-symbols-outlined msz-18 leading-none">add</span>
+        Nueva Cita
+      </button>
+    </app-page-header>
+
+    <!-- Stat cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <app-stat-card
+        label="Total" [value]="appointments.length" sublabel="Citas cargadas"
+        icon="event" color="blue"
+        [active]="selectedStatus === 'all'" [clickable]="true"
+        (cardClick)="setStatus('all')"
+      />
+      <app-stat-card
+        label="Programadas" [value]="getCountByStatus('scheduled')" sublabel="Pendientes de confirmar"
+        icon="schedule" color="amber"
+        [active]="selectedStatus === 'scheduled'" [clickable]="true"
+        (cardClick)="setStatus('scheduled')"
+      />
+      <app-stat-card
+        label="Confirmadas" [value]="getCountByStatus('confirmed')" sublabel="Listas para atender"
+        icon="check_circle" color="green"
+        [active]="selectedStatus === 'confirmed'" [clickable]="true"
+        (cardClick)="setStatus('confirmed')"
+      />
+      <app-stat-card
+        label="Completadas" [value]="getCountByStatus('completed')" sublabel="Atendidas"
+        icon="task_alt" color="slate"
+        [active]="selectedStatus === 'completed'" [clickable]="true"
+        (cardClick)="setStatus('completed')"
+      />
+    </div>
+
+    <!-- Tabla -->
+    <div class="table-container">
+
+      <div class="table-toolbar">
+        <app-search-bar
+          placeholder="Paciente, doctor, motivo..."
+          [value]="searchTerm"
+          [showClear]="!!(searchTerm || selectedStatus !== 'all')"
+          (valueChange)="searchTerm = $event; applyFilters()"
+          (cleared)="searchTerm = ''; setStatus('all')"
+        />
+      </div>
+
+      <app-skeleton-table *ngIf="loading" [rows]="6" [columns]="5" />
+
+      <app-empty-state
+        *ngIf="!loading && filteredAppointments.length === 0"
+        icon="event_busy"
+        title="Sin citas"
+        [subtitle]="searchTerm || selectedStatus !== 'all' ? 'Intenta ajustar los filtros' : 'Comienza creando la primera cita'"
+        [actionLabel]="!searchTerm && selectedStatus === 'all' ? 'Nueva Cita' : ''"
+        (action)="createAppointment()"
+      />
+
+      <div *ngIf="!loading && filteredAppointments.length > 0" class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-100">
+            <tr>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha / Hora</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Doctor</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Motivo</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
+              <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr
+              *ngFor="let apt of filteredAppointments"
+              (click)="editAppointment(apt)"
+              class="table-row-hover"
+              [class.bg-red-50]="apt.isEmergency"
+            >
+              <td class="px-6 py-4">
+                <div class="text-sm font-medium text-slate-900">{{ formatDate(apt.appointmentDate) }}</div>
+                <div class="text-xs text-slate-400 flex items-center gap-1">
+                  {{ formatTime(apt.appointmentDate) }}
+                  <span class="text-slate-300">·</span>
+                  {{ apt.duration }} min
+                </div>
+                <span *ngIf="apt.isEmergency" class="text-xs text-red-600 font-semibold flex items-center gap-1 mt-0.5">
+                  <span class="material-symbols-outlined msz-12">warning</span>Emergencia
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0 font-semibold text-sm">
+                    {{ getPatientInitials(apt) }}
+                  </div>
+                  <span class="font-medium text-slate-900">{{ apt.patient.firstName }} {{ apt.patient.lastName }}</span>
+                </div>
+              </td>
+              <td class="px-6 py-4 text-sm text-slate-700">
+                Dr. {{ apt.doctor.firstName }} {{ apt.doctor.lastName }}
+              </td>
+              <td class="px-6 py-4">
+                <span class="text-sm text-slate-600 max-w-xs truncate block" [title]="apt.reason">{{ apt.reason }}</span>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium" [ngClass]="getStatusColor(apt.status)">
+                  {{ getStatusLabel(apt.status) }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center justify-end gap-1">
+                  <button *ngIf="canConfirm(apt)" type="button"
+                    (click)="confirmAppointment($event, apt)" matTooltip="Confirmar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">check_circle</span>
+                  </button>
+                  <button *ngIf="canCancel(apt)" type="button"
+                    (click)="cancelAppointment($event, apt)" matTooltip="Cancelar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">cancel</span>
+                  </button>
+                  <button type="button" (click)="editAppointment(apt); $event.stopPropagation()"
+                    matTooltip="Ver detalles"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">visibility</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="table-footer">
+          <span class="text-sm text-slate-500">
+            Mostrando <span class="font-semibold text-slate-700">{{ filteredAppointments.length }}</span> de
+            <span class="font-semibold text-slate-700">{{ appointments.length }}</span> citas
+          </span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

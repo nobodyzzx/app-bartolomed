@@ -1,126 +1,185 @@
-import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { Product } from '../interfaces/pharmacy.interfaces';
+import { HttpClient, HttpParams } from '@angular/common/http'
+import { Injectable } from '@angular/core'
+import { AlertService } from '@core/services/alert.service'
+import { Observable, throwError } from 'rxjs'
+import { catchError, map, tap } from 'rxjs/operators'
+import { environment } from '../../../../../environments/environments'
+import { ErrorService } from '../../../../../shared/components/services/error.service'
+import {
+  CreateMedicationDto,
+  CreateMedicationStockDto,
+  Medication,
+  MedicationStock,
+  UpdateMedicationStockDto,
+} from '../interfaces/pharmacy.interfaces'
+
+export interface PaginatedResult<T> {
+  data: T[]
+  total: number
+  page: number
+  limit: number
+}
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class InventoryService {
+  private readonly baseUrl = `${environment.baseUrl}/pharmacy/inventory`
 
-  private products: Product[] = [
-    { 
-      id: 1, 
-      name: 'Paracetamol 500mg', 
-      brand: 'Genérico', 
-      stock: 150, 
-      price: 2.50, 
-      expirationDate: '2025-10-30',
-      category: 'Analgésico',
-      description: 'Medicamento para alivio del dolor y fiebre',
-      minStock: 50,
-      location: 'Estante A-1'
-    },
-    { 
-      id: 2, 
-      name: 'Amoxicilina 250mg', 
-      brand: 'Aurobindo', 
-      stock: 80, 
-      price: 5.75, 
-      expirationDate: '2026-03-15',
-      category: 'Antibiótico',
-      description: 'Antibiótico de amplio espectro',
-      minStock: 30,
-      location: 'Estante B-2'
-    },
-    { 
-      id: 3, 
-      name: 'Ibuprofeno 400mg', 
-      brand: 'Bayer', 
-      stock: 220, 
-      price: 3.10, 
-      expirationDate: '2025-05-20',
-      category: 'Antiinflamatorio',
-      description: 'Antiinflamatorio no esteroideo',
-      minStock: 40,
-      location: 'Estante A-3'
-    },
-    { 
-      id: 4, 
-      name: 'Vitamina C 1g', 
-      brand: 'Roche', 
-      stock: 50, 
-      price: 7.00, 
-      expirationDate: '2024-12-01',
-      category: 'Suplemento',
-      description: 'Suplemento vitamínico',
-      minStock: 25,
-      location: 'Estante C-1'
-    },
-    { 
-      id: 5, 
-      name: 'Omeprazol 20mg', 
-      brand: 'Losec', 
-      stock: 95, 
-      price: 4.20, 
-      expirationDate: '2025-08-15',
-      category: 'Gastroentérico',
-      description: 'Inhibidor de la bomba de protones',
-      minStock: 30,
-      location: 'Estante B-1'
-    }
-  ];
-
-  getProducts(): Observable<Product[]> {
-    return of(this.products);
+  constructor(
+    private http: HttpClient,
+    private errorService: ErrorService,
+    private alertService: AlertService,
+  ) {}
+  /**
+   * INVENTARIO (STOCK)
+   */
+  // Alias para compatibilidad con NewSaleComponent
+  getAllStock(clinicId: string, page = 1, limit = 100): Observable<PaginatedResult<MedicationStock>> {
+    return this.getProducts(clinicId, page, limit)
   }
 
-  getProduct(id: number): Observable<Product | undefined> {
-    const product = this.products.find(p => p.id === id);
-    return of(product);
+  getProducts(clinicId: string, page = 1, limit = 100): Observable<PaginatedResult<MedicationStock>> {
+    const params = new HttpParams().set('page', page.toString()).set('limit', limit.toString())
+    return this.http.get<PaginatedResult<MedicationStock>>(`${this.baseUrl}/stock`, { params }).pipe(
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
   }
 
-  addProduct(product: Product): Observable<Product> {
-    const newProduct = { ...product, id: this.generateId() };
-    this.products.push(newProduct);
-    return of(newProduct);
+  getLowStockProducts(clinicId: string): Observable<MedicationStock[]> {
+    const params = new HttpParams().set('clinicId', clinicId)
+    return this.http.get<MedicationStock[]>(`${this.baseUrl}/stock/low-stock`, { params }).pipe(
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
   }
 
-  updateProduct(id: number, product: Partial<Product>): Observable<Product | null> {
-    const index = this.products.findIndex(p => p.id === id);
-    if (index > -1) {
-      this.products[index] = { ...this.products[index], ...product };
-      return of(this.products[index]);
-    }
-    return of(null);
+  getExpiringProducts(clinicId: string, days: number = 30): Observable<MedicationStock[]> {
+    const params = new HttpParams().set('clinicId', clinicId).set('days', days.toString())
+    return this.http.get<MedicationStock[]>(`${this.baseUrl}/stock/expiring`, { params }).pipe(
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
   }
 
-  deleteProduct(id: number): Observable<boolean> {
-    const index = this.products.findIndex(p => p.id === id);
-    if (index > -1) {
-      this.products.splice(index, 1);
-      return of(true);
-    }
-    return of(false);
+  getProductById(id: string): Observable<MedicationStock> {
+    return this.http.get<MedicationStock>(`${this.baseUrl}/stock/${id}`).pipe(
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
   }
 
-  getLowStockProducts(): Observable<Product[]> {
-    const lowStock = this.products.filter(p => p.stock <= (p.minStock || 0));
-    return of(lowStock);
+  addProduct(dto: CreateMedicationStockDto): Observable<MedicationStock> {
+    return this.http.post<MedicationStock>(`${this.baseUrl}/stock`, dto).pipe(
+      tap(() => this.alertService.success('Éxito', 'Stock agregado correctamente')),
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
   }
 
-  getExpiringProducts(): Observable<Product[]> {
-    const today = new Date();
-    const thirtyDaysFromNow = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
-    
-    const expiring = this.products.filter(p => {
-      const expirationDate = new Date(p.expirationDate);
-      return expirationDate <= thirtyDaysFromNow;
-    });
-    
-    return of(expiring);
+  updateProduct(id: string, dto: UpdateMedicationStockDto): Observable<MedicationStock> {
+    return this.http.patch<MedicationStock>(`${this.baseUrl}/stock/${id}`, dto).pipe(
+      tap(() => this.alertService.success('Éxito', 'Stock actualizado correctamente')),
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
   }
 
-  private generateId(): number {
-    return Math.max(...this.products.map(p => p.id), 0) + 1;
+  deleteProduct(id: string): Observable<boolean> {
+    return this.http.delete<void>(`${this.baseUrl}/stock/${id}`).pipe(
+      tap(() => this.alertService.success('Éxito', 'Stock eliminado correctamente')),
+      map(() => true),
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => false)
+      }),
+    )
   }
+
+  getMedicationById(id: string): Observable<Medication> {
+    return this.http.get<Medication>(`${this.baseUrl}/medications/${id}`).pipe(
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
+  }
+
+  getAllMedications(page = 1, limit = 100): Observable<PaginatedResult<Medication>> {
+    const params = new HttpParams().set('page', page.toString()).set('limit', limit.toString())
+    return this.http.get<PaginatedResult<Medication>>(`${this.baseUrl}/medications`, { params }).pipe(
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
+  }
+
+  createMedication(dto: CreateMedicationDto): Observable<Medication> {
+    return this.http.post<Medication>(`${this.baseUrl}/medications`, dto).pipe(
+      tap(() => this.alertService.success('Éxito', 'Medicamento creado')),
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
+  }
+
+  updateMedication(id: string, dto: Partial<CreateMedicationDto>): Observable<Medication> {
+    return this.http.patch<Medication>(`${this.baseUrl}/medications/${id}`, dto).pipe(
+      tap(() => this.alertService.success('Éxito', 'Medicamento actualizado')),
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
+  }
+
+  deleteMedication(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/medications/${id}`).pipe(
+      tap(() => this.alertService.success('Éxito', 'Medicamento eliminado')),
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
+  }
+  /**
+   * TRANSFERENCIAS ENTRE CLÍNICAS
+   */
+  transferStock(dto: {
+    sourceStockId: string
+    toClinicId: string
+    quantity: number
+    location?: string
+    note?: string
+  }): Observable<{ source: any; destination: any; transferred: number }> {
+    return this.http
+      .post<{
+        source: any
+        destination: any
+        transferred: number
+      }>(`${this.baseUrl}/stock/transfer`, dto)
+      .pipe(
+        tap(() => this.alertService.success('Éxito', 'Transferencia realizada')),
+        catchError(error => {
+          this.errorService.handleError(error)
+          return throwError(() => error)
+        }),
+      )
+  }
+  // (código de mocks eliminado)
 }

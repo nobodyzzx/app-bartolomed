@@ -1,0 +1,551 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <!-- Header -->
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 class="text-3xl font-bold text-slate-900 m-0">Auditoría y Logs</h1>
+        <p class="text-sm text-slate-500 mt-1">
+          Actividad del sistema {{ rangeLabel }}
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <!-- Auto-refresh toggle -->
+        <button
+          (click)="toggleAutoRefresh()"
+          class="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-colors"
+          [class.bg-green-100]="autoRefresh"
+          [class.text-green-700]="autoRefresh"
+          [class.bg-slate-100]="!autoRefresh"
+          [class.text-slate-600]="!autoRefresh"
+          [title]="autoRefresh ? 'Auto-refresh activo (30s) — click para pausar' : 'Activar auto-refresh cada 30s'"
+        >
+          <span class="material-symbols-outlined msz-18">
+            {{ autoRefresh ? 'pause_circle' : 'play_circle' }}
+          </span>
+          {{ autoRefresh ? 'Live' : 'Pausado' }}
+        </button>
+        <!-- Refresh manual -->
+        <button
+          (click)="manualRefresh()"
+          class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors"
+          title="Actualizar ahora"
+        >
+          <span class="material-symbols-outlined msz-20">refresh</span>
+        </button>
+        <!-- Exportar -->
+        <button
+          (click)="exportCsv()"
+          class="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+        >
+          <span class="material-symbols-outlined msz-18">download</span>
+          CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Chips de filtro rápido ──────────────────────────────────────────── -->
+    <div class="flex flex-wrap gap-2 mb-6">
+      <button
+        *ngFor="let q of quickFilters"
+        (click)="applyQuickFilter(q.days)"
+        class="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+      >
+        {{ q.label }}
+      </button>
+      <button
+        (click)="filterForm.patchValue({ status: 'failure' })"
+        class="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+      >
+        <span class="material-symbols-outlined msz-14 align-middle mr-0.5">error</span>
+        Solo errores
+      </button>
+      <button
+        (click)="filterForm.patchValue({ action: 'LOGIN' })"
+        class="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+      >
+        <span class="material-symbols-outlined msz-14 align-middle mr-0.5">login</span>
+        Solo logins
+      </button>
+      <button
+        (click)="filterForm.patchValue({ action: 'DELETE' })"
+        class="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+      >
+        <span class="material-symbols-outlined msz-14 align-middle mr-0.5">delete</span>
+        Solo eliminaciones
+      </button>
+    </div>
+
+    <!-- ── Alerta de seguridad (condicional) ───────────────────────────────── -->
+    <div
+      *ngIf="securityAlert && stats"
+      class="mb-6 flex items-start gap-3 px-5 py-4 bg-red-50 border border-red-200 rounded-2xl"
+    >
+      <span class="material-symbols-outlined text-red-500 mt-0.5">warning</span>
+      <div class="flex-1">
+        <p class="font-semibold text-red-800 m-0 text-sm">Actividad inusual detectada</p>
+        <p class="text-xs text-red-600 mt-0.5 m-0">
+          {{ stats.errorsToday }} errores
+          <span *ngIf="stats.failedLogins > 0"> · {{ stats.failedLogins }} intentos de login fallidos</span>
+          <span *ngIf="stats.topIp"> · IP más activa: <strong class="font-mono">{{ stats.topIp.ip }}</strong> ({{ stats.topIp.count }} req)</span>
+          en el rango seleccionado.
+        </p>
+      </div>
+      <button
+        (click)="filterForm.patchValue({ status: 'failure' })"
+        class="text-xs font-medium text-red-700 underline underline-offset-2 hover:text-red-900 whitespace-nowrap"
+      >
+        Ver errores
+      </button>
+    </div>
+
+    <!-- ── Stats cards ─────────────────────────────────────────────────────── -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-blue-600 text-xs font-semibold uppercase tracking-wide">Total eventos</p>
+            <p class="text-3xl font-bold text-slate-800 mt-1">
+              {{ statsLoading ? '…' : (stats?.totalToday ?? 0) }}
+            </p>
+            <p class="text-xs text-slate-400 mt-1">en el rango</p>
+          </div>
+          <span class="material-symbols-outlined text-blue-200" style="font-size:40px">event_note</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-green-600 text-xs font-semibold uppercase tracking-wide">Inicios sesión</p>
+            <p class="text-3xl font-bold text-slate-800 mt-1">
+              {{ statsLoading ? '…' : (stats?.loginsToday ?? 0) }}
+            </p>
+            <p class="text-xs text-slate-400 mt-1">
+              <span *ngIf="(stats?.failedLogins ?? 0) > 0" class="text-red-500 font-medium">
+                {{ stats?.failedLogins }} fallidos
+              </span>
+              <span *ngIf="(stats?.failedLogins ?? 0) === 0">todos exitosos</span>
+            </p>
+          </div>
+          <span class="material-symbols-outlined text-green-200" style="font-size:40px">login</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-purple-600 text-xs font-semibold uppercase tracking-wide">Operaciones</p>
+            <p class="text-3xl font-bold text-slate-800 mt-1">
+              {{ statsLoading ? '…' : (stats?.mutationsToday ?? 0) }}
+            </p>
+            <p class="text-xs text-slate-400 mt-1">crear · editar · eliminar</p>
+          </div>
+          <span class="material-symbols-outlined text-purple-200" style="font-size:40px">edit_note</span>
+        </div>
+      </div>
+
+      <div
+        class="rounded-2xl shadow-sm border p-5 transition-colors"
+        [class.bg-red-50]="(stats?.errorsToday ?? 0) > 0"
+        [class.border-red-200]="(stats?.errorsToday ?? 0) > 0"
+        [class.bg-white]="(stats?.errorsToday ?? 0) === 0"
+        [class.border-slate-200]="(stats?.errorsToday ?? 0) === 0"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide"
+               [class.text-red-600]="(stats?.errorsToday ?? 0) > 0"
+               [class.text-slate-500]="(stats?.errorsToday ?? 0) === 0">
+              Errores
+            </p>
+            <p class="text-3xl font-bold mt-1"
+               [class.text-red-700]="(stats?.errorsToday ?? 0) > 0"
+               [class.text-slate-800]="(stats?.errorsToday ?? 0) === 0">
+              {{ statsLoading ? '…' : (stats?.errorsToday ?? 0) }}
+            </p>
+            <p class="text-xs mt-1"
+               [class.text-red-400]="(stats?.errorsToday ?? 0) > 0"
+               [class.text-slate-400]="(stats?.errorsToday ?? 0) === 0">
+              solicitudes fallidas
+            </p>
+          </div>
+          <span class="material-symbols-outlined"
+                [class.text-red-300]="(stats?.errorsToday ?? 0) > 0"
+                [class.text-slate-200]="(stats?.errorsToday ?? 0) === 0"
+                style="font-size:40px">
+            {{ (stats?.errorsToday ?? 0) > 0 ? 'error' : 'check_circle' }}
+          </span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Gráfico de actividad + Top usuarios/recursos ────────────────────── -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+      <!-- Gráfico actividad diaria -->
+      <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-3 px-5 py-3 bg-slate-50 border-b border-slate-100">
+          <span class="material-symbols-outlined text-blue-500 msz-20">bar_chart</span>
+          <h3 class="font-semibold text-slate-800 text-sm m-0">Actividad por día</h3>
+          <span *ngIf="activityLoading" class="ml-auto text-xs text-slate-400">cargando…</span>
+        </div>
+        <div class="p-4" style="height: 220px">
+          <canvas
+            *ngIf="activityChart"
+            baseChart
+            [data]="activityChart"
+            [options]="barOptions"
+            type="bar"
+          ></canvas>
+          <div *ngIf="!activityChart && !activityLoading" class="h-full flex items-center justify-center">
+            <p class="text-sm text-slate-400">Sin datos para el rango seleccionado</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top usuarios + recursos -->
+      <div class="flex flex-col gap-4">
+        <!-- Top usuarios -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1">
+          <div class="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border-b border-blue-100">
+            <span class="material-symbols-outlined text-blue-500 msz-18">people</span>
+            <h3 class="font-semibold text-slate-800 text-xs uppercase tracking-wide m-0">Usuarios más activos</h3>
+          </div>
+          <ul class="divide-y divide-slate-100">
+            <li
+              *ngFor="let u of (stats?.topUsers ?? []); let i = index"
+              class="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-blue-50 transition-colors"
+              (click)="filterByUser(u.email)"
+              [title]="'Filtrar por ' + u.email"
+            >
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="text-slate-400 font-mono text-xs shrink-0">{{ i + 1 }}.</span>
+                <span class="text-xs text-slate-700 truncate">{{ u.email }}</span>
+              </div>
+              <span class="shrink-0 ml-2 text-xs font-bold bg-blue-100 text-blue-700 rounded-full px-2 py-0.5">
+                {{ u.count }}
+              </span>
+            </li>
+            <li *ngIf="!(stats?.topUsers?.length)" class="px-4 py-3 text-xs text-slate-400 text-center">
+              Sin datos
+            </li>
+          </ul>
+        </div>
+        <!-- Top recursos -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1">
+          <div class="flex items-center gap-2 px-4 py-2.5 bg-purple-50 border-b border-purple-100">
+            <span class="material-symbols-outlined text-purple-500 msz-18">folder_open</span>
+            <h3 class="font-semibold text-slate-800 text-xs uppercase tracking-wide m-0">Recursos más accedidos</h3>
+          </div>
+          <ul class="divide-y divide-slate-100">
+            <li
+              *ngFor="let r of (stats?.topResources ?? []); let i = index"
+              class="flex items-center justify-between px-4 py-2"
+            >
+              <span class="text-xs text-slate-700 flex items-center gap-2">
+                <span class="text-slate-400 font-mono">{{ i + 1 }}.</span>
+                {{ r.resource }}
+              </span>
+              <span class="shrink-0 ml-2 text-xs font-bold bg-purple-100 text-purple-700 rounded-full px-2 py-0.5">
+                {{ r.count }}
+              </span>
+            </li>
+            <li *ngIf="!(stats?.topResources?.length)" class="px-4 py-3 text-xs text-slate-400 text-center">
+              Sin datos
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Tabla de logs ───────────────────────────────────────────────────── -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+
+      <!-- Cabecera -->
+      <div class="flex flex-wrap items-center justify-between gap-3 px-6 py-4 bg-slate-50 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center">
+            <span class="material-symbols-outlined msz-18">history</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 text-sm leading-tight">Registro de Actividad</h3>
+            <p class="text-xs text-slate-500 m-0">{{ total | number:'1.0-0' }} eventos encontrados</p>
+          </div>
+        </div>
+        <button
+          (click)="showFilters = !showFilters"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50 transition-colors"
+        >
+          <span class="material-symbols-outlined msz-16">tune</span>
+          {{ showFilters ? 'Ocultar filtros' : 'Mostrar filtros' }}
+        </button>
+      </div>
+
+      <!-- Panel de filtros colapsable -->
+      <div *ngIf="showFilters" class="px-6 py-5 border-b border-slate-100 bg-white" [formGroup]="filterForm">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+          <!-- Búsqueda -->
+          <mat-form-field appearance="outline" class="lg:col-span-3">
+            <mat-label>Buscar</mat-label>
+            <mat-icon matPrefix class="text-blue-400">search</mat-icon>
+            <input
+              matInput formControlName="search"
+              placeholder="Usuario, recurso, ruta…"
+              (input)="onSearch($any($event.target).value)"
+            />
+            <mat-hint>Busca por email, nombre de usuario, recurso o ruta</mat-hint>
+          </mat-form-field>
+
+          <!-- Acción -->
+          <mat-form-field appearance="outline">
+            <mat-label>Acción</mat-label>
+            <mat-icon matPrefix class="text-blue-400">bolt</mat-icon>
+            <mat-select formControlName="action">
+              <mat-option [value]="null">Todas</mat-option>
+              <mat-option *ngFor="let a of actionOptions" [value]="a.value">{{ a.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Recurso -->
+          <mat-form-field appearance="outline">
+            <mat-label>Recurso</mat-label>
+            <mat-icon matPrefix class="text-blue-400">folder_open</mat-icon>
+            <mat-select formControlName="resource">
+              <mat-option [value]="null">Todos</mat-option>
+              <mat-option *ngFor="let r of distinctValues.resources" [value]="r">{{ r }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Estado -->
+          <mat-form-field appearance="outline">
+            <mat-label>Estado</mat-label>
+            <mat-icon matPrefix class="text-blue-400">verified</mat-icon>
+            <mat-select formControlName="status">
+              <mat-option [value]="null">Todos</mat-option>
+              <mat-option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Desde -->
+          <mat-form-field appearance="outline">
+            <mat-label>Desde</mat-label>
+            <mat-icon matPrefix class="text-blue-400">calendar_today</mat-icon>
+            <input matInput [matDatepicker]="pickerStart" formControlName="startDate" />
+            <mat-datepicker-toggle matIconSuffix [for]="pickerStart"></mat-datepicker-toggle>
+            <mat-datepicker #pickerStart></mat-datepicker>
+            <mat-hint>Fecha de inicio del rango</mat-hint>
+          </mat-form-field>
+
+          <!-- Hasta -->
+          <mat-form-field appearance="outline">
+            <mat-label>Hasta</mat-label>
+            <mat-icon matPrefix class="text-blue-400">event</mat-icon>
+            <input matInput [matDatepicker]="pickerEnd" formControlName="endDate" />
+            <mat-datepicker-toggle matIconSuffix [for]="pickerEnd"></mat-datepicker-toggle>
+            <mat-datepicker #pickerEnd></mat-datepicker>
+            <mat-hint>Fecha de fin del rango</mat-hint>
+          </mat-form-field>
+
+        </div>
+
+        <!-- Botón limpiar -->
+        <div class="flex justify-end mt-4">
+          <button
+            type="button"
+            (click)="resetFilters()"
+            class="btn btn-danger-outline"
+          >
+            <span class="material-symbols-outlined msz-18 leading-none">filter_alt_off</span>
+            Limpiar filtros
+          </button>
+        </div>
+      </div>
+
+      <!-- Skeleton -->
+      <div *ngIf="loading" class="p-6">
+        <app-skeleton-table [rows]="10" [columns]="8"></app-skeleton-table>
+      </div>
+
+      <!-- Tabla -->
+      <div *ngIf="!loading" class="overflow-x-auto">
+        <table mat-table [dataSource]="logs" class="w-full">
+
+          <!-- Fecha/hora -->
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef class="whitespace-nowrap !pl-6">Fecha y hora</th>
+            <td mat-cell *matCellDef="let log" class="whitespace-nowrap text-xs text-slate-600 !pl-6">
+              {{ formatDate(log.createdAt) }}
+            </td>
+          </ng-container>
+
+          <!-- Usuario -->
+          <ng-container matColumnDef="userEmail">
+            <th mat-header-cell *matHeaderCellDef>Usuario</th>
+            <td mat-cell *matCellDef="let log">
+              <div class="max-w-[150px]">
+                <button
+                  class="text-xs text-blue-600 hover:underline truncate block text-left max-w-full"
+                  [title]="'Filtrar por ' + log.userEmail"
+                  (click)="filterByUser(log.userEmail)"
+                >{{ log.userEmail || '—' }}</button>
+                <p *ngIf="log.userName" class="text-xs text-slate-400 truncate m-0">{{ log.userName }}</p>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Acción -->
+          <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef>Acción</th>
+            <td mat-cell *matCellDef="let log">
+              <span
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+                [ngClass]="getActionClass(log.action)"
+              >
+                <span class="material-symbols-outlined" style="font-size:11px">{{ getActionIcon(log.action) }}</span>
+                {{ log.action }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Recurso -->
+          <ng-container matColumnDef="resource">
+            <th mat-header-cell *matHeaderCellDef>Recurso</th>
+            <td mat-cell *matCellDef="let log">
+              <span class="text-sm text-slate-700">{{ log.resource }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Método HTTP -->
+          <ng-container matColumnDef="method">
+            <th mat-header-cell *matHeaderCellDef>Método</th>
+            <td mat-cell *matCellDef="let log">
+              <span class="text-xs font-mono font-bold" [ngClass]="getMethodClass(log.method)">
+                {{ log.method }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Código HTTP -->
+          <ng-container matColumnDef="statusCode">
+            <th mat-header-cell *matHeaderCellDef>HTTP</th>
+            <td mat-cell *matCellDef="let log">
+              <span class="text-xs font-mono font-bold" [ngClass]="getHttpCodeClass(log.statusCode)">
+                {{ log.statusCode }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Estado -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let log">
+              <span
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+                [ngClass]="getStatusClass(log.status)"
+              >
+                <span class="material-symbols-outlined" style="font-size:11px">
+                  {{ log.status === 'success' ? 'check_circle' : 'cancel' }}
+                </span>
+                {{ log.status === 'success' ? 'OK' : 'Error' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- IP -->
+          <ng-container matColumnDef="ipAddress">
+            <th mat-header-cell *matHeaderCellDef>IP</th>
+            <td mat-cell *matCellDef="let log">
+              <span class="text-xs font-mono text-slate-400">{{ log.ipAddress || '—' }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Expandir detalles -->
+          <ng-container matColumnDef="expand">
+            <th mat-header-cell *matHeaderCellDef class="!pr-4 w-10"></th>
+            <td mat-cell *matCellDef="let log" class="!pr-4">
+              <button
+                *ngIf="hasExpandableContent(log)"
+                (click)="toggleExpand(log.id)"
+                class="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <span class="material-symbols-outlined msz-20">
+                  {{ expandedLogId === log.id ? 'expand_less' : 'expand_more' }}
+                </span>
+              </button>
+            </td>
+          </ng-container>
+
+          <!-- Detalle expandido -->
+          <ng-container matColumnDef="expandedDetail">
+            <td mat-cell *matCellDef="let log" [attr.colspan]="displayedColumns.length" class="!p-0 border-0">
+              <div *ngIf="expandedLogId === log.id" class="px-6 py-4 bg-slate-50 border-t border-slate-100">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+                  <div *ngIf="log.path">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Ruta completa</p>
+                    <p class="font-mono text-xs text-slate-700 break-all bg-white rounded px-2 py-1.5 border border-slate-200 m-0">
+                      <span class="font-bold" [ngClass]="getMethodClass(log.method)">{{ log.method }}</span>
+                      {{ log.path }}
+                    </p>
+                  </div>
+
+                  <div *ngIf="log.resourceId">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">ID del registro</p>
+                    <p class="font-mono text-xs text-slate-700 break-all bg-white rounded px-2 py-1.5 border border-slate-200 m-0">
+                      {{ log.resourceId }}
+                    </p>
+                  </div>
+
+                  <div *ngIf="log.details">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Detalles técnicos</p>
+                    <div class="bg-slate-900 rounded px-3 py-2 overflow-x-auto">
+                      <pre class="text-xs text-green-400 whitespace-pre-wrap m-0">{{ formatDetails(log.details) }}</pre>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-slate-50"></tr>
+          <tr
+            mat-row
+            *matRowDef="let log; columns: displayedColumns"
+            class="hover:bg-blue-50/30 transition-colors cursor-default"
+            [class.bg-red-50]="log.status === 'failure'"
+            [class.hover:bg-red-100]="log.status === 'failure'"
+          ></tr>
+          <tr mat-row *matRowDef="let log; columns: ['expandedDetail']" class="!min-h-0"></tr>
+
+          <tr class="mat-row" *matNoDataRow>
+            <td [attr.colspan]="displayedColumns.length">
+              <app-empty-state
+                icon="manage_search"
+                title="Sin resultados"
+                message="No se encontraron registros con los filtros seleccionados"
+              />
+            </td>
+          </tr>
+
+        </table>
+      </div>
+
+      <!-- Paginador -->
+      <mat-paginator
+        [length]="total"
+        [pageSize]="pageSize"
+        [pageIndex]="page - 1"
+        [pageSizeOptions]="[25, 50, 100, 200]"
+        (page)="onPageChange($event)"
+        showFirstLastButtons
+      ></mat-paginator>
+
+    </div>
+  </div>
+</div>

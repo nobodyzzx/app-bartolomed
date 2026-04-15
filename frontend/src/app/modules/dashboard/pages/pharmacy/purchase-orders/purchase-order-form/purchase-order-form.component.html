@@ -1,0 +1,278 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      [title]="isEditMode ? 'Editar Orden de Compra' : 'Nueva Orden de Compra'"
+      [subtitle]="isEditMode ? 'Modifica los datos de la orden' : 'Crea una nueva orden de compra a proveedor'"
+      (back)="goBack()"
+    >
+      <ng-container actions>
+        <button
+          type="button"
+          (click)="cancel()"
+          class="btn btn-danger-outline"
+        >
+          <span class="material-symbols-outlined msz-18">cancel</span>
+          Cancelar
+        </button>
+      </ng-container>
+    </app-page-header>
+
+    <form [formGroup]="orderForm" (ngSubmit)="onSubmit()" class="space-y-6">
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 1 — Información General (azul)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">info</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información General</h3>
+            <p class="text-sm text-slate-500 m-0">Proveedor, fechas y observaciones</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Proveedor</mat-label>
+              <mat-icon matPrefix class="text-blue-400">business</mat-icon>
+              <mat-select formControlName="supplierId">
+                <mat-option *ngFor="let s of suppliers()" [value]="s.id">
+                  {{ s.tradeName || s.nombreComercial || s.name }}
+                  <span class="text-sm text-slate-500" *ngIf="s.razonSocial"> - {{ s.razonSocial }}</span>
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="orderForm.get('supplierId')?.hasError('required')">Seleccione un proveedor</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Fecha de Orden</mat-label>
+              <mat-icon matPrefix class="text-blue-400">calendar_today</mat-icon>
+              <input matInput [matDatepicker]="orderDatePicker" formControlName="orderDate" />
+              <mat-datepicker-toggle matIconSuffix [for]="orderDatePicker"></mat-datepicker-toggle>
+              <mat-datepicker #orderDatePicker></mat-datepicker>
+              <mat-error *ngIf="orderForm.get('orderDate')?.hasError('required')">La fecha es requerida</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Fecha de Entrega Esperada</mat-label>
+              <mat-icon matPrefix class="text-blue-400">event</mat-icon>
+              <input matInput [matDatepicker]="deliveryDatePicker" formControlName="expectedDeliveryDate" />
+              <mat-datepicker-toggle matIconSuffix [for]="deliveryDatePicker"></mat-datepicker-toggle>
+              <mat-datepicker #deliveryDatePicker></mat-datepicker>
+              <mat-error *ngIf="orderForm.get('expectedDeliveryDate')?.hasError('required')">La fecha es requerida</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Notas adicionales</mat-label>
+              <mat-icon matPrefix class="text-blue-400">notes</mat-icon>
+              <textarea matInput formControlName="notes" rows="2" placeholder="Observaciones generales..."></textarea>
+            </mat-form-field>
+          </div>
+
+          <!-- Info del proveedor seleccionado -->
+          @if (selectedSupplier()) {
+            <div class="mt-6 p-4 bg-blue-50 rounded-2xl border border-blue-200">
+              <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined msz-20">store</span>
+                </div>
+                <div class="flex-1">
+                  <h3 class="font-semibold text-blue-900 mb-2">
+                    {{ selectedSupplier()?.tradeName || selectedSupplier()?.nombreComercial || selectedSupplier()?.name }}
+                  </h3>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                    <div *ngIf="selectedSupplier()?.contactPerson" class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-blue-400 msz-16">person</span>
+                      <span class="text-blue-800">{{ selectedSupplier()?.contactPerson }}</span>
+                    </div>
+                    <div *ngIf="selectedSupplier()?.email" class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-blue-400 msz-16">email</span>
+                      <span class="text-blue-800">{{ selectedSupplier()?.email }}</span>
+                    </div>
+                    <div *ngIf="selectedSupplier()?.phone" class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-blue-400 msz-16">phone</span>
+                      <span class="text-blue-800">{{ selectedSupplier()?.phone }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 2 — Items de la Orden (verde)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">inventory_2</span>
+          </div>
+          <div class="flex-1">
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Items de la Orden</h3>
+            <p class="text-sm text-slate-500 m-0">Agrega los medicamentos a solicitar</p>
+          </div>
+          <button
+            type="button"
+            (click)="addItem()"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+          >
+            <span class="material-symbols-outlined msz-20 leading-none">add</span>
+            Agregar Item
+          </button>
+        </div>
+        <div class="p-6">
+          <div formArrayName="items" class="space-y-4">
+            @for (item of items.controls; track $index; let i = $index) {
+              <div
+                [formGroupName]="i"
+                class="border-2 border-slate-200 rounded-2xl p-5 bg-gradient-to-br from-slate-50 to-white hover:shadow-md transition-shadow"
+              >
+                <div class="flex items-start gap-4">
+                  <div class="flex-1 space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                      <div class="md:col-span-6">
+                        <mat-form-field appearance="outline" class="w-full">
+                          <mat-label>Medicamento</mat-label>
+                          <mat-icon matPrefix class="text-green-400">medication</mat-icon>
+                          <mat-select formControlName="medicationId">
+                            <mat-option *ngFor="let med of medications()" [value]="med.id">
+                              {{ med.name }}
+                              <span *ngIf="med.brandName" class="text-sm text-slate-500"> - {{ med.brandName }}</span>
+                              <span class="text-xs text-slate-400"> [{{ med.code }}]</span>
+                            </mat-option>
+                          </mat-select>
+                          <mat-error *ngIf="item.get('medicationId')?.hasError('required')">Seleccione un medicamento</mat-error>
+                        </mat-form-field>
+                      </div>
+                      <div class="md:col-span-2">
+                        <mat-form-field appearance="outline" class="w-full">
+                          <mat-label>Cantidad</mat-label>
+                          <mat-icon matPrefix class="text-green-400">tag</mat-icon>
+                          <input matInput type="number" min="1" formControlName="quantity" />
+                          <mat-error *ngIf="item.get('quantity')?.hasError('required')">Requerido</mat-error>
+                          <mat-error *ngIf="item.get('quantity')?.hasError('min')">Mínimo 1</mat-error>
+                        </mat-form-field>
+                      </div>
+                      <div class="md:col-span-2">
+                        <mat-form-field appearance="outline" class="w-full">
+                          <mat-label>Precio Unit.</mat-label>
+                          <mat-icon matPrefix class="text-green-400">payments</mat-icon>
+                          <span matTextPrefix>Bs </span>
+                          <input matInput type="number" min="0.01" step="0.01" formControlName="unitPrice" />
+                          <mat-error *ngIf="item.get('unitPrice')?.hasError('required')">Requerido</mat-error>
+                          <mat-error *ngIf="item.get('unitPrice')?.hasError('min')">Mínimo 0.01</mat-error>
+                        </mat-form-field>
+                      </div>
+                      <div class="md:col-span-2">
+                        <div class="h-14 flex items-center justify-center rounded-xl bg-green-50 border border-green-200 px-3">
+                          <div class="text-center">
+                            <div class="text-xs text-green-700 font-medium">Subtotal</div>
+                            <div class="text-lg font-bold text-green-900">{{ getItemTotal(i) | currency: 'BOB' : 'symbol-narrow' : '1.2-2' }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Notas del item (opcional)</mat-label>
+                      <mat-icon matPrefix class="text-green-400">description</mat-icon>
+                      <input matInput formControlName="notes" placeholder="Especificaciones, observaciones..." />
+                    </mat-form-field>
+                  </div>
+                  <button
+                    type="button"
+                    (click)="removeItem(i)"
+                    class="w-10 h-10 flex-shrink-0 inline-flex items-center justify-center rounded-full bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed border-0"
+                    [disabled]="items.length === 1"
+                    matTooltip="Eliminar item"
+                    aria-label="Eliminar item"
+                  >
+                    <span class="material-symbols-outlined msz-20 leading-none">delete</span>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+
+          @if (items.length === 0) {
+            <app-empty-state
+              icon="inventory"
+              title="No hay items"
+              subtitle="Agrega al menos un item para continuar"
+              actionLabel="Agregar Item"
+              (action)="addItem()"
+            />
+          }
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 3 — Resumen (slate)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200">
+          <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">receipt_long</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Resumen de la Orden</h3>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <app-stat-card
+              label="Total de Items"
+              [value]="totalItems"
+              sublabel="Productos diferentes"
+              icon="inventory_2"
+              color="slate"
+            />
+            <app-stat-card
+              label="Total Unidades"
+              [value]="totalUnits"
+              sublabel="Cantidad total"
+              icon="tag"
+              color="blue"
+            />
+            <app-stat-card
+              label="Monto Total"
+              [value]="(totalAmount | currency: 'BOB' : 'symbol-narrow' : '1.2-2') ?? ''"
+              sublabel="Importe de la orden"
+              icon="attach_money"
+              color="green"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ Sticky action bar ══════ -->
+      <div class="form-action-bar">
+        <button
+          type="button"
+          (click)="cancel()"
+          class="btn btn-danger-outline"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none">close</span>
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          [disabled]="loading() || orderForm.invalid || items.length === 0"
+          class="btn btn-primary"
+        >
+          @if (loading()) {
+            <span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+          } @else {
+            <span class="material-symbols-outlined msz-18 leading-none">save</span>
+          }
+          {{ isEditMode ? 'Actualizar Orden' : 'Crear Orden' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>

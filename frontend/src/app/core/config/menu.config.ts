@@ -66,9 +66,15 @@ export const MENU_ITEMS: MenuItem[] = [
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
       {
-        label: 'Generación de Pedidos',
+        label: 'Proveedores',
+        icon: 'local_shipping',
+        route: '/dashboard/pharmacy/suppliers',
+        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
+      },
+      {
+        label: 'Órdenes de Compra',
         icon: 'shopping_cart',
-        route: '/dashboard/pharmacy/order-generation',
+        route: '/dashboard/pharmacy/purchase-orders',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
       {
@@ -118,21 +124,15 @@ export const MENU_ITEMS: MenuItem[] = [
     allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
     children: [
       {
-        label: 'Registro de Activos',
-        icon: 'add_circle',
-        route: '/dashboard/assets-control/registration',
+        label: 'Control de Inventario de Activos',
+        icon: 'inventory_2',
+        route: '/dashboard/assets-control/inventory',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
       {
         label: 'Mantenimiento de Activos',
         icon: 'build',
         route: '/dashboard/assets-control/maintenance',
-        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
-      },
-      {
-        label: 'Control de Inventario de Activos',
-        icon: 'inventory_2',
-        route: '/dashboard/assets-control/inventory',
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
       {
@@ -168,10 +168,10 @@ export const MENU_ITEMS: MenuItem[] = [
         allowedRoles: [UserRoles.ADMIN],
       },
       {
-        label: 'Cambiar Roles',
-        icon: 'manage_accounts',
+        label: 'Gestión de Roles',
+        icon: 'security',
         route: '/dashboard/roles',
-        allowedRoles: [UserRoles.ADMIN],
+        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_USER],
       },
       {
         label: 'Configuración del Sistema',

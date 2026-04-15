@@ -1,771 +1,880 @@
-<div class="medical-record-form-container">
-  <div class="medical-record-form-content">
-    
-    <!-- Encabezado -->
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-blue-900 mb-4">
-        {{isEditMode ? 'Editar Expediente Médico' : 'Nuevo Expediente Médico'}}
-      </h1>
-      <div class="w-24 h-1 bg-blue-600 mx-auto rounded-full mb-4"></div>
-      <p class="text-lg text-blue-600">
-        {{isEditMode ? 'Modificar información del expediente médico' : 'Crear nuevo expediente médico paso a paso'}}
-      </p>
-    </div>
+<div class="page-wrapper">
+  <div class="page-inner">
 
-    <!-- Loading Indicator -->
-    <div *ngIf="isLoading" class="flex justify-center items-center py-8">
+    <!-- Overlay de carga -->
+    <div *ngIf="isLoading" class="flex justify-center items-center py-20">
       <mat-spinner diameter="50"></mat-spinner>
     </div>
 
-    <!-- Stepper Form -->
-    <mat-stepper [linear]="true" #stepper *ngIf="!isLoading">
-      
-      <!-- Paso 1: Información del Paciente -->
-      <mat-step [stepControl]="patientInfoForm" label="Información del Paciente">
-        <form [formGroup]="patientInfoForm">
-          <div class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 mb-6">
-            <h2 class="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-3">
-              <mat-icon class="text-blue-600">person</mat-icon>
-              Información del Paciente y Consulta
-            </h2>
-            
+    <ng-container *ngIf="!isLoading">
+
+      <!-- Banner sticky con información crítica del paciente -->
+      <div
+        class="sticky top-4 z-50 mb-6 bg-gradient-to-r from-red-500 to-pink-600 rounded-xl shadow-lg p-4 border-2 border-red-300"
+        *ngIf="getSelectedPatient()"
+      >
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <span class="material-symbols-outlined text-white msz-24">medical_information</span>
+            </div>
+            <div>
+              <div class="text-white font-bold text-lg">
+                {{ getSelectedPatient()?.firstName }} {{ getSelectedPatient()?.lastName }}
+              </div>
+              <div class="text-white/90 text-xs">
+                {{ getSelectedPatient()?.documentNumber || 'Sin documento' }}
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 flex-wrap">
+            <div class="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2">
+              <span class="material-symbols-outlined text-white msz-20">water_drop</span>
+              <div>
+                <div class="text-white/80 text-xs font-medium">Grupo Sanguíneo</div>
+                <div class="text-white font-bold">{{ getSelectedPatient()?.bloodType || 'N/A' }}</div>
+              </div>
+            </div>
+            <div
+              class="flex items-center gap-2 bg-yellow-500/30 backdrop-blur-sm rounded-lg px-3 py-2 border border-yellow-300/50"
+              *ngIf="getSelectedPatient()?.allergies"
+            >
+              <span class="material-symbols-outlined text-white msz-20 animate-pulse">warning</span>
+              <div class="max-w-xs">
+                <div class="text-white/90 text-xs font-medium">⚠️ Alergias</div>
+                <div class="text-white font-semibold text-sm line-clamp-1">
+                  {{ getSelectedPatient()?.allergies }}
+                </div>
+              </div>
+            </div>
+            <div
+              class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 shadow-lg animate-pulse"
+              *ngIf="patientInfoForm.get('isEmergency')?.value"
+            >
+              <span class="material-symbols-outlined text-red-600 msz-20">emergency</span>
+              <div>
+                <div class="text-red-600 font-bold text-sm">EMERGENCIA</div>
+                <div class="text-red-500 text-xs">Atención prioritaria</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Encabezado de página -->
+      <app-page-header
+        [title]="isFollowUpMode ? 'Seguimiento Expediente Médico' : isEditMode ? 'Editar Expediente Médico' : 'Nuevo Expediente Médico'"
+        [subtitle]="isFollowUpMode ? 'Seguimiento de consulta anterior · Datos históricos protegidos' : isEditMode ? 'Modificar expediente clínico' : 'Crear expediente clínico'"
+        (back)="goBack()"
+      >
+        <button
+          type="button"
+          (click)="cancel()"
+          [disabled]="isSaving"
+          class="btn btn-danger-outline"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none">cancel</span>
+          Cancelar
+        </button>
+      </app-page-header>
+
+      <!-- Alerta de modo seguimiento -->
+      <div
+        *ngIf="isFollowUpMode && originalConsultation"
+        class="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 rounded-xl shadow-md p-5 mb-6"
+      >
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-24 text-amber-600">lock</span>
+          </div>
+          <div class="flex-1">
+            <h3 class="font-bold text-amber-900 text-lg mb-2 flex items-center gap-2">
+              <span class="material-symbols-outlined msz-20">refresh</span>
+              Modo Seguimiento Activo
+            </h3>
+            <p class="text-sm text-amber-800 mb-3 leading-relaxed">
+              Los campos con información de la consulta original están
+              <strong>bloqueados</strong> para preservar la integridad del historial médico.
+            </p>
+            <div class="bg-white/60 rounded-lg p-3 text-sm">
+              <p class="text-amber-900 font-medium mb-1">📋 Consulta Original:</p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-amber-800">
+                <p><strong>Paciente:</strong> {{ originalConsultation.patient?.firstName }} {{ originalConsultation.patient?.lastName }}</p>
+                <p><strong>Fecha:</strong> {{ originalConsultation.createdAt | date: 'short' }}</p>
+                <p class="md:col-span-2"><strong>Motivo:</strong> {{ originalConsultation.chiefComplaint }}</p>
+                <p class="md:col-span-2" *ngIf="originalConsultation.diagnosis">
+                  <strong>Diagnóstico previo:</strong> {{ originalConsultation.diagnosis }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════
+           SECCIÓN 1: Información de la Consulta (azul)
+      ══════════════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6" [formGroup]="patientInfoForm">
+        <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">assignment_ind</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información de la Consulta</h3>
+            <p class="text-sm text-slate-500 m-0">Paciente, médico y motivo principal</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- Selección de Paciente (Autocomplete) -->
+            <mat-form-field appearance="outline">
+              <mat-label>Paciente</mat-label>
+              <input
+                matInput type="text"
+                placeholder="Buscar paciente por nombre o C.I."
+                [formControl]="patientSearchCtrl"
+                [errorStateMatcher]="patientErrorMatcher"
+                [matAutocomplete]="autoPatient"
+                required aria-autocomplete="list"
+              />
+              <button mat-icon-button matSuffix type="button" class="!mr-1"
+                *ngIf="patientSearchCtrl.value && !isFollowUpMode"
+                (click)="clearPatientSelection()" aria-label="Limpiar selección de paciente">
+                <mat-icon>close</mat-icon>
+              </button>
+              <mat-icon matPrefix class="text-blue-400" *ngIf="!isFollowUpMode">person</mat-icon>
+              <mat-icon matPrefix class="text-amber-500" *ngIf="isFollowUpMode">lock</mat-icon>
+              <mat-autocomplete #autoPatient="matAutocomplete" (optionSelected)="onPatientSelected($event)" autoActiveFirstOption>
+                <mat-option *ngFor="let patient of (filteredPatients$ | async) ?? []; trackBy: trackById" [value]="patient">
+                  {{ patient.firstName }} {{ patient.lastName }}
+                  <span class="text-slate-500" *ngIf="patient.documentNumber"> – {{ patient.documentNumber }}</span>
+                </mat-option>
+              </mat-autocomplete>
+              <mat-hint *ngIf="!isFollowUpMode">Escriba para buscar y seleccione un paciente</mat-hint>
+              <mat-hint *ngIf="isFollowUpMode" class="text-amber-600">🔒 Paciente bloqueado en modo seguimiento</mat-hint>
+              <mat-error *ngIf="patientInfoForm.get('patientId')?.hasError('required')">Debe seleccionar un paciente</mat-error>
+            </mat-form-field>
+
+            <!-- Selección de Doctor (Autocomplete) -->
+            <mat-form-field appearance="outline">
+              <mat-label>Doctor</mat-label>
+              <input
+                matInput type="text"
+                placeholder="Buscar doctor por nombre o especialidad"
+                [formControl]="doctorSearchCtrl"
+                [errorStateMatcher]="doctorErrorMatcher"
+                [matAutocomplete]="autoDoctor"
+                required aria-autocomplete="list"
+              />
+              <button mat-icon-button matSuffix type="button" class="!mr-1"
+                *ngIf="doctorSearchCtrl.value" (click)="clearDoctorSelection()" aria-label="Limpiar selección de doctor">
+                <mat-icon>close</mat-icon>
+              </button>
+              <mat-icon matPrefix class="text-blue-400">medical_services</mat-icon>
+              <mat-autocomplete #autoDoctor="matAutocomplete" (optionSelected)="onDoctorSelected($event)" autoActiveFirstOption>
+                <mat-option *ngFor="let doctor of (filteredDoctors$ | async) ?? []; trackBy: trackById" [value]="doctor">
+                  <ng-container *ngIf="doctor.professionalInfo?.title as t">{{ t }} </ng-container>
+                  {{ doctor.personalInfo.firstName }} {{ doctor.personalInfo.lastName }}
+                  <span *ngIf="doctor.professionalInfo?.specialization" class="text-slate-500"> – {{ doctor.professionalInfo?.specialization }}</span>
+                </mat-option>
+              </mat-autocomplete>
+              <mat-hint>Escriba para buscar y seleccione un doctor</mat-hint>
+              <mat-error *ngIf="patientInfoForm.get('doctorId')?.hasError('required')">Debe seleccionar un doctor</mat-error>
+            </mat-form-field>
+
+            <!-- Tipo de Consulta -->
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo de Consulta</mat-label>
+              <mat-select formControlName="type" required>
+                <mat-option *ngFor="let type of recordTypes; trackBy: trackByValue" [value]="type">
+                  {{ getTypeText(type) }}
+                </mat-option>
+              </mat-select>
+              <mat-icon matPrefix class="text-blue-400">assignment</mat-icon>
+              <mat-error *ngIf="patientInfoForm.get('type')?.hasError('required')">Debe seleccionar el tipo de consulta</mat-error>
+            </mat-form-field>
+
+            <!-- Toggle Emergencia -->
+            <div
+              class="flex items-center gap-3 p-4 rounded-lg border-2 transition-all"
+              [ngClass]="patientInfoForm.get('isEmergency')?.value ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-slate-50'"
+            >
+              <div class="w-10 h-10 rounded-full flex items-center justify-center transition-all"
+                [ngClass]="patientInfoForm.get('isEmergency')?.value ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500'">
+                <span class="material-symbols-outlined msz-24">emergency</span>
+              </div>
+              <div class="flex-1">
+                <div class="font-semibold transition-colors"
+                  [ngClass]="patientInfoForm.get('isEmergency')?.value ? 'text-red-700' : 'text-slate-700'">
+                  Consulta de Emergencia
+                </div>
+                <div class="text-xs transition-colors"
+                  [ngClass]="patientInfoForm.get('isEmergency')?.value ? 'text-red-600' : 'text-slate-500'">
+                  {{ patientInfoForm.get('isEmergency')?.value ? 'Atención prioritaria activada' : 'Marcar si requiere atención inmediata' }}
+                </div>
+              </div>
+              <mat-slide-toggle formControlName="isEmergency" color="warn"></mat-slide-toggle>
+            </div>
+
+            <!-- Motivo Principal de Consulta -->
+            <mat-form-field appearance="outline" class="md:col-span-2">
+              <mat-label>Motivo Principal de Consulta</mat-label>
+              <textarea matInput formControlName="chiefComplaint"
+                placeholder="Describa el motivo principal por el cual el paciente busca atención médica..."
+                rows="4" required></textarea>
+              <mat-icon matPrefix class="text-blue-400">description</mat-icon>
+              <mat-error *ngIf="patientInfoForm.get('chiefComplaint')?.hasError('required')">El motivo de consulta es requerido</mat-error>
+              <mat-error *ngIf="patientInfoForm.get('chiefComplaint')?.hasError('minlength')">Mínimo 10 caracteres</mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="mt-4 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+            <div class="flex items-center gap-2 text-sm text-blue-800">
+              <span class="material-symbols-outlined msz-18">info</span>
+              <span><strong>Tip:</strong> El motivo de consulta debe ser claro y específico, ej: "Dolor abdominal intenso desde hace 2 días"</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════
+           SECCIÓN 2: Historia Médica (verde)
+      ══════════════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6" [formGroup]="clinicalDataForm">
+        <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">history</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Historia Médica del Paciente</h3>
+            <p class="text-sm text-slate-500 m-0">Antecedentes, medicamentos, alergias y sistemas</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 gap-6">
+            <mat-form-field appearance="outline">
+              <mat-label>Historia de la Enfermedad Actual</mat-label>
+              <textarea matInput formControlName="historyOfPresentIllness"
+                placeholder="Describa la evolución detallada de los síntomas actuales..." rows="3"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Antecedentes Médicos</mat-label>
+              <textarea matInput formControlName="pastMedicalHistory"
+                placeholder="Enfermedades previas, cirugías, hospitalizaciones..." rows="3"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Medicamentos Actuales</mat-label>
+              <textarea matInput formControlName="medications"
+                placeholder="Lista de medicamentos que toma actualmente, dosis y frecuencia..." rows="3"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Alergias</mat-label>
+              <textarea matInput formControlName="allergies"
+                placeholder="Alergias conocidas a medicamentos, alimentos, etc..." rows="2"></textarea>
+            </mat-form-field>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- Selección de Paciente -->
               <mat-form-field appearance="outline">
-                <mat-label>Paciente</mat-label>
-                <mat-select formControlName="patientId" required>
-                  <mat-option value="">Seleccione un paciente</mat-option>
-                  <mat-option *ngFor="let patient of patients$ | async" [value]="patient.id">
-                    {{patient.firstName}} {{patient.lastName}} - {{patient.documentNumber}}
-                  </mat-option>
-                </mat-select>
-                <mat-icon matSuffix>person</mat-icon>
-                <mat-error *ngIf="patientInfoForm.get('patientId')?.hasError('required')">
-                  Debe seleccionar un paciente
-                </mat-error>
+                <mat-label>Historia Social</mat-label>
+                <textarea matInput formControlName="socialHistory"
+                  placeholder="Hábitos, ocupación, estilo de vida..." rows="3"></textarea>
               </mat-form-field>
 
-              <!-- Selección de Doctor -->
               <mat-form-field appearance="outline">
-                <mat-label>Doctor</mat-label>
-                <mat-select formControlName="doctorId" required>
-                  <mat-option value="">Seleccione un doctor</mat-option>
-                  <mat-option *ngFor="let doctor of doctors$ | async" [value]="doctor.id">
-                    <span *ngIf="doctor.professionalInfo?.title">{{doctor.professionalInfo.title}}</span>
-                    {{doctor.personalInfo?.firstName}} {{doctor.personalInfo?.lastName}}
-                    <span *ngIf="doctor.professionalInfo?.specialization"> - {{doctor.professionalInfo.specialization}}</span>
-                  </mat-option>
-                </mat-select>
-                <mat-icon matSuffix>medical_services</mat-icon>
-                <mat-error *ngIf="patientInfoForm.get('doctorId')?.hasError('required')">
-                  Debe seleccionar un doctor
-                </mat-error>
-              </mat-form-field>
-
-              <!-- Tipo de Registro -->
-              <mat-form-field appearance="outline">
-                <mat-label>Tipo de Consulta</mat-label>
-                <mat-select formControlName="type" required>
-                  <mat-option *ngFor="let type of recordTypes" [value]="type">
-                    {{getTypeText(type)}}
-                  </mat-option>
-                </mat-select>
-                <mat-icon matSuffix>assignment</mat-icon>
-                <mat-error *ngIf="patientInfoForm.get('type')?.hasError('required')">
-                  Debe seleccionar el tipo de consulta
-                </mat-error>
-              </mat-form-field>
-
-              <!-- Emergencia -->
-              <div class="flex items-center">
-                <mat-checkbox formControlName="isEmergency" class="text-red-600">
-                  <span class="ml-2 text-red-600 font-medium">Marcar como Emergencia</span>
-                </mat-checkbox>
-              </div>
-
-              <!-- Motivo Principal de Consulta -->
-              <mat-form-field appearance="outline" class="md:col-span-2">
-                <mat-label>Motivo Principal de Consulta</mat-label>
-                <textarea matInput 
-                          formControlName="chiefComplaint" 
-                          placeholder="Describa el motivo principal por el cual el paciente busca atención médica..."
-                          rows="4"
-                          required></textarea>
-                <mat-icon matSuffix>description</mat-icon>
-                <mat-error *ngIf="patientInfoForm.get('chiefComplaint')?.hasError('required')">
-                  El motivo de consulta es requerido
-                </mat-error>
-                <mat-error *ngIf="patientInfoForm.get('chiefComplaint')?.hasError('minlength')">
-                  Debe proporcionar una descripción más detallada (mínimo 10 caracteres)
-                </mat-error>
+                <mat-label>Historia Familiar</mat-label>
+                <textarea matInput formControlName="familyHistory"
+                  placeholder="Enfermedades en familiares cercanos..." rows="3"></textarea>
               </mat-form-field>
             </div>
 
-            <!-- Datos de Ejemplo -->
-            <div class="mt-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-              <h3 class="text-sm font-bold text-blue-800 mb-2">💡 Ejemplos para prueba:</h3>
-              <div class="text-xs text-blue-700 grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div>
-                  <strong>Paciente:</strong> Cualquier paciente registrado
+            <mat-form-field appearance="outline">
+              <mat-label>Revisión por Sistemas</mat-label>
+              <textarea matInput formControlName="reviewOfSystems"
+                placeholder="Síntomas por sistemas (cardiovascular, respiratorio, etc.)..." rows="3"></textarea>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════
+           SECCIÓN 3: Signos Vitales (morado)
+      ══════════════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6" [formGroup]="clinicalDataForm">
+        <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
+          <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">monitor_heart</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Signos Vitales</h3>
+            <p class="text-sm text-slate-500 m-0">Temperatura, presión, frecuencia, saturación y medidas</p>
+          </div>
+        </div>
+        <div class="p-6">
+
+          <!-- Resumen visual (solo cuando hay valores ingresados) -->
+          <div
+            class="mb-6 p-5 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-200"
+            *ngIf="clinicalDataForm.get('temperature')?.value || clinicalDataForm.get('systolicBP')?.value ||
+                   clinicalDataForm.get('heartRate')?.value || clinicalDataForm.get('oxygenSaturation')?.value"
+          >
+            <div class="flex items-center gap-2 mb-4">
+              <span class="material-symbols-outlined text-purple-600 msz-20">analytics</span>
+              <h4 class="text-sm font-bold text-purple-900 m-0">Resumen de Signos Vitales Registrados</h4>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div class="bg-white rounded-lg p-3 shadow-sm border transition-all"
+                *ngIf="clinicalDataForm.get('temperature')?.value"
+                [ngClass]="{'border-green-300 bg-green-50': getVitalSignClasses('temperature')['vital-sign-normal'], 'border-yellow-300 bg-yellow-50': getVitalSignClasses('temperature')['vital-sign-warning'], 'border-red-300 bg-red-50': getVitalSignClasses('temperature')['vital-sign-danger']}">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="material-symbols-outlined msz-16"
+                    [ngClass]="{'text-green-600': getVitalSignClasses('temperature')['vital-sign-normal'], 'text-yellow-600': getVitalSignClasses('temperature')['vital-sign-warning'], 'text-red-600': getVitalSignClasses('temperature')['vital-sign-danger']}">device_thermostat</span>
+                  <span class="text-xs font-medium text-slate-600">Temperatura</span>
                 </div>
-                <div>
-                  <strong>Motivo:</strong> "Dolor abdominal de 2 días de evolución"
+                <div class="text-lg font-bold"
+                  [ngClass]="{'text-green-900': getVitalSignClasses('temperature')['vital-sign-normal'], 'text-yellow-900': getVitalSignClasses('temperature')['vital-sign-warning'], 'text-red-900': getVitalSignClasses('temperature')['vital-sign-danger']}">
+                  {{ clinicalDataForm.get('temperature')?.value }}°C
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div class="flex gap-4 justify-end">
-            <button mat-button (click)="cancel()" type="button">Cancelar</button>
-            <button mat-raised-button color="primary" matStepperNext [disabled]="patientInfoForm.invalid">
-              Siguiente: Historia Médica
-              <mat-icon>arrow_forward</mat-icon>
-            </button>
-          </div>
-        </form>
-      </mat-step>
-
-      <!-- Paso 2: Historia Médica -->
-      <mat-step [stepControl]="medicalHistoryForm" label="Historia Médica">
-        <form [formGroup]="medicalHistoryForm">
-          <div class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 mb-6">
-            <h2 class="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-3">
-              <mat-icon class="text-blue-600">history</mat-icon>
-              Historia Médica del Paciente
-            </h2>
-            
-            <div class="grid grid-cols-1 gap-6">
-              <!-- Historia de la Enfermedad Actual -->
-              <mat-form-field appearance="outline">
-                <mat-label>Historia de la Enfermedad Actual</mat-label>
-                <textarea matInput 
-                          formControlName="historyOfPresentIllness" 
-                          placeholder="Describa la evolución detallada de los síntomas actuales..."
-                          rows="3"></textarea>
-              </mat-form-field>
-
-              <!-- Antecedentes Médicos -->
-              <mat-form-field appearance="outline">
-                <mat-label>Antecedentes Médicos</mat-label>
-                <textarea matInput 
-                          formControlName="pastMedicalHistory" 
-                          placeholder="Enfermedades previas, cirugías, hospitalizaciones..."
-                          rows="3"></textarea>
-              </mat-form-field>
-
-              <!-- Medicamentos Actuales -->
-              <mat-form-field appearance="outline">
-                <mat-label>Medicamentos Actuales</mat-label>
-                <textarea matInput 
-                          formControlName="medications" 
-                          placeholder="Lista de medicamentos que toma actualmente, dosis y frecuencia..."
-                          rows="3"></textarea>
-              </mat-form-field>
-
-              <!-- Alergias -->
-              <mat-form-field appearance="outline">
-                <mat-label>Alergias</mat-label>
-                <textarea matInput 
-                          formControlName="allergies" 
-                          placeholder="Alergias conocidas a medicamentos, alimentos, etc..."
-                          rows="2"></textarea>
-              </mat-form-field>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Historia Social -->
-                <mat-form-field appearance="outline">
-                  <mat-label>Historia Social</mat-label>
-                  <textarea matInput 
-                            formControlName="socialHistory" 
-                            placeholder="Hábitos, ocupación, estilo de vida..."
-                            rows="3"></textarea>
-                </mat-form-field>
-
-                <!-- Historia Familiar -->
-                <mat-form-field appearance="outline">
-                  <mat-label>Historia Familiar</mat-label>
-                  <textarea matInput 
-                            formControlName="familyHistory" 
-                            placeholder="Enfermedades en familiares cercanos..."
-                            rows="3"></textarea>
-                </mat-form-field>
+              <div class="bg-white rounded-lg p-3 shadow-sm border transition-all"
+                *ngIf="clinicalDataForm.get('systolicBP')?.value || clinicalDataForm.get('diastolicBP')?.value"
+                [ngClass]="{'border-green-300 bg-green-50': getVitalSignClasses('systolicBP')['vital-sign-normal'], 'border-yellow-300 bg-yellow-50': getVitalSignClasses('systolicBP')['vital-sign-warning'], 'border-red-300 bg-red-50': getVitalSignClasses('systolicBP')['vital-sign-danger']}">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="material-symbols-outlined msz-16"
+                    [ngClass]="{'text-green-600': getVitalSignClasses('systolicBP')['vital-sign-normal'], 'text-yellow-600': getVitalSignClasses('systolicBP')['vital-sign-warning'], 'text-red-600': getVitalSignClasses('systolicBP')['vital-sign-danger']}">monitor_heart</span>
+                  <span class="text-xs font-medium text-slate-600">Presión Arterial</span>
+                </div>
+                <div class="text-lg font-bold"
+                  [ngClass]="{'text-green-900': getVitalSignClasses('systolicBP')['vital-sign-normal'], 'text-yellow-900': getVitalSignClasses('systolicBP')['vital-sign-warning'], 'text-red-900': getVitalSignClasses('systolicBP')['vital-sign-danger']}">
+                  {{ clinicalDataForm.get('systolicBP')?.value || '--' }}/{{ clinicalDataForm.get('diastolicBP')?.value || '--' }}
+                </div>
               </div>
 
-              <!-- Revisión por Sistemas -->
-              <mat-form-field appearance="outline">
-                <mat-label>Revisión por Sistemas</mat-label>
-                <textarea matInput 
-                          formControlName="reviewOfSystems" 
-                          placeholder="Síntomas por sistemas (cardiovascular, respiratorio, etc.)..."
-                          rows="3"></textarea>
-              </mat-form-field>
-            </div>
-
-            <!-- Ejemplos para Historia Médica -->
-            <div class="mt-6 p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
-              <h3 class="text-sm font-bold text-green-800 mb-2">💡 Ejemplos para Historia Médica:</h3>
-              <div class="text-xs text-green-700 space-y-1">
-                <div><strong>Enfermedad Actual:</strong> "Dolor abdominal iniciado hace 2 días, tipo cólico, localizado en fosa ilíaca derecha"</div>
-                <div><strong>Antecedentes:</strong> "Hipertensión arterial desde hace 5 años, controlada con medicamento"</div>
-                <div><strong>Medicamentos:</strong> "Losartán 50mg cada 12 horas, Metformina 500mg con desayuno y cena"</div>
-                <div><strong>Alergias:</strong> "Alergia conocida a Penicilina (rash cutáneo)"</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex gap-4 justify-between">
-            <button mat-button matStepperPrevious>
-              <mat-icon>arrow_back</mat-icon>
-              Anterior
-            </button>
-            <div class="flex gap-2">
-              <button mat-button (click)="saveDraft()" type="button" class="text-orange-600">
-                <mat-icon>save</mat-icon>
-                Guardar Borrador
-              </button>
-              <button mat-raised-button color="primary" matStepperNext>
-                Siguiente: Signos Vitales
-                <mat-icon>arrow_forward</mat-icon>
-              </button>
-            </div>
-          </div>
-        </form>
-      </mat-step>
-
-      <!-- Paso 3: Signos Vitales -->
-      <mat-step [stepControl]="vitalSignsForm" label="Signos Vitales">
-        <form [formGroup]="vitalSignsForm">
-          <div class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 mb-6">
-            <h2 class="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-3">
-              <mat-icon class="text-blue-600">monitor_heart</mat-icon>
-              Signos Vitales
-            </h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              <!-- Temperatura -->
-              <mat-form-field appearance="outline">
-                <mat-label>Temperatura (°C)</mat-label>
-                <input matInput 
-                       type="number" 
-                       formControlName="temperature" 
-                       placeholder="36.5"
-                       step="0.1"
-                       min="30"
-                       max="45">
-                <mat-icon matSuffix>thermostat</mat-icon>
-              </mat-form-field>
-
-              <!-- Presión Arterial Sistólica -->
-              <mat-form-field appearance="outline">
-                <mat-label>P.A. Sistólica (mmHg)</mat-label>
-                <input matInput 
-                       type="number" 
-                       formControlName="systolicBP" 
-                       placeholder="120"
-                       min="50"
-                       max="300">
-                <mat-icon matSuffix>favorite</mat-icon>
-              </mat-form-field>
-
-              <!-- Presión Arterial Diastólica -->
-              <mat-form-field appearance="outline">
-                <mat-label>P.A. Diastólica (mmHg)</mat-label>
-                <input matInput 
-                       type="number" 
-                       formControlName="diastolicBP" 
-                       placeholder="80"
-                       min="30"
-                       max="200">
-                <mat-icon matSuffix>favorite</mat-icon>
-              </mat-form-field>
-
-              <!-- Frecuencia Cardíaca -->
-              <mat-form-field appearance="outline">
-                <mat-label>Frecuencia Cardíaca (lpm)</mat-label>
-                <input matInput 
-                       type="number" 
-                       formControlName="heartRate" 
-                       placeholder="72"
-                       min="30"
-                       max="200">
-                <mat-icon matSuffix>monitor_heart</mat-icon>
-              </mat-form-field>
-
-              <!-- Frecuencia Respiratoria -->
-              <mat-form-field appearance="outline">
-                <mat-label>Freq. Respiratoria (rpm)</mat-label>
-                <input matInput 
-                       type="number" 
-                       formControlName="respiratoryRate" 
-                       placeholder="16"
-                       min="5"
-                       max="60">
-                <mat-icon matSuffix>air</mat-icon>
-              </mat-form-field>
-
-              <!-- Saturación de Oxígeno -->
-              <mat-form-field appearance="outline">
-                <mat-label>Sat. Oxígeno (%)</mat-label>
-                <input matInput 
-                       type="number" 
-                       formControlName="oxygenSaturation" 
-                       placeholder="98"
-                       min="50"
-                       max="100">
-                <mat-icon matSuffix>sensors</mat-icon>
-              </mat-form-field>
-
-              <!-- Peso -->
-              <mat-form-field appearance="outline">
-                <mat-label>Peso (kg)</mat-label>
-                <input matInput 
-                       type="number" 
-                       formControlName="weight" 
-                       placeholder="70"
-                       step="0.1"
-                       min="1"
-                       max="500">
-                <mat-icon matSuffix>scale</mat-icon>
-              </mat-form-field>
-
-              <!-- Altura -->
-              <mat-form-field appearance="outline">
-                <mat-label>Altura (cm)</mat-label>
-                <input matInput 
-                       type="number" 
-                       formControlName="height" 
-                       placeholder="170"
-                       min="50"
-                       max="250">
-                <mat-icon matSuffix>height</mat-icon>
-              </mat-form-field>
-            </div>
-
-            <!-- Ejemplos para Signos Vitales -->
-            <div class="mt-6 p-4 bg-purple-50 rounded-lg border-l-4 border-purple-500">
-              <h3 class="text-sm font-bold text-purple-800 mb-2">💡 Valores Normales de Referencia:</h3>
-              <div class="text-xs text-purple-700 grid grid-cols-2 md:grid-cols-4 gap-2">
-                <div><strong>Temperatura:</strong> 36.1-37.2°C</div>
-                <div><strong>P.A.:</strong> 120/80 mmHg</div>
-                <div><strong>F.C.:</strong> 60-100 lpm</div>
-                <div><strong>F.R.:</strong> 12-20 rpm</div>
-                <div><strong>Sat O2:</strong> >95%</div>
-                <div><strong>Peso:</strong> Variable</div>
-                <div><strong>Altura:</strong> Variable</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex gap-4 justify-between">
-            <button mat-button matStepperPrevious>
-              <mat-icon>arrow_back</mat-icon>
-              Anterior
-            </button>
-            <div class="flex gap-2">
-              <button mat-button (click)="saveDraft()" type="button" class="text-orange-600">
-                <mat-icon>save</mat-icon>
-                Guardar Borrador
-              </button>
-              <button mat-raised-button color="primary" matStepperNext>
-                Siguiente: Examen Físico
-                <mat-icon>arrow_forward</mat-icon>
-              </button>
-            </div>
-          </div>
-        </form>
-      </mat-step>
-
-      <!-- Paso 4: Examen Físico -->
-      <mat-step [stepControl]="physicalExamForm" label="Examen Físico">
-        <form [formGroup]="physicalExamForm">
-          <div class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 mb-6">
-            <h2 class="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-3">
-              <mat-icon class="text-blue-600">healing</mat-icon>
-              Examen Físico
-            </h2>
-            
-            <div class="grid grid-cols-1 gap-6">
-              <!-- Examen Físico General -->
-              <mat-form-field appearance="outline">
-                <mat-label>Resumen del Examen Físico</mat-label>
-                <textarea matInput 
-                          formControlName="physicalExamination" 
-                          placeholder="Resumen general de los hallazgos del examen físico..."
-                          rows="3"></textarea>
-              </mat-form-field>
-
-              <!-- Apariencia General -->
-              <mat-form-field appearance="outline">
-                <mat-label>Apariencia General</mat-label>
-                <textarea matInput 
-                          formControlName="generalAppearance" 
-                          placeholder="Estado general, nivel de conciencia, cooperación..."
-                          rows="2"></textarea>
-              </mat-form-field>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Cabeza, Ojos, Oídos, Nariz, Garganta -->
-                <mat-form-field appearance="outline">
-                  <mat-label>Cabeza, Ojos, Oídos, Nariz, Garganta</mat-label>
-                  <textarea matInput 
-                            formControlName="heent" 
-                            placeholder="Hallazgos en HEENT..."
-                            rows="3"></textarea>
-                </mat-form-field>
-
-                <!-- Cardiovascular -->
-                <mat-form-field appearance="outline">
-                  <mat-label>Sistema Cardiovascular</mat-label>
-                  <textarea matInput 
-                            formControlName="cardiovascular" 
-                            placeholder="Ruidos cardíacos, soplos, pulsos..."
-                            rows="3"></textarea>
-                </mat-form-field>
-
-                <!-- Respiratorio -->
-                <mat-form-field appearance="outline">
-                  <mat-label>Sistema Respiratorio</mat-label>
-                  <textarea matInput 
-                            formControlName="respiratory" 
-                            placeholder="Ruidos respiratorios, expansión torácica..."
-                            rows="3"></textarea>
-                </mat-form-field>
-
-                <!-- Abdominal -->
-                <mat-form-field appearance="outline">
-                  <mat-label>Examen Abdominal</mat-label>
-                  <textarea matInput 
-                            formControlName="abdominal" 
-                            placeholder="Inspección, palpación, percusión, auscultación..."
-                            rows="3"></textarea>
-                </mat-form-field>
-
-                <!-- Neurológico -->
-                <mat-form-field appearance="outline">
-                  <mat-label>Examen Neurológico</mat-label>
-                  <textarea matInput 
-                            formControlName="neurological" 
-                            placeholder="Función mental, reflejos, función motora..."
-                            rows="3"></textarea>
-                </mat-form-field>
-
-                <!-- Musculoesquelético -->
-                <mat-form-field appearance="outline">
-                  <mat-label>Sistema Musculoesquelético</mat-label>
-                  <textarea matInput 
-                            formControlName="musculoskeletal" 
-                            placeholder="Movilidad, fuerza, deformidades..."
-                            rows="3"></textarea>
-                </mat-form-field>
+              <div class="bg-white rounded-lg p-3 shadow-sm border transition-all"
+                *ngIf="clinicalDataForm.get('heartRate')?.value"
+                [ngClass]="{'border-green-300 bg-green-50': getVitalSignClasses('heartRate')['vital-sign-normal'], 'border-yellow-300 bg-yellow-50': getVitalSignClasses('heartRate')['vital-sign-warning'], 'border-red-300 bg-red-50': getVitalSignClasses('heartRate')['vital-sign-danger']}">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="material-symbols-outlined msz-16"
+                    [ngClass]="{'text-green-600': getVitalSignClasses('heartRate')['vital-sign-normal'], 'text-yellow-600': getVitalSignClasses('heartRate')['vital-sign-warning'], 'text-red-600': getVitalSignClasses('heartRate')['vital-sign-danger']}">cardiology</span>
+                  <span class="text-xs font-medium text-slate-600">Frec. Cardíaca</span>
+                </div>
+                <div class="text-lg font-bold"
+                  [ngClass]="{'text-green-900': getVitalSignClasses('heartRate')['vital-sign-normal'], 'text-yellow-900': getVitalSignClasses('heartRate')['vital-sign-warning'], 'text-red-900': getVitalSignClasses('heartRate')['vital-sign-danger']}">
+                  {{ clinicalDataForm.get('heartRate')?.value }} lpm
+                </div>
               </div>
 
-              <!-- Piel -->
-              <mat-form-field appearance="outline">
-                <mat-label>Examen de la Piel</mat-label>
-                <textarea matInput 
-                          formControlName="skin" 
-                          placeholder="Color, temperatura, humedad, lesiones..."
-                          rows="2"></textarea>
-              </mat-form-field>
+              <div class="bg-white rounded-lg p-3 shadow-sm border transition-all"
+                *ngIf="clinicalDataForm.get('respiratoryRate')?.value"
+                [ngClass]="{'border-green-300 bg-green-50': getVitalSignClasses('respiratoryRate')['vital-sign-normal'], 'border-yellow-300 bg-yellow-50': getVitalSignClasses('respiratoryRate')['vital-sign-warning'], 'border-red-300 bg-red-50': getVitalSignClasses('respiratoryRate')['vital-sign-danger']}">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="material-symbols-outlined msz-16"
+                    [ngClass]="{'text-green-600': getVitalSignClasses('respiratoryRate')['vital-sign-normal'], 'text-yellow-600': getVitalSignClasses('respiratoryRate')['vital-sign-warning'], 'text-red-600': getVitalSignClasses('respiratoryRate')['vital-sign-danger']}">air</span>
+                  <span class="text-xs font-medium text-slate-600">Frec. Respiratoria</span>
+                </div>
+                <div class="text-lg font-bold"
+                  [ngClass]="{'text-green-900': getVitalSignClasses('respiratoryRate')['vital-sign-normal'], 'text-yellow-900': getVitalSignClasses('respiratoryRate')['vital-sign-warning'], 'text-red-900': getVitalSignClasses('respiratoryRate')['vital-sign-danger']}">
+                  {{ clinicalDataForm.get('respiratoryRate')?.value }} rpm
+                </div>
+              </div>
+
+              <div class="bg-white rounded-lg p-3 shadow-sm border transition-all"
+                *ngIf="clinicalDataForm.get('oxygenSaturation')?.value"
+                [ngClass]="{'border-green-300 bg-green-50': getVitalSignClasses('oxygenSaturation')['vital-sign-normal'], 'border-yellow-300 bg-yellow-50': getVitalSignClasses('oxygenSaturation')['vital-sign-warning'], 'border-red-300 bg-red-50': getVitalSignClasses('oxygenSaturation')['vital-sign-danger']}">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="material-symbols-outlined msz-16"
+                    [ngClass]="{'text-green-600': getVitalSignClasses('oxygenSaturation')['vital-sign-normal'], 'text-yellow-600': getVitalSignClasses('oxygenSaturation')['vital-sign-warning'], 'text-red-600': getVitalSignClasses('oxygenSaturation')['vital-sign-danger']}">sensors</span>
+                  <span class="text-xs font-medium text-slate-600">Sat. Oxígeno</span>
+                </div>
+                <div class="text-lg font-bold"
+                  [ngClass]="{'text-green-900': getVitalSignClasses('oxygenSaturation')['vital-sign-normal'], 'text-yellow-900': getVitalSignClasses('oxygenSaturation')['vital-sign-warning'], 'text-red-900': getVitalSignClasses('oxygenSaturation')['vital-sign-danger']}">
+                  {{ clinicalDataForm.get('oxygenSaturation')?.value }}%
+                </div>
+              </div>
+
+              <div class="bg-white rounded-lg p-3 shadow-sm border border-slate-200"
+                *ngIf="clinicalDataForm.get('weight')?.value || clinicalDataForm.get('height')?.value">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="material-symbols-outlined msz-16 text-slate-600">straighten</span>
+                  <span class="text-xs font-medium text-slate-600">Peso/Altura</span>
+                </div>
+                <div class="text-sm font-bold text-slate-900">
+                  <div *ngIf="clinicalDataForm.get('weight')?.value">{{ clinicalDataForm.get('weight')?.value }} kg</div>
+                  <div *ngIf="clinicalDataForm.get('height')?.value">{{ clinicalDataForm.get('height')?.value }} cm</div>
+                </div>
+              </div>
             </div>
 
-            <!-- Ejemplos para Examen Físico -->
-            <div class="mt-6 p-4 bg-teal-50 rounded-lg border-l-4 border-teal-500">
-              <h3 class="text-sm font-bold text-teal-800 mb-2">💡 Ejemplos de Examen Físico:</h3>
-              <div class="text-xs text-teal-700 space-y-1">
-                <div><strong>Apariencia:</strong> "Paciente consciente, orientado, colaborador, en posición antiálgica"</div>
-                <div><strong>Cardiovascular:</strong> "Ruidos cardíacos rítmicos, no soplos, pulsos periféricos palpables"</div>
-                <div><strong>Abdominal:</strong> "Abdomen blando, depresible, doloroso a la palpación en fosa ilíaca derecha"</div>
-                <div><strong>Neurológico:</strong> "Funciones mentales superiores conservadas, reflejos normales"</div>
-              </div>
+            <div class="mt-4 pt-4 border-t border-purple-200 flex items-center gap-4 text-xs">
+              <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-full bg-green-500"></div><span class="text-slate-600">Normal</span></div>
+              <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-full bg-yellow-500"></div><span class="text-slate-600">Precaución</span></div>
+              <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-full bg-red-500"></div><span class="text-slate-600">Crítico</span></div>
             </div>
           </div>
 
-          <div class="flex gap-4 justify-between">
-            <button mat-button matStepperPrevious>
-              <mat-icon>arrow_back</mat-icon>
-              Anterior
-            </button>
-            <div class="flex gap-2">
-              <button mat-button (click)="saveDraft()" type="button" class="text-orange-600">
-                <mat-icon>save</mat-icon>
-                Guardar Borrador
-              </button>
-              <button mat-raised-button color="primary" matStepperNext>
-                Siguiente: Evaluación
-                <mat-icon>arrow_forward</mat-icon>
-              </button>
+          <!-- Inputs de signos vitales -->
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <mat-form-field appearance="outline" [ngClass]="getVitalSignClasses('temperature')">
+              <mat-label>Temperatura (°C)</mat-label>
+              <mat-icon matPrefix class="text-purple-400">thermostat</mat-icon>
+              <input matInput type="number" formControlName="temperature" placeholder="36.5" step="0.1" min="30" max="45"/>
+              <mat-error *ngIf="clinicalDataForm.get('temperature')?.invalid">{{ getVitalSignMessage('temperature') }}</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" [ngClass]="getVitalSignClasses('systolicBP')">
+              <mat-label>P.A. Sistólica (mmHg)</mat-label>
+              <mat-icon matPrefix class="text-purple-400">favorite</mat-icon>
+              <input matInput type="number" formControlName="systolicBP" placeholder="120" min="50" max="300"/>
+              <mat-error *ngIf="clinicalDataForm.get('systolicBP')?.invalid">{{ getVitalSignMessage('systolicBP') }}</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" [ngClass]="getVitalSignClasses('diastolicBP')">
+              <mat-label>P.A. Diastólica (mmHg)</mat-label>
+              <mat-icon matPrefix class="text-purple-400">favorite</mat-icon>
+              <input matInput type="number" formControlName="diastolicBP" placeholder="80" min="30" max="200"/>
+              <mat-error *ngIf="clinicalDataForm.get('diastolicBP')?.invalid">{{ getVitalSignMessage('diastolicBP') }}</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" [ngClass]="getVitalSignClasses('heartRate')">
+              <mat-label>Frecuencia Cardíaca (lpm)</mat-label>
+              <mat-icon matPrefix class="text-purple-400">monitor_heart</mat-icon>
+              <input matInput type="number" formControlName="heartRate" placeholder="72" min="30" max="200"/>
+              <mat-error *ngIf="clinicalDataForm.get('heartRate')?.invalid">{{ getVitalSignMessage('heartRate') }}</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" [ngClass]="getVitalSignClasses('respiratoryRate')">
+              <mat-label>Freq. Respiratoria (rpm)</mat-label>
+              <mat-icon matPrefix class="text-purple-400">air</mat-icon>
+              <input matInput type="number" formControlName="respiratoryRate" placeholder="16" min="5" max="60"/>
+              <mat-error *ngIf="clinicalDataForm.get('respiratoryRate')?.invalid">{{ getVitalSignMessage('respiratoryRate') }}</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" [ngClass]="getVitalSignClasses('oxygenSaturation')">
+              <mat-label>Sat. Oxígeno (%)</mat-label>
+              <mat-icon matPrefix class="text-purple-400">sensors</mat-icon>
+              <input matInput type="number" formControlName="oxygenSaturation" placeholder="98" min="50" max="100"/>
+              <mat-error *ngIf="clinicalDataForm.get('oxygenSaturation')?.invalid">{{ getVitalSignMessage('oxygenSaturation') }}</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Peso (kg)</mat-label>
+              <mat-icon matPrefix class="text-purple-400">scale</mat-icon>
+              <input matInput type="number" formControlName="weight" placeholder="70" step="0.1" min="1" max="500"/>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Altura (cm)</mat-label>
+              <mat-icon matPrefix class="text-purple-400">height</mat-icon>
+              <input matInput type="number" formControlName="height" placeholder="170" min="50" max="250"/>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════
+           SECCIÓN 4: Examen Físico (teal)
+      ══════════════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6" [formGroup]="evaluationForm">
+        <div class="flex items-center gap-4 px-6 py-4 bg-teal-50 border-b border-teal-100">
+          <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">healing</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Examen Físico</h3>
+            <p class="text-sm text-slate-500 m-0">Hallazgos por sistemas — todos los campos son opcionales</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 gap-6">
+            <mat-form-field appearance="outline">
+              <mat-label>Resumen del Examen Físico</mat-label>
+              <textarea matInput formControlName="physicalExamination"
+                placeholder="Resumen general de los hallazgos del examen físico..." rows="3"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Apariencia General</mat-label>
+              <textarea matInput formControlName="generalAppearance"
+                placeholder="Estado general, nivel de conciencia, cooperación..." rows="2"></textarea>
+            </mat-form-field>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <mat-form-field appearance="outline">
+                <mat-label>Cabeza, Ojos, Oídos, Nariz, Garganta</mat-label>
+                <textarea matInput formControlName="heent" placeholder="Hallazgos en HEENT..." rows="3"></textarea>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Sistema Cardiovascular</mat-label>
+                <textarea matInput formControlName="cardiovascular"
+                  placeholder="Ruidos cardíacos, soplos, pulsos..." rows="3"></textarea>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Sistema Respiratorio</mat-label>
+                <textarea matInput formControlName="respiratory"
+                  placeholder="Ruidos respiratorios, expansión torácica..." rows="3"></textarea>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Examen Abdominal</mat-label>
+                <textarea matInput formControlName="abdominal"
+                  placeholder="Inspección, palpación, percusión, auscultación..." rows="3"></textarea>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Examen Neurológico</mat-label>
+                <textarea matInput formControlName="neurological"
+                  placeholder="Función mental, reflejos, función motora..." rows="3"></textarea>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Sistema Musculoesquelético</mat-label>
+                <textarea matInput formControlName="musculoskeletal"
+                  placeholder="Movilidad, fuerza, deformidades..." rows="3"></textarea>
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Examen de la Piel</mat-label>
+              <textarea matInput formControlName="skin"
+                placeholder="Color, temperatura, humedad, lesiones..." rows="2"></textarea>
+            </mat-form-field>
+          </div>
+
+          <div class="mt-6 p-4 bg-teal-50 rounded-lg border-l-4 border-teal-500">
+            <h3 class="text-sm font-bold text-teal-800 mb-2">💡 Ejemplos de Examen Físico:</h3>
+            <div class="text-xs text-teal-700 space-y-1">
+              <div><strong>Apariencia:</strong> "Paciente consciente, orientado, colaborador, en posición antiálgica"</div>
+              <div><strong>Cardiovascular:</strong> "Ruidos cardíacos rítmicos, no soplos, pulsos periféricos palpables"</div>
+              <div><strong>Abdominal:</strong> "Abdomen blando, depresible, doloroso a la palpación en fosa ilíaca derecha"</div>
             </div>
           </div>
-        </form>
-      </mat-step>
+        </div>
+      </div>
 
-      <!-- Paso 5: Evaluación y Plan -->
-      <mat-step [stepControl]="assessmentForm" label="Evaluación y Plan">
-        <form [formGroup]="assessmentForm">
-          <div class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 mb-6">
-            <h2 class="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-3">
-              <mat-icon class="text-blue-600">assessment</mat-icon>
-              Evaluación y Plan de Tratamiento
-            </h2>
-            
-            <div class="grid grid-cols-1 gap-6">
-              <!-- Evaluación Clínica -->
+      <!-- ══════════════════════════════════════════════════
+           SECCIÓN 5: Evaluación y Diagnóstico (indigo)
+      ══════════════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6" [formGroup]="evaluationForm">
+        <div class="flex items-center gap-4 px-6 py-4 bg-indigo-50 border-b border-indigo-100">
+          <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">analytics</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Evaluación y Plan de Tratamiento</h3>
+            <p class="text-sm text-slate-500 m-0">Diagnóstico, plan terapéutico e instrucciones</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 gap-6">
+            <mat-form-field appearance="outline">
+              <mat-label>Evaluación Clínica</mat-label>
+              <textarea matInput formControlName="assessment"
+                placeholder="Análisis de hallazgos e impresión clínica..." rows="3"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Plan General</mat-label>
+              <textarea matInput formControlName="plan"
+                placeholder="Plan general de manejo del paciente..." rows="3"></textarea>
+            </mat-form-field>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <mat-form-field appearance="outline">
-                <mat-label>Evaluación Clínica</mat-label>
-                <textarea matInput 
-                          formControlName="assessment" 
-                          placeholder="Análisis de hallazgos y impresión clínica..."
-                          rows="3"></textarea>
+                <mat-label>Diagnóstico Principal</mat-label>
+                <textarea matInput formControlName="diagnosis"
+                  placeholder="Diagnóstico principal o impresión diagnóstica..." rows="3"></textarea>
               </mat-form-field>
 
-              <!-- Plan General -->
               <mat-form-field appearance="outline">
-                <mat-label>Plan General</mat-label>
-                <textarea matInput 
-                          formControlName="plan" 
-                          placeholder="Plan general de manejo del paciente..."
-                          rows="3"></textarea>
+                <mat-label>Diagnóstico Diferencial</mat-label>
+                <textarea matInput formControlName="differentialDiagnosis"
+                  placeholder="Otros diagnósticos a considerar..." rows="3"></textarea>
               </mat-form-field>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Diagnóstico -->
-                <mat-form-field appearance="outline">
-                  <mat-label>Diagnóstico Principal</mat-label>
-                  <textarea matInput 
-                            formControlName="diagnosis" 
-                            placeholder="Diagnóstico principal o impresión diagnóstica..."
-                            rows="3"></textarea>
-                </mat-form-field>
-
-                <!-- Diagnóstico Diferencial -->
-                <mat-form-field appearance="outline">
-                  <mat-label>Diagnóstico Diferencial</mat-label>
-                  <textarea matInput 
-                            formControlName="differentialDiagnosis" 
-                            placeholder="Posibles diagnósticos alternativos..."
-                            rows="3"></textarea>
-                </mat-form-field>
-              </div>
-
-              <!-- Plan de Tratamiento -->
               <mat-form-field appearance="outline">
                 <mat-label>Plan de Tratamiento</mat-label>
-                <textarea matInput 
-                          formControlName="treatmentPlan" 
-                          placeholder="Medicamentos, procedimientos, terapias recomendadas..."
-                          rows="4"></textarea>
+                <textarea matInput formControlName="treatmentPlan"
+                  placeholder="Medicamentos, procedimientos, intervenciones..." rows="3"></textarea>
               </mat-form-field>
 
-              <!-- Instrucciones de Seguimiento -->
               <mat-form-field appearance="outline">
                 <mat-label>Instrucciones de Seguimiento</mat-label>
-                <textarea matInput 
-                          formControlName="followUpInstructions" 
-                          placeholder="Cuándo regresar, signos de alarma, cuidados en casa..."
-                          rows="3"></textarea>
+                <textarea matInput formControlName="followUpInstructions"
+                  placeholder="Indicaciones para el paciente, signos de alarma..." rows="3"></textarea>
               </mat-form-field>
+            </div>
 
-              <!-- Educación al Paciente -->
+            <mat-form-field appearance="outline">
+              <mat-label>Educación al Paciente</mat-label>
+              <textarea matInput formControlName="patientEducation"
+                placeholder="Información entregada al paciente sobre su condición..." rows="2"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Notas Adicionales</mat-label>
+              <textarea matInput formControlName="notes"
+                placeholder="Cualquier información adicional relevante..." rows="2"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha de Seguimiento</mat-label>
+              <input matInput [matDatepicker]="followUpPicker" formControlName="followUpDate" [min]="today" placeholder="dd/mm/aaaa"/>
+              <mat-datepicker-toggle matSuffix [for]="followUpPicker"></mat-datepicker-toggle>
+              <mat-datepicker #followUpPicker startView="month"></mat-datepicker>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════
+           SECCIÓN 6: Consentimiento Informado (slate - opcional)
+      ══════════════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6" [formGroup]="consentForm">
+        <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200">
+          <div class="w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">gavel</span>
+          </div>
+          <div class="flex-1">
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Consentimiento Informado <span class="text-xs font-normal text-slate-400 ml-2">Opcional</span></h3>
+            <p class="text-sm text-slate-500 m-0">Solo requerido para procedimientos, cirugías, transfusiones o rechazos formales</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="mb-4 text-xs text-slate-600 bg-slate-50 rounded-lg px-4 py-2 border border-slate-200 flex items-center gap-2">
+            <span class="material-symbols-outlined msz-18">info</span>
+            El consentimiento es opcional. Si no aplica, puede guardar el expediente sin completar esta sección.
+          </div>
+
+          <div class="grid grid-cols-1 gap-6">
+            <!-- Formato del documento -->
+            <mat-form-field appearance="outline">
+              <mat-label>Formato del Documento</mat-label>
+              <mat-select formControlName="printTemplate">
+                <mat-option value="diagnostic">Diagnóstico (Bajo Riesgo)</mat-option>
+                <mat-option value="surgery">Intervención Quirúrgica</mat-option>
+                <mat-option value="blood_transfusion">Transfusión Sanguínea</mat-option>
+                <mat-option value="rejection">Rechazo/Revocación</mat-option>
+              </mat-select>
+              <mat-icon matPrefix class="text-slate-400">description</mat-icon>
+              <mat-hint *ngIf="consentForm.get('printTemplate')?.value === 'diagnostic'">Para procedimientos diagnósticos simples</mat-hint>
+              <mat-hint *ngIf="consentForm.get('printTemplate')?.value === 'surgery'">Para cirugías, anestesia o procedimientos invasivos</mat-hint>
+              <mat-hint *ngIf="consentForm.get('printTemplate')?.value === 'blood_transfusion'">Para transfusiones de sangre o hemoderivados</mat-hint>
+              <mat-hint *ngIf="consentForm.get('printTemplate')?.value === 'rejection'">Para rechazos o revocaciones de indicaciones médicas</mat-hint>
+            </mat-form-field>
+
+            <!-- Descripción adicional -->
+            <mat-form-field appearance="outline">
+              <mat-label>Descripción adicional (opcional)</mat-label>
+              <textarea matInput formControlName="description"
+                placeholder="Notas adicionales, aclaraciones o detalles relevantes para el consentimiento" rows="3"></textarea>
+            </mat-form-field>
+
+            <!-- Campos para Diagnóstico -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" *ngIf="consentForm.get('printTemplate')?.value === 'diagnostic'">
               <mat-form-field appearance="outline">
-                <mat-label>Educación al Paciente</mat-label>
-                <textarea matInput 
-                          formControlName="patientEducation" 
-                          placeholder="Información proporcionada al paciente sobre su condición..."
-                          rows="3"></textarea>
+                <mat-label>Nombre del Procedimiento Diagnóstico</mat-label>
+                <mat-icon matPrefix class="text-slate-400">assignment</mat-icon>
+                <input matInput formControlName="procedureName" placeholder="Ej: Ecografía Abdominal"/>
               </mat-form-field>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Notas Adicionales -->
+              <div class="grid grid-cols-2 gap-4">
                 <mat-form-field appearance="outline">
-                  <mat-label>Notas Adicionales</mat-label>
-                  <textarea matInput 
-                            formControlName="notes" 
-                            placeholder="Observaciones adicionales..."
-                            rows="3"></textarea>
+                  <mat-label>Fecha del Consentimiento</mat-label>
+                  <input matInput [matDatepicker]="consentPicker" formControlName="consentDate" placeholder="dd/mm/aaaa"/>
+                  <mat-datepicker-toggle matSuffix [for]="consentPicker"></mat-datepicker-toggle>
+                  <mat-datepicker #consentPicker startView="month"></mat-datepicker>
                 </mat-form-field>
-
-                <!-- Fecha de Seguimiento -->
                 <mat-form-field appearance="outline">
-                  <mat-label>Próxima Cita de Seguimiento</mat-label>
-                  <input matInput [matDatepicker]="followUpPicker" formControlName="followUpDate">
-                  <mat-datepicker-toggle matSuffix [for]="followUpPicker"></mat-datepicker-toggle>
-                  <mat-datepicker #followUpPicker></mat-datepicker>
+                  <mat-label>Hora</mat-label>
+                  <input matInput type="time" formControlName="consentTime" placeholder="HH:mm"/>
+                  <mat-icon matSuffix>schedule</mat-icon>
                 </mat-form-field>
               </div>
-            </div>
 
-            <!-- Ejemplos para Evaluación -->
-            <div class="mt-6 p-4 bg-indigo-50 rounded-lg border-l-4 border-indigo-500">
-              <h3 class="text-sm font-bold text-indigo-800 mb-2">💡 Ejemplos de Evaluación y Plan:</h3>
-              <div class="text-xs text-indigo-700 space-y-1">
-                <div><strong>Diagnóstico:</strong> "Apendicitis aguda, probable"</div>
-                <div><strong>Plan:</strong> "1. Interconsulta con cirugía general, 2. Laboratorios (hemograma, PCR), 3. TAC abdominal"</div>
-                <div><strong>Tratamiento:</strong> "Analgesia con Metamizol 500mg IV c/8h, ayuno, hidratación IV"</div>
-                <div><strong>Seguimiento:</strong> "Evaluar en 6 horas o antes si empeoramiento del dolor"</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex gap-4 justify-between">
-            <button mat-button matStepperPrevious>
-              <mat-icon>arrow_back</mat-icon>
-              Anterior
-            </button>
-            <div class="flex gap-2">
-              <button mat-button (click)="saveDraft()" type="button" class="text-orange-600">
-                <mat-icon>save</mat-icon>
-                Guardar Borrador
-              </button>
-              <button mat-raised-button color="primary" matStepperNext>
-                Siguiente: Consentimiento
-                <mat-icon>arrow_forward</mat-icon>
-              </button>
-            </div>
-          </div>
-        </form>
-      </mat-step>
-
-      <!-- Paso 6: Formulario de Consentimiento -->
-      <mat-step [stepControl]="consentForm" label="Formulario de Consentimiento">
-        <form [formGroup]="consentForm">
-          <div class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 mb-6">
-            <h2 class="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-3">
-              <mat-icon class="text-blue-600">gavel</mat-icon>
-              Formulario de Consentimiento Informado
-            </h2>
-            
-            <div class="grid grid-cols-1 gap-6">
-              <!-- Tipo de Consentimiento -->
-              <mat-form-field appearance="outline">
-                <mat-label>Tipo de Consentimiento</mat-label>
-                <mat-select formControlName="consentType" required>
-                  <mat-option *ngFor="let type of consentTypes" [value]="type">
-                    {{getConsentTypeText(type)}}
-                  </mat-option>
-                </mat-select>
-                <mat-icon matSuffix>assignment_turned_in</mat-icon>
-                <mat-error *ngIf="consentForm.get('consentType')?.hasError('required')">
-                  Debe seleccionar el tipo de consentimiento
-                </mat-error>
+              <mat-form-field appearance="outline" class="md:col-span-2">
+                <mat-label>Objetivo del Procedimiento</mat-label>
+                <textarea matInput formControlName="objective"
+                  placeholder="Ej: obtener imágenes para confirmar o descartar el diagnóstico de..." rows="3"></textarea>
               </mat-form-field>
 
-              <!-- Descripción del Consentimiento -->
               <mat-form-field appearance="outline">
-                <mat-label>Descripción del Consentimiento</mat-label>
-                <textarea matInput 
-                          formControlName="description" 
-                          placeholder="Describa los procedimientos, riesgos y beneficios explicados al paciente..."
-                          rows="6"
-                          required></textarea>
-                <mat-error *ngIf="consentForm.get('description')?.hasError('required')">
-                  La descripción del consentimiento es requerida
-                </mat-error>
-                <mat-error *ngIf="consentForm.get('description')?.hasError('minlength')">
-                  Debe proporcionar una descripción más detallada (mínimo 20 caracteres)
-                </mat-error>
+                <mat-label>Riesgos Comunes</mat-label>
+                <textarea matInput formControlName="risks"
+                  placeholder="Ej: ligera molestia, incomodidad temporal..." rows="3"></textarea>
               </mat-form-field>
 
-              <!-- Firmado por -->
               <mat-form-field appearance="outline">
-                <mat-label>Firmado por (opcional)</mat-label>
-                <input matInput 
-                       formControlName="signedBy" 
-                       placeholder="Nombre de quien firma (paciente, tutor legal, etc.)">
-                <mat-icon matSuffix>person</mat-icon>
+                <mat-label>Beneficios Esperados</mat-label>
+                <textarea matInput formControlName="benefits"
+                  placeholder="Ej: ayuda a tomar la mejor decisión terapéutica" rows="3"></textarea>
               </mat-form-field>
-
-              <!-- Subida de Archivo -->
-              <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
-                <mat-icon class="text-6xl text-gray-400 mb-4">cloud_upload</mat-icon>
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Subir Documento de Consentimiento</h3>
-                <p class="text-sm text-gray-600 mb-4">Seleccione el archivo firmado del consentimiento informado (PDF, JPG, PNG)</p>
-                
-                <input type="file" 
-                       #fileInput 
-                       (change)="onFileSelected($event)" 
-                       accept=".pdf,.jpg,.jpeg,.png"
-                       class="hidden">
-                
-                <button mat-raised-button 
-                        color="primary" 
-                        type="button"
-                        (click)="fileInput.click()">
-                  <mat-icon>attach_file</mat-icon>
-                  Seleccionar Archivo
-                </button>
-
-                <!-- Archivo Seleccionado -->
-                <div *ngIf="selectedFile" class="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                  <div class="flex items-center justify-center gap-2">
-                    <mat-icon class="text-green-600">check_circle</mat-icon>
-                    <span class="text-green-800 font-medium">{{selectedFile.name}}</span>
-                    <span class="text-green-600 text-sm">({{(selectedFile.size / 1024 / 1024).toFixed(2)}} MB)</span>
-                  </div>
-                  
-                  <!-- Preview de imagen -->
-                  <div *ngIf="filePreview" class="mt-3">
-                    <img [src]="filePreview" 
-                         alt="Preview" 
-                         class="max-w-xs max-h-48 mx-auto rounded-lg shadow-md">
-                  </div>
-                </div>
-              </div>
             </div>
 
-            <!-- Ejemplos para Consentimiento -->
-            <div class="mt-6 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-500">
-              <h3 class="text-sm font-bold text-yellow-800 mb-2">💡 Ejemplo de Consentimiento:</h3>
-              <div class="text-xs text-yellow-700 space-y-1">
-                <div><strong>Tipo:</strong> Tratamiento General</div>
-                <div><strong>Descripción:</strong> "Se le ha explicado al paciente la naturaleza de su condición (apendicitis aguda), los riesgos y beneficios del tratamiento quirúrgico propuesto (apendicectomía laparoscópica), las alternativas disponibles y las consecuencias de no recibir tratamiento. El paciente ha tenido la oportunidad de hacer preguntas y ha expresado su comprensión y consentimiento para el procedimiento."</div>
-                <div><strong>Firmado por:</strong> "Juan Pérez (paciente)" o "María Pérez (madre, tutora legal)"</div>
-              </div>
+            <!-- Campos para Cirugía -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" *ngIf="consentForm.get('printTemplate')?.value === 'surgery'">
+              <mat-form-field appearance="outline">
+                <mat-label>Diagnóstico Clínico Actual</mat-label>
+                <textarea matInput formControlName="surgicalDiagnosis" rows="2" placeholder="Ej: Colecistitis Aguda"></textarea>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre de la Intervención Quirúrgica</mat-label>
+                <input matInput formControlName="surgicalProcedureName" placeholder="Ej: Colecistectomía laparoscópica"/>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre del Cirujano Principal</mat-label>
+                <input matInput formControlName="leadSurgeonName" placeholder="Se sugiere el médico seleccionado"/>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Objetivo Principal y Resultado Esperado</mat-label>
+                <textarea matInput formControlName="surgeryObjective" rows="3"></textarea>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Alternativas de Tratamiento</mat-label>
+                <textarea matInput formControlName="surgicalAlternatives" rows="3"></textarea>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Consecuencias de No Operar</mat-label>
+                <textarea matInput formControlName="consequencesNoSurgery" rows="3"></textarea>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Testigo (Nombre)</mat-label>
+                <input matInput formControlName="surgeryWitnessName"/>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Testigo (C.I.)</mat-label>
+                <input matInput formControlName="surgeryWitnessCi"/>
+              </mat-form-field>
             </div>
+
+            <!-- Campos para Transfusión Sanguínea -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" *ngIf="consentForm.get('printTemplate')?.value === 'blood_transfusion'">
+              <mat-form-field appearance="outline">
+                <mat-label>Diagnóstico/Indicación para Transfusión</mat-label>
+                <textarea matInput formControlName="transfusionDiagnosis" rows="2" placeholder="Ej: Anemia aguda"></textarea>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Tipo de Hemoderivado</mat-label>
+                <input matInput formControlName="bloodProductType" placeholder="Ej: Concentrado Globular"/>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre del Médico Tratante</mat-label>
+                <input matInput formControlName="treatingPhysicianName" placeholder="Se sugiere el médico seleccionado"/>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Beneficio Principal</mat-label>
+                <textarea matInput formControlName="transfusionBenefits" rows="3"></textarea>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="md:col-span-2">
+                <mat-label>Alternativas</mat-label>
+                <textarea matInput formControlName="transfusionAlternatives" rows="3"></textarea>
+              </mat-form-field>
+            </div>
+
+            <!-- Campos para Rechazo/Revocación -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" *ngIf="consentForm.get('printTemplate')?.value === 'rejection'">
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre del Establecimiento de Salud</mat-label>
+                <input matInput formControlName="clinicName"/>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Nro. de Registro Clínico/Historia Clínica</mat-label>
+                <input matInput formControlName="clinicalRecordNumber"/>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Acto Médico/Tratamiento Rechazado</mat-label>
+                <input matInput formControlName="rejectedActName"/>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre del Médico Informante</mat-label>
+                <input matInput formControlName="informingPhysicianName" placeholder="Se sugiere el médico seleccionado"/>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Diagnóstico Clínico Actual</mat-label>
+                <textarea matInput formControlName="rejectionDiagnosis" rows="2"></textarea>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Consecuencias del Rechazo</mat-label>
+                <textarea matInput formControlName="rejectionConsequences" rows="3"
+                  placeholder="Ej: Riesgo de muerte, deterioro funcional irreversible"></textarea>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Ciudad</mat-label>
+                <input matInput formControlName="rejectionCity"/>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Testigo (Nombre)</mat-label>
+                <input matInput formControlName="witnessName"/>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Testigo (C.I.)</mat-label>
+                <input matInput formControlName="witnessCi"/>
+              </mat-form-field>
+            </div>
+
+            <!-- Firmado por -->
+            <mat-form-field appearance="outline">
+              <mat-label>Firmado por</mat-label>
+              <input matInput formControlName="signedBy"
+                placeholder="Nombre de quien firma (ej: paciente, madre, tutor legal, apoderado)"/>
+              <mat-icon matPrefix class="text-slate-400">person</mat-icon>
+              <mat-hint>Puede firmar el paciente, un representante legal, tutor, madre/padre o apoderado según corresponda.</mat-hint>
+            </mat-form-field>
           </div>
+        </div>
+      </div>
 
-          <div class="flex gap-4 justify-between">
-            <button mat-button matStepperPrevious>
-              <mat-icon>arrow_back</mat-icon>
-              Anterior
-            </button>
-            <div class="flex gap-4">
-              <button mat-button (click)="saveDraft()" type="button" class="text-orange-600">
-                <mat-icon>save</mat-icon>
-                Guardar Borrador
-              </button>
-              <button mat-raised-button 
-                      color="accent" 
-                      (click)="onSubmit()" 
-                      [disabled]="isSaving"
-                      type="button">
-                <mat-icon>save</mat-icon>
-                {{isSaving ? 'Guardando...' : (isEditMode ? 'Actualizar Expediente' : 'Crear Expediente Completo')}}
-              </button>
-            </div>
-          </div>
-        </form>
-      </mat-step>
+      <!-- ══════════════════════════════════════════════════
+           Barra de acciones
+      ══════════════════════════════════════════════════ -->
+      <div class="form-action-bar">
+        <button
+          type="button"
+          (click)="saveDraft()"
+          [disabled]="isSaving"
+          class="btn btn-ghost"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none">save</span>
+          Guardar Borrador
+        </button>
 
-    </mat-stepper>
+        <div class="flex items-center gap-3">
+          <button
+            type="button"
+            (click)="printMedicalRecordSummary()"
+            class="btn btn-outline"
+          >
+            <span class="material-symbols-outlined msz-18 leading-none">summarize</span>
+            Imprimir resumen
+          </button>
 
-    <!-- Botones de Acción Flotantes -->
-    <div class="fixed bottom-6 right-6 flex flex-col gap-3" *ngIf="!isLoading">
-      <button mat-fab 
-              color="warn" 
-              (click)="cancel()" 
-              matTooltip="Cancelar">
-        <mat-icon>close</mat-icon>
-      </button>
-      
-      <button mat-fab 
-              color="accent" 
-              (click)="saveDraft()" 
-              matTooltip="Guardar Borrador"
-              [disabled]="isSaving">
-        <mat-icon>save</mat-icon>
-      </button>
-    </div>
+          <button
+            type="button"
+            (click)="printConsent()"
+            class="btn btn-outline-primary"
+          >
+            <span class="material-symbols-outlined msz-18 leading-none">print</span>
+            Imprimir consentimiento
+          </button>
 
+          <button
+            type="button"
+            (click)="onSubmit()"
+            [disabled]="isSaving"
+            class="btn btn-primary"
+          >
+            <span class="material-symbols-outlined msz-18 leading-none animate-spin" *ngIf="isSaving">progress_activity</span>
+            <span class="material-symbols-outlined msz-18 leading-none" *ngIf="!isSaving">{{ isEditMode ? 'update' : 'check_circle' }}</span>
+            {{ isSaving ? 'Guardando...' : isEditMode ? 'Actualizar Expediente' : 'Crear Expediente' }}
+          </button>
+        </div>
+      </div>
+
+    </ng-container>
   </div>
 </div>

@@ -1,232 +1,372 @@
-<div class="stock-control-container">
-  <div class="header-section">
-    <div class="title-area">
-      <h2>
-        <mat-icon>inventory</mat-icon>
-        Control de Stock
-      </h2>
-      <p>Gestión y análisis detallado del inventario</p>
-    </div>
-  </div>
+<div class="page-wrapper">
+  <div class="page-inner">
 
-  <!-- Métricas de stock rápido -->
-  <div class="stock-metrics" *ngIf="stockReports.length > 0">
-    <div class="metrics-grid">
-      <div class="metric-card">
-        <mat-icon class="metric-icon inventory">inventory_2</mat-icon>
-        <div class="metric-content">
-          <h3>Total Productos</h3>
-          <p class="metric-value">450</p>
-          <small>En inventario</small>
-        </div>
-      </div>
-      <div class="metric-card warning">
-        <mat-icon class="metric-icon warning">warning</mat-icon>
-        <div class="metric-content">
-          <h3>Stock Bajo</h3>
-          <p class="metric-value">15</p>
-          <small>Requieren reposición</small>
-        </div>
-      </div>
-      <div class="metric-card expired">
-        <mat-icon class="metric-icon expired">schedule</mat-icon>
-        <div class="metric-content">
-          <h3>Por Vencer</h3>
-          <p class="metric-value">8</p>
-          <small>Próximos 30 días</small>
-        </div>
-      </div>
-      <div class="metric-card value">
-        <mat-icon class="metric-icon value">attach_money</mat-icon>
-        <div class="metric-content">
-          <h3>Valor Total</h3>
-          <p class="metric-value">$125,000</p>
-          <small>Inventario valorado</small>
-        </div>
-      </div>
-    </div>
-  </div>
+    <app-page-header
+      title="Control de Stock"
+      subtitle="Gestión y análisis detallado del inventario"
+      (back)="goBack()"
+    />
 
-  <!-- Formulario para generar nuevo reporte -->
-  <mat-card class="generate-form-card">
-    <mat-card-header>
-      <mat-card-title>Generar Nuevo Reporte de Stock</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <form [formGroup]="generateForm" (ngSubmit)="onGenerateReport()">
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="full-width">
+    <!-- Estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <app-stat-card
+        label="Total Productos"
+        [value]="totalProducts"
+        sublabel="Registros en el sistema"
+        icon="inventory_2"
+        color="green"
+      />
+      <app-stat-card
+        label="Stock Bajo"
+        [value]="lowStockCount"
+        sublabel="Requieren atención"
+        icon="warning"
+        color="amber"
+        [clickable]="true"
+        (cardClick)="filterByType('stock_bajo')"
+      />
+      <app-stat-card
+        label="Por Vencer"
+        [value]="expiringCount"
+        sublabel="Próximos 30 días"
+        icon="schedule"
+        color="red"
+        [clickable]="true"
+        (cardClick)="filterByType('por_vencer')"
+      />
+      <app-stat-card
+        label="Valor Total"
+        [value]="formatCurrency(totalStockValue)"
+        sublabel="Inventario total"
+        icon="attach_money"
+        color="blue"
+      />
+    </div>
+
+    <!-- Formulario de Generación -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+      <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+        <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">add_circle</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Generar Nuevo Reporte de Stock</h3>
+          <p class="text-sm text-slate-500 m-0">Configure los parámetros del análisis de inventario</p>
+        </div>
+      </div>
+
+      <form [formGroup]="generateForm" (ngSubmit)="onGenerateReport()" class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <mat-form-field appearance="outline" class="w-full">
             <mat-label>Tipo de Reporte</mat-label>
-            <mat-select formControlName="type" required>
+            <mat-icon matPrefix class="text-green-400">category</mat-icon>
+            <mat-select formControlName="type">
               <mat-option *ngFor="let type of reportTypes" [value]="type.value">
-                <mat-icon [matTooltip]="type.label">{{ getTypeIcon(type.value) }}</mat-icon>
-                {{ type.label }}
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined msz-18">{{ type.icon }}</span>
+                  {{ type.label }}
+                </div>
               </mat-option>
             </mat-select>
-            <mat-error *ngIf="generateForm.get('type')?.hasError('required')">
-              El tipo de reporte es requerido
-            </mat-error>
+            <mat-error>Seleccione un tipo de reporte</mat-error>
           </mat-form-field>
-        </div>
 
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="full-width">
+          <mat-form-field appearance="outline" class="w-full">
             <mat-label>Título del Reporte</mat-label>
-            <input matInput formControlName="title" placeholder="Ej: Inventario General Enero 2024" required>
-            <mat-error *ngIf="generateForm.get('title')?.hasError('required')">
-              El título es requerido
-            </mat-error>
+            <mat-icon matPrefix class="text-green-400">title</mat-icon>
+            <input matInput formControlName="title" placeholder="Ej: Inventario General Enero 2025" />
+            <mat-error *ngIf="generateForm.get('title')?.hasError('required')">El título es requerido</mat-error>
+            <mat-error *ngIf="generateForm.get('title')?.hasError('minlength')">Mínimo 5 caracteres</mat-error>
           </mat-form-field>
-        </div>
 
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Descripción</mat-label>
-            <textarea matInput formControlName="description" rows="3" 
-                      placeholder="Descripción detallada del reporte de stock..."></textarea>
-          </mat-form-field>
-        </div>
-
-        <div class="form-row date-range">
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" class="w-full">
             <mat-label>Fecha de Inicio (Opcional)</mat-label>
-            <input matInput [matDatepicker]="startPicker" formControlName="startDate">
-            <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+            <mat-icon matPrefix class="text-green-400">calendar_today</mat-icon>
+            <input matInput [matDatepicker]="startPicker" formControlName="startDate" />
+            <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
             <mat-datepicker #startPicker></mat-datepicker>
-            <mat-hint>Para reportes de movimientos</mat-hint>
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" class="w-full">
             <mat-label>Fecha de Fin (Opcional)</mat-label>
-            <input matInput [matDatepicker]="endPicker" formControlName="endDate">
-            <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+            <mat-icon matPrefix class="text-green-400">event</mat-icon>
+            <input matInput [matDatepicker]="endPicker" formControlName="endDate" />
+            <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
             <mat-datepicker #endPicker></mat-datepicker>
-            <mat-hint>Para reportes de movimientos</mat-hint>
           </mat-form-field>
         </div>
 
-        <div class="form-actions">
-          <button mat-raised-button color="primary" type="submit" 
-                  [disabled]="generateForm.invalid || loading">
-            <mat-icon>inventory_2</mat-icon>
-            <span *ngIf="!loading">Generar Reporte</span>
-            <span *ngIf="loading">Generando...</span>
+        <mat-form-field appearance="outline" class="w-full mb-6">
+          <mat-label>Descripción (Opcional)</mat-label>
+          <mat-icon matPrefix class="text-green-400">notes</mat-icon>
+          <textarea matInput formControlName="description" rows="3" placeholder="Descripción adicional del reporte..."></textarea>
+        </mat-form-field>
+
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+          <button
+            type="button"
+            (click)="generateForm.reset()"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors border-0"
+          >
+            <span class="material-symbols-outlined msz-18">restart_alt</span>
+            Limpiar
+          </button>
+          <button
+            type="submit"
+            [disabled]="generateForm.invalid || generating"
+            class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0"
+          >
+            <span class="material-symbols-outlined msz-20" [class.animate-spin]="generating">{{
+              generating ? 'sync' : 'add_circle'
+            }}</span>
+            {{ generating ? 'Generando...' : 'Generar Reporte' }}
           </button>
         </div>
       </form>
-    </mat-card-content>
-  </mat-card>
+    </div>
 
-  <!-- Lista de reportes existentes -->
-  <mat-card class="reports-list-card">
-    <mat-card-header>
-      <mat-card-title>Reportes de Stock Generados</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <div *ngIf="loading" class="loading-container">
-        <mat-spinner diameter="40"></mat-spinner>
-        <p>Cargando reportes...</p>
+    <!-- Lista de Reportes -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 bg-blue-50 border-b border-blue-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">inventory_2</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Reportes de Stock Generados</h3>
+            <p class="text-sm text-slate-500 m-0">
+              <span class="font-semibold text-slate-700">{{ stockReports.length }}</span> reportes registrados
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <mat-form-field appearance="outline" class="w-48">
+            <mat-label>Filtrar por tipo</mat-label>
+            <mat-select (selectionChange)="filterByType($event.value)" [value]="null">
+              <mat-option [value]="null">Todos</mat-option>
+              <mat-option *ngFor="let type of reportTypes" [value]="type.value">{{ type.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <button
+            type="button"
+            (click)="loadStockReports()"
+            [disabled]="loading"
+            class="inline-flex items-center gap-2 px-4 h-9 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-all border-0 disabled:opacity-50 text-sm font-medium"
+          >
+            <span class="material-symbols-outlined msz-18" [class.animate-spin]="loading">sync</span>
+            Actualizar
+          </button>
+        </div>
       </div>
 
-      <div *ngIf="!loading && stockReports.length === 0" class="no-data">
-        <mat-icon>inventory_2</mat-icon>
-        <p>No hay reportes de stock generados</p>
-        <small>Use el formulario superior para generar su primer reporte</small>
-      </div>
+      <app-skeleton-table *ngIf="loading" [rows]="6" [columns]="7" />
 
-      <div *ngIf="!loading && stockReports.length > 0" class="table-container">
-        <table mat-table [dataSource]="stockReports" class="reports-table">
-          <!-- Título -->
-          <ng-container matColumnDef="title">
-            <th mat-header-cell *matHeaderCellDef>Título</th>
-            <td mat-cell *matCellDef="let report">
-              <div class="title-cell">
-                <strong>{{ report.title }}</strong>
-                <small *ngIf="report.description">{{ report.description }}</small>
-              </div>
-            </td>
-          </ng-container>
+      <app-empty-state
+        *ngIf="!loading && stockReports.length === 0"
+        icon="inventory_2"
+        title="No hay reportes de stock"
+        subtitle="Genere su primer reporte utilizando el formulario superior"
+      />
 
-          <!-- Tipo -->
-          <ng-container matColumnDef="type">
-            <th mat-header-cell *matHeaderCellDef>Tipo</th>
-            <td mat-cell *matCellDef="let report">
-              <mat-chip-list>
-                <mat-chip [color]="getTypeColor(report.type)" selected>
-                  <mat-icon>{{ getTypeIcon(report.type) }}</mat-icon>
+      <div *ngIf="!loading && stockReports.length > 0" class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-100">
+            <tr>
+              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Título</span></th>
+              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Tipo</span></th>
+              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</span></th>
+              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Totales</span></th>
+              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Valor</span></th>
+              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span></th>
+              <th class="px-6 py-4 text-right"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr *ngFor="let report of stockReports" class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors">
+              <td class="px-6 py-4">
+                <div>
+                  <p class="text-sm font-medium text-slate-900">{{ report.title }}</p>
+                  <p class="text-xs text-slate-500 mt-1" *ngIf="report.description">{{ report.description }}</p>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
                   {{ report.type }}
-                </mat-chip>
-              </mat-chip-list>
-            </td>
-          </ng-container>
-
-          <!-- Fecha -->
-          <ng-container matColumnDef="date">
-            <th mat-header-cell *matHeaderCellDef>Fecha</th>
-            <td mat-cell *matCellDef="let report">{{ report.date | date:'short' }}</td>
-          </ng-container>
-
-          <!-- Total Productos -->
-          <ng-container matColumnDef="totalProducts">
-            <th mat-header-cell *matHeaderCellDef>Total Productos</th>
-            <td mat-cell *matCellDef="let report">
-              <span class="product-count">{{ report.totalProducts || 'N/A' }}</span>
-              <div class="stock-indicators" *ngIf="report.lowStockItems || report.expiringItems">
-                <mat-icon class="warning-icon" *ngIf="report.lowStockItems" matTooltip="Items con stock bajo">
-                  warning
-                </mat-icon>
-                <mat-icon class="expired-icon" *ngIf="report.expiringItems" matTooltip="Items por vencer">
-                  schedule
-                </mat-icon>
-              </div>
-            </td>
-          </ng-container>
-
-          <!-- Valor del Stock -->
-          <ng-container matColumnDef="stockValue">
-            <th mat-header-cell *matHeaderCellDef>Valor del Stock</th>
-            <td mat-cell *matCellDef="let report">
-              <span class="stock-value">{{ formatCurrency(report.stockValue) }}</span>
-            </td>
-          </ng-container>
-
-          <!-- Estado -->
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>Estado</th>
-            <td mat-cell *matCellDef="let report">
-              <mat-chip-list>
-                <mat-chip [color]="getStatusColor(report.status || '')" selected>
-                  {{ getStatusText(report.status || '') }}
-                </mat-chip>
-              </mat-chip-list>
-            </td>
-          </ng-container>
-
-          <!-- Acciones -->
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef>Acciones</th>
-            <td mat-cell *matCellDef="let report">
-              <div class="action-buttons">
-                <button mat-icon-button (click)="downloadReport(report)" 
-                        matTooltip="Descargar PDF">
-                  <mat-icon>download</mat-icon>
-                </button>
-                <button mat-icon-button (click)="exportToExcel(report)" 
-                        matTooltip="Exportar a Excel" color="accent">
-                  <mat-icon>table_chart</mat-icon>
-                </button>
-                <button mat-icon-button (click)="deleteReport(report)" 
-                        matTooltip="Eliminar" color="warn">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </div>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="text-sm text-slate-700">
+                  <div class="font-medium">{{ report.date | date: 'dd/MM/yyyy' }}</div>
+                  <div class="text-xs text-slate-500">{{ report.createdAt | date: 'HH:mm' }}</div>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-2 text-sm">
+                  <span class="font-semibold text-slate-900">{{ report.totalProducts || 'N/A' }}</span>
+                  <span
+                    *ngIf="report.lowStockItems"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs"
+                  >
+                    <span class="material-symbols-outlined msz-14">warning</span>
+                    {{ report.lowStockItems }}
+                  </span>
+                  <span
+                    *ngIf="report.expiringItems"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs"
+                  >
+                    <span class="material-symbols-outlined msz-14">schedule</span>
+                    {{ report.expiringItems }}
+                  </span>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <p class="text-sm font-bold text-green-600">{{ formatCurrency(report.stockValue) }}</p>
+              </td>
+              <td class="px-6 py-4">
+                <span
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="getStatusClass(report.status || 'draft')"
+                >
+                  <span class="material-symbols-outlined msz-14">{{ getStatusIcon(report.status || 'draft') }}</span>
+                  {{ getStatusText(report.status || 'draft') }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center justify-end gap-1">
+                  <button
+                    type="button"
+                    (click)="viewReport(report)"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors border-0"
+                    title="Ver detalles"
+                  >
+                    <span class="material-symbols-outlined msz-18">visibility</span>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="downloadReport(report)"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors border-0"
+                    title="Descargar PDF"
+                  >
+                    <span class="material-symbols-outlined msz-18">download</span>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="exportToExcel(report)"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-amber-600 hover:bg-amber-50 transition-colors border-0"
+                    title="Exportar a Excel"
+                  >
+                    <span class="material-symbols-outlined msz-18">table</span>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="deleteReport(report)"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-red-600 hover:bg-red-50 transition-colors border-0"
+                    title="Eliminar"
+                  >
+                    <span class="material-symbols-outlined msz-18">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
         </table>
       </div>
-    </mat-card-content>
-  </mat-card>
+    </div>
+
+    <!-- Modal de Detalles -->
+    <div
+      *ngIf="selectedReport"
+      class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+      (click)="selectedReport = null"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl animate-in fade-in zoom-in duration-200"
+        (click)="$event.stopPropagation()"
+      >
+        <div
+          class="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-emerald-50 to-teal-50"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center">
+              <span class="material-symbols-outlined msz-24 text-white">inventory_2</span>
+            </div>
+            <div>
+              <h4 class="text-lg font-semibold text-slate-900">{{ selectedReport.title }}</h4>
+              <p class="text-sm text-slate-600">Detalles del reporte de stock</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-slate-100 border-0 transition-colors"
+            (click)="selectedReport = null"
+            title="Cerrar"
+          >
+            <span class="material-symbols-outlined msz-20">close</span>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-slate-50 rounded-lg p-4">
+              <p class="text-xs text-slate-500">Total Productos</p>
+              <p class="text-lg font-semibold text-slate-900">{{ selectedReport.totalProducts || 'N/A' }}</p>
+            </div>
+            <div class="bg-slate-50 rounded-lg p-4">
+              <p class="text-xs text-slate-500">Stock Bajo</p>
+              <p class="text-lg font-semibold text-amber-600">{{ selectedReport.lowStockItems || 0 }}</p>
+            </div>
+            <div class="bg-slate-50 rounded-lg p-4">
+              <p class="text-xs text-slate-500">Por Vencer</p>
+              <p class="text-lg font-semibold text-red-600">{{ selectedReport.expiringItems || 0 }}</p>
+            </div>
+            <div class="bg-slate-50 rounded-lg p-4">
+              <p class="text-xs text-slate-500">Valor</p>
+              <p class="text-lg font-semibold text-emerald-600">{{ formatCurrency(selectedReport.stockValue) }}</p>
+            </div>
+          </div>
+
+          <div *ngIf="selectedReport?.movements?.length" class="mt-2">
+            <h5 class="text-sm font-semibold text-slate-800 mb-2 flex items-center gap-2">
+              <span class="material-symbols-outlined msz-18">history</span>
+              Movimientos recientes
+            </h5>
+            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+              <table class="w-full text-sm">
+                <thead class="bg-slate-50">
+                  <tr>
+                    <th class="px-4 py-2 text-left">Producto</th>
+                    <th class="px-4 py-2 text-left">Tipo</th>
+                    <th class="px-4 py-2 text-left">Cantidad</th>
+                    <th class="px-4 py-2 text-left">Fecha</th>
+                    <th class="px-4 py-2 text-left">Motivo</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <tr *ngFor="let m of selectedReport?.movements">
+                    <td class="px-4 py-2">{{ m.productName }}</td>
+                    <td class="px-4 py-2 capitalize">{{ m.movementType }}</td>
+                    <td class="px-4 py-2">{{ m.quantity }}</td>
+                    <td class="px-4 py-2">{{ m.date | date: 'dd/MM/yyyy' }}</td>
+                    <td class="px-4 py-2">{{ m.reason || '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors border-0"
+            (click)="selectedReport = null"
+          >
+            <span class="material-symbols-outlined msz-18">close</span>
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>

@@ -19,20 +19,17 @@
     "importHelpers": true,
     "target": "ES2022",
     "module": "ES2022",
-    "lib": [
-      "ES2022",
-      "dom"
-    ]
+    "lib": ["ES2022", "dom"],
+    "baseUrl": "src",
+    "paths": {
+      "@core/*": ["app/core/*"],
+      "@shared/*": ["app/shared/*"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
-    "strictTemplates": false,
-    "strictDomEventTypes": false,
-    "strictSafeNavigationTypes": false,
-    "strictDomLocalRefTypes": false,
-    "strictAttributeTypes": false,
-    "strictContextGenerics": false
+    "strictTemplates": true
   }
 }

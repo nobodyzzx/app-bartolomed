@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
   ManyToOne,
   JoinColumn,
   BeforeInsert,
@@ -43,6 +44,7 @@ export enum AppointmentPriority {
 }
 
 @Entity('appointments')
+@Index(['clinic', 'appointmentDate'])
 export class Appointment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -151,6 +153,7 @@ export class Appointment {
   @JoinColumn({ name: 'doctor_id' })
   doctor: User;
 
+  @Index()
   @ManyToOne(() => Clinic, { eager: true })
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic;

@@ -1,5 +1,5 @@
-import { Type } from 'class-transformer';
-import { IsDecimal, IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { MedicationCategory, StorageCondition } from '../entities/pharmacy.entity';
 
 export class CreateMedicationDto {
@@ -72,78 +72,9 @@ export class CreateMedicationDto {
   controlledSubstanceSchedule?: string;
 }
 
-export class UpdateMedicationDto {
+export class UpdateMedicationDto extends PartialType(CreateMedicationDto) {
   @IsOptional()
-  @IsString()
-  name?: string;
-
-  @IsOptional()
-  @IsString()
-  genericName?: string;
-
-  @IsOptional()
-  @IsString()
-  brandName?: string;
-
-  @IsOptional()
-  @IsString()
-  strength?: string;
-
-  @IsOptional()
-  @IsString()
-  dosageForm?: string;
-
-  @IsOptional()
-  @IsEnum(MedicationCategory)
-  category?: MedicationCategory;
-
-  @IsOptional()
-  @IsString()
-  manufacturer?: string;
-
-  @IsOptional()
-  @IsString()
-  supplier?: string;
-
-  @IsOptional()
-  @IsString()
-  description?: string;
-
-  @IsOptional()
-  @IsString()
-  activeIngredients?: string;
-
-  @IsOptional()
-  @IsString()
-  indications?: string;
-
-  @IsOptional()
-  @IsString()
-  contraindications?: string;
-
-  @IsOptional()
-  @IsString()
-  sideEffects?: string;
-
-  @IsOptional()
-  @IsString()
-  dosageInstructions?: string;
-
-  @IsOptional()
-  @IsEnum(StorageCondition)
-  storageCondition?: StorageCondition;
-
-  @IsOptional()
-  requiresPrescription?: boolean;
-
-  @IsOptional()
-  isControlledSubstance?: boolean;
-
-  @IsOptional()
-  @IsString()
-  controlledSubstanceSchedule?: string;
-
-  @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 }
 
@@ -158,17 +89,17 @@ export class CreateMedicationStockDto {
   @Min(1)
   quantity: number;
 
-  @IsDecimal({ decimal_digits: '2' })
+  @IsNumber()
   unitCost: number;
 
-  @IsDecimal({ decimal_digits: '2' })
+  @IsNumber()
   sellingPrice: number;
 
-  @Type(() => Date)
-  expiryDate: Date;
+  @IsString()
+  expiryDate: string;
 
-  @Type(() => Date)
-  receivedDate: Date;
+  @IsString()
+  receivedDate: string;
 
   @IsOptional()
   @IsString()
@@ -194,16 +125,16 @@ export class UpdateMedicationStockDto {
   quantity?: number;
 
   @IsOptional()
-  @IsDecimal({ decimal_digits: '2' })
+  @IsNumber()
   unitCost?: number;
 
   @IsOptional()
-  @IsDecimal({ decimal_digits: '2' })
+  @IsNumber()
   sellingPrice?: number;
 
   @IsOptional()
-  @Type(() => Date)
-  expiryDate?: Date;
+  @IsString()
+  expiryDate?: string;
 
   @IsOptional()
   @IsString()
@@ -216,4 +147,24 @@ export class UpdateMedicationStockDto {
 
   @IsOptional()
   isActive?: boolean;
+}
+
+export class TransferStockDto {
+  @IsString()
+  sourceStockId: string;
+
+  @IsString()
+  toClinicId: string;
+
+  @IsNumber()
+  @Min(1)
+  quantity: number;
+
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @IsOptional()
+  @IsString()
+  note?: string;
 }

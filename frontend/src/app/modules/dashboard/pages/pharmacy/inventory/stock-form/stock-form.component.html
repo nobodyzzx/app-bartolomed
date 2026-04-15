@@ -1,0 +1,240 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      [title]="isEditMode ? 'Editar Stock' : 'Nuevo Stock'"
+      [subtitle]="isEditMode ? 'Modifica el registro de stock' : 'Registra nuevo stock de medicamento'"
+      (back)="goBack()"
+    >
+      <ng-container actions>
+        <button
+          type="button"
+          (click)="cancel()"
+          class="btn btn-danger-outline"
+        >
+          <span class="material-symbols-outlined msz-18">cancel</span>
+          Cancelar
+        </button>
+      </ng-container>
+    </app-page-header>
+
+    <form [formGroup]="stockForm" (ngSubmit)="onSubmit()" class="space-y-6">
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 1 — Medicamento (azul)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">medication</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Medicamento</h3>
+            <p class="text-sm text-slate-500 m-0">Seleccione el medicamento del catálogo</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="flex items-center gap-3">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="flex-1">
+              <mat-label>Medicamento *</mat-label>
+              <mat-icon matPrefix class="text-blue-400">medication</mat-icon>
+              <mat-select formControlName="medicationId">
+                <mat-option *ngFor="let m of medications()" [value]="m.id">
+                  {{ m.name }} {{ m.brandName ? '– ' + m.brandName : '' }} [{{ m.code }}]
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="stockForm.get('medicationId')?.hasError('required')">
+                Seleccione un medicamento
+              </mat-error>
+            </mat-form-field>
+
+            <button
+              type="button"
+              (click)="goToMedicationsCatalog()"
+              class="inline-flex items-center gap-2 px-5 h-14 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 transition-all"
+              title="Ver catálogo completo"
+            >
+              <span class="material-symbols-outlined msz-18 leading-none">library_books</span>
+              Catálogo
+            </button>
+
+            <button
+              type="button"
+              (click)="createNewMedication()"
+              class="inline-flex items-center gap-2 px-5 h-14 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition-all"
+            >
+              <span class="material-symbols-outlined msz-18 leading-none">add</span>
+              Crear medicamento
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 2 — Información del Lote (verde)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">inventory_2</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información del Lote</h3>
+            <p class="text-sm text-slate-500 m-0">Número de lote, cantidad, vencimiento y ubicación</p>
+          </div>
+        </div>
+        <div class="p-6 space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Número de lote *</mat-label>
+              <mat-icon matPrefix class="text-green-400">tag</mat-icon>
+              <input matInput formControlName="batchNumber" placeholder="Ej: LOTE-2024-001" />
+              <mat-error *ngIf="stockForm.get('batchNumber')?.hasError('required')">
+                El lote es requerido
+              </mat-error>
+              <mat-error *ngIf="stockForm.get('batchNumber')?.hasError('minlength')">
+                Mínimo 3 caracteres
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Cantidad *</mat-label>
+              <mat-icon matPrefix class="text-green-400">inventory</mat-icon>
+              <input
+                matInput
+                type="number"
+                min="1"
+                formControlName="quantity"
+                placeholder="Ej: 100"
+              />
+              <mat-hint>Unidades</mat-hint>
+              <mat-error *ngIf="stockForm.get('quantity')?.hasError('required')">
+                La cantidad es requerida
+              </mat-error>
+              <mat-error *ngIf="stockForm.get('quantity')?.hasError('min')">
+                Debe ser al menos 1
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Fecha de vencimiento *</mat-label>
+              <mat-icon matPrefix class="text-green-400">event_busy</mat-icon>
+              <input
+                matInput
+                [matDatepicker]="pickerExp"
+                formControlName="expiryDate"
+                placeholder="Seleccione fecha"
+              />
+              <mat-datepicker-toggle matIconSuffix [for]="pickerExp"></mat-datepicker-toggle>
+              <mat-datepicker #pickerExp></mat-datepicker>
+              <mat-error *ngIf="stockForm.get('expiryDate')?.hasError('required')">
+                La fecha de vencimiento es requerida
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Ubicación</mat-label>
+              <mat-icon matPrefix class="text-green-400">place</mat-icon>
+              <input matInput formControlName="location" placeholder="Ej: Estante A-3" />
+              <mat-hint>Opcional</mat-hint>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 3 — Costos (naranja)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-orange-50 border-b border-orange-100">
+          <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">payments</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Costos</h3>
+            <p class="text-sm text-slate-500 m-0">Precio de costo, venta y stock mínimo</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Costo unitario *</mat-label>
+              <span matTextPrefix>$ &nbsp;</span>
+              <input
+                matInput
+                type="number"
+                min="0.01"
+                step="0.01"
+                formControlName="unitCost"
+                placeholder="0.00"
+              />
+              <mat-error *ngIf="stockForm.get('unitCost')?.hasError('required')">
+                El costo es requerido
+              </mat-error>
+              <mat-error *ngIf="stockForm.get('unitCost')?.hasError('min')">
+                Debe ser mayor a 0
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Precio de venta *</mat-label>
+              <span matTextPrefix>$ &nbsp;</span>
+              <input
+                matInput
+                type="number"
+                min="0.01"
+                step="0.01"
+                formControlName="sellingPrice"
+                placeholder="0.00"
+              />
+              <mat-error *ngIf="stockForm.get('sellingPrice')?.hasError('required')">
+                El precio es requerido
+              </mat-error>
+              <mat-error *ngIf="stockForm.get('sellingPrice')?.hasError('min')">
+                Debe ser mayor a 0
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Stock mínimo</mat-label>
+              <mat-icon matPrefix class="text-orange-400">warning</mat-icon>
+              <input
+                matInput
+                type="number"
+                min="0"
+                formControlName="minimumStock"
+                placeholder="Ej: 10"
+              />
+              <mat-hint>Cantidad mínima para alertas (opcional)</mat-hint>
+              <mat-error *ngIf="stockForm.get('minimumStock')?.hasError('min')">
+                No puede ser negativo
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ Sticky action bar ══════ -->
+      <div class="form-action-bar">
+        <button
+          type="button"
+          (click)="cancel()"
+          class="btn btn-danger-outline"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none">close</span>
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          [disabled]="loading() || stockForm.invalid"
+          class="btn btn-primary"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none" *ngIf="!loading()">save</span>
+          <span class="material-symbols-outlined msz-18 leading-none animate-spin" *ngIf="loading()">refresh</span>
+          {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>

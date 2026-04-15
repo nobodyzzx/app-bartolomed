@@ -1,155 +1,103 @@
-import { Component, computed, inject, OnInit, OnDestroy, Signal, effect } from '@angular/core'
-import { SidenavService } from '../services/sidenav.services'
-import { UserRoles } from '../../../modules/dashboard/interfaces/userRoles.enum'
-import { AuthService } from '../../../modules/auth/services/auth.service'
-import { MenuItem, MENU_ITEMS } from '../../../core/config/menu.config'
-import { Subscription } from 'rxjs'
+import { Component, computed, inject } from '@angular/core'
+
+import { MENU_ITEMS } from '@core/constants/menu-items'
+import { Permission } from '@core/enums/permission.enum'
+import { UserRoles } from '@core/enums/user-roles.enum'
+import { MenuItem } from '@core/interfaces/menu-item.interface'
+import { AlertService } from '@core/services/alert.service'
+import { RoleStateService } from '@core/services/role-state.service'
+import { AuthStatus } from '../../../../app/modules/auth/interfaces/auth-status.enum'
+import { AuthService as AppAuthService } from '../../../../app/modules/auth/services/auth.service'
+import { SidenavService } from '../services/sidenav.service'
+
+const ROLE_LABELS: Record<string, string> = {
+  'super-admin': 'Super Admin',
+  admin: 'Administrador',
+  doctor: 'Médico',
+  nurse: 'Enfermero/a',
+  receptionist: 'Recepcionista',
+  pharmacist: 'Farmacéutico',
+}
+const ROLE_PRIORITY: UserRoles[] = [
+  UserRoles.SUPER_ADMIN,
+  UserRoles.ADMIN,
+  UserRoles.DOCTOR,
+  UserRoles.PHARMACIST,
+  UserRoles.NURSE,
+  UserRoles.RECEPTIONIST,
+]
 
 @Component({
-  selector: 'shared-sidebar',
-  templateUrl: './sidebar.component.html',
-  styles: [`
-    ::ng-deep .sidebar-menu .mat-mdc-menu-panel {
-      margin-left: 8px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      min-width: 240px;
-      background-color: #dbeafe !important; /* bg-blue-50 - mismo que el sidebar */
-      border: 1px solid rgba(147, 197, 253, 0.3);
-    }
-    
-    ::ng-deep .sidebar-menu .mat-mdc-menu-item {
-      height: 48px;
-      line-height: 48px;
-      padding: 8px 16px;
-      border-radius: 12px;
-      margin: 2px 8px;
-      color: #1e3a8a; /* text-blue-900 */
-      text-decoration: none;
-      background-color: transparent;
-    }
-    
-    ::ng-deep .sidebar-menu .mat-mdc-menu-item:hover {
-      background-color: #bfdbfe !important; /* hover:bg-blue-100 - mismo que el sidebar */
-      color: #1e3a8a !important; /* text-blue-900 */
-    }
-    
-    ::ng-deep .sidebar-menu .mat-mdc-menu-item.bg-blue-200,
-    ::ng-deep .sidebar-menu .mat-mdc-menu-item.active,
-    ::ng-deep .sidebar-menu .mat-mdc-menu-item[aria-current="page"] {
-      background-color: #bfdbfe !important; /* bg-blue-200 */
-      color: #1e3a8a !important; /* text-blue-900 */
-      font-weight: normal;
-    }
-    
-    ::ng-deep .sidebar-menu .mat-mdc-menu-item .mat-icon {
-      margin-right: 16px;
-      width: 24px;
-      height: 24px;
-      font-size: 24px;
-      /* Mantener el color="primary" de Angular Material */
-    }
-    
-    ::ng-deep .sidebar-menu .mat-mdc-menu-item span {
-      font-size: 14px;
-      font-weight: normal;
-      color: #1e3a8a; /* text-blue-900 */
-    }
-    
-    /* Asegurar que los links mantengan el estilo */
-    ::ng-deep .sidebar-menu a.mat-mdc-menu-item {
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-    }
-    
-    /* Evitar que el hover cambie el color del texto */
-    ::ng-deep .sidebar-menu .mat-mdc-menu-item:hover span {
-      color: #1e3a8a !important; /* text-blue-900 */
-    }
-  `]
+    selector: 'shared-sidebar',
+    templateUrl: './sidebar.component.html',
+    styleUrls: ['./sidebar.component.scss'],
+    standalone: false
 })
-export class SidebarComponent implements OnInit, OnDestroy {
-  private authService = inject(AuthService)
+export class SidebarComponent {
   private sidenavService = inject(SidenavService)
-  public isExpanded = true
-  private subscription = new Subscription()
+  private roleState = inject(RoleStateService)
+  private appAuth = inject(AppAuthService)
+  private alert = inject(AlertService)
 
-  public user: Signal<any> = computed(() => this.authService.currentUser())
+  public isExpanded = this.sidenavService.isExpanded
 
-  public userRole: Signal<UserRoles> = computed(() => {
-    const roles = this.user()?.roles || []
-
-    // Lógica para determinar el rol principal
-    if (roles.includes('super_user')) return UserRoles.SUPER_USER
-    if (roles.includes('admin')) return UserRoles.ADMIN
-    if (roles.includes('user')) return UserRoles.USER
-
-    return UserRoles.GUEST // Rol por defecto si no hay coincidencias
+  public filteredMenuItems = computed(() => {
+    const userRoles = this.roleState.currentUserRoles()
+    if (userRoles.length === 0) return []
+    return this.filterMenuByRoles(MENU_ITEMS, userRoles)
   })
 
-  public menuItems: Signal<MenuItem[]> = computed(() => {
-    const currentUser = this.user()
-    const currentRole = this.userRole()
-
-    // Forzar la re-evaluación si el usuario o el rol cambian
-    if (currentUser && currentRole) {
-      const filteredItems = this.filterMenuItemsByRole(MENU_ITEMS, currentRole)
-      return filteredItems
-    }
-
-    return [] // Devolver un array vacío mientras se inicializa
+  public userName = computed(() => {
+    const u = this.appAuth.currentUser()
+    if (!u?.personalInfo) return 'Usuario'
+    return `${u.personalInfo.firstName || ''} ${u.personalInfo.lastName || ''}`.trim() || 'Usuario'
   })
 
-  constructor() {
-    // Efecto para observar cambios en el usuario y forzar re-renderizado
-    effect(() => {
-      const user = this.user()
-      const role = this.userRole()
-    })
-  }
+  public userInitials = computed(() => {
+    const u = this.appAuth.currentUser()
+    const first = u?.personalInfo?.firstName?.[0] ?? ''
+    const last = u?.personalInfo?.lastName?.[0] ?? ''
+    return (first + last).toUpperCase() || '?'
+  })
 
-  ngOnInit() {
-    // Suscripción al estado del sidenav
-    this.subscription.add(
-      this.sidenavService.isExpanded$.subscribe(isExpanded => {
-        this.isExpanded = isExpanded
+  public userRoleLabel = computed(() => {
+    const roles = this.roleState.currentUserRoles()
+    const role = ROLE_PRIORITY.find(r => roles.includes(r))
+    return role ? (ROLE_LABELS[role] ?? role) : 'Usuario'
+  })
+
+  private filterMenuByRoles(items: MenuItem[], roles: UserRoles[]): MenuItem[] {
+    if (!items) return []
+    return items
+      .filter(item => this.hasVisibility(item, roles))
+      .map(item => {
+        if (item.children && item.children.length > 0) {
+          return { ...item, children: this.filterMenuByRoles(item.children, roles) }
+        }
+        return { ...item }
       })
-    )
-
-    // Forzar verificación inicial del estado de autenticación
-    this.authService.checkAuthStatus().subscribe()
+      .filter(item => !(item.children && item.children.length === 0 && !item.route))
   }
 
-  ngOnDestroy() {
-    // Limpiar suscripciones para evitar memory leaks
-    this.subscription.unsubscribe()
+  private hasVisibility(item: MenuItem, userRoles: UserRoles[]): boolean {
+    const allowedRoles = item.allowedRoles || []
+    if (allowedRoles.length === 0) return true
+    return userRoles.some(role => allowedRoles.includes(role))
   }
 
-  private filterMenuItemsByRole(items: MenuItem[], role: UserRoles): MenuItem[] {
-    // Si es ADMIN, mostrar todo sin restricciones
-    if (role === UserRoles.ADMIN) {
-      return items.map(item => ({
-        ...item,
-        children: item.children ? [...item.children] : undefined
-      }))
-    }
+  get isDemo(): boolean {
+    return this.appAuth.authStatus() !== AuthStatus.authenticated
+  }
 
-    return items.filter(item => {
-      // Verificar si el ítem padre tiene acceso o si algún hijo lo tiene
-      const hasDirectAccess = item.allowedRoles.includes(role)
-      let hasChildAccess = false
+  trackByLabel(_index: number, item: MenuItem): string {
+    return item.label
+  }
 
-      if (item.children) {
-        item.children = this.filterMenuItemsByRole(item.children, role)
-        hasChildAccess = item.children.length > 0
-      }
-
-      return hasDirectAccess || hasChildAccess
+  onDemoClick(): void {
+    this.alert.fire({
+      icon: 'info',
+      title: 'Modo demo',
+      text: 'Para acceder a esta sección inicia sesión con un usuario válido.',
     })
-  }
-
-  onLogout() {
-    this.authService.logout()
   }
 }

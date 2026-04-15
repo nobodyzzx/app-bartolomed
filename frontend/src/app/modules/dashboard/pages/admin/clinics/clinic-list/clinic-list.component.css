@@ -1,0 +1,12 @@
+/* Material icon fixes */
+.mat-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+/* Override Material table background to transparent */
+::ng-deep .mat-mdc-table {
+  background-color: transparent !important;
+}

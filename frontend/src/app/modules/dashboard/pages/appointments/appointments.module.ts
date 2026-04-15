@@ -1,23 +1,24 @@
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
-
-import { MaterialModule } from '../../../../material/material.module';
-import { AppointmentFormComponent } from './appointment-form.component';
+import { CommonModule } from '@angular/common'
+import { HttpClientModule } from '@angular/common/http'
+import { NgModule } from '@angular/core'
+import { FormsModule, ReactiveFormsModule } from '@angular/forms'
+import { MaterialModule } from '../../../../material/material.module'
+import { SharedModule } from '../../../../shared/shared.module'
+import { AppointmentCalendarComponent } from './appointment-calendar.component'
+import { AppointmentFormComponent } from './appointment-form.component'
+import { AppointmentsPageComponent } from './appointments.page.component'
+import { AppointmentsRoutingModule } from './appointments.routing.module'
 
 @NgModule({
-  declarations: [
-    AppointmentFormComponent
-  ],
+  declarations: [AppointmentsPageComponent, AppointmentFormComponent, AppointmentCalendarComponent],
   imports: [
     CommonModule,
+    AppointmentsRoutingModule,
+    FormsModule,
     ReactiveFormsModule,
-    RouterModule,
-    MaterialModule
+    MaterialModule,
+    HttpClientModule,
+    SharedModule,
   ],
-  exports: [
-    AppointmentFormComponent
-  ]
 })
-export class AppointmentsModule { }
+export class AppointmentsModule {}

@@ -1,62 +1,8 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import * as bcrypt from 'bcrypt';
-import { DataSource } from 'typeorm';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { PersonalInfo } from './users/entities/personal-info.entity';
-import { User } from './users/entities/user.entity';
-
-async function seedDefaultUser(dataSource: DataSource): Promise<void> {
-  const logger = new Logger('Seeder');
-
-  try {
-    const userRepository = dataSource.getRepository(User);
-    const personalInfoRepository = dataSource.getRepository(PersonalInfo);
-
-    // Check if default user already exists
-    const existingUser = await userRepository.findOne({
-      where: { email: 'doctor@example.com' },
-    });
-
-    if (existingUser) {
-      logger.log('✅ Default user already exists: doctor@example.com');
-      return;
-    }
-
-    logger.log('🌱 Creating default user...');
-
-    // Create personal info first
-    const personalInfo = personalInfoRepository.create({
-      firstName: 'Doctor',
-      lastName: 'Default',
-      phone: '+591 70000000',
-      address: 'Sistema Médico Bartolomé',
-      birthDate: new Date('1980-01-01'),
-    });
-
-    await personalInfoRepository.save(personalInfo);
-
-    // Create the default user
-    const defaultUser = userRepository.create({
-      email: 'doctor@example.com',
-      password: bcrypt.hashSync('Abc123', 10),
-      roles: ['super_user', 'admin', 'user'],
-      isActive: true,
-      personalInfo: personalInfo,
-    });
-
-    await userRepository.save(defaultUser);
-
-    logger.log('✅ Default user created successfully:');
-    logger.log(`   Name: Doctor Default`);
-    logger.log(`   Email: doctor@example.com`);
-    logger.log(`   Password: Abc123`);
-    logger.log(`   Role: super_user`);
-  } catch (error) {
-    logger.error('❌ Error creating default user:', error.message);
-  }
-}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -105,13 +51,30 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      forbidNonWhitelisted: true,
+      forbidNonWhitelisted: false,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+      skipMissingProperties: false,
+      skipNullProperties: false,
+      skipUndefinedProperties: false,
     }),
   );
 
-  // Get the DataSource and run seeder
-  const dataSource = app.get(DataSource);
-  await seedDefaultUser(dataSource);
+  // Swagger — sólo en desarrollo
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Bartolomed API')
+      .setDescription('API clínica Bartolomed')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addApiKey({ type: 'apiKey', name: 'x-clinic-id', in: 'header' }, 'clinic-id')
+      .build()
+    const document = SwaggerModule.createDocument(app, config)
+    SwaggerModule.setup('api/docs', app, document)
+    logger.log(`Swagger docs available at http://localhost:3000/api/docs`)
+  }
 
   await app.listen(3000);
   logger.log(`Application listening on port 3000`);

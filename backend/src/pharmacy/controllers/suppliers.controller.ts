@@ -1,10 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { AuthClinic } from '../../auth/decorators';
+import { RequirePermissions } from '../../auth/permissions/permissions.decorator';
+import { Permission } from '../../auth/permissions/permissions.enum';
+import { ValidRoles } from '../../auth/interfaces';
 import { CreateSupplierDto, UpdateSupplierDto } from '../dto/supplier.dto';
 import { SuppliersService } from '../services/suppliers.service';
 
-@Controller('suppliers')
-@UseGuards(JwtAuthGuard)
+@Controller('pharmacy/suppliers')
+@AuthClinic({ roles: [ValidRoles.PHARMACIST, ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN] })
+@RequirePermissions(Permission.PharmacyInventoryManage)
 export class SuppliersController {
   constructor(private readonly suppliersService: SuppliersService) {}
 

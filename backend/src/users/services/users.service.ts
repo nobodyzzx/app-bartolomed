@@ -1,29 +1,55 @@
-import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../entities/user.entity';
-import { CreateUserDto } from '../dto/create-user.dto';
-import { PaginationDto } from '../../common/dtos/pagination.dto';
 import * as bcrypt from 'bcrypt';
+import { Repository } from 'typeorm';
+import { Clinic } from '../../clinics/entities/clinic.entity';
+import { PaginationDto } from '../../common/dtos/pagination.dto';
+import { CreateUserDto } from '../dto/create-user.dto';
+import { UserClinic } from '../entities/user-clinic.entity';
+import { User } from '../entities/user.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Clinic)
+    private readonly clinicRepository: Repository<Clinic>,
+    @InjectRepository(UserClinic)
+    private readonly userClinicRepository: Repository<UserClinic>,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
     try {
-      const { password, ...userData } = createUserDto;
+      const { password, clinicId, ...userData } = createUserDto;
+
+      // Si se proporciona clinicId, verificar que la clínica existe
+      let clinic: Clinic | undefined;
+      if (clinicId) {
+        clinic = await this.clinicRepository.findOne({ where: { id: clinicId } }) ?? undefined;
+        if (!clinic) {
+          throw new BadRequestException(`Clinic with id ${clinicId} not found`);
+        }
+      }
 
       const user = this.userRepository.create({
         ...userData,
         password: bcrypt.hashSync(password, 10),
+        clinic: clinic,
       });
 
       await this.userRepository.save(user);
-      delete user.password;
+      delete (user as any).password;
+
+      // Sincronizar: crear registro en user_clinics para que ClinicScopeGuard funcione
+      if (clinic) {
+        const membership = this.userClinicRepository.create({
+          user,
+          clinic,
+          roles: user.roles ?? [],
+        });
+        await this.userClinicRepository.save(membership);
+      }
 
       return user;
     } catch (error) {
@@ -31,18 +57,23 @@ export class UsersService {
         // Código de error de PostgreSQL para clave duplicada
         throw new BadRequestException('El correo ya está registrado');
       }
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       throw new InternalServerErrorException('Error al crear usuario');
     }
   }
 
   async findAll(paginationDto: PaginationDto) {
-    const { limit = 10, offset = 0 } = paginationDto;
+    const { limit = 25, offset = 0 } = paginationDto;
 
-    return await this.userRepository.find({
+    const [data, total] = await this.userRepository.findAndCount({
       take: limit,
       skip: offset,
-      relations: ['clinic'],
+      relations: ['clinic', 'personalInfo', 'professionalInfo'],
     });
+
+    return { data, total, limit, offset };
   }
 
   async findOne(id: string) {
@@ -63,15 +94,40 @@ export class UsersService {
       updateUserDto.password = bcrypt.hashSync(updateUserDto.password, 10);
     }
 
+    // Manejar la actualización de clínica si se proporciona clinicId
+    if (updateUserDto.clinicId) {
+      const clinic = await this.clinicRepository.findOne({ where: { id: updateUserDto.clinicId } });
+      if (!clinic) {
+        throw new BadRequestException(`Clinic with id ${updateUserDto.clinicId} not found`);
+      }
+      user.clinic = clinic;
+      delete (updateUserDto as any).clinicId;
+
+      // Sincronizar: upsert en user_clinics
+      const existing = await this.userClinicRepository.findOne({
+        where: { user: { id: user.id }, clinic: { id: clinic.id } },
+      });
+      if (!existing) {
+        const membership = this.userClinicRepository.create({ user, clinic, roles: user.roles ?? [] });
+        await this.userClinicRepository.save(membership);
+      }
+    }
+
     try {
       Object.assign(user, updateUserDto);
       await this.userRepository.save(user);
-      delete user.password;
+      delete (user as any).password;
 
       return user;
     } catch (error) {
       this.handleDBErrors(error);
     }
+  }
+
+  async updateStatus(id: string, isActive: boolean) {
+    const user = await this.findOne(id);
+    user.isActive = isActive;
+    await this.userRepository.save(user);
   }
 
   async remove(id: string) {

@@ -1,43 +1,57 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  Query,
-  UseInterceptors,
-  UploadedFile,
-  ParseUUIDPipe,
-  HttpStatus,
+  Get,
   HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  Res,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { MedicalRecordsService, MedicalRecordFilters, PaginationOptions } from './medical-records.service';
+import { Auth, AuthClinic, GetUser } from '../auth/decorators';
+import { resolveClinicId } from '../auth/decorators/clinic-roles.decorator';
+import { RequirePermissions } from '../auth/permissions/permissions.decorator';
+import { Permission } from '../auth/permissions/permissions.enum';
+import { ValidRoles } from '../auth/interfaces';
+import { User } from '../users/entities/user.entity';
 import {
-  CreateMedicalRecordDto,
-  UpdateMedicalRecordDto,
   CreateConsentFormDto,
+  CreateMedicalRecordDto,
   UpdateConsentFormDto,
+  UpdateMedicalRecordDto,
   UploadConsentDocumentDto,
 } from './dto';
 import { ConsentStatus } from './entities';
-import { Auth } from '../auth/decorators';
-import { ValidRoles } from '../auth/interfaces';
+import { MedicalRecordFilters, MedicalRecordsService, PaginationOptions } from './medical-records.service';
+import { MedicalRecordsPdfService } from './services/medical-records-pdf.service';
+import { ConsentPdfDto, SummaryPdfDto } from './dto/pdf.dto';
 
 @Controller('medical-records')
-@Auth()
+@AuthClinic()
+@RequirePermissions(Permission.RecordsRead, Permission.RecordsWrite, Permission.RecordsWriteVitals)
 export class MedicalRecordsController {
-  constructor(private readonly medicalRecordsService: MedicalRecordsService) {}
+  constructor(
+    private readonly medicalRecordsService: MedicalRecordsService,
+    private readonly pdfService: MedicalRecordsPdfService,
+  ) {}
 
   // Medical Records Endpoints
   @Post()
   @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
-  create(@Body() createMedicalRecordDto: CreateMedicalRecordDto) {
-    return this.medicalRecordsService.create(createMedicalRecordDto);
+  create(@Body() createMedicalRecordDto: CreateMedicalRecordDto, @GetUser() user: User, @Req() req: Request) {
+    const clinicId = resolveClinicId(req)!;
+    return this.medicalRecordsService.create(createMedicalRecordDto, user, clinicId);
   }
 
   @Get()
@@ -52,13 +66,16 @@ export class MedicalRecordsController {
     @Query('isEmergency') isEmergency?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
+    const clinicId = req ? resolveClinicId(req) : undefined;
     const filters: MedicalRecordFilters = {
       search,
       type,
       status,
       patientId,
       doctorId,
+      clinicId,
       startDate,
       endDate,
       isEmergency: isEmergency ? isEmergency === 'true' : undefined,
@@ -69,38 +86,81 @@ export class MedicalRecordsController {
       limit: limit ? parseInt(limit, 10) : 10,
     };
 
-    return this.medicalRecordsService.findAll(filters, pagination);
+    return this.medicalRecordsService.findAll(filters, pagination, clinicId);
   }
 
   @Get('stats')
   @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
-  getStats() {
-    return this.medicalRecordsService.getStats();
+  getStats(@Req() req: Request) {
+    const clinicId = resolveClinicId(req);
+    return this.medicalRecordsService.getStats(clinicId);
+  }
+
+  @Get('patient/:patientId')
+  getMedicalRecordsByPatient(@Param('patientId', ParseUUIDPipe) patientId: string, @Req() req: Request) {
+    const clinicId = resolveClinicId(req);
+    return this.medicalRecordsService.getMedicalRecordsByPatient(patientId, clinicId);
+  }
+
+  @Get('doctor/:doctorId')
+  getMedicalRecordsByDoctor(@Param('doctorId', ParseUUIDPipe) doctorId: string, @Req() req: Request) {
+    const clinicId = resolveClinicId(req);
+    return this.medicalRecordsService.getMedicalRecordsByDoctor(doctorId, clinicId);
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.medicalRecordsService.findOne(id);
+  findOne(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
+    const clinicId = resolveClinicId(req);
+    return this.medicalRecordsService.findOne(id, clinicId);
   }
 
   @Patch(':id')
   @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateMedicalRecordDto: UpdateMedicalRecordDto) {
-    return this.medicalRecordsService.update(id, updateMedicalRecordDto);
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateMedicalRecordDto: UpdateMedicalRecordDto,
+    @GetUser() user: User,
+    @Req() req: Request,
+  ) {
+    const clinicId = resolveClinicId(req);
+    return this.medicalRecordsService.update(id, updateMedicalRecordDto, user, clinicId);
   }
 
   @Delete(':id')
   @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.medicalRecordsService.remove(id);
+  remove(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
+    const clinicId = resolveClinicId(req);
+    return this.medicalRecordsService.remove(id, clinicId);
+  }
+
+  // PDF Generation Endpoints
+  @Post('pdf/consent')
+  @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
+  async generateConsentPdf(@Body() dto: ConsentPdfDto, @Res() res: Response): Promise<void> {
+    const buffer = await this.pdfService.generateConsentPdf(dto);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="consentimiento.pdf"');
+    res.setHeader('Content-Length', buffer.length);
+    res.end(buffer);
+  }
+
+  @Post('pdf/summary')
+  @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
+  async generateSummaryPdf(@Body() dto: SummaryPdfDto, @Res() res: Response): Promise<void> {
+    const buffer = await this.pdfService.generateSummaryPdf(dto);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="expediente-medico.pdf"');
+    res.setHeader('Content-Length', buffer.length);
+    res.end(buffer);
   }
 
   // Consent Forms Endpoints
   @Post('consent-forms')
   @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
-  createConsentForm(@Body() createConsentFormDto: CreateConsentFormDto) {
-    return this.medicalRecordsService.createConsentForm(createConsentFormDto);
+  createConsentForm(@Body() createConsentFormDto: CreateConsentFormDto, @Req() req: Request) {
+    const clinicId = resolveClinicId(req)!;
+    return this.medicalRecordsService.createConsentForm(createConsentFormDto, clinicId);
   }
 
   @Get('consent-forms')
@@ -108,11 +168,14 @@ export class MedicalRecordsController {
     @Query('patientId') patientId?: string,
     @Query('medicalRecordId') medicalRecordId?: string,
     @Query('status') status?: ConsentStatus,
+    @Req() req?: Request,
   ) {
+    const clinicId = req ? resolveClinicId(req) : undefined;
     return this.medicalRecordsService.findAllConsentForms({
       patientId,
       medicalRecordId,
       status,
+      clinicId,
     });
   }
 

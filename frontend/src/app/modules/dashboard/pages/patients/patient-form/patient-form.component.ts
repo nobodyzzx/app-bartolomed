@@ -1,34 +1,47 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, DestroyRef, ElementRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
-import { MatSnackBar } from '@angular/material/snack-bar'
 import { ActivatedRoute, Router } from '@angular/router'
 import { of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
+import { AlertService } from '../../../../../core/services/alert.service'
+import { ClinicContextService } from '../../../../clinics/services/clinic-context.service'
+import { Clinic } from '../../admin/clinics/interfaces/clinic.interface'
+import { ClinicsService } from '../../admin/clinics/services'
 import { BloodType, CreatePatientDto, Gender, MaritalStatus, Patient } from '../interfaces'
 import { PatientsService } from '../services'
 
 @Component({
-  selector: 'app-patient-form',
-  templateUrl: './patient-form.component.html',
-  styleUrl: './patient-form.component.css'
+    selector: 'app-patient-form',
+    templateUrl: './patient-form.component.html',
+    styleUrl: './patient-form.component.css',
+    standalone: false
 })
 export class PatientFormComponent implements OnInit {
-  
+  private readonly destroyRef = inject(DestroyRef)
+  private readonly elRef = inject(ElementRef)
+
   // Stepper form groups
-  personalInfoForm!: FormGroup;
-  contactInfoForm!: FormGroup;
-  medicalInfoForm!: FormGroup;
-  emergencyContactForm!: FormGroup;
-  insuranceForm!: FormGroup;
-  
+  personalInfoForm!: FormGroup
+  contactInfoForm!: FormGroup
+  emergencyContactForm!: FormGroup
+  insuranceForm!: FormGroup
+
   // Loading states
-  isLoading = false;
-  isSaving = false;
-  
+  isLoading = false
+  isSaving = false
+
   // Edit mode
-  isEditMode = false;
-  isViewMode = false;
-  patientId: string | null = null;
+  isEditMode = false
+  isViewMode = false
+  patientId: string | null = null
+
+  // Clinics for select
+  clinics: Clinic[] = []
+  isClinicsLoading = false
+
+  // Contexto de clínica (si existe, bloquea selector)
+  public readonly ctxClinicId: string | null = null
 
   // Options for dropdowns
   protected readonly genderOptions = [
@@ -58,91 +71,186 @@ export class PatientFormComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private router: Router,
+    public router: Router,
     private route: ActivatedRoute,
-    private snackBar: MatSnackBar,
-    private patientsService: PatientsService
+    private patientsService: PatientsService,
+    private clinicsService: ClinicsService,
+    private clinicCtx: ClinicContextService,
+    private alert: AlertService,
   ) {
-    this.initializeForms();
+    // fijar contexto si existe
+    this.ctxClinicId = this.clinicCtx?.clinicId ?? null
+    this.initializeForms()
   }
 
   ngOnInit(): void {
-    this.checkEditMode();
+    this.loadClinics()
+    this.checkEditMode()
   }
 
   private initializeForms(): void {
     // Paso 1: Información Personal
     this.personalInfoForm = this.fb.group({
-      firstName: ['María', [Validators.required, Validators.minLength(2)]],
-      lastName: ['González', [Validators.required, Validators.minLength(2)]],
-      documentNumber: ['12345678', [Validators.required, Validators.minLength(5)]],
+      firstName: ['', [Validators.required, Validators.minLength(2)]],
+      lastName: ['', [Validators.required, Validators.minLength(2)]],
+      documentNumber: [
+        '',
+        [
+          Validators.required,
+          Validators.minLength(5),
+          Validators.pattern(/^[A-Za-z0-9\-\.]{5,20}$/),
+        ],
+      ],
       documentType: ['CI'],
-      birthDate: [new Date('1985-03-15'), Validators.required],
-      gender: [Gender.FEMALE, Validators.required],
-      maritalStatus: [MaritalStatus.SINGLE],
-      occupation: ['Profesora']
-    });
+      birthDate: [null, Validators.required],
+      gender: [null, Validators.required],
+      bloodType: [null],
+      maritalStatus: [null],
+      occupation: [''],
+    })
 
     // Paso 2: Información de Contacto
     this.contactInfoForm = this.fb.group({
-      email: ['maria.gonzalez@email.com', [Validators.email]],
-      phone: ['+591-70123456'],
-      address: ['Av. América #123, Zona Central'],
-      city: ['La Paz'],
-      state: ['La Paz'],
-      zipCode: ['00000'],
-      country: ['Bolivia']
-    });
+      email: ['', [Validators.email]],
+      phone: ['', [Validators.pattern(/^\+?[0-9\-\s]{7,15}$/)]],
+      address: [''],
+      city: [''],
+      state: [''],
+      zipCode: [''],
+      country: [''],
+    })
 
-    // Paso 3: Información Médica
-    this.medicalInfoForm = this.fb.group({
-      bloodType: [BloodType.O_POSITIVE],
-      allergies: ['Alergia a la penicilina'],
-      medications: ['Ninguno actualmente'],
-      medicalHistory: ['Hipertensión arterial controlada'],
-      notes: ['Paciente colaboradora, sin antecedentes quirúrgicos relevantes']
-    });
+    // Información médica se gestionará en Expedientes Médicos (no en el alta del paciente)
 
     // Paso 4: Contacto de Emergencia
     this.emergencyContactForm = this.fb.group({
-      emergencyContactName: ['Pedro González'],
-      emergencyContactPhone: ['+591-70654321'],
-      emergencyContactRelationship: ['Esposo']
-    });
+      emergencyContactName: [''],
+      emergencyContactPhone: ['', [Validators.pattern(/^\+?[0-9\-\s]{7,15}$/)]],
+      emergencyContactRelationship: [''],
+    })
 
     // Paso 5: Información de Seguro
     this.insuranceForm = this.fb.group({
-      insuranceProvider: ['Caja Nacional de Salud'],
-      insuranceNumber: ['CNS-123456789'],
-      clinicId: ['1', Validators.required]
-    });
+      insuranceProvider: [''],
+      insuranceNumber: [''],
+      clinicId: [this.clinicCtx.clinicId, Validators.required],
+    })
+  }
+
+  private loadClinics(): void {
+    // Cargar solo clínicas activas para el selector
+    this.clinicsService
+      .findAll(true)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError(err => {
+          this.alert
+            .fire({
+              title: 'Error al Cargar Clínicas',
+              html: `
+              <div style="text-align: center; padding: 10px;">
+                <p>No se pudieron cargar las clínicas disponibles.</p>
+                <p style="color: #64748b; font-size: 0.9em; margin-top: 10px;">
+                  ${err.status === 401 ? 'Su sesión ha expirado. Por favor, inicie sesión nuevamente.' : 'Por favor, intente recargar la página.'}
+                </p>
+              </div>
+            `,
+              icon: 'error',
+              confirmButtonText: 'Reintentar',
+              showCancelButton: true,
+              cancelButtonText: 'Continuar sin clínicas',
+            })
+            .then((result: any) => {
+              if (result.isConfirmed) {
+                this.loadClinics()
+              }
+            })
+          return of([] as Clinic[])
+        }),
+      )
+      .subscribe(clinics => {
+        this.clinics = clinics || []
+        this.isClinicsLoading = false
+
+        // Mostrar advertencia si no hay clínicas
+        if (this.clinics.length === 0 && !this.isEditMode) {
+          this.alert.fire({
+            title: 'Sin Clínicas Activas',
+            text: 'No hay clínicas activas disponibles. Por favor, contacte al administrador.',
+            icon: 'warning',
+            confirmButtonText: 'Entendido',
+          })
+        }
+
+        // Prefijar clínica del contexto solo en modo creación
+        const ctxId = this.clinicCtx.clinicId
+        if (!this.isEditMode && ctxId && this.clinics.some(c => c.id === ctxId)) {
+          this.insuranceForm.patchValue({ clinicId: ctxId })
+        } else if (!this.isEditMode && ctxId && !this.clinics.some(c => c.id === ctxId)) {
+          // Si el contexto apunta a una clínica que aún no está cargada (o filtrada), cargarla y agregarla
+          this.clinicsService
+            .findOne(ctxId)
+            .pipe(takeUntilDestroyed(this.destroyRef), catchError(() => of(null as Clinic | null)))
+            .subscribe(c => {
+              if (c) {
+                this.clinics = [...this.clinics, c]
+                this.insuranceForm.patchValue({ clinicId: ctxId })
+              }
+            })
+        }
+      })
   }
 
   private checkEditMode(): void {
     // Verificar si estamos en modo edición o vista
     this.route.paramMap
       .pipe(
+        takeUntilDestroyed(this.destroyRef),
         switchMap(params => {
           this.patientId = params.get('id')
           this.isEditMode = !!this.patientId && !this.route.snapshot.data['viewMode']
           this.isViewMode = !!this.patientId && !!this.route.snapshot.data['viewMode']
 
           if ((this.isEditMode || this.isViewMode) && this.patientId) {
-            this.isLoading = true;
+            this.isLoading = true
             return this.patientsService.findOne(this.patientId)
           }
           return of(null)
         }),
         catchError(error => {
-          this.showError('Error al cargar el paciente');
-          return of(null);
-        })
+          this.isLoading = false
+
+          if (error.status === 404) {
+            this.alert
+              .fire({
+                title: 'Paciente No Encontrado',
+                text: 'El paciente que intenta editar no existe o ha sido eliminado.',
+                icon: 'error',
+                confirmButtonText: 'Ir a Lista',
+              })
+              .then(() => {
+                this.router.navigate(['/dashboard/patients'])
+              })
+          } else {
+            this.alert
+              .fire({
+                title: 'Error al Cargar Paciente',
+                text: 'No se pudo cargar la información del paciente. Por favor, intente nuevamente.',
+                icon: 'error',
+                confirmButtonText: 'Volver',
+              })
+              .then(() => {
+                this.router.navigate(['/dashboard/patients'])
+              })
+          }
+          return of(null)
+        }),
       )
       .subscribe(patient => {
         if (patient) {
-          this.populateForms(patient);
+          this.populateForms(patient)
         }
-        this.isLoading = false;
+        this.isLoading = false
       })
   }
 
@@ -152,11 +260,12 @@ export class PatientFormComponent implements OnInit {
       lastName: patient.lastName,
       documentNumber: patient.documentNumber,
       documentType: patient.documentType,
-      birthDate: patient.birthDate,
+      birthDate: patient.birthDate ? new Date(patient.birthDate) : null,
       gender: patient.gender,
+      bloodType: patient.bloodType,
       maritalStatus: patient.maritalStatus,
-      occupation: patient.occupation
-    });
+      occupation: patient.occupation,
+    })
 
     this.contactInfoForm.patchValue({
       email: patient.email,
@@ -165,141 +274,458 @@ export class PatientFormComponent implements OnInit {
       city: patient.city,
       state: patient.state,
       zipCode: patient.zipCode,
-      country: patient.country
-    });
+      country: patient.country,
+    })
 
-    this.medicalInfoForm.patchValue({
-      bloodType: patient.bloodType,
-      allergies: patient.allergies,
-      medications: patient.medications,
-      medicalHistory: patient.medicalHistory,
-      notes: patient.notes
-    });
+    // Información médica se completará en el expediente (omitida en alta)
 
     this.emergencyContactForm.patchValue({
       emergencyContactName: patient.emergencyContactName,
       emergencyContactPhone: patient.emergencyContactPhone,
-      emergencyContactRelationship: patient.emergencyContactRelationship
-    });
+      emergencyContactRelationship: patient.emergencyContactRelationship,
+    })
 
+    const patientClinicId = patient.clinic?.id ?? patient.clinicId
     this.insuranceForm.patchValue({
       insuranceProvider: patient.insuranceProvider,
       insuranceNumber: patient.insuranceNumber,
-      clinicId: patient.clinicId
-    });
+      clinicId: patientClinicId,
+    })
+
+    // Si la clínica del paciente no está en la lista (p.ej. está inactiva), agregarla
+    if (patientClinicId && !this.clinics.some(c => c.id === patientClinicId)) {
+      this.clinicsService
+        .findOne(patientClinicId)
+        .pipe(takeUntilDestroyed(this.destroyRef), catchError(() => of(null as Clinic | null)))
+        .subscribe(c => {
+          if (c) {
+            this.clinics = [...this.clinics, c]
+          }
+        })
+    }
+
+    if (this.isViewMode) {
+      this.personalInfoForm.disable()
+      this.contactInfoForm.disable()
+      this.emergencyContactForm.disable()
+      this.insuranceForm.disable()
+    }
   }
 
   onSubmit(): void {
     if (this.isAllFormsValid()) {
-      this.isSaving = true;
-      
-      const patientData = this.createPatientDto();
-      
+      this.isSaving = true
+
+      const patientData = this.createPatientDto()
+
       if (this.isEditMode && this.patientId) {
-        this.updatePatient(patientData);
+        this.updatePatient(patientData)
       } else {
-        this.createPatient(patientData);
+        this.createPatient(patientData)
       }
     } else {
-      this.showError('Por favor complete todos los campos requeridos');
+      this.personalInfoForm.markAllAsTouched()
+      this.contactInfoForm.markAllAsTouched()
+      this.emergencyContactForm.markAllAsTouched()
+      this.insuranceForm.markAllAsTouched()
+      this.scrollToFirstError()
+      this.showValidationErrors()
     }
   }
 
+  private showValidationErrors(): void {
+    const p = this.personalInfoForm.controls
+    const c = this.contactInfoForm.controls
+    const i = this.insuranceForm.controls
+
+    const missing: string[] = []
+
+    if (p['firstName']?.invalid)      missing.push('Nombres')
+    if (p['lastName']?.invalid)       missing.push('Apellidos')
+    if (p['documentNumber']?.invalid) missing.push('Número de documento (CI)')
+    if (p['birthDate']?.invalid)      missing.push('Fecha de nacimiento')
+    if (p['gender']?.invalid)         missing.push('Género')
+    if (c['email']?.invalid)          missing.push('Correo electrónico (formato inválido)')
+    if (c['phone']?.invalid)          missing.push('Teléfono (formato inválido)')
+    if (i['clinicId']?.invalid)       missing.push('Clínica asignada')
+
+    this.alert.fire({
+      icon: 'warning',
+      title: 'Campos requeridos',
+      html: `
+        <p style="margin-bottom:10px;color:#374151">Corrija los siguientes campos antes de continuar:</p>
+        <ul style="text-align:left;color:#dc2626;line-height:1.8">
+          ${missing.map(m => `<li>• ${m}</li>`).join('')}
+        </ul>
+      `,
+      confirmButtonText: 'Entendido',
+    })
+  }
+
+  private scrollToFirstError(): void {
+    requestAnimationFrame(() => {
+      const el = this.elRef.nativeElement as HTMLElement
+      const invalid = el.querySelector('.mat-form-field-invalid')
+      if (invalid) {
+        invalid.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    })
+  }
+
+  // Utilidad: calcular edad para mostrar junto a la fecha de nacimiento
+  getAge(): number | null {
+    const bd = this.personalInfoForm.get('birthDate')?.value
+    if (!bd) return null
+    const birthDate = new Date(bd)
+    const today = new Date()
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const m = today.getMonth() - birthDate.getMonth()
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--
+    return age
+  }
+
+  searchByDocument(): void {
+    const doc = this.personalInfoForm.get('documentNumber')?.value
+    if (!doc || String(doc).length < 5) {
+      this.alert.fire({
+        title: 'Documento insuficiente',
+        text: 'Ingrese al menos 5 caracteres para buscar.',
+        icon: 'warning',
+        confirmButtonText: 'Entendido',
+      })
+      return
+    }
+
+    this.patientsService
+      .findByDocument(doc)
+      .pipe(takeUntilDestroyed(this.destroyRef), catchError(() => of(null as Patient | null)))
+      .subscribe(p => {
+        if (p && p.id) {
+          this.alert
+            .fire({
+              title: 'Paciente ya existe',
+              html: `<div style="text-align:left">Se encontró un paciente con ese documento:<br><strong>${p.firstName} ${p.lastName}</strong></div>`,
+              icon: 'info',
+              confirmButtonText: 'Abrir para editar',
+              showCancelButton: true,
+              cancelButtonText: 'Seguir creando',
+            })
+            .then((res: any) => {
+              if (res.isConfirmed) {
+                this.router.navigate(['/dashboard/patients/edit', p.id])
+              }
+            })
+        } else {
+          this.alert.fire({
+            title: 'No encontrado',
+            text: 'No existe un paciente con ese documento. Puede continuar con el registro.',
+            icon: 'success',
+            confirmButtonText: 'Continuar',
+          })
+        }
+      })
+  }
+
+  getSelectedClinicName(): string | null {
+    const id = this.insuranceForm.get('clinicId')?.value
+    if (!id) return null
+    const c = this.clinics.find(x => x.id === id)
+    return c ? c.name : null
+  }
+
   isAllFormsValid(): boolean {
-    return this.personalInfoForm.valid && 
-           this.contactInfoForm.valid && 
-           this.emergencyContactForm.valid && 
-           this.insuranceForm.valid;
+    return (
+      this.personalInfoForm.valid &&
+      this.contactInfoForm.valid &&
+      this.emergencyContactForm.valid &&
+      this.insuranceForm.valid
+    )
   }
 
   private createPatientDto(): CreatePatientDto {
-    const personalData = this.personalInfoForm.value;
-    const contactData = this.contactInfoForm.value;
-    const medicalData = this.medicalInfoForm.value;
-    const emergencyData = this.emergencyContactForm.value;
-    const insuranceData = this.insuranceForm.value;
+    const personalData = this.personalInfoForm.value
+    const contactData = this.contactInfoForm.value
+    // Sin información médica en este flujo; se completará en Expedientes Médicos
+    const emergencyData = this.emergencyContactForm.value
+    const insuranceData = this.insuranceForm.value
 
-    return {
+    const raw = {
       ...personalData,
       ...contactData,
-      ...medicalData,
       ...emergencyData,
-      ...insuranceData
-    };
+      ...insuranceData,
+    }
+
+    // Convertir strings vacíos a undefined para que el backend respete @IsOptional()
+    return Object.fromEntries(
+      Object.entries(raw).map(([k, v]) => [k, v === '' ? undefined : v]),
+    ) as unknown as CreatePatientDto
   }
 
   private createPatient(patientData: CreatePatientDto): void {
-    this.patientsService.createPatient(patientData).subscribe({
-      next: (patient) => {
-        this.showSuccess('Paciente creado exitosamente');
-        this.router.navigate(['/dashboard/patients']);
+    this.patientsService.createPatient(patientData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: patient => {
+        this.isSaving = false
+        this.alert
+          .fire({
+            title: '¡Paciente Creado!',
+            html: `
+            <div style="text-align: left; padding: 10px;">
+              <p><strong>Nombre:</strong> ${patient.firstName} ${patient.lastName}</p>
+              <p><strong>Documento:</strong> ${patient.documentNumber}</p>
+              <div style="background:#eff6ff; color:#1d4ed8; padding:12px; border-radius:10px; margin-top:12px; border:1px solid #bfdbfe;">
+                <span style="font-weight:600;">Siguiente paso:</span> Completa el <strong>Expediente Médico</strong> del paciente.
+              </div>
+            </div>
+          `,
+            icon: 'success',
+            confirmButtonText: 'Crear Expediente Médico',
+            showDenyButton: true,
+            denyButtonText: 'Ir a Lista',
+            showCancelButton: true,
+            cancelButtonText: 'Crear Otro',
+            reverseButtons: true,
+          })
+          .then((result: any) => {
+            if (result.isConfirmed) {
+              this.router.navigate(['/dashboard/medical-records/new'], {
+                queryParams: { patientId: patient.id },
+              })
+            } else if (result.isDenied) {
+              this.router.navigate(['/dashboard/patients'])
+            } else {
+              // Resetear formulario para crear otro paciente
+              this.initializeForms()
+            }
+          })
       },
-      error: (error) => {
-        this.showError('Error al crear el paciente');
-        this.isSaving = false;
-      }
-    });
+      error: error => {
+        this.isSaving = false
+        this.handlePatientError(error, patientData)
+      },
+    })
   }
 
   private updatePatient(patientData: CreatePatientDto): void {
-    this.patientsService.updatePatient(this.patientId!, patientData).subscribe({
-      next: (patient) => {
-        this.showSuccess('Paciente actualizado exitosamente');
-        this.router.navigate(['/dashboard/patients']);
+    this.patientsService.updatePatient(this.patientId!, patientData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: patient => {
+        this.isSaving = false
+        this.alert
+          .fire({
+            title: '¡Paciente Actualizado!',
+            text: 'Los datos del paciente han sido actualizados correctamente',
+            icon: 'success',
+            confirmButtonText: 'Aceptar',
+            timer: 3000,
+            timerProgressBar: true,
+          })
+          .then(() => {
+            this.router.navigate(['/dashboard/patients'])
+          })
       },
-      error: (error) => {
-        this.showError('Error al actualizar el paciente');
-        this.isSaving = false;
+      error: error => {
+        this.isSaving = false
+        this.handlePatientError(error, patientData)
+      },
+    })
+  }
+
+  private handlePatientError(error: any, patientData: CreatePatientDto): void {
+    // Error de paciente duplicado (409 Conflict)
+    if (error.status === 409 || error.error?.message?.includes('already exists')) {
+      this.alert
+        .fire({
+          title: '⚠️ Paciente Ya Registrado',
+          html: `
+          <div style="text-align: left; padding: 15px;">
+            <p style="margin-bottom: 15px;">Ya existe un paciente registrado con el documento:</p>
+            <div style="background: #fef3c7; padding: 12px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 15px;">
+              <strong style="font-size: 1.1em; color: #92400e;">${patientData.documentType || 'CI'}: ${patientData.documentNumber}</strong>
+            </div>
+            <p style="color: #64748b; font-size: 0.9em;">Por favor, verifique el número de documento o busque al paciente existente.</p>
+          </div>
+        `,
+          icon: 'warning',
+          confirmButtonText: 'Buscar Paciente',
+          showCancelButton: true,
+          cancelButtonText: 'Revisar Documento',
+          reverseButtons: true,
+        })
+        .then(result => {
+          if (result.isConfirmed) {
+            // Navegar a la lista con búsqueda del documento
+            this.router.navigate(['/dashboard/patients'], {
+              queryParams: { q: patientData.documentNumber },
+            })
+          }
+        })
+      return
+    }
+
+    // Error de clínica no encontrada (404)
+    if (error.status === 404 && error.error?.message?.includes('Clinic not found')) {
+      this.alert.fire({
+        title: 'Clínica No Encontrada',
+        text: 'La clínica seleccionada no existe. Por favor, seleccione otra clínica.',
+        icon: 'error',
+        confirmButtonText: 'Entendido',
+      })
+      return
+    }
+
+    // Error de validación (400 Bad Request)
+    if (error.status === 400) {
+      const validationErrors = this.extractValidationErrors(error)
+      this.alert.fire({
+        title: 'Datos Inválidos',
+        html: `
+          <div style="text-align: left; padding: 10px;">
+            <p style="margin-bottom: 10px;">Por favor, corrija los siguientes errores:</p>
+            <ul style="color: #dc2626; text-align: left;">
+              ${validationErrors.map(err => `<li>${err}</li>`).join('')}
+            </ul>
+          </div>
+        `,
+        icon: 'error',
+        confirmButtonText: 'Corregir',
+      })
+      return
+    }
+
+    // Error de autorización (401/403)
+    if (error.status === 401 || error.status === 403) {
+      this.alert.fire({
+        title: 'Sin Autorización',
+        text: 'No tiene permisos para realizar esta acción.',
+        icon: 'error',
+        confirmButtonText: 'Entendido',
+      })
+      return
+    }
+
+    // Error de servidor (500)
+    if (error.status >= 500) {
+      this.alert
+        .fire({
+          title: 'Error del Servidor',
+          html: `
+          <div style="text-align: center; padding: 10px;">
+            <p>Ocurrió un error en el servidor. Por favor, intente nuevamente.</p>
+            <p style="color: #64748b; font-size: 0.9em; margin-top: 10px;">Si el problema persiste, contacte al administrador.</p>
+          </div>
+        `,
+          icon: 'error',
+          confirmButtonText: 'Reintentar',
+          showCancelButton: true,
+          cancelButtonText: 'Cancelar',
+        })
+        .then((result: any) => {
+          if (result.isConfirmed) {
+            this.isSaving = true
+            if (this.isEditMode) {
+              this.updatePatient(patientData)
+            } else {
+              this.createPatient(patientData)
+            }
+          }
+        })
+      return
+    }
+
+    // Error genérico
+    this.alert.fire({
+      title: 'Error al Guardar',
+      text:
+        error.error?.message ||
+        'Ocurrió un error al guardar el paciente. Por favor, intente nuevamente.',
+      icon: 'error',
+      confirmButtonText: 'Entendido',
+    })
+  }
+
+  private extractValidationErrors(error: any): string[] {
+    const errors: string[] = []
+
+    if (error.error?.message) {
+      if (Array.isArray(error.error.message)) {
+        errors.push(...error.error.message)
+      } else {
+        errors.push(error.error.message)
       }
-    });
+    }
+
+    if (errors.length === 0) {
+      errors.push('Datos inválidos. Por favor, revise el formulario.')
+    }
+
+    return errors
   }
 
   saveDraft(): void {
     if (this.personalInfoForm.valid) {
-      this.isSaving = true;
-      const patientData = this.createPatientDto();
-      
-      this.createPatient(patientData);
+      this.alert
+        .fire({
+          title: 'Guardar Borrador',
+          text: 'Se guardará el paciente solo con la información personal básica. ¿Desea continuar?',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'Sí, guardar',
+          cancelButtonText: 'Cancelar',
+          reverseButtons: true,
+        })
+        .then((result: any) => {
+          if (result.isConfirmed) {
+            this.isSaving = true
+            const patientData = this.createPatientDto()
+            this.createPatient(patientData)
+          }
+        })
     } else {
-      this.showError('Debe completar al menos la información personal básica');
+      this.alert.fire({
+        title: 'Información Incompleta',
+        html: `
+          <div style="text-align: left; padding: 10px;">
+            <p>Debe completar al menos la información personal básica:</p>
+            <ul style="color: #dc2626; margin-top: 10px;">
+              ${!this.personalInfoForm.get('firstName')?.valid ? '<li>Nombres</li>' : ''}
+              ${!this.personalInfoForm.get('lastName')?.valid ? '<li>Apellidos</li>' : ''}
+              ${!this.personalInfoForm.get('documentNumber')?.valid ? '<li>Número de documento</li>' : ''}
+              ${!this.personalInfoForm.get('birthDate')?.valid ? '<li>Fecha de nacimiento</li>' : ''}
+              ${!this.personalInfoForm.get('gender')?.valid ? '<li>Género</li>' : ''}
+            </ul>
+          </div>
+        `,
+        icon: 'warning',
+        confirmButtonText: 'Completar Datos',
+      })
     }
   }
 
   cancel(): void {
-    this.router.navigate(['/dashboard/patients']);
-  }
-
-  private showSuccess(message: string): void {
-    this.snackBar.open(message, 'Cerrar', {
-      duration: 3000,
-      panelClass: ['success-snackbar']
-    });
+    this.alert
+      .fire({
+        title: '¿Estás seguro?',
+        text: 'Los cambios no guardados se perderán',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, salir',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+      })
+      .then((result: any) => {
+        if (result.isConfirmed) {
+          this.router.navigate(['/dashboard/patients'])
+        }
+      })
   }
 
   private showError(message: string): void {
-    this.snackBar.open(message, 'Cerrar', {
-      duration: 3000,
-      panelClass: ['error-snackbar']
-    });
+    this.alert.fire({
+      title: 'Error',
+      text: message,
+      icon: 'error',
+      confirmButtonText: 'Entendido',
+    })
   }
 
-  getErrorMessage(fieldName: string): string {
-    const field = this.personalInfoForm.get(fieldName) || 
-                  this.contactInfoForm.get(fieldName) || 
-                  this.medicalInfoForm.get(fieldName) || 
-                  this.emergencyContactForm.get(fieldName) || 
-                  this.insuranceForm.get(fieldName);
-                  
-    if (field?.hasError('required')) {
-      return 'Este campo es requerido';
-    }
-    if (field?.hasError('email')) {
-      return 'Ingrese un email válido';
-    }
-    if (field?.hasError('minlength')) {
-      return `Mínimo ${field.getError('minlength').requiredLength} caracteres`;
-    }
-    return '';
-  }
 }
-

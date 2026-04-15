@@ -1,221 +1,364 @@
-<div class="financial-reports-container">
-  <div class="header-section">
-    <div class="title-area">
-      <h2>
-        <mat-icon>account_balance</mat-icon>
-        Reportes Financieros
-      </h2>
-      <p>Análisis financiero y control contable detallado</p>
-    </div>
-  </div>
+<div class="page-wrapper">
+  <div class="page-inner">
 
-  <!-- Formulario para generar nuevo reporte -->
-  <mat-card class="generate-form-card">
-    <mat-card-header>
-      <mat-card-title>Generar Nuevo Reporte Financiero</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <form [formGroup]="generateForm" (ngSubmit)="onGenerateReport()">
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="full-width">
+    <app-page-header
+      title="Reportes Financieros"
+      subtitle="Análisis financiero y control contable detallado"
+      (back)="goBack()"
+    />
+
+    <!-- Estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <app-stat-card
+        label="Total Reportes"
+        [value]="totalReports"
+        sublabel="Generados"
+        icon="description"
+        color="green"
+      />
+      <app-stat-card
+        label="Ingresos Totales"
+        [value]="formatCurrency(totalRevenue)"
+        sublabel="Cobros acumulados"
+        icon="trending_up"
+        color="blue"
+      />
+      <app-stat-card
+        label="Gastos Totales"
+        [value]="formatCurrency(totalExpenses)"
+        sublabel="Egresos registrados"
+        icon="money_off"
+        color="red"
+      />
+      <app-stat-card
+        label="Utilidad Neta"
+        [value]="formatCurrency(totalProfit)"
+        sublabel="Balance general"
+        icon="account_balance_wallet"
+        color="amber"
+      />
+    </div>
+
+    <!-- Formulario de Generación -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+      <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+        <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">add_circle</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Generar Nuevo Reporte Financiero</h3>
+          <p class="text-sm text-slate-500 m-0">Configure los parámetros del análisis financiero</p>
+        </div>
+      </div>
+
+      <form [formGroup]="generateForm" (ngSubmit)="onGenerateReport()" class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <mat-form-field appearance="outline" class="w-full">
             <mat-label>Tipo de Reporte</mat-label>
-            <mat-select formControlName="type" required>
+            <mat-icon matPrefix class="text-green-400">category</mat-icon>
+            <mat-select formControlName="type">
               <mat-option *ngFor="let type of reportTypes" [value]="type.value">
-                {{ type.label }}
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined msz-18">{{ type.icon }}</span>
+                  {{ type.label }}
+                </div>
               </mat-option>
             </mat-select>
-            <mat-error *ngIf="generateForm.get('type')?.hasError('required')">
-              El tipo de reporte es requerido
-            </mat-error>
+            <mat-error>Seleccione un tipo de reporte</mat-error>
           </mat-form-field>
-        </div>
 
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="full-width">
+          <mat-form-field appearance="outline" class="w-full">
             <mat-label>Título del Reporte</mat-label>
-            <input matInput formControlName="title" placeholder="Ej: Balance Financiero Enero 2024" required>
-            <mat-error *ngIf="generateForm.get('title')?.hasError('required')">
-              El título es requerido
-            </mat-error>
+            <mat-icon matPrefix class="text-green-400">title</mat-icon>
+            <input matInput formControlName="title" placeholder="Ej: Balance Financiero Enero 2025" />
+            <mat-error *ngIf="generateForm.get('title')?.hasError('required')">El título es requerido</mat-error>
+            <mat-error *ngIf="generateForm.get('title')?.hasError('minlength')">Mínimo 5 caracteres</mat-error>
           </mat-form-field>
-        </div>
 
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Descripción</mat-label>
-            <textarea matInput formControlName="description" rows="3" 
-                      placeholder="Descripción detallada del reporte financiero..."></textarea>
-          </mat-form-field>
-        </div>
-
-        <div class="form-row date-range">
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" class="w-full">
             <mat-label>Fecha de Inicio</mat-label>
-            <input matInput [matDatepicker]="startPicker" formControlName="startDate" required>
-            <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+            <mat-icon matPrefix class="text-green-400">calendar_today</mat-icon>
+            <input matInput [matDatepicker]="startPicker" formControlName="startDate" />
+            <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
             <mat-datepicker #startPicker></mat-datepicker>
-            <mat-error *ngIf="generateForm.get('startDate')?.hasError('required')">
-              La fecha de inicio es requerida
-            </mat-error>
+            <mat-error>Seleccione una fecha de inicio</mat-error>
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" class="w-full">
             <mat-label>Fecha de Fin</mat-label>
-            <input matInput [matDatepicker]="endPicker" formControlName="endDate" required>
-            <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+            <mat-icon matPrefix class="text-green-400">event</mat-icon>
+            <input matInput [matDatepicker]="endPicker" formControlName="endDate" />
+            <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
             <mat-datepicker #endPicker></mat-datepicker>
-            <mat-error *ngIf="generateForm.get('endDate')?.hasError('required')">
-              La fecha de fin es requerida
-            </mat-error>
+            <mat-error>Seleccione una fecha de fin</mat-error>
           </mat-form-field>
         </div>
 
-        <div class="form-actions">
-          <button mat-raised-button color="primary" type="submit" 
-                  [disabled]="generateForm.invalid || loading">
-            <mat-icon>assessment</mat-icon>
-            <span *ngIf="!loading">Generar Reporte</span>
-            <span *ngIf="loading">Generando...</span>
+        <mat-form-field appearance="outline" class="w-full mb-6">
+          <mat-label>Descripción (Opcional)</mat-label>
+          <mat-icon matPrefix class="text-green-400">notes</mat-icon>
+          <textarea matInput formControlName="description" rows="3" placeholder="Descripción adicional del reporte..."></textarea>
+        </mat-form-field>
+
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-200">
+          <button
+            type="button"
+            (click)="generateForm.reset()"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors border-0"
+          >
+            <span class="material-symbols-outlined msz-18">restart_alt</span>
+            Limpiar
+          </button>
+          <button
+            type="submit"
+            [disabled]="generateForm.invalid || generating"
+            class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0"
+          >
+            <span class="material-symbols-outlined msz-20" [class.animate-spin]="generating">{{
+              generating ? 'sync' : 'add_circle'
+            }}</span>
+            {{ generating ? 'Generando...' : 'Generar Reporte' }}
           </button>
         </div>
       </form>
-    </mat-card-content>
-  </mat-card>
+    </div>
 
-  <!-- Lista de reportes existentes -->
-  <mat-card class="reports-list-card">
-    <mat-card-header>
-      <mat-card-title>Reportes Financieros Generados</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <div *ngIf="loading" class="loading-container">
-        <mat-spinner diameter="40"></mat-spinner>
-        <p>Cargando reportes...</p>
+    <!-- Lista de Reportes -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 bg-blue-50 border-b border-blue-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">folder_open</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Reportes Financieros Generados</h3>
+            <p class="text-sm text-slate-500 m-0">
+              <span class="font-semibold text-slate-700">{{ financialReports.length }}</span> reportes registrados
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          (click)="loadFinancialReports()"
+          [disabled]="loading"
+          class="inline-flex items-center gap-2 px-4 h-9 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-all border-0 disabled:opacity-50 text-sm font-medium"
+        >
+          <span class="material-symbols-outlined msz-18" [class.animate-spin]="loading">sync</span>
+          Actualizar
+        </button>
       </div>
 
-      <div *ngIf="!loading && financialReports.length === 0" class="no-data">
-        <mat-icon>account_balance_wallet</mat-icon>
-        <p>No hay reportes financieros generados</p>
-        <small>Use el formulario superior para generar su primer reporte</small>
-      </div>
+      <app-skeleton-table *ngIf="loading" [rows]="6" [columns]="5" />
 
-      <div *ngIf="!loading && financialReports.length > 0" class="table-container">
-        <table mat-table [dataSource]="financialReports" class="reports-table">
-          <!-- Título -->
-          <ng-container matColumnDef="title">
-            <th mat-header-cell *matHeaderCellDef>Título</th>
-            <td mat-cell *matCellDef="let report">
-              <div class="title-cell">
-                <strong>{{ report.title }}</strong>
-                <small *ngIf="report.description">{{ report.description }}</small>
-              </div>
-            </td>
-          </ng-container>
+      <app-empty-state
+        *ngIf="!loading && financialReports.length === 0"
+        icon="account_balance"
+        title="No hay reportes financieros"
+        subtitle="Genere su primer reporte utilizando el formulario superior"
+      />
 
-          <!-- Tipo -->
-          <ng-container matColumnDef="type">
-            <th mat-header-cell *matHeaderCellDef>Tipo</th>
-            <td mat-cell *matCellDef="let report">
-              <mat-chip-list>
-                <mat-chip [color]="'accent'" selected>{{ report.type }}</mat-chip>
-              </mat-chip-list>
-            </td>
-          </ng-container>
-
-          <!-- Fecha -->
-          <ng-container matColumnDef="date">
-            <th mat-header-cell *matHeaderCellDef>Fecha</th>
-            <td mat-cell *matCellDef="let report">{{ report.date | date:'short' }}</td>
-          </ng-container>
-
-          <!-- Monto Total -->
-          <ng-container matColumnDef="totalAmount">
-            <th mat-header-cell *matHeaderCellDef>Monto Total</th>
-            <td mat-cell *matCellDef="let report">
-              <span class="amount-cell" [ngClass]="{'positive': (report.totalAmount || 0) > 0, 'negative': (report.totalAmount || 0) < 0}">
-                {{ formatCurrency(report.totalAmount) }}
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Estado -->
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>Estado</th>
-            <td mat-cell *matCellDef="let report">
-              <mat-chip-list>
-                <mat-chip [color]="getStatusColor(report.status || '')" selected>
-                  {{ getStatusText(report.status || '') }}
-                </mat-chip>
-              </mat-chip-list>
-            </td>
-          </ng-container>
-
-          <!-- Acciones -->
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef>Acciones</th>
-            <td mat-cell *matCellDef="let report">
-              <div class="action-buttons">
-                <button mat-icon-button (click)="downloadReport(report)" 
-                        matTooltip="Descargar PDF">
-                  <mat-icon>download</mat-icon>
-                </button>
-                <button mat-icon-button (click)="exportToExcel(report)" 
-                        matTooltip="Exportar a Excel" color="accent">
-                  <mat-icon>table_chart</mat-icon>
-                </button>
-                <button mat-icon-button (click)="deleteReport(report)" 
-                        matTooltip="Eliminar" color="warn">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </div>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      <div *ngIf="!loading && financialReports.length > 0" class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-100 border-b border-slate-200">
+            <tr>
+              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Título</span></th>
+              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Tipo</span></th>
+              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</span></th>
+              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Monto</span></th>
+              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span></th>
+              <th class="px-6 py-4 text-right"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr *ngFor="let report of financialReports" class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors">
+              <td class="px-6 py-4">
+                <div>
+                  <p class="text-sm font-medium text-slate-900">{{ report.title }}</p>
+                  <p class="text-xs text-slate-500 mt-1" *ngIf="report.description">{{ report.description }}</p>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                  {{ report.type }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="text-sm text-slate-700">
+                  <div class="font-medium">{{ report.date | date: 'dd/MM/yyyy' }}</div>
+                  <div class="text-xs text-slate-500">{{ report.createdAt | date: 'HH:mm' }}</div>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <p
+                  class="text-sm font-bold"
+                  [class.text-green-600]="(report.totalAmount || 0) >= 0"
+                  [class.text-red-600]="(report.totalAmount || 0) < 0"
+                >
+                  {{ formatCurrency(report.totalAmount) }}
+                </p>
+              </td>
+              <td class="px-6 py-4">
+                <span
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="getStatusClass(report.status || 'draft')"
+                >
+                  <span class="material-symbols-outlined msz-14">{{ getStatusIcon(report.status || 'draft') }}</span>
+                  {{ getStatusText(report.status || 'draft') }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center justify-end gap-1">
+                  <button
+                    type="button"
+                    (click)="viewReport(report)"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors border-0"
+                    title="Ver detalles"
+                  >
+                    <span class="material-symbols-outlined msz-18">visibility</span>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="downloadReport(report)"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors border-0"
+                    title="Descargar PDF"
+                  >
+                    <span class="material-symbols-outlined msz-18">download</span>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="deleteReport(report)"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-red-600 hover:bg-red-50 transition-colors border-0"
+                    title="Eliminar"
+                  >
+                    <span class="material-symbols-outlined msz-18">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
         </table>
       </div>
-    </mat-card-content>
-  </mat-card>
+    </div>
 
-  <!-- Resumen financiero rápido -->
-  <div class="financial-summary" *ngIf="financialReports.length > 0">
-    <mat-card>
-      <mat-card-header>
-        <mat-card-title>Resumen Financiero Rápido</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="summary-grid">
-          <div class="summary-item">
-            <mat-icon>trending_up</mat-icon>
-            <div class="summary-content">
-              <h3>Total Ingresos</h3>
-              <p class="positive">$52,000</p>
+    <!-- Modal de Detalles -->
+    <div
+      *ngIf="selectedReport"
+      class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+      (click)="selectedReport = null"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl animate-in fade-in zoom-in duration-200"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-emerald-50 to-teal-50">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center">
+              <span class="material-symbols-outlined msz-24 text-white">account_balance</span>
+            </div>
+            <div>
+              <h4 class="text-lg font-semibold text-slate-900">{{ selectedReport.title }}</h4>
+              <p class="text-sm text-slate-600">Detalles del reporte financiero</p>
             </div>
           </div>
-          <div class="summary-item">
-            <mat-icon>trending_down</mat-icon>
-            <div class="summary-content">
-              <h3>Total Gastos</h3>
-              <p class="negative">$38,000</p>
+          <button type="button" (click)="selectedReport = null" class="p-2 rounded-full hover:bg-white/50 transition-colors border-0">
+            <span class="material-symbols-outlined msz-20 text-slate-600">close</span>
+          </button>
+        </div>
+
+        <div class="px-6 py-5 space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Tipo de Reporte</label>
+              <p class="mt-1 text-sm font-medium text-slate-900">{{ selectedReport.type }}</p>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Estado</label>
+              <div class="mt-1">
+                <span
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="getStatusClass(selectedReport.status || 'draft')"
+                >
+                  <span class="material-symbols-outlined msz-14">{{ getStatusIcon(selectedReport.status || 'draft') }}</span>
+                  {{ getStatusText(selectedReport.status || 'draft') }}
+                </span>
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Fecha de Generación</label>
+              <p class="mt-1 text-sm font-medium text-slate-900">{{ selectedReport.date | date: 'dd/MM/yyyy HH:mm' }}</p>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Monto Total</label>
+              <p
+                class="mt-1 text-sm font-bold"
+                [class.text-green-600]="(selectedReport.totalAmount || 0) >= 0"
+                [class.text-red-600]="(selectedReport.totalAmount || 0) < 0"
+              >
+                {{ formatCurrency(selectedReport.totalAmount) }}
+              </p>
+            </div>
+            <div *ngIf="selectedReport.revenue">
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Ingresos</label>
+              <p class="mt-1 text-sm font-medium text-green-600">{{ formatCurrency(selectedReport.revenue) }}</p>
+            </div>
+            <div *ngIf="selectedReport.expenses">
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Gastos</label>
+              <p class="mt-1 text-sm font-medium text-red-600">{{ formatCurrency(selectedReport.expenses) }}</p>
+            </div>
+            <div *ngIf="selectedReport.period">
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Período</label>
+              <p class="mt-1 text-sm text-slate-700">
+                {{ selectedReport.period.startDate | date: 'dd/MM/yyyy' }} -
+                {{ selectedReport.period.endDate | date: 'dd/MM/yyyy' }}
+              </p>
+            </div>
+            <div *ngIf="selectedReport.createdBy">
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Generado Por</label>
+              <p class="mt-1 text-sm font-medium text-slate-900">{{ selectedReport.createdBy }}</p>
             </div>
           </div>
-          <div class="summary-item">
-            <mat-icon>account_balance</mat-icon>
-            <div class="summary-content">
-              <h3>Balance Neto</h3>
-              <p class="positive">$14,000</p>
-            </div>
+
+          <div *ngIf="selectedReport.description">
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Descripción</label>
+            <p class="mt-1 text-sm text-slate-700 leading-relaxed">{{ selectedReport.description }}</p>
           </div>
-          <div class="summary-item">
-            <mat-icon>assignment</mat-icon>
-            <div class="summary-content">
-              <h3>Reportes</h3>
-              <p>{{ financialReports.length }}</p>
+
+          <div *ngIf="selectedReport.categories && selectedReport.categories.length > 0">
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Categorías</label>
+            <div class="mt-2 space-y-2">
+              <div
+                *ngFor="let category of selectedReport.categories"
+                class="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+              >
+                <span class="text-sm font-medium text-slate-700">{{ category.category }}</span>
+                <div class="text-right">
+                  <p class="text-sm font-bold text-slate-900">{{ formatCurrency(category.amount) }}</p>
+                  <p class="text-xs text-slate-500">{{ category.percentage }}%</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </mat-card-content>
-    </mat-card>
+
+        <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50">
+          <button
+            type="button"
+            (click)="selectedReport = null"
+            class="px-5 h-11 rounded-full bg-white text-slate-700 hover:bg-slate-100 font-medium transition-colors border border-slate-200"
+          >
+            Cerrar
+          </button>
+          <button
+            type="button"
+            (click)="downloadReport(selectedReport!)"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-medium transition-colors border-0"
+          >
+            <span class="material-symbols-outlined msz-18">download</span>
+            Descargar PDF
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>

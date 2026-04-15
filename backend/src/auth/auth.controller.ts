@@ -1,15 +1,12 @@
-import { Body, Controller, Get, Headers, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Body, Controller, Get, Headers, Patch, Post, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 
 import { CreateUserDto } from '../users/dto';
 import { User } from '../users/entities/user.entity';
-import { Auth, GetUser, RawHeaders } from './decorators';
-import { RoleProtected } from './decorators/role-protected.decorator';
-import { LoginUserDto, RefreshTokenDto } from './dto';
+import { Auth, GetUser } from './decorators';
+import { ChangePasswordDto, ForgotPasswordDto, LoginUserDto, RefreshTokenDto, ResetPasswordDto, UpdateProfileDto } from './dto';
 import { GodBootstrapDto } from './dto/god-bootstrap.dto';
-import { UserRoleGuard } from './guards/user-role.guard';
 import { LoginResponse, ValidRoles } from './interfaces';
 
 @Controller('auth')
@@ -25,24 +22,33 @@ export class AuthController {
   @Post('login')
   async loginUser(@Body() loginUserDto: LoginUserDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(loginUserDto);
+    const remember = !!loginUserDto.rememberMe;
     // Set httpOnly refresh token cookie for rotation
     if (result.refreshToken) {
       const isProduction = process.env.NODE_ENV === 'production';
-      res.cookie('rt', result.refreshToken, {
+      const cookieCommon: any = {
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? 'lax' : 'lax',
         path: '/',
-        maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days
+      };
+      const rtOptions = remember ? { ...cookieCommon, maxAge: 15 * 24 * 60 * 60 * 1000 } : cookieCommon;
+      res.cookie('rt', result.refreshToken, rtOptions);
+      // Helper cookie to remember choice (not httpOnly so FE could read if needed, but keep httpOnly off)
+      res.cookie('rtr', remember ? '1' : '0', {
+        secure: isProduction,
+        sameSite: isProduction ? 'lax' : 'lax',
+        path: '/',
+        ...(remember ? { maxAge: 15 * 24 * 60 * 60 * 1000 } : {}),
       });
     }
-    return { user: result.user, token: result.token };
+    return { user: result.user, token: result.token, rememberMe: remember };
   }
 
   @Post('refresh')
   async refresh(@Body() dto: RefreshTokenDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     // Prefer cookie 'rt'; fallback to body
-    let refreshToken = dto?.refreshToken;
+    let refreshToken: string | undefined = dto?.refreshToken;
     if (!refreshToken) {
       const cookieHeader = req.headers['cookie'] || '';
       const match = cookieHeader
@@ -55,19 +61,34 @@ export class AuthController {
 
     if (result.refreshToken) {
       const isProduction = process.env.NODE_ENV === 'production';
-      res.cookie('rt', result.refreshToken, {
+      const cookieHeader = req.headers['cookie'] || '';
+      const rtr = cookieHeader
+        .split(';')
+        .map(c => c.trim())
+        .find(c => c.startsWith('rtr='));
+      const remember = rtr ? rtr.split('=')[1] === '1' : false;
+      const cookieCommon: any = {
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? 'lax' : 'lax',
         path: '/',
-        maxAge: 15 * 24 * 60 * 60 * 1000,
+      };
+      const rtOptions = remember ? { ...cookieCommon, maxAge: 15 * 24 * 60 * 60 * 1000 } : cookieCommon;
+      res.cookie('rt', result.refreshToken, rtOptions);
+      // refresh rtr as well
+      res.cookie('rtr', remember ? '1' : '0', {
+        secure: isProduction,
+        sameSite: isProduction ? 'lax' : 'lax',
+        path: '/',
+        ...(remember ? { maxAge: 15 * 24 * 60 * 60 * 1000 } : {}),
       });
+      return { user: result.user, token: result.token, rememberMe: remember };
     }
-    return { user: result.user, token: result.token };
+    return { user: result.user, token: result.token, rememberMe: false };
   }
 
   @Post('logout')
-  @UseGuards(AuthGuard('jwt'))
+  @Auth()
   async logout(@GetUser() user: User, @Res({ passthrough: true }) res: Response) {
     await this.authService.logout(user.id);
     const isProduction = process.env.NODE_ENV === 'production';
@@ -81,9 +102,43 @@ export class AuthController {
   }
 
   @Get('check-status')
-  @UseGuards(AuthGuard('jwt'))
+  @Auth()
   async checkStatus(@GetUser() user: User): Promise<LoginResponse> {
     return this.authService.checkAuthStatus(user);
+  }
+
+  @Get('my-clinics')
+  @Auth()
+  getMyMemberships(@GetUser() user: User) {
+    return this.authService.getMyMemberships(user.id, user.roles);
+  }
+
+  @Get('profile')
+  @Auth()
+  getProfile(@GetUser() user: User) {
+    return this.authService.getProfile(user);
+  }
+
+  @Patch('profile')
+  @Auth()
+  updateProfile(@GetUser() user: User, @Body() dto: UpdateProfileDto) {
+    return this.authService.updateProfile(user, dto);
+  }
+
+  @Patch('change-password')
+  @Auth()
+  changePassword(@GetUser() user: User, @Body() dto: ChangePasswordDto) {
+    return this.authService.changePassword(user, dto);
+  }
+
+  @Post('forgot-password')
+  requestPasswordReset(@Body() dto: ForgotPasswordDto) {
+    return this.authService.requestPasswordReset(dto);
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 
   // GODMODE: crear o promover SUPER_ADMIN mediante token de entorno
@@ -100,42 +155,4 @@ export class AuthController {
     return { user: result.user, token: result.token };
   }
 
-  @Get('private')
-  @UseGuards(AuthGuard())
-  testingPrivateRoute(
-    @Req() request: Request,
-    @GetUser() user: User,
-    @GetUser('email') userEmail: string,
-    @RawHeaders() rawHeaders: string[],
-  ) {
-    console.log(request);
-    return {
-      ok: true,
-      message: 'This is a private route',
-      user,
-      userEmail,
-      rawHeaders,
-    };
-  }
-  // @SetMetadata('roles', ['admin', 'super-user'])
-
-  @Get('private2')
-  @RoleProtected(ValidRoles.SUPER_ADMIN)
-  @UseGuards(AuthGuard(), UserRoleGuard)
-  privateRoute2(@GetUser() user: User) {
-    return {
-      ok: true,
-      message: 'This is a private route dos',
-      user,
-    };
-  }
-  @Get('private3')
-  @Auth()
-  privateRoute3(@GetUser() user: User) {
-    return {
-      ok: true,
-      message: 'This is a private route tres',
-      user,
-    };
-  }
 }

@@ -1,148 +1,221 @@
-import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { Order, Supplier } from '../interfaces/pharmacy.interfaces';
+import { Injectable } from '@angular/core'
+import { Observable, of } from 'rxjs'
+import { PurchaseOrder, PurchaseOrderStatus, Supplier, SupplierStatus, SupplierType } from '../interfaces/pharmacy.interfaces'
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class OrderGenerationService {
-
   private suppliers: Supplier[] = [
-    { 
-      id: 1, 
-      name: 'Proveedor Farmacéutico del Centro', 
-      contact: 'contacto@pfc.com',
+    {
+      id: 'supplier-001',
+      nombreComercial: 'Proveedor Farmacéutico del Centro',
+      razonSocial: 'Proveedor Farmacéutico del Centro S.R.L.',
+      idTributario: '1234567',
+      tipoProveedor: SupplierType.MEDICAMENTOS,
+      contactPerson: 'Juan Sánchez',
+      email: 'contacto@pfc.com',
       phone: '+591-4-4234567',
-      email: 'pedidos@pfc.com',
-      address: 'Av. América #123, Cochabamba'
+      address: 'Av. América #123',
+      city: 'Cochabamba',
+      country: 'Bolivia',
+      status: SupplierStatus.ACTIVE,
     },
-    { 
-      id: 2, 
-      name: 'Distribuidora Médica del Norte', 
-      contact: 'pedidos@dmn.com',
+    {
+      id: 'supplier-002',
+      nombreComercial: 'Distribuidora Médica del Norte',
+      razonSocial: 'Distribuidora Médica del Norte S.A.',
+      idTributario: '2345678',
+      tipoProveedor: SupplierType.MEDICAMENTOS,
+      contactPerson: 'María López',
+      email: 'pedidos@dmn.com',
       phone: '+591-2-2456789',
-      email: 'ventas@dmn.com',
-      address: 'Calle Comercio #456, La Paz'
+      address: 'Calle Comercio #456',
+      city: 'La Paz',
+      country: 'Bolivia',
+      status: SupplierStatus.ACTIVE,
     },
-    { 
-      id: 3, 
-      name: 'Laboratorios Unidos S.A.', 
-      contact: 'info@laboratoriosunidos.com',
+    {
+      id: 'supplier-003',
+      nombreComercial: 'Laboratorios Unidos S.A.',
+      razonSocial: 'Laboratorios Unidos S.A.',
+      idTributario: '3456789',
+      tipoProveedor: SupplierType.MEDICAMENTOS,
+      contactPerson: 'Carlos Rodriguez',
+      email: 'info@laboratoriosunidos.com',
       phone: '+591-3-3345678',
-      email: 'ordenes@laboratoriosunidos.com',
-      address: 'Zona Industrial, Santa Cruz'
-    }
-  ];
+      address: 'Zona Industrial',
+      city: 'Santa Cruz',
+      country: 'Bolivia',
+      status: SupplierStatus.ACTIVE,
+    },
+  ]
 
-  private orders: Order[] = [
-    { 
+  private orders: PurchaseOrder[] = [
+    {
       id: 'ORD-001',
-      supplierId: 1, 
-      date: '2025-09-03', 
+      orderNumber: 'ORD-001',
+      supplierId: 'supplier-001',
+      orderDate: '2025-09-03',
+      expectedDeliveryDate: '2025-09-17',
+      status: PurchaseOrderStatus.PENDING,
+      subtotal: 350.0,
+      taxAmount: 0,
+      totalAmount: 350.0,
       items: [
-        { productId: 1, productName: 'Paracetamol 500mg', quantity: 50, price: 2.00, subtotal: 100.00 }, 
-        { productId: 3, productName: 'Ibuprofeno 400mg', quantity: 100, price: 2.50, subtotal: 250.00 }
+        {
+          productName: 'Paracetamol 500mg',
+          productCode: 'PARA-500',
+          quantity: 50,
+          unitPrice: 2.0,
+          subtotal: 100.0,
+        },
+        {
+          productName: 'Ibuprofeno 400mg',
+          productCode: 'IBU-400',
+          quantity: 100,
+          unitPrice: 2.5,
+          subtotal: 250.0,
+        },
       ],
-      status: 'pending',
-      total: 350.00,
-      supplierName: 'Proveedor Farmacéutico del Centro'
     },
-    { 
+    {
       id: 'ORD-002',
-      supplierId: 2, 
-      date: '2025-09-02', 
+      orderNumber: 'ORD-002',
+      supplierId: 'supplier-002',
+      orderDate: '2025-09-02',
+      expectedDeliveryDate: '2025-09-16',
+      status: PurchaseOrderStatus.APPROVED,
+      subtotal: 337.5,
+      taxAmount: 0,
+      totalAmount: 337.5,
       items: [
-        { productId: 2, productName: 'Amoxicilina 250mg', quantity: 75, price: 4.50, subtotal: 337.50 }
+        {
+          productName: 'Amoxicilina 250mg',
+          productCode: 'AMOX-250',
+          quantity: 75,
+          unitPrice: 4.5,
+          subtotal: 337.5,
+        },
       ],
-      status: 'approved',
-      total: 337.50,
-      supplierName: 'Distribuidora Médica del Norte'
     },
-    { 
+    {
       id: 'ORD-003',
-      supplierId: 3, 
-      date: '2025-09-01', 
+      orderNumber: 'ORD-003',
+      supplierId: 'supplier-003',
+      orderDate: '2025-09-01',
+      expectedDeliveryDate: '2025-09-15',
+      actualDeliveryDate: '2025-09-14',
+      status: PurchaseOrderStatus.RECEIVED,
+      subtotal: 360.0,
+      taxAmount: 0,
+      totalAmount: 360.0,
       items: [
-        { productId: 4, productName: 'Vitamina C 1g', quantity: 30, price: 5.00, subtotal: 150.00 },
-        { productId: 5, productName: 'Omeprazol 20mg', quantity: 60, price: 3.50, subtotal: 210.00 }
+        {
+          productName: 'Vitamina C 1g',
+          productCode: 'VITC-1000',
+          quantity: 30,
+          unitPrice: 5.0,
+          subtotal: 150.0,
+        },
+        {
+          productName: 'Omeprazol 20mg',
+          productCode: 'OMEP-20',
+          quantity: 60,
+          unitPrice: 3.5,
+          subtotal: 210.0,
+        },
       ],
-      status: 'delivered',
-      total: 360.00,
-      supplierName: 'Laboratorios Unidos S.A.'
-    }
-  ];
+    },
+  ]
 
   getSuppliers(): Observable<Supplier[]> {
-    return of(this.suppliers);
+    return of(this.suppliers)
   }
 
-  getSupplier(id: number): Observable<Supplier | undefined> {
-    const supplier = this.suppliers.find(s => s.id === id);
-    return of(supplier);
+  getSupplier(id: string): Observable<Supplier | undefined> {
+    const supplier = this.suppliers.find(s => s.id === id)
+    return of(supplier)
   }
 
-  getOrders(): Observable<Order[]> {
-    return of(this.orders);
+  getOrders(): Observable<PurchaseOrder[]> {
+    return of(this.orders)
   }
 
-  getOrder(id: string): Observable<Order | undefined> {
-    const order = this.orders.find(o => o.id === id);
-    return of(order);
+  getOrder(id: string): Observable<PurchaseOrder | undefined> {
+    const order = this.orders.find(o => o.id === id)
+    return of(order)
   }
 
-  createOrder(order: Omit<Order, 'id'>): Observable<Order> {
-    const newOrder: Order = {
+  createOrder(order: Omit<PurchaseOrder, 'id' | 'orderNumber'>): Observable<PurchaseOrder> {
+    const newOrder: PurchaseOrder = {
       ...order,
       id: this.generateOrderId(),
-      status: 'pending'
-    };
-    
-    // Calcular total
-    newOrder.total = newOrder.items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
-    
-    // Agregar nombre del proveedor
-    const supplier = this.suppliers.find(s => s.id === newOrder.supplierId);
-    if (supplier) {
-      newOrder.supplierName = supplier.name;
+      orderNumber: this.generateOrderNumber(),
+      status: PurchaseOrderStatus.PENDING,
     }
-    
-    this.orders.push(newOrder);
-    return of(newOrder);
+
+    // Calcular totalAmount si no está presente
+    if (!newOrder.totalAmount) {
+      const subtotal = newOrder.items.reduce((sum: number, item) => sum + (item.subtotal || 0), 0)
+      newOrder.totalAmount =
+        subtotal +
+        (newOrder.taxAmount || 0) +
+        (newOrder.shippingCost || 0) -
+        (newOrder.discountAmount || 0)
+    }
+
+    // Cargar información del supplier
+    const supplier = this.suppliers.find(s => s.id === newOrder.supplierId)
+    if (supplier) {
+      newOrder.supplier = supplier
+    }
+
+    this.orders.push(newOrder)
+    return of(newOrder)
   }
 
-  updateOrderStatus(id: string, status: Order['status']): Observable<Order | null> {
-    const order = this.orders.find(o => o.id === id);
+  updateOrderStatus(id: string, status: PurchaseOrderStatus): Observable<PurchaseOrder | null> {
+    const order = this.orders.find(o => o.id === id)
     if (order) {
-      order.status = status;
-      return of(order);
+      order.status = status
+      return of(order)
     }
-    return of(null);
+    return of(null)
   }
 
   addSupplier(supplier: Omit<Supplier, 'id'>): Observable<Supplier> {
     const newSupplier: Supplier = {
       ...supplier,
-      id: this.generateSupplierId()
-    };
-    this.suppliers.push(newSupplier);
-    return of(newSupplier);
+      id: this.generateSupplierId(),
+    }
+    this.suppliers.push(newSupplier)
+    return of(newSupplier)
   }
 
-  updateSupplier(id: number, supplier: Partial<Supplier>): Observable<Supplier | null> {
-    const index = this.suppliers.findIndex(s => s.id === id);
+  updateSupplier(id: string, supplier: Partial<Supplier>): Observable<Supplier | null> {
+    const index = this.suppliers.findIndex(s => s.id === id)
     if (index > -1) {
-      this.suppliers[index] = { ...this.suppliers[index], ...supplier };
-      return of(this.suppliers[index]);
+      this.suppliers[index] = { ...this.suppliers[index], ...supplier }
+      return of(this.suppliers[index])
     }
-    return of(null);
+    return of(null)
   }
 
   private generateOrderId(): string {
-    const orderNumber = this.orders.length + 1;
-    return `ORD-${orderNumber.toString().padStart(3, '0')}`;
+    const orderNumber = this.orders.length + 1
+    return `ORD-${orderNumber.toString().padStart(3, '0')}`
   }
 
-  private generateSupplierId(): number {
-    return Math.max(...this.suppliers.map(s => s.id), 0) + 1;
+  private generateOrderNumber(): string {
+    const orderNumber = this.orders.length + 1
+    return `ORD-${orderNumber.toString().padStart(3, '0')}`
+  }
+
+  private generateSupplierId(): string {
+    const maxNum = this.suppliers
+      .map(s => parseInt(s.id.split('-')[1] || '0'))
+      .reduce((max, num) => Math.max(max, num), 0)
+    return `supplier-${String(maxNum + 1).padStart(3, '0')}`
   }
 }

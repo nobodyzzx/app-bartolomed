@@ -1,0 +1,108 @@
+<!-- Cabecera del diálogo -->
+<div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100">
+  <h2 class="text-lg font-semibold text-slate-900 m-0">Detalle del Usuario</h2>
+  <button
+    type="button"
+    (click)="dialogRef.close()"
+    class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors border-0"
+  >
+    <span class="material-symbols-outlined msz-20">close</span>
+  </button>
+</div>
+
+<!-- Avatar + nombre + roles -->
+<div class="flex flex-col items-center gap-3 px-6 py-5 bg-blue-50 border-b border-blue-100">
+  <div class="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+    <span class="text-3xl font-bold text-blue-600">{{ initials }}</span>
+  </div>
+  <div class="text-center">
+    <p class="text-xl font-bold text-blue-900 m-0 leading-tight">{{ fullName }}</p>
+    <p class="text-sm text-slate-500 m-0 mt-1">{{ user.email }}</p>
+  </div>
+  <div class="flex flex-wrap justify-center gap-2">
+    <span
+      *ngFor="let role of user.roles"
+      class="px-3 py-0.5 rounded-full text-xs font-medium"
+      [ngClass]="getRoleClass(role)"
+    >{{ role }}</span>
+    <span
+      class="px-3 py-0.5 rounded-full text-xs font-medium"
+      [ngClass]="user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+    >{{ user.isActive ? 'Activo' : 'Inactivo' }}</span>
+  </div>
+</div>
+
+<!-- Tabs -->
+<mat-tab-group class="w-full" animationDuration="150ms">
+
+  <!-- Tab: Información Personal -->
+  <mat-tab label="Personal">
+    <div class="px-6 py-4 space-y-3">
+      <div class="flex items-start gap-3 py-2 border-b border-slate-100">
+        <span class="text-sm font-medium text-slate-500 w-40 flex-shrink-0">Nombre completo</span>
+        <span class="text-sm text-slate-900">{{ fullName }}</span>
+      </div>
+      <div class="flex items-start gap-3 py-2 border-b border-slate-100">
+        <span class="text-sm font-medium text-slate-500 w-40 flex-shrink-0">Teléfono</span>
+        <span class="text-sm text-slate-900">{{ user.personalInfo.phone || '—' }}</span>
+      </div>
+      <div class="flex items-start gap-3 py-2 border-b border-slate-100">
+        <span class="text-sm font-medium text-slate-500 w-40 flex-shrink-0">Email</span>
+        <span class="text-sm text-slate-900">{{ user.email }}</span>
+      </div>
+      <div class="flex items-start gap-3 py-2">
+        <span class="text-sm font-medium text-slate-500 w-40 flex-shrink-0">Estado</span>
+        <span
+          class="px-2.5 py-0.5 rounded-full text-xs font-medium"
+          [ngClass]="user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+        >{{ user.isActive ? 'Activo' : 'Inactivo' }}</span>
+      </div>
+    </div>
+  </mat-tab>
+
+  <!-- Tab: Información Profesional -->
+  <mat-tab label="Profesional">
+    <div class="px-6 py-4 space-y-3">
+      <div class="flex items-start gap-3 py-2 border-b border-slate-100">
+        <span class="text-sm font-medium text-slate-500 w-40 flex-shrink-0">Título</span>
+        <span class="text-sm text-slate-900">{{ user.professionalInfo?.title || '—' }}</span>
+      </div>
+      <div class="flex items-start gap-3 py-2 border-b border-slate-100">
+        <span class="text-sm font-medium text-slate-500 w-40 flex-shrink-0">Rol profesional</span>
+        <span class="text-sm text-slate-900">{{ user.professionalInfo?.role || '—' }}</span>
+      </div>
+      <div class="flex items-start gap-3 py-2 border-b border-slate-100">
+        <span class="text-sm font-medium text-slate-500 w-40 flex-shrink-0">Especialización</span>
+        <span class="text-sm text-slate-900">{{ user.professionalInfo?.specialization || '—' }}</span>
+      </div>
+      <div class="flex items-start gap-3 py-2 border-b border-slate-100">
+        <span class="text-sm font-medium text-slate-500 w-40 flex-shrink-0">Licencia</span>
+        <span class="text-sm text-slate-900">{{ user.professionalInfo?.license || '—' }}</span>
+      </div>
+      <div class="flex items-start gap-3 py-2 border-b border-slate-100">
+        <span class="text-sm font-medium text-slate-500 w-40 flex-shrink-0">Certificaciones</span>
+        <span class="text-sm text-slate-900">
+          {{ user.professionalInfo?.certifications?.length ? user.professionalInfo!.certifications!.join(', ') : '—' }}
+        </span>
+      </div>
+      <div class="flex items-start gap-3 py-2 border-b border-slate-100">
+        <span class="text-sm font-medium text-slate-500 w-40 flex-shrink-0">Áreas de práctica</span>
+        <span class="text-sm text-slate-900">
+          {{ user.professionalInfo?.areas?.length ? user.professionalInfo!.areas!.join(', ') : '—' }}
+        </span>
+      </div>
+      <div class="flex items-start gap-3 py-2">
+        <span class="text-sm font-medium text-slate-500 w-40 flex-shrink-0">Descripción</span>
+        <span class="text-sm text-slate-900">{{ user.professionalInfo?.description || '—' }}</span>
+      </div>
+    </div>
+  </mat-tab>
+
+</mat-tab-group>
+
+<!-- Footer -->
+<div class="flex justify-end px-6 py-4 border-t border-slate-100">
+  <button type="button" (click)="dialogRef.close()" class="btn btn-ghost">
+    Cerrar
+  </button>
+</div>

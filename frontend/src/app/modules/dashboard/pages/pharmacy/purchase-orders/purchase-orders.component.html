@@ -1,0 +1,215 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+    <!-- Header -->
+    <app-page-header
+      title="Órdenes de Compra"
+      subtitle="Gestión completa de órdenes de compra a proveedores"
+      [showBack]="true"
+      (back)="goBack()"
+    >
+      <button
+        type="button"
+        (click)="newOrder()"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+        aria-label="Crear nueva orden"
+      >
+        <span class="material-symbols-outlined msz-20 leading-none">add</span>
+        Nueva Orden
+      </button>
+    </app-page-header>
+
+    <!-- Estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <app-stat-card
+        label="Total Órdenes"
+        [value]="stats().total"
+        sublabel="Registros en el sistema"
+        icon="receipt_long"
+        color="blue"
+        [clickable]="true"
+        [active]="statusFilter() === 'all'"
+        (cardClick)="statusFilter.set('all')"
+      />
+      <app-stat-card
+        label="Borradores"
+        [value]="stats().draft"
+        sublabel="En proceso de creación"
+        icon="draft"
+        color="slate"
+        [clickable]="true"
+        [active]="statusFilter() === 'draft'"
+        (cardClick)="statusFilter.set(POS.DRAFT)"
+      />
+      <app-stat-card
+        label="Pendientes"
+        [value]="stats().pending"
+        sublabel="Esperando aprobación"
+        icon="pending"
+        color="orange"
+        [clickable]="true"
+        [active]="statusFilter() === 'pending'"
+        (cardClick)="statusFilter.set(POS.PENDING)"
+      />
+      <app-stat-card
+        label="Aprobadas"
+        [value]="stats().approved"
+        sublabel="Listas para procesar"
+        icon="check_circle"
+        color="green"
+        [clickable]="true"
+        [active]="statusFilter() === 'approved'"
+        (cardClick)="statusFilter.set(POS.APPROVED)"
+      />
+    </div>
+
+    <!-- Tabla de órdenes -->
+    <div class="table-container">
+
+      <!-- Buscador -->
+      <div class="table-toolbar">
+        <app-search-bar
+          placeholder="Número de orden, proveedor..."
+          [value]="search()"
+          (valueChange)="search.set($event)"
+        />
+      </div>
+
+      <!-- Cargando -->
+      <app-skeleton-table *ngIf="loading()" [rows]="6" [columns]="5" />
+
+      <!-- Estado vacío -->
+      <app-empty-state
+        *ngIf="!loading() && dataSource.data.length === 0"
+        icon="inventory_2"
+        title="Sin registros"
+        subtitle="No se encontraron órdenes de compra"
+        actionLabel="Crear primera orden"
+        (action)="newOrder()"
+      />
+
+      <!-- Tabla -->
+      <div *ngIf="!loading() && dataSource.data.length > 0" class="overflow-x-auto">
+        <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
+          <!-- Columna Número de Orden -->
+          <ng-container matColumnDef="orderNumber">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Número de Orden</span>
+            </th>
+            <td mat-cell *matCellDef="let order" class="px-6 py-4">
+              <div class="font-medium text-blue-700">{{ order.orderNumber }}</div>
+            </td>
+          </ng-container>
+
+          <!-- Columna Proveedor -->
+          <ng-container matColumnDef="supplier">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Proveedor</span>
+            </th>
+            <td mat-cell *matCellDef="let order" class="px-6 py-4">
+              <div>
+                <div class="text-sm font-medium text-slate-900">
+                  {{ supplierDisplayName(order) }}
+                </div>
+                <div class="text-xs text-slate-500">{{ order.supplier?.email }}</div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Columna Fecha -->
+          <ng-container matColumnDef="orderDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</span>
+            </th>
+            <td mat-cell *matCellDef="let order" class="px-6 py-4">
+              <div class="text-sm text-slate-700">{{ order.orderDate | date: 'dd/MM/yyyy' }}</div>
+            </td>
+          </ng-container>
+
+          <!-- Columna Estado -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
+            </th>
+            <td mat-cell *matCellDef="let order" class="px-6 py-4">
+              <span
+                class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
+                [ngClass]="getStatusColor(order.status)"
+              >
+                <span
+                  class="w-2 h-2 rounded-full"
+                  [ngClass]="getStatusDotColor(order.status)"
+                ></span>
+                {{ getStatusLabel(order.status) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Columna Total -->
+          <ng-container matColumnDef="totalAmount">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Total</span>
+            </th>
+            <td mat-cell *matCellDef="let order" class="px-6 py-4 text-right">
+              <div class="text-sm font-semibold text-green-700">
+                {{ order.totalAmount || 0 | currency: 'BOB' }}
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Columna Acciones -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span>
+            </th>
+            <td mat-cell *matCellDef="let order" class="px-6 py-4">
+              <div class="flex gap-2 items-center">
+                <button
+                  type="button"
+                  class="inline-flex items-center justify-center w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border-0"
+                  (click)="viewOrder(order); $event.stopPropagation()"
+                  matTooltip="Ver detalles"
+                  aria-label="Ver detalles"
+                >
+                  <span class="material-symbols-outlined msz-18 leading-none">visibility</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="inline-flex items-center justify-center w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors border-0"
+                  (click)="editOrder(order); $event.stopPropagation()"
+                  matTooltip="Editar"
+                  aria-label="Editar"
+                >
+                  <span class="material-symbols-outlined msz-18 leading-none">edit</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="inline-flex items-center justify-center w-9 h-9 text-red-600 hover:bg-red-50 rounded-lg transition-colors border-0"
+                  (click)="deleteOrder(order); $event.stopPropagation()"
+                  matTooltip="Eliminar"
+                  aria-label="Eliminar"
+                >
+                  <span class="material-symbols-outlined msz-18 leading-none">delete</span>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"
+              (click)="viewOrder(row)"
+              class="table-row-hover"></tr>
+        </table>
+      </div>
+
+      <!-- Footer -->
+      <div *ngIf="!loading() && dataSource.data.length > 0" class="table-footer">
+        <span class="text-sm text-slate-500">
+          <span class="font-semibold text-slate-700">{{ dataSource.data.length }}</span> órdenes en total
+        </span>
+        <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons class="bg-transparent border-0"></mat-paginator>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,213 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      title="Transferir Stock entre Clínicas"
+      subtitle="Mueva inventario de esta clínica a otra clínica del sistema"
+      (back)="goBack()"
+    >
+      <ng-container actions>
+        <button
+          type="button"
+          (click)="goBack()"
+          class="btn btn-danger-outline"
+        >
+          <span class="material-symbols-outlined msz-18">cancel</span>
+          Cancelar
+        </button>
+      </ng-container>
+    </app-page-header>
+
+    @if (loadingStocks() || loadingClinics()) {
+      <div class="flex justify-center items-center py-12">
+        <mat-spinner diameter="50"></mat-spinner>
+      </div>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
+
+        <!-- Producto seleccionado (info card, condicional) -->
+        @if (selectedStock()) {
+          <div class="bg-white rounded-2xl shadow-sm border border-blue-200 overflow-hidden">
+            <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+              <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined msz-20">inventory_2</span>
+              </div>
+              <div>
+                <h3 class="font-semibold text-slate-900 m-0 leading-tight">Producto seleccionado</h3>
+                <p class="text-sm text-slate-500 m-0">Información del lote de origen</p>
+              </div>
+            </div>
+            <div class="p-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="flex flex-col">
+                  <span class="text-slate-500 font-medium mb-0.5">Medicamento</span>
+                  <span class="text-slate-900 font-semibold">{{ selectedStock()!.medication?.name || 'N/A' }}</span>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-slate-500 font-medium mb-0.5">Lote</span>
+                  <span class="text-slate-900">{{ selectedStock()!.batchNumber }}</span>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-slate-500 font-medium mb-0.5">Disponible</span>
+                  <span class="text-green-700 font-semibold">{{ selectedStock()!.availableQuantity || 0 }} unidades</span>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-slate-500 font-medium mb-0.5">Vencimiento</span>
+                  <span class="text-slate-900">{{ selectedStock()!.expiryDate || 'N/A' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- ══════════════════════════════════════════
+             SECCIÓN 1 — Origen (azul)
+        ══════════════════════════════════════════ -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined msz-20">output</span>
+            </div>
+            <div>
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Origen de la transferencia</h3>
+              <p class="text-sm text-slate-500 m-0">Seleccione el lote a transferir</p>
+            </div>
+          </div>
+          <div class="p-6">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Lote a transferir</mat-label>
+              <mat-icon matPrefix class="text-blue-400">inventory_2</mat-icon>
+              <mat-select formControlName="sourceStockId" required>
+                <mat-option value="">-- Seleccione un lote --</mat-option>
+                @for (stock of stocks(); track stock.id) {
+                  <mat-option [value]="stock.id">{{ getStockDisplay(stock) }}</mat-option>
+                }
+              </mat-select>
+              <mat-error>Debe seleccionar un lote de origen</mat-error>
+              @if (!currentClinicId() && !form.get('sourceStockId')?.hasError('required')) {
+                <mat-hint class="text-amber-700">No se detectó clínica actual. Seleccione manualmente el stock.</mat-hint>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             SECCIÓN 2 — Destino (verde)
+        ══════════════════════════════════════════ -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+            <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined msz-20">input</span>
+            </div>
+            <div>
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Destino</h3>
+              <p class="text-sm text-slate-500 m-0">Clínica y ubicación destino</p>
+            </div>
+          </div>
+          <div class="p-6 space-y-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Clínica destino</mat-label>
+              <mat-icon matPrefix class="text-green-400">domain</mat-icon>
+              <mat-select formControlName="toClinicId" required>
+                <mat-option value="">-- Seleccione clínica destino --</mat-option>
+                @for (clinic of clinics(); track clinic.id) {
+                  <mat-option [value]="clinic.id">{{ clinic.name }}</mat-option>
+                }
+              </mat-select>
+              <mat-error>Debe seleccionar una clínica de destino</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Ubicación en destino (opcional)</mat-label>
+              <mat-icon matPrefix class="text-green-400">place</mat-icon>
+              <input
+                matInput
+                formControlName="location"
+                placeholder="Ej: Estante A-2, Refrigerador 1"
+              />
+              <mat-hint>Indique dónde se almacenará en la clínica destino</mat-hint>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             SECCIÓN 3 — Detalles (naranja)
+        ══════════════════════════════════════════ -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="flex items-center gap-4 px-6 py-4 bg-orange-50 border-b border-orange-100">
+            <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined msz-20">local_shipping</span>
+            </div>
+            <div>
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Detalles de la transferencia</h3>
+              <p class="text-sm text-slate-500 m-0">Cantidad y observaciones</p>
+            </div>
+          </div>
+          <div class="p-6 space-y-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Cantidad a transferir</mat-label>
+              <mat-icon matPrefix class="text-orange-400">scale</mat-icon>
+              <input
+                matInput
+                type="number"
+                formControlName="quantity"
+                placeholder="Ingrese cantidad"
+                min="1"
+                required
+              />
+              <mat-hint>Máximo disponible: {{ selectedStock()?.availableQuantity || 0 }} unidades</mat-hint>
+              @if (form.get('quantity')?.hasError('max')) {
+                <mat-error>No puede exceder {{ selectedStock()?.availableQuantity || 0 }} unidades</mat-error>
+              } @else if (form.get('quantity')?.hasError('min')) {
+                <mat-error>La cantidad mínima es 1</mat-error>
+              } @else if (form.get('quantity')?.hasError('required')) {
+                <mat-error>La cantidad es requerida</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Nota / Comentario (opcional)</mat-label>
+              <mat-icon matPrefix class="text-orange-400">comment</mat-icon>
+              <textarea
+                matInput
+                formControlName="note"
+                placeholder="Observaciones sobre la transferencia..."
+                rows="3"
+                cdkTextareaAutosize
+                cdkAutosizeMinRows="3"
+                cdkAutosizeMaxRows="6"
+              ></textarea>
+              <mat-hint>Agregue cualquier observación relevante</mat-hint>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- ══════ Sticky action bar ══════ -->
+        <div class="form-action-bar">
+          <button
+            type="button"
+            (click)="goBack()"
+            class="btn btn-danger-outline"
+          >
+            <span class="material-symbols-outlined msz-18 leading-none">close</span>
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            [disabled]="loading() || form.invalid"
+            class="btn btn-primary"
+          >
+            @if (loading()) {
+              <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              <span>Procesando...</span>
+            } @else {
+              <span class="material-symbols-outlined msz-18 leading-none">local_shipping</span>
+              <span>Transferir Stock</span>
+            }
+          </button>
+        </div>
+
+      </form>
+    }
+  </div>
+</div>

@@ -1,0 +1,411 @@
+<div class="min-h-screen bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
+        <button
+          type="button"
+          (click)="goBack()"
+          class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-1 transition-all border-0"
+          matTooltip="Volver"
+          aria-label="Volver"
+        >
+          <span class="material-symbols-outlined msz-20 leading-none">arrow_back</span>
+        </button>
+        <div class="text-left">
+          <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-0.5">
+            Historial Médico Completo
+          </h1>
+          <p class="text-slate-600" *ngIf="patient">
+            {{ patient.firstName }} {{ patient.lastName }} · {{ patient.documentNumber }}
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        (click)="createNewConsultation()"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+        aria-label="Crear nueva consulta"
+      >
+        <span class="material-symbols-outlined msz-20 leading-none">add</span>
+        Nueva Consulta
+      </button>
+    </div>
+
+    <!-- Resumen Ejecutivo del Paciente -->
+    <div class="bg-white rounded-2xl shadow-md p-6 mb-6" *ngIf="patient">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="material-symbols-outlined text-blue-600 text-2xl">medical_information</span>
+        <h2 class="text-xl font-bold text-slate-900">Información del Paciente</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Datos Personales -->
+        <div class="space-y-3">
+          <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wide">
+            Datos Personales
+          </h3>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-slate-400 text-sm">person</span>
+              <span class="text-sm text-slate-700"
+                >{{ patient.firstName }} {{ patient.lastName }}</span
+              >
+            </div>
+            <div class="flex items-center gap-2" *ngIf="patient.birthDate">
+              <span class="material-symbols-outlined text-slate-400 text-sm">cake</span>
+              <span class="text-sm text-slate-700">{{ formatDate(patient.birthDate) }}</span>
+            </div>
+            <div class="flex items-center gap-2" *ngIf="patient.phone">
+              <span class="material-symbols-outlined text-slate-400 text-sm">phone</span>
+              <span class="text-sm text-slate-700">{{ patient.phone }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Información Médica -->
+        <div class="space-y-3">
+          <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wide">
+            Información Médica
+          </h3>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2" *ngIf="patient.bloodType">
+              <span class="material-symbols-outlined text-red-500 text-sm">water_drop</span>
+              <span class="text-sm text-slate-700">Tipo de sangre: {{ patient.bloodType }}</span>
+            </div>
+            <div class="flex items-start gap-2" *ngIf="patient.allergies">
+              <span class="material-symbols-outlined text-orange-500 text-sm">warning</span>
+              <span class="text-sm text-slate-700">Alergias: {{ patient.allergies }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Estadísticas del Historial -->
+        <div class="space-y-3">
+          <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wide">Estadísticas</h3>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-blue-500 text-sm">description</span>
+              <span class="text-sm text-slate-700">{{ records.length }} consultas totales</span>
+            </div>
+            <div class="flex items-center gap-2" *ngIf="getEmergencyCount() > 0">
+              <span class="material-symbols-outlined text-red-500 text-sm">emergency</span>
+              <span class="text-sm text-slate-700">{{ getEmergencyCount() }} emergencias</span>
+            </div>
+            <div class="flex items-center gap-2" *ngIf="getLastConsultationDate()">
+              <span class="material-symbols-outlined text-green-500 text-sm">event</span>
+              <span class="text-sm text-slate-700"
+                >Última consulta: {{ formatDate(getLastConsultationDate()) }}</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumen Visual de Consultas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      <!-- Total Consultas -->
+      <div
+        class="bg-blue-50 p-5 rounded-2xl border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-all"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-blue-600 text-sm font-semibold">Consultas</p>
+            <p class="text-3xl font-bold text-blue-900 mt-1">{{ getTypeCount('CONSULTATION') }}</p>
+            <p class="text-xs text-blue-600/60 mt-1">Consultas generales</p>
+          </div>
+          <span class="material-symbols-outlined text-blue-300" style="font-size: 40px"
+            >medical_services</span
+          >
+        </div>
+      </div>
+
+      <!-- Emergencias -->
+      <div
+        class="bg-red-50 p-5 rounded-2xl border-l-4 border-red-500 shadow-md hover:shadow-lg transition-all"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-red-600 text-sm font-semibold">Emergencias</p>
+            <p class="text-3xl font-bold text-red-900 mt-1">{{ getTypeCount('EMERGENCY') }}</p>
+            <p class="text-xs text-red-600/60 mt-1">Atención urgente</p>
+          </div>
+          <span class="material-symbols-outlined text-red-300" style="font-size: 40px">emergency</span>
+        </div>
+      </div>
+
+      <!-- Seguimientos -->
+      <div
+        class="bg-green-50 p-5 rounded-2xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-green-600 text-sm font-semibold">Seguimientos</p>
+            <p class="text-3xl font-bold text-green-900 mt-1">{{ getTypeCount('FOLLOW_UP') }}</p>
+            <p class="text-xs text-green-600/60 mt-1">Reconsultas</p>
+          </div>
+          <span class="material-symbols-outlined text-green-300" style="font-size: 40px">refresh</span>
+        </div>
+      </div>
+
+      <!-- Cirugías -->
+      <div
+        class="bg-purple-50 p-5 rounded-2xl border-l-4 border-purple-500 shadow-md hover:shadow-lg transition-all"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-purple-600 text-sm font-semibold">Cirugías</p>
+            <p class="text-3xl font-bold text-purple-900 mt-1">{{ getTypeCount('SURGERY') }}</p>
+            <p class="text-xs text-purple-600/60 mt-1">Procedimientos quirúrgicos</p>
+          </div>
+          <span class="material-symbols-outlined text-purple-300" style="font-size: 40px">healing</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros Mejorados -->
+    <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
+      <div class="flex items-center gap-3 mb-6">
+        <span class="material-symbols-outlined text-blue-600 msz-24">tune</span>
+        <h2 class="text-xl font-bold text-slate-900">Filtros</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Tipo de consulta -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Tipo de consulta</mat-label>
+          <mat-select [(ngModel)]="filterType">
+            <mat-option value="ALL">Todas</mat-option>
+            <mat-option *ngFor="let type of recordTypes" [value]="type">
+              {{ getTypeText(type) }}
+            </mat-option>
+          </mat-select>
+          <mat-icon matPrefix>category</mat-icon>
+        </mat-form-field>
+
+        <!-- Fecha desde -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Desde</mat-label>
+          <input matInput [matDatepicker]="fromPicker" [formControl]="filterDateFromControl" />
+          <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+          <mat-datepicker #fromPicker></mat-datepicker>
+          <mat-icon matPrefix>calendar_today</mat-icon>
+        </mat-form-field>
+
+        <!-- Fecha hasta -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Hasta</mat-label>
+          <input matInput [matDatepicker]="toPicker" [formControl]="filterDateToControl" />
+          <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+          <mat-datepicker #toPicker></mat-datepicker>
+          <mat-icon matPrefix>calendar_today</mat-icon>
+        </mat-form-field>
+
+        <!-- Búsqueda -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Buscar</mat-label>
+          <input matInput [(ngModel)]="searchTerm" placeholder="Motivo, diagnóstico..." />
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <!-- Botones de acción -->
+      <div class="flex items-center gap-3 mt-4">
+        <button
+          type="button"
+          (click)="clearFilters()"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+        >
+          <span class="material-symbols-outlined msz-20">clear</span>
+          Limpiar filtros
+        </button>
+        <div class="text-sm text-slate-600 ml-auto">
+          Mostrando <span class="font-semibold">{{ filteredRecords.length }}</span> de
+          <span class="font-semibold">{{ records.length }}</span> registros
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline de Consultas -->
+    <div class="bg-white rounded-2xl shadow-md p-6" *ngIf="!isLoading">
+      <div class="flex items-center gap-3 mb-6">
+        <span class="material-symbols-outlined text-blue-600 msz-24">timeline</span>
+        <h2 class="text-xl font-bold text-slate-900">Historial Cronológico</h2>
+      </div>
+
+      <!-- Mensaje vacío -->
+      <div *ngIf="filteredRecords.length === 0" class="text-center py-12 px-6">
+        <span class="material-symbols-outlined text-slate-400 text-6xl mb-4 block"
+          >description</span
+        >
+        <p class="text-lg text-slate-500 mb-2">No se encontraron consultas</p>
+        <p class="text-sm text-slate-400">
+          Intenta ajustar los filtros o agrega una nueva consulta
+        </p>
+      </div>
+
+      <!-- Lista de consultas -->
+      <div class="space-y-4" *ngIf="filteredRecords.length > 0">
+        <div
+          *ngFor="let record of filteredRecords; let first = first"
+          class="border border-slate-200 rounded-lg hover:shadow-md transition-shadow bg-white"
+        >
+          <div class="p-4">
+            <!-- Header del registro -->
+            <div class="flex items-start justify-between mb-3">
+              <div class="flex items-center gap-3 flex-wrap">
+                <!-- Badge de tipo -->
+                <span
+                  class="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium"
+                  [ngClass]="getTypeColor(record.type)"
+                >
+                  <span class="material-symbols-outlined text-base">
+                    {{
+                      record.type === RecordType.EMERGENCY
+                        ? 'emergency'
+                        : record.type === RecordType.SURGERY
+                          ? 'healing'
+                          : record.type === RecordType.FOLLOW_UP
+                            ? 'refresh'
+                            : record.type === RecordType.LABORATORY
+                              ? 'science'
+                              : record.type === RecordType.IMAGING
+                                ? 'radiology'
+                                : 'medical_services'
+                    }}
+                  </span>
+                  {{ getTypeText(record.type) }}
+                </span>
+
+                <!-- Fecha -->
+                <span class="text-sm text-slate-500 flex items-center gap-1">
+                  <span class="material-symbols-outlined text-base">schedule</span>
+                  {{ formatDate(record.createdAt) }}
+                </span>
+
+                <!-- Badge de emergencia -->
+                <span
+                  *ngIf="record.isEmergency"
+                  class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-red-100 text-red-700 text-xs font-semibold animate-pulse"
+                >
+                  <span class="material-symbols-outlined text-sm">warning</span>
+                  EMERGENCIA
+                </span>
+              </div>
+
+              <!-- Acciones -->
+              <div class="flex items-center gap-1">
+                <button
+                  (click)="viewRecord(record.id!)"
+                  class="w-9 h-9 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors flex items-center justify-center"
+                  title="Ver detalles completos"
+                >
+                  <span class="material-symbols-outlined text-xl">visibility</span>
+                </button>
+                <button
+                  (click)="editRecord(record.id!)"
+                  class="w-9 h-9 rounded-lg hover:bg-amber-50 text-amber-600 transition-colors flex items-center justify-center"
+                  title="Editar expediente"
+                >
+                  <span class="material-symbols-outlined text-xl">edit</span>
+                </button>
+                <button
+                  (click)="createFollowUp(record.id!)"
+                  class="w-9 h-9 rounded-lg hover:bg-green-50 text-green-600 transition-colors flex items-center justify-center"
+                  title="Crear seguimiento"
+                >
+                  <span class="material-symbols-outlined text-xl">add_circle</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Contenido del registro -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+              <!-- Motivo de consulta -->
+              <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                  Motivo de Consulta
+                </p>
+                <p class="text-sm text-slate-700">
+                  {{ record.chiefComplaint || 'No especificado' }}
+                </p>
+              </div>
+
+              <!-- Diagnóstico -->
+              <div *ngIf="record.diagnosis">
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                  Diagnóstico
+                </p>
+                <p class="text-sm text-slate-700">{{ record.diagnosis }}</p>
+              </div>
+
+              <!-- Plan de tratamiento -->
+              <div *ngIf="record.treatmentPlan" class="md:col-span-2">
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                  Plan de Tratamiento
+                </p>
+                <p class="text-sm text-slate-700">{{ record.treatmentPlan }}</p>
+              </div>
+            </div>
+
+            <!-- Signos vitales -->
+            <div class="flex items-center gap-4 flex-wrap pt-3 border-t border-slate-100">
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                Signos Vitales:
+              </p>
+              <div class="flex items-center gap-4 text-sm text-slate-600">
+                <span *ngIf="record.temperature" class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-red-500 text-base"
+                    >device_thermostat</span
+                  >
+                  {{ record.temperature }}°C
+                </span>
+                <span
+                  *ngIf="record.systolicBP && record.diastolicBP"
+                  class="flex items-center gap-1"
+                >
+                  <span class="material-symbols-outlined text-pink-500 text-base">favorite</span>
+                  {{ record.systolicBP }}/{{ record.diastolicBP }} mmHg
+                </span>
+                <span *ngIf="record.heartRate" class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-red-600 text-base">ecg_heart</span>
+                  {{ record.heartRate }} lpm
+                </span>
+                <span *ngIf="record.oxygenSaturation" class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-blue-500 text-base">air</span>
+                  {{ record.oxygenSaturation }}%
+                </span>
+                <span *ngIf="record.weight" class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-purple-500 text-base"
+                    >monitor_weight</span
+                  >
+                  {{ record.weight }} kg
+                </span>
+              </div>
+            </div>
+
+            <!-- Doctor -->
+            <div
+              class="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100"
+              *ngIf="record.doctor"
+            >
+              <span class="material-symbols-outlined text-slate-400 text-base">stethoscope</span>
+              <span class="text-xs text-slate-500">
+                Atendido por:
+                <span class="font-medium text-slate-700"
+                  >Dr(a). {{ record.doctor.firstName }} {{ record.doctor.lastName }}</span
+                >
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  </div>
+</div>

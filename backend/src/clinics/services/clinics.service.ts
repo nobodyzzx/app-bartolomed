@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserClinic } from '../../users/entities/user-clinic.entity';
@@ -98,7 +98,7 @@ export class ClinicsService {
       .leftJoinAndSelect('clinic.users', 'users')
       .where('clinic.isActive = :isActive', { isActive: true })
       .andWhere(
-        '(clinic.name ILIKE :searchTerm OR clinic.address ILIKE :searchTerm OR clinic.city ILIKE :searchTerm)',
+        '(clinic.name ILIKE :searchTerm OR clinic.address ILIKE :searchTerm OR clinic.departamento ILIKE :searchTerm OR clinic.provincia ILIKE :searchTerm OR clinic.localidad ILIKE :searchTerm)',
         { searchTerm: `%${searchTerm}%` },
       )
       .getMany();
@@ -213,12 +213,13 @@ export class ClinicsService {
     }));
   }
 
+  private readonly logger = new Logger(ClinicsService.name);
+
   private handleDBErrors(error: any): never {
     if (error.code === '23505') {
       throw new BadRequestException(error.detail.replace('Key ', ''));
     }
-
-    console.error(error);
+    this.logger.error(error.message, error.stack);
     throw new BadRequestException('Please check server logs');
   }
 }

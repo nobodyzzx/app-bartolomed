@@ -1,23 +1,11 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
 import { PaymentMethod, SaleStatus } from '../entities/pharmacy-sale.entity';
 
 export class CreatePharmacySaleItemDto {
   @IsNotEmpty()
   @IsString()
-  productName: string;
-
-  @IsOptional()
-  @IsString()
-  productCode?: string;
-
-  @IsOptional()
-  @IsString()
-  brand?: string;
-
-  @IsOptional()
-  @IsString()
-  batchNumber?: string;
+  medicationStockId: string;
 
   @IsNotEmpty()
   @IsNumber()
@@ -29,29 +17,29 @@ export class CreatePharmacySaleItemDto {
 
   @IsOptional()
   @IsNumber()
-  discount?: number;
+  discountPercent?: number;
 
   @IsOptional()
   @IsString()
-  instructions?: string;
+  batchNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  expiryDate?: string;
 }
 
 export class CreatePharmacySaleDto {
-  @IsNotEmpty()
-  @IsString()
-  patientName: string;
-
   @IsOptional()
   @IsString()
   patientId?: string;
 
   @IsOptional()
   @IsString()
-  prescriptionNumber?: string;
+  patientName?: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  doctorName?: string;
+  clinicId: string;
 
   @IsNotEmpty()
   @IsEnum(PaymentMethod)
@@ -59,15 +47,27 @@ export class CreatePharmacySaleDto {
 
   @IsOptional()
   @IsNumber()
-  discount?: number;
+  taxRate?: number;
 
   @IsOptional()
   @IsNumber()
-  amountPaid?: number;
+  discountAmount?: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  amountPaid: number;
 
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsUUID()
+  prescriptionId?: string;
+
+  @IsOptional()
+  @IsString()
+  prescriptionNumber?: string;
 
   @IsArray()
   @ValidateNested({ each: true })
@@ -131,4 +131,18 @@ export class UpdatePharmacySaleDto {
   @ValidateNested({ each: true })
   @Type(() => CreatePharmacySaleItemDto)
   items?: CreatePharmacySaleItemDto[];
+}
+
+export class AdjustPaymentDto {
+  @IsNotEmpty()
+  @IsEnum(PaymentMethod)
+  paymentMethod: PaymentMethod;
+
+  @IsNotEmpty()
+  @IsNumber()
+  amountPaid: number;
+
+  @IsNotEmpty()
+  @IsString()
+  reason: string;
 }

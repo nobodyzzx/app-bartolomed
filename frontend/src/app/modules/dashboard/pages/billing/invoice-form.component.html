@@ -1,0 +1,268 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      [title]="isEdit ? 'Editar Factura' : 'Nueva Factura'"
+      subtitle="Registra cobros con detalle de servicios"
+      (back)="goBack()"
+    >
+      <ng-container actions>
+        <button
+          type="button"
+          (click)="goBack()"
+          [disabled]="loading"
+          class="btn btn-danger-outline"
+        >
+          <span class="material-symbols-outlined msz-18">cancel</span>
+          Cancelar
+        </button>
+      </ng-container>
+    </app-page-header>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 1 — Datos de la Factura (azul)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">receipt_long</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Datos de la Factura</h3>
+            <p class="text-sm text-slate-500 m-0">Información general del cobro</p>
+          </div>
+        </div>
+        <div class="p-6 space-y-4">
+          <div class="grid md:grid-cols-3 gap-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Número de factura</mat-label>
+              <mat-icon matPrefix class="text-blue-400">tag</mat-icon>
+              <input matInput formControlName="invoiceNumber" />
+              <button
+                mat-icon-button matSuffix
+                type="button"
+                (click)="generateInvoiceNumber()"
+                aria-label="Generar número"
+                matTooltip="Generar número"
+              >
+                <mat-icon>auto_awesome</mat-icon>
+              </button>
+              <mat-error *ngIf="form.get('invoiceNumber')?.hasError('required')">Requerido</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Paciente</mat-label>
+              <mat-icon matPrefix class="text-blue-400">person</mat-icon>
+              <mat-select formControlName="patientId">
+                <mat-option *ngFor="let p of patients" [value]="p.id">
+                  {{ p.firstName }} {{ p.lastName }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="form.get('patientId')?.hasError('required')">Requerido</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Clínica</mat-label>
+              <mat-icon matPrefix class="text-blue-400">business</mat-icon>
+              <mat-select formControlName="clinicId">
+                <mat-option *ngFor="let c of clinics" [value]="c.id">{{ c.name }}</mat-option>
+              </mat-select>
+              <mat-error *ngIf="form.get('clinicId')?.hasError('required')">Requerido</mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="grid md:grid-cols-3 gap-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha de emisión</mat-label>
+              <mat-icon matPrefix class="text-blue-400">calendar_today</mat-icon>
+              <input matInput [matDatepicker]="issuePicker" formControlName="issueDate" />
+              <mat-datepicker-toggle matIconSuffix [for]="issuePicker"></mat-datepicker-toggle>
+              <mat-datepicker #issuePicker></mat-datepicker>
+              <mat-error *ngIf="form.get('issueDate')?.hasError('required')">Requerido</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha de vencimiento</mat-label>
+              <mat-icon matPrefix class="text-blue-400">event_busy</mat-icon>
+              <input matInput [matDatepicker]="duePicker" formControlName="dueDate" />
+              <mat-datepicker-toggle matIconSuffix [for]="duePicker"></mat-datepicker-toggle>
+              <mat-datepicker #duePicker></mat-datepicker>
+              <mat-error *ngIf="form.get('dueDate')?.hasError('required')">Requerido</mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 2 — Servicios / Ítems (verde)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">list_alt</span>
+          </div>
+          <div class="flex-1">
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Servicios / Ítems</h3>
+            <p class="text-sm text-slate-500 m-0">Agrega los conceptos de cobro</p>
+          </div>
+          <button
+            type="button"
+            (click)="addItem()"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all border-0"
+          >
+            <span class="material-symbols-outlined msz-18 leading-none">add</span>
+            Agregar ítem
+          </button>
+        </div>
+        <div class="p-6">
+          <div class="grid gap-3">
+            <div
+              class="grid md:grid-cols-12 gap-3 items-end"
+              *ngFor="let item of items.controls; let i = index"
+              [formGroup]="$any(item)"
+            >
+              <mat-form-field class="md:col-span-5" appearance="outline">
+                <mat-label>Descripción</mat-label>
+                <mat-icon matPrefix class="text-green-400">description</mat-icon>
+                <input matInput formControlName="description" />
+                <mat-error *ngIf="item.get('description')?.invalid">Requerido</mat-error>
+              </mat-form-field>
+              <mat-form-field class="md:col-span-2" appearance="outline">
+                <mat-label>Cantidad</mat-label>
+                <input matInput type="number" min="1" formControlName="quantity" />
+                <mat-error *ngIf="item.get('quantity')?.invalid">Cantidad inválida</mat-error>
+              </mat-form-field>
+              <mat-form-field class="md:col-span-2" appearance="outline">
+                <mat-label>Precio unitario</mat-label>
+                <input matInput type="number" min="0" step="0.01" formControlName="unitPrice" />
+                <mat-error *ngIf="item.get('unitPrice')?.invalid">Precio inválido</mat-error>
+              </mat-form-field>
+              <mat-form-field class="md:col-span-2" appearance="outline">
+                <mat-label>Categoría</mat-label>
+                <input matInput formControlName="category" />
+              </mat-form-field>
+              <div class="md:col-span-1 flex items-center mb-[1.3125rem]">
+                <button
+                  type="button"
+                  (click)="removeItem(i)"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors border-0"
+                  matTooltip="Eliminar ítem"
+                >
+                  <span class="material-symbols-outlined msz-20 leading-none">delete</span>
+                </button>
+              </div>
+            </div>
+
+            <div *ngIf="items.controls.length === 0" class="py-8 text-center text-slate-400 text-sm">
+              Sin ítems. Agrega conceptos de cobro con el botón de arriba.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 3 — Totales y Ajustes (naranja)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-orange-50 border-b border-orange-100">
+          <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">calculate</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Totales y Ajustes</h3>
+            <p class="text-sm text-slate-500 m-0">Descuentos, impuestos y resumen</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="grid md:grid-cols-3 gap-4">
+              <mat-form-field appearance="outline">
+                <mat-label>% Descuento</mat-label>
+                <mat-icon matPrefix class="text-orange-400">percent</mat-icon>
+                <input matInput type="number" min="0" step="0.01" formControlName="discountRate" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Monto Descuento</mat-label>
+                <mat-icon matPrefix class="text-orange-400">remove_circle</mat-icon>
+                <input matInput type="number" min="0" step="0.01" formControlName="discountAmount" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>% Impuesto</mat-label>
+                <mat-icon matPrefix class="text-orange-400">account_balance</mat-icon>
+                <input matInput type="number" min="0" step="0.01" formControlName="taxRate" />
+              </mat-form-field>
+            </div>
+
+            <div class="bg-slate-50 rounded-2xl p-4">
+              <div class="flex justify-between py-1 text-slate-700">
+                <span>Subtotal</span><span>{{ subtotal | number: '1.2-2' }}</span>
+              </div>
+              <div class="flex justify-between py-1 text-slate-700">
+                <span>Descuento</span><span>- {{ discountAmountCalc | number: '1.2-2' }}</span>
+              </div>
+              <div class="flex justify-between py-1 text-slate-700">
+                <span>Impuesto</span><span>{{ taxAmount | number: '1.2-2' }}</span>
+              </div>
+              <div class="flex justify-between py-2 text-lg font-semibold text-slate-900 border-t mt-2">
+                <span>Total</span><span>{{ total | number: '1.2-2' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           SECCIÓN 4 — Notas y Términos (slate)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200">
+          <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">note_alt</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Notas y Términos</h3>
+            <p class="text-sm text-slate-500 m-0">Observaciones adicionales</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Notas</mat-label>
+              <mat-icon matPrefix class="text-slate-400">notes</mat-icon>
+              <textarea matInput rows="3" formControlName="notes"></textarea>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Términos</mat-label>
+              <mat-icon matPrefix class="text-slate-400">gavel</mat-icon>
+              <textarea matInput rows="3" formControlName="terms"></textarea>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ Sticky action bar ══════ -->
+      <div class="form-action-bar">
+        <button
+          type="button"
+          (click)="goBack()"
+          class="btn btn-danger-outline"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none">close</span>
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          [disabled]="loading || form.invalid"
+          class="btn btn-primary"
+        >
+          <mat-spinner *ngIf="loading" diameter="16" class="!text-white"></mat-spinner>
+          <span class="material-symbols-outlined msz-18 leading-none" *ngIf="!loading">save</span>
+          {{ isEdit ? 'Guardar cambios' : 'Crear factura' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>

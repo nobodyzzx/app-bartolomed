@@ -2,8 +2,8 @@ import { Component } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
 
 @Component({
-  selector: 'app-placeholder',
-  template: `
+    selector: 'app-placeholder',
+    template: `
     <div class="placeholder-container">
       <div class="placeholder-content">
         <!-- Encabezado -->
@@ -55,7 +55,7 @@ import { ActivatedRoute } from '@angular/router'
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .placeholder-container {
       min-height: 100vh;
       background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
@@ -72,7 +72,8 @@ import { ActivatedRoute } from '@angular/router'
         padding: 1rem;
       }
     }
-  `]
+  `],
+    standalone: false
 })
 export class PlaceholderComponent {
   constructor(private route: ActivatedRoute) {}

@@ -1,0 +1,141 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      title="Configuración del Sistema"
+      subtitle="Parámetros y ajustes generales del sistema"
+      [showBack]="false"
+    />
+
+    <!-- Tarjetas de acceso rápido -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex items-start gap-4 cursor-not-allowed opacity-60">
+        <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-24">tune</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 mb-1">Parámetros Generales</h3>
+          <p class="text-sm text-slate-500">Nombre del sistema, zona horaria, idioma y moneda.</p>
+          <span class="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
+            <span class="material-symbols-outlined msz-14">schedule</span>
+            Próximamente
+          </span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex items-start gap-4 cursor-not-allowed opacity-60">
+        <div class="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-24">mail</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 mb-1">Configuración de Email</h3>
+          <p class="text-sm text-slate-500">SMTP, remitente, plantillas de correo.</p>
+          <span class="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
+            <span class="material-symbols-outlined msz-14">schedule</span>
+            Próximamente
+          </span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex items-start gap-4 cursor-not-allowed opacity-60">
+        <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-24">security</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 mb-1">Seguridad</h3>
+          <p class="text-sm text-slate-500">Políticas de contraseñas, sesiones y 2FA.</p>
+          <span class="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
+            <span class="material-symbols-outlined msz-14">schedule</span>
+            Próximamente
+          </span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex items-start gap-4 cursor-not-allowed opacity-60">
+        <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-24">notifications</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 mb-1">Notificaciones</h3>
+          <p class="text-sm text-slate-500">Alertas del sistema, recordatorios y eventos.</p>
+          <span class="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
+            <span class="material-symbols-outlined msz-14">schedule</span>
+            Próximamente
+          </span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex items-start gap-4 cursor-not-allowed opacity-60">
+        <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-24">palette</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 mb-1">Apariencia</h3>
+          <p class="text-sm text-slate-500">Tema, logo y personalización visual.</p>
+          <span class="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
+            <span class="material-symbols-outlined msz-14">schedule</span>
+            Próximamente
+          </span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex items-start gap-4 cursor-not-allowed opacity-60">
+        <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-24">integration_instructions</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 mb-1">Integraciones</h3>
+          <p class="text-sm text-slate-500">APIs externas, webhooks y servicios de terceros.</p>
+          <span class="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
+            <span class="material-symbols-outlined msz-14">schedule</span>
+            Próximamente
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Datos de demostración -->
+    <div *ngIf="!resetDone" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">dataset</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900">Datos de Demostración</h3>
+          <p class="text-sm text-slate-500">Carga datos de ejemplo o reinicia el sistema a estado limpio.</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <button
+          (click)="poblarDemo()"
+          [disabled]="loading"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          <span class="material-symbols-outlined msz-18">cloud_download</span>
+          Poblar datos demo
+        </button>
+        <button
+          (click)="resetearDatos()"
+          [disabled]="loading"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          <span class="material-symbols-outlined msz-18">delete_sweep</span>
+          Resetear todos los datos
+        </button>
+      </div>
+    </div>
+
+    <!-- Banner informativo -->
+    <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6 flex items-start gap-4">
+      <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined msz-20">info</span>
+      </div>
+      <div>
+        <h3 class="font-semibold text-blue-900 mb-1">Módulo en desarrollo</h3>
+        <p class="text-sm text-blue-700">
+          Las secciones de configuración del sistema están en desarrollo y estarán disponibles próximamente.
+          Mientras tanto, puede configurar parámetros básicos directamente en el archivo de entorno.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>

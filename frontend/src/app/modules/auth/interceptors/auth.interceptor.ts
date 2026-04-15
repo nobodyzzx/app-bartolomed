@@ -16,18 +16,19 @@ export class AuthInterceptor implements HttpInterceptor {
   private auth = inject(AuthService)
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token')
     const authReq = token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req
 
     return next.handle(authReq).pipe(
       catchError((error: HttpErrorResponse) => {
-        if ((error.status === 401 || error.status === 403) && !isRefreshing) {
+        // Intentar refresh SOLO en 401 (no en 403). Un 403 no es un problema de token.
+        if (error.status === 401 && !isRefreshing) {
           isRefreshing = true
           return this.auth.refreshAccessToken().pipe(
             switchMap(success => {
               isRefreshing = false
               if (success) {
-                const newToken = localStorage.getItem('token')
+                const newToken = localStorage.getItem('token') || sessionStorage.getItem('token')
                 const retried = newToken
                   ? authReq.clone({ setHeaders: { Authorization: `Bearer ${newToken}` } })
                   : authReq
@@ -43,6 +44,7 @@ export class AuthInterceptor implements HttpInterceptor {
             }),
           )
         }
+        // Para 403 y otros códigos, no forzar logout aquí; propagar el error al consumidor
         return throwError(() => error)
       }),
     )

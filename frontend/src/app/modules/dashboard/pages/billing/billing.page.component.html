@@ -1,0 +1,144 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      title="Facturación"
+      subtitle="Gestión completa de facturas y pagos"
+      (back)="goBack()"
+    >
+      <button
+        type="button"
+        (click)="navigateToInvoicesList()"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <span class="material-symbols-outlined msz-18 leading-none">list</span>
+        Lista de Facturas
+      </button>
+      <button
+        type="button"
+        (click)="navigateToNewInvoice()"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <span class="material-symbols-outlined msz-18 leading-none">add</span>
+        Nueva Factura
+      </button>
+    </app-page-header>
+
+    <!-- Tabla de facturas -->
+    <div class="table-container">
+      <div class="table-toolbar">
+        <app-search-bar
+          placeholder="Número de factura, paciente..."
+          [value]="searchTerm"
+          [showClear]="!!searchTerm"
+          (valueChange)="searchTerm = $event"
+          (cleared)="searchTerm = ''"
+        />
+      </div>
+
+      <app-skeleton-table *ngIf="isLoading && recentInvoices.length === 0" [rows]="5" [columns]="4" />
+
+      <app-empty-state
+        *ngIf="!isLoading && recentInvoices.length === 0"
+        icon="receipt_long"
+        title="No hay facturas registradas"
+        subtitle="El módulo de facturación está en desarrollo"
+        actionLabel="Crear primera factura"
+        (action)="navigateToNewInvoice()"
+      />
+
+      <div *ngIf="recentInvoices.length > 0" class="overflow-x-auto">
+        <table mat-table [dataSource]="recentInvoices" class="w-full bg-transparent">
+
+          <ng-container matColumnDef="number">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Número</span>
+            </th>
+            <td mat-cell *matCellDef="let invoice" class="px-6 py-4 font-medium text-slate-900">
+              {{ invoice.invoiceNumber }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="patient">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</span>
+            </th>
+            <td mat-cell *matCellDef="let invoice" class="px-6 py-4 text-slate-900">
+              {{ getPatientName(invoice) }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="date">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</span>
+            </th>
+            <td mat-cell *matCellDef="let invoice" class="px-6 py-4 text-slate-600 text-sm">
+              {{ formatDate(invoice.issueDate) }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="amount">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Monto</span>
+            </th>
+            <td mat-cell *matCellDef="let invoice" class="px-6 py-4 font-semibold text-slate-900">
+              {{ formatCurrency(invoice.totalAmount) }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
+            </th>
+            <td mat-cell *matCellDef="let invoice" class="px-6 py-4">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                [ngClass]="getStatusClass(invoice.status)">
+                {{ getStatusLabel(invoice.status) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4 text-right">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span>
+            </th>
+            <td mat-cell *matCellDef="let invoice" class="px-6 py-4">
+              <div class="flex justify-end">
+                <button type="button" (click)="viewInvoice(invoice); $event.stopPropagation()"
+                  matTooltip="Ver factura"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0">
+                  <span class="material-symbols-outlined msz-18">visibility</span>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"
+              (click)="viewInvoice(row)"
+              class="table-row-hover"></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Nota de desarrollo -->
+    <div class="mt-6 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200">
+        <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">construction</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Módulo en Desarrollo</h3>
+          <p class="text-sm text-slate-500 m-0">Funcionalidades próximamente disponibles</p>
+        </div>
+      </div>
+      <div class="p-6">
+        <p class="text-sm text-slate-600 m-0">
+          El módulo de facturación está actualmente en desarrollo. La interfaz está lista y
+          esperando la implementación del backend. Todas las funcionalidades estarán disponibles próximamente.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>

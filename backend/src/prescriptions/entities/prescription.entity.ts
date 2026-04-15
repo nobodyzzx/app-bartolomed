@@ -3,7 +3,9 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   UpdateDateColumn,
+  Index,
   ManyToOne,
   OneToMany,
   JoinColumn,
@@ -22,6 +24,7 @@ export enum PrescriptionStatus {
 }
 
 @Entity('prescriptions')
+@Index(['clinic', 'createdAt'])
 export class Prescription {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -77,6 +80,7 @@ export class Prescription {
   @JoinColumn({ name: 'doctor_id' })
   doctor: User;
 
+  @Index()
   @ManyToOne(() => Clinic, { eager: true })
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic;
@@ -93,6 +97,9 @@ export class Prescription {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
 
   // Helper methods
   isExpired(): boolean {

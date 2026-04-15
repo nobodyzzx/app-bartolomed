@@ -1,0 +1,199 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      title="Gestión de Clínicas"
+      subtitle="Administra todas las clínicas del sistema"
+      [showBack]="false"
+    >
+      <ng-container actions>
+        <button
+          type="button"
+          (click)="navigateToNew()"
+          class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all border-0 text-sm"
+        >
+          <span class="material-symbols-outlined msz-18">add</span>
+          Nueva Clínica
+        </button>
+      </ng-container>
+    </app-page-header>
+
+    <!-- Estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <app-stat-card
+        label="Total"
+        [value]="allClinics.length"
+        sublabel="Clínicas registradas"
+        icon="business"
+        color="blue"
+        [clickable]="true"
+        [active]="filterStatus === 'all'"
+        (cardClick)="setFilterStatus('all')"
+      />
+      <app-stat-card
+        label="Activas"
+        [value]="getActiveClinicsCount()"
+        sublabel="En operación"
+        icon="check_circle"
+        color="green"
+        [clickable]="true"
+        [active]="filterStatus === 'active'"
+        (cardClick)="setFilterStatus('active')"
+      />
+      <app-stat-card
+        label="Inactivas"
+        [value]="getInactiveClinicsCount()"
+        sublabel="Deshabilitadas"
+        icon="cancel"
+        color="red"
+        [clickable]="true"
+        [active]="filterStatus === 'inactive'"
+        (cardClick)="setFilterStatus('inactive')"
+      />
+    </div>
+
+    <!-- Tabla principal -->
+    <div class="table-container">
+
+      <div class="table-toolbar flex items-center justify-between gap-4">
+        <span class="text-sm text-slate-600">
+          <span class="font-semibold text-slate-800">{{ dataSource.data.length }}</span>
+          <span *ngIf="dataSource.data.length !== allClinics.length"> de <span class="font-semibold text-slate-800">{{ allClinics.length }}</span></span>
+          clínicas
+        </span>
+        <app-search-bar
+          placeholder="Nombre, ciudad..."
+          [value]="searchTerm"
+          [showClear]="!!searchTerm"
+          (valueChange)="searchTerm = $event; applyFilter($event)"
+          (cleared)="searchTerm = ''; loadClinics()"
+        />
+      </div>
+
+      <app-skeleton-table *ngIf="isLoading" [rows]="6" [columns]="6" />
+
+      <app-empty-state
+        *ngIf="!isLoading && dataSource.data.length === 0"
+        icon="business"
+        [title]="searchTerm ? 'Sin resultados' : 'Sin clínicas registradas'"
+        [subtitle]="searchTerm ? 'Intenta con otros términos' : 'Comienza creando la primera clínica'"
+        [actionLabel]="searchTerm ? '' : 'Nueva Clínica'"
+        (action)="navigateToNew()"
+      />
+
+      <div *ngIf="!isLoading && dataSource.data.length > 0" class="overflow-x-auto">
+        <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Nombre</span>
+            </th>
+            <td mat-cell *matCellDef="let clinic" class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined text-blue-600 msz-18">business</span>
+                </div>
+                <div>
+                  <div class="font-medium text-slate-900">{{ clinic.name }}</div>
+                  <div *ngIf="clinic.description" class="text-xs text-slate-400 truncate max-w-xs">{{ clinic.description }}</div>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="address">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Dirección</span>
+            </th>
+            <td mat-cell *matCellDef="let clinic" class="px-6 py-4">
+              <div class="text-sm text-slate-900">{{ clinic.address }}</div>
+              <div *ngIf="clinic.departamento || clinic.provincia || clinic.localidad" class="text-xs text-slate-400">
+                <ng-container *ngIf="clinic.departamento">{{ clinic.departamento }}</ng-container>
+                <ng-container *ngIf="clinic.provincia"> · {{ clinic.provincia }}</ng-container>
+                <ng-container *ngIf="clinic.localidad"> · {{ clinic.localidad }}</ng-container>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="phone">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Teléfono</span>
+            </th>
+            <td mat-cell *matCellDef="let clinic" class="px-6 py-4 text-sm text-slate-700">
+              {{ clinic.phone || '—' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="email">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Email</span>
+            </th>
+            <td mat-cell *matCellDef="let clinic" class="px-6 py-4 text-sm text-slate-700">
+              {{ clinic.email || '—' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="isActive">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
+            </th>
+            <td mat-cell *matCellDef="let clinic" class="px-6 py-4">
+              <button
+                type="button"
+                (click)="toggleClinicStatus(clinic); $event.stopPropagation()"
+                [matTooltip]="clinic.isActive ? 'Clic para desactivar' : 'Clic para activar'"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border-0 cursor-pointer transition-opacity hover:opacity-70"
+                [ngClass]="clinic.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+              >
+                <span class="w-1.5 h-1.5 rounded-full" [ngClass]="clinic.isActive ? 'bg-green-500' : 'bg-red-500'"></span>
+                {{ clinic.isActive ? 'Activa' : 'Inactiva' }}
+              </button>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4 text-right">
+              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span>
+            </th>
+            <td mat-cell *matCellDef="let clinic" class="px-6 py-4">
+              <div class="flex items-center justify-end gap-1">
+                <button type="button" (click)="viewClinic(clinic); $event.stopPropagation()" matTooltip="Ver detalles"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0">
+                  <span class="material-symbols-outlined msz-18">visibility</span>
+                </button>
+                <button type="button" (click)="editClinic(clinic); $event.stopPropagation()" matTooltip="Editar"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0">
+                  <span class="material-symbols-outlined msz-18">edit</span>
+                </button>
+<button type="button" (click)="deleteClinic(clinic); $event.stopPropagation()" matTooltip="Eliminar"
+                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0">
+                  <span class="material-symbols-outlined msz-18">delete</span>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"
+              (click)="viewClinic(row)"
+              class="table-row-hover"></tr>
+        </table>
+      </div>
+
+      <div *ngIf="!isLoading && dataSource.data.length > 0" class="table-footer">
+        <span class="text-sm text-slate-500">
+          Mostrando <span class="font-semibold text-slate-700">{{ dataSource.data.length }}</span> de
+          <span class="font-semibold text-slate-700">{{ allClinics.length }}</span> clínicas
+        </span>
+        <mat-paginator
+          [pageSizeOptions]="[10, 25, 50]"
+          showFirstLastButtons
+          aria-label="Seleccionar página"
+          class="bg-transparent border-0"
+        ></mat-paginator>
+      </div>
+
+    </div>
+
+  </div>
+</div>

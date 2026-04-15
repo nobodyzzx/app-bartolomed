@@ -1,0 +1,184 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <!-- Header -->
+    <app-page-header
+      title="Proveedores"
+      subtitle="Gestión de proveedores de farmacia"
+      [showBack]="true"
+      (back)="goBack()"
+    >
+      <button
+        type="button"
+        (click)="newSupplier()"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <span class="material-symbols-outlined msz-18 leading-none">add</span>
+        Nuevo Proveedor
+      </button>
+    </app-page-header>
+
+    <!-- Tarjetas de estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <app-stat-card
+        label="Total"
+        [value]="suppliers().length"
+        sublabel="Proveedores registrados"
+        icon="store"
+        color="blue"
+        [clickable]="true"
+        [active]="statusFilter() === 'all'"
+        (cardClick)="setStatusFilter('all')"
+      />
+      <app-stat-card
+        label="Activos"
+        [value]="activeCount()"
+        sublabel="En operación"
+        icon="check_circle"
+        color="green"
+        [clickable]="true"
+        [active]="statusFilter() === 'active'"
+        (cardClick)="setStatusFilter('active')"
+      />
+      <app-stat-card
+        label="Inactivos"
+        [value]="inactiveCount()"
+        sublabel="Deshabilitados"
+        icon="cancel"
+        color="red"
+        [clickable]="true"
+        [active]="statusFilter() === 'inactive'"
+        (cardClick)="setStatusFilter('inactive')"
+      />
+      <app-stat-card
+        label="Medicamentos"
+        [value]="medicamentosCount()"
+        sublabel="Proveedores de meds."
+        icon="medication"
+        color="purple"
+      />
+    </div>
+
+    <!-- Contenedor principal -->
+    <div class="table-container">
+
+      <!-- Buscador -->
+      <div class="table-toolbar">
+        <app-search-bar
+          placeholder="Nombre, contacto, email..."
+          [value]="search()"
+          [showClear]="!!(search() || statusFilter() !== 'all')"
+          (valueChange)="search.set($event)"
+          (cleared)="search.set(''); setStatusFilter('all')"
+        />
+      </div>
+
+      <!-- Cargando -->
+      <app-skeleton-table *ngIf="loading()" [rows]="6" [columns]="5" />
+
+      <!-- Estado vacío -->
+      <app-empty-state
+        *ngIf="!loading() && filtered().length === 0"
+        icon="store"
+        [title]="search() || statusFilter() !== 'all' ? 'Sin resultados' : 'Sin proveedores registrados'"
+        [subtitle]="search() || statusFilter() !== 'all' ? 'Intenta con otros términos o filtros' : 'Comienza agregando el primer proveedor'"
+        [actionLabel]="!search() && statusFilter() === 'all' ? 'Nuevo Proveedor' : ''"
+        (action)="newSupplier()"
+      />
+
+      <!-- Tabla -->
+      <div *ngIf="!loading() && filtered().length > 0" class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-100">
+            <tr>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Nombre</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Razón Social</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Tipo</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Contacto</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Email</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Ubicación</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
+              <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr
+              *ngFor="let s of filtered(); trackBy: trackById"
+              class="hover:bg-blue-50/40 transition-colors"
+            >
+              <td class="px-6 py-4 font-medium text-slate-900">{{ s.nombreComercial || s.name }}</td>
+              <td class="px-6 py-4 text-sm text-slate-600">{{ s.razonSocial || '—' }}</td>
+              <td class="px-6 py-4">
+                <span
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="{
+                    'bg-blue-50 text-blue-700':   s.tipoProveedor === 'medicamentos',
+                    'bg-purple-50 text-purple-700': s.tipoProveedor === 'insumos',
+                    'bg-green-50 text-green-700':  s.tipoProveedor === 'servicios',
+                    'bg-slate-50 text-slate-700':  !s.tipoProveedor
+                  }"
+                >
+                  {{ getSupplierTypeLabel(s.tipoProveedor) || 'N/A' }}
+                </span>
+              </td>
+              <td class="px-6 py-4 text-sm text-slate-600">{{ s.contactPerson || '—' }}</td>
+              <td class="px-6 py-4 text-sm text-slate-600">{{ s.email || '—' }}</td>
+              <td class="px-6 py-4 text-sm text-slate-600">
+                {{ s.city || '—' }}<span *ngIf="s.state">, {{ s.state }}</span>
+              </td>
+              <td class="px-6 py-4">
+                <span
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="s.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full" [ngClass]="s.isActive ? 'bg-green-500' : 'bg-red-500'"></span>
+                  {{ s.isActive ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center justify-end gap-1">
+                  <button
+                    type="button"
+                    (click)="edit(s)"
+                    matTooltip="Editar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0"
+                  >
+                    <span class="material-symbols-outlined msz-18">edit</span>
+                  </button>
+                  <button
+                    *ngIf="s.isActive"
+                    type="button"
+                    (click)="delete(s)"
+                    matTooltip="Eliminar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors border-0"
+                  >
+                    <span class="material-symbols-outlined msz-18">delete</span>
+                  </button>
+                  <button
+                    *ngIf="!s.isActive"
+                    type="button"
+                    (click)="restore(s)"
+                    matTooltip="Restaurar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
+                  >
+                    <span class="material-symbols-outlined msz-18">restore</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Footer -->
+      <div *ngIf="!loading() && filtered().length > 0" class="table-footer">
+        <span class="text-sm text-slate-500">
+          Mostrando <span class="font-semibold text-slate-700">{{ filtered().length }}</span> de
+          <span class="font-semibold text-slate-700">{{ suppliers().length }}</span> proveedores
+        </span>
+      </div>
+
+    </div>
+
+  </div>
+</div>

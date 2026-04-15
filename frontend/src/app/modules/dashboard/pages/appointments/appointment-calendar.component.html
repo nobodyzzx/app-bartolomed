@@ -1,0 +1,179 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      title="Calendario de Citas"
+      subtitle="Vista mensual de citas programadas"
+      (back)="goBack()"
+    >
+      <button
+        type="button"
+        (click)="createNewAppointment()"
+        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+      >
+        <span class="material-symbols-outlined msz-18 leading-none">event_available</span>
+        Nueva Cita
+      </button>
+    </app-page-header>
+
+    <!-- Controles de navegación del mes -->
+    <div class="table-container mb-6">
+      <div class="flex items-center justify-between px-6 py-4">
+        <div class="flex items-center gap-3">
+          <button
+            type="button"
+            (click)="previousMonth()"
+            class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all border-0"
+            aria-label="Mes anterior"
+          >
+            <span class="material-symbols-outlined leading-none">chevron_left</span>
+          </button>
+
+          <h2 class="text-xl font-semibold text-slate-900 min-w-[200px] text-center">
+            {{ currentMonthYear }}
+          </h2>
+
+          <button
+            type="button"
+            (click)="nextMonth()"
+            class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all border-0"
+            aria-label="Mes siguiente"
+          >
+            <span class="material-symbols-outlined leading-none">chevron_right</span>
+          </button>
+        </div>
+
+        <button
+          type="button"
+          (click)="goToToday()"
+          class="inline-flex items-center gap-2 px-4 h-9 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all border-0"
+        >
+          <span class="material-symbols-outlined msz-18 leading-none">today</span>
+          Hoy
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="flex justify-center items-center py-12">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+
+    <!-- Cuadrícula del calendario -->
+    <div *ngIf="!loading" class="table-container overflow-hidden mb-6">
+
+      <!-- Encabezado días de la semana -->
+      <div class="grid grid-cols-7 border-b border-slate-100 bg-slate-50">
+        <div
+          *ngFor="let day of weekDays"
+          class="py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wide"
+        >
+          {{ day }}
+        </div>
+      </div>
+
+      <!-- Días -->
+      <div class="grid grid-cols-7 divide-x divide-y divide-slate-100">
+        <div
+          *ngFor="let day of calendarDays"
+          class="min-h-[120px] p-2 transition-colors cursor-pointer relative"
+          [ngClass]="{
+            'bg-white hover:bg-slate-50': day.isCurrentMonth,
+            'bg-slate-50/60': !day.isCurrentMonth,
+            'ring-2 ring-inset ring-blue-500': day.isToday
+          }"
+          (click)="onDayClick(day)"
+        >
+          <!-- Número del día -->
+          <div class="flex items-center justify-between mb-1">
+            <span
+              class="text-sm font-medium inline-flex items-center justify-center w-7 h-7 rounded-full"
+              [ngClass]="{
+                'text-slate-900': day.isCurrentMonth && !day.isToday,
+                'text-slate-400': !day.isCurrentMonth,
+                'bg-blue-600 text-white font-bold': day.isToday
+              }"
+            >
+              {{ day.dayNumber }}
+            </span>
+
+            <span
+              *ngIf="day.appointments.length > 0"
+              class="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
+            >
+              {{ day.appointments.length }}
+            </span>
+          </div>
+
+          <!-- Citas del día -->
+          <div class="space-y-1 overflow-y-auto max-h-[80px]">
+            <div
+              *ngFor="let appointment of day.appointments"
+              class="text-xs px-1.5 py-1 rounded cursor-pointer hover:shadow-sm transition-shadow"
+              [ngClass]="[getStatusColor(appointment.status), getPriorityColor(appointment.priority)]"
+              (click)="viewAppointment(appointment); $event.stopPropagation()"
+            >
+              <div class="font-medium truncate">
+                {{ formatTime(appointment.appointmentDate) }} · {{ appointment.patient.firstName }} {{ appointment.patient.lastName }}
+              </div>
+              <div class="opacity-70 truncate">{{ appointment.reason }}</div>
+            </div>
+
+            <div
+              *ngIf="day.appointments.length > 3"
+              class="text-xs text-blue-600 font-medium text-center pt-0.5"
+            >
+              +{{ day.appointments.length - 3 }} más
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leyenda -->
+    <div *ngIf="!loading" class="table-container">
+      <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
+        <h3 class="text-sm font-semibold text-slate-700">Leyenda</h3>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Estados -->
+        <div>
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Estados</p>
+          <div class="flex flex-wrap gap-2">
+            <span
+              *ngFor="let s of ['scheduled','confirmed','in_progress','completed','cancelled','no_show']"
+              class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+              [ngClass]="getStatusColor(s)"
+            >
+              {{ getStatusLabel(s) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Prioridades -->
+        <div>
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Prioridades (borde izquierdo)</p>
+          <div class="flex flex-wrap gap-2">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border-l-4 border-blue-400">Baja</span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border-l-4 border-green-400">Normal</span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 border-l-4 border-yellow-400">Alta</span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border-l-4 border-red-500">Urgente</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <app-empty-state
+      *ngIf="!loading && appointments.length === 0"
+      icon="event_busy"
+      title="Sin citas este mes"
+      subtitle="No hay citas programadas para este mes"
+      actionLabel="Nueva Cita"
+      (action)="createNewAppointment()"
+    />
+
+  </div>
+</div>

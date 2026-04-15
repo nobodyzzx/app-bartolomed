@@ -1,71 +1,103 @@
-<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-  <div class="max-w-md w-full space-y-8 bg-slate-100 bg-opacity-90 p-10 rounded-xl shadow-xl">
-    <div>
-      <div class="mx-auto w-48">
+<div class="login-page">
+  <!-- Esferas decorativas de fondo -->
+  <div class="login-bg-orb login-bg-orb--1"></div>
+  <div class="login-bg-orb login-bg-orb--2"></div>
+  <div class="login-bg-orb login-bg-orb--3"></div>
+
+  <!-- Contenedor central -->
+  <div class="login-container">
+
+    <!-- Tarjeta unificada: brand + form -->
+    <div class="login-card">
+
+      <!-- Cabecera de marca sobre fondo oscuro (logo blanco) -->
+      <div class="login-card-brand">
         <img
-          class="mx-auto w-full h-full object-cover"
           src="../../../../assets/images/logo-big-bartolomed.png"
-          alt=""
+          alt="Bartolomed"
+          class="login-logo"
         />
+        <p class="login-tagline">Plataforma de Gestión Clínica</p>
       </div>
-      <p class="mt-2 text-center text-base text-gray-600">Plataforma de Gestión Clínica</p>
-      <h2 class="mt-6 text-center text-2xl font-extrabold text-gray-900">Iniciar Sesión</h2>
-    </div>
-    <form class="mt-8 space-y-6" [formGroup]="myForm" (ngSubmit)="onSubmit()">
-      <div class="rounded-md shadow-sm -space-y-px">
-        <div>
-          <mat-form-field appearance="outline" class="w-full pb-2">
-            <mat-label>Correo electrónico</mat-label>
-            <input matInput type="email" formControlName="email" required />
-            <mat-error>Por favor, ingrese un correo electrónico válido</mat-error>
-          </mat-form-field>
+
+      <!-- Divisor con ícono de acceso -->
+      <div class="login-card-divider">
+        <div class="login-card-divider-icon">
+          <span class="material-symbols-outlined">lock</span>
         </div>
-        <div>
+      </div>
+
+      <!-- Cuerpo del formulario -->
+      <div class="login-card-body">
+
+        <div class="login-form-title">
+          <h3>Acceso al sistema</h3>
+          <p>Ingresa tus credenciales para continuar</p>
+        </div>
+
+        <form [formGroup]="myForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-1">
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Correo electrónico</mat-label>
+            <mat-icon matPrefix class="text-blue-400">mail</mat-icon>
+            <input matInput type="email" formControlName="email" autocomplete="email" />
+            <mat-error>Por favor, ingresa un correo electrónico válido</mat-error>
+          </mat-form-field>
+
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Contraseña</mat-label>
+            <mat-icon matPrefix class="text-blue-400">lock</mat-icon>
             <input
               matInput
               formControlName="password"
               [type]="hidePassword ? 'password' : 'text'"
-              required
+              autocomplete="current-password"
             />
             <button
               mat-icon-button
               matSuffix
-              (click)="hidePassword = !hidePassword"
-              [attr.aria-label]="'Hide password'"
-              [attr.aria-pressed]="hidePassword"
               type="button"
+              (click)="hidePassword = !hidePassword"
+              [attr.aria-label]="hidePassword ? 'Mostrar contraseña' : 'Ocultar contraseña'"
             >
               <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
             </button>
-            <mat-error>La contraseña es requerida</mat-error>
+            <mat-error>La contraseña es requerida (mínimo 6 caracteres)</mat-error>
           </mat-form-field>
-        </div>
-      </div>
 
-      <div class="flex items-center justify-between">
-        <mat-checkbox class="text-sm">Recordarme</mat-checkbox>
-        <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-          ¿Olvidaste tu contraseña?
-        </a>
-      </div>
+          <div class="flex items-center justify-between mb-3">
+            <mat-checkbox class="text-sm text-slate-600" formControlName="rememberMe">
+              Recordarme
+            </mat-checkbox>
+            <button
+              type="button"
+              (click)="openForgotPassword()"
+              class="text-sm font-medium text-blue-600 hover:text-blue-800 bg-transparent border-0 cursor-pointer p-0 transition-colors"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
 
-      <div>
-        <button
-          mat-raised-button
-          color="primary"
-          class="w-full"
-          type="submit"
-          [disabled]="isLoading"
-        >
-          <span *ngIf="!isLoading">Iniciar Sesión</span>
-          <span *ngIf="isLoading" class="flex items-center justify-center">
-            <mat-spinner diameter="20" class="mr-2"></mat-spinner>
-            Iniciando sesión...
-          </span>
-        </button>
+          <button
+            type="submit"
+            [disabled]="isLoading"
+            class="btn btn-primary w-full justify-center"
+          >
+            @if (isLoading) {
+              <span class="login-spinner"></span>
+              Iniciando sesión...
+            } @else {
+              <span class="material-symbols-outlined" style="font-size:18px">login</span>
+              Ingresar al sistema
+            }
+          </button>
+
+        </form>
       </div>
-    </form>
+    </div>
+
+    <p class="login-footer">
+      Bartolomed &copy; {{ currentYear }} &mdash; Sistema de Gestión Clínica
+    </p>
   </div>
 </div>

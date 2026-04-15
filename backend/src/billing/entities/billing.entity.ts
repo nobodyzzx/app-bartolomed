@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
   ManyToOne,
   OneToMany,
   JoinColumn,
@@ -44,6 +45,7 @@ export enum PaymentStatus {
 }
 
 @Entity('invoices')
+@Index(['clinic', 'createdAt'])
 export class Invoice {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -114,6 +116,7 @@ export class Invoice {
   @JoinColumn({ name: 'patient_id' })
   patient: Patient;
 
+  @Index()
   @ManyToOne(() => Clinic, { eager: true })
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic;
@@ -162,6 +165,8 @@ export class Invoice {
   @BeforeInsert()
   @BeforeUpdate()
   calculateAmounts() {
+    const isTerminalStatus = [InvoiceStatus.CANCELLED, InvoiceStatus.REFUNDED].includes(this.status);
+
     // Calcular subtotal desde los items si no está establecido
     if (!this.subtotal && this.items) {
       this.subtotal = this.items.reduce((sum: number, item: any) => {
@@ -188,21 +193,23 @@ export class Invoice {
     // Calcular monto restante
     this.remainingAmount = this.totalAmount - this.paidAmount;
 
-    // Actualizar estado basado en pagos
-    if (this.paidAmount === 0) {
-      if (this.status === InvoiceStatus.PAID || this.status === InvoiceStatus.PARTIALLY_PAID) {
-        this.status = InvoiceStatus.PENDING;
+    if (!isTerminalStatus) {
+      // Actualizar estado basado en pagos
+      if (this.paidAmount === 0) {
+        if (this.status === InvoiceStatus.PAID || this.status === InvoiceStatus.PARTIALLY_PAID) {
+          this.status = InvoiceStatus.PENDING;
+        }
+      } else if (this.paidAmount >= this.totalAmount) {
+        this.status = InvoiceStatus.PAID;
+        this.remainingAmount = 0;
+      } else {
+        this.status = InvoiceStatus.PARTIALLY_PAID;
       }
-    } else if (this.paidAmount >= this.totalAmount) {
-      this.status = InvoiceStatus.PAID;
-      this.remainingAmount = 0;
-    } else {
-      this.status = InvoiceStatus.PARTIALLY_PAID;
-    }
 
-    // Verificar si está vencida
-    if (this.remainingAmount > 0 && new Date() > new Date(this.dueDate)) {
-      this.status = InvoiceStatus.OVERDUE;
+      // Verificar si está vencida
+      if (this.remainingAmount > 0 && new Date() > new Date(this.dueDate)) {
+        this.status = InvoiceStatus.OVERDUE;
+      }
     }
   }
 }

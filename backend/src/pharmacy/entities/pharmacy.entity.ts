@@ -1,17 +1,18 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  OneToMany,
-  JoinColumn,
   BeforeInsert,
   BeforeUpdate,
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
 import { Clinic } from '../../clinics/entities/clinic.entity';
+import { User } from '../../users/entities/user.entity';
 
 export enum MedicationCategory {
   ANALGESIC = 'analgesic',
@@ -122,6 +123,7 @@ export class Medication {
 }
 
 @Entity('medication_stock')
+@Index(['clinic', 'createdAt'])
 export class MedicationStock {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -167,6 +169,7 @@ export class MedicationStock {
   @JoinColumn({ name: 'medication_id' })
   medication: Medication;
 
+  @Index()
   @ManyToOne(() => Clinic, { eager: true })
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic;
@@ -183,6 +186,11 @@ export class MedicationStock {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  // Virtual property for clinicId (for frontend compatibility)
+  get clinicId(): string | undefined {
+    return this.clinic?.id;
+  }
 
   // Helper methods
   isExpired(): boolean {
@@ -246,13 +254,13 @@ export class StockMovement {
   totalAmount: number;
 
   @Column('text', { nullable: true })
-  reference: string; // Invoice number, prescription number, etc.
+  reference: string | undefined; // Invoice number, prescription number, etc.
 
   @Column('text', { nullable: true })
-  reason: string;
+  reason: string | undefined;
 
   @Column('text', { nullable: true })
-  notes: string;
+  notes: string | undefined;
 
   @Column('timestamp with time zone')
   movementDate: Date;
@@ -348,6 +356,7 @@ export enum OrderStatus {
 }
 
 @Entity('purchase_orders')
+@Index(['clinic', 'createdAt'])
 export class PurchaseOrder {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -385,6 +394,7 @@ export class PurchaseOrder {
   @JoinColumn({ name: 'supplier_id' })
   supplier: Supplier;
 
+  @Index()
   @ManyToOne(() => Clinic, { eager: true })
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic;
