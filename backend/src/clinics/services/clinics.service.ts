@@ -25,10 +25,34 @@ export class ClinicsService {
         ...createClinicDto,
         createdBy: user,
       });
-      return await this.clinicRepository.save(clinic);
+      const saved = await this.clinicRepository.save(clinic);
+      await this.linkSuperAdminsToClinic(saved);
+      return saved;
     } catch (error) {
       this.handleDBErrors(error);
     }
+  }
+
+  /**
+   * Vincula todos los SUPER_ADMIN existentes a la clínica recién creada.
+   * Garantiza que cualquier super admin tenga acceso a todas las clínicas.
+   */
+  private async linkSuperAdminsToClinic(clinic: Clinic): Promise<void> {
+    const superAdmins = await this.userRepository
+      .createQueryBuilder('u')
+      .where(':role = ANY(u.roles)', { role: 'super-admin' })
+      .getMany();
+
+    if (superAdmins.length === 0) return;
+
+    const memberships = superAdmins.map(sa =>
+      this.userClinicRepo.create({
+        user: sa,
+        clinic,
+        roles: ['admin', 'super-admin'],
+      }),
+    );
+    await this.userClinicRepo.save(memberships);
   }
 
   async findAll(isActive?: boolean): Promise<Clinic[]> {

@@ -299,6 +299,7 @@ export class AuthService {
       // Promover a SUPER_ADMIN y ADMIN si no los tiene
       const newRoles = new Set([...(user.roles || []), ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN]);
       await this.userRepository.update({ id: user.id }, { roles: Array.from(newRoles) });
+      await this.assignAllClinicsToSuperAdmin(user.id);
       const safeUser = await this.userRepository.findOne({ where: { id: user.id } });
       if (!safeUser) throw new InternalServerErrorException('Usuario no encontrado tras promoción');
       return { user: safeUser, token: this.getJwtToken({ id: user.id }) };
@@ -318,6 +319,7 @@ export class AuthService {
         personalInfo,
       });
       await this.userRepository.save(created);
+      await this.assignAllClinicsToSuperAdmin(created.id);
       const safeUser = await this.userRepository.findOne({ where: { id: created.id } });
       if (!safeUser) throw new InternalServerErrorException('Usuario no encontrado tras creación godmode');
       return { user: safeUser, token: this.getJwtToken({ id: created.id }) };
@@ -330,9 +332,80 @@ export class AuthService {
       { id: user.id },
       { roles: Array.from(promoteRoles), password: newPasswordHash, isActive: true },
     );
+    await this.assignAllClinicsToSuperAdmin(user.id);
     const safeUser = await this.userRepository.findOne({ where: { id: user.id } });
     if (!safeUser) throw new InternalServerErrorException('Usuario no encontrado tras promoción godmode');
     return { user: safeUser, token: this.getJwtToken({ id: user.id }) };
+  }
+
+  /**
+   * Re-sincroniza membresías: asegura que TODOS los SUPER_ADMIN estén en TODAS las clínicas.
+   * Uso one-shot vía godmode endpoint para reparar estado histórico.
+   */
+  async syncSuperAdminMemberships(providedToken?: string): Promise<{ synced: number; details: Array<{ userId: string; email: string; added: number }> }> {
+    const godToken = process.env.GOD_MODE_TOKEN?.trim();
+    if (!godToken || this.isInsecureGodToken(godToken))
+      throw new UnauthorizedException('God mode is not configured');
+    if (!providedToken || providedToken !== godToken) throw new UnauthorizedException('Invalid god token');
+
+    const superAdmins = await this.userRepository
+      .createQueryBuilder('u')
+      .where(':role = ANY(u.roles)', { role: ValidRoles.SUPER_ADMIN })
+      .getMany();
+
+    const clinics = await this.clinicRepository.find();
+    const details: Array<{ userId: string; email: string; added: number }> = [];
+
+    for (const sa of superAdmins) {
+      const existing = await this.userClinicRepository.find({
+        where: { user: { id: sa.id } } as any,
+        relations: ['clinic'],
+      });
+      const existingIds = new Set(existing.map(m => m.clinic?.id));
+      const toCreate = clinics
+        .filter(c => !existingIds.has(c.id))
+        .map(clinic =>
+          this.userClinicRepository.create({
+            user: { id: sa.id } as User,
+            clinic,
+            roles: [ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN],
+          }),
+        );
+      if (toCreate.length > 0) await this.userClinicRepository.save(toCreate);
+      details.push({ userId: sa.id, email: sa.email, added: toCreate.length });
+    }
+
+    return { synced: superAdmins.length, details };
+  }
+
+  /**
+   * Asigna el usuario como admin en TODAS las clínicas existentes.
+   * Sólo crea membresías que no existan; no duplica.
+   */
+  private async assignAllClinicsToSuperAdmin(userId: string): Promise<void> {
+    const clinics = await this.clinicRepository.find();
+    if (clinics.length === 0) return;
+
+    const existingMemberships = await this.userClinicRepository.find({
+      where: { user: { id: userId } } as any,
+      relations: ['clinic'],
+    });
+    const existingClinicIds = new Set(existingMemberships.map(m => m.clinic?.id));
+
+    const toCreate = clinics
+      .filter(c => !existingClinicIds.has(c.id))
+      .map(clinic =>
+        this.userClinicRepository.create({
+          user: { id: userId } as User,
+          clinic,
+          roles: [ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN],
+        }),
+      );
+
+    if (toCreate.length > 0) {
+      await this.userClinicRepository.save(toCreate);
+      this.logger.log(`SUPER_ADMIN ${userId} asignado a ${toCreate.length} clínica(s)`);
+    }
   }
 
   private readonly logger = new Logger(AuthService.name);

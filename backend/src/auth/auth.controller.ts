@@ -155,4 +155,10 @@ export class AuthController {
     return { user: result.user, token: result.token };
   }
 
+  // GODMODE: re-sincroniza membresías de todos los SUPER_ADMIN con todas las clínicas
+  @Post('godmode/sync-super-admin-clinics')
+  async godmodeSyncSuperAdmins(@Headers('x-god-token') xGodToken?: string) {
+    return this.authService.syncSuperAdminMemberships(xGodToken);
+  }
+
 }
