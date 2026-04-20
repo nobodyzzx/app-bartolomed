@@ -63,6 +63,12 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('Credenciales no Validas (email)');
     if (!(await bcrypt.compare(password, user.password)))
       throw new UnauthorizedException('Credenciales no Validas (password)');
+
+    // Auto-heal: un SUPER_ADMIN debe tener acceso a todas las clínicas
+    if ((user.roles || []).includes(ValidRoles.SUPER_ADMIN)) {
+      await this.assignAllClinicsToSuperAdmin(user.id);
+    }
+
     // Obtener clínicas del usuario para embeber en el token
     const clinicIds = await this.getClinicIds(user.id);
 
@@ -381,6 +387,7 @@ export class AuthService {
   /**
    * Asigna el usuario como admin en TODAS las clínicas existentes.
    * Sólo crea membresías que no existan; no duplica.
+   * Además, setea `user.clinic` (clínica principal) si está null.
    */
   private async assignAllClinicsToSuperAdmin(userId: string): Promise<void> {
     const clinics = await this.clinicRepository.find();
@@ -405,6 +412,15 @@ export class AuthService {
     if (toCreate.length > 0) {
       await this.userClinicRepository.save(toCreate);
       this.logger.log(`SUPER_ADMIN ${userId} asignado a ${toCreate.length} clínica(s)`);
+    }
+
+    // Setear clínica principal si no tiene
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['clinic'],
+    });
+    if (user && !user.clinic) {
+      await this.userRepository.update({ id: userId }, { clinic: clinics[0] });
     }
   }
 
