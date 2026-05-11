@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 import { AlertService } from '../../../../../core/services/alert.service'
+import { VALIDATION_PATTERNS } from '../../../../../shared/validators/validation-patterns'
 import { ClinicContextService } from '../../../../clinics/services/clinic-context.service'
 import { Clinic } from '../../admin/clinics/interfaces/clinic.interface'
 import { ClinicsService } from '../../admin/clinics/services'
@@ -98,7 +99,7 @@ export class PatientFormComponent implements OnInit {
         [
           Validators.required,
           Validators.minLength(5),
-          Validators.pattern(/^[A-Za-z0-9\-\.]{5,20}$/),
+          Validators.pattern(VALIDATION_PATTERNS.documentNumber),
         ],
       ],
       documentType: ['CI'],
@@ -112,7 +113,7 @@ export class PatientFormComponent implements OnInit {
     // Paso 2: Información de Contacto
     this.contactInfoForm = this.fb.group({
       email: ['', [Validators.email]],
-      phone: ['', [Validators.pattern(/^\+?[0-9\-\s]{7,15}$/)]],
+      phone: ['', [Validators.pattern(VALIDATION_PATTERNS.phone)]],
       address: [''],
       city: [''],
       state: [''],
@@ -125,7 +126,7 @@ export class PatientFormComponent implements OnInit {
     // Paso 4: Contacto de Emergencia
     this.emergencyContactForm = this.fb.group({
       emergencyContactName: [''],
-      emergencyContactPhone: ['', [Validators.pattern(/^\+?[0-9\-\s]{7,15}$/)]],
+      emergencyContactPhone: ['', [Validators.pattern(VALIDATION_PATTERNS.phone)]],
       emergencyContactRelationship: [''],
     })
 

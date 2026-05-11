@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { ErrorService } from '../../../../../../shared/components/services/error.service'
 import { SidenavService } from '../../../../../../shared/components/services/sidenav.service'
+import { VALIDATION_PATTERNS } from '../../../../../../shared/validators/validation-patterns'
 import { CreateClinicDto, UpdateClinicDto } from '../interfaces'
 import { ClinicsService } from '../services'
 
@@ -203,7 +204,7 @@ export class ClinicFormComponent implements OnInit {
         '',
         [
           Validators.required,
-          Validators.pattern(/^[67]\d{7}$/),
+          Validators.pattern(VALIDATION_PATTERNS.phoneBolivia),
           Validators.minLength(8),
           Validators.maxLength(8),
         ],

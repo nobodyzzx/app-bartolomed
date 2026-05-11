@@ -14,6 +14,7 @@ import { ClinicsService } from '../admin/clinics/services/clinics.service'
 import { PatientsService } from '../patients/services/patients.service'
 import { UsersService } from '../admin/users/users.service'
 import { ClinicContextService } from '../../../clinics/services/clinic-context.service'
+import { VALIDATION_PATTERNS } from '../../../../shared/validators/validation-patterns'
 import { PrescriptionsService } from './prescriptions.service'
 import { DrugSearchService } from './drug-search.service'
 
@@ -186,7 +187,7 @@ export class PrescriptionFormComponent {
       dosageForm: new FormControl(data?.dosageForm || 'tableta', Validators.required),
       quantity: new FormControl(data?.quantity || '1', [
         Validators.required,
-        Validators.pattern('^[0-9]+$'),
+        Validators.pattern(VALIDATION_PATTERNS.digitsOnly),
       ]),
       dosage: new FormControl(data?.dosage || '', Validators.required),
       frequency: new FormControl(data?.frequency || 'cada 8 horas', Validators.required),
