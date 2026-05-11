@@ -3,6 +3,7 @@ import { HttpClientModule } from '@angular/common/http'
 import { NgModule } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { RouterModule, Routes } from '@angular/router'
+import { canDeactivateGuard } from '../../../../core/guards/can-deactivate.guard'
 import { MaterialModule } from '../../../../material/material.module'
 import { SharedModule } from '../../../../shared/shared.module'
 import { PrescriptionDetailComponent } from './prescription-detail.component'
@@ -11,8 +12,8 @@ import { PrescriptionListComponent } from './prescription-list.component'
 
 const routes: Routes = [
   { path: '', component: PrescriptionListComponent },
-  { path: 'new', component: PrescriptionFormComponent },
-  { path: 'edit/:id', component: PrescriptionFormComponent },
+  { path: 'new', component: PrescriptionFormComponent, canDeactivate: [canDeactivateGuard] },
+  { path: 'edit/:id', component: PrescriptionFormComponent, canDeactivate: [canDeactivateGuard] },
   { path: ':id', component: PrescriptionDetailComponent },
 ]
 

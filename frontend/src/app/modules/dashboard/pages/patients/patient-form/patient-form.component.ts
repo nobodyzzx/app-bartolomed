@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 import { AlertService } from '../../../../../core/services/alert.service'
+import { CanComponentDeactivate, confirmDiscardChanges } from '../../../../../core/guards/can-deactivate.guard'
 import { VALIDATION_PATTERNS } from '../../../../../shared/validators/validation-patterns'
 import { ClinicContextService } from '../../../../clinics/services/clinic-context.service'
 import { Clinic } from '../../admin/clinics/interfaces/clinic.interface'
@@ -18,7 +19,7 @@ import { PatientsService } from '../services'
     styleUrl: './patient-form.component.css',
     standalone: false
 })
-export class PatientFormComponent implements OnInit {
+export class PatientFormComponent implements OnInit, CanComponentDeactivate {
   private readonly destroyRef = inject(DestroyRef)
   private readonly elRef = inject(ElementRef)
 
@@ -36,6 +37,11 @@ export class PatientFormComponent implements OnInit {
   isEditMode = false
   isViewMode = false
   patientId: string | null = null
+
+  // Marca puesta antes de cualquier navegación intencional para que el
+  // canDeactivate guard no vuelva a preguntar (el usuario ya decidió en su
+  // propio diálogo o terminó de guardar). Ver método `canDeactivate()`.
+  private allowNavigationOnce = false
 
   // Clinics for select
   clinics: Clinic[] = []
@@ -413,6 +419,7 @@ export class PatientFormComponent implements OnInit {
             })
             .then((res: any) => {
               if (res.isConfirmed) {
+                this.allowNavigationOnce = true
                 this.router.navigate(['/dashboard/patients/edit', p.id])
               }
             })
@@ -467,6 +474,7 @@ export class PatientFormComponent implements OnInit {
     this.patientsService.createPatient(patientData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: patient => {
         this.isSaving = false
+        this.allowNavigationOnce = true
         this.alert
           .fire({
             title: '¡Paciente Creado!',
@@ -511,6 +519,7 @@ export class PatientFormComponent implements OnInit {
     this.patientsService.updatePatient(this.patientId!, patientData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: patient => {
         this.isSaving = false
+        this.allowNavigationOnce = true
         this.alert
           .fire({
             title: '¡Paciente Actualizado!',
@@ -555,6 +564,7 @@ export class PatientFormComponent implements OnInit {
         .then(result => {
           if (result.isConfirmed) {
             // Navegar a la lista con búsqueda del documento
+            this.allowNavigationOnce = true
             this.router.navigate(['/dashboard/patients'], {
               queryParams: { q: patientData.documentNumber },
             })
@@ -715,9 +725,32 @@ export class PatientFormComponent implements OnInit {
       })
       .then((result: any) => {
         if (result.isConfirmed) {
+          this.allowNavigationOnce = true
           this.router.navigate(['/dashboard/patients'])
         }
       })
+  }
+
+  /**
+   * canDeactivate (`CanComponentDeactivate`):
+   * permite salir si el usuario está en modo lectura, si ya confirmó la
+   * intención de salir vía nuestro propio diálogo (`allowNavigationOnce`),
+   * o si los 4 sub-formularios siguen pristine. En otro caso, lanza el
+   * diálogo compartido y devuelve la decisión del usuario.
+   */
+  async canDeactivate(): Promise<boolean> {
+    if (this.isViewMode) return true
+    if (this.allowNavigationOnce) {
+      this.allowNavigationOnce = false
+      return true
+    }
+    const dirty =
+      this.personalInfoForm?.dirty ||
+      this.contactInfoForm?.dirty ||
+      this.emergencyContactForm?.dirty ||
+      this.insuranceForm?.dirty
+    if (!dirty) return true
+    return confirmDiscardChanges(this.alert)
   }
 
   private showError(message: string): void {

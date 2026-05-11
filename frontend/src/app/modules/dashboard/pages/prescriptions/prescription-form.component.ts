@@ -14,6 +14,7 @@ import { ClinicsService } from '../admin/clinics/services/clinics.service'
 import { PatientsService } from '../patients/services/patients.service'
 import { UsersService } from '../admin/users/users.service'
 import { ClinicContextService } from '../../../clinics/services/clinic-context.service'
+import { CanComponentDeactivate, confirmDiscardChanges } from '../../../../core/guards/can-deactivate.guard'
 import { VALIDATION_PATTERNS } from '../../../../shared/validators/validation-patterns'
 import { PrescriptionsService } from './prescriptions.service'
 import { DrugSearchService } from './drug-search.service'
@@ -54,7 +55,8 @@ function dateOrderValidator(group: AbstractControl): ValidationErrors | null {
     styleUrls: ['./prescription-form.component.css'],
     standalone: false
 })
-export class PrescriptionFormComponent {
+export class PrescriptionFormComponent implements CanComponentDeactivate {
+  private allowNavigationOnce = false
   route = inject(ActivatedRoute)
   router = inject(Router)
   private svc = inject(PrescriptionsService)
@@ -102,7 +104,18 @@ export class PrescriptionFormComponent {
   clinics: any[] = []
 
   goBack(): void {
+    // El guard preguntará si hay cambios sin guardar; no duplicar diálogo aquí.
     this.router.navigate(['/dashboard/prescriptions'])
+  }
+
+  /** canDeactivate: permitir salida si form pristine o si ya guardamos. */
+  async canDeactivate(): Promise<boolean> {
+    if (this.allowNavigationOnce) {
+      this.allowNavigationOnce = false
+      return true
+    }
+    if (!this.form?.dirty) return true
+    return confirmDiscardChanges(this.alert)
   }
 
   printPdf(): void {
@@ -303,6 +316,7 @@ export class PrescriptionFormComponent {
     obs.subscribe({
       next: (res: any) => {
         this.loading = false
+        this.allowNavigationOnce = true
         const savedId = res?.id ?? id
         const msg = id ? 'Receta actualizada' : status === 'draft' ? 'Borrador guardado' : 'Receta creada'
         this.alert.success(msg, 'Operación exitosa').then(() => {

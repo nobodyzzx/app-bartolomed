@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core'
 import { RouterModule, Routes } from '@angular/router'
+import { canDeactivateGuard } from '../../../../core/guards/can-deactivate.guard'
 import { MedicalRecordFormComponent } from './components/medical-record-form.component'
 import { PatientMedicalHistoryComponent } from './components/patient-medical-history.component'
 import { MedicalRecordsDashboardComponent } from './medical-records-dashboard.component'
@@ -16,14 +17,17 @@ const routes: Routes = [
   {
     path: 'new',
     component: MedicalRecordFormComponent,
+    canDeactivate: [canDeactivateGuard],
   },
   {
     path: ':id',
     component: MedicalRecordFormComponent,
+    canDeactivate: [canDeactivateGuard],
   },
   {
     path: ':id/edit',
     component: MedicalRecordFormComponent,
+    canDeactivate: [canDeactivateGuard],
   },
 ]
 

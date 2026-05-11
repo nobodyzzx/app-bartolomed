@@ -14,6 +14,7 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { combineLatest, Observable, of, Subject } from 'rxjs'
 import { auditTime, catchError, map, startWith, takeUntil } from 'rxjs/operators'
+import { CanComponentDeactivate, confirmDiscardChanges } from '../../../../../core/guards/can-deactivate.guard'
 import { User } from '../../../../auth/interfaces/user.interface'
 import { Patient } from '../../patients/interfaces'
 import { PatientsService } from '../../patients/services/patients.service'
@@ -45,12 +46,15 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: false
 })
-export class MedicalRecordFormComponent implements OnInit, OnDestroy {
+export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanComponentDeactivate {
   // Stepper form groups (reducido de 6 a 4 pasos)
   patientInfoForm!: FormGroup
   clinicalDataForm!: FormGroup // Combina historia médica + signos vitales
   evaluationForm!: FormGroup // Combina examen físico + evaluación
   consentForm!: FormGroup
+
+  /** Permite la siguiente navegación sin disparar el diálogo (post-save o cancel confirmado). */
+  private allowNavigationOnce = false
 
   private readonly destroy$ = new Subject<void>()
 
@@ -672,6 +676,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
               confirmButtonText: 'Aceptar',
             })
             .then(() => {
+              this.allowNavigationOnce = true
               this.draftService.clear()
               this.router.navigate(['/dashboard/medical-records'])
             })
@@ -695,6 +700,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
             confirmButtonText: 'Aceptar',
           })
           .then(() => {
+            this.allowNavigationOnce = true
             this.draftService.clear()
             this.router.navigate(['/dashboard/medical-records'])
           })
@@ -743,6 +749,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
             confirmButtonText: 'Aceptar',
           })
           .then(() => {
+            this.allowNavigationOnce = true
             this.draftService.clear()
             this.router.navigate(['/dashboard/medical-records'])
           })
@@ -781,6 +788,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
                     confirmButtonText: 'Aceptar',
                   })
                   .then(() => {
+                    this.allowNavigationOnce = true
                     this.router.navigate(['/dashboard/medical-records'])
                   })
                 this.isSaving = false
@@ -814,10 +822,26 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
       })
       .then(result => {
         if (result.isConfirmed) {
+          this.allowNavigationOnce = true
           this.draftService.clear()
           this.router.navigate(['/dashboard/medical-records'])
         }
       })
+  }
+
+  /** canDeactivate: pristine en los 4 sub-forms o permiso explícito = salida sin diálogo. */
+  async canDeactivate(): Promise<boolean> {
+    if (this.allowNavigationOnce) {
+      this.allowNavigationOnce = false
+      return true
+    }
+    const dirty =
+      this.patientInfoForm?.dirty ||
+      this.clinicalDataForm?.dirty ||
+      this.evaluationForm?.dirty ||
+      this.consentForm?.dirty
+    if (!dirty) return true
+    return confirmDiscardChanges(this.alert)
   }
 
   goBack(): void {
