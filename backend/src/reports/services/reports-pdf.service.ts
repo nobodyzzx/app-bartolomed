@@ -3,6 +3,32 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import puppeteer from 'puppeteer-core';
 
+import {
+  AppointmentsReportData,
+  CriticalStockReportData,
+  DailySalesReportData,
+  DashboardReportData,
+  DemographicsReportData,
+  DoctorPerformanceReportData,
+  ExpiryBucketsReportData,
+  FinancialReportData,
+  InventoryByCategoryRow,
+  MarginRow,
+  MedicalRecordsReportData,
+  MedicationDetailRow,
+  MonthlySalesComparisonData,
+  NoMovementReportData,
+  Numeric,
+  PharmacistDayMedicationData,
+  PrescriptionVsFreeData,
+  ProfitabilityRow,
+  RotationRow,
+  SalesByPaymentMethodData,
+  SalesByPharmacistRow,
+  TransferEfficiencyReportData,
+  ValorizedInventoryData,
+} from './reports-pdf.types';
+
 @Injectable()
 export class ReportsPdfService {
   private readonly logo64: string;
@@ -28,35 +54,35 @@ export class ReportsPdfService {
 
   // ─── API pública ──────────────────────────────────────────────────────────
 
-  async generateFinancialPdf(data: any): Promise<Buffer> {
+  async generateFinancialPdf(data: FinancialReportData): Promise<Buffer> {
     return this.render(this.financialHtml(data));
   }
 
-  async generateDemographicsPdf(data: any): Promise<Buffer> {
+  async generateDemographicsPdf(data: DemographicsReportData): Promise<Buffer> {
     return this.render(this.demographicsHtml(data));
   }
 
-  async generateDoctorPerformancePdf(data: any): Promise<Buffer> {
+  async generateDoctorPerformancePdf(data: DoctorPerformanceReportData): Promise<Buffer> {
     return this.render(this.doctorPerformanceHtml(data));
   }
 
-  async generateAppointmentsPdf(data: any): Promise<Buffer> {
+  async generateAppointmentsPdf(data: AppointmentsReportData): Promise<Buffer> {
     return this.render(this.appointmentsHtml(data));
   }
 
-  async generateMedicalRecordsPdf(data: any): Promise<Buffer> {
+  async generateMedicalRecordsPdf(data: MedicalRecordsReportData): Promise<Buffer> {
     return this.render(this.medicalRecordsHtml(data));
   }
 
-  async generateDashboardPdf(data: any): Promise<Buffer> {
+  async generateDashboardPdf(data: DashboardReportData): Promise<Buffer> {
     return this.render(this.dashboardHtml(data));
   }
 
-  async generateCriticalStockPdf(data: any): Promise<Buffer> {
+  async generateCriticalStockPdf(data: CriticalStockReportData): Promise<Buffer> {
     return this.render(this.criticalStockHtml(data));
   }
 
-  async generateTransferEfficiencyPdf(data: any): Promise<Buffer> {
+  async generateTransferEfficiencyPdf(data: TransferEfficiencyReportData): Promise<Buffer> {
     return this.render(this.transferEfficiencyHtml(data));
   }
 
@@ -179,16 +205,16 @@ export class ReportsPdfService {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  private fmtNum(n: any, decimals = 0): string {
+  private fmtNum(n: Numeric, decimals = 0): string {
     const v = parseFloat(String(n ?? 0));
     return isNaN(v) ? '0' : v.toLocaleString('es-BO', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   }
 
-  private fmtBs(n: any): string {
+  private fmtBs(n: Numeric): string {
     return `Bs ${this.fmtNum(n, 2)}`;
   }
 
-  private fmtPct(n: any): string {
+  private fmtPct(n: Numeric): string {
     return `${this.fmtNum(n, 1)}%`;
   }
 
@@ -820,7 +846,7 @@ export class ReportsPdfService {
 
   // ─── Pharmacy Rotation PDF ────────────────────────────────────────────────
 
-  async generateRotationPdf(data: any): Promise<Buffer> {
+  async generateRotationPdf(data: RotationRow[]): Promise<Buffer> {
     return this.render(this.rotationHtml(data));
   }
 
@@ -877,7 +903,7 @@ export class ReportsPdfService {
 
   // ─── Pharmacy Margins PDF ─────────────────────────────────────────────────
 
-  async generateMarginsPdf(data: any): Promise<Buffer> {
+  async generateMarginsPdf(data: MarginRow[]): Promise<Buffer> {
     return this.render(this.marginsHtml(data));
   }
 
@@ -926,7 +952,7 @@ export class ReportsPdfService {
 
   // ─── Pharmacy Daily Sales PDF ─────────────────────────────────────────────
 
-  async generateDailySalesPdf(data: any): Promise<Buffer> {
+  async generateDailySalesPdf(data: DailySalesReportData): Promise<Buffer> {
     return this.render(this.dailySalesHtml(data));
   }
 
@@ -998,7 +1024,7 @@ export class ReportsPdfService {
 
   // ─── Pharmacy Expiry Buckets PDF ──────────────────────────────────────────
 
-  async generateExpiryBucketsPdf(data: any): Promise<Buffer> {
+  async generateExpiryBucketsPdf(data: ExpiryBucketsReportData): Promise<Buffer> {
     return this.render(this.expiryBucketsHtml(data));
   }
 
@@ -1047,13 +1073,13 @@ export class ReportsPdfService {
 
   // ─── Pharmacy Profitability PDF ───────────────────────────────────────────
 
-  async generateProfitabilityPdf(data: any[]): Promise<Buffer> {
+  async generateProfitabilityPdf(data: ProfitabilityRow[]): Promise<Buffer> {
     return this.render(this.profitabilityHtml(data));
   }
 
   // ─── A1: PDF Ventas por Farmacéutico ─────────────────────────────────────
 
-  async generateSalesByPharmacistPdf(data: any[]): Promise<Buffer> {
+  async generateSalesByPharmacistPdf(data: SalesByPharmacistRow[]): Promise<Buffer> {
     return this.render(this.salesByPharmacistHtml(data));
   }
 
@@ -1110,7 +1136,7 @@ export class ReportsPdfService {
 
   // ─── A2: PDF Encargado × Día × Medicamento ────────────────────────────────
 
-  async generatePharmacistDayMedicationPdf(data: any): Promise<Buffer> {
+  async generatePharmacistDayMedicationPdf(data: PharmacistDayMedicationData): Promise<Buffer> {
     return this.render(this.pharmacistDayMedicationHtml(data));
   }
 
@@ -1158,7 +1184,7 @@ export class ReportsPdfService {
 
   // ─── B1: PDF Inventario Valorizado ───────────────────────────────────────
 
-  async generateValorizedInventoryPdf(data: any): Promise<Buffer> {
+  async generateValorizedInventoryPdf(data: ValorizedInventoryData): Promise<Buffer> {
     return this.render(this.valorizedInventoryHtml(data));
   }
 
@@ -1215,7 +1241,7 @@ export class ReportsPdfService {
 
   // ─── B2: PDF Inventario por Categoría ────────────────────────────────────
 
-  async generateInventoryByCategoryPdf(data: any[]): Promise<Buffer> {
+  async generateInventoryByCategoryPdf(data: InventoryByCategoryRow[]): Promise<Buffer> {
     return this.render(this.inventoryByCategoryHtml(data));
   }
 
@@ -1279,7 +1305,7 @@ export class ReportsPdfService {
 
   // ─── B3: PDF Medicamentos sin Movimiento ─────────────────────────────────
 
-  async generateNoMovementPdf(data: any): Promise<Buffer> {
+  async generateNoMovementPdf(data: NoMovementReportData): Promise<Buffer> {
     return this.render(this.noMovementHtml(data));
   }
 
@@ -1332,7 +1358,7 @@ export class ReportsPdfService {
 
   // ─── C1: PDF Ventas por Medicamento Detalle ───────────────────────────────
 
-  async generateMedicationDetailPdf(data: any[]): Promise<Buffer> {
+  async generateMedicationDetailPdf(data: MedicationDetailRow[]): Promise<Buffer> {
     return this.render(this.medicationDetailHtml(data));
   }
 
@@ -1393,7 +1419,7 @@ export class ReportsPdfService {
 
   // ─── C2: PDF Ventas con Receta vs Libres ─────────────────────────────────
 
-  async generatePrescriptionVsFreePdf(data: any): Promise<Buffer> {
+  async generatePrescriptionVsFreePdf(data: PrescriptionVsFreeData): Promise<Buffer> {
     return this.render(this.prescriptionVsFreeHtml(data));
   }
 
@@ -1518,7 +1544,7 @@ export class ReportsPdfService {
 
   // ─── C3: PDF Ventas por método de pago ───────────────────────────────────
 
-  async generateSalesByPaymentMethodPdf(data: any): Promise<Buffer> {
+  async generateSalesByPaymentMethodPdf(data: SalesByPaymentMethodData): Promise<Buffer> {
     return this.render(this.salesByPaymentMethodHtml(data));
   }
 
@@ -1597,7 +1623,7 @@ export class ReportsPdfService {
 
   // ─── C6: PDF Comparativo mensual ─────────────────────────────────────────
 
-  async generateMonthlySalesComparisonPdf(data: any): Promise<Buffer> {
+  async generateMonthlySalesComparisonPdf(data: MonthlySalesComparisonData): Promise<Buffer> {
     return this.render(this.monthlySalesComparisonHtml(data));
   }
 
