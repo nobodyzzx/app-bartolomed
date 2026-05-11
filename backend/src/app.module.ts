@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { validateEnvironment } from './config/env-validation';
 import { AuditModule } from './audit/audit.module';
 import { AuditLog } from './audit/entities/audit-log.entity';
 import { MailModule } from './mail/mail.module';
@@ -52,7 +53,10 @@ import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate: validateEnvironment,
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
