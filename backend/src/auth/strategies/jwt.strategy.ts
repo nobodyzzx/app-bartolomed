@@ -18,6 +18,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       secretOrKey: configService.get<string>('JWT_SECRET', ''),
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      algorithms: ['HS256'],
     });
   }
   async validate(payload: JwtPayload): Promise<User & { clinicIds: string[] }> {

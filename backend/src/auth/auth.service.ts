@@ -132,10 +132,23 @@ export class AuthService {
     return token;
   }
 
+  private getRefreshSecret(): string {
+    const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+    if (!secret) {
+      // En condiciones normales esto no se dispara: la validación de env vars al arrancar
+      // (main.ts) impide booteo sin JWT_SECRET. Esta guardia es defensa en profundidad.
+      throw new Error('JWT_SECRET o JWT_REFRESH_SECRET no configurado');
+    }
+    return secret;
+  }
+
   private async getRefreshToken(payload: JwtPayload): Promise<string> {
     // Usar secreto y expiración diferente para refresh tokens
-    const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'changeme-refresh';
-    const token = this.jwtService.sign({ ...payload, jti: randomUUID() }, { secret, expiresIn: '15d' });
+    const secret = this.getRefreshSecret();
+    const token = this.jwtService.sign(
+      { ...payload, jti: randomUUID() },
+      { secret, expiresIn: '15d', algorithm: 'HS256' },
+    );
     return token;
   }
 
@@ -145,10 +158,10 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token requerido');
     }
 
-    const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'changeme-refresh';
+    const secret = this.getRefreshSecret();
     let payload: JwtPayload;
     try {
-      payload = this.jwtService.verify<JwtPayload>(refreshToken, { secret });
+      payload = this.jwtService.verify<JwtPayload>(refreshToken, { secret, algorithms: ['HS256'] });
     } catch {
       throw new UnauthorizedException('Refresh token inválido o expirado');
     }

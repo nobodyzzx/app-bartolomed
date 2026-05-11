@@ -27,6 +27,18 @@ describe('AuthService', () => {
     verify: jest.fn(),
   };
 
+  // En producción la validación de env vars al arrancar (main.ts → ConfigModule.validate)
+  // garantiza que JWT_SECRET existe. En unit tests lo seteamos aquí para que la guardia
+  // defensiva de getRefreshSecret() no aborte.
+  const originalJwtSecret = process.env.JWT_SECRET;
+  beforeAll(() => {
+    process.env.JWT_SECRET = 'test-jwt-secret-test-jwt-secret-test';
+  });
+  afterAll(() => {
+    if (originalJwtSecret === undefined) delete process.env.JWT_SECRET;
+    else process.env.JWT_SECRET = originalJwtSecret;
+  });
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [

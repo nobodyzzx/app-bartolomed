@@ -30,6 +30,10 @@ import { JwtStrategy } from './strategies/jwt.strategy';
           secret: configService.get('JWT_SECRET'),
           signOptions: {
             expiresIn: '2h',
+            algorithm: 'HS256',
+          },
+          verifyOptions: {
+            algorithms: ['HS256'],
           },
         };
       },
