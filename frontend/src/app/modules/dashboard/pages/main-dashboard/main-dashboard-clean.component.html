@@ -132,6 +132,7 @@
                     class="inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100"
                     (click)="viewAppointmentDetails(appointment)"
                     title="Ver detalles"
+                    aria-label="Ver detalles de la cita"
                   >
                     <span class="material-symbols-outlined">visibility</span>
                   </button>
@@ -139,6 +140,7 @@
                     class="inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100"
                     (click)="editAppointment(appointment)"
                     title="Editar"
+                    aria-label="Editar cita"
                   >
                     <span class="material-symbols-outlined">edit</span>
                   </button>
@@ -176,6 +178,7 @@
                 class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-red-600 text-white hover:bg-red-700"
                 (click)="restockMedication(alert)"
                 title="Reabastecer"
+                aria-label="Reabastecer medicamento"
               >
                 <span class="material-symbols-outlined">add</span>
               </button>
@@ -258,6 +261,7 @@
                   class="inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100"
                   (click)="viewPatientDetails(patient)"
                   title="Ver perfil"
+                  aria-label="Ver perfil del paciente"
                 >
                   <span class="material-symbols-outlined">person</span>
                 </button>
@@ -265,6 +269,7 @@
                   class="inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100"
                   (click)="scheduleAppointment(patient)"
                   title="Programar cita"
+                  aria-label="Programar cita con el paciente"
                 >
                   <span class="material-symbols-outlined">event_available</span>
                 </button>

@@ -1,5 +1,5 @@
 import { Location } from '@angular/common'
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core'
+import { Component, DestroyRef, HostListener, inject, OnInit, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { AlertService } from '@core/services/alert.service'
@@ -69,6 +69,14 @@ export class AssetTransfersComponent implements OnInit {
     this.loadTransfers()
     this.loadClinics()
     this.loadAvailableAssets()
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    // Cerrar modal con Escape (requisito a11y para role="dialog")
+    if (this.showAuditModal()) {
+      this.showAuditModal.set(false)
+    }
   }
 
   loadTransfers(): void {

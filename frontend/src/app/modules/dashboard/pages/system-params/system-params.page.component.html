@@ -85,7 +85,9 @@
                 <mat-icon matPrefix class="text-indigo-400">key</mat-icon>
                 <input matInput [type]="hidePass ? 'password' : 'text'" formControlName="pass"
                   placeholder="Dejar vacío para no cambiar" autocomplete="current-password" />
-                <button type="button" mat-icon-button matSuffix (click)="hidePass = !hidePass">
+                <button type="button" mat-icon-button matSuffix
+                  (click)="hidePass = !hidePass"
+                  [attr.aria-label]="hidePass ? 'Mostrar contraseña SMTP' : 'Ocultar contraseña SMTP'">
                   <mat-icon>{{ hidePass ? 'visibility_off' : 'visibility' }}</mat-icon>
                 </button>
                 <mat-hint>Dejar vacío para conservar la contraseña actual</mat-hint>

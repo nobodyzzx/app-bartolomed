@@ -80,7 +80,8 @@
               <button mat-icon-button matSuffix type="button"
                 (click)="searchByDocument()"
                 [disabled]="!personalInfoForm.get('documentNumber')?.valid"
-                matTooltip="Buscar paciente por documento">
+                matTooltip="Buscar paciente por documento"
+                aria-label="Buscar paciente por número de documento">
                 <mat-icon>search</mat-icon>
               </button>
               <mat-error *ngIf="personalInfoForm.get('documentNumber')?.hasError('required')">El número de documento es requerido</mat-error>

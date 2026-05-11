@@ -58,7 +58,8 @@
               <mat-icon matPrefix class="text-blue-400">receipt_long</mat-icon>
               <input matInput formControlName="prescriptionNumber" placeholder="RX-XXXXXX" />
               <button mat-icon-button matSuffix type="button"
-                (click)="autoGenerateNumber()" matTooltip="Generar automáticamente">
+                (click)="autoGenerateNumber()" matTooltip="Generar automáticamente"
+                aria-label="Generar número de receta automáticamente">
                 <mat-icon>refresh</mat-icon>
               </button>
               <mat-error *ngIf="form.get('prescriptionNumber')?.hasError('required')">Número requerido</mat-error>

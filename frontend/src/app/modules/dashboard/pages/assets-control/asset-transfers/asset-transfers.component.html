@@ -77,7 +77,7 @@
               <p class="text-sm text-slate-500 m-0">Seleccione activos y clínica destino</p>
             </div>
           </div>
-          <button type="button" (click)="cancelNewTransfer()" class="text-slate-400 hover:text-slate-600 transition-colors">
+          <button type="button" (click)="cancelNewTransfer()" aria-label="Cancelar nueva solicitud de traslado" class="text-slate-400 hover:text-slate-600 transition-colors">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
@@ -354,13 +354,24 @@
 ══════════════════════════════════════ -->
 @if (showAuditModal() && selectedTransfer()) {
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" (click)="showAuditModal.set(false)">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden" (click)="$event.stopPropagation()">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="audit-modal-title"
+      class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden"
+      (click)="$event.stopPropagation()"
+    >
       <div class="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-200">
         <div>
-          <h3 class="font-semibold text-slate-900 m-0">Historial de auditoría</h3>
+          <h3 id="audit-modal-title" class="font-semibold text-slate-900 m-0">Historial de auditoría</h3>
           <p class="text-sm text-slate-500 m-0">{{ selectedTransfer()!.transferNumber }}</p>
         </div>
-        <button type="button" (click)="showAuditModal.set(false)" class="text-slate-400 hover:text-slate-600 transition-colors">
+        <button
+          type="button"
+          (click)="showAuditModal.set(false)"
+          aria-label="Cerrar historial de auditoría"
+          class="text-slate-400 hover:text-slate-600 transition-colors"
+        >
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
