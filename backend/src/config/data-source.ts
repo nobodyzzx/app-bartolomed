@@ -9,6 +9,7 @@ dotenv.config({ path: path.resolve(__dirname, '../..', '.env') });
 import { DataSource } from 'typeorm';
 
 import { Appointment } from '../appointments/entities/appointment.entity';
+import { AuditLog } from '../audit/entities/audit-log.entity';
 import { AssetInventory } from '../assets/entities/asset-inventory.entity';
 import { AssetMaintenance } from '../assets/entities/asset-maintenance.entity';
 import { AssetReport } from '../assets/entities/asset-report.entity';
@@ -20,6 +21,7 @@ import {
 import { Asset } from '../assets/entities/asset.entity';
 import { Invoice, InvoiceItem, Payment } from '../billing/entities/billing.entity';
 import { Clinic } from '../clinics/entities';
+import { SmtpConfig } from '../mail/entities/smtp-config.entity';
 import { ConsentForm, MedicalRecord, MedicalReport } from '../medical-records/entities';
 import { Patient } from '../patients/entities';
 import { PharmacyInvoice } from '../pharmacy/entities/pharmacy-invoice.entity';
@@ -81,6 +83,8 @@ export const AppDataSource = new DataSource({
     StockTransfer,
     StockTransferItem,
     TransferAuditLog,
+    AuditLog,
+    SmtpConfig,
   ],
   // Funciona en dev (ts-node → src/migrations/*.ts) y en prod (node → dist/migrations/*.js)
   migrations: [path.join(__dirname, '..', 'migrations', '*.{ts,js}')],

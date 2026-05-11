@@ -47,9 +47,13 @@ export class PatientsService {
         throw new NotFoundException('Clinic not found');
       }
 
-      // Verificar que no existe un paciente activo con el mismo número de documento
+      // Verificar que no existe un paciente activo con el mismo número de documento en la clínica
       const existingPatient = await this.patientRepository.findOne({
-        where: { documentNumber: createPatientDto.documentNumber, isActive: true },
+        where: {
+          documentNumber: createPatientDto.documentNumber,
+          isActive: true,
+          clinic: { id: createPatientDto.clinicId },
+        },
       });
 
       if (existingPatient) {
@@ -141,10 +145,15 @@ export class PatientsService {
       this.ensureBirthDateNotFuture(updatePatientDto.birthDate);
     }
 
-    // Si se está actualizando el número de documento, verificar que no exista en pacientes activos
+    // Si se está actualizando el número de documento, verificar que no exista en pacientes activos de la misma clínica
     if (updatePatientDto.documentNumber && updatePatientDto.documentNumber !== patient.documentNumber) {
+      const scopedClinicId = updatePatientDto.clinicId ?? patient.clinic?.id ?? clinicId;
       const existingPatient = await this.patientRepository.findOne({
-        where: { documentNumber: updatePatientDto.documentNumber, isActive: true },
+        where: {
+          documentNumber: updatePatientDto.documentNumber,
+          isActive: true,
+          clinic: { id: scopedClinicId },
+        },
       });
 
       if (existingPatient) {
