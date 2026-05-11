@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { AuditService } from 'src/audit/audit.service';
 import { PharmacySalesService } from './pharmacy-sales.service';
 import { PharmacySale, PharmacySaleItem, SaleStatus } from '../entities/pharmacy-sale.entity';
 import { MedicationStock, MovementType, StockMovement } from '../entities/pharmacy.entity';
@@ -42,6 +43,7 @@ describe('PharmacySalesService', () => {
         { provide: getRepositoryToken(StockMovement), useValue: createMockRepository() },
         { provide: getRepositoryToken(Prescription), useValue: createMockRepository() },
         { provide: InventoryService, useValue: mockInventoryService },
+        { provide: AuditService, useValue: { log: jest.fn() } },
       ],
     }).compile();
 

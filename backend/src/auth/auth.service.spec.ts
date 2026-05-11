@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
+import { MailService } from 'src/mail/mail.service';
 import { User } from 'src/users/entities/user.entity';
 import { UserClinic } from 'src/users/entities/user-clinic.entity';
 import { Clinic } from 'src/clinics/entities/clinic.entity';
@@ -34,6 +35,7 @@ describe('AuthService', () => {
         { provide: getRepositoryToken(UserClinic), useValue: createMockRepository() },
         { provide: getRepositoryToken(Clinic), useValue: createMockRepository() },
         { provide: JwtService, useValue: mockJwtService },
+        { provide: MailService, useValue: { send: jest.fn().mockResolvedValue(undefined) } },
       ],
     }).compile();
 

@@ -13,10 +13,11 @@ import { ValidRoles } from 'src/users/interfaces';
 
 const makePrescription = (overrides: Record<string, any> = {}) => ({
   id: 'rx-1',
-  prescriptionNumber: 'RX-20260402-001',
+  prescriptionNumber: 'RX-TEST-001',
   status: PrescriptionStatus.DRAFT,
-  prescriptionDate: new Date('2026-04-01'),
-  expiryDate: new Date('2026-04-30'),
+  // Fechas relativas al "ahora" para que los tests no caduquen con el tiempo
+  prescriptionDate: new Date(Date.now() - 86_400_000),
+  expiryDate: new Date(Date.now() + 30 * 86_400_000),
   items: [{ id: 'item-1', medicationName: 'Paracetamol', duration: 5 }],
   patient: makePatient(),
   doctor: makeUser({ roles: [ValidRoles.DOCTOR] }),

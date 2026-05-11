@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException } from '@nestjs/common';
+import { AuditService } from 'src/audit/audit.service';
 import { MedicalRecordsService } from './medical-records.service';
 import { MedicalRecord } from './entities/medical-record.entity';
 import { ConsentForm } from './entities/consent-form.entity';
@@ -32,6 +33,7 @@ describe('MedicalRecordsService', () => {
         MedicalRecordsService,
         { provide: getRepositoryToken(MedicalRecord), useValue: createMockRepository() },
         { provide: getRepositoryToken(ConsentForm), useValue: createMockRepository() },
+        { provide: AuditService, useValue: { log: jest.fn() } },
       ],
     }).compile();
 

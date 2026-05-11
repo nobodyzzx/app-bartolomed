@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { AuditService } from 'src/audit/audit.service';
 import { PatientsService } from './patients.service';
 import { Patient } from '../entities/patient.entity';
 import { Clinic } from 'src/clinics/entities/clinic.entity';
@@ -18,6 +19,7 @@ describe('PatientsService', () => {
         PatientsService,
         { provide: getRepositoryToken(Patient), useValue: createMockRepository() },
         { provide: getRepositoryToken(Clinic), useValue: createMockRepository() },
+        { provide: AuditService, useValue: { log: jest.fn() } },
       ],
     }).compile();
 
