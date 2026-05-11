@@ -1,296 +1,84 @@
 # GitHub Copilot Instructions - Bartolomed Medical System
 
-## Project Overview
+This file was refined from existing project guidance in `README.md` and `CLAUDE.md`, plus current source code.
 
-Full-stack medical management system with Angular 18 (frontend), NestJS 10 (backend), PostgreSQL database. Runs continuously in containers during development—**no need to start/stop services manually**.
+## Build, test, and lint commands
 
-## Container Runtime
+Services run in containers with auto-reload. Do not start app servers manually (`npm start`, `ng serve`, `docker compose up`) for normal coding changes.
 
-**Supports both Docker and Podman**:
-
-- **Podman** (rootless, typically on Fedora/RHEL): Use `podman-compose` or `podman compose`
-- **Docker** (Windows/Mac/Linux): Use `docker compose`
-- Commands are interchangeable: replace `docker` with `podman` as needed
-- Both use the same `docker-compose.yml` and `.env` configuration
-
-## Critical Development Patterns
-
-### 🔄 Development Workflow
-
-- **Project runs in containers**: After code changes, just refresh browser—services auto-reload
-- **Never run**: `npm start`, `docker-compose up`, or similar start commands (containers are already running)
-- **To verify**: Check browser results or container logs:
-  - Docker: `docker compose logs -f backend`
-  - Podman: `podman-compose logs -f backend` or `podman compose logs -f backend`
-- **Environment**: `.env` file at project root provides all config variables
-
-### 🏗️ Backend Architecture (NestJS + TypeORM)
-
-**Module Structure Pattern**:
-
-```typescript
-// Feature modules follow this structure:
-@Module({
-  imports: [
-    TypeOrmModule.forFeature([EntityA, EntityB, RelatedEntity]),
-    AuthModule, // Required for @Auth() decorator
-    OtherFeatureModule // Import related features
-  ],
-  controllers: [FeatureController],
-  providers: [FeatureService],
-  exports: [TypeOrmModule, FeatureService]
-})
-```
-
-**Authentication & Authorization**:
-
-- Use `@Auth(...roles)` decorator from `auth/decorators` (combines JWT guard + role guard)
-- Valid roles: `ValidRoles.SUPER_ADMIN`, `ADMIN`, `DOCTOR`, `NURSE`, `PHARMACIST`, `RECEPTIONIST`
-- Extract current user: `@GetUser() user: User` decorator
-- Example:
-  ```typescript
-  @Post()
-  @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
-  create(@Body() dto: CreateDto, @GetUser() user: User) {
-    return this.service.create(dto, user);
-  }
-  ```
-
-**Entity Registration**:
-
-- Add ALL entities to `app.module.ts` entities array (even with `autoLoadEntities: true`)
-- Always export TypeOrmModule from feature modules for entity reuse
-
-**Database Seeds**:
-
-- Default user created in `main.ts`: `doctor@example.com` / `Abc123` (super_user, admin, user roles)
-- Use for local testing and development
-
-### 🎨 Frontend Architecture (Angular 18)
-
-**Module Pattern - Lazy Loading**:
-
-```typescript
-// Dashboard routes use lazy loading:
-{
-  path: 'feature-name',
-  loadChildren: () => import('./pages/feature/feature.module').then(m => m.FeatureModule),
-  canActivate: [permissionsGuard, roleGuard],
-  data: {
-    allowedRoles: [UserRoles.DOCTOR, UserRoles.ADMIN],
-    requiredPermissions: [Permission.FeatureRead]
-  }
-}
-```
-
-**Feature Module Structure**:
-
-```typescript
-// Standard feature module setup:
-@NgModule({
-  declarations: [PageComponent, ListComponent, FormComponent],
-  imports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
-    MaterialModule, // Centralized Material imports
-    HttpClientModule,
-    RouterModule.forChild(routes)
-  ]
-})
-```
-
-**HTTP Service Pattern**:
-
-```typescript
-// Services use centralized error handling:
-constructor(
-  private http: HttpClient,
-  private errorService: ErrorService,
-  private alertService: AlertService
-) {}
-
-create(payload: CreateDto): Observable<Entity> {
-  return this.http.post<Entity>(`${environment.baseUrl}/endpoint`, payload)
-    .pipe(
-      tap(() => this.alertService.success('Éxito', 'Registro creado')),
-      catchError(this.errorService.handleError)
-    );
-}
-```
-
-**HTTP Interceptors** (registered in `app.module.ts`):
-
-- `AuthInterceptor`: Auto-injects JWT token, handles 401 with silent refresh
-- `ClinicContextInterceptor`: Adds `X-Clinic-Id` header from clinic context service
-
-### 🎨 UI Design System (See `docs/GUIA-DISENO-UI.md`)
-
-**Iconography**:
-
-- **Prefer**: Material Symbols Outlined with ligatures: `<span class="material-symbols-outlined">icon_name</span>`
-- **Keep `<mat-icon>`**: Only inside Material components (`mat-form-field`, `mat-chip`, `mat-icon-button`)
-
-**Alert Service (SweetAlert2)**:
-
-```typescript
-// Centralized alerts with custom Tailwind styling:
-const result = await this.alert.fire({
-  icon: 'question',
-  title: '¿Confirmar acción?',
-  text: 'Descripción detallada',
-  showCancelButton: true,
-  confirmButtonText: 'Confirmar',
-  cancelButtonText: 'Cancelar',
-});
-if (result.isConfirmed) {
-  /* action */
-}
-```
-
-**Page Layout Pattern**:
-
-```html
-<!-- Standard page structure -->
-<div class="min-h-screen bg-slate-50">
-  <div class="max-w-7xl mx-auto p-6">
-    <!-- Header: back button + title -->
-    <header class="mb-6 flex items-center gap-4">
-      <button
-        (click)="goBack()"
-        class="w-9 h-9 rounded-full hover:bg-slate-100"
-      >
-        <span class="material-symbols-outlined">arrow_back</span>
-      </button>
-      <h1 class="text-3xl font-bold text-slate-900">Page Title</h1>
-    </header>
-
-    <!-- Content: cards, tables, forms -->
-    <div class="grid gap-6">...</div>
-  </div>
-</div>
-```
-
-**Material Module Import**:
-
-- Use `MaterialModule` from `app/material/material.module.ts` (centralized Material imports)
-- Avoid importing individual Material modules in feature modules
-
-### 🔐 Security & Authentication
-
-**Godmode Bootstrap** (Production Setup):
-
-- Special endpoint: `POST /api/auth/godmode/super-admin` with `x-god-token` header
-- Creates/promotes SUPER_ADMIN without authentication
-- **Security**: Delete `GOD_MODE_TOKEN` env var after initial setup
-- Details: See `GODMODE-SETUP.md`
-
-**Role-Based Access**:
-
-- Frontend guards: `roleGuard`, `permissionsGuard` in routing `data`
-- Backend decorators: `@Auth(...roles)` on controller methods
-- Clinic context: Multi-tenant via `X-Clinic-Id` header (auto-injected by interceptor)
-
-### 🧪 Testing Conventions
-
-**Backend Tests**:
-
-- Unit tests: `*.spec.ts` files in same directory as source
-- E2E tests: `test/*.e2e-spec.ts` with supertest
-- Run: `npm test` (unit) or `npm run test:e2e` (integration)
-
-**Frontend Tests**:
-
-- Basic module specs: `*.spec.ts` with TestBed
-- Minimal smoke tests ensure modules compile
-- Run: `npm test` in frontend directory
-
-### 🚀 Deployment Notes
-
-**Container Orchestration**:
-
-- `docker-compose.yml` / `podman-compose`: Local development (ports exposed)
-- `docker-compose.dokploy.yml`: Production with Traefik (internal network, no exposed ports)
-- Environment file: `.env` (dev) or `.env.production`
-- Works identically with Docker or Podman
-
-**Production Architecture**:
-
-- Frontend served by Node `serve` on internal port 4200
-- Backend on internal port 3000, API prefix `/api`
-- Traefik routes same domain: frontend on `/`, backend on `/api/*`
-- CORS: Backend allows same origin, credentials enabled
-- Details: `docs/DEPLOY-DOKPLOY-NET-INTERNA.md`
-
-### 📂 Key Directory Patterns
-
-**Backend** (`backend/src/`):
-
-- `{feature}/{feature}.module.ts` - Feature module
-- `{feature}/{feature}.controller.ts` - REST endpoints
-- `{feature}/{feature}.service.ts` - Business logic
-- `{feature}/entities/*.entity.ts` - TypeORM entities
-- `{feature}/dto/*.dto.ts` - Data transfer objects
-- `auth/decorators/` - Custom decorators (`@Auth`, `@GetUser`)
-
-**Frontend** (`frontend/src/app/`):
-
-- `modules/dashboard/pages/{feature}/` - Lazy-loaded feature modules
-- `core/services/` - Singleton services (auth, alert, error handling)
-- `shared/` - Reusable components/directives
-- `material/material.module.ts` - Centralized Material Design imports
-- `environments/` - Environment configs (`baseUrl = 'http://localhost:3000/api'` for dev)
-
-### ⚡ Quick Reference Commands
-
-**Never needed during development** (containers auto-run):
-
-- ❌ `npm start`, `ng serve`, `nest start`
-- ❌ `docker-compose up` / `podman-compose up`
-
-**Useful when troubleshooting**:
+### Backend (`cd backend`)
 
 ```bash
-# View backend logs (Docker)
-docker compose logs -f backend
+npm run build
+npm run lint
+npm test
+npm run test:e2e
+npm run test:cov
+```
 
-# View backend logs (Podman)
-podman-compose logs -f backend
-# or
+Run a single backend unit test file:
+
+```bash
+npx jest src/auth/auth.service.spec.ts
+```
+
+Run a single backend e2e test file:
+
+```bash
+npx jest test/auth.e2e-spec.ts --config ./test/jest-e2e.json
+```
+
+### Frontend (`cd frontend`)
+
+```bash
+npm run build
+npm test -- --watch=false
+```
+
+Run a single frontend spec file:
+
+```bash
+npm test -- --include="src/app/modules/dashboard/pages/patients/patients.component.spec.ts" --watch=false
+```
+
+### Useful container troubleshooting
+
+```bash
 podman compose logs -f backend
-
-# View frontend logs
-docker compose logs -f frontend    # Docker
-podman-compose logs -f frontend    # Podman
-
-# Restart specific service if needed
-docker compose restart backend     # Docker
-podman-compose restart backend     # Podman
-
-# Run backend tests (outside containers)
-cd backend && npm test
-
-# Check database health
+podman compose logs -f frontend
+podman compose restart backend
 curl http://localhost:3000/api/health
 ```
 
-### 🔍 Common Gotchas
+Docker equivalents (`docker compose ...`) are interchangeable.
 
-1. **Entity not found**: Ensure entity is registered in `app.module.ts` entities array
-2. **Circular dependency**: Don't import full modules in entities/DTOs; use `forwardRef()` or extract interfaces
-3. **Material icon not found**: Check if component needs `<mat-icon>` (Material context) vs `<span class="material-symbols-outlined">` (standalone)
-4. **401 on API calls**: Verify `AuthInterceptor` is registered and token exists in localStorage/sessionStorage
-5. **CORS errors**: Backend CORS configured for `localhost:4200` (dev) and same-origin (prod via Traefik)
-6. **Clinic context missing**: Some endpoints require `X-Clinic-Id` header (auto-added by `ClinicContextInterceptor`)
+## High-level architecture
 
-### 📚 Additional Documentation
+- Monorepo with Angular frontend (`frontend/`) and NestJS API (`backend/`), orchestrated via `docker-compose.yml` with PostgreSQL.
+- Frontend and backend are both mounted as volumes in containers, so code edits hot-reload without restarting services.
+- Frontend root wiring is in `frontend/src/app/app.module.ts`: HTTP interceptors are global (`AuthInterceptor`, `ClinicContextInterceptor`), and routing starts in `app-routing.module.ts` then lazy-loads the dashboard.
+- Feature access is mainly controlled in `frontend/src/app/modules/dashboard/dashboard-routing.module.ts` through `canActivate` plus `data.allowedRoles` and `data.requiredPermissions`.
+- Backend root wiring is in `backend/src/app.module.ts`: all domain modules are imported there, and entities are explicitly listed in `TypeOrmModule.forRoot(...)`.
+- Multi-tenant clinic scope spans both apps: frontend sends `X-Clinic-Id` (clinic interceptor), backend enforces clinic membership in guards (notably `ClinicScopeGuard` when using `@AuthClinic`).
+- DB schema is migration-driven (`synchronize: false` in both app config and migration data source). TypeORM migrations live in `backend/src/migrations/`.
+- API contract flow is backend Swagger/OpenAPI -> frontend generated types (`frontend/src/generated/api-types.ts`) via `frontend` scripts `generate-types` / `generate-types:fetch`.
 
-- UI Design Guidelines: `docs/GUIA-DISENO-UI.md`
-- User Registration with Clinics: `docs/REGISTRO-USUARIOS-CON-CLINICA.md`
-- Production Deployment: `docs/DEPLOY-DOKPLOY-NET-INTERNA.md`
-- Godmode Setup: `GODMODE-SETUP.md`
-- Forms Guide: `frontend/FORMULARIOS-README.md`
+## Key conventions for this codebase
 
----
+- Keep entity registration explicit: when adding/modifying entities, update both:
+  1. `backend/src/app.module.ts` entities list (runtime)
+  2. `backend/src/config/data-source.ts` entities list (migrations/CLI)
+- Backend schema changes must be done with migrations; do not rely on TypeORM sync.
+- Prefer `@Auth(...)` / `@AuthClinic(...)` decorators for controller protection instead of ad-hoc `@UseGuards(...)`.
+- Dashboard routes should define both role and permission metadata (`allowedRoles`, `requiredPermissions`) alongside guards.
+- Use `MaterialModule` as the centralized Angular Material import point in feature modules.
+- Icon convention: use Material Symbols (`<span class="material-symbols-outlined">`) for standalone icons; reserve `<mat-icon>` for Material component contexts.
+- In frontend auth-related work, use `modules/auth/services/auth.service.ts` (the active auth service path in this repo).
 
-**Philosophy**: Consistency over personal preference. Follow established patterns for module structure, authentication, UI components, and error handling. The project is designed to run continuously—focus on code changes and browser verification, not service lifecycle management.
+## Related docs to consult when changing behavior
+
+- `README.md`
+- `CLAUDE.md`
+- `docs/GUIA-DISENO-UI.md`
+- `docs/DEPLOY-DOKPLOY-NET-INTERNA.md`
+- `GODMODE-SETUP.md`

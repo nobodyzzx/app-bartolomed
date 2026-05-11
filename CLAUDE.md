@@ -38,13 +38,31 @@ podman compose exec backend npm run seed:all
 ### Frontend (`cd frontend`)
 ```bash
 npm test                    # Karma/Jasmine tests
-npm run lint                # ESLint
 npm run build               # Production build
 ```
+No hay script `lint` en `frontend/package.json` — el frontend no tiene ESLint configurado. Si necesitas linting, configura `ng lint` con `@angular-eslint` antes de invocarlo.
 
-### Run a single backend test file
+### Run a single test file
 ```bash
+# Backend unit
 cd backend && npx jest src/auth/auth.service.spec.ts
+
+# Backend e2e
+cd backend && npx jest test/auth.e2e-spec.ts --config ./test/jest-e2e.json
+
+# Frontend spec
+cd frontend && npm test -- --include="src/app/modules/dashboard/pages/patients/patients.component.spec.ts" --watch=false
+```
+
+### Type generation (backend DTOs → frontend types)
+Frontend types in `frontend/src/generated/api-types.ts` are generated from the Swagger spec — do not edit by hand. Friendly re-exports live in `api-exports.ts` (`ApiPatient`, `ApiCreatePatientDto`, …).
+```bash
+# With backend running (HTTP fetch):
+cd frontend && npm run generate-types:fetch
+
+# CI / no HTTP (DB available, runs in-process):
+podman compose exec backend npm run openapi:generate
+cd frontend && npm run generate-types
 ```
 
 ## Backend Architecture (NestJS + TypeORM)
@@ -63,16 +81,21 @@ cd backend && npx jest src/auth/auth.service.spec.ts
 })
 ```
 
-All entities must also be registered in `app.module.ts` entities array (even with `autoLoadEntities: true`).
+When adding/modifying entities, register in **both** places — runtime and migrations CLI use different sources:
+1. `backend/src/app.module.ts` entities array (runtime, even with `autoLoadEntities: true`)
+2. `backend/src/config/data-source.ts` entities list (TypeORM CLI / migrations)
 
 ### Auth Decorators (from `auth/decorators/`)
 ```typescript
-@Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)   // JWT + role guard + clinic scope
+@Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)   // JWT + role guard
+@AuthClinic({ roles: [...], permissions: [...] })  // adds ClinicScopeGuard — use for clinic-scoped endpoints
 @GetUser() user: User                         // extract current user
 @Public()                                     // bypass JWT auth
 ```
 
-Valid roles: `SUPER_ADMIN`, `ADMIN`, `DOCTOR`, `NURSE`, `PHARMACIST`, `RECEPTIONIST`
+Prefer `@Auth` / `@AuthClinic` over ad-hoc `@UseGuards(...)`.
+
+Valid roles: `SUPER_ADMIN`, `ADMIN`, `DOCTOR`, `NURSE`, `PHARMACIST`, `RECEPTIONIST`, `USER`
 
 Guard execution order: `JwtAuthGuard` → `UserRoleGuard` → `PermissionsGuard` → `ClinicScopeGuard`
 
@@ -80,6 +103,7 @@ Guard execution order: `JwtAuthGuard` → `UserRoleGuard` → `PermissionsGuard`
 - Clinic context flows via `X-Clinic-Id` request header (auto-injected by frontend interceptor)
 - Backend `ClinicScopeGuard` validates membership; all queries must filter by `clinic_id`
 - **Never return cross-clinic data** — always scope queries to the authenticated clinic
+- **SUPER_ADMIN auto-vinculación**: al crear un usuario `SUPER_ADMIN` y en cada login se materializan automáticamente sus filas en `UserClinic` para todas las clínicas existentes (`auth.service.ts`). No hace falta seed manual ni endpoint admin para darle acceso a una clínica nueva — pero si añades una clínica con la app corriendo, la vinculación se completa en el siguiente login del SUPER_ADMIN.
 
 ### Database Migrations
 `synchronize: false` is enforced. Schema changes require a migration:
@@ -87,7 +111,7 @@ Guard execution order: `JwtAuthGuard` → `UserRoleGuard` → `PermissionsGuard`
 2. Migration files live in `backend/src/migrations/`
 3. Data source config: `backend/src/config/data-source.ts`
 
-## Frontend Architecture (Angular 18)
+## Frontend Architecture (Angular 19)
 
 ### Routing Pattern
 Dashboard features are lazy-loaded from `modules/dashboard/pages/{feature}/`:
@@ -116,9 +140,8 @@ create(payload: CreateDto): Observable<Entity> {
 - `AuthInterceptor`: injects Bearer token, handles 401 with silent refresh
 - `ClinicContextInterceptor`: adds `X-Clinic-Id` header automatically
 
-### Two Auth Services (known tech debt)
-- `modules/auth/services/auth.service.ts` — **real** auth service (use this)
-- `core/services/auth.service.ts` — dev-only role simulator (pending deletion)
+### Auth service
+Use `modules/auth/services/auth.service.ts` (the real, signal-based auth service). The old `core/services/auth.service.ts` dev simulator was removed.
 
 ## UI Design System
 
@@ -161,10 +184,17 @@ if (result.isConfirmed) { /* action */ }
 - **401 on API calls**: Check that `AuthInterceptor` is registered and token is in localStorage/sessionStorage
 - **Clinic context missing (403)**: Some endpoints require `X-Clinic-Id`; verify `ClinicContextInterceptor` is active
 - **CORS errors**: Backend allows `localhost:4200` (dev) and same-origin (prod via Traefik)
+- **Test fails con `Nest can't resolve dependencies of XService (?, AuditService)`**: agrega un provider mock en el `Test.createTestingModule` del spec:
+  ```typescript
+  { provide: AuditService, useValue: { log: jest.fn() } }
+  ```
+  Cualquier servicio que reciba `AuditService` por DI lo necesita en sus tests, aun si el spec original era anterior a la introducción del audit trail.
 
 ## Default Dev Credentials
 
-Created by seeds: `doctor@example.com` / `Abc123` (roles: SUPER_ADMIN, ADMIN, USER)
+- Seed user: `doctor@example.com` / `Abc123` (SUPER_ADMIN, ADMIN, USER)
+- Demo DB clinic admin: `admin@bartolomed.com` / `Abc123`
+- Reset demo data: `GET /api/seed/reset`
 
 ## Additional Docs
 
