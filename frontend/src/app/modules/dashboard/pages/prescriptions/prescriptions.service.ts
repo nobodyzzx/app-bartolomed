@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http'
 import { Injectable } from '@angular/core'
 import { AlertService } from '@core/services/alert.service'
 import { Observable, throwError } from 'rxjs'
-import { catchError, map } from 'rxjs/operators'
+import { catchError, map, tap } from 'rxjs/operators'
 import { environment } from '../../../../environments/environments'
 import { ErrorService } from '../../../../shared/components/services/error.service'
 
@@ -65,6 +65,7 @@ export class PrescriptionsService {
 
   create(payload: PrescriptionDto) {
     return this.http.post(`${this.base}/prescriptions`, payload).pipe(
+      tap(() => this.alert.success('Éxito', 'Receta creada correctamente')),
       map(res => res),
       catchError(err => {
         this.errorService.handleError(err)
@@ -75,6 +76,7 @@ export class PrescriptionsService {
 
   update(id: string, payload: Partial<PrescriptionDto>) {
     return this.http.patch(`${this.base}/prescriptions/${id}`, payload).pipe(
+      tap(() => this.alert.success('Éxito', 'Receta actualizada correctamente')),
       catchError(err => {
         this.errorService.handleError(err)
         return throwError(() => err)
@@ -84,6 +86,7 @@ export class PrescriptionsService {
 
   setStatus(id: string, status: string) {
     return this.http.patch(`${this.base}/prescriptions/${id}/status`, { status }).pipe(
+      tap(() => this.alert.success('Éxito', 'Estado actualizado correctamente')),
       catchError(err => {
         this.errorService.handleError(err)
         return throwError(() => err)
@@ -93,6 +96,7 @@ export class PrescriptionsService {
 
   refill(id: string) {
     return this.http.post(`${this.base}/prescriptions/${id}/refill`, {}).pipe(
+      tap(() => this.alert.success('Éxito', 'Recarga generada correctamente')),
       catchError(err => {
         this.errorService.handleError(err)
         return throwError(() => err)

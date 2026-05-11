@@ -10,17 +10,9 @@ import {
   Validators,
 } from '@angular/forms'
 import { COMMA, ENTER } from '@angular/cdk/keycodes'
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete'
-import { MatButtonModule } from '@angular/material/button'
-import { MatCardModule } from '@angular/material/card'
-import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips'
-import { MatFormFieldModule } from '@angular/material/form-field'
-import { MatIconModule } from '@angular/material/icon'
-import { MatInputModule } from '@angular/material/input'
-import { MatPaginatorModule } from '@angular/material/paginator'
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
-import { MatTableModule } from '@angular/material/table'
-import { MatTooltipModule } from '@angular/material/tooltip'
+import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete'
+import { MatChipInputEvent } from '@angular/material/chips'
+import { MaterialModule } from '../../../../../../material/material.module'
 import { Observable } from 'rxjs'
 import { map, startWith } from 'rxjs/operators'
 import { AlertService } from '@core/services/alert.service'
@@ -36,17 +28,7 @@ import { Role, RolesService } from '../services/roles.service'
         CommonModule,
         FormsModule,
         ReactiveFormsModule,
-        MatButtonModule,
-        MatCardModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatTableModule,
-        MatIconModule,
-        MatChipsModule,
-        MatPaginatorModule,
-        MatProgressSpinnerModule,
-        MatTooltipModule,
-        MatAutocompleteModule,
+        MaterialModule,
         PageHeaderComponent,
         SkeletonTableComponent,
         EmptyStateComponent,
