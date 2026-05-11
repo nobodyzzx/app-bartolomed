@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { validateEnvironment } from './config/env-validation';
 import { AuditModule } from './audit/audit.module';
@@ -57,6 +59,9 @@ import { UsersModule } from './users/users.module';
       isGlobal: true,
       validate: validateEnvironment,
     }),
+    // Rate limiting global por IP. Los endpoints sensibles (login, forgot,
+    // reset) endurecen el límite con @Throttle() en sus controllers.
+    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 60 }]),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
@@ -125,6 +130,10 @@ import { UsersModule } from './users/users.module';
     TransfersModule,
     AuditModule,
     MailModule,
+  ],
+  providers: [
+    // Aplica ThrottlerGuard a todos los endpoints (rate limit por IP).
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
 export class AppModule {}

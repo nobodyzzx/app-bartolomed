@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Headers, Patch, Post, Req, Res } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 
@@ -20,6 +21,8 @@ export class AuthController {
   }
 
   @Post('login')
+  // 10 intentos por minuto por IP: tolera reintentos legítimos pero frena fuerza bruta.
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async loginUser(@Body() loginUserDto: LoginUserDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(loginUserDto);
     const remember = !!loginUserDto.rememberMe;
@@ -132,11 +135,15 @@ export class AuthController {
   }
 
   @Post('forgot-password')
+  // 3 requests cada 15 min por IP: previene enumeración de cuentas y abuso del SMTP.
+  @Throttle({ default: { limit: 3, ttl: 900_000 } })
   requestPasswordReset(@Body() dto: ForgotPasswordDto) {
     return this.authService.requestPasswordReset(dto);
   }
 
   @Post('reset-password')
+  // 5 intentos por hora por IP: contiene fuerza bruta de tokens de reseteo.
+  @Throttle({ default: { limit: 5, ttl: 3_600_000 } })
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
   }
