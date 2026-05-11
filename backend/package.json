@@ -102,9 +102,22 @@
       "^src/(.*)$": "<rootDir>/$1"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.(t|j)s",
+      "!**/*.module.ts",
+      "!**/*.dto.ts",
+      "!**/main.ts",
+      "!**/migrations/**",
+      "!**/seed/**"
     ],
     "coverageDirectory": "../coverage",
+    "coverageThreshold": {
+      "global": {
+        "lines": 10,
+        "branches": 8,
+        "functions": 10,
+        "statements": 10
+      }
+    },
     "testEnvironment": "node"
   }
 }

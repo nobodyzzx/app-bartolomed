@@ -21,7 +21,16 @@ module.exports = function (config) {
     coverageReporter: {
       dir: path.join(__dirname, './coverage/frontend'),
       subdir: '.',
-      reporters: [{ type: 'html' }, { type: 'text-summary' }],
+      reporters: [{ type: 'html' }, { type: 'text-summary' }, { type: 'lcovonly' }],
+      check: {
+        // Línea base conservadora — subir gradualmente al añadir tests
+        global: {
+          statements: 1,
+          lines: 1,
+          functions: 1,
+          branches: 0,
+        },
+      },
     },
     reporters: ['progress', 'kjhtml'],
     port: 9876,
