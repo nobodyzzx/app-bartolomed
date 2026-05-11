@@ -1,5 +1,11 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
+// Índices compuestos para las queries más frecuentes del módulo de auditoría:
+// stats y activity filtran por clínica + rango de fechas, y los listados
+// por usuario suelen pedir orden descendente por fecha.
+@Index('IDX_audit_logs_clinic_created', ['clinicId', 'createdAt'])
+@Index('IDX_audit_logs_user_created', ['userId', 'createdAt'])
+@Index('IDX_audit_logs_created_at', ['createdAt'])
 @Entity('audit_logs')
 export class AuditLog {
   @PrimaryGeneratedColumn('uuid')
