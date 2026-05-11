@@ -1,6 +1,10 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ObjectLiteral, Repository, SelectQueryBuilder } from 'typeorm';
+
+// Cap defensivo para listados sin paginación explícita: evita que un cliente
+// (o una llamada interna mal escrita) materialice cientos de miles de filas.
+const MAX_UNPAGINATED_ROWS = 1000;
 
 export interface PaginatedResult<T> {
   data: T[];
@@ -17,6 +21,8 @@ import { Asset, AssetStatus } from './entities/asset.entity';
 
 @Injectable()
 export class AssetsService {
+  private readonly logger = new Logger(AssetsService.name);
+
   constructor(
     @InjectRepository(Asset)
     private readonly assetRepository: Repository<Asset>,
@@ -178,33 +184,123 @@ export class AssetsService {
   }
 
   async getStats(clinicId?: string): Promise<any> {
-    const queryBuilder = this.assetRepository
-      .createQueryBuilder('asset')
-      .leftJoin('asset.clinic', 'clinic')
-      .where('asset.isActive = :isActive', { isActive: true });
-
-    if (clinicId) {
-      queryBuilder.andWhere('clinic.id = :clinicId', { clinicId });
-    }
-
-    const assets = await queryBuilder.getMany();
-
-    const stats = {
-      total: assets.length,
-      active: assets.filter(a => a.status === AssetStatus.ACTIVE).length,
-      inactive: assets.filter(a => a.status === AssetStatus.INACTIVE).length,
-      maintenance: assets.filter(a => a.status === AssetStatus.MAINTENANCE).length,
-      retired: assets.filter(a => a.status === AssetStatus.RETIRED).length,
-      totalValue: assets.reduce((sum, asset) => sum + Number(asset.purchasePrice), 0),
-      currentValue: assets.reduce((sum, asset) => sum + Number(asset.currentValue), 0),
-      totalDepreciation: assets.reduce((sum, asset) => sum + Number(asset.accumulatedDepreciation), 0),
-      underWarranty: assets.filter(a => a.isUnderWarranty()).length,
-      maintenanceDue: assets.filter(a => a.isMaintenanceDue()).length,
-      byType: this.groupByType(assets),
-      byCondition: this.groupByCondition(assets),
+    // Agregaciones en SQL: cada COUNT/SUM ocurre en Postgres en lugar de
+    // cargar todas las filas a Node. Tres queries en paralelo:
+    //   1) Conteos por status + sumas monetarias
+    //   2) Conteos por type
+    //   3) Conteos por condition
+    //
+    // Los flags computados isUnderWarranty/isMaintenanceDue requieren la
+    // entidad cargada; los mantenemos como queries acotadas usando los
+    // mismos predicados que tienen los métodos de la entidad.
+    const scoped = <T extends ObjectLiteral>(qb: SelectQueryBuilder<T>) => {
+      qb.where('asset.isActive = :isActive', { isActive: true });
+      if (clinicId) {
+        qb.leftJoin('asset.clinic', 'clinic').andWhere('clinic.id = :clinicId', { clinicId });
+      }
+      return qb;
     };
 
-    return stats;
+    const summaryQb = scoped(
+      this.assetRepository
+        .createQueryBuilder('asset')
+        .select('COUNT(*)', 'total')
+        .addSelect(
+          `SUM(CASE WHEN asset.status = :active THEN 1 ELSE 0 END)`,
+          'active',
+        )
+        .addSelect(
+          `SUM(CASE WHEN asset.status = :inactive THEN 1 ELSE 0 END)`,
+          'inactive',
+        )
+        .addSelect(
+          `SUM(CASE WHEN asset.status = :maintenance THEN 1 ELSE 0 END)`,
+          'maintenance',
+        )
+        .addSelect(
+          `SUM(CASE WHEN asset.status = :retired THEN 1 ELSE 0 END)`,
+          'retired',
+        )
+        .addSelect('COALESCE(SUM(asset.purchasePrice), 0)', 'totalValue')
+        .addSelect('COALESCE(SUM(asset.currentValue), 0)', 'currentValue')
+        .addSelect(
+          'COALESCE(SUM(asset.accumulatedDepreciation), 0)',
+          'totalDepreciation',
+        )
+        .setParameters({
+          active: AssetStatus.ACTIVE,
+          inactive: AssetStatus.INACTIVE,
+          maintenance: AssetStatus.MAINTENANCE,
+          retired: AssetStatus.RETIRED,
+        }),
+    );
+
+    const typeQb = scoped(
+      this.assetRepository
+        .createQueryBuilder('asset')
+        .select('asset.type', 'key')
+        .addSelect('COUNT(*)', 'count')
+        .groupBy('asset.type'),
+    );
+
+    const conditionQb = scoped(
+      this.assetRepository
+        .createQueryBuilder('asset')
+        .select('asset.condition', 'key')
+        .addSelect('COUNT(*)', 'count')
+        .groupBy('asset.condition'),
+    );
+
+    const warrantyQb = scoped(
+      this.assetRepository
+        .createQueryBuilder('asset')
+        .select('COUNT(*)', 'count')
+        .andWhere('asset.warrantyEndDate IS NOT NULL')
+        .andWhere('asset.warrantyEndDate >= NOW()'),
+    );
+
+    const maintenanceDueQb = scoped(
+      this.assetRepository
+        .createQueryBuilder('asset')
+        .select('COUNT(*)', 'count')
+        .andWhere('asset.nextMaintenanceDate IS NOT NULL')
+        .andWhere('asset.nextMaintenanceDate <= NOW()'),
+    );
+
+    const [summary, typeRows, conditionRows, warrantyRow, maintenanceDueRow] = await Promise.all([
+      summaryQb.getRawOne<{
+        total: string;
+        active: string;
+        inactive: string;
+        maintenance: string;
+        retired: string;
+        totalValue: string;
+        currentValue: string;
+        totalDepreciation: string;
+      }>(),
+      typeQb.getRawMany<{ key: string; count: string }>(),
+      conditionQb.getRawMany<{ key: string; count: string }>(),
+      warrantyQb.getRawOne<{ count: string }>(),
+      maintenanceDueQb.getRawOne<{ count: string }>(),
+    ]);
+
+    const toInt = (v: string | undefined) => Number(v ?? 0);
+    const toNum = (v: string | undefined) => Number(v ?? 0);
+
+    return {
+      total: toInt(summary?.total),
+      active: toInt(summary?.active),
+      inactive: toInt(summary?.inactive),
+      maintenance: toInt(summary?.maintenance),
+      retired: toInt(summary?.retired),
+      totalValue: toNum(summary?.totalValue),
+      currentValue: toNum(summary?.currentValue),
+      totalDepreciation: toNum(summary?.totalDepreciation),
+      underWarranty: toInt(warrantyRow?.count),
+      maintenanceDue: toInt(maintenanceDueRow?.count),
+      byType: Object.fromEntries(typeRows.map(r => [r.key, toInt(r.count)])),
+      byCondition: Object.fromEntries(conditionRows.map(r => [r.key, toInt(r.count)])),
+    };
   }
 
   async getUniqueValues(
@@ -235,20 +331,6 @@ export class AssetsService {
     return `${prefix}-${timestamp}-${random}`;
   }
 
-  private groupByType(assets: Asset[]): Record<string, number> {
-    return assets.reduce((acc, asset) => {
-      acc[asset.type] = (acc[asset.type] || 0) + 1;
-      return acc;
-    }, {});
-  }
-
-  private groupByCondition(assets: Asset[]): Record<string, number> {
-    return assets.reduce((acc, asset) => {
-      acc[asset.condition] = (acc[asset.condition] || 0) + 1;
-      return acc;
-    }, {});
-  }
-
   // ==================== MAINTENANCE METHODS ====================
   async findAllMaintenance(filters?: any, clinicId?: string): Promise<AssetMaintenance[]> {
     const qb = this.maintenanceRepository
@@ -257,7 +339,11 @@ export class AssetsService {
       .leftJoin('asset.clinic', 'clinic')
       .leftJoinAndSelect('maintenance.scheduledBy', 'scheduledBy')
       .leftJoinAndSelect('maintenance.completedBy', 'completedBy')
-      .orderBy('maintenance.scheduledDate', 'DESC');
+      .orderBy('maintenance.scheduledDate', 'DESC')
+      // Cap defensivo mientras este endpoint no expone paginación al cliente.
+      // Si se alcanza, queda registro en logs y conviene migrar el consumidor
+      // a una variante paginada.
+      .take(MAX_UNPAGINATED_ROWS);
 
     if (clinicId) {
       qb.andWhere('clinic.id = :clinicId', { clinicId });
@@ -267,7 +353,13 @@ export class AssetsService {
       qb.andWhere('maintenance.status = :status', { status: filters.status });
     }
 
-    return qb.getMany();
+    const rows = await qb.getMany();
+    if (rows.length >= MAX_UNPAGINATED_ROWS) {
+      this.logger.warn(
+        `findAllMaintenance alcanzó el cap (${MAX_UNPAGINATED_ROWS}) — agregar paginación al endpoint`,
+      );
+    }
+    return rows;
   }
 
   async findOneMaintenance(id: string, clinicId?: string): Promise<AssetMaintenance> {
@@ -340,15 +432,54 @@ export class AssetsService {
   }
 
   async getMaintenanceStats(clinicId?: string): Promise<any> {
-    const records = await this.findAllMaintenance(undefined, clinicId);
-    const total = records.length;
+    // Agregado en SQL: una sola query con CASE/SUM, sin cargar entidades.
+    const qb = this.maintenanceRepository
+      .createQueryBuilder('maintenance')
+      .select('COUNT(*)', 'total')
+      .addSelect(
+        'SUM(CASE WHEN maintenance.status = :scheduled THEN 1 ELSE 0 END)',
+        'scheduled',
+      )
+      .addSelect(
+        'SUM(CASE WHEN maintenance.status = :completed THEN 1 ELSE 0 END)',
+        'completed',
+      )
+      .addSelect(
+        'SUM(CASE WHEN maintenance.status = :inProgress THEN 1 ELSE 0 END)',
+        'inProgress',
+      )
+      .addSelect(
+        'SUM(CASE WHEN maintenance.status = :cancelled THEN 1 ELSE 0 END)',
+        'cancelled',
+      )
+      .setParameters({
+        scheduled: MaintenanceStatus.SCHEDULED,
+        completed: MaintenanceStatus.COMPLETED,
+        inProgress: MaintenanceStatus.IN_PROGRESS,
+        cancelled: MaintenanceStatus.CANCELLED,
+      });
 
+    if (clinicId) {
+      qb.leftJoin('maintenance.asset', 'asset')
+        .leftJoin('asset.clinic', 'clinic')
+        .andWhere('clinic.id = :clinicId', { clinicId });
+    }
+
+    const row = await qb.getRawOne<{
+      total: string;
+      scheduled: string;
+      completed: string;
+      inProgress: string;
+      cancelled: string;
+    }>();
+
+    const toInt = (v: string | undefined) => Number(v ?? 0);
     return {
-      total,
-      scheduled: records.filter(r => r.status === MaintenanceStatus.SCHEDULED).length,
-      completed: records.filter(r => r.status === MaintenanceStatus.COMPLETED).length,
-      inProgress: records.filter(r => r.status === MaintenanceStatus.IN_PROGRESS).length,
-      cancelled: records.filter(r => r.status === MaintenanceStatus.CANCELLED).length,
+      total: toInt(row?.total),
+      scheduled: toInt(row?.scheduled),
+      completed: toInt(row?.completed),
+      inProgress: toInt(row?.inProgress),
+      cancelled: toInt(row?.cancelled),
     };
   }
 

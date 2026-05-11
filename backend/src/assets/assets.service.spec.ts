@@ -375,14 +375,42 @@ describe('AssetsService', () => {
   // ─── getStats ─────────────────────────────────────────────────────────────
 
   describe('getStats', () => {
-    it('calcula estadísticas correctamente', async () => {
-      const assets = [
-        makeAsset({ status: AssetStatus.ACTIVE, purchasePrice: 1000, currentValue: 900, accumulatedDepreciation: 100 }),
-        makeAsset({ id: 'asset-2', status: AssetStatus.MAINTENANCE, purchasePrice: 2000, currentValue: 1500, accumulatedDepreciation: 500 }),
-        makeAsset({ id: 'asset-3', status: AssetStatus.INACTIVE, purchasePrice: 500, currentValue: 500, accumulatedDepreciation: 0 }),
-      ];
-      const qb = createMockQueryBuilder({ getMany: jest.fn().mockResolvedValue(assets) });
-      assetRepo.createQueryBuilder!.mockReturnValue(qb);
+    it('calcula estadísticas a partir de aggregates SQL', async () => {
+      // getStats lanza 5 queries en paralelo. Cada llamada a createQueryBuilder
+      // recibe un mock distinto con su getRaw* correspondiente.
+      const summaryQb = createMockQueryBuilder({
+        getRawOne: jest.fn().mockResolvedValue({
+          total: '3',
+          active: '1',
+          inactive: '1',
+          maintenance: '1',
+          retired: '0',
+          totalValue: '3500',
+          currentValue: '2900',
+          totalDepreciation: '600',
+        }),
+      });
+      const typeQb = createMockQueryBuilder({
+        getRawMany: jest.fn().mockResolvedValue([
+          { key: 'medical_equipment', count: '2' },
+          { key: 'office', count: '1' },
+        ]),
+      });
+      const conditionQb = createMockQueryBuilder({
+        getRawMany: jest.fn().mockResolvedValue([{ key: 'good', count: '3' }]),
+      });
+      const warrantyQb = createMockQueryBuilder({
+        getRawOne: jest.fn().mockResolvedValue({ count: '1' }),
+      });
+      const maintenanceDueQb = createMockQueryBuilder({
+        getRawOne: jest.fn().mockResolvedValue({ count: '0' }),
+      });
+      assetRepo
+        .createQueryBuilder!.mockReturnValueOnce(summaryQb)
+        .mockReturnValueOnce(typeQb)
+        .mockReturnValueOnce(conditionQb)
+        .mockReturnValueOnce(warrantyQb)
+        .mockReturnValueOnce(maintenanceDueQb);
 
       const stats = await service.getStats(CLINIC_ID);
 
@@ -393,6 +421,10 @@ describe('AssetsService', () => {
       expect(stats.totalValue).toBe(3500);
       expect(stats.currentValue).toBe(2900);
       expect(stats.totalDepreciation).toBe(600);
+      expect(stats.underWarranty).toBe(1);
+      expect(stats.maintenanceDue).toBe(0);
+      expect(stats.byType).toEqual({ medical_equipment: 2, office: 1 });
+      expect(stats.byCondition).toEqual({ good: 3 });
     });
   });
 
@@ -532,14 +564,16 @@ describe('AssetsService', () => {
   // ─── getMaintenanceStats ──────────────────────────────────────────────────
 
   describe('getMaintenanceStats', () => {
-    it('devuelve conteos por estado de mantenimiento', async () => {
-      const records = [
-        makeMaintenance({ status: MaintenanceStatus.SCHEDULED }),
-        makeMaintenance({ id: 'm2', status: MaintenanceStatus.COMPLETED }),
-        makeMaintenance({ id: 'm3', status: MaintenanceStatus.IN_PROGRESS }),
-        makeMaintenance({ id: 'm4', status: MaintenanceStatus.SCHEDULED }),
-      ];
-      const qb = createMockQueryBuilder({ getMany: jest.fn().mockResolvedValue(records) });
+    it('devuelve conteos por estado vía aggregate SQL', async () => {
+      const qb = createMockQueryBuilder({
+        getRawOne: jest.fn().mockResolvedValue({
+          total: '4',
+          scheduled: '2',
+          completed: '1',
+          inProgress: '1',
+          cancelled: '0',
+        }),
+      });
       maintenanceRepo.createQueryBuilder!.mockReturnValue(qb);
 
       const stats = await service.getMaintenanceStats(CLINIC_ID);
@@ -548,6 +582,7 @@ describe('AssetsService', () => {
       expect(stats.scheduled).toBe(2);
       expect(stats.completed).toBe(1);
       expect(stats.inProgress).toBe(1);
+      expect(stats.cancelled).toBe(0);
     });
   });
 
