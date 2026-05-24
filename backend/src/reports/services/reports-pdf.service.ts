@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import puppeteer from 'puppeteer-core';
@@ -31,6 +31,7 @@ import {
 
 @Injectable()
 export class ReportsPdfService {
+  private readonly logger = new Logger(ReportsPdfService.name);
   private readonly logo64: string;
   private readonly chartJs: string;
 
@@ -89,19 +90,20 @@ export class ReportsPdfService {
   // ─── Puppeteer ────────────────────────────────────────────────────────────
 
   private async render(html: string): Promise<Buffer> {
-    const browser = await puppeteer.launch({
-      executablePath:
-        process.env.PUPPETEER_EXECUTABLE_PATH ?? '/usr/bin/chromium',
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--no-first-run',
-      ],
-    });
+    let browser: Awaited<ReturnType<typeof puppeteer.launch>> | undefined;
     try {
+      browser = await puppeteer.launch({
+        executablePath:
+          process.env.PUPPETEER_EXECUTABLE_PATH ?? '/usr/bin/chromium',
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--no-first-run',
+        ],
+      });
       const page = await browser.newPage();
       await page.setContent(html, { waitUntil: 'load' });
       // Esperar a que todos los charts terminen de renderizar
@@ -125,7 +127,23 @@ export class ReportsPdfService {
       });
       return Buffer.from(buf);
     } finally {
-      await browser.close();
+      // Cleanup robusto: si la instancia existe, intentar close() y si éste falla,
+      // matar el proceso chromium subyacente con SIGKILL. Evita procesos huérfanos
+      // tras errores intermitentes (timeout de página, OOM en headless, etc.).
+      if (browser) {
+        try {
+          await browser.close();
+        } catch (err) {
+          this.logger.warn(
+            `Fallo cerrando browser de Puppeteer: ${err instanceof Error ? err.message : err}. Intentando SIGKILL.`,
+          );
+          try {
+            browser.process()?.kill('SIGKILL');
+          } catch {
+            // Sin más vías para limpiar: el proceso queda al cargo del OS.
+          }
+        }
+      }
     }
   }
 
