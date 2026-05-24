@@ -27,6 +27,7 @@ import { ClinicsModule } from './clinics/clinics.module';
 import { Clinic } from './clinics/entities';
 import { CommonModule } from './common/common.module';
 import { HealthModule } from './health/health.module';
+import { MetricsModule } from './metrics/metrics.module';
 import { ConsentForm, MedicalRecord, MedicalReport } from './medical-records/entities';
 import { MedicalRecordsModule } from './medical-records/medical-records.module';
 import { Patient } from './patients/entities';
@@ -130,6 +131,7 @@ import { UsersModule } from './users/users.module';
     TransfersModule,
     AuditModule,
     MailModule,
+    MetricsModule,
   ],
   providers: [
     // Aplica ThrottlerGuard a todos los endpoints (rate limit por IP).
