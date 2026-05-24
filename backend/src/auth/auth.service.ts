@@ -226,13 +226,23 @@ export class AuthService {
     const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:4200';
     const resetLink = `${frontendUrl}/auth/reset-password?token=${rawToken}`;
 
-    await this.mailService.send({
-      to: user.email,
-      subject: 'Recuperación de contraseña — Bartolomed',
-      html: this.buildResetEmailHtml(resetLink),
-    });
-
-    this.logger.log(`[PASSWORD RESET] Email enviado a ${user.email} (expira: ${expiresAt.toISOString()})`);
+    try {
+      await this.mailService.send({
+        to: user.email,
+        subject: 'Recuperación de contraseña — Bartolomed',
+        html: this.buildResetEmailHtml(resetLink),
+      });
+      this.logger.log(`[PASSWORD RESET] Email enviado a ${user.email} (expira: ${expiresAt.toISOString()})`);
+    } catch (err) {
+      // No se propaga al cliente: devolvemos el mismo mensaje genérico para no revelar
+      // existencia del email ni el estado del SMTP. El token queda en DB y el usuario
+      // puede reintentar; el operador lo ve en logs con stack completo.
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(
+        `[PASSWORD RESET] Fallo enviando email a ${user.email}: ${message}`,
+        err instanceof Error ? err.stack : undefined,
+      );
+    }
 
     return { message: 'Si el correo existe en el sistema, recibirás instrucciones para restablecer tu contraseña.' };
   }
