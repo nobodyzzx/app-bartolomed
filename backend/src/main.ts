@@ -3,10 +3,15 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { requestIdMiddleware } from './common/middleware/request-id.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
+
+  // Asigna X-Request-Id a cada request (acepta el upstream o genera uno).
+  // Va antes del filtro de excepciones para que cualquier 500 ya tenga id.
+  app.use(requestIdMiddleware);
 
   app.useGlobalFilters(new HttpExceptionFilter());
 
