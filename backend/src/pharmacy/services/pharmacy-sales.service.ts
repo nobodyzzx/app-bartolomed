@@ -10,7 +10,12 @@ export interface PaginatedResult<T> {
   limit: number;
 }
 import { AuditService } from '../../audit/audit.service';
-import { AdjustPaymentDto, CreatePharmacySaleDto, UpdatePharmacySaleDto, UpdatePharmacySaleStatusDto } from '../dto/pharmacy-sale.dto';
+import {
+  AdjustPaymentDto,
+  CreatePharmacySaleDto,
+  UpdatePharmacySaleDto,
+  UpdatePharmacySaleStatusDto,
+} from '../dto/pharmacy-sale.dto';
 import { PharmacySale, PharmacySaleItem, SaleStatus } from '../entities/pharmacy-sale.entity';
 import { MedicationStock, MovementType, StockMovement } from '../entities/pharmacy.entity';
 import { InventoryService } from './inventory.service';
@@ -32,7 +37,11 @@ export class PharmacySalesService {
     private auditService: AuditService,
   ) {}
 
-  async create(createPharmacySaleDto: CreatePharmacySaleDto, soldById: string, clinicId: string): Promise<PharmacySale> {
+  async create(
+    createPharmacySaleDto: CreatePharmacySaleDto,
+    soldById: string,
+    clinicId: string,
+  ): Promise<PharmacySale> {
     const saleNumber = await this.generateSaleNumber();
 
     // Validate stock availability for all items and cache results
@@ -148,22 +157,12 @@ export class PharmacySalesService {
 
     // Marcar la receta como DISPENSED tras la venta exitosa
     if (createPharmacySaleDto.prescriptionId) {
-      await this.prescriptionRepository.update(
-        createPharmacySaleDto.prescriptionId,
-        { status: PrescriptionStatus.DISPENSED },
-      );
+      await this.prescriptionRepository.update(createPharmacySaleDto.prescriptionId, {
+        status: PrescriptionStatus.DISPENSED,
+      });
     }
 
     return await this.findOne(savedSale.id);
-  }
-
-  async findAll(): Promise<PharmacySale[]> {
-    // Sólo regresamos ventas completadas en modo de sólo visualización de facturación
-    return await this.pharmacySaleRepository.find({
-      where: { status: SaleStatus.COMPLETED },
-      relations: ['items', 'soldBy'],
-      order: { createdAt: 'DESC' },
-    });
   }
 
   async listWithFilters(options: {
@@ -410,8 +409,7 @@ export class PharmacySalesService {
     totalRevenue: number;
     dateRange?: { startDate: Date; endDate: Date };
   }> {
-    const qb = this.pharmacySaleRepository
-      .createQueryBuilder('sale');
+    const qb = this.pharmacySaleRepository.createQueryBuilder('sale');
 
     if (!clinicId) {
       throw new BadRequestException('clinicId is required');
@@ -495,8 +493,8 @@ export class PharmacySalesService {
     };
 
     sale.paymentMethod = dto.paymentMethod as any;
-    sale.amountPaid    = dto.amountPaid;
-    sale.change        = Math.max(0, dto.amountPaid - Number(sale.total));
+    sale.amountPaid = dto.amountPaid;
+    sale.change = Math.max(0, dto.amountPaid - Number(sale.total));
     if (!sale.notes) {
       sale.notes = dto.reason;
     } else {
