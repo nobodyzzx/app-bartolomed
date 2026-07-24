@@ -6,7 +6,14 @@ import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto';
 import { User } from '../users/entities/user.entity';
 import { Auth, GetUser } from './decorators';
-import { ChangePasswordDto, ForgotPasswordDto, LoginUserDto, RefreshTokenDto, ResetPasswordDto, UpdateProfileDto } from './dto';
+import {
+  ChangePasswordDto,
+  ForgotPasswordDto,
+  LoginUserDto,
+  RefreshTokenDto,
+  ResetPasswordDto,
+  UpdateProfileDto,
+} from './dto';
 import { GodBootstrapDto } from './dto/god-bootstrap.dto';
 import { LoginResponse, ValidRoles } from './interfaces';
 
@@ -150,6 +157,8 @@ export class AuthController {
 
   // GODMODE: crear o promover SUPER_ADMIN mediante token de entorno
   @Post('godmode/super-admin')
+  // 3 intentos por hora por IP: endpoint de máximo privilegio, solo el rate default global lo cubría antes.
+  @Throttle({ default: { limit: 3, ttl: 3_600_000 } })
   async godmodeBootstrap(
     @Body() dto: GodBootstrapDto,
     @Headers('x-god-token') xGodToken?: string,
@@ -164,8 +173,8 @@ export class AuthController {
 
   // GODMODE: re-sincroniza membresías de todos los SUPER_ADMIN con todas las clínicas
   @Post('godmode/sync-super-admin-clinics')
+  @Throttle({ default: { limit: 3, ttl: 3_600_000 } })
   async godmodeSyncSuperAdmins(@Headers('x-god-token') xGodToken?: string) {
     return this.authService.syncSuperAdminMemberships(xGodToken);
   }
-
 }

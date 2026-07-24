@@ -1,8 +1,15 @@
-import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { createHash, randomBytes, randomUUID } from 'crypto';
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'crypto';
 
 import * as bcrypt from 'bcrypt';
 
@@ -11,7 +18,14 @@ import { CreateUserDto } from '../users/dto';
 import { Clinic } from '../clinics/entities/clinic.entity';
 import { UserClinic } from '../users/entities/user-clinic.entity';
 import { User } from '../users/entities/user.entity';
-import { ChangePasswordDto, ForgotPasswordDto, LoginUserDto, RefreshTokenDto, ResetPasswordDto, UpdateProfileDto } from './dto';
+import {
+  ChangePasswordDto,
+  ForgotPasswordDto,
+  LoginUserDto,
+  RefreshTokenDto,
+  ResetPasswordDto,
+  UpdateProfileDto,
+} from './dto';
 import { GodBootstrapDto } from './dto/god-bootstrap.dto';
 import { LoginResponse } from './interfaces';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
@@ -111,7 +125,10 @@ export class AuthService {
     return memberships.map(m => m.clinic.id);
   }
 
-  async getMyMemberships(userId: string, userRoles: string[]): Promise<{ id: string; name: string; address: string }[]> {
+  async getMyMemberships(
+    userId: string,
+    userRoles: string[],
+  ): Promise<{ id: string; name: string; address: string }[]> {
     // Super-admin ve todas las clínicas activas sin necesidad de membresía
     if (userRoles.includes(ValidRoles.SUPER_ADMIN)) {
       const all = await this.clinicRepository.find({ where: { isActive: true }, order: { name: 'ASC' } });
@@ -286,10 +303,9 @@ export class AuthService {
     });
 
     if (found?.personalInfo) {
-      await this.userRepository.manager.getRepository('personal_info').update(
-        { id: found.personalInfo.id },
-        { ...dto },
-      );
+      await this.userRepository.manager
+        .getRepository('personal_info')
+        .update({ id: found.personalInfo.id }, { ...dto });
     }
 
     return this.getProfile(user);
@@ -314,9 +330,9 @@ export class AuthService {
   // Godmode: crea o promueve un SUPER_ADMIN, protegido por token de entorno
   async bootstrapSuperAdmin(dto: GodBootstrapDto, providedToken?: string): Promise<LoginResponse> {
     const godToken = process.env.GOD_MODE_TOKEN?.trim();
-    if (!godToken || this.isInsecureGodToken(godToken))
-      throw new UnauthorizedException('God mode is not configured');
-    if (!providedToken || providedToken !== godToken) throw new UnauthorizedException('Invalid god token');
+    if (!godToken || this.isInsecureGodToken(godToken)) throw new UnauthorizedException('God mode is not configured');
+    if (!providedToken || !this.secureTokenCompare(providedToken, godToken))
+      throw new UnauthorizedException('Invalid god token');
 
     const email = dto.email.toLowerCase().trim();
     const user = await this.userRepository.findOne({
@@ -371,11 +387,13 @@ export class AuthService {
    * Re-sincroniza membresías: asegura que TODOS los SUPER_ADMIN estén en TODAS las clínicas.
    * Uso one-shot vía godmode endpoint para reparar estado histórico.
    */
-  async syncSuperAdminMemberships(providedToken?: string): Promise<{ synced: number; details: Array<{ userId: string; email: string; added: number }> }> {
+  async syncSuperAdminMemberships(
+    providedToken?: string,
+  ): Promise<{ synced: number; details: Array<{ userId: string; email: string; added: number }> }> {
     const godToken = process.env.GOD_MODE_TOKEN?.trim();
-    if (!godToken || this.isInsecureGodToken(godToken))
-      throw new UnauthorizedException('God mode is not configured');
-    if (!providedToken || providedToken !== godToken) throw new UnauthorizedException('Invalid god token');
+    if (!godToken || this.isInsecureGodToken(godToken)) throw new UnauthorizedException('God mode is not configured');
+    if (!providedToken || !this.secureTokenCompare(providedToken, godToken))
+      throw new UnauthorizedException('Invalid god token');
 
     const superAdmins = await this.userRepository
       .createQueryBuilder('u')
@@ -451,11 +469,19 @@ export class AuthService {
 
   private isInsecureGodToken(token: string): boolean {
     const normalized = token.toLowerCase();
+    if (token.length < 20) return true;
     return normalized === 'change-me-very-strong' || normalized.includes('change-me');
   }
 
   private fingerprintToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  /** Comparación en tiempo constante vía digest de longitud fija — evita timing attacks y el throw de timingSafeEqual ante longitudes distintas. */
+  private secureTokenCompare(a: string, b: string): boolean {
+    const digestA = createHash('sha256').update(a).digest();
+    const digestB = createHash('sha256').update(b).digest();
+    return timingSafeEqual(digestA, digestB);
   }
 
   private handleDBError(error: any): never {
