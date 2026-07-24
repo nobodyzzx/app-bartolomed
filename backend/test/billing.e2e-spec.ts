@@ -31,11 +31,13 @@ import { createMockRepository, MockRepository } from '../src/test/helpers/mock-r
 
 const TEST_USER_ID = 'user-1';
 const TEST_USER_EMAIL = 'admin@test.com';
-const TEST_CLINIC_ID = '11111111-1111-1111-1111-111111111111';
-const OTHER_CLINIC_ID = '22222222-2222-2222-2222-222222222222';
-const TEST_PATIENT_ID = '33333333-3333-3333-3333-333333333333';
-const TEST_INVOICE_ID = '44444444-4444-4444-4444-444444444444';
-const TEST_PAYMENT_ID = '55555555-5555-5555-5555-555555555555';
+// UUIDs v4 válidos (versión "4" y variante "8") — class-validator/validator ahora
+// exige el formato RFC 4122 estricto, placeholders como '1111-1111-1111' ya no pasan @IsUUID().
+const TEST_CLINIC_ID = '11111111-1111-4111-8111-111111111111';
+const OTHER_CLINIC_ID = '22222222-2222-4222-8222-222222222222';
+const TEST_PATIENT_ID = '33333333-3333-4333-8333-333333333333';
+const TEST_INVOICE_ID = '44444444-4444-4444-8444-444444444444';
+const TEST_PAYMENT_ID = '55555555-5555-4555-8555-555555555555';
 
 @Injectable()
 class MockAuthGuard implements CanActivate {
