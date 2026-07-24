@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import puppeteer from 'puppeteer-core';
@@ -6,6 +6,7 @@ import { ConsentPdfDto, SummaryPdfDto } from '../dto/pdf.dto';
 
 @Injectable()
 export class MedicalRecordsPdfService {
+  private readonly logger = new Logger(MedicalRecordsPdfService.name);
   private readonly logo64: string;
 
   constructor() {
@@ -31,19 +32,20 @@ export class MedicalRecordsPdfService {
   // ─── Puppeteer ───────────────────────────────────────────────────────────────
 
   private async render(html: string): Promise<Buffer> {
-    const browser = await puppeteer.launch({
-      executablePath:
-        process.env.PUPPETEER_EXECUTABLE_PATH ?? '/usr/bin/chromium',
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--no-first-run',
-      ],
-    });
+    let browser: Awaited<ReturnType<typeof puppeteer.launch>> | undefined;
     try {
+      browser = await puppeteer.launch({
+        executablePath:
+          process.env.PUPPETEER_EXECUTABLE_PATH ?? '/usr/bin/chromium',
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--no-first-run',
+        ],
+      });
       const page = await browser.newPage();
       await page.setContent(html, { waitUntil: 'networkidle0' });
       const buf = await page.pdf({
@@ -65,7 +67,22 @@ export class MedicalRecordsPdfService {
       });
       return Buffer.from(buf);
     } finally {
-      await browser.close();
+      // Cleanup robusto: si close() falla, matar el proceso chromium subyacente con
+      // SIGKILL para evitar procesos huérfanos (mismo patrón que reports-pdf.service.ts).
+      if (browser) {
+        try {
+          await browser.close();
+        } catch (err) {
+          this.logger.warn(
+            `Fallo cerrando browser de Puppeteer: ${err instanceof Error ? err.message : err}. Intentando SIGKILL.`,
+          );
+          try {
+            browser.process()?.kill('SIGKILL');
+          } catch {
+            // Sin más vías para limpiar: el proceso queda al cargo del OS.
+          }
+        }
+      }
     }
   }
 
