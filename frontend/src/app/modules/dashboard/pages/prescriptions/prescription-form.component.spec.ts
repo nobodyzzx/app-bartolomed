@@ -1,20 +1,26 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { ActivatedRoute } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { of } from 'rxjs'
 import { MaterialModule } from '../../../../material/material.module'
-import { ClinicsService } from '../clinics/services/clinics.service'
+import { SharedModule } from '../../../../shared/shared.module'
+import { ClinicsService } from '../admin/clinics/services/clinics.service'
 import { PatientsService } from '../patients/services/patients.service'
-import { UsersService } from '../users/users.service'
+import { UsersService } from '../admin/users/users.service'
 import { PrescriptionFormComponent } from './prescription-form.component'
 import { PrescriptionsService } from './prescriptions.service'
 
 // Minimal mocks
-const mockPatientsService: Partial<PatientsService> = { findAll: () => of([]) }
-const mockUsersService: Partial<UsersService> = { getUsers: () => of([]) }
-const mockClinicsService: Partial<ClinicsService> = { findAll: (_: boolean) => of([]) }
+const mockPatientsService: Partial<PatientsService> = {
+  findAll: () => of({ data: [], total: 0, page: 1, limit: 25 }),
+}
+const mockUsersService: Partial<UsersService> = {
+  getUsers: () => of({ data: [], total: 0, limit: 25, offset: 0 }),
+}
+const mockClinicsService: Partial<ClinicsService> = { findAll: (_?: boolean) => of([]) }
 const mockPrescriptionsService: Partial<PrescriptionsService> = {
   get: (_id: string) => of({}),
   create: (_p: any) => of({}),
@@ -31,7 +37,14 @@ describe('PrescriptionFormComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [PrescriptionFormComponent],
-      imports: [ReactiveFormsModule, FormsModule, MaterialModule, NoopAnimationsModule],
+      imports: [
+        ReactiveFormsModule,
+        FormsModule,
+        MaterialModule,
+        SharedModule,
+        NoopAnimationsModule,
+        HttpClientTestingModule,
+      ],
       providers: [
         { provide: AlertService, useValue: mockAlert },
         { provide: PatientsService, useValue: mockPatientsService },

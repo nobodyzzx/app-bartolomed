@@ -48,7 +48,6 @@ jobs:
       - name: Coverage
         working-directory: backend
         run: npm run test:cov -- --ci --runInBand
-        continue-on-error: true
 
       - name: Upload coverage
         if: always()
@@ -59,7 +58,7 @@ jobs:
           if-no-files-found: ignore
 
   frontend:
-    name: Frontend (lint + test + build)
+    name: Frontend (test + build)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -79,9 +78,8 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Lint
-        working-directory: frontend
-        run: npm run lint
+      # No hay script "lint" en frontend/package.json (sin ESLint/@angular-eslint configurado
+      # todavía — ver CLAUDE.md). Añadir este step cuando exista `ng lint`.
 
       - name: Unit tests
         working-directory: frontend
