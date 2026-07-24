@@ -5,7 +5,7 @@ import { AuditService } from 'src/audit/audit.service';
 import { PatientsService } from './patients.service';
 import { Patient } from '../entities/patient.entity';
 import { Clinic } from 'src/clinics/entities/clinic.entity';
-import { createMockRepository, createMockQueryBuilder, MockRepository } from 'src/test/helpers/mock-repository.factory';
+import { createMockRepository, MockRepository } from 'src/test/helpers/mock-repository.factory';
 import { makeClinic, makePatient, makeCreatePatientDto, makeUser } from 'src/test/helpers/test-data.factory';
 
 describe('PatientsService', () => {

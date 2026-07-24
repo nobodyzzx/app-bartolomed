@@ -7,7 +7,7 @@ export class AddQrPaymentMethod1775201687863 implements MigrationInterface {
     );
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
+  public async down(): Promise<void> {
     // PostgreSQL no permite eliminar valores de un enum.
     // Para revertir, recrear el tipo sin 'qr' y actualizar la columna.
   }

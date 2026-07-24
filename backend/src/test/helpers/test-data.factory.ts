@@ -1,4 +1,4 @@
-import { Gender, BloodType } from 'src/patients/entities/patient.entity';
+import { Gender } from 'src/patients/entities/patient.entity';
 import { ValidRoles } from 'src/users/interfaces';
 import { AppointmentStatus, AppointmentType, AppointmentPriority } from 'src/appointments/entities/appointment.entity';
 

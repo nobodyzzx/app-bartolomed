@@ -10,7 +10,7 @@ import {
   TransferStatus,
 } from '../entities/stock-transfer.entity';
 import { MedicationStock } from 'src/pharmacy/entities/pharmacy.entity';
-import { createMockRepository, MockRepository } from 'src/test/helpers/mock-repository.factory';
+import { createMockRepository } from 'src/test/helpers/mock-repository.factory';
 import { makeClinic, makeUser } from 'src/test/helpers/test-data.factory';
 
 // ─── EntityManager mock usado dentro de la transacción ────────────────────────
@@ -28,8 +28,6 @@ const makeMockDataSource = (em: ReturnType<typeof makeEm>) => ({
 
 describe('StockTransfersService', () => {
   let service: StockTransfersService;
-  let transferRepo: MockRepository<StockTransfer>;
-  let stockRepo: MockRepository<MedicationStock>;
   let em: ReturnType<typeof makeEm>;
   let mockDataSource: ReturnType<typeof makeMockDataSource>;
 
@@ -49,8 +47,6 @@ describe('StockTransfersService', () => {
     }).compile();
 
     service = module.get<StockTransfersService>(StockTransfersService);
-    transferRepo = module.get(getRepositoryToken(StockTransfer));
-    stockRepo = module.get(getRepositoryToken(MedicationStock));
   });
 
   afterEach(() => jest.clearAllMocks());

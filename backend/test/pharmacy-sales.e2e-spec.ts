@@ -155,7 +155,7 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
     });
 
     it('reduce el stock y crea un movimiento SALE', async () => {
-      const stock = happyPathStock({ quantity: 100 });
+      happyPathStock({ quantity: 100 });
 
       await request(app.getHttpServer())
         .post('/api/pharmacy-sales')

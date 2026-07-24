@@ -25,7 +25,6 @@ const makeMedicalRecordEntity = (overrides: Record<string, any> = {}) => ({
 describe('MedicalRecordsService', () => {
   let service: MedicalRecordsService;
   let recordRepo: MockRepository<MedicalRecord>;
-  let consentRepo: MockRepository<ConsentForm>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -39,7 +38,6 @@ describe('MedicalRecordsService', () => {
 
     service = module.get<MedicalRecordsService>(MedicalRecordsService);
     recordRepo = module.get(getRepositoryToken(MedicalRecord));
-    consentRepo = module.get(getRepositoryToken(ConsentForm));
   });
 
   afterEach(() => jest.clearAllMocks());

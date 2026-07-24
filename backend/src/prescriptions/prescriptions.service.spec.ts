@@ -7,7 +7,7 @@ import { PrescriptionItem } from './entities/prescription.entity';
 import { Patient } from 'src/patients/entities/patient.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Clinic } from 'src/clinics/entities/clinic.entity';
-import { createMockRepository, createMockQueryBuilder, MockRepository } from 'src/test/helpers/mock-repository.factory';
+import { createMockRepository, MockRepository } from 'src/test/helpers/mock-repository.factory';
 import { makeClinic, makePatient, makeUser } from 'src/test/helpers/test-data.factory';
 import { ValidRoles } from 'src/users/interfaces';
 
@@ -30,7 +30,6 @@ const makePrescription = (overrides: Record<string, any> = {}) => ({
 describe('PrescriptionsService', () => {
   let service: PrescriptionsService;
   let rxRepo: MockRepository<Prescription>;
-  let itemRepo: MockRepository<PrescriptionItem>;
   let patientRepo: MockRepository<Patient>;
   let userRepo: MockRepository<User>;
   let clinicRepo: MockRepository<Clinic>;
@@ -49,7 +48,6 @@ describe('PrescriptionsService', () => {
 
     service = module.get<PrescriptionsService>(PrescriptionsService);
     rxRepo = module.get(getRepositoryToken(Prescription));
-    itemRepo = module.get(getRepositoryToken(PrescriptionItem));
     patientRepo = module.get(getRepositoryToken(Patient));
     userRepo = module.get(getRepositoryToken(User));
     clinicRepo = module.get(getRepositoryToken(Clinic));

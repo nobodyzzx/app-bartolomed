@@ -10,7 +10,7 @@ import {
   AssetTransferItem,
   AssetTransferStatus,
 } from '../entities/asset-transfer.entity';
-import { Asset, AssetStatus, AssetType, AssetCondition, DepreciationMethod } from '../entities/asset.entity';
+import { Asset, AssetStatus, AssetType, AssetCondition } from '../entities/asset.entity';
 import { Clinic } from 'src/clinics/entities/clinic.entity';
 import { createMockRepository, createMockQueryBuilder, MockRepository } from 'src/test/helpers/mock-repository.factory';
 

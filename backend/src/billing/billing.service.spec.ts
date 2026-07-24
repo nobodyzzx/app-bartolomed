@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { BillingService } from './billing.service';
-import { Invoice, InvoiceItem, InvoiceStatus, Payment, PaymentStatus } from './entities/billing.entity';
+import { Invoice, InvoiceItem, InvoiceStatus, Payment } from './entities/billing.entity';
 import { Patient } from 'src/patients/entities/patient.entity';
 import { Clinic } from 'src/clinics/entities/clinic.entity';
 import { Appointment } from 'src/appointments/entities/appointment.entity';
@@ -50,7 +50,6 @@ const createInvoiceRepoMock = (
 describe('BillingService', () => {
   let service: BillingService;
   let invoiceRepo: MockRepository<Invoice> & { manager: any };
-  let paymentRepo: MockRepository<Payment>;
   let patientRepo: MockRepository<Patient>;
   let clinicRepo: MockRepository<Clinic>;
 
@@ -82,7 +81,6 @@ describe('BillingService', () => {
 
     service = module.get<BillingService>(BillingService);
     invoiceRepo = module.get(getRepositoryToken(Invoice));
-    paymentRepo = module.get(getRepositoryToken(Payment));
     patientRepo = module.get(getRepositoryToken(Patient));
     clinicRepo = module.get(getRepositoryToken(Clinic));
   });

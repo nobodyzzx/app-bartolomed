@@ -345,9 +345,6 @@ export class ReportsPdfService {
     const monthly = data.monthlyRevenue ?? [];
     const payments = data.paymentMethods ?? [];
 
-    const maxRevenue = Math.max(...monthly.map((m: any) => Number(m.revenue ?? 0)), 1);
-    const maxPayment = Math.max(...payments.map((p: any) => Number(p.total ?? 0)), 1);
-
     const monthlyRows = monthly.map((m: any) => [
       this.esc(m.month ?? '-'),
       `<span class="num">${this.fmtBs(m.revenue)}</span>`,
@@ -558,8 +555,6 @@ export class ReportsPdfService {
     const summary = data.summary ?? {};
     const statusDist = data.statusDistribution ?? [];
     const monthly = data.monthlyTrend ?? [];
-
-    const maxMonthly = Math.max(...monthly.map((m: any) => Number(m.count ?? 0)), 1);
 
     const statusColors: Record<string, string> = {
       completed: 'badge-green',
@@ -981,8 +976,6 @@ export class ReportsPdfService {
     const totalRevenue = daily.reduce((s: number, r: any) => s + Number(r.totalRevenue ?? 0), 0);
     const totalTickets = daily.reduce((s: number, r: any) => s + Number(r.ticketCount ?? 0), 0);
     const avgTicket    = totalTickets > 0 ? totalRevenue / totalTickets : 0;
-
-    const maxRevenue = Math.max(...daily.map((d: any) => Number(d.totalRevenue ?? 0)), 1);
 
     const fmtDate = (d: any): string =>
       d instanceof Date ? d.toISOString().slice(0, 10) : String(d ?? '-');
