@@ -72,24 +72,26 @@ export class ClinicsController {
     return this.clinicsService.deactivate(id);
   }
 
-  // Membership management scoped by clinic: SUPER_ADMIN or clinic admin
+  // Membership management scoped by clinic: SUPER_ADMIN o admin de ESA clínica.
+  // Sin @RequirePermissions aquí a propósito: ClinicsManage no está asignado a ningún
+  // rol global salvo SUPER_ADMIN (via spread de todos los permisos), así que agregarlo
+  // bloquearía a cualquier admin scoped-a-clínica antes de que ClinicScopeGuard llegue
+  // a evaluar clinicRoles — que es precisamente el control de acceso que estos endpoints
+  // necesitan (ya verifica membresía + rol 'admin' en esa clínica vía UserClinic).
   @Get(':clinicId/members')
   @AuthClinic()
-  @RequirePermissions(Permission.ClinicsManage)
   getMembers(@Param('clinicId', ParseUUIDPipe) clinicId: string) {
     return this.clinicsService.getClinicMembers(clinicId);
   }
 
   @Post(':clinicId/members')
   @AuthClinic({ clinicRoles: ['admin'] })
-  @RequirePermissions(Permission.ClinicsManage)
   addMember(@Param('clinicId', ParseUUIDPipe) clinicId: string, @Body() dto: AddClinicMemberDto) {
     return this.clinicsService.addMemberWithRoles(clinicId, dto);
   }
 
   @Patch(':clinicId/members/:userId')
   @AuthClinic({ clinicRoles: ['admin'] })
-  @RequirePermissions(Permission.ClinicsManage)
   updateMember(
     @Param('clinicId', ParseUUIDPipe) clinicId: string,
     @Param('userId', ParseUUIDPipe) userId: string,
@@ -100,7 +102,6 @@ export class ClinicsController {
 
   @Delete(':clinicId/members/:userId')
   @AuthClinic({ clinicRoles: ['admin'] })
-  @RequirePermissions(Permission.ClinicsManage)
   removeMember(@Param('clinicId', ParseUUIDPipe) clinicId: string, @Param('userId', ParseUUIDPipe) userId: string) {
     return this.clinicsService.removeUserFromClinic(userId, clinicId);
   }
