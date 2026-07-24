@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FilterAuditDto } from './dto/filter-audit.dto';
@@ -22,6 +22,8 @@ export interface CreateAuditLogDto {
 
 @Injectable()
 export class AuditService {
+  private readonly logger = new Logger(AuditService.name);
+
   constructor(
     @InjectRepository(AuditLog)
     private readonly auditLogRepository: Repository<AuditLog>,
@@ -32,8 +34,10 @@ export class AuditService {
     try {
       const entry = this.auditLogRepository.create(dto);
       await this.auditLogRepository.save(entry);
-    } catch {
-      // Los logs de auditoría no deben cortar el flujo de la aplicación
+    } catch (error) {
+      // No propagamos (un log de auditoría no debe cortar el flujo de la app), pero sí lo dejamos visible.
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Fallo al persistir audit log (action=${dto.action}, resource=${dto.resource}): ${message}`);
     }
   }
 
@@ -73,28 +77,44 @@ export class AuditService {
   async getStats(startDate?: string, endDate?: string) {
     const start = startDate
       ? new Date(startDate)
-      : (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })();
+      : (() => {
+          const d = new Date();
+          d.setHours(0, 0, 0, 0);
+          return d;
+        })();
 
     const end = endDate
-      ? (() => { const d = new Date(endDate); d.setHours(23, 59, 59, 999); return d; })()
-      : (() => { const d = new Date(); d.setHours(23, 59, 59, 999); return d; })();
+      ? (() => {
+          const d = new Date(endDate);
+          d.setHours(23, 59, 59, 999);
+          return d;
+        })()
+      : (() => {
+          const d = new Date();
+          d.setHours(23, 59, 59, 999);
+          return d;
+        })();
 
     const [total, errors, logins, failedLogins] = await Promise.all([
-      this.auditLogRepository.createQueryBuilder('log')
+      this.auditLogRepository
+        .createQueryBuilder('log')
         .where('log.createdAt >= :start', { start })
         .andWhere('log.createdAt <= :end', { end })
         .getCount(),
-      this.auditLogRepository.createQueryBuilder('log')
+      this.auditLogRepository
+        .createQueryBuilder('log')
         .where('log.status = :status', { status: 'failure' })
         .andWhere('log.createdAt >= :start', { start })
         .andWhere('log.createdAt <= :end', { end })
         .getCount(),
-      this.auditLogRepository.createQueryBuilder('log')
+      this.auditLogRepository
+        .createQueryBuilder('log')
         .where('log.action = :action', { action: 'LOGIN' })
         .andWhere('log.createdAt >= :start', { start })
         .andWhere('log.createdAt <= :end', { end })
         .getCount(),
-      this.auditLogRepository.createQueryBuilder('log')
+      this.auditLogRepository
+        .createQueryBuilder('log')
         .where('log.action = :action', { action: 'LOGIN' })
         .andWhere('log.status = :status', { status: 'failure' })
         .andWhere('log.createdAt >= :start', { start })
@@ -103,7 +123,8 @@ export class AuditService {
     ]);
 
     const [topUsersRaw, topResourcesRaw, topIpRaw] = await Promise.all([
-      this.auditLogRepository.createQueryBuilder('log')
+      this.auditLogRepository
+        .createQueryBuilder('log')
         .select('log.userEmail', 'email')
         .addSelect('COUNT(*)', 'count')
         .where('log.createdAt >= :start', { start })
@@ -113,7 +134,8 @@ export class AuditService {
         .orderBy('count', 'DESC')
         .limit(5)
         .getRawMany(),
-      this.auditLogRepository.createQueryBuilder('log')
+      this.auditLogRepository
+        .createQueryBuilder('log')
         .select('log.resource', 'resource')
         .addSelect('COUNT(*)', 'count')
         .where('log.createdAt >= :start', { start })
@@ -122,7 +144,8 @@ export class AuditService {
         .orderBy('count', 'DESC')
         .limit(5)
         .getRawMany(),
-      this.auditLogRepository.createQueryBuilder('log')
+      this.auditLogRepository
+        .createQueryBuilder('log')
         .select('log.ipAddress', 'ip')
         .addSelect('COUNT(*)', 'count')
         .where('log.createdAt >= :start', { start })
@@ -149,11 +172,24 @@ export class AuditService {
   async getDailyActivity(startDate?: string, endDate?: string) {
     const start = startDate
       ? new Date(startDate)
-      : (() => { const d = new Date(); d.setDate(d.getDate() - 6); d.setHours(0, 0, 0, 0); return d; })();
+      : (() => {
+          const d = new Date();
+          d.setDate(d.getDate() - 6);
+          d.setHours(0, 0, 0, 0);
+          return d;
+        })();
 
     const end = endDate
-      ? (() => { const d = new Date(endDate); d.setHours(23, 59, 59, 999); return d; })()
-      : (() => { const d = new Date(); d.setHours(23, 59, 59, 999); return d; })();
+      ? (() => {
+          const d = new Date(endDate);
+          d.setHours(23, 59, 59, 999);
+          return d;
+        })()
+      : (() => {
+          const d = new Date();
+          d.setHours(23, 59, 59, 999);
+          return d;
+        })();
 
     const raw = await this.auditLogRepository
       .createQueryBuilder('log')

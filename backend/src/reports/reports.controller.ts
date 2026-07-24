@@ -2,6 +2,7 @@ import {
   Controller,
   DefaultValuePipe,
   Get,
+  Logger,
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
@@ -10,12 +11,11 @@ import {
   Res,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { Auth, AuthClinic, GetUser } from '../auth/decorators';
+import { Auth, AuthClinic } from '../auth/decorators';
 import { resolveClinicId } from '../auth/decorators/clinic-roles.decorator';
 import { RequirePermissions } from '../auth/permissions/permissions.decorator';
 import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
-import { User } from '../users/entities/user.entity';
 import { AdvancedReportsService } from './services/advanced-reports.service';
 import { ExportService } from './services/export.service';
 import { ReportsPdfService } from './services/reports-pdf.service';
@@ -25,6 +25,8 @@ import { ReportFilters, ReportsService } from './services/reports.service';
 @AuthClinic()
 @RequirePermissions(Permission.ReportsMedical, Permission.ReportsFinancial, Permission.ReportsStock)
 export class ReportsController {
+  private readonly logger = new Logger(ReportsController.name);
+
   constructor(
     private readonly reportsService: ReportsService,
     private readonly advancedReportsService: AdvancedReportsService,
@@ -167,7 +169,7 @@ export class ReportsController {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.end(buf);
     } catch (e) {
-      console.error('[CriticalStockPdf ERROR]', e);
+      this.logger.error('[CriticalStockPdf ERROR]', e instanceof Error ? e.stack : String(e));
       res.status(500).json({ error: String(e) });
     }
   }
@@ -178,11 +180,7 @@ export class ReportsController {
    */
   @Get('export/pdf/transfer-efficiency')
   @Auth(ValidRoles.ADMIN)
-  async exportTransferEfficiencyPdf(
-    @Query() filters: ReportFilters,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
+  async exportTransferEfficiencyPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     try {
       const data = await this.advancedReportsService.getTransferEfficiencyReport(this.scope(filters, req));
       const buf = await this.reportsPdfService.generateTransferEfficiencyPdf(data);
@@ -191,7 +189,7 @@ export class ReportsController {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.end(buf);
     } catch (e) {
-      console.error('[TransferEfficiencyPdf ERROR]', e);
+      this.logger.error('[TransferEfficiencyPdf ERROR]', e instanceof Error ? e.stack : String(e));
       res.status(500).json({ error: String(e) });
     }
   }
@@ -222,11 +220,7 @@ export class ReportsController {
    */
   @Get('export/excel/pharmacy-consumption')
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
-  async exportPharmacyConsumptionExcel(
-    @Query() filters: ReportFilters,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
+  async exportPharmacyConsumptionExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getPharmacyConsumptionReport(this.scope(filters, req));
     await this.exportService.streamExcel(
       res,
@@ -321,9 +315,12 @@ export class ReportsController {
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportRotationPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getRotationReport(this.scope(filters, req));
-    const buf  = await this.reportsPdfService.generateRotationPdf(data);
+    const buf = await this.reportsPdfService.generateRotationPdf(data);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="rotacion-stock-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="rotacion-stock-${new Date().toISOString().slice(0, 10)}.pdf"`,
+    );
     res.end(buf);
   }
 
@@ -331,9 +328,12 @@ export class ReportsController {
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportMarginsPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getProductMarginReport(this.scope(filters, req));
-    const buf  = await this.reportsPdfService.generateMarginsPdf(data);
+    const buf = await this.reportsPdfService.generateMarginsPdf(data);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="margenes-producto-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="margenes-producto-${new Date().toISOString().slice(0, 10)}.pdf"`,
+    );
     res.end(buf);
   }
 
@@ -341,9 +341,12 @@ export class ReportsController {
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportDailySalesPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getDailySalesSummary(this.scope(filters, req));
-    const buf  = await this.reportsPdfService.generateDailySalesPdf(data);
+    const buf = await this.reportsPdfService.generateDailySalesPdf(data);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="ventas-diarias-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="ventas-diarias-${new Date().toISOString().slice(0, 10)}.pdf"`,
+    );
     res.end(buf);
   }
 
@@ -351,9 +354,12 @@ export class ReportsController {
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportExpiryBucketsPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getExpiryBucketReport(this.scope(filters, req));
-    const buf  = await this.reportsPdfService.generateExpiryBucketsPdf(data);
+    const buf = await this.reportsPdfService.generateExpiryBucketsPdf(data);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="vencimientos-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="vencimientos-${new Date().toISOString().slice(0, 10)}.pdf"`,
+    );
     res.end(buf);
   }
 
@@ -361,9 +367,12 @@ export class ReportsController {
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportProfitabilityPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getMonthlyProfitability(this.scope(filters, req));
-    const buf  = await this.reportsPdfService.generateProfitabilityPdf(data);
+    const buf = await this.reportsPdfService.generateProfitabilityPdf(data);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="rentabilidad-mensual-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="rentabilidad-mensual-${new Date().toISOString().slice(0, 10)}.pdf"`,
+    );
     res.end(buf);
   }
 
@@ -404,7 +413,11 @@ export class ReportsController {
 
   @Get('export/excel/pharmacy-stock-movements')
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
-  async exportStockMovementsExcel(@Query() filters: ReportFilters & { medicationId?: string }, @Req() req: Request, @Res() res: Response) {
+  async exportStockMovementsExcel(
+    @Query() filters: ReportFilters & { medicationId?: string },
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
     const data = await this.advancedReportsService.getStockMovementsReport(this.scope(filters, req) as any);
     await this.exportService.streamExcel(
       res,
@@ -425,9 +438,12 @@ export class ReportsController {
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportSalesByPharmacistPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getSalesByPharmacist(this.scope(filters, req));
-    const buf  = await this.reportsPdfService.generateSalesByPharmacistPdf(data);
+    const buf = await this.reportsPdfService.generateSalesByPharmacistPdf(data);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="ventas-por-farmaceutico-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="ventas-por-farmaceutico-${new Date().toISOString().slice(0, 10)}.pdf"`,
+    );
     res.end(buf);
   }
 
@@ -454,9 +470,12 @@ export class ReportsController {
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportPharmacistDayPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getSalesByPharmacistMedicationDay(this.scope(filters, req));
-    const buf  = await this.reportsPdfService.generatePharmacistDayMedicationPdf(data);
+    const buf = await this.reportsPdfService.generatePharmacistDayMedicationPdf(data);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="detalle-encargado-dia-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="detalle-encargado-dia-${new Date().toISOString().slice(0, 10)}.pdf"`,
+    );
     res.end(buf);
   }
 
@@ -483,9 +502,12 @@ export class ReportsController {
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportValorizedInventoryPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getValorizedInventory(this.scope(filters, req));
-    const buf  = await this.reportsPdfService.generateValorizedInventoryPdf(data);
+    const buf = await this.reportsPdfService.generateValorizedInventoryPdf(data);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="inventario-valorizado-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="inventario-valorizado-${new Date().toISOString().slice(0, 10)}.pdf"`,
+    );
     res.end(buf);
   }
 
@@ -512,9 +534,12 @@ export class ReportsController {
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportInventoryByCategoryPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getInventoryByCategory(this.scope(filters, req));
-    const buf  = await this.reportsPdfService.generateInventoryByCategoryPdf(data);
+    const buf = await this.reportsPdfService.generateInventoryByCategoryPdf(data);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="inventario-categorias-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="inventario-categorias-${new Date().toISOString().slice(0, 10)}.pdf"`,
+    );
     res.end(buf);
   }
 
@@ -539,9 +564,12 @@ export class ReportsController {
     @Res() res: Response,
   ) {
     const data = await this.advancedReportsService.getMedicationsWithoutMovement(this.scope(filters, req), days);
-    const buf  = await this.reportsPdfService.generateNoMovementPdf(data);
+    const buf = await this.reportsPdfService.generateNoMovementPdf(data);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="sin-movimiento-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="sin-movimiento-${new Date().toISOString().slice(0, 10)}.pdf"`,
+    );
     res.end(buf);
   }
 
@@ -573,9 +601,12 @@ export class ReportsController {
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportMedicationDetailPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getSalesByMedicationDetail(this.scope(filters, req));
-    const buf  = await this.reportsPdfService.generateMedicationDetailPdf(data);
+    const buf = await this.reportsPdfService.generateMedicationDetailPdf(data);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="ventas-por-medicamento-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="ventas-por-medicamento-${new Date().toISOString().slice(0, 10)}.pdf"`,
+    );
     res.end(buf);
   }
 
@@ -602,9 +633,12 @@ export class ReportsController {
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportPrescriptionVsFreePdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getPrescriptionVsFreeSales(this.scope(filters, req));
-    const buf  = await this.reportsPdfService.generatePrescriptionVsFreePdf(data);
+    const buf = await this.reportsPdfService.generatePrescriptionVsFreePdf(data);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="receta-vs-libre-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="receta-vs-libre-${new Date().toISOString().slice(0, 10)}.pdf"`,
+    );
     res.end(buf);
   }
 
@@ -620,9 +654,12 @@ export class ReportsController {
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportSalesByPaymentPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getSalesByPaymentDetailed(this.scope(filters, req));
-    const buf  = await this.reportsPdfService.generateSalesByPaymentMethodPdf(data);
+    const buf = await this.reportsPdfService.generateSalesByPaymentMethodPdf(data);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="ventas-metodo-pago-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="ventas-metodo-pago-${new Date().toISOString().slice(0, 10)}.pdf"`,
+    );
     res.end(buf);
   }
 
@@ -649,9 +686,12 @@ export class ReportsController {
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportMonthlySalesComparisonPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getMonthlySalesComparison(this.scope(filters, req));
-    const buf  = await this.reportsPdfService.generateMonthlySalesComparisonPdf(data);
+    const buf = await this.reportsPdfService.generateMonthlySalesComparisonPdf(data);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="comparativo-mensual-${new Date().toISOString().slice(0, 10)}.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="comparativo-mensual-${new Date().toISOString().slice(0, 10)}.pdf"`,
+    );
     res.end(buf);
   }
 
@@ -674,11 +714,7 @@ export class ReportsController {
    */
   @Get('export/pdf/financial')
   @Auth(ValidRoles.ADMIN)
-  async exportFinancialPdf(
-    @Query() filters: ReportFilters,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
+  async exportFinancialPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const scoped = this.scope(filters, req);
     const [summary, payments] = await Promise.all([
       this.reportsService.getFinancialSummaryReport(scoped),
@@ -698,11 +734,7 @@ export class ReportsController {
    */
   @Get('export/pdf/demographics')
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR)
-  async exportDemographicsPdf(
-    @Query() filters: ReportFilters,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
+  async exportDemographicsPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.reportsService.getPatientDemographicsReport(this.scope(filters, req));
     const buf = await this.reportsPdfService.generateDemographicsPdf(data);
     const filename = `demografia-pacientes-${new Date().toISOString().slice(0, 10)}.pdf`;
@@ -717,11 +749,7 @@ export class ReportsController {
    */
   @Get('export/pdf/doctor-performance')
   @Auth(ValidRoles.ADMIN)
-  async exportDoctorPerformancePdf(
-    @Query() filters: ReportFilters,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
+  async exportDoctorPerformancePdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.reportsService.getDoctorPerformanceReport(this.scope(filters, req));
     const buf = await this.reportsPdfService.generateDoctorPerformancePdf(data);
     const filename = `rendimiento-medicos-${new Date().toISOString().slice(0, 10)}.pdf`;
@@ -736,11 +764,7 @@ export class ReportsController {
    */
   @Get('export/pdf/appointments')
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR)
-  async exportAppointmentsPdf(
-    @Query() filters: ReportFilters,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
+  async exportAppointmentsPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.reportsService.getAppointmentStatisticsReport(this.scope(filters, req));
     const buf = await this.reportsPdfService.generateAppointmentsPdf(data);
     const filename = `estadisticas-citas-${new Date().toISOString().slice(0, 10)}.pdf`;
@@ -755,11 +779,7 @@ export class ReportsController {
    */
   @Get('export/pdf/medical-records')
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR)
-  async exportMedicalRecordsPdf(
-    @Query() filters: ReportFilters,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
+  async exportMedicalRecordsPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.reportsService.getMedicalRecordsReport(this.scope(filters, req));
     const buf = await this.reportsPdfService.generateMedicalRecordsPdf(data);
     const filename = `registros-medicos-${new Date().toISOString().slice(0, 10)}.pdf`;
@@ -774,11 +794,7 @@ export class ReportsController {
    */
   @Get('export/pdf/dashboard')
   @Auth(ValidRoles.ADMIN)
-  async exportDashboardPdf(
-    @Query() filters: ReportFilters,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
+  async exportDashboardPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.reportsService.getDashboardReport(this.scope(filters, req));
     const buf = await this.reportsPdfService.generateDashboardPdf(data);
     const filename = `dashboard-${new Date().toISOString().slice(0, 10)}.pdf`;
