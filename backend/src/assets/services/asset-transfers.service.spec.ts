@@ -352,22 +352,22 @@ describe('AssetTransfersService', () => {
   describe('reject', () => {
     it('rechaza el traslado y guarda el motivo', async () => {
       const transfer = makeTransfer({ status: AssetTransferStatus.REQUESTED });
-      transferRepo.findOne!
-        .mockResolvedValueOnce(transfer) // findOne inicial
-        .mockResolvedValueOnce({ ...transfer, status: AssetTransferStatus.REJECTED }); // findOne final
-      auditRepo.create!.mockReturnValue({ transferId: TRANSFER_ID });
-      auditRepo.save!.mockResolvedValue({});
-      transferRepo.save!.mockResolvedValue(transfer);
+      em.findOne
+        .mockResolvedValueOnce(transfer) // loadTransferForUpdate
+        .mockResolvedValueOnce({ ...transfer, status: AssetTransferStatus.REJECTED }); // loadTransfer final
 
       await service.reject(TRANSFER_ID, { reason: 'No disponible' }, USER_ID, SOURCE_CLINIC);
 
-      expect(transferRepo.save).toHaveBeenCalledWith(
+      const transferSaveCall = em.save.mock.calls.find(
+        ([cls]) => cls === AssetTransfer || (typeof cls === 'function' && cls.name === 'AssetTransfer'),
+      );
+      expect(transferSaveCall?.[1]).toEqual(
         expect.objectContaining({ status: AssetTransferStatus.REJECTED, rejectionReason: 'No disponible' }),
       );
     });
 
     it('lanza BadRequestException si el traslado no está SOLICITADO', async () => {
-      transferRepo.findOne!.mockResolvedValue(makeTransfer({ status: AssetTransferStatus.IN_TRANSIT }));
+      em.findOne.mockResolvedValue(makeTransfer({ status: AssetTransferStatus.IN_TRANSIT }));
 
       await expect(
         service.reject(TRANSFER_ID, { reason: 'motivo' }, USER_ID, SOURCE_CLINIC),
@@ -375,7 +375,7 @@ describe('AssetTransfersService', () => {
     });
 
     it('lanza BadRequestException si no es la clínica origen', async () => {
-      transferRepo.findOne!.mockResolvedValue(makeTransfer({ status: AssetTransferStatus.REQUESTED }));
+      em.findOne.mockResolvedValue(makeTransfer({ status: AssetTransferStatus.REQUESTED }));
 
       await expect(
         service.reject(TRANSFER_ID, { reason: 'motivo' }, USER_ID, TARGET_CLINIC),

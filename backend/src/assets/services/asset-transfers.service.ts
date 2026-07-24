@@ -271,28 +271,24 @@ export class AssetTransfersService {
   // ─── Rechazo (clínica origen rechaza la solicitud) ────────────────────────
 
   async reject(id: string, dto: RejectTransferDto, userId: string, clinicId: string): Promise<AssetTransfer> {
-    const transfer = await this.findOne(id, clinicId);
+    return await this.dataSource.transaction(async (em: EntityManager) => {
+      const transfer = await this.loadTransferForUpdate(em, id);
 
-    if (transfer.status !== AssetTransferStatus.REQUESTED) {
-      throw new BadRequestException('Solo se pueden rechazar traslados en estado SOLICITADO');
-    }
-    this.assertSourceClinic(transfer, clinicId);
+      if (transfer.status !== AssetTransferStatus.REQUESTED) {
+        throw new BadRequestException('Solo se pueden rechazar traslados en estado SOLICITADO');
+      }
+      this.assertSourceClinic(transfer, clinicId);
 
-    transfer.status = AssetTransferStatus.REJECTED;
-    transfer.rejectionReason = dto.reason;
-    await this.transferRepo.save(transfer);
+      transfer.status = AssetTransferStatus.REJECTED;
+      transfer.rejectionReason = dto.reason;
+      await em.save(AssetTransfer, transfer);
 
-    await this.auditRepo.save(
-      this.auditRepo.create({
-        transferId: id,
-        action: AssetTransferAuditAction.REJECTED,
-        actorId: userId,
-        actorClinicId: clinicId,
-        snapshot: { reason: dto.reason },
-      }),
-    );
+      await this.saveAudit(em, id, AssetTransferAuditAction.REJECTED, userId, clinicId, {
+        reason: dto.reason,
+      });
 
-    return this.findOne(id, clinicId);
+      return (await this.loadTransfer(em, id))!;
+    });
   }
 
   // ─── Devolución (clínica destino devuelve en tránsito) ────────────────────
