@@ -1,6 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { ThrottlerStorage, ThrottlerStorageService } from '@nestjs/throttler';
 import * as request from 'supertest';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
@@ -10,7 +11,8 @@ import { User } from '../src/users/entities/user.entity';
 describe('Auth Godmode (e2e)', () => {
   let app: INestApplication;
   let userRepo: Repository<User>;
-  const GOD_TOKEN = 'test-god-token-123';
+  let throttlerStorage: ThrottlerStorageService;
+  const GOD_TOKEN = 'test-god-token-123456'; // >=20 chars: isInsecureGodToken() rechaza tokens más cortos
   const TEST_PASSWORD = 'Abc123!';
 
   beforeAll(async () => {
@@ -27,6 +29,15 @@ describe('Auth Godmode (e2e)', () => {
     await app.init();
 
     userRepo = moduleFixture.get<Repository<User>>(getRepositoryToken(User));
+    throttlerStorage = moduleFixture.get<ThrottlerStorageService>(ThrottlerStorage, { strict: false });
+  });
+
+  beforeEach(() => {
+    // El test hace varias llamadas seguidas a godmode; el throttle real (3/hora) por IP
+    // bloquearía el suite entero con 429 antes de llegar a probar la lógica de negocio.
+    // ThrottlerGuard está registrado vía APP_GUARD (multi-provider), así que overrideGuard/
+    // overrideProvider no lo neutraliza de forma confiable — se limpia el storage en su lugar.
+    throttlerStorage.storage.clear();
   });
 
   afterAll(async () => {
