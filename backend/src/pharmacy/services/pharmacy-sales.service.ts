@@ -120,47 +120,57 @@ export class PharmacySalesService {
     pharmacySale.prescriptionId = createPharmacySaleDto.prescriptionId;
     pharmacySale.status = SaleStatus.COMPLETED;
 
-    const savedSale = await this.pharmacySaleRepository.save(pharmacySale);
+    const savedSale = await this.pharmacySaleRepository.manager.transaction(async manager => {
+      const saleRepo = manager.getRepository(PharmacySale);
+      const saleItemRepo = manager.getRepository(PharmacySaleItem);
+      const stockRepo = manager.getRepository(MedicationStock);
+      const movementRepo = manager.getRepository(StockMovement);
+      const prescriptionRepo = manager.getRepository(Prescription);
 
-    // Create sale items and reduce stock immediately
-    for (const itemDto of items) {
-      const item = new PharmacySaleItem();
-      const stock = stockCache.get(itemDto.medicationStockId)!;
-      item.sale = pharmacySale;
-      item.saleId = savedSale.id;
-      item.medicationStockId = itemDto.medicationStockId;
-      item.productName = stock.medication?.name || 'Producto';
-      item.batchNumber = itemDto.batchNumber || stock.batchNumber || '';
-      item.quantity = itemDto.quantity;
-      item.unitPrice = itemDto.unitPrice;
-      item.discount = itemDto.discountAmount || 0;
-      item.subtotal = itemDto.totalPrice;
-      item.expiryDate = itemDto.expiryDate ? new Date(itemDto.expiryDate) : (stock.expiryDate ?? undefined);
-      await this.pharmacySaleItemRepository.save(item);
+      const sale = await saleRepo.save(pharmacySale);
 
-      // Reduce stock
-      stock.quantity = stock.quantity - itemDto.quantity;
-      await this.medicationStockRepository.save(stock);
+      // Create sale items and reduce stock immediately
+      for (const itemDto of items) {
+        const item = new PharmacySaleItem();
+        const stock = stockCache.get(itemDto.medicationStockId)!;
+        item.sale = sale;
+        item.saleId = sale.id;
+        item.medicationStockId = itemDto.medicationStockId;
+        item.productName = stock.medication?.name || 'Producto';
+        item.batchNumber = itemDto.batchNumber || stock.batchNumber || '';
+        item.quantity = itemDto.quantity;
+        item.unitPrice = itemDto.unitPrice;
+        item.discount = itemDto.discountAmount || 0;
+        item.subtotal = itemDto.totalPrice;
+        item.expiryDate = itemDto.expiryDate ? new Date(itemDto.expiryDate) : (stock.expiryDate ?? undefined);
+        await saleItemRepo.save(item);
 
-      const movement = new StockMovement();
-      movement.stock = stock;
-      movement.type = MovementType.SALE;
-      movement.quantity = itemDto.quantity;
-      movement.unitPrice = itemDto.unitPrice;
-      movement.totalAmount = itemDto.totalPrice;
-      movement.reference = saleNumber;
-      movement.reason = `Venta ${saleNumber}`;
-      movement.notes = createPharmacySaleDto.notes ?? undefined;
-      movement.movementDate = new Date();
-      await this.stockMovementRepository.save(movement);
-    }
+        // Reduce stock
+        stock.quantity = stock.quantity - itemDto.quantity;
+        await stockRepo.save(stock);
 
-    // Marcar la receta como DISPENSED tras la venta exitosa
-    if (createPharmacySaleDto.prescriptionId) {
-      await this.prescriptionRepository.update(createPharmacySaleDto.prescriptionId, {
-        status: PrescriptionStatus.DISPENSED,
-      });
-    }
+        const movement = new StockMovement();
+        movement.stock = stock;
+        movement.type = MovementType.SALE;
+        movement.quantity = itemDto.quantity;
+        movement.unitPrice = itemDto.unitPrice;
+        movement.totalAmount = itemDto.totalPrice;
+        movement.reference = saleNumber;
+        movement.reason = `Venta ${saleNumber}`;
+        movement.notes = createPharmacySaleDto.notes ?? undefined;
+        movement.movementDate = new Date();
+        await movementRepo.save(movement);
+      }
+
+      // Marcar la receta como DISPENSED tras la venta exitosa
+      if (createPharmacySaleDto.prescriptionId) {
+        await prescriptionRepo.update(createPharmacySaleDto.prescriptionId, {
+          status: PrescriptionStatus.DISPENSED,
+        });
+      }
+
+      return sale;
+    });
 
     return await this.findOne(savedSale.id);
   }

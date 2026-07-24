@@ -100,6 +100,23 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
     stockRepo = moduleRef.get(getRepositoryToken(MedicationStock));
     movementRepo = moduleRef.get(getRepositoryToken(StockMovement));
     prescriptionRepo = moduleRef.get(getRepositoryToken(Prescription));
+
+    // create() ahora corre dentro de una transacción; el manager mockeado devuelve
+    // los mismos mocks de arriba para que las aserciones existentes sigan funcionando.
+    (saleRepo as any).manager = {
+      transaction: jest.fn().mockImplementation(async (fn: (m: any) => any) =>
+        fn({
+          getRepository: (entity: any) => {
+            if (entity === PharmacySale) return saleRepo;
+            if (entity === PharmacySaleItem) return saleItemRepo;
+            if (entity === MedicationStock) return stockRepo;
+            if (entity === StockMovement) return movementRepo;
+            if (entity === Prescription) return prescriptionRepo;
+            throw new Error('Unexpected entity in manager.getRepository mock');
+          },
+        }),
+      ),
+    };
   });
 
   afterAll(async () => {

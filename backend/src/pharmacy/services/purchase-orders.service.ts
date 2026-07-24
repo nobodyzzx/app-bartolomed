@@ -77,18 +77,22 @@ export class PurchaseOrdersService {
       status: PurchaseOrderStatus.DRAFT,
     });
 
-    const savedOrder = await this.purchaseOrderRepository.save(purchaseOrder);
+    const savedOrder = await this.purchaseOrderRepository.manager.transaction(async manager => {
+      const orderRepo = manager.getRepository(PurchaseOrder);
+      const itemRepo = manager.getRepository(PurchaseOrderItem);
 
-    // Items creation
+      const order = await orderRepo.save(purchaseOrder);
 
-    // Create order items
-    for (const itemDto of items) {
-      const item = this.purchaseOrderItemRepository.create({
-        ...itemDto,
-        purchaseOrder: savedOrder,
-      });
-      await this.purchaseOrderItemRepository.save(item);
-    }
+      for (const itemDto of items) {
+        const item = itemRepo.create({
+          ...itemDto,
+          purchaseOrder: order,
+        });
+        await itemRepo.save(item);
+      }
+
+      return order;
+    });
 
     return await this.findOne(savedOrder.id);
   }

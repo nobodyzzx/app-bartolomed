@@ -56,6 +56,20 @@ describe('PurchaseOrdersService', () => {
     orderRepo = module.get(getRepositoryToken(PurchaseOrder));
     itemRepo = module.get(getRepositoryToken(PurchaseOrderItem));
     supplierRepo = module.get(getRepositoryToken(Supplier));
+
+    // create() ahora corre dentro de una transacción; el manager mockeado devuelve
+    // los mismos mocks de arriba para que las aserciones existentes sigan funcionando.
+    (orderRepo as any).manager = {
+      transaction: jest.fn().mockImplementation(async (fn: (m: any) => any) =>
+        fn({
+          getRepository: (entity: any) => {
+            if (entity === PurchaseOrder) return orderRepo;
+            if (entity === PurchaseOrderItem) return itemRepo;
+            throw new Error('Unexpected entity in manager.getRepository mock');
+          },
+        }),
+      ),
+    };
   });
 
   afterEach(() => jest.clearAllMocks());
