@@ -13,11 +13,34 @@ concurrency:
 
 jobs:
   backend:
-    name: Backend (lint + test + build)
+    name: Backend (lint + test + build + e2e)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
       contents: read
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: bartolomed_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test1234
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test -d bartolomed_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      NODE_ENV: test
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: bartolomed_test
+      DB_USER: test
+      DB_PASS: test1234
+      JWT_SECRET: ci-test-jwt-secret-at-least-32-characters-long
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-at-least-32-chars-long
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -48,6 +71,14 @@ jobs:
       - name: Coverage
         working-directory: backend
         run: npm run test:cov -- --ci --runInBand
+
+      - name: Run migrations (e2e DB)
+        working-directory: backend
+        run: npm run migration:run
+
+      - name: E2E tests
+        working-directory: backend
+        run: npm run test:e2e -- --ci --runInBand
 
       - name: Upload coverage
         if: always()
