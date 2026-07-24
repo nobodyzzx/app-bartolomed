@@ -89,7 +89,20 @@ services:
       traefik.http.routers.backend-path.tls: 'true'
       traefik.http.routers.backend-path.tls.certresolver: '${TRAEFIK_CERT_RESOLVER:-letsencrypt}'
       traefik.http.routers.backend-path.service: 'backend-svc'
+      traefik.http.routers.backend-path.priority: '1'
       traefik.http.services.backend-svc.loadbalancer.server.port: '3000'
+      # /api/metrics: router propio con IP allowlist, prioridad mayor que backend-path
+      # para que gane sobre el PathPrefix genérico. Configurar METRICS_ALLOWED_IPS en
+      # el .env de producción con la(s) IP(s)/CIDR reales del scraper de Prometheus
+      # antes de desplegar — el default de aquí (loopback) bloquea todo tráfico externo.
+      traefik.http.middlewares.metrics-allowlist.ipallowlist.sourcerange: '${METRICS_ALLOWED_IPS:-127.0.0.1/32}'
+      traefik.http.routers.backend-metrics.rule: 'Host(`${FRONTEND_DOMAIN:-bartolomed.tecnocondor.dev}`) && Path(`/api/metrics`)'
+      traefik.http.routers.backend-metrics.entrypoints: 'websecure'
+      traefik.http.routers.backend-metrics.tls: 'true'
+      traefik.http.routers.backend-metrics.tls.certresolver: '${TRAEFIK_CERT_RESOLVER:-letsencrypt}'
+      traefik.http.routers.backend-metrics.service: 'backend-svc'
+      traefik.http.routers.backend-metrics.priority: '10'
+      traefik.http.routers.backend-metrics.middlewares: 'metrics-allowlist'
       # Forzar a Traefik a usar su red compartida
       traefik.docker.network: '${TRAEFIK_NETWORK:-dokploy-network}'
     networks:
