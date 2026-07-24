@@ -167,13 +167,13 @@ export class BillingService {
   }
 
   async update(id: string, updateDto: UpdateInvoiceDto, clinicId?: string): Promise<Invoice> {
+    if (!clinicId) throw new BadRequestException('clinicId is required');
     return await this.invoiceRepository.manager.transaction(async manager => {
       const invoiceRepo = manager.getRepository(Invoice);
       const itemRepo = manager.getRepository(InvoiceItem);
 
-      const where = clinicId ? ({ id, clinic: { id: clinicId } } as any) : ({ id } as any);
       const invoice = await invoiceRepo.findOne({
-        where,
+        where: { id, clinic: { id: clinicId } } as any,
         relations: ['items'],
       });
       if (!invoice) throw new NotFoundException('Invoice not found');
@@ -185,23 +185,21 @@ export class BillingService {
       // Actualizar relaciones si se proporcionan
       if (updateDto.patientId) {
         const patient = await this.patientRepository.findOne({
-          where: { id: updateDto.patientId, clinic: { id: clinicId || invoice.clinic.id }, isActive: true },
+          where: { id: updateDto.patientId, clinic: { id: clinicId }, isActive: true },
         });
         if (!patient) throw new NotFoundException('Patient not found');
         invoice.patient = patient;
       }
 
-      if (updateDto.clinicId) {
-        if (clinicId && updateDto.clinicId !== clinicId) {
-          throw new BadRequestException('Cannot change invoice clinic');
-        }
+      if (updateDto.clinicId && updateDto.clinicId !== clinicId) {
+        throw new BadRequestException('Cannot change invoice clinic');
       }
 
       if (updateDto.appointmentId) {
         const appointment = await this.appointmentRepository.findOne({
           where: {
             id: updateDto.appointmentId,
-            clinic: { id: clinicId || invoice.clinic.id },
+            clinic: { id: clinicId },
             patient: { id: invoice.patient.id },
           },
         });
@@ -251,7 +249,7 @@ export class BillingService {
       await invoiceRepo.save(invoice);
 
       const updated = await invoiceRepo.findOne({
-        where,
+        where: { id, clinic: { id: clinicId } } as any,
         relations: ['patient', 'clinic', 'appointment', 'items', 'payments', 'createdBy'],
       });
       if (!updated) throw new NotFoundException('Factura no encontrada tras actualización');
