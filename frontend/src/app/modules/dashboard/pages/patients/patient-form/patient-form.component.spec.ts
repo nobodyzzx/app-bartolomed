@@ -1,0 +1,536 @@
+import { ElementRef } from '@angular/core'
+import { TestBed } from '@angular/core/testing'
+import { FormBuilder } from '@angular/forms'
+import { ActivatedRoute, Router } from '@angular/router'
+import { of, throwError } from 'rxjs'
+import { AlertService } from '../../../../../core/services/alert.service'
+import { ClinicContextService } from '../../../../clinics/services/clinic-context.service'
+import { Clinic } from '../../admin/clinics/interfaces/clinic.interface'
+import { ClinicsService } from '../../admin/clinics/services'
+import { Gender, Patient } from '../interfaces'
+import { PatientsService } from '../services'
+import { PatientFormComponent } from './patient-form.component'
+
+describe('PatientFormComponent', () => {
+  let component: PatientFormComponent
+  let patientsService: jasmine.SpyObj<PatientsService>
+  let clinicsService: jasmine.SpyObj<ClinicsService>
+  let clinicCtx: { clinicId: string | null }
+  let alert: jasmine.SpyObj<AlertService>
+  let router: jasmine.SpyObj<Router>
+  let route: { paramMap: any; snapshot: { data: Record<string, any> } }
+
+  const makeClinic = (overrides: Partial<Clinic> = {}): Clinic =>
+    ({ id: 'clinic-1', name: 'Norte', address: 'x', phone: 'x', isActive: true, ...overrides }) as Clinic
+
+  const makePatient = (overrides: Partial<Patient> = {}): Patient =>
+    ({
+      id: 'patient-1',
+      firstName: 'Juan',
+      lastName: 'Perez',
+      documentNumber: '1234567',
+      documentType: 'CI',
+      birthDate: new Date('1990-01-01'),
+      gender: Gender.MALE,
+      isActive: true,
+      clinicId: 'clinic-1',
+      ...overrides,
+    }) as Patient
+
+  const createComponent = (paramMapValue: Record<string, string | null> = {}, snapshotData: Record<string, any> = {}) => {
+    route = {
+      paramMap: of({ get: (key: string) => paramMapValue[key] ?? null }),
+      snapshot: { data: snapshotData },
+    }
+
+    TestBed.configureTestingModule({
+      providers: [
+        PatientFormComponent,
+        FormBuilder,
+        { provide: ElementRef, useValue: new ElementRef(document.createElement('div')) },
+        { provide: Router, useValue: router },
+        { provide: ActivatedRoute, useValue: route },
+        { provide: PatientsService, useValue: patientsService },
+        { provide: ClinicsService, useValue: clinicsService },
+        { provide: ClinicContextService, useValue: clinicCtx },
+        { provide: AlertService, useValue: alert },
+      ],
+    })
+    return TestBed.inject(PatientFormComponent)
+  }
+
+  beforeEach(() => {
+    patientsService = jasmine.createSpyObj('PatientsService', [
+      'createPatient',
+      'updatePatient',
+      'findOne',
+      'findByDocument',
+    ])
+    clinicsService = jasmine.createSpyObj('ClinicsService', ['findAll', 'findOne'])
+    clinicsService.findAll.and.returnValue(of([makeClinic()]))
+    clinicCtx = { clinicId: null }
+    alert = jasmine.createSpyObj('AlertService', ['fire'])
+    alert.fire.and.returnValue(Promise.resolve({ isConfirmed: false } as any))
+    router = jasmine.createSpyObj('Router', ['navigate'])
+  })
+
+  describe('constructor / initializeForms', () => {
+    it('prefija insuranceForm.clinicId con el contexto de clínica activo', () => {
+      clinicCtx.clinicId = 'clinic-9'
+      component = createComponent()
+      expect(component.insuranceForm.value.clinicId).toBe('clinic-9')
+      expect(component.ctxClinicId).toBe('clinic-9')
+    })
+
+    it('los 4 sub-formularios existen e inician inválidos sin datos', () => {
+      component = createComponent()
+      expect(component.personalInfoForm.valid).toBeFalse()
+      expect(component.contactInfoForm.valid).toBeTrue() // todos opcionales
+      expect(component.emergencyContactForm.valid).toBeTrue()
+      expect(component.insuranceForm.valid).toBeFalse() // clinicId requerido
+    })
+  })
+
+  describe('loadClinics (vía ngOnInit)', () => {
+    it('en éxito, guarda las clínicas', () => {
+      component = createComponent()
+      component.ngOnInit()
+      expect(component.clinics.length).toBe(1)
+      expect(component.isClinicsLoading).toBeFalse()
+    })
+
+    it('avisa si no hay clínicas activas y no está en modo edición', () => {
+      clinicsService.findAll.and.returnValue(of([]))
+      component = createComponent()
+      component.ngOnInit()
+      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Sin Clínicas Activas' }))
+    })
+
+    it('prefija clinicId si el contexto coincide con una clínica cargada', () => {
+      clinicCtx.clinicId = 'clinic-1'
+      component = createComponent()
+      component.ngOnInit()
+      expect(component.insuranceForm.value.clinicId).toBe('clinic-1')
+    })
+
+    it('si el contexto no está en la lista cargada, busca y agrega esa clínica', () => {
+      clinicCtx.clinicId = 'clinic-9'
+      clinicsService.findOne.and.returnValue(of(makeClinic({ id: 'clinic-9', name: 'Sur' })))
+      component = createComponent()
+      component.ngOnInit()
+      expect(clinicsService.findOne).toHaveBeenCalledWith('clinic-9')
+      expect(component.clinics.some(c => c.id === 'clinic-9')).toBeTrue()
+    })
+
+    it('en error, ofrece reintentar y reintenta si el usuario confirma', async () => {
+      clinicsService.findAll.and.returnValues(
+        throwError(() => ({ status: 500 })),
+        of([makeClinic()]),
+      )
+      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
+
+      component = createComponent()
+      component.ngOnInit()
+      await Promise.resolve()
+
+      expect(clinicsService.findAll).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  describe('checkEditMode (vía ngOnInit)', () => {
+    it('sin id en la ruta, no entra en modo edición ni llama a findOne', () => {
+      component = createComponent({ id: null })
+      component.ngOnInit()
+      expect(component.isEditMode).toBeFalse()
+      expect(patientsService.findOne).not.toHaveBeenCalled()
+    })
+
+    it('con id y sin viewMode, entra en modo edición y puebla el formulario', () => {
+      patientsService.findOne.and.returnValue(of(makePatient()))
+      component = createComponent({ id: 'patient-1' })
+
+      component.ngOnInit()
+
+      expect(component.isEditMode).toBeTrue()
+      expect(component.isViewMode).toBeFalse()
+      expect(component.personalInfoForm.value.firstName).toBe('Juan')
+      expect(component.isLoading).toBeFalse()
+    })
+
+    it('con id y viewMode=true, entra en modo vista y deshabilita los formularios', () => {
+      patientsService.findOne.and.returnValue(of(makePatient()))
+      component = createComponent({ id: 'patient-1' }, { viewMode: true })
+
+      component.ngOnInit()
+
+      expect(component.isViewMode).toBeTrue()
+      expect(component.isEditMode).toBeFalse()
+      expect(component.personalInfoForm.disabled).toBeTrue()
+    })
+
+    it('si el paciente no existe (404), avisa y navega a la lista', async () => {
+      patientsService.findOne.and.returnValue(throwError(() => ({ status: 404 })))
+      alert.fire.and.returnValue(Promise.resolve({} as any))
+      component = createComponent({ id: 'patient-1' })
+
+      component.ngOnInit()
+      await Promise.resolve()
+
+      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Paciente No Encontrado' }))
+      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/patients'])
+    })
+
+    it('en cualquier otro error, avisa genéricamente y navega a la lista', async () => {
+      patientsService.findOne.and.returnValue(throwError(() => ({ status: 500 })))
+      alert.fire.and.returnValue(Promise.resolve({} as any))
+      component = createComponent({ id: 'patient-1' })
+
+      component.ngOnInit()
+      await Promise.resolve()
+
+      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Error al Cargar Paciente' }))
+      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/patients'])
+    })
+  })
+
+  describe('getAge', () => {
+    beforeEach(() => (component = createComponent()))
+
+    it('devuelve null sin fecha de nacimiento', () => {
+      expect(component.getAge()).toBeNull()
+    })
+
+    it('calcula la edad correctamente', () => {
+      const today = new Date()
+      const twenty = new Date(today.getFullYear() - 20, today.getMonth(), today.getDate())
+      component.personalInfoForm.patchValue({ birthDate: twenty })
+      expect(component.getAge()).toBe(20)
+    })
+
+    it('resta 1 si el cumpleaños de este año todavía no llegó', () => {
+      const today = new Date()
+      const future = new Date(today.getFullYear() - 20, today.getMonth() + 1, today.getDate())
+      component.personalInfoForm.patchValue({ birthDate: future })
+      expect(component.getAge()).toBe(19)
+    })
+  })
+
+  describe('searchByDocument', () => {
+    beforeEach(() => (component = createComponent()))
+
+    it('avisa si el documento tiene menos de 5 caracteres, sin llamar al servicio', () => {
+      component.personalInfoForm.patchValue({ documentNumber: '123' })
+      component.searchByDocument()
+      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Documento insuficiente' }))
+      expect(patientsService.findByDocument).not.toHaveBeenCalled()
+    })
+
+    it('si encuentra un paciente y el usuario confirma, navega a editarlo', async () => {
+      component.personalInfoForm.patchValue({ documentNumber: '1234567' })
+      patientsService.findByDocument.and.returnValue(of(makePatient()))
+      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
+
+      component.searchByDocument()
+      await Promise.resolve()
+
+      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/patients/edit', 'patient-1'])
+    })
+
+    it('si no encuentra ningún paciente, avisa que puede continuar', () => {
+      component.personalInfoForm.patchValue({ documentNumber: '1234567' })
+      patientsService.findByDocument.and.returnValue(of(null as unknown as Patient))
+
+      component.searchByDocument()
+
+      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'No encontrado' }))
+    })
+  })
+
+  describe('getSelectedClinicName / isAllFormsValid', () => {
+    beforeEach(() => {
+      clinicCtx.clinicId = 'clinic-1'
+      component = createComponent()
+      component.ngOnInit()
+    })
+
+    it('getSelectedClinicName devuelve null sin clínica seleccionada', () => {
+      component.insuranceForm.patchValue({ clinicId: null })
+      expect(component.getSelectedClinicName()).toBeNull()
+    })
+
+    it('getSelectedClinicName devuelve el nombre si la clínica está cargada', () => {
+      expect(component.getSelectedClinicName()).toBe('Norte')
+    })
+
+    it('isAllFormsValid es false si falta algún campo requerido', () => {
+      expect(component.isAllFormsValid()).toBeFalse()
+    })
+
+    it('isAllFormsValid es true con los 4 formularios completos', () => {
+      component.personalInfoForm.patchValue({
+        firstName: 'Juan',
+        lastName: 'Perez',
+        documentNumber: '1234567',
+        birthDate: new Date('1990-01-01'),
+        gender: Gender.MALE,
+      })
+      expect(component.isAllFormsValid()).toBeTrue()
+    })
+  })
+
+  describe('onSubmit', () => {
+    beforeEach(() => {
+      clinicCtx.clinicId = 'clinic-1'
+      component = createComponent()
+      component.ngOnInit()
+    })
+
+    it('si el formulario es inválido, marca todo como touched y muestra los campos faltantes', () => {
+      component.onSubmit()
+
+      expect(component.personalInfoForm.get('firstName')?.touched).toBeTrue()
+      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Campos requeridos' }))
+      expect(patientsService.createPatient).not.toHaveBeenCalled()
+    })
+
+    it('con formulario válido en modo creación, llama a createPatient', () => {
+      component.personalInfoForm.patchValue({
+        firstName: 'Juan',
+        lastName: 'Perez',
+        documentNumber: '1234567',
+        birthDate: new Date('1990-01-01'),
+        gender: Gender.MALE,
+      })
+      patientsService.createPatient.and.returnValue(of(makePatient()))
+
+      component.onSubmit()
+
+      expect(patientsService.createPatient).toHaveBeenCalled()
+    })
+
+  })
+
+  describe('onSubmit — modo edición', () => {
+    it('con formulario válido, llama a updatePatient', () => {
+      patientsService.findOne.and.returnValue(of(makePatient()))
+      component = createComponent({ id: 'patient-1' })
+      component.ngOnInit()
+      patientsService.updatePatient.and.returnValue(of(makePatient()))
+
+      component.onSubmit()
+
+      expect(patientsService.updatePatient).toHaveBeenCalledWith('patient-1', jasmine.any(Object))
+    })
+  })
+
+  describe('createPatient (flujo de éxito, vía onSubmit)', () => {
+    beforeEach(() => {
+      clinicCtx.clinicId = 'clinic-1'
+      component = createComponent()
+      component.ngOnInit()
+      component.personalInfoForm.patchValue({
+        firstName: 'Juan',
+        lastName: 'Perez',
+        documentNumber: '1234567',
+        birthDate: new Date('1990-01-01'),
+        gender: Gender.MALE,
+      })
+    })
+
+    it('navega a crear expediente médico si el usuario confirma', async () => {
+      patientsService.createPatient.and.returnValue(of(makePatient()))
+      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
+
+      component.onSubmit()
+      await Promise.resolve()
+
+      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/medical-records/new'], {
+        queryParams: { patientId: 'patient-1' },
+      })
+      expect(component.isSaving).toBeFalse()
+    })
+
+    it('navega a la lista si el usuario elige "Ir a Lista" (isDenied)', async () => {
+      patientsService.createPatient.and.returnValue(of(makePatient()))
+      alert.fire.and.returnValue(Promise.resolve({ isDenied: true } as any))
+
+      component.onSubmit()
+      await Promise.resolve()
+
+      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/patients'])
+    })
+
+    it('reinicia los formularios si el usuario elige "Crear Otro"', async () => {
+      patientsService.createPatient.and.returnValue(of(makePatient()))
+      alert.fire.and.returnValue(Promise.resolve({} as any))
+      const initSpy = spyOn<any>(component, 'initializeForms').and.callThrough()
+
+      component.onSubmit()
+      await Promise.resolve()
+
+      expect(initSpy).toHaveBeenCalled()
+    })
+
+    it('en error, delega a handlePatientError', () => {
+      patientsService.createPatient.and.returnValue(throwError(() => ({ status: 400, error: {} })))
+
+      component.onSubmit()
+
+      expect(component.isSaving).toBeFalse()
+      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Datos Inválidos' }))
+    })
+  })
+
+  describe('handlePatientError (a través de createPatient)', () => {
+    beforeEach(() => {
+      clinicCtx.clinicId = 'clinic-1'
+      component = createComponent()
+      component.ngOnInit()
+      component.personalInfoForm.patchValue({
+        firstName: 'Juan',
+        lastName: 'Perez',
+        documentNumber: '1234567',
+        birthDate: new Date('1990-01-01'),
+        gender: Gender.MALE,
+      })
+    })
+
+    const submitWithError = (error: any) => {
+      patientsService.createPatient.and.returnValue(throwError(() => error))
+      component.onSubmit()
+    }
+
+    it('409 (paciente duplicado): confirma → navega a la lista con q=documentNumber', async () => {
+      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
+      submitWithError({ status: 409 })
+      await Promise.resolve()
+
+      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: '⚠️ Paciente Ya Registrado' }))
+      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/patients'], { queryParams: { q: '1234567' } })
+    })
+
+    it('404 con "Clinic not found": muestra alerta específica de clínica', () => {
+      submitWithError({ status: 404, error: { message: 'Clinic not found' } })
+      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Clínica No Encontrada' }))
+    })
+
+    it('400: extrae errores de validación (array) y los muestra', () => {
+      submitWithError({ status: 400, error: { message: ['Campo A inválido', 'Campo B inválido'] } })
+      const call = alert.fire.calls.mostRecent().args[0] as any
+      expect(call.title).toBe('Datos Inválidos')
+      expect(call.html).toContain('Campo A inválido')
+      expect(call.html).toContain('Campo B inválido')
+    })
+
+    it('400 sin mensaje del backend: usa el mensaje por defecto', () => {
+      submitWithError({ status: 400, error: {} })
+      const call = alert.fire.calls.mostRecent().args[0] as any
+      expect(call.html).toContain('Datos inválidos. Por favor, revise el formulario.')
+    })
+
+    it('401/403: muestra alerta de falta de autorización', () => {
+      submitWithError({ status: 401 })
+      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Sin Autorización' }))
+    })
+
+    it('>=500: ofrece reintentar y reintenta createPatient si confirma', async () => {
+      patientsService.createPatient.and.returnValues(throwError(() => ({ status: 500 })), of(makePatient()))
+      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
+
+      component.onSubmit()
+      await Promise.resolve()
+      await Promise.resolve()
+
+      expect(patientsService.createPatient).toHaveBeenCalledTimes(2)
+    })
+
+    it('error genérico: usa error.error.message si viene, si no el mensaje por defecto', () => {
+      submitWithError({ status: 418, error: { message: 'Soy una tetera' } })
+      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Error al Guardar', text: 'Soy una tetera' }))
+    })
+  })
+
+  describe('saveDraft', () => {
+    beforeEach(() => {
+      clinicCtx.clinicId = 'clinic-1'
+      component = createComponent()
+      component.ngOnInit()
+    })
+
+    it('con personalInfoForm inválido, avisa qué falta sin llamar al servicio', () => {
+      component.saveDraft()
+      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Información Incompleta' }))
+      expect(patientsService.createPatient).not.toHaveBeenCalled()
+    })
+
+    it('con personalInfoForm válido y confirmación, crea el paciente', async () => {
+      component.personalInfoForm.patchValue({
+        firstName: 'Juan',
+        lastName: 'Perez',
+        documentNumber: '1234567',
+        birthDate: new Date('1990-01-01'),
+        gender: Gender.MALE,
+      })
+      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
+      patientsService.createPatient.and.returnValue(of(makePatient()))
+
+      component.saveDraft()
+      await Promise.resolve()
+
+      expect(patientsService.createPatient).toHaveBeenCalled()
+    })
+  })
+
+  describe('cancel', () => {
+    beforeEach(() => (component = createComponent()))
+
+    it('si el usuario confirma, marca allowNavigationOnce y navega a la lista', async () => {
+      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
+      component.cancel()
+      await Promise.resolve()
+      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/patients'])
+    })
+
+    it('si el usuario cancela, no navega', async () => {
+      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: false } as any))
+      component.cancel()
+      await Promise.resolve()
+      expect(router.navigate).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('canDeactivate', () => {
+    beforeEach(() => (component = createComponent()))
+
+    it('en modo vista, siempre permite salir', async () => {
+      ;(component as any).isViewMode = true
+      expect(await component.canDeactivate()).toBeTrue()
+    })
+
+    it('si allowNavigationOnce está seteado, permite salir una vez y resetea el flag', async () => {
+      ;(component as any).allowNavigationOnce = true
+      expect(await component.canDeactivate()).toBeTrue()
+      expect((component as any).allowNavigationOnce).toBeFalse()
+    })
+
+    it('si los 4 formularios están pristine, permite salir sin preguntar', async () => {
+      expect(await component.canDeactivate()).toBeTrue()
+      expect(alert.fire).not.toHaveBeenCalled()
+    })
+
+    it('si algún formulario está dirty, pregunta y respeta la decisión del usuario', async () => {
+      component.personalInfoForm.markAsDirty()
+      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
+
+      expect(await component.canDeactivate()).toBeTrue()
+      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: '¿Salir sin guardar?' }))
+    })
+
+    it('si el usuario no confirma el diálogo de descarte, bloquea la salida', async () => {
+      component.personalInfoForm.markAsDirty()
+      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: false } as any))
+
+      expect(await component.canDeactivate()).toBeFalse()
+    })
+  })
+})
