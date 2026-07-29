@@ -32,16 +32,20 @@
     "migration:run:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/config/data-source.js",
     "migration:revert:prod": "node ./node_modules/typeorm/cli.js migration:revert -d dist/config/data-source.js"
   },
+  "overrides": {
+    "archiver": "^7.0.1",
+    "uuid": "^11.1.1"
+  },
   "dependencies": {
     "@nestjs/mapped-types": "*",
     "@nestjs/throttler": "^6.5.0",
-    "bcrypt": "^5.1.1",
+    "bcrypt": "^6.0.0",
     "chart.js": "^4.5.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "exceljs": "^4.4.0",
     "multer": "^2.0.2",
-    "nodemailer": "^8.0.4",
+    "nodemailer": "^9.0.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pdfkit": "^0.18.0",
