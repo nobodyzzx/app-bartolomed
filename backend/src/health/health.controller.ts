@@ -1,6 +1,7 @@
 import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { Public } from '../auth/decorators';
 
 interface HealthCheck {
   status: 'ok' | 'error';
@@ -21,6 +22,7 @@ interface HealthResponse {
 export class HealthController {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
+  @Public()
   @Get()
   @HttpCode(HttpStatus.OK)
   async checkHealth(): Promise<HealthResponse> {

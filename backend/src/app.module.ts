@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { validateEnvironment } from './config/env-validation';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AuditModule } from './audit/audit.module';
 import { AuditLog } from './audit/entities/audit-log.entity';
 import { MailModule } from './mail/mail.module';
@@ -136,6 +137,9 @@ import { UsersModule } from './users/users.module';
   providers: [
     // Aplica ThrottlerGuard a todos los endpoints (rate limit por IP).
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // JwtAuthGuard global: ningún endpoint queda desprotegido por omisión.
+    // Los que deben ser públicos (login, health, metrics, etc.) llevan @Public() explícito.
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })
 export class AppModule {}

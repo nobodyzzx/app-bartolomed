@@ -5,7 +5,7 @@ import { AuthService } from './auth.service';
 
 import { CreateUserDto } from '../users/dto';
 import { User } from '../users/entities/user.entity';
-import { Auth, GetUser } from './decorators';
+import { Auth, GetUser, Public } from './decorators';
 import {
   ChangePasswordDto,
   ForgotPasswordDto,
@@ -27,6 +27,7 @@ export class AuthController {
     return this.authService.create(createUserDto);
   }
 
+  @Public()
   @Post('login')
   // 10 intentos por minuto por IP: tolera reintentos legítimos pero frena fuerza bruta.
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
@@ -55,6 +56,7 @@ export class AuthController {
     return { user: result.user, token: result.token, rememberMe: remember };
   }
 
+  @Public()
   @Post('refresh')
   async refresh(@Body() dto: RefreshTokenDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     // Prefer cookie 'rt'; fallback to body
@@ -141,6 +143,7 @@ export class AuthController {
     return this.authService.changePassword(user, dto);
   }
 
+  @Public()
   @Post('forgot-password')
   // 3 requests cada 15 min por IP: previene enumeración de cuentas y abuso del SMTP.
   @Throttle({ default: { limit: 3, ttl: 900_000 } })
@@ -148,6 +151,7 @@ export class AuthController {
     return this.authService.requestPasswordReset(dto);
   }
 
+  @Public()
   @Post('reset-password')
   // 5 intentos por hora por IP: contiene fuerza bruta de tokens de reseteo.
   @Throttle({ default: { limit: 5, ttl: 3_600_000 } })
@@ -156,6 +160,7 @@ export class AuthController {
   }
 
   // GODMODE: crear o promover SUPER_ADMIN mediante token de entorno
+  @Public()
   @Post('godmode/super-admin')
   // 3 intentos por hora por IP: endpoint de máximo privilegio, solo el rate default global lo cubría antes.
   @Throttle({ default: { limit: 3, ttl: 3_600_000 } })
@@ -172,6 +177,7 @@ export class AuthController {
   }
 
   // GODMODE: re-sincroniza membresías de todos los SUPER_ADMIN con todas las clínicas
+  @Public()
   @Post('godmode/sync-super-admin-clinics')
   @Throttle({ default: { limit: 3, ttl: 3_600_000 } })
   async godmodeSyncSuperAdmins(@Headers('x-god-token') xGodToken?: string) {

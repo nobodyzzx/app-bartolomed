@@ -1,5 +1,6 @@
 import { Controller, Get, Header, HttpCode, HttpStatus, Res } from '@nestjs/common';
 import { Response } from 'express';
+import { Public } from '../auth/decorators';
 import { MetricsService } from './metrics.service';
 
 /**
@@ -11,6 +12,7 @@ import { MetricsService } from './metrics.service';
 export class MetricsController {
   constructor(private readonly metrics: MetricsService) {}
 
+  @Public()
   @Get()
   @HttpCode(HttpStatus.OK)
   @Header('Cache-Control', 'no-store')
