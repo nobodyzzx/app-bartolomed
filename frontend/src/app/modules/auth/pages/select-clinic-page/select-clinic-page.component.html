@@ -20,7 +20,10 @@
     <div class="text-center text-red-600">
       <span class="material-symbols-outlined text-4xl">error_outline</span>
       <p class="mt-2">No se pudieron cargar las clínicas. Intenta de nuevo.</p>
-      <button mat-flat-button color="primary" class="mt-4" (click)="ngOnInit()">Reintentar</button>
+      <button type="button" class="btn btn-primary mt-4" (click)="ngOnInit()">
+        <span class="material-symbols-outlined msz-18">refresh</span>
+        Reintentar
+      </button>
     </div>
   }
 
@@ -30,7 +33,10 @@
       <span class="material-symbols-outlined text-5xl text-slate-300">domain_disabled</span>
       <p class="mt-3 font-medium text-slate-700">Sin clínicas asignadas</p>
       <p class="mt-1 text-sm">Tu cuenta no tiene acceso a ninguna clínica activa. Contacta al administrador.</p>
-      <button mat-stroked-button class="mt-6" (click)="logout()">Cerrar sesión</button>
+      <button type="button" class="btn btn-outline mt-6" (click)="logout()">
+        <span class="material-symbols-outlined msz-18">logout</span>
+        Cerrar sesión
+      </button>
     </div>
   }
 
@@ -54,7 +60,10 @@
         </button>
       }
       <div class="pt-4 text-center">
-        <button mat-button color="warn" (click)="logout()">Cerrar sesión</button>
+        <button type="button" class="btn btn-danger-outline" (click)="logout()">
+          <span class="material-symbols-outlined msz-18">logout</span>
+          Cerrar sesión
+        </button>
       </div>
     </div>
   }
