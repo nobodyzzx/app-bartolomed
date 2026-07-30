@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { Router } from '@angular/router'
 import { MenuItem } from '@core/interfaces/menu-item.interface'
 
@@ -7,13 +7,24 @@ import { MenuItem } from '@core/interfaces/menu-item.interface'
     templateUrl: './sidebar-menu-item.component.html',
     standalone: false
 })
-export class SidebarMenuItemComponent {
+export class SidebarMenuItemComponent implements OnInit {
   @Input() item!: MenuItem
   @Input() isExpanded = true
   @Input() isDemo = false
   @Output() demoClick = new EventEmitter<void>()
 
   private router = inject(Router)
+
+  /** Grupo abierto/cerrado (modo expandido). Arranca abierto solo si contiene la ruta activa. */
+  isOpen = false
+
+  ngOnInit(): void {
+    this.isOpen = this.isParentActive
+  }
+
+  toggleGroup(): void {
+    this.isOpen = !this.isOpen
+  }
 
   get hasChildren(): boolean {
     return !!this.item.children?.length
