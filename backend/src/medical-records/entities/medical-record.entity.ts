@@ -177,11 +177,11 @@ export class MedicalRecord {
   @JoinColumn({ name: 'related_record_id' })
   relatedRecord: MedicalRecord;
 
-  @ManyToOne(() => Patient, { eager: true })
+  @ManyToOne(() => Patient)
   @JoinColumn({ name: 'patient_id' })
   patient: Patient;
 
-  @ManyToOne(() => User, { eager: true })
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'doctor_id' })
   doctor: User;
 
