@@ -185,7 +185,7 @@ export class Asset {
 
   // Relaciones
   @Index()
-  @ManyToOne(() => Clinic, { eager: true })
+  @ManyToOne(() => Clinic)
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic;
 
