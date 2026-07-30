@@ -68,8 +68,13 @@
           />
       </div>
 
+      <!-- Loading -->
+      @if (loading) {
+        <app-skeleton-table [rows]="6" [columns]="7" />
+      }
+
       <!-- Estado vacío -->
-      @if (dataSource.data.length === 0) {
+      @if (!loading && dataSource.data.length === 0) {
         <app-empty-state
           icon="receipt"
           title="Sin registros"
@@ -80,7 +85,7 @@
       }
 
       <!-- Tabla -->
-      @if (dataSource.data.length > 0) {
+      @if (!loading && dataSource.data.length > 0) {
         <div class="overflow-x-auto">
           <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
             <!-- Columna ID -->
@@ -220,7 +225,7 @@
       }
 
       <!-- Footer -->
-      @if (dataSource.data.length > 0) {
+      @if (!loading && dataSource.data.length > 0) {
         <div class="table-footer">
           <span class="text-sm text-slate-500">
             <span class="font-semibold text-slate-700">{{ totalRecords }}</span> ventas en total

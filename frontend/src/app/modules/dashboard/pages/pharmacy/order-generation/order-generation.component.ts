@@ -52,6 +52,8 @@ export class OrderGenerationComponent implements OnInit {
     })
   })
 
+  loading = signal(false)
+
   // Modal creación
   createOpen = signal(false)
   creating = signal(false)
@@ -94,10 +96,15 @@ export class OrderGenerationComponent implements OnInit {
   }
 
   loadOrders(): void {
-    this.ordersService.getAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(result => {
-      this.orders = result.data
-      this.refreshDataSource()
-      this.calculateStats()
+    this.loading.set(true)
+    this.ordersService.getAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: result => {
+        this.orders = result.data
+        this.refreshDataSource()
+        this.calculateStats()
+        this.loading.set(false)
+      },
+      error: () => this.loading.set(false),
     })
   }
 

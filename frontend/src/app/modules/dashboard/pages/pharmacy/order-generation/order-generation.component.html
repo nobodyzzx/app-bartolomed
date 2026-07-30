@@ -96,7 +96,11 @@
         </app-search-bar>
       </div>
 
-      @if (dataSource.data.length === 0) {
+      @if (loading()) {
+        <app-skeleton-table [rows]="6" [columns]="6" />
+      }
+
+      @if (!loading() && dataSource.data.length === 0) {
         <app-empty-state
           icon="shopping_cart"
           title="No se encontraron pedidos"
@@ -106,7 +110,7 @@
           />
       }
 
-      @if (dataSource.data.length > 0) {
+      @if (!loading() && dataSource.data.length > 0) {
         <div class="overflow-x-auto">
           <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
             <ng-container matColumnDef="orderNumber">
