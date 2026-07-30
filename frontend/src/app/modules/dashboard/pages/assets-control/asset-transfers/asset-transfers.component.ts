@@ -85,8 +85,8 @@ export class AssetTransfersComponent implements OnInit {
       .getTransfers(this.activeFilter() ?? undefined)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: transfers => {
-          this.transfers.set(transfers)
+        next: result => {
+          this.transfers.set(result.data)
           this.loading.set(false)
         },
         error: () => this.loading.set(false),

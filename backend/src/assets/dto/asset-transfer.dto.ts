@@ -2,9 +2,11 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsEnum,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
+  Min,
   MinLength,
   ValidateNested,
 } from 'class-validator';
@@ -55,4 +57,14 @@ export class FilterAssetTransfersDto {
   @IsEnum(AssetTransferStatus)
   @IsOptional()
   status?: AssetTransferStatus;
+
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  limit?: number;
 }

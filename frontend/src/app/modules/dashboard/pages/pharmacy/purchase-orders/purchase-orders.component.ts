@@ -127,9 +127,9 @@ export class PurchaseOrdersComponent implements OnInit {
   loadOrders(): void {
     this.loading.set(true)
     this.ordersService.getAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: list => {
+      next: result => {
         // Limpiar valores NaN en todas las órdenes
-        const cleanOrders = list.map(order => ({
+        const cleanOrders = result.data.map(order => ({
           ...order,
           subtotal: Number(order.subtotal) || 0,
           taxRate: Number(order.taxRate) || 0,

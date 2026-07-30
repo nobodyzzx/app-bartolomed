@@ -10,6 +10,7 @@ import {
   AssetTransferAuditLog,
   AssetTransferStatus,
   CreateAssetTransferDto,
+  PaginatedResult,
 } from '../interfaces/assets.interfaces'
 
 @Injectable({ providedIn: 'root' })
@@ -27,11 +28,12 @@ export class AssetTransfersService {
     return throwError(() => error)
   }
 
-  getTransfers(status?: AssetTransferStatus): Observable<AssetTransfer[]> {
+  getTransfers(status?: AssetTransferStatus): Observable<PaginatedResult<AssetTransfer>> {
     let params = new HttpParams()
     if (status) params = params.set('status', status)
+    params = params.set('limit', '100')
     return this.http
-      .get<AssetTransfer[]>(this.apiUrl, { params })
+      .get<PaginatedResult<AssetTransfer>>(this.apiUrl, { params })
       .pipe(catchError(this.handleHttpError))
   }
 

@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  Request,
+} from '@nestjs/common';
 import { AuthClinic } from '../../auth/decorators';
 import { resolveClinicId } from '../../auth/decorators/clinic-roles.decorator';
 import { RequirePermissions } from '../../auth/permissions/permissions.decorator';
@@ -25,12 +37,14 @@ export class PharmacyInvoicesController {
   }
 
   @Get()
-  findAll(@Query('status') status?: InvoiceStatus, @Request() req?: any) {
+  findAll(
+    @Query('status') status?: InvoiceStatus,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+    @Request() req?: any,
+  ) {
     const clinicId = req ? resolveClinicId(req) : undefined;
-    if (status) {
-      return this.pharmacyInvoicesService.getInvoicesByStatus(status, clinicId);
-    }
-    return this.pharmacyInvoicesService.findAll(clinicId);
+    return this.pharmacyInvoicesService.findAll(clinicId, status, page, limit);
   }
 
   @Get('overdue')

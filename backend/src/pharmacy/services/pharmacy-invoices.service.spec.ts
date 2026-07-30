@@ -97,13 +97,24 @@ describe('PharmacyInvoicesService', () => {
     });
 
     it('filtra por clínica vía join a createdBy.clinic', async () => {
-      const qb = createMockQueryBuilder({ getMany: jest.fn().mockResolvedValue([makeInvoice()]) });
+      const qb = createMockQueryBuilder({ getManyAndCount: jest.fn().mockResolvedValue([[makeInvoice()], 1]) });
       (invoiceRepo.createQueryBuilder as jest.Mock).mockReturnValue(qb);
 
       const result = await service.findAll(CLINIC_ID);
 
       expect(qb.andWhere).toHaveBeenCalledWith('clinic.id = :clinicId', { clinicId: CLINIC_ID });
-      expect(result).toHaveLength(1);
+      expect(result).toEqual({ data: [makeInvoice()], total: 1, page: 1, limit: 20 });
+    });
+
+    it('filtra por estado cuando se provee', async () => {
+      const qb = createMockQueryBuilder({ getManyAndCount: jest.fn().mockResolvedValue([[], 0]) });
+      (invoiceRepo.createQueryBuilder as jest.Mock).mockReturnValue(qb);
+
+      await service.findAll(CLINIC_ID, InvoiceStatus.OVERDUE, 2, 10);
+
+      expect(qb.andWhere).toHaveBeenCalledWith('invoice.status = :status', { status: InvoiceStatus.OVERDUE });
+      expect(qb.take).toHaveBeenCalledWith(10);
+      expect(qb.skip).toHaveBeenCalledWith(10);
     });
   });
 
@@ -226,22 +237,6 @@ describe('PharmacyInvoicesService', () => {
       await service.remove('inv-1', CLINIC_ID);
 
       expect(invoiceRepo.remove).toHaveBeenCalledWith(invoice);
-    });
-  });
-
-  describe('getInvoicesByStatus', () => {
-    it('lanza BadRequestException si no se pasa clinicId', async () => {
-      await expect(service.getInvoicesByStatus(InvoiceStatus.PENDING, undefined)).rejects.toThrow(BadRequestException);
-    });
-
-    it('filtra por estado y clínica', async () => {
-      const qb = createMockQueryBuilder({ getMany: jest.fn().mockResolvedValue([makeInvoice()]) });
-      (invoiceRepo.createQueryBuilder as jest.Mock).mockReturnValue(qb);
-
-      await service.getInvoicesByStatus(InvoiceStatus.OVERDUE, CLINIC_ID);
-
-      expect(qb.where).toHaveBeenCalledWith('invoice.status = :status', { status: InvoiceStatus.OVERDUE });
-      expect(qb.andWhere).toHaveBeenCalledWith('clinic.id = :clinicId', { clinicId: CLINIC_ID });
     });
   });
 

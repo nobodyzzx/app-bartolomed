@@ -7,6 +7,7 @@ import { environment } from '../../../../../environments/environments'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
 import {
   CreatePurchaseOrderDto,
+  PaginatedResult,
   PurchaseOrder,
   PurchaseOrderStatus,
   UpdatePurchaseOrderStatusDto,
@@ -25,11 +26,15 @@ export class PurchaseOrdersService {
   getAll(filters?: {
     status?: PurchaseOrderStatus
     supplierId?: string
-  }): Observable<PurchaseOrder[]> {
+    page?: number
+    limit?: number
+  }): Observable<PaginatedResult<PurchaseOrder>> {
     let params = new HttpParams()
     if (filters?.status) params = params.set('status', filters.status)
     if (filters?.supplierId) params = params.set('supplierId', filters.supplierId)
-    return this.http.get<PurchaseOrder[]>(this.baseUrl, { params }).pipe(
+    params = params.set('page', String(filters?.page ?? 1))
+    params = params.set('limit', String(filters?.limit ?? 100))
+    return this.http.get<PaginatedResult<PurchaseOrder>>(this.baseUrl, { params }).pipe(
       catchError(error => {
         this.errorService.handleError(error)
         return throwError(() => error)

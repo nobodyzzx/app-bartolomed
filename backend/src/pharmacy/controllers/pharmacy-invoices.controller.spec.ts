@@ -16,8 +16,7 @@ describe('PharmacyInvoicesController', () => {
   beforeEach(() => {
     service = {
       create: jest.fn().mockResolvedValue({ id: 'inv-1' }),
-      findAll: jest.fn().mockResolvedValue([{ id: 'inv-1' }]),
-      getInvoicesByStatus: jest.fn().mockResolvedValue([{ id: 'inv-1', status: InvoiceStatus.PAID }]),
+      findAll: jest.fn().mockResolvedValue({ data: [{ id: 'inv-1' }], total: 1, page: 1, limit: 20 }),
       getOverdueInvoices: jest.fn().mockResolvedValue([]),
       getTotalRevenue: jest.fn().mockResolvedValue(1000),
       getPendingAmount: jest.fn().mockResolvedValue(200),
@@ -45,20 +44,19 @@ describe('PharmacyInvoicesController', () => {
   });
 
   describe('findAll', () => {
-    it('delega en getInvoicesByStatus si viene el query param status', async () => {
-      await controller.findAll(InvoiceStatus.OVERDUE, makeReq());
-      expect(service.getInvoicesByStatus).toHaveBeenCalledWith(InvoiceStatus.OVERDUE, 'clinic-1');
-      expect(service.findAll).not.toHaveBeenCalled();
+    it('pasa status, page y limit al servicio', async () => {
+      await controller.findAll(InvoiceStatus.OVERDUE, 2, 10, makeReq());
+      expect(service.findAll).toHaveBeenCalledWith('clinic-1', InvoiceStatus.OVERDUE, 2, 10);
     });
 
-    it('delega en findAll si no viene status', async () => {
-      await controller.findAll(undefined, makeReq());
-      expect(service.findAll).toHaveBeenCalledWith('clinic-1');
+    it('delega en findAll con status undefined si no viene', async () => {
+      await controller.findAll(undefined, 1, 20, makeReq());
+      expect(service.findAll).toHaveBeenCalledWith('clinic-1', undefined, 1, 20);
     });
 
     it('resuelve clinicId undefined si no viene req', async () => {
-      await controller.findAll(undefined, undefined);
-      expect(service.findAll).toHaveBeenCalledWith(undefined);
+      await controller.findAll(undefined, 1, 20, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined, 1, 20);
     });
   });
 

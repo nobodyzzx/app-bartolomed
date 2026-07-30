@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  Request,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Auth, AuthClinic, GetUser } from '../../auth/decorators';
@@ -38,15 +50,15 @@ export class PurchaseOrdersController {
   }
 
   @Get()
-  findAll(@Query('status') status?: PurchaseOrderStatus, @Query('supplierId') supplierId?: string, @Request() req?: any) {
+  findAll(
+    @Query('status') status?: PurchaseOrderStatus,
+    @Query('supplierId') supplierId?: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+    @Request() req?: any,
+  ) {
     const clinicId = req ? resolveClinicId(req) : undefined;
-    if (status) {
-      return this.purchaseOrdersService.getOrdersByStatus(status, clinicId);
-    }
-    if (supplierId) {
-      return this.purchaseOrdersService.getOrdersBySupplier(supplierId, clinicId);
-    }
-    return this.purchaseOrdersService.findAll(clinicId);
+    return this.purchaseOrdersService.findAll(clinicId, { status, supplierId }, page, limit);
   }
 
   @Get(':id')

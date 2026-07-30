@@ -192,29 +192,33 @@ describe('AssetTransfersService', () => {
   // ─── findAll ──────────────────────────────────────────────────────────────
 
   describe('findAll', () => {
-    it('devuelve traslados de la clínica (como origen o destino)', async () => {
+    it('devuelve traslados paginados de la clínica (como origen o destino)', async () => {
       const transfers = [makeTransfer()];
-      const qb = createMockQueryBuilder({ getMany: jest.fn().mockResolvedValue(transfers) });
+      const qb = createMockQueryBuilder({ getManyAndCount: jest.fn().mockResolvedValue([transfers, 1]) });
       transferRepo.createQueryBuilder!.mockReturnValue(qb);
 
       const result = await service.findAll(SOURCE_CLINIC);
 
-      expect(result).toEqual(transfers);
+      expect(result).toEqual({ data: transfers, total: 1, page: 1, limit: 20 });
       expect(qb.where).toHaveBeenCalledWith(
         expect.stringContaining('source_clinic_id'),
         { clinicId: SOURCE_CLINIC },
       );
+      expect(qb.take).toHaveBeenCalledWith(20);
+      expect(qb.skip).toHaveBeenCalledWith(0);
     });
 
-    it('aplica filtro por status cuando se proporciona', async () => {
-      const qb = createMockQueryBuilder({ getMany: jest.fn().mockResolvedValue([]) });
+    it('aplica filtro por status y página/límite cuando se proporcionan', async () => {
+      const qb = createMockQueryBuilder({ getManyAndCount: jest.fn().mockResolvedValue([[], 0]) });
       transferRepo.createQueryBuilder!.mockReturnValue(qb);
 
-      await service.findAll(SOURCE_CLINIC, { status: AssetTransferStatus.COMPLETED });
+      await service.findAll(SOURCE_CLINIC, { status: AssetTransferStatus.COMPLETED, page: 2, limit: 10 });
 
       expect(qb.andWhere).toHaveBeenCalledWith('transfer.status = :status', {
         status: AssetTransferStatus.COMPLETED,
       });
+      expect(qb.take).toHaveBeenCalledWith(10);
+      expect(qb.skip).toHaveBeenCalledWith(10);
     });
   });
 

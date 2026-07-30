@@ -5,7 +5,7 @@ import { PurchaseOrdersService } from './purchase-orders.service';
 import { PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus } from '../entities/purchase-order.entity';
 import { Supplier, SupplierStatus } from '../entities/supplier.entity';
 import { InventoryService } from './inventory.service';
-import { createMockRepository, MockRepository } from 'src/test/helpers/mock-repository.factory';
+import { createMockQueryBuilder, createMockRepository, MockRepository } from 'src/test/helpers/mock-repository.factory';
 
 const makeSupplier = (overrides: Record<string, any> = {}) => ({
   id: 'sup-1',
@@ -121,10 +121,27 @@ describe('PurchaseOrdersService', () => {
       await expect(service.findAll(undefined)).rejects.toThrow(BadRequestException);
     });
 
-    it('retorna órdenes de una clínica', async () => {
-      orderRepo.find!.mockResolvedValue([makePurchaseOrder()]);
+    it('retorna órdenes paginadas de una clínica', async () => {
+      const qb = createMockQueryBuilder({ getManyAndCount: jest.fn().mockResolvedValue([[makePurchaseOrder()], 1]) });
+      orderRepo.createQueryBuilder!.mockReturnValue(qb);
+
       const result = await service.findAll('clinic-1');
-      expect(result).toHaveLength(1);
+
+      expect(result).toEqual({ data: [makePurchaseOrder()], total: 1, page: 1, limit: 20 });
+      expect(qb.take).toHaveBeenCalledWith(20);
+      expect(qb.skip).toHaveBeenCalledWith(0);
+    });
+
+    it('filtra por status y supplierId cuando se proveen', async () => {
+      const qb = createMockQueryBuilder({ getManyAndCount: jest.fn().mockResolvedValue([[], 0]) });
+      orderRepo.createQueryBuilder!.mockReturnValue(qb);
+
+      await service.findAll('clinic-1', { status: PurchaseOrderStatus.PENDING, supplierId: 'sup-1' }, 2, 10);
+
+      expect(qb.andWhere).toHaveBeenCalledWith('po.status = :status', { status: PurchaseOrderStatus.PENDING });
+      expect(qb.andWhere).toHaveBeenCalledWith('po.supplierId = :supplierId', { supplierId: 'sup-1' });
+      expect(qb.take).toHaveBeenCalledWith(10);
+      expect(qb.skip).toHaveBeenCalledWith(10);
     });
   });
 

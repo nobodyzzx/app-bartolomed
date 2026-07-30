@@ -17,9 +17,7 @@ describe('PurchaseOrdersController', () => {
   beforeEach(() => {
     service = {
       create: jest.fn().mockResolvedValue({ id: 'po-1' }),
-      getOrdersByStatus: jest.fn().mockResolvedValue([{ id: 'po-1' }]),
-      getOrdersBySupplier: jest.fn().mockResolvedValue([{ id: 'po-1' }]),
-      findAll: jest.fn().mockResolvedValue([{ id: 'po-1' }]),
+      findAll: jest.fn().mockResolvedValue({ data: [{ id: 'po-1' }], total: 1, page: 1, limit: 20 }),
       findOne: jest.fn().mockResolvedValue({ id: 'po-1' }),
       update: jest.fn().mockResolvedValue({ id: 'po-1' }),
       updateStatus: jest.fn().mockResolvedValue({ id: 'po-1' }),
@@ -50,20 +48,19 @@ describe('PurchaseOrdersController', () => {
   });
 
   describe('findAll', () => {
-    it('prioriza status sobre supplierId si ambos vienen', async () => {
-      await controller.findAll(PurchaseOrderStatus.PENDING, 'sup-1', makeReq());
-      expect(service.getOrdersByStatus).toHaveBeenCalledWith(PurchaseOrderStatus.PENDING, 'clinic-1');
-      expect(service.getOrdersBySupplier).not.toHaveBeenCalled();
+    it('pasa status y supplierId como filtros junto con page/limit', async () => {
+      await controller.findAll(PurchaseOrderStatus.PENDING, 'sup-1', 2, 10, makeReq());
+      expect(service.findAll).toHaveBeenCalledWith(
+        'clinic-1',
+        { status: PurchaseOrderStatus.PENDING, supplierId: 'sup-1' },
+        2,
+        10,
+      );
     });
 
-    it('delega en getOrdersBySupplier si solo viene supplierId', async () => {
-      await controller.findAll(undefined, 'sup-1', makeReq());
-      expect(service.getOrdersBySupplier).toHaveBeenCalledWith('sup-1', 'clinic-1');
-    });
-
-    it('delega en findAll si no vienen filtros', async () => {
-      await controller.findAll(undefined, undefined, makeReq());
-      expect(service.findAll).toHaveBeenCalledWith('clinic-1');
+    it('delega en findAll con filtros vacíos si no vienen', async () => {
+      await controller.findAll(undefined, undefined, 1, 20, makeReq());
+      expect(service.findAll).toHaveBeenCalledWith('clinic-1', { status: undefined, supplierId: undefined }, 1, 20);
     });
   });
 

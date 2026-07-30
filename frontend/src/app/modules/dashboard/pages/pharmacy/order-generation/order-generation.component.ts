@@ -94,8 +94,8 @@ export class OrderGenerationComponent implements OnInit {
   }
 
   loadOrders(): void {
-    this.ordersService.getAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(orders => {
-      this.orders = orders
+    this.ordersService.getAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(result => {
+      this.orders = result.data
       this.refreshDataSource()
       this.calculateStats()
     })

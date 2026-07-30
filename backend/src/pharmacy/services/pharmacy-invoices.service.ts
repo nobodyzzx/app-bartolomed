@@ -9,6 +9,13 @@ import {
 import { InvoiceStatus, PharmacyInvoice } from '../entities/pharmacy-invoice.entity';
 import { PharmacySale } from '../entities/pharmacy-sale.entity';
 
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 @Injectable()
 export class PharmacyInvoicesService {
   constructor(
@@ -62,7 +69,12 @@ export class PharmacyInvoicesService {
     return await this.pharmacyInvoiceRepository.save(pharmacyInvoice);
   }
 
-  async findAll(clinicId?: string): Promise<PharmacyInvoice[]> {
+  async findAll(
+    clinicId?: string,
+    status?: InvoiceStatus,
+    page = 1,
+    limit = 20,
+  ): Promise<PaginatedResult<PharmacyInvoice>> {
     if (!clinicId) {
       throw new BadRequestException('clinicId is required');
     }
@@ -72,11 +84,18 @@ export class PharmacyInvoicesService {
       .leftJoinAndSelect('invoice.sale', 'sale')
       .leftJoinAndSelect('invoice.createdBy', 'createdBy')
       .leftJoin('createdBy.clinic', 'clinic')
-      .orderBy('invoice.createdAt', 'DESC');
+      .orderBy('invoice.createdAt', 'DESC')
+      .take(limit)
+      .skip((page - 1) * limit);
 
     qb.andWhere('clinic.id = :clinicId', { clinicId });
 
-    return await qb.getMany();
+    if (status) {
+      qb.andWhere('invoice.status = :status', { status });
+    }
+
+    const [data, total] = await qb.getManyAndCount();
+    return { data, total, page, limit };
   }
 
   async findOne(id: string, clinicId?: string): Promise<PharmacyInvoice> {
@@ -155,24 +174,6 @@ export class PharmacyInvoicesService {
     }
 
     await this.pharmacyInvoiceRepository.remove(pharmacyInvoice);
-  }
-
-  async getInvoicesByStatus(status: InvoiceStatus, clinicId?: string): Promise<PharmacyInvoice[]> {
-    if (!clinicId) {
-      throw new BadRequestException('clinicId is required');
-    }
-
-    const qb = this.pharmacyInvoiceRepository
-      .createQueryBuilder('invoice')
-      .leftJoinAndSelect('invoice.sale', 'sale')
-      .leftJoinAndSelect('invoice.createdBy', 'createdBy')
-      .leftJoin('createdBy.clinic', 'clinic')
-      .where('invoice.status = :status', { status })
-      .orderBy('invoice.createdAt', 'DESC');
-
-    qb.andWhere('clinic.id = :clinicId', { clinicId });
-
-    return await qb.getMany();
   }
 
   async getOverdueInvoices(clinicId?: string): Promise<PharmacyInvoice[]> {

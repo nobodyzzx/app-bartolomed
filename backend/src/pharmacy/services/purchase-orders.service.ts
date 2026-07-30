@@ -10,6 +10,13 @@ import { PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus } from '../entiti
 import { Supplier, SupplierStatus } from '../entities/supplier.entity';
 import { InventoryService } from './inventory.service';
 
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 @Injectable()
 export class PurchaseOrdersService {
   constructor(
@@ -97,13 +104,33 @@ export class PurchaseOrdersService {
     return await this.findOne(savedOrder.id);
   }
 
-  async findAll(clinicId?: string): Promise<PurchaseOrder[]> {
+  async findAll(
+    clinicId?: string,
+    filters?: { status?: PurchaseOrderStatus; supplierId?: string },
+    page = 1,
+    limit = 20,
+  ): Promise<PaginatedResult<PurchaseOrder>> {
     if (!clinicId) throw new BadRequestException('clinicId is required');
-    return await this.purchaseOrderRepository.find({
-      where: { clinicId } as any,
-      relations: ['supplier', 'items', 'createdBy'],
-      order: { createdAt: 'DESC' },
-    });
+
+    const qb = this.purchaseOrderRepository
+      .createQueryBuilder('po')
+      .leftJoinAndSelect('po.supplier', 'supplier')
+      .leftJoinAndSelect('po.items', 'items')
+      .leftJoinAndSelect('po.createdBy', 'createdBy')
+      .where('po.clinicId = :clinicId', { clinicId })
+      .orderBy('po.createdAt', 'DESC')
+      .take(limit)
+      .skip((page - 1) * limit);
+
+    if (filters?.status) {
+      qb.andWhere('po.status = :status', { status: filters.status });
+    }
+    if (filters?.supplierId) {
+      qb.andWhere('po.supplierId = :supplierId', { supplierId: filters.supplierId });
+    }
+
+    const [data, total] = await qb.getManyAndCount();
+    return { data, total, page, limit };
   }
 
   async findOne(id: string, clinicId?: string): Promise<PurchaseOrder> {
@@ -234,24 +261,6 @@ export class PurchaseOrdersService {
     }
 
     await this.purchaseOrderRepository.remove(purchaseOrder);
-  }
-
-  async getOrdersByStatus(status: PurchaseOrderStatus, clinicId?: string): Promise<PurchaseOrder[]> {
-    if (!clinicId) throw new BadRequestException('clinicId is required');
-    return await this.purchaseOrderRepository.find({
-      where: { status, clinicId } as any,
-      relations: ['supplier', 'items', 'createdBy'],
-      order: { createdAt: 'DESC' },
-    });
-  }
-
-  async getOrdersBySupplier(supplierId: string, clinicId?: string): Promise<PurchaseOrder[]> {
-    if (!clinicId) throw new BadRequestException('clinicId is required');
-    return await this.purchaseOrderRepository.find({
-      where: { supplierId, clinicId } as any,
-      relations: ['supplier', 'items', 'createdBy'],
-      order: { createdAt: 'DESC' },
-    });
   }
 
   async receive(

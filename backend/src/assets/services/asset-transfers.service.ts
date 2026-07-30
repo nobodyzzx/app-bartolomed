@@ -18,6 +18,13 @@ import {
 } from '../entities/asset-transfer.entity';
 import { Asset, AssetStatus } from '../entities/asset.entity';
 
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 // Estados terminales: no se puede crear traslado para activos en estos estados
 const BLOCKED_STATUSES: AssetStatus[] = [
   AssetStatus.RETIRED,
@@ -127,7 +134,10 @@ export class AssetTransfersService {
 
   // ─── Listado ──────────────────────────────────────────────────────────────
 
-  async findAll(clinicId: string, filters?: FilterAssetTransfersDto): Promise<AssetTransfer[]> {
+  async findAll(clinicId: string, filters?: FilterAssetTransfersDto): Promise<PaginatedResult<AssetTransfer>> {
+    const page = filters?.page ?? 1;
+    const limit = filters?.limit ?? 20;
+
     const qb = this.transferRepo
       .createQueryBuilder('transfer')
       .leftJoinAndSelect('transfer.sourceClinic', 'sourceClinic')
@@ -138,13 +148,16 @@ export class AssetTransfersService {
       .where('(transfer.source_clinic_id = :clinicId OR transfer.target_clinic_id = :clinicId)', {
         clinicId,
       })
-      .orderBy('transfer.createdAt', 'DESC');
+      .orderBy('transfer.createdAt', 'DESC')
+      .take(limit)
+      .skip((page - 1) * limit);
 
     if (filters?.status) {
       qb.andWhere('transfer.status = :status', { status: filters.status });
     }
 
-    return qb.getMany();
+    const [data, total] = await qb.getManyAndCount();
+    return { data, total, page, limit };
   }
 
   async findOne(id: string, clinicId: string): Promise<AssetTransfer> {
