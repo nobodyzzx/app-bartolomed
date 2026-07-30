@@ -1,13 +1,14 @@
 import { registerLocaleData } from '@angular/common'
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http'
 import localeEsBo from '@angular/common/locales/es-BO'
-import { LOCALE_ID, NgModule } from '@angular/core'
+import { ErrorHandler, LOCALE_ID, NgModule } from '@angular/core'
 import { BrowserModule } from '@angular/platform-browser'
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts'
 
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async'
 import { AppRoutingModule } from './app-routing.module'
 import { AppComponent } from './app.component'
+import { GlobalErrorHandler } from './core/services/global-error-handler.service'
 import { MaterialModule } from './material/material.module'
 import { AuthInterceptor } from './modules/auth/interceptors/auth.interceptor'
 import { ClinicContextInterceptor } from './modules/clinics/interceptors/clinic-context.interceptor'
@@ -25,6 +26,7 @@ registerLocaleData(localeEsBo)
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: ClinicContextInterceptor, multi: true },
     { provide: LOCALE_ID, useValue: 'es-BO' },
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
   ],
   bootstrap: [AppComponent],
 })
