@@ -52,6 +52,7 @@ describe('BillingService', () => {
   let invoiceRepo: MockRepository<Invoice> & { manager: any };
   let patientRepo: MockRepository<Patient>;
   let clinicRepo: MockRepository<Clinic>;
+  let appointmentRepo: MockRepository<Appointment>;
 
   // Repos internos al manager (usados dentro de create())
   let managerInvoiceRepo: MockRepository<Invoice>;
@@ -83,6 +84,7 @@ describe('BillingService', () => {
     invoiceRepo = module.get(getRepositoryToken(Invoice));
     patientRepo = module.get(getRepositoryToken(Patient));
     clinicRepo = module.get(getRepositoryToken(Clinic));
+    appointmentRepo = module.get(getRepositoryToken(Appointment));
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -158,6 +160,39 @@ describe('BillingService', () => {
     it('lanza NotFoundException si la factura no existe', async () => {
       invoiceRepo.findOne!.mockResolvedValue(null);
       await expect(service.findOne('no-existe', 'clinic-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ─── update ───────────────────────────────────────────────────────────────
+
+  describe('update', () => {
+    it('resuelve el appointment usando invoice.patient.id cuando solo viene appointmentId (sin patientId)', async () => {
+      const patient = makePatient({ id: 'patient-1' });
+      const invoice = makeInvoice({ status: InvoiceStatus.DRAFT, patient });
+      // se llama dos veces: carga inicial dentro de la transacción + recarga final con relaciones
+      managerInvoiceRepo.findOne!.mockResolvedValue(invoice);
+      managerInvoiceRepo.save!.mockResolvedValue(invoice);
+      appointmentRepo.findOne!.mockResolvedValue({ id: 'appt-1' });
+
+      await service.update('inv-1', { appointmentId: 'appt-1' } as any, 'clinic-1');
+
+      expect(appointmentRepo.findOne).toHaveBeenCalledWith({
+        where: {
+          id: 'appt-1',
+          clinic: { id: 'clinic-1' },
+          patient: { id: 'patient-1' },
+        },
+      });
+    });
+
+    it('lanza NotFoundException si el appointment no existe o no es del paciente de la factura', async () => {
+      const invoice = makeInvoice({ status: InvoiceStatus.DRAFT });
+      managerInvoiceRepo.findOne!.mockResolvedValueOnce(invoice);
+      appointmentRepo.findOne!.mockResolvedValue(null);
+
+      await expect(service.update('inv-1', { appointmentId: 'appt-inexistente' } as any, 'clinic-1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

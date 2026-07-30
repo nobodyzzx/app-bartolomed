@@ -174,7 +174,7 @@ export class BillingService {
 
       const invoice = await invoiceRepo.findOne({
         where: { id, clinic: { id: clinicId } } as any,
-        relations: ['items'],
+        relations: ['items', 'patient'],
       });
       if (!invoice) throw new NotFoundException('Invoice not found');
       this.assertInvoiceUpdatable(invoice);

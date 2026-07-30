@@ -112,12 +112,12 @@ export class Invoice {
   isActive: boolean;
 
   // Relaciones
-  @ManyToOne(() => Patient, { eager: true })
+  @ManyToOne(() => Patient)
   @JoinColumn({ name: 'patient_id' })
   patient: Patient;
 
   @Index()
-  @ManyToOne(() => Clinic, { eager: true })
+  @ManyToOne(() => Clinic)
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic;
 
