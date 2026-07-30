@@ -8,7 +8,6 @@ import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dial
 import { EmptyStateComponent } from './components/empty-state/empty-state.component'
 import { NavbarComponent } from './components/navbar/navbar.component'
 import { PageHeaderComponent } from './components/page-header/page-header.component'
-import { PlaceholderComponent } from './components/placeholder/placeholder.component'
 import { SearchBarComponent } from './components/search-bar/search-bar.component'
 import { SidebarMenuItemComponent } from './components/sidebar/sidebar-menu-item/sidebar-menu-item.component'
 import { SidebarComponent } from './components/sidebar/sidebar.component'
@@ -22,7 +21,6 @@ import { PhoneMaskDirective } from './directives/phone-mask.directive'
     SidebarComponent,
     SidebarMenuItemComponent,
     NavbarComponent,
-    PlaceholderComponent,
     PhoneMaskDirective,
     ConfirmDialogComponent,
   ],
@@ -43,7 +41,6 @@ import { PhoneMaskDirective } from './directives/phone-mask.directive'
   exports: [
     SidebarComponent,
     NavbarComponent,
-    PlaceholderComponent,
     CommonModule,
     MaterialModule,
     PhoneMaskDirective,
