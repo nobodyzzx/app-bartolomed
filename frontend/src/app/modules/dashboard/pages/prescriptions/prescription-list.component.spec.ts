@@ -1,0 +1,132 @@
+import { TestBed } from '@angular/core/testing'
+import { Router } from '@angular/router'
+import { AlertService } from '@core/services/alert.service'
+import { of } from 'rxjs'
+import { Prescription } from './interfaces/prescription-ui.interface'
+import { PrescriptionListComponent } from './prescription-list.component'
+import { PrescriptionsService } from './prescriptions.service'
+
+describe('PrescriptionListComponent', () => {
+  let component: PrescriptionListComponent
+  let prescriptionsService: jasmine.SpyObj<PrescriptionsService>
+  let router: jasmine.SpyObj<Router>
+  let alert: jasmine.SpyObj<AlertService>
+
+  const daysFromNow = (days: number): string => {
+    const d = new Date()
+    d.setDate(d.getDate() + days)
+    return d.toISOString()
+  }
+
+  const makePrescription = (overrides: Partial<Prescription> = {}): Prescription =>
+    ({
+      id: 'rx-1',
+      prescriptionNumber: 'RX-1',
+      prescriptionDate: daysFromNow(-10),
+      expiryDate: daysFromNow(10),
+      status: 'active',
+      diagnosis: 'Dx',
+      patient: { id: 'p1', firstName: 'Juan', lastName: 'Perez', documentNumber: '123' },
+      doctor: { id: 'd1', email: 'doc@example.com' },
+      items: [],
+      refillsAllowed: 2,
+      refillsUsed: 0,
+      ...overrides,
+    }) as Prescription
+
+  const createComponent = () => {
+    TestBed.configureTestingModule({
+      providers: [
+        PrescriptionListComponent,
+        { provide: PrescriptionsService, useValue: prescriptionsService },
+        { provide: Router, useValue: router },
+        { provide: AlertService, useValue: alert },
+      ],
+    })
+    return TestBed.inject(PrescriptionListComponent)
+  }
+
+  beforeEach(() => {
+    prescriptionsService = jasmine.createSpyObj('PrescriptionsService', ['list', 'setStatus', 'refill', 'getPdf'])
+    router = jasmine.createSpyObj('Router', ['navigate'])
+    alert = jasmine.createSpyObj('AlertService', ['fire', 'success'])
+    alert.fire.and.returnValue(Promise.resolve({ isConfirmed: false } as any))
+  })
+
+  describe('bug real: badge de estado ignoraba el vencimiento', () => {
+    it('getEffectiveStatus devuelve "expired" para una receta "active" con expiryDate en el pasado', () => {
+      prescriptionsService.list.and.returnValue(of({ items: [] }))
+      component = createComponent()
+
+      const vencida = makePrescription({ status: 'active', expiryDate: daysFromNow(-1) })
+
+      expect(component.getEffectiveStatus(vencida)).toBe('expired')
+      expect(component.getStatusLabel(component.getEffectiveStatus(vencida))).toBe('Vencida')
+    })
+
+    it('getEffectiveStatus respeta el status real cuando la receta sigue vigente', () => {
+      prescriptionsService.list.and.returnValue(of({ items: [] }))
+      component = createComponent()
+
+      const vigente = makePrescription({ status: 'active', expiryDate: daysFromNow(5) })
+
+      expect(component.getEffectiveStatus(vigente)).toBe('active')
+    })
+
+    it('getEffectiveStatus no reclasifica estados terminales (dispensada) aunque la fecha ya haya pasado', () => {
+      prescriptionsService.list.and.returnValue(of({ items: [] }))
+      component = createComponent()
+
+      const dispensada = makePrescription({ status: 'dispensed', expiryDate: daysFromNow(-30) })
+
+      expect(component.getEffectiveStatus(dispensada)).toBe('dispensed')
+    })
+
+    it('getActiveCount excluye las "active" ya vencidas (antes se contaban como Activas)', () => {
+      prescriptionsService.list.and.returnValue(
+        of({
+          items: [
+            makePrescription({ id: 'a', status: 'active', expiryDate: daysFromNow(5) }),
+            makePrescription({ id: 'b', status: 'active', expiryDate: daysFromNow(-1) }),
+          ],
+        }),
+      )
+      component = createComponent()
+      component.loadPrescriptions()
+
+      expect(component.getActiveCount()).toBe(1)
+      expect(component.getExpiredCount()).toBe(1)
+    })
+  })
+
+  describe('bug real: filtro "Vencidas" no traía resultados', () => {
+    it('setStatusFilter("expired") no envía status=expired al backend (no existe ese valor en BD)', () => {
+      prescriptionsService.list.and.returnValue(of({ items: [] }))
+      component = createComponent()
+
+      component.setStatusFilter('expired')
+
+      expect(prescriptionsService.list).toHaveBeenCalledWith(1, 100, {})
+    })
+
+    it('setStatusFilter("expired") filtra client-side las recetas "active" vencidas', () => {
+      const vigente = makePrescription({ id: 'a', status: 'active', expiryDate: daysFromNow(5) })
+      const vencida = makePrescription({ id: 'b', status: 'active', expiryDate: daysFromNow(-2) })
+      prescriptionsService.list.and.returnValue(of({ items: [vigente, vencida] }))
+      component = createComponent()
+
+      component.setStatusFilter('expired')
+
+      expect(component.filteredPrescriptions).toEqual([vencida])
+    })
+
+    it('otros filtros de status sí se envían al backend normalmente', () => {
+      prescriptionsService.list.and.returnValue(of({ items: [] }))
+      component = createComponent()
+
+      component.setStatusFilter('dispensed')
+
+      expect(prescriptionsService.list).toHaveBeenCalledWith(1, 100, { status: 'dispensed' })
+    })
+  })
+})

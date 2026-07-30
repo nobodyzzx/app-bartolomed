@@ -25,7 +25,7 @@
         (cardClick)="setStatusFilter('')"
         />
       <app-stat-card
-        label="Activas" [value]="getCountByStatus('active')" sublabel="Vigentes"
+        label="Activas" [value]="getActiveCount()" sublabel="Vigentes"
         icon="check_circle" color="green"
         [active]="selectedStatus === 'active'" [clickable]="true"
         (cardClick)="setStatusFilter('active')"
@@ -140,8 +140,8 @@
                   </td>
                   <td class="px-6 py-4">
                     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
-                      [ngClass]="getStatusBadgeClass(p.status)">
-                      {{ getStatusLabel(p.status) }}
+                      [ngClass]="getStatusBadgeClass(getEffectiveStatus(p))">
+                      {{ getStatusLabel(getEffectiveStatus(p)) }}
                     </span>
                   </td>
                   <td class="px-6 py-4">

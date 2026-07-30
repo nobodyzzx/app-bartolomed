@@ -42,13 +42,20 @@ export class PrescriptionListComponent implements OnInit {
   loadPrescriptions(): void {
     this.loading = true
     const filter: any = {}
-    if (this.selectedStatus) filter.status = this.selectedStatus
+    // 'expired' no es un valor real de status en la mayoría de los casos (una receta
+    // vencida sigue guardada como 'active' salvo que alguien la haya marcado a mano) —
+    // filtrar por 'expired' en el backend devolvería vacío casi siempre. Se resuelve
+    // client-side en filteredPrescriptions.
+    if (this.selectedStatus && this.selectedStatus !== 'expired') filter.status = this.selectedStatus
     if (this.searchTerm?.trim()) filter.search = this.searchTerm.trim()
 
     this.prescriptionsService.list(1, 100, filter).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (response: any) => {
         this.prescriptions = response.items || []
-        this.filteredPrescriptions = this.prescriptions
+        this.filteredPrescriptions =
+          this.selectedStatus === 'expired'
+            ? this.prescriptions.filter(p => this.isEffectivelyExpired(p))
+            : this.prescriptions
         this.loading = false
       },
       error: () => {
@@ -90,6 +97,19 @@ export class PrescriptionListComponent implements OnInit {
     return STATUS_MAP[status]?.label ?? status
   }
 
+  /**
+   * Una receta 'active' cuya expiryDate ya pasó sigue vigente en la BD (nada la
+   * marca 'expired' automáticamente) pero ya no es utilizable — se muestra como
+   * vencida en vez de activa.
+   */
+  isEffectivelyExpired(p: Prescription): boolean {
+    return p.status === 'expired' || (p.status === 'active' && this.isExpired(p.expiryDate))
+  }
+
+  getEffectiveStatus(p: Prescription): string {
+    return this.isEffectivelyExpired(p) ? 'expired' : p.status
+  }
+
   getDaysUntilExpiry(expiryDate: string): number {
     const today = new Date()
     const expiry = new Date(expiryDate)
@@ -118,8 +138,13 @@ export class PrescriptionListComponent implements OnInit {
     return this.prescriptions.filter(p => p.status === status).length
   }
 
+  /** 'Activas' = status 'active' Y no vencida — igual que canRefill/el gate de "Dispensar". */
+  getActiveCount(): number {
+    return this.prescriptions.filter(p => p.status === 'active' && !this.isExpired(p.expiryDate)).length
+  }
+
   getExpiredCount(): number {
-    return this.prescriptions.filter(p => this.isExpired(p.expiryDate)).length
+    return this.prescriptions.filter(p => this.isEffectivelyExpired(p)).length
   }
 
   getPatientInitials(p: Prescription): string {
