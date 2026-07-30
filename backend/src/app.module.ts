@@ -113,6 +113,15 @@ import { UsersModule } from './users/users.module';
       ],
       synchronize: false,
       migrations: ['dist/migrations/*.js'],
+      // Pool explícito en vez de dejar los defaults implícitos de `pg` (max:10,
+      // connectionTimeoutMillis:0 -- sin timeout, un pool agotado cuelga requests
+      // indefinidamente en vez de fallar rápido). Ajustar via env var tras medir
+      // bajo carga real, no a ciegas.
+      extra: {
+        max: +(process.env.DB_POOL_MAX ?? '10'),
+        connectionTimeoutMillis: +(process.env.DB_POOL_CONNECTION_TIMEOUT_MS ?? '5000'),
+        idleTimeoutMillis: +(process.env.DB_POOL_IDLE_TIMEOUT_MS ?? '10000'),
+      },
     }),
     AuthModule,
     UsersModule,
