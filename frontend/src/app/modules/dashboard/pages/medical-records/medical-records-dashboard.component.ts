@@ -151,13 +151,10 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
         if (result.isConfirmed) {
           this.medicalRecordsService.deleteMedicalRecord(record.id!).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: () => {
-              this.alert.success('Eliminado', 'El expediente médico ha sido eliminado.')
               this.loadMedicalRecords()
               this.loadStats()
             },
-            error: () => {
-              this.alert.error('Error', 'No se pudo eliminar el expediente médico.')
-            },
+            error: () => {},
           })
         }
       })

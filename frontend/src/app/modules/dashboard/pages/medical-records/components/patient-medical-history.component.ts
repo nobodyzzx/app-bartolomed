@@ -108,15 +108,9 @@ export class PatientMedicalHistoryComponent implements OnInit, OnDestroy {
           this.isLoading = false
           this.cdr.markForCheck()
         },
-        error: error => {
+        error: () => {
           this.isLoading = false
           this.cdr.markForCheck()
-          this.alert.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No se pudo cargar el historial médico.',
-            confirmButtonText: 'Aceptar',
-          })
         },
       })
   }

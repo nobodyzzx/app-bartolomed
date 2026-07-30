@@ -433,7 +433,6 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
           this.cdr.markForCheck()
         },
         error: () => {
-          this.showError('Error al cargar el expediente médico')
           this.isLoading = false
           this.cdr.markForCheck()
         },
@@ -668,22 +667,12 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
         if (this.consentForm.valid) {
           this.createConsentForm(record.id!)
         } else {
-          this.alert
-            .fire({
-              icon: 'success',
-              title: '¡Expediente creado!',
-              text: 'El expediente médico ha sido creado exitosamente.',
-              confirmButtonText: 'Aceptar',
-            })
-            .then(() => {
-              this.allowNavigationOnce = true
-              this.draftService.clear()
-              this.router.navigate(['/dashboard/medical-records'])
-            })
+          this.allowNavigationOnce = true
+          this.draftService.clear()
+          this.router.navigate(['/dashboard/medical-records'])
         }
       },
-      error: error => {
-        this.showError('Error al crear el expediente médico')
+      error: () => {
         this.isSaving = false
       },
     })
@@ -691,23 +680,13 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
 
   private updateMedicalRecord(medicalRecord: CreateMedicalRecordDto): void {
     this.medicalRecordsService.updateMedicalRecord(this.recordId!, medicalRecord).subscribe({
-      next: record => {
-        this.alert
-          .fire({
-            icon: 'success',
-            title: '¡Expediente actualizado!',
-            text: 'El expediente médico ha sido actualizado exitosamente.',
-            confirmButtonText: 'Aceptar',
-          })
-          .then(() => {
-            this.allowNavigationOnce = true
-            this.draftService.clear()
-            this.router.navigate(['/dashboard/medical-records'])
-          })
+      next: () => {
         this.isSaving = false
+        this.allowNavigationOnce = true
+        this.draftService.clear()
+        this.router.navigate(['/dashboard/medical-records'])
       },
-      error: error => {
-        this.showError('Error al actualizar el expediente médico')
+      error: () => {
         this.isSaving = false
       },
     })
@@ -740,23 +719,13 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
     }
 
     this.medicalRecordsService.createConsentForm(consent).subscribe({
-      next: consentRecord => {
-        this.alert
-          .fire({
-            icon: 'success',
-            title: '¡Expediente y consentimiento creados!',
-            text: 'El expediente médico y el consentimiento han sido creados exitosamente.',
-            confirmButtonText: 'Aceptar',
-          })
-          .then(() => {
-            this.allowNavigationOnce = true
-            this.draftService.clear()
-            this.router.navigate(['/dashboard/medical-records'])
-          })
+      next: () => {
         this.isSaving = false
+        this.allowNavigationOnce = true
+        this.draftService.clear()
+        this.router.navigate(['/dashboard/medical-records'])
       },
-      error: error => {
-        this.showError('Error al crear el formulario de consentimiento')
+      error: () => {
         this.isSaving = false
       },
     })
@@ -779,22 +748,12 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
             const medicalRecord = this.createMedicalRecordDto(RecordStatus.DRAFT)
 
             this.medicalRecordsService.createMedicalRecord(medicalRecord).subscribe({
-              next: record => {
-                this.alert
-                  .fire({
-                    icon: 'success',
-                    title: '¡Borrador guardado!',
-                    text: 'El expediente médico ha sido guardado como borrador.',
-                    confirmButtonText: 'Aceptar',
-                  })
-                  .then(() => {
-                    this.allowNavigationOnce = true
-                    this.router.navigate(['/dashboard/medical-records'])
-                  })
+              next: () => {
                 this.isSaving = false
+                this.allowNavigationOnce = true
+                this.router.navigate(['/dashboard/medical-records'])
               },
-              error: error => {
-                this.showError('Error al guardar el borrador')
+              error: () => {
                 this.isSaving = false
               },
             })
@@ -928,7 +887,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
 
     this.medicalRecordsService.downloadConsentPdf(dto).subscribe({
       next: blob => this.openPdfBlob(blob, 'consentimiento.pdf'),
-      error: () => this.showError('No se pudo generar el PDF del consentimiento'),
+      error: () => {},
     })
   }
 
@@ -1001,7 +960,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
 
     this.medicalRecordsService.downloadSummaryPdf(dto).subscribe({
       next: blob => this.openPdfBlob(blob, 'expediente-medico.pdf'),
-      error: () => this.showError('No se pudo generar el PDF del expediente'),
+      error: () => {},
     })
   }
 
