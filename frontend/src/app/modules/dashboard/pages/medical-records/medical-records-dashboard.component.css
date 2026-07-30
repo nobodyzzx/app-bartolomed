@@ -196,7 +196,7 @@
 
 /* Loading state */
 ::ng-deep .mat-mdc-progress-spinner {
-  --mdc-circular-progress-active-indicator-color: #2563eb;
+  --mat-progress-spinner-active-indicator-color: #2563eb;
 }
 
 /* Empty state icon */

@@ -248,7 +248,7 @@ p, h1, h2, h3, h4, h5, h6 {
   box-shadow: none !important;
   cursor: pointer;
   --mat-icon-button-state-layer-color: transparent;
-  --mdc-icon-button-container-color: transparent;
+  --mat-icon-button-container-color: transparent;
   --mat-menu-trigger-background: transparent;
 }
 
@@ -441,9 +441,9 @@ p, h1, h2, h3, h4, h5, h6 {
 
 /* Borde del outline en estado de error — color rojo vía variables MDC (evita doble línea) */
 .mat-mdc-form-field.mat-form-field-invalid {
-  --mdc-outlined-text-field-error-outline-color: #ef4444;
-  --mdc-outlined-text-field-error-hover-outline-color: #ef4444;
-  --mdc-outlined-text-field-error-focus-outline-color: #ef4444;
+  --mat-form-field-outlined-error-outline-color: #ef4444;
+  --mat-form-field-outlined-error-hover-outline-color: #ef4444;
+  --mat-form-field-outlined-error-focus-outline-color: #ef4444;
 }
 
 /* Icono matPrefix en estado de error — se vuelve rojo */
