@@ -114,9 +114,10 @@
 
                   <!-- Receiving Quantity -->
                   <div class="col-span-12 md:col-span-3">
-                    <label class="block text-xs font-medium text-slate-700 mb-2">Recibiendo Ahora</label>
+                    <label class="block text-xs font-medium text-slate-700 mb-2" [attr.for]="'receivingQuantity-' + i">Recibiendo Ahora</label>
                     <input
                       type="number"
+                      [id]="'receivingQuantity-' + i"
                       formControlName="receivingQuantity"
                       min="0"
                       [max]="getRemainingQuantity(i)"
@@ -150,18 +151,20 @@
                 <!-- Batch & Expiry -->
                 <div class="mt-4 grid grid-cols-12 gap-4">
                   <div class="col-span-12 md:col-span-6">
-                    <label class="block text-xs font-medium text-slate-700 mb-2">Lote (opcional)</label>
+                    <label class="block text-xs font-medium text-slate-700 mb-2" [attr.for]="'batchNumber-' + i">Lote (opcional)</label>
                     <input
                       type="text"
+                      [id]="'batchNumber-' + i"
                       formControlName="batchNumber"
                       placeholder="Ej: LOTE-ABC-123"
                       class="w-full h-9 px-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     />
                   </div>
                   <div class="col-span-12 md:col-span-6">
-                    <label class="block text-xs font-medium text-slate-700 mb-2">Vencimiento (opcional)</label>
+                    <label class="block text-xs font-medium text-slate-700 mb-2" [attr.for]="'expiryDate-' + i">Vencimiento (opcional)</label>
                     <input
                       type="date"
+                      [id]="'expiryDate-' + i"
                       formControlName="expiryDate"
                       class="w-full h-9 px-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     />
@@ -170,9 +173,10 @@
 
                 <!-- Notes -->
                 <div class="mt-4">
-                  <label class="block text-xs font-medium text-slate-700 mb-2">Notas del producto</label>
+                  <label class="block text-xs font-medium text-slate-700 mb-2" [attr.for]="'notes-' + i">Notas del producto</label>
                   <input
                     type="text"
+                    [id]="'notes-' + i"
                     formControlName="notes"
                     placeholder="Ej: Caja dañada, lote específico..."
                     class="w-full h-9 px-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
