@@ -1,10 +1,9 @@
-import { CommonModule } from '@angular/common'
 import { Component, EventEmitter, Input, Output } from '@angular/core'
 
 @Component({
-    selector: 'app-page-header',
-    imports: [CommonModule],
-    templateUrl: './page-header.component.html'
+  selector: 'app-page-header',
+  imports: [],
+  templateUrl: './page-header.component.html',
 })
 export class PageHeaderComponent {
   @Input() title = ''

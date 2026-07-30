@@ -4,13 +4,13 @@
     <app-page-header
       title="Gestión de Clínicas"
       subtitle="Administra y supervisa todas las clínicas del sistema"
-    >
+      >
       <ng-container actions>
         <button
           type="button"
           (click)="navigateToClinics()"
           class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors border-0 text-sm"
-        >
+          >
           <span class="material-symbols-outlined msz-18">list</span>
           Ver Lista
         </button>
@@ -18,7 +18,7 @@
           type="button"
           (click)="navigateToNewClinic()"
           class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all border-0 text-sm"
-        >
+          >
           <span class="material-symbols-outlined msz-18">add</span>
           Nueva Clínica
         </button>
@@ -35,7 +35,7 @@
         color="blue"
         [clickable]="true"
         (cardClick)="showAllClinics()"
-      />
+        />
       <app-stat-card
         label="Activas"
         [value]="isLoading ? '—' : (statistics?.activeClinics ?? 0)"
@@ -44,7 +44,7 @@
         color="green"
         [clickable]="true"
         (cardClick)="showActiveClinics()"
-      />
+        />
       <app-stat-card
         label="Inactivas"
         [value]="isLoading ? '—' : (statistics?.inactiveClinics ?? 0)"
@@ -53,7 +53,7 @@
         color="red"
         [clickable]="true"
         (cardClick)="showInactiveClinics()"
-      />
+        />
       <app-stat-card
         label="Usuarios asignados"
         [value]="isLoading ? '—' : getTotalAssignedUsers()"
@@ -62,7 +62,7 @@
         color="purple"
         [clickable]="true"
         (cardClick)="showAssignedUsers()"
-      />
+        />
     </div>
 
     <!-- Card: Clínicas recientes -->
@@ -84,73 +84,93 @@
         </button>
       </div>
 
-      <app-skeleton-table *ngIf="isLoading" [rows]="5" [columns]="5" />
+      @if (isLoading) {
+        <app-skeleton-table [rows]="5" [columns]="5" />
+      }
 
-      <app-empty-state
-        *ngIf="!isLoading && recentClinics.length === 0"
-        icon="business"
-        title="Sin clínicas registradas"
-        subtitle="Comienza creando la primera clínica"
-        actionLabel="Nueva Clínica"
-        (action)="navigateToNewClinic()"
-      />
+      @if (!isLoading && recentClinics.length === 0) {
+        <app-empty-state
+          icon="business"
+          title="Sin clínicas registradas"
+          subtitle="Comienza creando la primera clínica"
+          actionLabel="Nueva Clínica"
+          (action)="navigateToNewClinic()"
+          />
+      }
 
-      <div *ngIf="!isLoading && recentClinics.length > 0" class="overflow-x-auto">
-        <table class="w-full">
-          <thead class="bg-slate-100">
-            <tr>
-              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Clínica</span></th>
-              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Dirección</span></th>
-              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Contacto</span></th>
-              <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span></th>
-              <th class="px-6 py-4 text-right"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acción</span></th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr *ngFor="let clinic of recentClinics"
-              (click)="viewClinic(clinic)"
-              class="hover:bg-blue-50/40 transition-colors cursor-pointer">
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <span class="material-symbols-outlined text-blue-600 msz-18">business</span>
-                  </div>
-                  <div>
-                    <div class="font-medium text-slate-900">{{ clinic.name }}</div>
-                    <div *ngIf="clinic.description" class="text-xs text-slate-400 truncate max-w-xs">{{ clinic.description }}</div>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4 text-sm text-slate-700">
-                <div>{{ clinic.address }}</div>
-                <div *ngIf="clinic.departamento || clinic.provincia" class="text-xs text-slate-400">
-                  {{ clinic.departamento }}<ng-container *ngIf="clinic.provincia"> · {{ clinic.provincia }}</ng-container>
-                </div>
-              </td>
-              <td class="px-6 py-4 text-sm text-slate-600">
-                <div *ngIf="clinic.phone">{{ clinic.phone }}</div>
-                <div *ngIf="clinic.email" class="text-xs text-slate-400">{{ clinic.email }}</div>
-                <span *ngIf="!clinic.phone && !clinic.email" class="text-slate-400">—</span>
-              </td>
-              <td class="px-6 py-4">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                  [ngClass]="clinic.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
-                  <span class="w-1.5 h-1.5 rounded-full" [ngClass]="clinic.isActive ? 'bg-green-500' : 'bg-red-500'"></span>
-                  {{ clinic.isActive ? 'Activa' : 'Inactiva' }}
-                </span>
-              </td>
-              <td class="px-6 py-4 text-right">
-                <button type="button" (click)="viewClinic(clinic); $event.stopPropagation()" matTooltip="Ver detalle"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors border-0">
-                  <span class="material-symbols-outlined msz-18">arrow_forward</span>
-                </button>
-              </td>
-            </tr>
+      @if (!isLoading && recentClinics.length > 0) {
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-slate-100">
+              <tr>
+                <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Clínica</span></th>
+                <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Dirección</span></th>
+                <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Contacto</span></th>
+                <th class="px-6 py-4 text-left"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span></th>
+                <th class="px-6 py-4 text-right"><span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acción</span></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              @for (clinic of recentClinics; track clinic) {
+                <tr
+                  (click)="viewClinic(clinic)"
+                  class="hover:bg-blue-50/40 transition-colors cursor-pointer">
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-blue-600 msz-18">business</span>
+                      </div>
+                      <div>
+                        <div class="font-medium text-slate-900">{{ clinic.name }}</div>
+                        @if (clinic.description) {
+                          <div class="text-xs text-slate-400 truncate max-w-xs">{{ clinic.description }}</div>
+                        }
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 text-sm text-slate-700">
+                    <div>{{ clinic.address }}</div>
+                    @if (clinic.departamento || clinic.provincia) {
+                      <div class="text-xs text-slate-400">
+                        {{ clinic.departamento }}@if (clinic.provincia) {
+                        · {{ clinic.provincia }}
+                      }
+                    </div>
+                  }
+                </td>
+                <td class="px-6 py-4 text-sm text-slate-600">
+                  @if (clinic.phone) {
+                    <div>{{ clinic.phone }}</div>
+                  }
+                  @if (clinic.email) {
+                    <div class="text-xs text-slate-400">{{ clinic.email }}</div>
+                  }
+                  @if (!clinic.phone && !clinic.email) {
+                    <span class="text-slate-400">—</span>
+                  }
+                </td>
+                <td class="px-6 py-4">
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                    [ngClass]="clinic.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+                    <span class="w-1.5 h-1.5 rounded-full" [ngClass]="clinic.isActive ? 'bg-green-500' : 'bg-red-500'"></span>
+                    {{ clinic.isActive ? 'Activa' : 'Inactiva' }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-right">
+                  <button type="button" (click)="viewClinic(clinic); $event.stopPropagation()" matTooltip="Ver detalle"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">arrow_forward</span>
+                  </button>
+                </td>
+              </tr>
+            }
           </tbody>
         </table>
       </div>
+    }
 
-      <div *ngIf="!isLoading && recentClinics.length > 0" class="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-100">
+    @if (!isLoading && recentClinics.length > 0) {
+      <div class="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-100">
         <span class="text-sm text-slate-500">
           Mostrando las <span class="font-semibold text-slate-700">{{ recentClinics.length }}</span> clínicas más recientes
         </span>
@@ -159,8 +179,9 @@
           Ver lista completa →
         </button>
       </div>
-
-    </div>
+    }
 
   </div>
+
+</div>
 </div>

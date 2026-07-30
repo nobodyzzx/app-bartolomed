@@ -5,12 +5,12 @@
       title="Expedientes Médicos"
       subtitle="Gestión completa de historiales clínicos"
       (back)="goBack()"
-    >
+      >
       <button
         type="button"
         (click)="createNewRecord()"
         class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-0"
-      >
+        >
         <span class="material-symbols-outlined msz-18 leading-none">add</span>
         Nuevo Expediente
       </button>
@@ -23,25 +23,25 @@
         icon="folder_shared" color="blue"
         [active]="!filters.status && !filters.isEmergency" [clickable]="true"
         (cardClick)="showAllRecords()"
-      />
+        />
       <app-stat-card
         label="Borradores" [value]="stats.drafts" sublabel="Pendientes de completar"
         icon="edit_note" color="amber"
         [active]="filters.status === RecordStatus.DRAFT" [clickable]="true"
         (cardClick)="showDrafts()"
-      />
+        />
       <app-stat-card
         label="Completados" [value]="stats.completed" sublabel="Expedientes finalizados"
         icon="check_circle" color="green"
         [active]="filters.status === RecordStatus.COMPLETED" [clickable]="true"
         (cardClick)="showCompleted()"
-      />
+        />
       <app-stat-card
         label="Emergencias" [value]="stats.emergencies" sublabel="Atención prioritaria"
         icon="emergency" color="red"
         [active]="!!filters.isEmergency" [clickable]="true"
         (cardClick)="showEmergencies()"
-      />
+        />
     </div>
 
     <!-- Tabla -->
@@ -54,148 +54,150 @@
           [showClear]="!!(searchTerm || filters.status || filters.isEmergency)"
           (valueChange)="searchTerm = $event; applyFilter($event)"
           (cleared)="clearFilters()"
-        />
+          />
       </div>
 
-      <app-skeleton-table *ngIf="loading" [rows]="6" [columns]="5" />
+      @if (loading) {
+        <app-skeleton-table [rows]="6" [columns]="5" />
+      }
 
-      <app-empty-state
-        *ngIf="!loading && dataSource.data.length === 0"
-        icon="folder_open"
-        title="Sin expedientes médicos"
-        subtitle="Comienza creando el primer expediente"
-        actionLabel="Nuevo Expediente"
-        (action)="createNewRecord()"
-      />
+      @if (!loading && dataSource.data.length === 0) {
+        <app-empty-state
+          icon="folder_open"
+          title="Sin expedientes médicos"
+          subtitle="Comienza creando el primer expediente"
+          actionLabel="Nuevo Expediente"
+          (action)="createNewRecord()"
+          />
+      }
 
-      <div *ngIf="!loading && dataSource.data.length > 0" class="overflow-x-auto">
-        <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
-
-          <ng-container matColumnDef="date">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</span>
-            </th>
-            <td mat-cell *matCellDef="let record" class="px-6 py-4">
-              <div class="flex flex-col">
-                <span class="text-sm font-medium text-slate-900">{{ record.createdAt | date: 'dd/MM/yyyy' }}</span>
-                <span *ngIf="record.isEmergency" class="text-xs text-red-600 font-semibold flex items-center gap-1 mt-0.5">
-                  <span class="material-symbols-outlined msz-12">emergency</span>EMERGENCIA
+      @if (!loading && dataSource.data.length > 0) {
+        <div class="overflow-x-auto">
+          <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
+            <ng-container matColumnDef="date">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</span>
+              </th>
+              <td mat-cell *matCellDef="let record" class="px-6 py-4">
+                <div class="flex flex-col">
+                  <span class="text-sm font-medium text-slate-900">{{ record.createdAt | date: 'dd/MM/yyyy' }}</span>
+                  @if (record.isEmergency) {
+                    <span class="text-xs text-red-600 font-semibold flex items-center gap-1 mt-0.5">
+                      <span class="material-symbols-outlined msz-12">emergency</span>EMERGENCIA
+                    </span>
+                  }
+                </div>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="patient">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</span>
+              </th>
+              <td mat-cell *matCellDef="let record" class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0 font-semibold text-sm">
+                    {{ getPatientInitials(record) }}
+                  </div>
+                  <div>
+                    <div class="font-medium text-slate-900">{{ record.patient?.firstName }} {{ record.patient?.lastName }}</div>
+                    @if (record.patient?.documentNumber) {
+                      <div class="text-xs text-slate-400">{{ record.patient?.documentNumber }}</div>
+                    }
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="type">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Tipo</span>
+              </th>
+              <td mat-cell *matCellDef="let record" class="px-6 py-4">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-slate-400 msz-18">{{ getRecordIcon(record.type) }}</span>
+                  <span class="text-sm text-slate-700">{{ getTypeText(record.type) }}</span>
+                </div>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="chiefComplaint">
+              <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Motivo</span>
+              </th>
+              <td mat-cell *matCellDef="let record" class="px-6 py-4">
+                <span class="text-sm text-slate-600 max-w-xs truncate block" [title]="record.chiefComplaint">
+                  {{ record.chiefComplaint || '—' }}
                 </span>
-              </div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="patient">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</span>
-            </th>
-            <td mat-cell *matCellDef="let record" class="px-6 py-4">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0 font-semibold text-sm">
-                  {{ getPatientInitials(record) }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="doctor">
+              <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Doctor</span>
+              </th>
+              <td mat-cell *matCellDef="let record" class="px-6 py-4">
+                <div class="text-sm font-medium text-slate-900">
+                  Dr. {{ record.doctor?.personalInfo?.firstName }} {{ record.doctor?.personalInfo?.lastName }}
                 </div>
-                <div>
-                  <div class="font-medium text-slate-900">{{ record.patient?.firstName }} {{ record.patient?.lastName }}</div>
-                  <div *ngIf="record.patient?.documentNumber" class="text-xs text-slate-400">{{ record.patient?.documentNumber }}</div>
+                @if (record.doctor?.professionalInfo?.specialization) {
+                  <div class="text-xs text-slate-400">
+                    {{ record.doctor?.professionalInfo?.specialization }}
+                  </div>
+                }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
+              </th>
+              <td mat-cell *matCellDef="let record" class="px-6 py-4">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="getStatusColor(record.status)">
+                  {{ getStatusText(record.status) }}
+                </span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4 text-right">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span>
+              </th>
+              <td mat-cell *matCellDef="let record" class="px-6 py-4">
+                <div class="flex items-center justify-end gap-1">
+                  <button type="button" (click)="viewRecord(record); $event.stopPropagation()"
+                    matTooltip="Ver expediente"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">visibility</span>
+                  </button>
+                  <button type="button" (click)="editRecord(record); $event.stopPropagation()"
+                    matTooltip="Editar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <span class="material-symbols-outlined msz-18">edit</span>
+                  </button>
+                  <button type="button" (click)="viewPatientHistory(record.patient?.id); $event.stopPropagation()"
+                    matTooltip="Historial del paciente"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-purple-50 hover:text-purple-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">history</span>
+                  </button>
+                  <button type="button" (click)="deleteRecord(record); $event.stopPropagation()"
+                    matTooltip="Eliminar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">delete</span>
+                  </button>
                 </div>
-              </div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="type">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Tipo</span>
-            </th>
-            <td mat-cell *matCellDef="let record" class="px-6 py-4">
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-slate-400 msz-18">{{ getRecordIcon(record.type) }}</span>
-                <span class="text-sm text-slate-700">{{ getTypeText(record.type) }}</span>
-              </div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="chiefComplaint">
-            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Motivo</span>
-            </th>
-            <td mat-cell *matCellDef="let record" class="px-6 py-4">
-              <span class="text-sm text-slate-600 max-w-xs truncate block" [title]="record.chiefComplaint">
-                {{ record.chiefComplaint || '—' }}
-              </span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="doctor">
-            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Doctor</span>
-            </th>
-            <td mat-cell *matCellDef="let record" class="px-6 py-4">
-              <div class="text-sm font-medium text-slate-900">
-                Dr. {{ record.doctor?.personalInfo?.firstName }} {{ record.doctor?.personalInfo?.lastName }}
-              </div>
-              <div *ngIf="record.doctor?.professionalInfo?.specialization" class="text-xs text-slate-400">
-                {{ record.doctor?.professionalInfo?.specialization }}
-              </div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
-            </th>
-            <td mat-cell *matCellDef="let record" class="px-6 py-4">
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                [ngClass]="getStatusColor(record.status)">
-                {{ getStatusText(record.status) }}
-              </span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4 text-right">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span>
-            </th>
-            <td mat-cell *matCellDef="let record" class="px-6 py-4">
-              <div class="flex items-center justify-end gap-1">
-                <button type="button" (click)="viewRecord(record); $event.stopPropagation()"
-                  matTooltip="Ver expediente"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0">
-                  <span class="material-symbols-outlined msz-18">visibility</span>
-                </button>
-                <button type="button" (click)="editRecord(record); $event.stopPropagation()"
-                  matTooltip="Editar"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0 disabled:opacity-40 disabled:cursor-not-allowed">
-                  <span class="material-symbols-outlined msz-18">edit</span>
-                </button>
-                <button type="button" (click)="viewPatientHistory(record.patient?.id); $event.stopPropagation()"
-                  matTooltip="Historial del paciente"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-purple-50 hover:text-purple-600 transition-colors border-0">
-                  <span class="material-symbols-outlined msz-18">history</span>
-                </button>
-                <button type="button" (click)="deleteRecord(record); $event.stopPropagation()"
-                  matTooltip="Eliminar"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0">
-                  <span class="material-symbols-outlined msz-18">delete</span>
-                </button>
-              </div>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns"
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns"
               (click)="viewRecord(row)"
-              class="table-row-hover"></tr>
-        </table>
-
-        <div class="table-footer">
-          <span class="text-sm text-slate-500">
-            Mostrando <span class="font-semibold text-slate-700">{{ dataSource.filteredData.length }}</span> de
-            <span class="font-semibold text-slate-700">{{ totalRecords }}</span> expedientes
-          </span>
-          <mat-paginator [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons
-            aria-label="Seleccionar página" class="bg-transparent border-0" />
+            class="table-row-hover"></tr>
+          </table>
+          <div class="table-footer">
+            <span class="text-sm text-slate-500">
+              Mostrando <span class="font-semibold text-slate-700">{{ dataSource.filteredData.length }}</span> de
+              <span class="font-semibold text-slate-700">{{ totalRecords }}</span> expedientes
+            </span>
+            <mat-paginator [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons
+              aria-label="Seleccionar página" class="bg-transparent border-0" />
+          </div>
         </div>
-      </div>
+      }
 
     </div>
   </div>

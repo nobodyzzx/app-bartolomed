@@ -6,7 +6,7 @@
       title="Reportes"
       subtitle="Estadísticas y descarga de informes del período seleccionado"
       (back)="goBack()"
-    />
+      />
 
     <!-- Filtro de período -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-6">
@@ -61,12 +61,13 @@
           <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Pacientes por género</p>
             <div class="h-48 flex items-center justify-center">
-              <canvas *ngIf="genderChart; else skeletonTpl"
-                baseChart [type]="'doughnut'" [data]="genderChart" [options]="doughnutOptions">
-              </canvas>
-              <ng-template #skeletonTpl>
+              @if (genderChart) {
+                <canvas
+                  baseChart [type]="'doughnut'" [data]="genderChart" [options]="doughnutOptions">
+                </canvas>
+              } @else {
                 <div class="w-32 h-32 rounded-full skeleton-shimmer"></div>
-              </ng-template>
+              }
             </div>
           </div>
 
@@ -74,12 +75,13 @@
           <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Distribución por edad</p>
             <div class="h-48 flex items-center justify-center">
-              <canvas *ngIf="ageChart; else skeletonBar"
-                baseChart [type]="'bar'" [data]="ageChart" [options]="barOptions">
-              </canvas>
-              <ng-template #skeletonBar>
+              @if (ageChart) {
+                <canvas
+                  baseChart [type]="'bar'" [data]="ageChart" [options]="barOptions">
+                </canvas>
+              } @else {
                 <div class="w-full h-32 rounded-lg skeleton-shimmer"></div>
-              </ng-template>
+              }
             </div>
           </div>
 
@@ -87,12 +89,13 @@
           <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Estado de citas</p>
             <div class="h-48 flex items-center justify-center">
-              <canvas *ngIf="appointmentStatusChart; else skeletonTpl2"
-                baseChart [type]="'doughnut'" [data]="appointmentStatusChart" [options]="doughnutOptions">
-              </canvas>
-              <ng-template #skeletonTpl2>
+              @if (appointmentStatusChart) {
+                <canvas
+                  baseChart [type]="'doughnut'" [data]="appointmentStatusChart" [options]="doughnutOptions">
+                </canvas>
+              } @else {
                 <div class="w-32 h-32 rounded-full skeleton-shimmer"></div>
-              </ng-template>
+              }
             </div>
           </div>
         </div>
@@ -156,12 +159,13 @@
           <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Ingresos por mes</p>
             <div class="h-52 flex items-center justify-center">
-              <canvas *ngIf="revenueChart; else skeletonRevenue"
-                baseChart [type]="'bar'" [data]="revenueChart" [options]="revenueOptions">
-              </canvas>
-              <ng-template #skeletonRevenue>
+              @if (revenueChart) {
+                <canvas
+                  baseChart [type]="'bar'" [data]="revenueChart" [options]="revenueOptions">
+                </canvas>
+              } @else {
                 <div class="w-full h-40 rounded-lg skeleton-shimmer"></div>
-              </ng-template>
+              }
             </div>
           </div>
 
@@ -169,12 +173,13 @@
           <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Métodos de pago</p>
             <div class="h-52 flex items-center justify-center">
-              <canvas *ngIf="paymentMethodsChart; else skeletonPayments"
-                baseChart [type]="'doughnut'" [data]="paymentMethodsChart" [options]="doughnutOptions">
-              </canvas>
-              <ng-template #skeletonPayments>
+              @if (paymentMethodsChart) {
+                <canvas
+                  baseChart [type]="'doughnut'" [data]="paymentMethodsChart" [options]="doughnutOptions">
+                </canvas>
+              } @else {
                 <div class="w-36 h-36 rounded-full skeleton-shimmer"></div>
-              </ng-template>
+              }
             </div>
           </div>
         </div>

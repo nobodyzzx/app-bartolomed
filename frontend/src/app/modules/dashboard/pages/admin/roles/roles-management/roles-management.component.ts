@@ -23,20 +23,19 @@ import { NotificationService } from '../../../../../../shared/services/notificat
 import { Role, RolesService } from '../services/roles.service'
 
 @Component({
-    selector: 'app-roles-management',
-    imports: [
-        CommonModule,
-        FormsModule,
-        ReactiveFormsModule,
-        MaterialModule,
-        PageHeaderComponent,
-        SkeletonTableComponent,
-        EmptyStateComponent,
-    ],
-    template: `
+  selector: 'app-roles-management',
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MaterialModule,
+    PageHeaderComponent,
+    SkeletonTableComponent,
+    EmptyStateComponent,
+  ],
+  template: `
     <div class="page-wrapper">
       <div class="page-inner">
-
         <app-page-header
           title="Gestión de Roles"
           subtitle="Administra los roles y permisos del sistema"
@@ -55,191 +54,250 @@ import { Role, RolesService } from '../services/roles.service'
         </app-page-header>
 
         <!-- Formulario -->
-        <div *ngIf="isFormVisible" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
-          <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
-            <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
-              <span class="material-symbols-outlined msz-20">verified_user</span>
+        @if (isFormVisible) {
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+            <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
+              <div
+                class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0"
+              >
+                <span class="material-symbols-outlined msz-20">verified_user</span>
+              </div>
+              <div>
+                <h3 class="font-semibold text-slate-900 m-0 leading-tight">
+                  {{ editingRoleId ? 'Editar Rol' : 'Crear Nuevo Rol' }}
+                </h3>
+                <p class="text-sm text-slate-500 m-0">Complete los datos del rol</p>
+              </div>
             </div>
-            <div>
-              <h3 class="font-semibold text-slate-900 m-0 leading-tight">{{ editingRoleId ? 'Editar Rol' : 'Crear Nuevo Rol' }}</h3>
-              <p class="text-sm text-slate-500 m-0">Complete los datos del rol</p>
-            </div>
-          </div>
-
-          <form [formGroup]="roleForm" (ngSubmit)="saveRole()" class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Nombre del Rol</mat-label>
-                <mat-icon matPrefix class="text-purple-400">badge</mat-icon>
-                <input matInput formControlName="name" placeholder="Ej: Administrador" />
-                <mat-error *ngIf="roleForm.get('name')?.hasError('required')">El nombre es obligatorio</mat-error>
-                <mat-error *ngIf="roleForm.get('name')?.hasError('minlength')">Mínimo 2 caracteres</mat-error>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Descripción</mat-label>
-                <mat-icon matPrefix class="text-purple-400">notes</mat-icon>
-                <input matInput formControlName="description" placeholder="Descripción del rol" />
-              </mat-form-field>
-            </div>
-
-            <mat-form-field appearance="outline" class="w-full mb-4">
-              <mat-label>Permisos</mat-label>
-              <mat-icon matPrefix class="text-purple-400">lock</mat-icon>
-              <mat-chip-grid #chipGrid>
-                <mat-chip-row
-                  *ngFor="let perm of selectedPermissions"
-                  [removable]="true"
-                  (removed)="removePermission(perm)"
-                  class="!text-xs"
-                  [ngClass]="getPermissionClass(perm)"
+            <form [formGroup]="roleForm" (ngSubmit)="saveRole()" class="p-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Nombre del Rol</mat-label>
+                  <mat-icon matPrefix class="text-purple-400">badge</mat-icon>
+                  <input matInput formControlName="name" placeholder="Ej: Administrador" />
+                  @if (roleForm.get('name')?.hasError('required')) {
+                    <mat-error>El nombre es obligatorio</mat-error>
+                  }
+                  @if (roleForm.get('name')?.hasError('minlength')) {
+                    <mat-error>Mínimo 2 caracteres</mat-error>
+                  }
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Descripción</mat-label>
+                  <mat-icon matPrefix class="text-purple-400">notes</mat-icon>
+                  <input matInput formControlName="description" placeholder="Descripción del rol" />
+                </mat-form-field>
+              </div>
+              <mat-form-field appearance="outline" class="w-full mb-4">
+                <mat-label>Permisos</mat-label>
+                <mat-icon matPrefix class="text-purple-400">lock</mat-icon>
+                <mat-chip-grid #chipGrid>
+                  @for (perm of selectedPermissions; track perm) {
+                    <mat-chip-row
+                      [removable]="true"
+                      (removed)="removePermission(perm)"
+                      class="!text-xs"
+                      [ngClass]="getPermissionClass(perm)"
+                    >
+                      {{ perm }}
+                      <button matChipRemove>
+                        <span class="material-symbols-outlined" style="font-size:14px">cancel</span>
+                      </button>
+                    </mat-chip-row>
+                  }
+                  <input
+                    placeholder="Escribir o buscar permiso..."
+                    [formControl]="permissionInput"
+                    [matChipInputFor]="chipGrid"
+                    [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                    [matAutocomplete]="permAuto"
+                    (matChipInputTokenEnd)="addPermission($event)"
+                  />
+                </mat-chip-grid>
+                <mat-autocomplete
+                  #permAuto="matAutocomplete"
+                  (optionSelected)="selectPermission($event)"
                 >
-                  {{ perm }}
-                  <button matChipRemove>
-                    <span class="material-symbols-outlined" style="font-size:14px">cancel</span>
-                  </button>
-                </mat-chip-row>
-                <input
-                  placeholder="Escribir o buscar permiso..."
-                  [formControl]="permissionInput"
-                  [matChipInputFor]="chipGrid"
-                  [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                  [matAutocomplete]="permAuto"
-                  (matChipInputTokenEnd)="addPermission($event)"
-                />
-              </mat-chip-grid>
-              <mat-autocomplete #permAuto="matAutocomplete" (optionSelected)="selectPermission($event)">
-                <mat-option *ngFor="let perm of filteredPermissions | async" [value]="perm">
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mr-2"
-                    [ngClass]="getPermissionClass(perm)">{{ perm }}</span>
-                </mat-option>
-              </mat-autocomplete>
-              <mat-hint>Escribe un permiso y presiona Enter o coma para agregar</mat-hint>
-            </mat-form-field>
-
-            <div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
-              <button type="button" (click)="cancel()"
-                class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors border-0 text-sm">
-                <span class="material-symbols-outlined msz-18">close</span>
-                Cancelar
-              </button>
-              <button type="submit" [disabled]="roleForm.invalid"
-                class="inline-flex items-center gap-2 px-6 h-10 rounded-full font-medium bg-purple-600 text-white hover:bg-purple-700 shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0 text-sm">
-                <span class="material-symbols-outlined msz-18">save</span>
-                Guardar
-              </button>
-            </div>
-          </form>
-        </div>
+                  @for (perm of filteredPermissions | async; track perm) {
+                    <mat-option [value]="perm">
+                      <span
+                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mr-2"
+                        [ngClass]="getPermissionClass(perm)"
+                        >{{ perm }}</span
+                      >
+                    </mat-option>
+                  }
+                </mat-autocomplete>
+                <mat-hint>Escribe un permiso y presiona Enter o coma para agregar</mat-hint>
+              </mat-form-field>
+              <div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  (click)="cancel()"
+                  class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors border-0 text-sm"
+                >
+                  <span class="material-symbols-outlined msz-18">close</span>
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  [disabled]="roleForm.invalid"
+                  class="inline-flex items-center gap-2 px-6 h-10 rounded-full font-medium bg-purple-600 text-white hover:bg-purple-700 shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0 text-sm"
+                >
+                  <span class="material-symbols-outlined msz-18">save</span>
+                  Guardar
+                </button>
+              </div>
+            </form>
+          </div>
+        }
 
         <!-- Tabla de Roles -->
         <div class="table-container">
-
           <div class="table-toolbar flex items-center justify-between">
             <span class="text-sm text-slate-600">
               <span class="font-semibold text-slate-800">{{ roles.length }}</span> roles registrados
             </span>
           </div>
 
-          <app-skeleton-table *ngIf="isLoading" [rows]="5" [columns]="4" />
+          @if (isLoading) {
+            <app-skeleton-table [rows]="5" [columns]="4" />
+          }
 
-          <app-empty-state
-            *ngIf="!isLoading && roles.length === 0"
-            icon="verified_user"
-            title="No hay roles registrados"
-            subtitle="Crea el primer rol del sistema"
-            actionLabel="Crear Primer Rol"
-            (action)="openForm()"
-          />
+          @if (!isLoading && roles.length === 0) {
+            <app-empty-state
+              icon="verified_user"
+              title="No hay roles registrados"
+              subtitle="Crea el primer rol del sistema"
+              actionLabel="Crear Primer Rol"
+              (action)="openForm()"
+            />
+          }
 
-          <div class="overflow-x-auto" *ngIf="!isLoading && roles.length > 0">
-            <table mat-table [dataSource]="roles" class="w-full bg-transparent">
-
-              <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
-                  <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Rol</span>
-                </th>
-                <td mat-cell *matCellDef="let role" class="px-6 py-4">
-                  <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                      <span class="material-symbols-outlined text-purple-600 msz-20">verified_user</span>
+          @if (!isLoading && roles.length > 0) {
+            <div class="overflow-x-auto">
+              <table mat-table [dataSource]="roles" class="w-full bg-transparent">
+                <ng-container matColumnDef="name">
+                  <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+                    <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide"
+                      >Rol</span
+                    >
+                  </th>
+                  <td mat-cell *matCellDef="let role" class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0"
+                      >
+                        <span class="material-symbols-outlined text-purple-600 msz-20"
+                          >verified_user</span
+                        >
+                      </div>
+                      <div>
+                        <div class="font-medium text-slate-900">{{ role.name }}</div>
+                        @if (role.description) {
+                          <div class="text-xs text-slate-500">{{ role.description }}</div>
+                        }
+                      </div>
                     </div>
-                    <div>
-                      <div class="font-medium text-slate-900">{{ role.name }}</div>
-                      <div class="text-xs text-slate-500" *ngIf="role.description">{{ role.description }}</div>
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="permissions">
+                  <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+                    <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide"
+                      >Permisos</span
+                    >
+                  </th>
+                  <td mat-cell *matCellDef="let role" class="px-6 py-4">
+                    <div class="flex flex-wrap gap-1.5">
+                      @for (permission of role.permissions?.slice(0, 4); track permission) {
+                        <span
+                          class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                          [ngClass]="getPermissionClass(permission)"
+                        >
+                          {{ permission }}
+                        </span>
+                      }
+                      @if (role.permissions?.length > 4) {
+                        <span
+                          class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 cursor-default"
+                          [matTooltip]="role.permissions.slice(4).join(', ')"
+                          matTooltipPosition="above"
+                        >
+                          +{{ role.permissions.length - 4 }} más
+                        </span>
+                      }
                     </div>
-                  </div>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="permissions">
-                <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
-                  <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Permisos</span>
-                </th>
-                <td mat-cell *matCellDef="let role" class="px-6 py-4">
-                  <div class="flex flex-wrap gap-1.5">
-                    <span *ngFor="let permission of role.permissions?.slice(0, 4)"
-                      class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                      [ngClass]="getPermissionClass(permission)">
-                      {{ permission }}
-                    </span>
-                    <span *ngIf="role.permissions?.length > 4"
-                      class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 cursor-default"
-                      [matTooltip]="role.permissions.slice(4).join(', ')"
-                      matTooltipPosition="above">
-                      +{{ role.permissions.length - 4 }} más
-                    </span>
-                  </div>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
-                  <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
-                </th>
-                <td mat-cell *matCellDef="let role" class="px-6 py-4">
-                  <button
-                    type="button"
-                    (click)="toggleRoleStatus(role)"
-                    [matTooltip]="role.isActive ? 'Clic para desactivar' : 'Clic para activar'"
-                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border-0 cursor-pointer transition-opacity hover:opacity-70"
-                    [ngClass]="role.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
-                  >
-                    <span class="w-1.5 h-1.5 rounded-full" [ngClass]="role.isActive ? 'bg-green-500' : 'bg-red-500'"></span>
-                    {{ role.isActive ? 'Activo' : 'Inactivo' }}
-                  </button>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4 text-right">
-                  <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span>
-                </th>
-                <td mat-cell *matCellDef="let role" class="px-6 py-4">
-                  <div class="flex items-center justify-end gap-1">
-                    <button type="button" (click)="editRole(role)" matTooltip="Editar rol"
-                      class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0">
-                      <span class="material-symbols-outlined msz-18">edit</span>
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+                    <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide"
+                      >Estado</span
+                    >
+                  </th>
+                  <td mat-cell *matCellDef="let role" class="px-6 py-4">
+                    <button
+                      type="button"
+                      (click)="toggleRoleStatus(role)"
+                      [matTooltip]="role.isActive ? 'Clic para desactivar' : 'Clic para activar'"
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border-0 cursor-pointer transition-opacity hover:opacity-70"
+                      [ngClass]="
+                        role.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      "
+                    >
+                      <span
+                        class="w-1.5 h-1.5 rounded-full"
+                        [ngClass]="role.isActive ? 'bg-green-500' : 'bg-red-500'"
+                      ></span>
+                      {{ role.isActive ? 'Activo' : 'Inactivo' }}
                     </button>
-                    <button type="button" (click)="deleteRole(role)" matTooltip="Eliminar rol"
-                      class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0">
-                      <span class="material-symbols-outlined msz-18">delete</span>
-                    </button>
-                  </div>
-                </td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns" class="table-row-hover"></tr>
-            </table>
-          </div>
-
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4 text-right">
+                    <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide"
+                      >Acciones</span
+                    >
+                  </th>
+                  <td mat-cell *matCellDef="let role" class="px-6 py-4">
+                    <div class="flex items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        (click)="editRole(role)"
+                        matTooltip="Editar rol"
+                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0"
+                      >
+                        <span class="material-symbols-outlined msz-18">edit</span>
+                      </button>
+                      <button
+                        type="button"
+                        (click)="deleteRole(role)"
+                        matTooltip="Eliminar rol"
+                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0"
+                      >
+                        <span class="material-symbols-outlined msz-18">delete</span>
+                      </button>
+                    </div>
+                  </td>
+                </ng-container>
+                <tr
+                  mat-header-row
+                  *matHeaderRowDef="displayedColumns"
+                  class="border-b border-slate-200"
+                ></tr>
+                <tr
+                  mat-row
+                  *matRowDef="let row; columns: displayedColumns"
+                  class="table-row-hover"
+                ></tr>
+              </table>
+            </div>
+          }
         </div>
-
       </div>
     </div>
   `,
-    styles: []
+  styles: [],
 })
 export class RolesManagementComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
@@ -310,16 +368,19 @@ export class RolesManagementComponent implements OnInit {
 
   loadRoles(): void {
     this.isLoading = true
-    this.rolesService.findAll(true).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (roles: Role[]) => {
-        this.roles = roles
-        this.isLoading = false
-      },
-      error: () => {
-        this.notificationService.error('Error al cargar roles')
-        this.isLoading = false
-      },
-    })
+    this.rolesService
+      .findAll(true)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (roles: Role[]) => {
+          this.roles = roles
+          this.isLoading = false
+        },
+        error: () => {
+          this.notificationService.error('Error al cargar roles')
+          this.isLoading = false
+        },
+      })
   }
 
   openForm(): void {
@@ -352,31 +413,37 @@ export class RolesManagementComponent implements OnInit {
     }
 
     if (this.editingRoleId) {
-      this.rolesService.update(this.editingRoleId, payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: () => {
-          this.notificationService.success('Rol actualizado')
-          this.loadRoles()
-          this.isFormVisible = false
-        },
-        error: () => {
-          this.notificationService.error('Error al actualizar rol')
-        },
-      })
+      this.rolesService
+        .update(this.editingRoleId, payload)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.notificationService.success('Rol actualizado')
+            this.loadRoles()
+            this.isFormVisible = false
+          },
+          error: () => {
+            this.notificationService.error('Error al actualizar rol')
+          },
+        })
     } else {
-      this.rolesService.create(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: () => {
-          this.notificationService.success('Rol creado')
-          this.loadRoles()
-          this.isFormVisible = false
-        },
-        error: (err: any) => {
-          if (err.error?.message?.includes('duplicate')) {
-            this.notificationService.error('El rol ya existe')
-          } else {
-            this.notificationService.error('Error al crear rol')
-          }
-        },
-      })
+      this.rolesService
+        .create(payload)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.notificationService.success('Rol creado')
+            this.loadRoles()
+            this.isFormVisible = false
+          },
+          error: (err: any) => {
+            if (err.error?.message?.includes('duplicate')) {
+              this.notificationService.error('El rol ya existe')
+            } else {
+              this.notificationService.error('Error al crear rol')
+            }
+          },
+        })
     }
   }
 
@@ -392,15 +459,18 @@ export class RolesManagementComponent implements OnInit {
       })
       .then(result => {
         if (result.isConfirmed) {
-          this.rolesService.delete(role.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-            next: () => {
-              this.notificationService.success('Rol eliminado')
-              this.loadRoles()
-            },
-            error: () => {
-              this.notificationService.error('Error al eliminar rol')
-            },
-          })
+          this.rolesService
+            .delete(role.id)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: () => {
+                this.notificationService.success('Rol eliminado')
+                this.loadRoles()
+              },
+              error: () => {
+                this.notificationService.error('Error al eliminar rol')
+              },
+            })
         }
       })
   }
@@ -419,13 +489,18 @@ export class RolesManagementComponent implements OnInit {
       })
       .then(result => {
         if (result.isConfirmed) {
-          this.rolesService.update(role.id, { isActive: !role.isActive }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-            next: () => {
-              this.notificationService.success(`Rol ${role.isActive ? 'desactivado' : 'activado'}`)
-              this.loadRoles()
-            },
-            error: () => this.notificationService.error(`Error al ${action} el rol`),
-          })
+          this.rolesService
+            .update(role.id, { isActive: !role.isActive })
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: () => {
+                this.notificationService.success(
+                  `Rol ${role.isActive ? 'desactivado' : 'activado'}`,
+                )
+                this.loadRoles()
+              },
+              error: () => this.notificationService.error(`Error al ${action} el rol`),
+            })
         }
       })
   }
@@ -436,9 +511,19 @@ export class RolesManagementComponent implements OnInit {
       return 'bg-blue-100 text-blue-700'
     if (p.startsWith('crear') || p.startsWith('create') || p.includes('_crear'))
       return 'bg-green-100 text-green-700'
-    if (p.startsWith('editar') || p.startsWith('edit') || p.startsWith('update') || p.includes('_editar'))
+    if (
+      p.startsWith('editar') ||
+      p.startsWith('edit') ||
+      p.startsWith('update') ||
+      p.includes('_editar')
+    )
       return 'bg-amber-100 text-amber-700'
-    if (p.startsWith('eliminar') || p.startsWith('delete') || p.startsWith('remove') || p.includes('_eliminar'))
+    if (
+      p.startsWith('eliminar') ||
+      p.startsWith('delete') ||
+      p.startsWith('remove') ||
+      p.includes('_eliminar')
+    )
       return 'bg-red-100 text-red-700'
     if (p.startsWith('gestionar') || p.startsWith('manage') || p.includes('_gestionar'))
       return 'bg-purple-100 text-purple-700'

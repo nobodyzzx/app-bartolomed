@@ -5,12 +5,12 @@
       title="Pacientes"
       subtitle="Gestión y registro de pacientes"
       (back)="goBack()"
-    >
+      >
       <button
         type="button"
         (click)="createPatient()"
         class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
-      >
+        >
         <span class="material-symbols-outlined msz-18 leading-none">person_add</span>
         Nuevo Paciente
       </button>
@@ -23,23 +23,23 @@
         icon="group" color="blue"
         [active]="activeGenderFilter === null" [clickable]="true"
         (cardClick)="setGenderFilter(null)"
-      />
+        />
       <app-stat-card
         label="Masculinos" [value]="getMaleCount()" sublabel="Pacientes hombres"
         icon="man" color="indigo"
         [active]="activeGenderFilter === Gender.MALE" [clickable]="true"
         (cardClick)="setGenderFilter(Gender.MALE)"
-      />
+        />
       <app-stat-card
         label="Femeninas" [value]="getFemaleCount()" sublabel="Pacientes mujeres"
         icon="woman" color="pink"
         [active]="activeGenderFilter === Gender.FEMALE" [clickable]="true"
         (cardClick)="setGenderFilter(Gender.FEMALE)"
-      />
+        />
       <app-stat-card
         label="Nuevos este mes" [value]="getNewThisMonthCount()" sublabel="Registros del mes"
         icon="person_add" color="green"
-      />
+        />
     </div>
 
     <!-- Tabla -->
@@ -53,7 +53,7 @@
           [showClear]="!!(searchTerm || activeGenderFilter)"
           (valueChange)="applyFilter($event)"
           (cleared)="clearFilters()"
-        >
+          >
           <!-- Filtros de género -->
           <div class="flex items-center gap-2 flex-wrap">
             <button type="button" (click)="setGenderFilter(null)"
@@ -78,140 +78,143 @@
       </div>
 
       <!-- Skeleton carga -->
-      <app-skeleton-table *ngIf="isLoading" [rows]="6" [columns]="4" />
+      @if (isLoading) {
+        <app-skeleton-table [rows]="6" [columns]="4" />
+      }
 
       <!-- Estado vacío -->
-      <app-empty-state
-        *ngIf="!isLoading && dataSource.data.length === 0"
-        icon="group"
-        [title]="activeGenderFilter || searchTerm ? 'Sin resultados' : 'Sin pacientes registrados'"
-        [subtitle]="activeGenderFilter || searchTerm ? 'Intenta con otro filtro o término de búsqueda' : 'Comienza registrando el primer paciente'"
-        [actionLabel]="!activeGenderFilter && !searchTerm ? 'Nuevo Paciente' : ''"
-        (action)="createPatient()"
-      />
+      @if (!isLoading && dataSource.data.length === 0) {
+        <app-empty-state
+          icon="group"
+          [title]="activeGenderFilter || searchTerm ? 'Sin resultados' : 'Sin pacientes registrados'"
+          [subtitle]="activeGenderFilter || searchTerm ? 'Intenta con otro filtro o término de búsqueda' : 'Comienza registrando el primer paciente'"
+          [actionLabel]="!activeGenderFilter && !searchTerm ? 'Nuevo Paciente' : ''"
+          (action)="createPatient()"
+          />
+      }
 
       <!-- Tabla de datos -->
-      <div *ngIf="!isLoading && dataSource.data.length > 0" class="overflow-x-auto">
-        <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
-
-          <ng-container matColumnDef="documentNumber">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Documento</span>
-            </th>
-            <td mat-cell *matCellDef="let patient" class="px-6 py-4">
-              <span class="font-mono text-sm bg-slate-100 text-slate-700 px-2 py-0.5 rounded">{{ patient.documentNumber }}</span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</span>
-            </th>
-            <td mat-cell *matCellDef="let patient" class="px-6 py-4">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-sm"
-                  [ngClass]="patient.gender === Gender.FEMALE ? 'bg-pink-100 text-pink-700' : patient.gender === Gender.MALE ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-700'">
-                  {{ patient.firstName.charAt(0) }}{{ patient.lastName.charAt(0) }}
+      @if (!isLoading && dataSource.data.length > 0) {
+        <div class="overflow-x-auto">
+          <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
+            <ng-container matColumnDef="documentNumber">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Documento</span>
+              </th>
+              <td mat-cell *matCellDef="let patient" class="px-6 py-4">
+                <span class="font-mono text-sm bg-slate-100 text-slate-700 px-2 py-0.5 rounded">{{ patient.documentNumber }}</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</span>
+              </th>
+              <td mat-cell *matCellDef="let patient" class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-sm"
+                    [ngClass]="patient.gender === Gender.FEMALE ? 'bg-pink-100 text-pink-700' : patient.gender === Gender.MALE ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-700'">
+                    {{ patient.firstName.charAt(0) }}{{ patient.lastName.charAt(0) }}
+                  </div>
+                  <div>
+                    <div class="font-medium text-slate-900">{{ getPatientFullName(patient) }}</div>
+                    @if (patient.email) {
+                      <div class="text-xs text-slate-400">{{ patient.email }}</div>
+                    }
+                  </div>
                 </div>
-                <div>
-                  <div class="font-medium text-slate-900">{{ getPatientFullName(patient) }}</div>
-                  <div *ngIf="patient.email" class="text-xs text-slate-400">{{ patient.email }}</div>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="age">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Edad</span>
+              </th>
+              <td mat-cell *matCellDef="let patient" class="px-6 py-4">
+                <span class="text-sm text-slate-700">{{ getPatientAge(patient) }} años</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="gender">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Género</span>
+              </th>
+              <td mat-cell *matCellDef="let patient" class="px-6 py-4">
+                <app-status-badge
+                  [label]="patient.gender === Gender.MALE ? 'Masculino' : patient.gender === Gender.FEMALE ? 'Femenino' : 'Otro'"
+                  [color]="patient.gender === Gender.MALE ? 'indigo' : patient.gender === Gender.FEMALE ? 'pink' : 'slate'"
+                  />
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="phone">
+              <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Teléfono</span>
+              </th>
+              <td mat-cell *matCellDef="let patient" class="px-6 py-4">
+                @if (patient.phone) {
+                  <div class="flex items-center gap-1.5 text-sm text-slate-700">
+                    <span class="material-symbols-outlined text-slate-400 msz-16">phone</span>
+                    {{ patient.phone }}
+                  </div>
+                }
+                @if (!patient.phone) {
+                  <span class="text-sm text-slate-400">—</span>
+                }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4 text-right">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span>
+              </th>
+              <td mat-cell *matCellDef="let patient" class="px-6 py-4">
+                <div class="flex items-center justify-end gap-1">
+                  <button type="button" (click)="viewMedicalHistory(patient); $event.stopPropagation()"
+                    matTooltip="Historial médico"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-purple-50 hover:text-purple-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">history</span>
+                  </button>
+                  <button type="button" (click)="createMedicalRecord(patient); $event.stopPropagation()"
+                    matTooltip="Nuevo expediente"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">note_add</span>
+                  </button>
+                  <button type="button" (click)="viewPatient(patient); $event.stopPropagation()"
+                    matTooltip="Ver detalles"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">visibility</span>
+                  </button>
+                  <button type="button" (click)="editPatient(patient); $event.stopPropagation()"
+                    matTooltip="Editar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">edit</span>
+                  </button>
+                  <button type="button" (click)="deletePatient(patient); $event.stopPropagation()"
+                    matTooltip="Eliminar"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0">
+                    <span class="material-symbols-outlined msz-18">delete</span>
+                  </button>
                 </div>
-              </div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="age">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Edad</span>
-            </th>
-            <td mat-cell *matCellDef="let patient" class="px-6 py-4">
-              <span class="text-sm text-slate-700">{{ getPatientAge(patient) }} años</span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="gender">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Género</span>
-            </th>
-            <td mat-cell *matCellDef="let patient" class="px-6 py-4">
-              <app-status-badge
-                [label]="patient.gender === Gender.MALE ? 'Masculino' : patient.gender === Gender.FEMALE ? 'Femenino' : 'Otro'"
-                [color]="patient.gender === Gender.MALE ? 'indigo' : patient.gender === Gender.FEMALE ? 'pink' : 'slate'"
-              />
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="phone">
-            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Teléfono</span>
-            </th>
-            <td mat-cell *matCellDef="let patient" class="px-6 py-4">
-              <div *ngIf="patient.phone" class="flex items-center gap-1.5 text-sm text-slate-700">
-                <span class="material-symbols-outlined text-slate-400 msz-16">phone</span>
-                {{ patient.phone }}
-              </div>
-              <span *ngIf="!patient.phone" class="text-sm text-slate-400">—</span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4 text-right">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span>
-            </th>
-            <td mat-cell *matCellDef="let patient" class="px-6 py-4">
-              <div class="flex items-center justify-end gap-1">
-                <button type="button" (click)="viewMedicalHistory(patient); $event.stopPropagation()"
-                  matTooltip="Historial médico"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-purple-50 hover:text-purple-600 transition-colors border-0">
-                  <span class="material-symbols-outlined msz-18">history</span>
-                </button>
-                <button type="button" (click)="createMedicalRecord(patient); $event.stopPropagation()"
-                  matTooltip="Nuevo expediente"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors border-0">
-                  <span class="material-symbols-outlined msz-18">note_add</span>
-                </button>
-                <button type="button" (click)="viewPatient(patient); $event.stopPropagation()"
-                  matTooltip="Ver detalles"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0">
-                  <span class="material-symbols-outlined msz-18">visibility</span>
-                </button>
-                <button type="button" (click)="editPatient(patient); $event.stopPropagation()"
-                  matTooltip="Editar"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0">
-                  <span class="material-symbols-outlined msz-18">edit</span>
-                </button>
-                <button type="button" (click)="deletePatient(patient); $event.stopPropagation()"
-                  matTooltip="Eliminar"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0">
-                  <span class="material-symbols-outlined msz-18">delete</span>
-                </button>
-              </div>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns"
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns"
               (click)="editPatient(row)"
-              class="table-row-hover"></tr>
-        </table>
-
-        <div class="table-footer">
-          <span class="text-sm text-slate-500">
-            <span class="font-semibold text-slate-700">{{ totalRecords }}</span>
-            {{ totalRecords === 1 ? 'paciente' : 'pacientes' }}
-            {{ activeGenderFilter || searchTerm ? 'encontrados' : 'en total' }}
-          </span>
-          <mat-paginator
-            [length]="totalRecords"
-            [pageSize]="pageSize"
-            [pageSizeOptions]="[10, 25, 50]"
-            showFirstLastButtons
-            class="bg-transparent"
-            (page)="onPageChange($event)"
-          />
+            class="table-row-hover"></tr>
+          </table>
+          <div class="table-footer">
+            <span class="text-sm text-slate-500">
+              <span class="font-semibold text-slate-700">{{ totalRecords }}</span>
+              {{ totalRecords === 1 ? 'paciente' : 'pacientes' }}
+              {{ activeGenderFilter || searchTerm ? 'encontrados' : 'en total' }}
+            </span>
+            <mat-paginator
+              [length]="totalRecords"
+              [pageSize]="pageSize"
+              [pageSizeOptions]="[10, 25, 50]"
+              showFirstLastButtons
+              class="bg-transparent"
+              (page)="onPageChange($event)"
+              />
+          </div>
         </div>
-      </div>
+      }
 
     </div>
   </div>

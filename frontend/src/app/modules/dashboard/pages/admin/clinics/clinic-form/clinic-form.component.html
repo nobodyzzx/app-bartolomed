@@ -5,13 +5,13 @@
       [title]="isEditMode ? 'Editar Clínica' : 'Nueva Clínica'"
       [subtitle]="isEditMode ? 'Actualice la información de la clínica' : 'Complete el formulario para registrar una nueva clínica'"
       (back)="router.navigate(['/dashboard/clinics'])"
-    >
+      >
       <ng-container actions>
         <button
           type="button"
           (click)="router.navigate(['/dashboard/clinics'])"
           class="btn btn-danger-outline"
-        >
+          >
           <mat-icon class="!text-[18px]">cancel</mat-icon>
           Cancelar
         </button>
@@ -100,7 +100,9 @@
               <mat-icon matPrefix class="text-purple-400">map</mat-icon>
               <mat-select formControlName="departamento">
                 <mat-option value=""></mat-option>
-                <mat-option *ngFor="let dep of departamentos" [value]="dep">{{ dep }}</mat-option>
+                @for (dep of departamentos; track dep) {
+                  <mat-option [value]="dep">{{ dep }}</mat-option>
+                }
               </mat-select>
             </mat-form-field>
 
@@ -109,7 +111,9 @@
               <mat-icon matPrefix class="text-purple-400">map</mat-icon>
               <mat-select formControlName="provincia">
                 <mat-option value=""></mat-option>
-                <mat-option *ngFor="let prov of provinciasDisponibles" [value]="prov">{{ prov }}</mat-option>
+                @for (prov of provinciasDisponibles; track prov) {
+                  <mat-option [value]="prov">{{ prov }}</mat-option>
+                }
               </mat-select>
             </mat-form-field>
           </div>
@@ -148,7 +152,7 @@
           type="button"
           (click)="router.navigate(['/dashboard/clinics'])"
           class="btn btn-danger-outline"
-        >
+          >
           <mat-icon class="!text-[18px]">close</mat-icon>
           Cancelar
         </button>
@@ -156,9 +160,13 @@
           type="submit"
           [disabled]="clinicForm.invalid || isLoading"
           class="btn btn-primary"
-        >
-          <mat-spinner *ngIf="isLoading" diameter="18"></mat-spinner>
-          <mat-icon *ngIf="!isLoading" class="!text-[18px]">save</mat-icon>
+          >
+          @if (isLoading) {
+            <mat-spinner diameter="18"></mat-spinner>
+          }
+          @if (!isLoading) {
+            <mat-icon class="!text-[18px]">save</mat-icon>
+          }
           {{ isEditMode ? 'Actualizar Clínica' : 'Registrar Clínica' }}
         </button>
       </div>

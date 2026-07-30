@@ -5,7 +5,7 @@
       title="Ventas de Farmacia"
       subtitle="Visualización de ventas pagadas derivadas de recetas dispensadas"
       (back)="goBack()"
-    />
+      />
 
     <!-- Aviso modo solo visualización (amber) -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
@@ -38,7 +38,7 @@
         [active]="selectedStatus === null"
         [clickable]="true"
         (cardClick)="filterByStatus(null)"
-      />
+        />
       <app-stat-card
         label="Ventas Pagadas"
         [value]="stats.paidInvoices"
@@ -48,21 +48,21 @@
         [active]="selectedStatus === InvoiceStatus.PAID"
         [clickable]="true"
         (cardClick)="selectedStatus = InvoiceStatus.PAID; applyFilters()"
-      />
+        />
       <app-stat-card
         label="Ingresos Totales"
         [value]="(stats.totalRevenue | number: '1.2-2') ?? ''"
         sublabel="Monto total cobrado"
         icon="trending_up"
         color="green"
-      />
+        />
       <app-stat-card
         label="Monto Pendiente"
         [value]="(stats.pendingAmount | number: '1.2-2') ?? ''"
         sublabel="Por cobrar"
         icon="schedule"
         color="orange"
-      />
+        />
     </div>
 
     <!-- Tabla principal -->
@@ -74,7 +74,7 @@
           placeholder="Buscar por ID, paciente, venta..."
           (valueChange)="applyFilter($event)"
           (cleared)="applyFilter('')"
-        >
+          >
           <mat-form-field appearance="outline" class="w-48" subscriptSizing="dynamic">
             <mat-label>Estado</mat-label>
             <mat-select [(value)]="selectedStatus" (selectionChange)="onStatusFilterChange()">
@@ -115,7 +115,7 @@
               type="button"
               (click)="clearFilters()"
               class="inline-flex items-center gap-2 px-4 h-9 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all border-0 text-sm"
-            >
+              >
               <span class="material-symbols-outlined msz-16 leading-none">filter_alt_off</span>
               Limpiar
             </button>
@@ -123,7 +123,7 @@
               type="button"
               (click)="exportToExcel()"
               class="inline-flex items-center gap-2 px-4 h-9 rounded-full font-medium bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200 transition-all text-sm"
-            >
+              >
               <span class="material-symbols-outlined msz-16 leading-none">download</span>
               Exportar
             </button>
@@ -131,115 +131,114 @@
         </app-search-bar>
       </div>
 
-      <app-skeleton-table *ngIf="loading" [rows]="6" [columns]="6" />
+      @if (loading) {
+        <app-skeleton-table [rows]="6" [columns]="6" />
+      }
 
-      <app-empty-state
-        *ngIf="!loading && dataSource.data.length === 0"
-        icon="description"
-        title="Sin registros"
-        subtitle="No se encontraron ventas registradas"
-      />
+      @if (!loading && dataSource.data.length === 0) {
+        <app-empty-state
+          icon="description"
+          title="Sin registros"
+          subtitle="No se encontraron ventas registradas"
+          />
+      }
 
-      <div *ngIf="!loading && dataSource.data.length > 0" class="overflow-x-auto">
-        <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
-
-          <ng-container matColumnDef="saleNumber">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Nº Venta</span>
-            </th>
-            <td mat-cell *matCellDef="let sale" class="px-6 py-4 text-blue-700 font-medium tracking-tight">
-              {{ sale.saleNumber }}
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="patient">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</span>
-            </th>
-            <td mat-cell *matCellDef="let invoice" class="px-6 py-4">
-              <div class="flex items-center gap-2">
-                <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0 font-semibold text-sm">
-                  {{ invoice.patientName?.charAt(0) || '?' }}
+      @if (!loading && dataSource.data.length > 0) {
+        <div class="overflow-x-auto">
+          <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
+            <ng-container matColumnDef="saleNumber">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Nº Venta</span>
+              </th>
+              <td mat-cell *matCellDef="let sale" class="px-6 py-4 text-blue-700 font-medium tracking-tight">
+                {{ sale.saleNumber }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="patient">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</span>
+              </th>
+              <td mat-cell *matCellDef="let invoice" class="px-6 py-4">
+                <div class="flex items-center gap-2">
+                  <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0 font-semibold text-sm">
+                    {{ invoice.patientName?.charAt(0) || '?' }}
+                  </div>
+                  <div>
+                    <div class="font-medium text-slate-900">{{ invoice.patientName }}</div>
+                    <div class="text-xs text-slate-500">Venta: {{ invoice.saleId }}</div>
+                  </div>
                 </div>
-                <div>
-                  <div class="font-medium text-slate-900">{{ invoice.patientName }}</div>
-                  <div class="text-xs text-slate-500">Venta: {{ invoice.saleId }}</div>
-                </div>
-              </div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="date">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</span>
-            </th>
-            <td mat-cell *matCellDef="let invoice" class="px-6 py-4 text-slate-700">
-              {{ invoice.date | date: 'dd/MM/yyyy' }}
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="total">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Total</span>
-            </th>
-            <td mat-cell *matCellDef="let invoice" class="px-6 py-4 text-green-700 font-semibold">
-              Bs {{ invoice.total | number: '1.2-2' }}
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
-            </th>
-            <td mat-cell *matCellDef="let invoice" class="px-6 py-4">
-              <span
-                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border"
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="date">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</span>
+              </th>
+              <td mat-cell *matCellDef="let invoice" class="px-6 py-4 text-slate-700">
+                {{ invoice.date | date: 'dd/MM/yyyy' }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="total">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Total</span>
+              </th>
+              <td mat-cell *matCellDef="let invoice" class="px-6 py-4 text-green-700 font-semibold">
+                Bs {{ invoice.total | number: '1.2-2' }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
+              </th>
+              <td mat-cell *matCellDef="let invoice" class="px-6 py-4">
+                <span
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border"
                 [ngClass]="{
                   'bg-green-50 text-green-700 border-green-200': invoice.status === 'paid',
                   'bg-orange-50 text-orange-700 border-orange-200': invoice.status === 'pending',
                   'bg-red-50 text-red-700 border-red-200': invoice.status === 'overdue' || invoice.status === 'cancelled'
                 }"
-              >
-                <span
-                  class="w-1.5 h-1.5 rounded-full"
+                  >
+                  <span
+                    class="w-1.5 h-1.5 rounded-full"
                   [ngClass]="{
                     'bg-green-600': invoice.status === 'paid',
                     'bg-orange-600': invoice.status === 'pending',
                     'bg-red-600': invoice.status === 'overdue' || invoice.status === 'cancelled'
                   }"
-                ></span>
-                {{ getStatusLabel(invoice.status) }}
-                <span *ngIf="isOverdue(invoice)" class="font-bold">({{ getDaysOverdue(invoice) }}d)</span>
-              </span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="paymentMethod">
-            <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
-              <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Método</span>
-            </th>
-            <td mat-cell *matCellDef="let sale" class="px-6 py-4 text-slate-700 capitalize">
-              {{ sale.paymentMethod | lowercase }}
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns"
-              class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors cursor-pointer"></tr>
-        </table>
-
-        <div class="table-footer">
-          <span class="text-sm text-slate-500">
-            <span class="font-semibold text-slate-700">{{ dataSource.filteredData.length || dataSource.data.length }}</span> ventas en total
-          </span>
-          <mat-paginator
-            [pageSizeOptions]="[10, 25, 50, 100]"
-            showFirstLastButtons
-            aria-label="Seleccionar página de ventas"
-            class="bg-transparent border-0"
-          ></mat-paginator>
+                  ></span>
+                  {{ getStatusLabel(invoice.status) }}
+                  @if (isOverdue(invoice)) {
+                    <span class="font-bold">({{ getDaysOverdue(invoice) }}d)</span>
+                  }
+                </span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="paymentMethod">
+              <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Método</span>
+              </th>
+              <td mat-cell *matCellDef="let sale" class="px-6 py-4 text-slate-700 capitalize">
+                {{ sale.paymentMethod | lowercase }}
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns"
+            class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors cursor-pointer"></tr>
+          </table>
+          <div class="table-footer">
+            <span class="text-sm text-slate-500">
+              <span class="font-semibold text-slate-700">{{ dataSource.filteredData.length || dataSource.data.length }}</span> ventas en total
+            </span>
+            <mat-paginator
+              [pageSizeOptions]="[10, 25, 50, 100]"
+              showFirstLastButtons
+              aria-label="Seleccionar página de ventas"
+              class="bg-transparent border-0"
+            ></mat-paginator>
+          </div>
         </div>
-      </div>
+      }
 
     </div>
   </div>

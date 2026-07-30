@@ -5,14 +5,14 @@
       [title]="isEdit ? 'Editar Factura' : 'Nueva Factura'"
       subtitle="Registra cobros con detalle de servicios"
       (back)="goBack()"
-    >
+      >
       <ng-container actions>
         <button
           type="button"
           (click)="goBack()"
           [disabled]="loading"
           class="btn btn-danger-outline"
-        >
+          >
           <span class="material-symbols-outlined msz-18">cancel</span>
           Cancelar
         </button>
@@ -22,7 +22,7 @@
     <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 1 — Datos de la Factura (azul)
+      SECCIÓN 1 — Datos de la Factura (azul)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
@@ -46,30 +46,40 @@
                 (click)="generateInvoiceNumber()"
                 aria-label="Generar número"
                 matTooltip="Generar número"
-              >
+                >
                 <mat-icon>auto_awesome</mat-icon>
               </button>
-              <mat-error *ngIf="form.get('invoiceNumber')?.hasError('required')">Requerido</mat-error>
+              @if (form.get('invoiceNumber')?.hasError('required')) {
+                <mat-error>Requerido</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Paciente</mat-label>
               <mat-icon matPrefix class="text-blue-400">person</mat-icon>
               <mat-select formControlName="patientId">
-                <mat-option *ngFor="let p of patients" [value]="p.id">
-                  {{ p.firstName }} {{ p.lastName }}
-                </mat-option>
+                @for (p of patients; track p) {
+                  <mat-option [value]="p.id">
+                    {{ p.firstName }} {{ p.lastName }}
+                  </mat-option>
+                }
               </mat-select>
-              <mat-error *ngIf="form.get('patientId')?.hasError('required')">Requerido</mat-error>
+              @if (form.get('patientId')?.hasError('required')) {
+                <mat-error>Requerido</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Clínica</mat-label>
               <mat-icon matPrefix class="text-blue-400">business</mat-icon>
               <mat-select formControlName="clinicId">
-                <mat-option *ngFor="let c of clinics" [value]="c.id">{{ c.name }}</mat-option>
+                @for (c of clinics; track c) {
+                  <mat-option [value]="c.id">{{ c.name }}</mat-option>
+                }
               </mat-select>
-              <mat-error *ngIf="form.get('clinicId')?.hasError('required')">Requerido</mat-error>
+              @if (form.get('clinicId')?.hasError('required')) {
+                <mat-error>Requerido</mat-error>
+              }
             </mat-form-field>
           </div>
 
@@ -80,7 +90,9 @@
               <input matInput [matDatepicker]="issuePicker" formControlName="issueDate" />
               <mat-datepicker-toggle matIconSuffix [for]="issuePicker"></mat-datepicker-toggle>
               <mat-datepicker #issuePicker></mat-datepicker>
-              <mat-error *ngIf="form.get('issueDate')?.hasError('required')">Requerido</mat-error>
+              @if (form.get('issueDate')?.hasError('required')) {
+                <mat-error>Requerido</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -89,14 +101,16 @@
               <input matInput [matDatepicker]="duePicker" formControlName="dueDate" />
               <mat-datepicker-toggle matIconSuffix [for]="duePicker"></mat-datepicker-toggle>
               <mat-datepicker #duePicker></mat-datepicker>
-              <mat-error *ngIf="form.get('dueDate')?.hasError('required')">Requerido</mat-error>
+              @if (form.get('dueDate')?.hasError('required')) {
+                <mat-error>Requerido</mat-error>
+              }
             </mat-form-field>
           </div>
         </div>
       </div>
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 2 — Servicios / Ítems (verde)
+      SECCIÓN 2 — Servicios / Ítems (verde)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
@@ -111,59 +125,68 @@
             type="button"
             (click)="addItem()"
             class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all border-0"
-          >
+            >
             <span class="material-symbols-outlined msz-18 leading-none">add</span>
             Agregar ítem
           </button>
         </div>
         <div class="p-6">
           <div class="grid gap-3">
-            <div
-              class="grid md:grid-cols-12 gap-3 items-end"
-              *ngFor="let item of items.controls; let i = index"
-              [formGroup]="$any(item)"
-            >
-              <mat-form-field class="md:col-span-5" appearance="outline">
-                <mat-label>Descripción</mat-label>
-                <mat-icon matPrefix class="text-green-400">description</mat-icon>
-                <input matInput formControlName="description" />
-                <mat-error *ngIf="item.get('description')?.invalid">Requerido</mat-error>
-              </mat-form-field>
-              <mat-form-field class="md:col-span-2" appearance="outline">
-                <mat-label>Cantidad</mat-label>
-                <input matInput type="number" min="1" formControlName="quantity" />
-                <mat-error *ngIf="item.get('quantity')?.invalid">Cantidad inválida</mat-error>
-              </mat-form-field>
-              <mat-form-field class="md:col-span-2" appearance="outline">
-                <mat-label>Precio unitario</mat-label>
-                <input matInput type="number" min="0" step="0.01" formControlName="unitPrice" />
-                <mat-error *ngIf="item.get('unitPrice')?.invalid">Precio inválido</mat-error>
-              </mat-form-field>
-              <mat-form-field class="md:col-span-2" appearance="outline">
-                <mat-label>Categoría</mat-label>
-                <input matInput formControlName="category" />
-              </mat-form-field>
-              <div class="md:col-span-1 flex items-center mb-[1.3125rem]">
-                <button
-                  type="button"
-                  (click)="removeItem(i)"
-                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors border-0"
-                  matTooltip="Eliminar ítem"
+            @for (item of items.controls; track item; let i = $index) {
+              <div
+                class="grid md:grid-cols-12 gap-3 items-end"
+                [formGroup]="$any(item)"
                 >
-                  <span class="material-symbols-outlined msz-20 leading-none">delete</span>
-                </button>
+                <mat-form-field class="md:col-span-5" appearance="outline">
+                  <mat-label>Descripción</mat-label>
+                  <mat-icon matPrefix class="text-green-400">description</mat-icon>
+                  <input matInput formControlName="description" />
+                  @if (item.get('description')?.invalid) {
+                    <mat-error>Requerido</mat-error>
+                  }
+                </mat-form-field>
+                <mat-form-field class="md:col-span-2" appearance="outline">
+                  <mat-label>Cantidad</mat-label>
+                  <input matInput type="number" min="1" formControlName="quantity" />
+                  @if (item.get('quantity')?.invalid) {
+                    <mat-error>Cantidad inválida</mat-error>
+                  }
+                </mat-form-field>
+                <mat-form-field class="md:col-span-2" appearance="outline">
+                  <mat-label>Precio unitario</mat-label>
+                  <input matInput type="number" min="0" step="0.01" formControlName="unitPrice" />
+                  @if (item.get('unitPrice')?.invalid) {
+                    <mat-error>Precio inválido</mat-error>
+                  }
+                </mat-form-field>
+                <mat-form-field class="md:col-span-2" appearance="outline">
+                  <mat-label>Categoría</mat-label>
+                  <input matInput formControlName="category" />
+                </mat-form-field>
+                <div class="md:col-span-1 flex items-center mb-[1.3125rem]">
+                  <button
+                    type="button"
+                    (click)="removeItem(i)"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors border-0"
+                    matTooltip="Eliminar ítem"
+                    >
+                    <span class="material-symbols-outlined msz-20 leading-none">delete</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            }
 
-            <div *ngIf="items.controls.length === 0" class="py-8 text-center text-slate-400 text-sm">
-              Sin ítems. Agrega conceptos de cobro con el botón de arriba.
-            </div>
+            @if (items.controls.length === 0) {
+              <div class="py-8 text-center text-slate-400 text-sm">
+                Sin ítems. Agrega conceptos de cobro con el botón de arriba.
+              </div>
+            }
           </div>
         </div>
       </div>
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 3 — Totales y Ajustes (naranja)
+      SECCIÓN 3 — Totales y Ajustes (naranja)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-orange-50 border-b border-orange-100">
@@ -214,7 +237,7 @@
       </div>
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 4 — Notas y Términos (slate)
+      SECCIÓN 4 — Notas y Términos (slate)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200">
@@ -248,7 +271,7 @@
           type="button"
           (click)="goBack()"
           class="btn btn-danger-outline"
-        >
+          >
           <span class="material-symbols-outlined msz-18 leading-none">close</span>
           Cancelar
         </button>
@@ -256,9 +279,13 @@
           type="submit"
           [disabled]="loading || form.invalid"
           class="btn btn-primary"
-        >
-          <mat-spinner *ngIf="loading" diameter="16" class="!text-white"></mat-spinner>
-          <span class="material-symbols-outlined msz-18 leading-none" *ngIf="!loading">save</span>
+          >
+          @if (loading) {
+            <mat-spinner diameter="16" class="!text-white"></mat-spinner>
+          }
+          @if (!loading) {
+            <span class="material-symbols-outlined msz-18 leading-none">save</span>
+          }
           {{ isEdit ? 'Guardar cambios' : 'Crear factura' }}
         </button>
       </div>

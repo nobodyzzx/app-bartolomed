@@ -9,7 +9,7 @@
         [attr.aria-label]="isExpanded() ? 'Cerrar menú lateral' : 'Abrir menú lateral'"
         [attr.aria-expanded]="isExpanded()"
         class="!text-slate-600 hover:!bg-slate-100"
-      >
+        >
         <mat-icon>{{ isExpanded() ? 'close' : 'menu' }}</mat-icon>
       </button>
 
@@ -19,7 +19,7 @@
         width="160"
         height="36"
         alt="Bartolomed"
-      />
+        />
     </div>
 
     <div class="flex-grow"></div>
@@ -33,7 +33,7 @@
         [matMenuTriggerFor]="clinicMenu"
         class="clinic-selector-button !text-slate-700 !normal-case !rounded-lg !px-3"
         [disabled]="isClinicsLoading || hasNoClinics()"
-      >
+        >
         <span class="flex items-center gap-1.5">
           <span class="material-symbols-outlined msz-18 text-blue-500">apartment</span>
           <span class="hidden sm:inline text-sm font-medium max-w-[200px] truncate">{{ getSelectedClinicName() }}</span>
@@ -43,76 +43,91 @@
 
       <mat-menu #clinicMenu="matMenu" class="clinic-menu" xPosition="before" (closed)="resetClinicSearch()">
         <!-- Búsqueda (solo si hay más de 5 clínicas) -->
-        <div
-          *ngIf="showClinicSearch"
-          class="px-4 py-3 border-b border-slate-200 bg-slate-50"
-          (click)="$event.stopPropagation()"
-        >
-          <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-slate-200">
-            <span class="material-symbols-outlined msz-16 text-slate-400">search</span>
-            <input
-              type="text"
-              placeholder="Buscar clínica..."
-              class="flex-1 text-sm outline-none border-none bg-transparent text-slate-700"
-              [(ngModel)]="clinicSearchTerm"
-              (ngModelChange)="onClinicSearchChange($event)"
-            />
+        @if (showClinicSearch) {
+          <div
+            class="px-4 py-3 border-b border-slate-200 bg-slate-50"
+            (click)="$event.stopPropagation()"
+            >
+            <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-slate-200">
+              <span class="material-symbols-outlined msz-16 text-slate-400">search</span>
+              <input
+                type="text"
+                placeholder="Buscar clínica..."
+                class="flex-1 text-sm outline-none border-none bg-transparent text-slate-700"
+                [(ngModel)]="clinicSearchTerm"
+                (ngModelChange)="onClinicSearchChange($event)"
+                />
+            </div>
           </div>
-        </div>
+        }
 
         <!-- Super Admin: Ver todas las clínicas -->
-        <button
-          *ngIf="isSuperAdmin()"
-          mat-menu-item
-          (click)="onClinicChange(null)"
-          class="!min-h-[44px]"
-          [class.!bg-blue-50]="!selectedClinicId"
-        >
-          <span class="flex items-center gap-2">
-            <span class="material-symbols-outlined msz-18"
-              [class.text-blue-600]="!selectedClinicId"
-              [class.text-slate-400]="selectedClinicId"
-            >domain</span>
-            <span class="text-sm" [class.font-medium]="!selectedClinicId" [class.text-blue-700]="!selectedClinicId">
-              Todas las clínicas
+        @if (isSuperAdmin()) {
+          <button
+            mat-menu-item
+            (click)="onClinicChange(null)"
+            class="!min-h-[44px]"
+            [class.!bg-blue-50]="!selectedClinicId"
+            >
+            <span class="flex items-center gap-2">
+              <span class="material-symbols-outlined msz-18"
+                [class.text-blue-600]="!selectedClinicId"
+                [class.text-slate-400]="selectedClinicId"
+              >domain</span>
+              <span class="text-sm" [class.font-medium]="!selectedClinicId" [class.text-blue-700]="!selectedClinicId">
+                Todas las clínicas
+              </span>
+              @if (!selectedClinicId) {
+                <span class="material-symbols-outlined msz-16 text-blue-500 ml-auto">check</span>
+              }
             </span>
-            <span *ngIf="!selectedClinicId" class="material-symbols-outlined msz-16 text-blue-500 ml-auto">check</span>
-          </span>
-        </button>
+          </button>
+        }
 
-        <mat-divider *ngIf="isSuperAdmin()" class="!my-1"></mat-divider>
+        @if (isSuperAdmin()) {
+          <mat-divider class="!my-1"></mat-divider>
+        }
 
         <!-- Lista de clínicas -->
-        <button
-          mat-menu-item
-          *ngFor="let clinic of filteredClinics; trackBy: trackClinicById"
-          (click)="onClinicChange(clinic.id)"
-          class="!min-h-[52px]"
-          [class.!bg-blue-50]="clinic.id === selectedClinicId"
-        >
-          <div class="flex items-center gap-3 py-0.5">
-            <span class="material-symbols-outlined msz-18"
-              [class.text-blue-600]="clinic.id === selectedClinicId"
-              [class.text-slate-400]="clinic.id !== selectedClinicId"
-            >apartment</span>
-            <div class="flex flex-col flex-1 min-w-0">
-              <span class="text-sm truncate"
-                [class.font-semibold]="clinic.id === selectedClinicId"
-                [class.text-blue-800]="clinic.id === selectedClinicId"
-                [class.text-slate-800]="clinic.id !== selectedClinicId"
-              >{{ clinic.name }}</span>
-              <span *ngIf="clinic.address" class="text-xs text-slate-400 truncate">{{ clinic.address }}</span>
+        @for (clinic of filteredClinics; track trackClinicById($index, clinic)) {
+          <button
+            mat-menu-item
+            (click)="onClinicChange(clinic.id)"
+            class="!min-h-[52px]"
+            [class.!bg-blue-50]="clinic.id === selectedClinicId"
+            >
+            <div class="flex items-center gap-3 py-0.5">
+              <span class="material-symbols-outlined msz-18"
+                [class.text-blue-600]="clinic.id === selectedClinicId"
+                [class.text-slate-400]="clinic.id !== selectedClinicId"
+              >apartment</span>
+              <div class="flex flex-col flex-1 min-w-0">
+                <span class="text-sm truncate"
+                  [class.font-semibold]="clinic.id === selectedClinicId"
+                  [class.text-blue-800]="clinic.id === selectedClinicId"
+                  [class.text-slate-800]="clinic.id !== selectedClinicId"
+                >{{ clinic.name }}</span>
+                @if (clinic.address) {
+                  <span class="text-xs text-slate-400 truncate">{{ clinic.address }}</span>
+                }
+              </div>
+              @if (clinic.id === selectedClinicId) {
+                <span class="material-symbols-outlined msz-16 text-blue-500">check</span>
+              }
             </div>
-            <span *ngIf="clinic.id === selectedClinicId" class="material-symbols-outlined msz-16 text-blue-500">check</span>
-          </div>
-        </button>
+          </button>
+        }
 
-        <div *ngIf="filteredClinics.length === 0 && clinicSearchTerm" class="px-4 py-3 text-center text-slate-400 text-sm italic">
-          Sin resultados para "{{ clinicSearchTerm }}"
-        </div>
-        <div *ngIf="hasNoClinics()" class="px-4 py-3 text-center text-amber-600 text-sm">
-          No hay clínicas disponibles
-        </div>
+        @if (filteredClinics.length === 0 && clinicSearchTerm) {
+          <div class="px-4 py-3 text-center text-slate-400 text-sm italic">
+            Sin resultados para "{{ clinicSearchTerm }}"
+          </div>
+        }
+        @if (hasNoClinics()) {
+          <div class="px-4 py-3 text-center text-amber-600 text-sm">
+            No hay clínicas disponibles
+          </div>
+        }
       </mat-menu>
 
       <!-- Divider vertical -->
@@ -131,7 +146,7 @@
           [matMenuTriggerFor]="userMenu"
           aria-label="Menú de usuario"
           class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white text-sm font-bold flex items-center justify-center hover:opacity-90 transition-opacity flex-shrink-0 border-0 shadow-sm ring-2 ring-white ring-offset-1 ring-offset-white"
-        >
+          >
           {{ userInitials() }}
         </button>
 

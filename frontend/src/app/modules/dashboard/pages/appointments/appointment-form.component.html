@@ -2,33 +2,32 @@
   <div class="page-inner">
 
     <!-- Overlay de carga -->
-    <div *ngIf="isLoading" class="flex justify-center items-center py-20">
-      <mat-spinner diameter="50"></mat-spinner>
-    </div>
+    @if (isLoading) {
+      <div class="flex justify-center items-center py-20">
+        <mat-spinner diameter="50"></mat-spinner>
+      </div>
+    }
 
-    <ng-container *ngIf="!isLoading">
-
+    @if (!isLoading) {
       <app-page-header
         [title]="isEditMode ? 'Editar Cita' : 'Nueva Cita Médica'"
         [subtitle]="isEditMode ? 'Actualice la información de la cita' : 'Complete el formulario para programar una cita'"
         (back)="goBack()"
-      >
+        >
         <ng-container actions>
           <button
             type="button"
             (click)="goBack()"
             class="btn btn-danger-outline"
-          >
+            >
             <span class="material-symbols-outlined msz-18">cancel</span>
             Cancelar
           </button>
         </ng-container>
       </app-page-header>
-
       <form [formGroup]="appointmentForm" (ngSubmit)="onSubmit()">
-
         <!-- ══════════════════════════════════════════════════
-             SECCIÓN 1: Participantes (azul)
+        SECCIÓN 1: Participantes (azul)
         ══════════════════════════════════════════════════ -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
           <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
@@ -42,48 +41,61 @@
           </div>
           <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Paciente</mat-label>
                 <mat-select formControlName="patientId" required [disabled]="patients.length === 0">
-                  <mat-option *ngIf="patients.length === 0" disabled>No hay pacientes disponibles</mat-option>
-                  <mat-option *ngFor="let patient of patients" [value]="patient.id">
-                    {{ getPatientFullName(patient) }} – {{ patient.documentNumber }}
-                  </mat-option>
+                  @if (patients.length === 0) {
+                    <mat-option disabled>No hay pacientes disponibles</mat-option>
+                  }
+                  @for (patient of patients; track patient) {
+                    <mat-option [value]="patient.id">
+                      {{ getPatientFullName(patient) }} – {{ patient.documentNumber }}
+                    </mat-option>
+                  }
                 </mat-select>
                 <mat-icon matPrefix class="text-blue-400">person</mat-icon>
-                <mat-error *ngIf="appointmentForm.get('patientId')?.hasError('required')">El paciente es obligatorio</mat-error>
+                @if (appointmentForm.get('patientId')?.hasError('required')) {
+                  <mat-error>El paciente es obligatorio</mat-error>
+                }
               </mat-form-field>
-
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Doctor</mat-label>
                 <mat-select formControlName="doctorId" required [disabled]="doctors.length === 0"
                   (selectionChange)="checkAvailability()">
-                  <mat-option *ngIf="doctors.length === 0" disabled>No hay doctores disponibles</mat-option>
-                  <mat-option *ngFor="let doctor of doctors" [value]="doctor.id">
-                    {{ getDoctorFullName(doctor) }} – {{ getDoctorSpecialization(doctor) }}
-                  </mat-option>
+                  @if (doctors.length === 0) {
+                    <mat-option disabled>No hay doctores disponibles</mat-option>
+                  }
+                  @for (doctor of doctors; track doctor) {
+                    <mat-option [value]="doctor.id">
+                      {{ getDoctorFullName(doctor) }} – {{ getDoctorSpecialization(doctor) }}
+                    </mat-option>
+                  }
                 </mat-select>
                 <mat-icon matPrefix class="text-blue-400">medical_services</mat-icon>
-                <mat-error *ngIf="appointmentForm.get('doctorId')?.hasError('required')">El doctor es obligatorio</mat-error>
+                @if (appointmentForm.get('doctorId')?.hasError('required')) {
+                  <mat-error>El doctor es obligatorio</mat-error>
+                }
               </mat-form-field>
-
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Clínica</mat-label>
                 <mat-select formControlName="clinicId" required [disabled]="clinics.length === 0">
-                  <mat-option *ngIf="clinics.length === 0" disabled>No hay clínicas disponibles</mat-option>
-                  <mat-option *ngFor="let clinic of clinics" [value]="clinic.id">{{ clinic.name }}</mat-option>
+                  @if (clinics.length === 0) {
+                    <mat-option disabled>No hay clínicas disponibles</mat-option>
+                  }
+                  @for (clinic of clinics; track clinic) {
+                    <mat-option [value]="clinic.id">{{ clinic.name }}</mat-option>
+                  }
                 </mat-select>
                 <mat-icon matPrefix class="text-blue-400">local_hospital</mat-icon>
-                <mat-error *ngIf="appointmentForm.get('clinicId')?.hasError('required')">La clínica es obligatoria</mat-error>
+                @if (appointmentForm.get('clinicId')?.hasError('required')) {
+                  <mat-error>La clínica es obligatoria</mat-error>
+                }
               </mat-form-field>
-
             </div>
           </div>
         </div>
-
         <!-- ══════════════════════════════════════════════════
-             SECCIÓN 2: Fecha y Hora (verde)
+        SECCIÓN 2: Fecha y Hora (verde)
         ══════════════════════════════════════════════════ -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
           <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
@@ -97,38 +109,41 @@
           </div>
           <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Fecha</mat-label>
                 <input matInput [matDatepicker]="datePicker" formControlName="appointmentDate" required (dateChange)="checkAvailability()" placeholder="DD/MM/AAAA" readonly/>
                 <mat-icon matPrefix class="text-green-400">calendar_today</mat-icon>
                 <mat-datepicker-toggle matSuffix [for]="datePicker"></mat-datepicker-toggle>
                 <mat-datepicker #datePicker></mat-datepicker>
-                <mat-error *ngIf="appointmentForm.get('appointmentDate')?.hasError('required')">La fecha es obligatoria</mat-error>
+                @if (appointmentForm.get('appointmentDate')?.hasError('required')) {
+                  <mat-error>La fecha es obligatoria</mat-error>
+                }
               </mat-form-field>
-
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Hora</mat-label>
                 <input matInput formControlName="appointmentTime" type="time" required (change)="checkAvailability()"/>
                 <mat-icon matPrefix class="text-green-400">access_time</mat-icon>
-                <mat-error *ngIf="appointmentForm.get('appointmentTime')?.hasError('required')">La hora es obligatoria</mat-error>
+                @if (appointmentForm.get('appointmentTime')?.hasError('required')) {
+                  <mat-error>La hora es obligatoria</mat-error>
+                }
               </mat-form-field>
-
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Duración</mat-label>
                 <mat-select formControlName="duration" required>
-                  <mat-option *ngFor="let d of durations" [value]="d.value">{{ d.label }}</mat-option>
+                  @for (d of durations; track d) {
+                    <mat-option [value]="d.value">{{ d.label }}</mat-option>
+                  }
                 </mat-select>
                 <mat-icon matPrefix class="text-green-400">timer</mat-icon>
-                <mat-error *ngIf="appointmentForm.get('duration')?.hasError('required')">La duración es obligatoria</mat-error>
+                @if (appointmentForm.get('duration')?.hasError('required')) {
+                  <mat-error>La duración es obligatoria</mat-error>
+                }
               </mat-form-field>
-
             </div>
           </div>
         </div>
-
         <!-- ══════════════════════════════════════════════════
-             SECCIÓN 3: Clasificación (morado)
+        SECCIÓN 3: Clasificación (morado)
         ══════════════════════════════════════════════════ -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
           <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
@@ -142,36 +157,40 @@
           </div>
           <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Tipo de Cita</mat-label>
                 <mat-select formControlName="appointmentType" required>
-                  <mat-option *ngFor="let type of appointmentTypes" [value]="type.value">{{ type.label }}</mat-option>
+                  @for (type of appointmentTypes; track type) {
+                    <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                  }
                 </mat-select>
                 <mat-icon matPrefix class="text-purple-400">category</mat-icon>
-                <mat-error *ngIf="appointmentForm.get('appointmentType')?.hasError('required')">El tipo de cita es obligatorio</mat-error>
+                @if (appointmentForm.get('appointmentType')?.hasError('required')) {
+                  <mat-error>El tipo de cita es obligatorio</mat-error>
+                }
               </mat-form-field>
-
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Prioridad</mat-label>
                 <mat-select formControlName="priority" required>
-                  <mat-option *ngFor="let p of priorities" [value]="p.value">
-                    <div class="flex items-center gap-2">
-                      <span [ngClass]="{'text-blue-600': p.value === 'low', 'text-green-600': p.value === 'normal', 'text-yellow-600': p.value === 'high', 'text-red-600': p.value === 'urgent'}">●</span>
-                      {{ p.label }}
-                    </div>
-                  </mat-option>
+                  @for (p of priorities; track p) {
+                    <mat-option [value]="p.value">
+                      <div class="flex items-center gap-2">
+                        <span [ngClass]="{'text-blue-600': p.value === 'low', 'text-green-600': p.value === 'normal', 'text-yellow-600': p.value === 'high', 'text-red-600': p.value === 'urgent'}">●</span>
+                        {{ p.label }}
+                      </div>
+                    </mat-option>
+                  }
                 </mat-select>
                 <mat-icon matPrefix class="text-purple-400">flag</mat-icon>
-                <mat-error *ngIf="appointmentForm.get('priority')?.hasError('required')">La prioridad es obligatoria</mat-error>
+                @if (appointmentForm.get('priority')?.hasError('required')) {
+                  <mat-error>La prioridad es obligatoria</mat-error>
+                }
               </mat-form-field>
-
             </div>
           </div>
         </div>
-
         <!-- ══════════════════════════════════════════════════
-             SECCIÓN 4: Detalles (naranja)
+        SECCIÓN 4: Detalles (naranja)
         ══════════════════════════════════════════════════ -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
           <div class="flex items-center gap-4 px-6 py-4 bg-orange-50 border-b border-orange-100">
@@ -184,55 +203,50 @@
             </div>
           </div>
           <div class="p-6 space-y-6">
-
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Motivo de la Cita</mat-label>
               <input matInput formControlName="reason" required placeholder="Describe brevemente el motivo de la consulta"/>
               <mat-icon matPrefix class="text-orange-400">help_outline</mat-icon>
-              <mat-error *ngIf="appointmentForm.get('reason')?.hasError('required')">El motivo de la cita es obligatorio</mat-error>
+              @if (appointmentForm.get('reason')?.hasError('required')) {
+                <mat-error>El motivo de la cita es obligatorio</mat-error>
+              }
             </mat-form-field>
-
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Notas Adicionales</mat-label>
               <textarea matInput formControlName="notes" rows="4"
-                placeholder="Información adicional relevante para la cita"></textarea>
+              placeholder="Información adicional relevante para la cita"></textarea>
               <mat-icon matPrefix class="text-orange-400">note</mat-icon>
             </mat-form-field>
-
           </div>
         </div>
-
         <!-- Barra de acciones -->
         <div class="form-action-bar">
           <button
             type="button" (click)="goBack()"
             class="btn btn-danger-outline"
-          >
+            >
             <span class="material-symbols-outlined msz-18 leading-none">cancel</span>
             Cancelar
           </button>
-
           <div class="flex items-center gap-3">
             <button
               type="button" (click)="checkAvailability()"
               class="btn btn-outline"
-            >
+              >
               <span class="material-symbols-outlined msz-18 leading-none">event_available</span>
               Verificar Disponibilidad
             </button>
-
             <button
               type="submit"
               [disabled]="appointmentForm.invalid"
               class="btn btn-primary"
-            >
+              >
               <span class="material-symbols-outlined msz-18 leading-none">{{ isEditMode ? 'update' : 'save' }}</span>
               {{ isEditMode ? 'Actualizar' : 'Programar' }} Cita
             </button>
           </div>
         </div>
-
       </form>
-    </ng-container>
+    }
   </div>
 </div>

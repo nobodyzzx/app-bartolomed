@@ -5,13 +5,13 @@
       [title]="isEditMode ? 'Editar Orden de Compra' : 'Nueva Orden de Compra'"
       [subtitle]="isEditMode ? 'Modifica los datos de la orden' : 'Crea una nueva orden de compra a proveedor'"
       (back)="goBack()"
-    >
+      >
       <ng-container actions>
         <button
           type="button"
           (click)="cancel()"
           class="btn btn-danger-outline"
-        >
+          >
           <span class="material-symbols-outlined msz-18">cancel</span>
           Cancelar
         </button>
@@ -21,7 +21,7 @@
     <form [formGroup]="orderForm" (ngSubmit)="onSubmit()" class="space-y-6">
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 1 — Información General (azul)
+      SECCIÓN 1 — Información General (azul)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
@@ -39,12 +39,18 @@
               <mat-label>Proveedor</mat-label>
               <mat-icon matPrefix class="text-blue-400">business</mat-icon>
               <mat-select formControlName="supplierId">
-                <mat-option *ngFor="let s of suppliers()" [value]="s.id">
-                  {{ s.tradeName || s.nombreComercial || s.name }}
-                  <span class="text-sm text-slate-500" *ngIf="s.razonSocial"> - {{ s.razonSocial }}</span>
-                </mat-option>
+                @for (s of suppliers(); track s) {
+                  <mat-option [value]="s.id">
+                    {{ s.tradeName || s.nombreComercial || s.name }}
+                    @if (s.razonSocial) {
+                      <span class="text-sm text-slate-500"> - {{ s.razonSocial }}</span>
+                    }
+                  </mat-option>
+                }
               </mat-select>
-              <mat-error *ngIf="orderForm.get('supplierId')?.hasError('required')">Seleccione un proveedor</mat-error>
+              @if (orderForm.get('supplierId')?.hasError('required')) {
+                <mat-error>Seleccione un proveedor</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
@@ -53,7 +59,9 @@
               <input matInput [matDatepicker]="orderDatePicker" formControlName="orderDate" />
               <mat-datepicker-toggle matIconSuffix [for]="orderDatePicker"></mat-datepicker-toggle>
               <mat-datepicker #orderDatePicker></mat-datepicker>
-              <mat-error *ngIf="orderForm.get('orderDate')?.hasError('required')">La fecha es requerida</mat-error>
+              @if (orderForm.get('orderDate')?.hasError('required')) {
+                <mat-error>La fecha es requerida</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
@@ -62,7 +70,9 @@
               <input matInput [matDatepicker]="deliveryDatePicker" formControlName="expectedDeliveryDate" />
               <mat-datepicker-toggle matIconSuffix [for]="deliveryDatePicker"></mat-datepicker-toggle>
               <mat-datepicker #deliveryDatePicker></mat-datepicker>
-              <mat-error *ngIf="orderForm.get('expectedDeliveryDate')?.hasError('required')">La fecha es requerida</mat-error>
+              @if (orderForm.get('expectedDeliveryDate')?.hasError('required')) {
+                <mat-error>La fecha es requerida</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
@@ -84,18 +94,24 @@
                     {{ selectedSupplier()?.tradeName || selectedSupplier()?.nombreComercial || selectedSupplier()?.name }}
                   </h3>
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                    <div *ngIf="selectedSupplier()?.contactPerson" class="flex items-center gap-2">
-                      <span class="material-symbols-outlined text-blue-400 msz-16">person</span>
-                      <span class="text-blue-800">{{ selectedSupplier()?.contactPerson }}</span>
-                    </div>
-                    <div *ngIf="selectedSupplier()?.email" class="flex items-center gap-2">
-                      <span class="material-symbols-outlined text-blue-400 msz-16">email</span>
-                      <span class="text-blue-800">{{ selectedSupplier()?.email }}</span>
-                    </div>
-                    <div *ngIf="selectedSupplier()?.phone" class="flex items-center gap-2">
-                      <span class="material-symbols-outlined text-blue-400 msz-16">phone</span>
-                      <span class="text-blue-800">{{ selectedSupplier()?.phone }}</span>
-                    </div>
+                    @if (selectedSupplier()?.contactPerson) {
+                      <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-blue-400 msz-16">person</span>
+                        <span class="text-blue-800">{{ selectedSupplier()?.contactPerson }}</span>
+                      </div>
+                    }
+                    @if (selectedSupplier()?.email) {
+                      <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-blue-400 msz-16">email</span>
+                        <span class="text-blue-800">{{ selectedSupplier()?.email }}</span>
+                      </div>
+                    }
+                    @if (selectedSupplier()?.phone) {
+                      <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-blue-400 msz-16">phone</span>
+                        <span class="text-blue-800">{{ selectedSupplier()?.phone }}</span>
+                      </div>
+                    }
                   </div>
                 </div>
               </div>
@@ -105,7 +121,7 @@
       </div>
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 2 — Items de la Orden (verde)
+      SECCIÓN 2 — Items de la Orden (verde)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
@@ -120,7 +136,7 @@
             type="button"
             (click)="addItem()"
             class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
-          >
+            >
             <span class="material-symbols-outlined msz-20 leading-none">add</span>
             Agregar Item
           </button>
@@ -131,7 +147,7 @@
               <div
                 [formGroupName]="i"
                 class="border-2 border-slate-200 rounded-2xl p-5 bg-gradient-to-br from-slate-50 to-white hover:shadow-md transition-shadow"
-              >
+                >
                 <div class="flex items-start gap-4">
                   <div class="flex-1 space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
@@ -140,13 +156,19 @@
                           <mat-label>Medicamento</mat-label>
                           <mat-icon matPrefix class="text-green-400">medication</mat-icon>
                           <mat-select formControlName="medicationId">
-                            <mat-option *ngFor="let med of medications()" [value]="med.id">
-                              {{ med.name }}
-                              <span *ngIf="med.brandName" class="text-sm text-slate-500"> - {{ med.brandName }}</span>
-                              <span class="text-xs text-slate-400"> [{{ med.code }}]</span>
-                            </mat-option>
+                            @for (med of medications(); track med) {
+                              <mat-option [value]="med.id">
+                                {{ med.name }}
+                                @if (med.brandName) {
+                                  <span class="text-sm text-slate-500"> - {{ med.brandName }}</span>
+                                }
+                                <span class="text-xs text-slate-400"> [{{ med.code }}]</span>
+                              </mat-option>
+                            }
                           </mat-select>
-                          <mat-error *ngIf="item.get('medicationId')?.hasError('required')">Seleccione un medicamento</mat-error>
+                          @if (item.get('medicationId')?.hasError('required')) {
+                            <mat-error>Seleccione un medicamento</mat-error>
+                          }
                         </mat-form-field>
                       </div>
                       <div class="md:col-span-2">
@@ -154,8 +176,12 @@
                           <mat-label>Cantidad</mat-label>
                           <mat-icon matPrefix class="text-green-400">tag</mat-icon>
                           <input matInput type="number" min="1" formControlName="quantity" />
-                          <mat-error *ngIf="item.get('quantity')?.hasError('required')">Requerido</mat-error>
-                          <mat-error *ngIf="item.get('quantity')?.hasError('min')">Mínimo 1</mat-error>
+                          @if (item.get('quantity')?.hasError('required')) {
+                            <mat-error>Requerido</mat-error>
+                          }
+                          @if (item.get('quantity')?.hasError('min')) {
+                            <mat-error>Mínimo 1</mat-error>
+                          }
                         </mat-form-field>
                       </div>
                       <div class="md:col-span-2">
@@ -164,8 +190,12 @@
                           <mat-icon matPrefix class="text-green-400">payments</mat-icon>
                           <span matTextPrefix>Bs </span>
                           <input matInput type="number" min="0.01" step="0.01" formControlName="unitPrice" />
-                          <mat-error *ngIf="item.get('unitPrice')?.hasError('required')">Requerido</mat-error>
-                          <mat-error *ngIf="item.get('unitPrice')?.hasError('min')">Mínimo 0.01</mat-error>
+                          @if (item.get('unitPrice')?.hasError('required')) {
+                            <mat-error>Requerido</mat-error>
+                          }
+                          @if (item.get('unitPrice')?.hasError('min')) {
+                            <mat-error>Mínimo 0.01</mat-error>
+                          }
                         </mat-form-field>
                       </div>
                       <div class="md:col-span-2">
@@ -190,7 +220,7 @@
                     [disabled]="items.length === 1"
                     matTooltip="Eliminar item"
                     aria-label="Eliminar item"
-                  >
+                    >
                     <span class="material-symbols-outlined msz-20 leading-none">delete</span>
                   </button>
                 </div>
@@ -205,13 +235,13 @@
               subtitle="Agrega al menos un item para continuar"
               actionLabel="Agregar Item"
               (action)="addItem()"
-            />
+              />
           }
         </div>
       </div>
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 3 — Resumen (slate)
+      SECCIÓN 3 — Resumen (slate)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200">
@@ -230,21 +260,21 @@
               sublabel="Productos diferentes"
               icon="inventory_2"
               color="slate"
-            />
+              />
             <app-stat-card
               label="Total Unidades"
               [value]="totalUnits"
               sublabel="Cantidad total"
               icon="tag"
               color="blue"
-            />
+              />
             <app-stat-card
               label="Monto Total"
               [value]="(totalAmount | currency: 'BOB' : 'symbol-narrow' : '1.2-2') ?? ''"
               sublabel="Importe de la orden"
               icon="attach_money"
               color="green"
-            />
+              />
           </div>
         </div>
       </div>
@@ -255,7 +285,7 @@
           type="button"
           (click)="cancel()"
           class="btn btn-danger-outline"
-        >
+          >
           <span class="material-symbols-outlined msz-18 leading-none">close</span>
           Cancelar
         </button>
@@ -263,7 +293,7 @@
           type="submit"
           [disabled]="loading() || orderForm.invalid || items.length === 0"
           class="btn btn-primary"
-        >
+          >
           @if (loading()) {
             <span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
           } @else {

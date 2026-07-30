@@ -5,13 +5,13 @@
       [title]="isEditMode ? 'Editar Medicamento' : 'Nuevo Medicamento'"
       [subtitle]="isEditMode ? 'Modifica los datos del medicamento' : 'Registra un nuevo medicamento en el inventario'"
       (back)="goBack()"
-    >
+      >
       <ng-container actions>
         <button
           type="button"
           (click)="cancel()"
           class="btn btn-danger-outline"
-        >
+          >
           <span class="material-symbols-outlined msz-18">cancel</span>
           Cancelar
         </button>
@@ -21,7 +21,7 @@
     <form [formGroup]="medicationForm" (ngSubmit)="onSubmit()" class="space-y-6">
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 1 — Información Básica (azul)
+      SECCIÓN 1 — Información Básica (azul)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
@@ -46,21 +46,27 @@
               <mat-label>Nombre comercial *</mat-label>
               <mat-icon matPrefix class="text-blue-400">sell</mat-icon>
               <input matInput formControlName="nombreComercial" placeholder="Ej: Tafirol 500" />
-              <mat-error *ngIf="medicationForm.get('nombreComercial')?.hasError('required')">
-                El nombre comercial es requerido
-              </mat-error>
-              <mat-error *ngIf="medicationForm.get('nombreComercial')?.hasError('minlength')">
-                Mínimo 2 caracteres
-              </mat-error>
+              @if (medicationForm.get('nombreComercial')?.hasError('required')) {
+                <mat-error>
+                  El nombre comercial es requerido
+                </mat-error>
+              }
+              @if (medicationForm.get('nombreComercial')?.hasError('minlength')) {
+                <mat-error>
+                  Mínimo 2 caracteres
+                </mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Principio activo *</mat-label>
               <mat-icon matPrefix class="text-blue-400">science</mat-icon>
               <input matInput formControlName="principioActivo" placeholder="Ej: Paracetamol" />
-              <mat-error *ngIf="medicationForm.get('principioActivo')?.hasError('required')">
-                El principio activo es requerido
-              </mat-error>
+              @if (medicationForm.get('principioActivo')?.hasError('required')) {
+                <mat-error>
+                  El principio activo es requerido
+                </mat-error>
+              }
             </mat-form-field>
           </div>
 
@@ -74,7 +80,7 @@
       </div>
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 2 — Concentración y Presentación (morado)
+      SECCIÓN 2 — Concentración y Presentación (morado)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
@@ -98,20 +104,26 @@
                 step="0.01"
                 formControlName="concentracionValor"
                 placeholder="Ej: 500"
-              />
-              <mat-error *ngIf="medicationForm.get('concentracionValor')?.hasError('required')">
-                Requerido
-              </mat-error>
-              <mat-error *ngIf="medicationForm.get('concentracionValor')?.hasError('min')">
-                Debe ser mayor a 0
-              </mat-error>
+                />
+              @if (medicationForm.get('concentracionValor')?.hasError('required')) {
+                <mat-error>
+                  Requerido
+                </mat-error>
+              }
+              @if (medicationForm.get('concentracionValor')?.hasError('min')) {
+                <mat-error>
+                  Debe ser mayor a 0
+                </mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Unidad *</mat-label>
               <mat-icon matPrefix class="text-purple-400">straighten</mat-icon>
               <mat-select formControlName="concentracionUnidad">
-                <mat-option *ngFor="let u of concentrationUnits" [value]="u">{{ u }}</mat-option>
+                @for (u of concentrationUnits; track u) {
+                  <mat-option [value]="u">{{ u }}</mat-option>
+                }
               </mat-select>
             </mat-form-field>
 
@@ -119,22 +131,30 @@
               <mat-label>Forma farmacéutica *</mat-label>
               <mat-icon matPrefix class="text-purple-400">medication_liquid</mat-icon>
               <mat-select formControlName="formaFarmaceutica">
-                <mat-option *ngFor="let f of dosageForms" [value]="f">{{ f }}</mat-option>
+                @for (f of dosageForms; track f) {
+                  <mat-option [value]="f">{{ f }}</mat-option>
+                }
               </mat-select>
-              <mat-error *ngIf="medicationForm.get('formaFarmaceutica')?.hasError('required')">
-                Requerido
-              </mat-error>
+              @if (medicationForm.get('formaFarmaceutica')?.hasError('required')) {
+                <mat-error>
+                  Requerido
+                </mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Vía de administración *</mat-label>
               <mat-icon matPrefix class="text-purple-400">route</mat-icon>
               <mat-select formControlName="viaAdministracion">
-                <mat-option *ngFor="let v of administrationRoutes" [value]="v">{{ v }}</mat-option>
+                @for (v of administrationRoutes; track v) {
+                  <mat-option [value]="v">{{ v }}</mat-option>
+                }
               </mat-select>
-              <mat-error *ngIf="medicationForm.get('viaAdministracion')?.hasError('required')">
-                Requerido
-              </mat-error>
+              @if (medicationForm.get('viaAdministracion')?.hasError('required')) {
+                <mat-error>
+                  Requerido
+                </mat-error>
+              }
             </mat-form-field>
           </div>
         </div>
@@ -146,7 +166,7 @@
           type="button"
           (click)="cancel()"
           class="btn btn-danger-outline"
-        >
+          >
           <span class="material-symbols-outlined msz-18 leading-none">close</span>
           Cancelar
         </button>
@@ -154,9 +174,13 @@
           type="submit"
           [disabled]="loading || medicationForm.invalid"
           class="btn btn-primary"
-        >
-          <span class="material-symbols-outlined msz-18 leading-none" *ngIf="!loading">save</span>
-          <span class="material-symbols-outlined msz-18 leading-none animate-spin" *ngIf="loading">refresh</span>
+          >
+          @if (!loading) {
+            <span class="material-symbols-outlined msz-18 leading-none">save</span>
+          }
+          @if (loading) {
+            <span class="material-symbols-outlined msz-18 leading-none animate-spin">refresh</span>
+          }
           {{ isEditMode ? 'Actualizar' : 'Guardar' }}
         </button>
       </div>

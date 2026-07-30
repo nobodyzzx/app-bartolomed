@@ -5,13 +5,13 @@
       [title]="isEditMode ? 'Editar Proveedor' : 'Nuevo Proveedor'"
       [subtitle]="isEditMode ? 'Modifica los datos del proveedor' : 'Registra un nuevo proveedor'"
       (back)="goBack()"
-    >
+      >
       <ng-container actions>
         <button
           type="button"
           (click)="cancel()"
           class="btn btn-danger-outline"
-        >
+          >
           <span class="material-symbols-outlined msz-18">cancel</span>
           Cancelar
         </button>
@@ -21,7 +21,7 @@
     <form [formGroup]="supplierForm" (ngSubmit)="onSubmit()" class="space-y-6">
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 1 — Información Fiscal (azul)
+      SECCIÓN 1 — Información Fiscal (azul)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
@@ -38,20 +38,26 @@
             <mat-label>Nombre comercial *</mat-label>
             <mat-icon matPrefix class="text-blue-400">storefront</mat-icon>
             <input matInput formControlName="nombreComercial" />
-            <mat-error *ngIf="supplierForm.get('nombreComercial')?.hasError('required')">Requerido</mat-error>
+            @if (supplierForm.get('nombreComercial')?.hasError('required')) {
+              <mat-error>Requerido</mat-error>
+            }
           </mat-form-field>
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Razón social *</mat-label>
             <mat-icon matPrefix class="text-blue-400">business</mat-icon>
             <input matInput formControlName="razonSocial" />
-            <mat-error *ngIf="supplierForm.get('razonSocial')?.hasError('required')">Requerido</mat-error>
+            @if (supplierForm.get('razonSocial')?.hasError('required')) {
+              <mat-error>Requerido</mat-error>
+            }
           </mat-form-field>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>ID Tributario *</mat-label>
               <mat-icon matPrefix class="text-blue-400">badge</mat-icon>
               <input matInput formControlName="idTributario" />
-              <mat-error *ngIf="supplierForm.get('idTributario')?.hasError('required')">Requerido</mat-error>
+              @if (supplierForm.get('idTributario')?.hasError('required')) {
+                <mat-error>Requerido</mat-error>
+              }
             </mat-form-field>
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Tipo de proveedor *</mat-label>
@@ -67,7 +73,7 @@
       </div>
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 2 — Contacto (verde)
+      SECCIÓN 2 — Contacto (verde)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
@@ -84,15 +90,21 @@
             <mat-label>Persona de contacto *</mat-label>
             <mat-icon matPrefix class="text-green-400">person</mat-icon>
             <input matInput formControlName="contactPerson" />
-            <mat-error *ngIf="supplierForm.get('contactPerson')?.hasError('required')">Requerido</mat-error>
+            @if (supplierForm.get('contactPerson')?.hasError('required')) {
+              <mat-error>Requerido</mat-error>
+            }
           </mat-form-field>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Email *</mat-label>
               <mat-icon matPrefix class="text-green-400">email</mat-icon>
               <input matInput type="email" formControlName="email" />
-              <mat-error *ngIf="supplierForm.get('email')?.hasError('required')">Requerido</mat-error>
-              <mat-error *ngIf="supplierForm.get('email')?.hasError('email')">Email inválido</mat-error>
+              @if (supplierForm.get('email')?.hasError('required')) {
+                <mat-error>Requerido</mat-error>
+              }
+              @if (supplierForm.get('email')?.hasError('email')) {
+                <mat-error>Email inválido</mat-error>
+              }
             </mat-form-field>
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Teléfono</mat-label>
@@ -104,7 +116,7 @@
       </div>
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 3 — Ubicación (morado)
+      SECCIÓN 3 — Ubicación (morado)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
@@ -122,16 +134,22 @@
               <mat-label>País *</mat-label>
               <mat-icon matPrefix class="text-purple-400">public</mat-icon>
               <mat-select formControlName="country">
-                <mat-option *ngFor="let c of countries" [value]="c.code">{{ c.name }}</mat-option>
+                @for (c of countries; track c) {
+                  <mat-option [value]="c.code">{{ c.name }}</mat-option>
+                }
               </mat-select>
             </mat-form-field>
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Estado *</mat-label>
               <mat-icon matPrefix class="text-purple-400">map</mat-icon>
               <mat-select formControlName="state">
-                <mat-option *ngFor="let st of availableStates()" [value]="st">{{ st }}</mat-option>
+                @for (st of availableStates(); track st) {
+                  <mat-option [value]="st">{{ st }}</mat-option>
+                }
               </mat-select>
-              <mat-hint *ngIf="!availableStates().length">Selecciona país primero</mat-hint>
+              @if (!availableStates().length) {
+                <mat-hint>Selecciona país primero</mat-hint>
+              }
             </mat-form-field>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -155,7 +173,7 @@
       </div>
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 4 — Notas (slate)
+      SECCIÓN 4 — Notas (slate)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200">
@@ -182,7 +200,7 @@
           type="button"
           (click)="cancel()"
           class="btn btn-danger-outline"
-        >
+          >
           <span class="material-symbols-outlined msz-18 leading-none">close</span>
           Cancelar
         </button>
@@ -190,9 +208,13 @@
           type="submit"
           [disabled]="loading() || supplierForm.invalid"
           class="btn btn-primary"
-        >
-          <span class="material-symbols-outlined msz-18 leading-none" *ngIf="!loading()">save</span>
-          <span class="material-symbols-outlined msz-18 leading-none animate-spin" *ngIf="loading()">refresh</span>
+          >
+          @if (!loading()) {
+            <span class="material-symbols-outlined msz-18 leading-none">save</span>
+          }
+          @if (loading()) {
+            <span class="material-symbols-outlined msz-18 leading-none animate-spin">refresh</span>
+          }
           {{ isEditMode ? 'Actualizar' : 'Guardar' }}
         </button>
       </div>

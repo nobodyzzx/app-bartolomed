@@ -5,33 +5,37 @@
       [title]="isViewMode ? 'Detalle del Paciente' : isEditMode ? 'Editar Paciente' : 'Nuevo Paciente'"
       [subtitle]="isViewMode ? 'Información registrada del paciente' : isEditMode ? 'Actualiza la información del paciente' : 'Completa el formulario para registrar un nuevo paciente'"
       (back)="cancel()"
-    >
-      <ng-container actions *ngIf="isViewMode">
-        <button
-          type="button"
-          (click)="router.navigate(['/dashboard/patients/edit', patientId])"
-          class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all border-0 text-sm"
-        >
-          <span class="material-symbols-outlined msz-18">edit</span>
-          Editar
-        </button>
-      </ng-container>
-      <ng-container actions *ngIf="!isViewMode">
-        <button
-          type="button"
-          (click)="cancel()"
-          class="btn btn-danger-outline"
-        >
-          <span class="material-symbols-outlined msz-18">cancel</span>
-          Cancelar
-        </button>
-      </ng-container>
+      >
+      @if (isViewMode) {
+        <ng-container actions>
+          <button
+            type="button"
+            (click)="router.navigate(['/dashboard/patients/edit', patientId])"
+            class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all border-0 text-sm"
+            >
+            <span class="material-symbols-outlined msz-18">edit</span>
+            Editar
+          </button>
+        </ng-container>
+      }
+      @if (!isViewMode) {
+        <ng-container actions>
+          <button
+            type="button"
+            (click)="cancel()"
+            class="btn btn-danger-outline"
+            >
+            <span class="material-symbols-outlined msz-18">cancel</span>
+            Cancelar
+          </button>
+        </ng-container>
+      }
     </app-page-header>
 
     <div class="space-y-6">
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 1 — Información Personal (azul)
+      SECCIÓN 1 — Información Personal (azul)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-5 bg-blue-50 border-b border-blue-100">
@@ -51,16 +55,24 @@
               <mat-label>Nombres</mat-label>
               <mat-icon matPrefix class="text-blue-400">person</mat-icon>
               <input matInput formControlName="firstName" placeholder="Ingrese nombres" />
-              <mat-error *ngIf="personalInfoForm.get('firstName')?.hasError('required')">Los nombres son requeridos</mat-error>
-              <mat-error *ngIf="personalInfoForm.get('firstName')?.hasError('minlength')">Mínimo 2 caracteres</mat-error>
+              @if (personalInfoForm.get('firstName')?.hasError('required')) {
+                <mat-error>Los nombres son requeridos</mat-error>
+              }
+              @if (personalInfoForm.get('firstName')?.hasError('minlength')) {
+                <mat-error>Mínimo 2 caracteres</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Apellidos</mat-label>
               <mat-icon matPrefix class="text-blue-400">person</mat-icon>
               <input matInput formControlName="lastName" placeholder="Ingrese apellidos" />
-              <mat-error *ngIf="personalInfoForm.get('lastName')?.hasError('required')">Los apellidos son requeridos</mat-error>
-              <mat-error *ngIf="personalInfoForm.get('lastName')?.hasError('minlength')">Mínimo 2 caracteres</mat-error>
+              @if (personalInfoForm.get('lastName')?.hasError('required')) {
+                <mat-error>Los apellidos son requeridos</mat-error>
+              }
+              @if (personalInfoForm.get('lastName')?.hasError('minlength')) {
+                <mat-error>Mínimo 2 caracteres</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -84,9 +96,15 @@
                 aria-label="Buscar paciente por número de documento">
                 <mat-icon>search</mat-icon>
               </button>
-              <mat-error *ngIf="personalInfoForm.get('documentNumber')?.hasError('required')">El número de documento es requerido</mat-error>
-              <mat-error *ngIf="personalInfoForm.get('documentNumber')?.hasError('minlength')">Mínimo 5 caracteres</mat-error>
-              <mat-error *ngIf="personalInfoForm.get('documentNumber')?.hasError('pattern')">Solo letras, números y guiones (5-20 caracteres)</mat-error>
+              @if (personalInfoForm.get('documentNumber')?.hasError('required')) {
+                <mat-error>El número de documento es requerido</mat-error>
+              }
+              @if (personalInfoForm.get('documentNumber')?.hasError('minlength')) {
+                <mat-error>Mínimo 5 caracteres</mat-error>
+              }
+              @if (personalInfoForm.get('documentNumber')?.hasError('pattern')) {
+                <mat-error>Solo letras, números y guiones (5-20 caracteres)</mat-error>
+              }
               <mat-hint>Ej: 12345678, ABC123-9</mat-hint>
             </mat-form-field>
 
@@ -96,17 +114,25 @@
               <input matInput [matDatepicker]="picker" formControlName="birthDate" />
               <mat-datepicker-toggle matIconSuffix [for]="picker" />
               <mat-datepicker #picker />
-              <mat-error *ngIf="personalInfoForm.get('birthDate')?.hasError('required')">La fecha de nacimiento es requerida</mat-error>
-              <mat-hint *ngIf="getAge() !== null">Edad: {{ getAge() }} años</mat-hint>
+              @if (personalInfoForm.get('birthDate')?.hasError('required')) {
+                <mat-error>La fecha de nacimiento es requerida</mat-error>
+              }
+              @if (getAge() !== null) {
+                <mat-hint>Edad: {{ getAge() }} años</mat-hint>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Género</mat-label>
               <mat-icon matPrefix class="text-blue-400">wc</mat-icon>
               <mat-select formControlName="gender">
-                <mat-option *ngFor="let opt of genderOptions" [value]="opt.value">{{ opt.label }}</mat-option>
+                @for (opt of genderOptions; track opt) {
+                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                }
               </mat-select>
-              <mat-error *ngIf="personalInfoForm.get('gender')?.hasError('required')">El género es requerido</mat-error>
+              @if (personalInfoForm.get('gender')?.hasError('required')) {
+                <mat-error>El género es requerido</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -114,7 +140,9 @@
               <mat-icon matPrefix class="text-blue-400">water_drop</mat-icon>
               <mat-select formControlName="bloodType">
                 <mat-option [value]="null">No especificado</mat-option>
-                <mat-option *ngFor="let opt of bloodTypeOptions" [value]="opt.value">{{ opt.label }}</mat-option>
+                @for (opt of bloodTypeOptions; track opt) {
+                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                }
               </mat-select>
             </mat-form-field>
 
@@ -122,7 +150,9 @@
               <mat-label>Estado Civil</mat-label>
               <mat-icon matPrefix class="text-blue-400">people</mat-icon>
               <mat-select formControlName="maritalStatus">
-                <mat-option *ngFor="let opt of maritalStatusOptions" [value]="opt.value">{{ opt.label }}</mat-option>
+                @for (opt of maritalStatusOptions; track opt) {
+                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                }
               </mat-select>
             </mat-form-field>
 
@@ -137,7 +167,7 @@
       </div>
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 2 — Contacto (verde)
+      SECCIÓN 2 — Contacto (verde)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-5 bg-green-50 border-b border-green-100">
@@ -157,14 +187,18 @@
               <mat-label>Email</mat-label>
               <mat-icon matPrefix class="text-green-400">email</mat-icon>
               <input matInput type="email" formControlName="email" placeholder="correo@email.com" />
-              <mat-error *ngIf="contactInfoForm.get('email')?.hasError('email')">Ingrese un email válido</mat-error>
+              @if (contactInfoForm.get('email')?.hasError('email')) {
+                <mat-error>Ingrese un email válido</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Teléfono</mat-label>
               <mat-icon matPrefix class="text-green-400">phone</mat-icon>
               <input matInput formControlName="phone" placeholder="+591-xxxxxxxx" appPhoneMask />
-              <mat-error *ngIf="contactInfoForm.get('phone')?.hasError('pattern')">Formato inválido. Ej: +591-70123456</mat-error>
+              @if (contactInfoForm.get('phone')?.hasError('pattern')) {
+                <mat-error>Formato inválido. Ej: +591-70123456</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="md:col-span-2">
@@ -202,7 +236,7 @@
       </div>
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 3 — Emergencia (naranja · opcional)
+      SECCIÓN 3 — Emergencia (naranja · opcional)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-5 bg-orange-50 border-b border-orange-100">
@@ -231,7 +265,9 @@
               <mat-label>Teléfono</mat-label>
               <mat-icon matPrefix class="text-orange-400">phone</mat-icon>
               <input matInput formControlName="emergencyContactPhone" placeholder="+591-xxxxxxxx" appPhoneMask />
-              <mat-error *ngIf="emergencyContactForm.get('emergencyContactPhone')?.hasError('pattern')">Formato inválido. Ej: +591-70654321</mat-error>
+              @if (emergencyContactForm.get('emergencyContactPhone')?.hasError('pattern')) {
+                <mat-error>Formato inválido. Ej: +591-70654321</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -245,7 +281,7 @@
       </div>
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 4 — Seguro Médico (morado · opcional)
+      SECCIÓN 4 — Seguro Médico (morado · opcional)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-5 bg-purple-50 border-b border-purple-100">
@@ -281,11 +317,19 @@
               <mat-icon matPrefix class="text-purple-400">local_hospital</mat-icon>
               <mat-select formControlName="clinicId" [disabled]="!!ctxClinicId">
                 <mat-select-trigger>{{ getSelectedClinicName() || 'Seleccione una clínica' }}</mat-select-trigger>
-                <mat-option *ngIf="isClinicsLoading" disabled>Cargando clínicas...</mat-option>
-                <mat-option *ngFor="let c of clinics" [value]="c.id">{{ c.name }}</mat-option>
+                @if (isClinicsLoading) {
+                  <mat-option disabled>Cargando clínicas...</mat-option>
+                }
+                @for (c of clinics; track c) {
+                  <mat-option [value]="c.id">{{ c.name }}</mat-option>
+                }
               </mat-select>
-              <mat-error *ngIf="insuranceForm.get('clinicId')?.hasError('required')">Debe seleccionar una clínica</mat-error>
-              <mat-hint *ngIf="ctxClinicId">Usando clínica del contexto</mat-hint>
+              @if (insuranceForm.get('clinicId')?.hasError('required')) {
+                <mat-error>Debe seleccionar una clínica</mat-error>
+              }
+              @if (ctxClinicId) {
+                <mat-hint>Usando clínica del contexto</mat-hint>
+              }
             </mat-form-field>
 
           </div>
@@ -293,39 +337,46 @@
       </div>
 
       <!-- ══════════════════════════════════════════
-           ACCIONES FINALES
+      ACCIONES FINALES
       ══════════════════════════════════════════ -->
-      <div *ngIf="!isViewMode" class="form-action-bar">
-        <button
-          type="button"
-          (click)="saveDraft()"
-          [disabled]="isSaving"
-          class="btn btn-ghost">
-          <span class="material-symbols-outlined msz-18 leading-none">save</span>
-          Guardar Borrador
-        </button>
-
-        <button
-          type="button"
-          (click)="onSubmit()"
-          [disabled]="isSaving"
-          class="btn btn-primary">
-          <mat-spinner *ngIf="isSaving" diameter="18" class="!text-white" />
-          <span *ngIf="!isSaving" class="material-symbols-outlined msz-18 leading-none">{{ isEditMode ? 'save' : 'person_add' }}</span>
-          {{ isEditMode ? 'Actualizar Paciente' : 'Crear Paciente' }}
-        </button>
-      </div>
+      @if (!isViewMode) {
+        <div class="form-action-bar">
+          <button
+            type="button"
+            (click)="saveDraft()"
+            [disabled]="isSaving"
+            class="btn btn-ghost">
+            <span class="material-symbols-outlined msz-18 leading-none">save</span>
+            Guardar Borrador
+          </button>
+          <button
+            type="button"
+            (click)="onSubmit()"
+            [disabled]="isSaving"
+            class="btn btn-primary">
+            @if (isSaving) {
+              <mat-spinner diameter="18" class="!text-white" />
+            }
+            @if (!isSaving) {
+              <span class="material-symbols-outlined msz-18 leading-none">{{ isEditMode ? 'save' : 'person_add' }}</span>
+            }
+            {{ isEditMode ? 'Actualizar Paciente' : 'Crear Paciente' }}
+          </button>
+        </div>
+      }
 
     </div>
 
     <!-- Loading overlay -->
-    <div *ngIf="isLoading"
-      class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col items-center gap-3">
-        <mat-spinner diameter="50" />
-        <p class="text-slate-700">Cargando información del paciente...</p>
+    @if (isLoading) {
+      <div
+        class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col items-center gap-3">
+          <mat-spinner diameter="50" />
+          <p class="text-slate-700">Cargando información del paciente...</p>
+        </div>
       </div>
-    </div>
+    }
 
   </div>
 </div>

@@ -5,13 +5,13 @@
       [title]="isEditMode ? 'Editar Stock' : 'Nuevo Stock'"
       [subtitle]="isEditMode ? 'Modifica el registro de stock' : 'Registra nuevo stock de medicamento'"
       (back)="goBack()"
-    >
+      >
       <ng-container actions>
         <button
           type="button"
           (click)="cancel()"
           class="btn btn-danger-outline"
-        >
+          >
           <span class="material-symbols-outlined msz-18">cancel</span>
           Cancelar
         </button>
@@ -21,7 +21,7 @@
     <form [formGroup]="stockForm" (ngSubmit)="onSubmit()" class="space-y-6">
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 1 — Medicamento (azul)
+      SECCIÓN 1 — Medicamento (azul)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
@@ -39,13 +39,17 @@
               <mat-label>Medicamento *</mat-label>
               <mat-icon matPrefix class="text-blue-400">medication</mat-icon>
               <mat-select formControlName="medicationId">
-                <mat-option *ngFor="let m of medications()" [value]="m.id">
-                  {{ m.name }} {{ m.brandName ? '– ' + m.brandName : '' }} [{{ m.code }}]
-                </mat-option>
+                @for (m of medications(); track m) {
+                  <mat-option [value]="m.id">
+                    {{ m.name }} {{ m.brandName ? '– ' + m.brandName : '' }} [{{ m.code }}]
+                  </mat-option>
+                }
               </mat-select>
-              <mat-error *ngIf="stockForm.get('medicationId')?.hasError('required')">
-                Seleccione un medicamento
-              </mat-error>
+              @if (stockForm.get('medicationId')?.hasError('required')) {
+                <mat-error>
+                  Seleccione un medicamento
+                </mat-error>
+              }
             </mat-form-field>
 
             <button
@@ -53,7 +57,7 @@
               (click)="goToMedicationsCatalog()"
               class="inline-flex items-center gap-2 px-5 h-14 rounded-full font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 transition-all"
               title="Ver catálogo completo"
-            >
+              >
               <span class="material-symbols-outlined msz-18 leading-none">library_books</span>
               Catálogo
             </button>
@@ -62,7 +66,7 @@
               type="button"
               (click)="createNewMedication()"
               class="inline-flex items-center gap-2 px-5 h-14 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition-all"
-            >
+              >
               <span class="material-symbols-outlined msz-18 leading-none">add</span>
               Crear medicamento
             </button>
@@ -71,7 +75,7 @@
       </div>
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 2 — Información del Lote (verde)
+      SECCIÓN 2 — Información del Lote (verde)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
@@ -89,12 +93,16 @@
               <mat-label>Número de lote *</mat-label>
               <mat-icon matPrefix class="text-green-400">tag</mat-icon>
               <input matInput formControlName="batchNumber" placeholder="Ej: LOTE-2024-001" />
-              <mat-error *ngIf="stockForm.get('batchNumber')?.hasError('required')">
-                El lote es requerido
-              </mat-error>
-              <mat-error *ngIf="stockForm.get('batchNumber')?.hasError('minlength')">
-                Mínimo 3 caracteres
-              </mat-error>
+              @if (stockForm.get('batchNumber')?.hasError('required')) {
+                <mat-error>
+                  El lote es requerido
+                </mat-error>
+              }
+              @if (stockForm.get('batchNumber')?.hasError('minlength')) {
+                <mat-error>
+                  Mínimo 3 caracteres
+                </mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
@@ -106,14 +114,18 @@
                 min="1"
                 formControlName="quantity"
                 placeholder="Ej: 100"
-              />
+                />
               <mat-hint>Unidades</mat-hint>
-              <mat-error *ngIf="stockForm.get('quantity')?.hasError('required')">
-                La cantidad es requerida
-              </mat-error>
-              <mat-error *ngIf="stockForm.get('quantity')?.hasError('min')">
-                Debe ser al menos 1
-              </mat-error>
+              @if (stockForm.get('quantity')?.hasError('required')) {
+                <mat-error>
+                  La cantidad es requerida
+                </mat-error>
+              }
+              @if (stockForm.get('quantity')?.hasError('min')) {
+                <mat-error>
+                  Debe ser al menos 1
+                </mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
@@ -124,12 +136,14 @@
                 [matDatepicker]="pickerExp"
                 formControlName="expiryDate"
                 placeholder="Seleccione fecha"
-              />
+                />
               <mat-datepicker-toggle matIconSuffix [for]="pickerExp"></mat-datepicker-toggle>
               <mat-datepicker #pickerExp></mat-datepicker>
-              <mat-error *ngIf="stockForm.get('expiryDate')?.hasError('required')">
-                La fecha de vencimiento es requerida
-              </mat-error>
+              @if (stockForm.get('expiryDate')?.hasError('required')) {
+                <mat-error>
+                  La fecha de vencimiento es requerida
+                </mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
@@ -143,7 +157,7 @@
       </div>
 
       <!-- ══════════════════════════════════════════
-           SECCIÓN 3 — Costos (naranja)
+      SECCIÓN 3 — Costos (naranja)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-orange-50 border-b border-orange-100">
@@ -167,13 +181,17 @@
                 step="0.01"
                 formControlName="unitCost"
                 placeholder="0.00"
-              />
-              <mat-error *ngIf="stockForm.get('unitCost')?.hasError('required')">
-                El costo es requerido
-              </mat-error>
-              <mat-error *ngIf="stockForm.get('unitCost')?.hasError('min')">
-                Debe ser mayor a 0
-              </mat-error>
+                />
+              @if (stockForm.get('unitCost')?.hasError('required')) {
+                <mat-error>
+                  El costo es requerido
+                </mat-error>
+              }
+              @if (stockForm.get('unitCost')?.hasError('min')) {
+                <mat-error>
+                  Debe ser mayor a 0
+                </mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
@@ -186,13 +204,17 @@
                 step="0.01"
                 formControlName="sellingPrice"
                 placeholder="0.00"
-              />
-              <mat-error *ngIf="stockForm.get('sellingPrice')?.hasError('required')">
-                El precio es requerido
-              </mat-error>
-              <mat-error *ngIf="stockForm.get('sellingPrice')?.hasError('min')">
-                Debe ser mayor a 0
-              </mat-error>
+                />
+              @if (stockForm.get('sellingPrice')?.hasError('required')) {
+                <mat-error>
+                  El precio es requerido
+                </mat-error>
+              }
+              @if (stockForm.get('sellingPrice')?.hasError('min')) {
+                <mat-error>
+                  Debe ser mayor a 0
+                </mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
@@ -204,11 +226,13 @@
                 min="0"
                 formControlName="minimumStock"
                 placeholder="Ej: 10"
-              />
+                />
               <mat-hint>Cantidad mínima para alertas (opcional)</mat-hint>
-              <mat-error *ngIf="stockForm.get('minimumStock')?.hasError('min')">
-                No puede ser negativo
-              </mat-error>
+              @if (stockForm.get('minimumStock')?.hasError('min')) {
+                <mat-error>
+                  No puede ser negativo
+                </mat-error>
+              }
             </mat-form-field>
           </div>
         </div>
@@ -220,7 +244,7 @@
           type="button"
           (click)="cancel()"
           class="btn btn-danger-outline"
-        >
+          >
           <span class="material-symbols-outlined msz-18 leading-none">close</span>
           Cancelar
         </button>
@@ -228,9 +252,13 @@
           type="submit"
           [disabled]="loading() || stockForm.invalid"
           class="btn btn-primary"
-        >
-          <span class="material-symbols-outlined msz-18 leading-none" *ngIf="!loading()">save</span>
-          <span class="material-symbols-outlined msz-18 leading-none animate-spin" *ngIf="loading()">refresh</span>
+          >
+          @if (!loading()) {
+            <span class="material-symbols-outlined msz-18 leading-none">save</span>
+          }
+          @if (loading()) {
+            <span class="material-symbols-outlined msz-18 leading-none animate-spin">refresh</span>
+          }
           {{ isEditMode ? 'Actualizar' : 'Guardar' }}
         </button>
       </div>

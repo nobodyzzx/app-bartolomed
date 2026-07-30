@@ -1,14 +1,19 @@
 <!-- Barra de progreso de navegación -->
-<div
-  *ngIf="loading.isLoading()"
-  class="fixed top-0 left-0 right-0 h-1 bg-blue-600 z-[9999] animate-pulse"
-  role="progressbar"
-  aria-label="Cargando..."
-></div>
+@if (loading.isLoading()) {
+  <div
+    class="fixed top-0 left-0 right-0 h-1 bg-blue-600 z-[9999] animate-pulse"
+    role="progressbar"
+    aria-label="Cargando..."
+  ></div>
+}
 
 <!-- Pantalla de verificación de autenticación inicial -->
-<div class="loader-screen" *ngIf="!finishedAuthCheck()">
-  <div class="spinner"></div>
-</div>
+@if (!finishedAuthCheck()) {
+  <div class="loader-screen">
+    <div class="spinner"></div>
+  </div>
+}
 
-<router-outlet *ngIf="finishedAuthCheck()"></router-outlet>
+@if (finishedAuthCheck()) {
+  <router-outlet></router-outlet>
+}

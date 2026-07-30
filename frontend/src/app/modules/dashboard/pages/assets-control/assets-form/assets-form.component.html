@@ -5,27 +5,31 @@
       [title]="isViewMode ? 'Detalle del Activo' : isEditMode ? 'Editar Activo' : 'Nuevo Activo'"
       [subtitle]="isViewMode ? 'Información completa del activo' : isEditMode ? 'Actualice la información del activo' : 'Complete el formulario para registrar un nuevo activo'"
       (back)="goBack()"
-    >
-      <ng-container actions *ngIf="isViewMode">
-        <button
-          type="button"
-          (click)="enableEdit()"
-          class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
-        >
-          <span class="material-symbols-outlined msz-18 leading-none">edit</span>
-          Editar
-        </button>
-      </ng-container>
-      <ng-container actions *ngIf="!isViewMode">
-        <button
-          type="button"
-          (click)="goBack()"
-          class="btn btn-danger-outline"
-        >
-          <span class="material-symbols-outlined msz-18">cancel</span>
-          Cancelar
-        </button>
-      </ng-container>
+      >
+      @if (isViewMode) {
+        <ng-container actions>
+          <button
+            type="button"
+            (click)="enableEdit()"
+            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+            >
+            <span class="material-symbols-outlined msz-18 leading-none">edit</span>
+            Editar
+          </button>
+        </ng-container>
+      }
+      @if (!isViewMode) {
+        <ng-container actions>
+          <button
+            type="button"
+            (click)="goBack()"
+            class="btn btn-danger-outline"
+            >
+            <span class="material-symbols-outlined msz-18">cancel</span>
+            Cancelar
+          </button>
+        </ng-container>
+      }
     </app-page-header>
 
     <form [formGroup]="assetForm" (ngSubmit)="onSubmit()" class="space-y-6">
@@ -47,20 +51,26 @@
               <mat-label>Nombre del Activo</mat-label>
               <mat-icon matPrefix class="text-blue-400">inventory_2</mat-icon>
               <input matInput formControlName="name" placeholder="Ej: Máquina de Rayos X" required />
-              <mat-error *ngIf="assetForm.get('name')?.hasError('required')">El nombre es requerido</mat-error>
+              @if (assetForm.get('name')?.hasError('required')) {
+                <mat-error>El nombre es requerido</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Tipo de Activo</mat-label>
               <mat-select formControlName="type" required>
-                <mat-option *ngFor="let type of assetTypes" [value]="type.value">
-                  <span class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-slate-600">{{ type.icon }}</span>
-                    {{ type.label }}
-                  </span>
-                </mat-option>
+                @for (type of assetTypes; track type) {
+                  <mat-option [value]="type.value">
+                    <span class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-slate-600">{{ type.icon }}</span>
+                      {{ type.label }}
+                    </span>
+                  </mat-option>
+                }
               </mat-select>
-              <mat-error *ngIf="assetForm.get('type')?.hasError('required')">El tipo es requerido</mat-error>
+              @if (assetForm.get('type')?.hasError('required')) {
+                <mat-error>El tipo es requerido</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full md:col-span-2">
@@ -95,7 +105,9 @@
               <mat-label>Fabricante</mat-label>
               <mat-icon matPrefix class="text-purple-400">factory</mat-icon>
               <input matInput formControlName="manufacturer" placeholder="Ej: Siemens" required />
-              <mat-error *ngIf="assetForm.get('manufacturer')?.hasError('required')">El fabricante es requerido</mat-error>
+              @if (assetForm.get('manufacturer')?.hasError('required')) {
+                <mat-error>El fabricante es requerido</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
@@ -108,7 +120,9 @@
               <mat-label>Número de Serie</mat-label>
               <mat-icon matPrefix class="text-purple-400">tag</mat-icon>
               <input matInput formControlName="serialNumber" placeholder="Ej: SX-2024-001" required />
-              <mat-error *ngIf="assetForm.get('serialNumber')?.hasError('required')">El número de serie es requerido</mat-error>
+              @if (assetForm.get('serialNumber')?.hasError('required')) {
+                <mat-error>El número de serie es requerido</mat-error>
+              }
             </mat-form-field>
           </div>
         </div>
@@ -131,7 +145,9 @@
               <mat-label>Estado</mat-label>
               <mat-icon matPrefix class="text-orange-400">info</mat-icon>
               <mat-select formControlName="status" required>
-                <mat-option *ngFor="let status of assetStatuses" [value]="status.value">{{ status.label }}</mat-option>
+                @for (status of assetStatuses; track status) {
+                  <mat-option [value]="status.value">{{ status.label }}</mat-option>
+                }
               </mat-select>
             </mat-form-field>
 
@@ -139,7 +155,9 @@
               <mat-label>Condición</mat-label>
               <mat-icon matPrefix class="text-orange-400">fact_check</mat-icon>
               <mat-select formControlName="condition" required>
-                <mat-option *ngFor="let condition of assetConditions" [value]="condition.value">{{ condition.label }}</mat-option>
+                @for (condition of assetConditions; track condition) {
+                  <mat-option [value]="condition.value">{{ condition.label }}</mat-option>
+                }
               </mat-select>
             </mat-form-field>
           </div>
@@ -163,14 +181,18 @@
               <mat-label>Precio de Compra</mat-label>
               <mat-icon matPrefix class="text-green-400">attach_money</mat-icon>
               <input matInput type="number" formControlName="purchasePrice" required min="0" />
-              <mat-error *ngIf="assetForm.get('purchasePrice')?.hasError('required')">El precio de compra es requerido</mat-error>
+              @if (assetForm.get('purchasePrice')?.hasError('required')) {
+                <mat-error>El precio de compra es requerido</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Fecha de Compra</mat-label>
               <mat-icon matPrefix class="text-green-400">calendar_today</mat-icon>
               <input matInput type="date" formControlName="purchaseDate" required />
-              <mat-error *ngIf="assetForm.get('purchaseDate')?.hasError('required')">La fecha de compra es requerida</mat-error>
+              @if (assetForm.get('purchaseDate')?.hasError('required')) {
+                <mat-error>La fecha de compra es requerida</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
@@ -211,7 +233,9 @@
               <mat-label>Método de Depreciación</mat-label>
               <mat-icon matPrefix class="text-teal-400">calculate</mat-icon>
               <mat-select formControlName="depreciationMethod">
-                <mat-option *ngFor="let method of depreciationMethods" [value]="method.value">{{ method.label }}</mat-option>
+                @for (method of depreciationMethods; track method) {
+                  <mat-option [value]="method.value">{{ method.label }}</mat-option>
+                }
               </mat-select>
             </mat-form-field>
 
@@ -317,31 +341,32 @@
       </div>
 
       <!-- ══════ Sticky action bar ══════ -->
-      <div
-        *ngIf="!isViewMode"
-        class="form-action-bar"
-      >
-        <button
-          type="button"
-          (click)="goBack()"
-          class="btn btn-danger-outline"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          [disabled]="isSubmitting || assetForm.invalid"
-          class="btn btn-primary"
-        >
-          @if (isSubmitting) {
-            <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-            <span>Guardando...</span>
-          } @else {
-            <span class="material-symbols-outlined msz-18 leading-none">save</span>
-            <span>{{ isEditMode ? 'Actualizar Activo' : 'Registrar Activo' }}</span>
-          }
-        </button>
-      </div>
+      @if (!isViewMode) {
+        <div
+          class="form-action-bar"
+          >
+          <button
+            type="button"
+            (click)="goBack()"
+            class="btn btn-danger-outline"
+            >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            [disabled]="isSubmitting || assetForm.invalid"
+            class="btn btn-primary"
+            >
+            @if (isSubmitting) {
+              <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              <span>Guardando...</span>
+            } @else {
+              <span class="material-symbols-outlined msz-18 leading-none">save</span>
+              <span>{{ isEditMode ? 'Actualizar Activo' : 'Registrar Activo' }}</span>
+            }
+          </button>
+        </div>
+      }
 
     </form>
   </div>
