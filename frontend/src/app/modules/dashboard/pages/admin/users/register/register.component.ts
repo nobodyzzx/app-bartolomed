@@ -6,7 +6,6 @@ import { AlertService } from '@core/services/alert.service'
 import { of } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { ErrorService } from '../../../../../../shared/components/services/error.service'
-import { SidenavService } from '../../../../../../shared/components/services/sidenav.service'
 import { Role, RolesService } from '../../roles/services/roles.service'
 import { ClinicsService } from '../../clinics/services/clinics.service'
 import { UsersService } from '../users.service'
@@ -45,7 +44,6 @@ export interface Clinic {
 export class UserRegisterComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
 
-  isExpanded: boolean = true
   isEditMode: boolean = false
   userId: string | null = null
   clinics: Clinic[] = []
@@ -118,13 +116,10 @@ export class UserRegisterComponent implements OnInit {
     public router: Router,
     private route: ActivatedRoute,
     private errorService: ErrorService,
-    private sidenavService: SidenavService,
     private alert: AlertService,
   ) {}
 
   ngOnInit() {
-    this.sidenavService.isExpanded$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(isExpanded => (this.isExpanded = isExpanded))
-
     // Cargar clínicas activas
     this.loadClinics()
 

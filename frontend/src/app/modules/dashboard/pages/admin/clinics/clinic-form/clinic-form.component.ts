@@ -3,7 +3,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { ErrorService } from '../../../../../../shared/components/services/error.service'
-import { SidenavService } from '../../../../../../shared/components/services/sidenav.service'
 import { VALIDATION_PATTERNS } from '../../../../../../shared/validators/validation-patterns'
 import { CreateClinicDto, UpdateClinicDto } from '../interfaces'
 import { ClinicsService } from '../services'
@@ -19,7 +18,6 @@ export class ClinicFormComponent implements OnInit {
 
   clinicForm: FormGroup
   isEditMode = false
-  isExpanded: boolean = true
   isLoading = false
   currentClinicId: string | null = null
 
@@ -170,15 +168,12 @@ export class ClinicFormComponent implements OnInit {
     public router: Router,
     private route: ActivatedRoute,
     private errorService: ErrorService,
-    private sidenavService: SidenavService,
     private elRef: ElementRef,
   ) {
     this.clinicForm = this.createForm()
   }
 
   ngOnInit(): void {
-    this.sidenavService.isExpanded$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(isExpanded => (this.isExpanded = isExpanded))
-
     this.route.params.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       if (params['id']) {
         this.isEditMode = true

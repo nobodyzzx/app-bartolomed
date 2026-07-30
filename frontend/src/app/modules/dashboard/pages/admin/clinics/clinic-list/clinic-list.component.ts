@@ -6,7 +6,6 @@ import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
 import { ActivatedRoute, Router } from '@angular/router'
 import { ConfirmDialogComponent } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.component'
-import { SidenavService } from '../../../../../../shared/components/services/sidenav.service'
 import { Clinic } from '../interfaces'
 import { ClinicsService } from '../services'
 
@@ -21,7 +20,6 @@ export class ClinicListComponent implements OnInit {
 
   displayedColumns: string[] = ['name', 'address', 'phone', 'email', 'isActive', 'actions']
   dataSource = new MatTableDataSource<Clinic>()
-  isExpanded: boolean = true
   isLoading = false
   searchTerm = ''
   filterStatus: 'all' | 'active' | 'inactive' = 'all'
@@ -35,12 +33,9 @@ export class ClinicListComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private dialog: MatDialog,
-    private sidenavService: SidenavService,
   ) {}
 
   ngOnInit(): void {
-    this.sidenavService.isExpanded$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(isExpanded => (this.isExpanded = isExpanded))
-
     this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       const status = params['status']
       if (status === 'active') {
