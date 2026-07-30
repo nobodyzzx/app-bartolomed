@@ -161,23 +161,21 @@ describe('PatientListComponent', () => {
       expect(patientsService.findAll).not.toHaveBeenCalled()
     })
 
-    it('en error de findAll, muestra alerta y apaga isLoading', () => {
+    it('en error de findAll, apaga isLoading (la alerta la muestra el servicio)', () => {
       patientsService.findAll.and.returnValue(throwError(() => ({ message: 'caído' })))
       component.searchTerm = ''
 
       component.loadPatients()
 
-      expect(alert.error).toHaveBeenCalledWith('Error al cargar pacientes', 'caído')
       expect(component.isLoading).toBeFalse()
     })
 
-    it('en error de searchPatients, muestra alerta y apaga isLoading', () => {
+    it('en error de searchPatients, apaga isLoading (la alerta la muestra el servicio)', () => {
       patientsService.searchPatients.and.returnValue(throwError(() => ({})))
       component.searchTerm = 'juan'
 
       component.loadPatients()
 
-      expect(alert.error).toHaveBeenCalledWith('Error al buscar pacientes', 'Inténtalo de nuevo')
       expect(component.isLoading).toBeFalse()
     })
   })
@@ -329,17 +327,14 @@ describe('PatientListComponent', () => {
       expect(patientsService.removePatient).toHaveBeenCalledWith('p1')
       expect(component.dataSource.data.map(p => p.id)).toEqual(['p2'])
       expect(component.totalRecords).toBe(1)
-      expect(alert.success).toHaveBeenCalledWith('Eliminado', 'El paciente ha sido eliminado.')
     })
 
-    it('si falla la eliminación, muestra alerta de error', async () => {
+    it('si falla la eliminación, no rompe el componente (la alerta la muestra el servicio)', async () => {
       alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
       patientsService.removePatient.and.returnValue(throwError(() => ({ message: 'no se pudo' })))
 
-      component.deletePatient(makePatient({ id: 'p1' }))
+      expect(() => component.deletePatient(makePatient({ id: 'p1' }))).not.toThrow()
       await Promise.resolve()
-
-      expect(alert.error).toHaveBeenCalledWith('No se pudo eliminar', 'no se pudo')
     })
   })
 })

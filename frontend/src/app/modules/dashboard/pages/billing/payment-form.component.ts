@@ -79,9 +79,8 @@ export class PaymentFormComponent implements OnInit {
       )
       .subscribe({
         next: () => (this.loading = false),
-        error: err => {
+        error: () => {
           this.loading = false
-          this.errorService.handleError(err)
         },
       })
   }

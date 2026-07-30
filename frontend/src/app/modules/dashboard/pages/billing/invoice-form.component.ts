@@ -96,7 +96,7 @@ export class InvoiceFormComponent implements OnInit {
   loadOptions(): void {
     this.patientsService.findAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: pts => (this.patients = pts.data.map(p => ({ id: p.id, firstName: p.firstName, lastName: p.lastName }))),
-      error: err => this.errorService.handleError(err),
+      error: () => {},
     })
     this.clinicsService.findAll(true).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: cs => (this.clinics = cs.map(c => ({ id: c.id, name: c.name }))),

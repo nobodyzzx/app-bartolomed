@@ -88,8 +88,7 @@ export class PatientListComponent implements OnInit, AfterViewInit {
           this.totalRecords = patients.length
           this.isLoading = false
         },
-        error: error => {
-          this.alert.error('Error al buscar pacientes', error?.message || 'Inténtalo de nuevo')
+        error: () => {
           this.isLoading = false
         },
       })
@@ -104,8 +103,7 @@ export class PatientListComponent implements OnInit, AfterViewInit {
           this.totalRecords = result.total
           this.isLoading = false
         },
-        error: error => {
-          this.alert.error('Error al cargar pacientes', error?.message || 'Inténtalo de nuevo')
+        error: () => {
           this.isLoading = false
         },
       })
@@ -203,11 +201,8 @@ export class PatientListComponent implements OnInit, AfterViewInit {
               this.dataSource.data = this.dataSource.data.filter(p => p.id !== patient.id)
               this.totalRecords--
               this.loadStatistics()
-              this.alert.success('Eliminado', 'El paciente ha sido eliminado.')
             },
-            error: error => {
-              this.alert.error('No se pudo eliminar', error?.message || 'Inténtalo de nuevo')
-            },
+            error: () => {},
           })
         }
       })
