@@ -1,4 +1,5 @@
 import { Component } from '@angular/core'
+import { Router } from '@angular/router'
 
 @Component({
     selector: 'app-api-integration-page',
@@ -6,4 +7,10 @@ import { Component } from '@angular/core'
     styleUrls: ['./api-integration.page.component.css'],
     standalone: false
 })
-export class ApiIntegrationPageComponent {}
+export class ApiIntegrationPageComponent {
+  constructor(private router: Router) {}
+
+  goBack(): void {
+    this.router.navigate(['/dashboard'])
+  }
+}

@@ -4,6 +4,7 @@ import { NgModule } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { RouterModule, Routes } from '@angular/router'
 import { MaterialModule } from '../../../../material/material.module'
+import { SharedModule } from '../../../../shared/shared.module'
 import { DocumentTemplatesPageComponent } from './document-templates.page.component'
 
 const routes: Routes = [{ path: '', component: DocumentTemplatesPageComponent }]
@@ -17,6 +18,7 @@ const routes: Routes = [{ path: '', component: DocumentTemplatesPageComponent }]
     ReactiveFormsModule,
     MaterialModule,
     HttpClientModule,
+    SharedModule,
   ],
 })
 export class DocumentTemplatesModule {}
