@@ -40,6 +40,7 @@ export class SidebarComponent {
   private alert = inject(AlertService)
 
   public isExpanded = this.sidenavService.isExpanded
+  public isMobileOpen = this.sidenavService.isMobileOpen
 
   public filteredMenuItems = computed(() => {
     const userRoles = this.roleState.currentUserRoles()
@@ -81,8 +82,14 @@ export class SidebarComponent {
 
   private hasVisibility(item: MenuItem, userRoles: UserRoles[]): boolean {
     const allowedRoles = item.allowedRoles || []
-    if (allowedRoles.length === 0) return true
-    return userRoles.some(role => allowedRoles.includes(role))
+    if (allowedRoles.length > 0 && !userRoles.some(role => allowedRoles.includes(role))) {
+      return false
+    }
+    const requiredPermissions = item.requiredPermissions || []
+    if (requiredPermissions.length > 0 && !this.roleState.hasAnyPermission(requiredPermissions)) {
+      return false
+    }
+    return true
   }
 
   get isDemo(): boolean {

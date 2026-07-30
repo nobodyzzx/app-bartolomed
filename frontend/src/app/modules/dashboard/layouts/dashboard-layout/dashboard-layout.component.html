@@ -2,8 +2,8 @@
   <!-- Navbar -->
   <share-navbar></share-navbar>
 
-  <!-- Backdrop mobile: visible solo en pantallas pequeñas cuando el sidebar está abierto -->
-  @if (isExpanded()) {
+  <!-- Backdrop mobile: visible solo en pantallas pequeñas cuando el drawer está abierto -->
+  @if (isMobileOpen()) {
     <div
       class="fixed inset-0 top-16 bg-black/40 z-30 md:hidden"
       (click)="closeSidebar()"

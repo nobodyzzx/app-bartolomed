@@ -44,6 +44,7 @@ export class NavbarComponent implements OnInit {
   private router = inject(Router)
 
   public isExpanded = this.sidenavService.isExpanded
+  public isMobileOpen = this.sidenavService.isMobileOpen
 
   public userInitials = computed(() => {
     const u = this.authService.currentUser()

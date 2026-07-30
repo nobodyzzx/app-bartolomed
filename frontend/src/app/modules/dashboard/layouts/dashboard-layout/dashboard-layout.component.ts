@@ -13,12 +13,13 @@ export class DashboardLayoutComponent implements OnInit {
   private sidenavService = inject(SidenavService)
 
   public isExpanded = this.sidenavService.isExpanded
+  public isMobileOpen = this.sidenavService.isMobileOpen
 
   ngOnInit() {
     this.authService.checkAuthStatus().subscribe()
   }
 
   closeSidebar() {
-    this.sidenavService.setExpanded(false)
+    this.sidenavService.closeMobile()
   }
 }

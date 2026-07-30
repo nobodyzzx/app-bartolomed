@@ -6,11 +6,11 @@
       <button
         mat-icon-button
         (click)="toggleSidenav()"
-        [attr.aria-label]="isExpanded() ? 'Cerrar menú lateral' : 'Abrir menú lateral'"
-        [attr.aria-expanded]="isExpanded()"
+        [attr.aria-label]="(isExpanded() || isMobileOpen()) ? 'Cerrar menú lateral' : 'Abrir menú lateral'"
+        [attr.aria-expanded]="isExpanded() || isMobileOpen()"
         class="!text-slate-600 hover:!bg-slate-100"
         >
-        <mat-icon>{{ isExpanded() ? 'close' : 'menu' }}</mat-icon>
+        <mat-icon>{{ (isExpanded() || isMobileOpen()) ? 'close' : 'menu' }}</mat-icon>
       </button>
 
       <img

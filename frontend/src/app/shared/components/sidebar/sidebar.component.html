@@ -1,8 +1,14 @@
 <nav
   role="navigation"
   aria-label="Menú principal"
-  class="fixed top-16 left-0 h-[calc(100vh-4rem)] bg-blue-50 flex flex-col z-40 transition-all duration-300 ease-in-out shadow-lg"
-  [ngClass]="{ 'w-72': isExpanded(), 'w-16': !isExpanded() }"
+  class="fixed top-16 left-0 h-[calc(100vh-4rem)] w-72 flex-col bg-blue-50 z-40 transition-all duration-300 ease-in-out shadow-2xl md:shadow-lg"
+  [ngClass]="{
+    'flex': isMobileOpen(),
+    'hidden': !isMobileOpen(),
+    'md:flex': true,
+    'md:w-72': isExpanded(),
+    'md:w-16': !isExpanded()
+  }"
   >
   <!-- Items del menú -->
   <div

@@ -258,6 +258,15 @@ p, h1, h2, h3, h4, h5, h6 {
   outline: none !important;
 }
 
+/* Pill activo — debe ganarle al background-color:transparent!important de arriba */
+.sidebar-collapsed-btn.sidebar-collapsed-btn-active {
+  background-color: #2563eb !important; /* blue-600 */
+}
+.sidebar-collapsed-btn.sidebar-collapsed-btn-active:hover,
+.sidebar-collapsed-btn.sidebar-collapsed-btn-active:focus-visible {
+  background-color: #1d4ed8 !important; /* blue-700 */
+}
+
 
 .sidebar-menu-panel {
   --mat-menu-container-color: #eff6ff;

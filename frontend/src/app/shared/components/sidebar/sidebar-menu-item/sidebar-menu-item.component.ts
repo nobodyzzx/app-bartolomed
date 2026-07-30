@@ -33,4 +33,8 @@ export class SidebarMenuItemComponent {
     const url = this.router.url
     return this.item.children!.some(child => child.route && url.startsWith(child.route))
   }
+
+  isChildActive(child: MenuItem): boolean {
+    return !!child.route && this.router.url.startsWith(child.route)
+  }
 }
