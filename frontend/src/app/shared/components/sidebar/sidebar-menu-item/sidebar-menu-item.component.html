@@ -21,13 +21,14 @@
 <!-- MODO EXPANDIDO                                                -->
 <!-- ============================================================ -->
 @if (isExpanded) {
-  <!-- Ítem sin hijos -->
+  <!-- Ítem sin hijos: mt-3 lo separa visualmente del grupo anterior (si no, se lee como
+       si fuera un hijo más de ese grupo, al no tener encabezado propio) -->
   @if (!hasChildren) {
     @if (!isDemo) {
       <a
         [routerLink]="item.route"
         [attr.aria-current]="isLeafActive ? 'page' : null"
-        class="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-colors no-underline"
+        class="flex items-center gap-3 w-full px-3 py-2.5 mt-3 rounded-xl transition-colors no-underline"
         [class.bg-blue-600]="isLeafActive"
         [class.hover:bg-blue-100]="!isLeafActive"
         >
@@ -38,7 +39,7 @@
         type="button"
         (click)="demoClick.emit()"
         matTooltip="Inicia sesión para acceder"
-        class="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-blue-100/60 transition-colors"
+        class="flex items-center gap-3 w-full px-3 py-2.5 mt-3 rounded-xl hover:bg-blue-100/60 transition-colors"
         >
         <ng-container [ngTemplateOutlet]="rowContent" [ngTemplateOutletContext]="{ icon: item.icon, label: item.label, demo: true }"></ng-container>
       </button>
@@ -47,7 +48,7 @@
 
   <!-- Grupo con hijos: encabezado no interactivo + hijos siempre visibles (sin acordeón) -->
   @if (hasChildren) {
-    <div class="px-3 pt-4 pb-1.5 first:pt-1.5">
+    <div class="px-3 pt-4 pb-1.5">
       <span
         class="text-[11px] font-semibold uppercase tracking-wider"
         [class.text-blue-700]="isParentActive"
