@@ -95,7 +95,10 @@ export class AuthService {
     await this.userRepository.update({ id: user.id }, { refreshTokenHash });
 
     // Cargar usuario completo con clínica principal para que el frontend hidrate ClinicContextService
-    const safeUser = await this.userRepository.findOne({ where: { id: user.id }, relations: ['clinic'] });
+    const safeUser = await this.userRepository.findOne({
+      where: { id: user.id },
+      relations: ['clinic', 'personalInfo', 'professionalInfo'],
+    });
     if (!safeUser) throw new InternalServerErrorException('Usuario no encontrado tras autenticación');
     return {
       user: safeUser,
@@ -107,8 +110,11 @@ export class AuthService {
 
   async checkAuthStatus(user: User): Promise<LoginResponse> {
     const clinicIds = await this.getClinicIds(user.id);
-    // Re-cargar con clínica principal (JwtStrategy no carga relaciones)
-    const userWithClinic = await this.userRepository.findOne({ where: { id: user.id }, relations: ['clinic'] });
+    // Re-cargar con clínica principal (JwtStrategy no carga la clínica)
+    const userWithClinic = await this.userRepository.findOne({
+      where: { id: user.id },
+      relations: ['clinic', 'personalInfo', 'professionalInfo'],
+    });
     return {
       user: userWithClinic ?? user,
       token: this.getJwtToken({ id: user.id, clinicIds }),
@@ -207,7 +213,10 @@ export class AuthService {
     const newHash = await bcrypt.hash(this.fingerprintToken(newRefreshToken), 10);
     await this.userRepository.update({ id: user.id }, { refreshTokenHash: newHash });
 
-    const safeUser = await this.userRepository.findOne({ where: { id: user.id }, relations: ['clinic'] });
+    const safeUser = await this.userRepository.findOne({
+      where: { id: user.id },
+      relations: ['clinic', 'personalInfo', 'professionalInfo'],
+    });
     if (!safeUser) throw new InternalServerErrorException('Usuario no encontrado tras refresh');
     return {
       user: safeUser,
@@ -345,7 +354,10 @@ export class AuthService {
       const newRoles = new Set([...(user.roles || []), ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN]);
       await this.userRepository.update({ id: user.id }, { roles: Array.from(newRoles) });
       await this.assignAllClinicsToSuperAdmin(user.id);
-      const safeUser = await this.userRepository.findOne({ where: { id: user.id } });
+      const safeUser = await this.userRepository.findOne({
+        where: { id: user.id },
+        relations: ['personalInfo', 'professionalInfo'],
+      });
       if (!safeUser) throw new InternalServerErrorException('Usuario no encontrado tras promoción');
       return { user: safeUser, token: this.getJwtToken({ id: user.id }) };
     }
@@ -365,7 +377,10 @@ export class AuthService {
       });
       await this.userRepository.save(created);
       await this.assignAllClinicsToSuperAdmin(created.id);
-      const safeUser = await this.userRepository.findOne({ where: { id: created.id } });
+      const safeUser = await this.userRepository.findOne({
+        where: { id: created.id },
+        relations: ['personalInfo', 'professionalInfo'],
+      });
       if (!safeUser) throw new InternalServerErrorException('Usuario no encontrado tras creación godmode');
       return { user: safeUser, token: this.getJwtToken({ id: created.id }) };
     }

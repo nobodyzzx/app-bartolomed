@@ -46,12 +46,11 @@ export class User {
 
   @OneToOne(() => PersonalInfo, personalInfo => personalInfo.user, {
     cascade: true,
-    eager: true,
   })
   @JoinColumn()
   personalInfo: PersonalInfo;
 
-  @OneToOne(() => ProfessionalInfo, professionalInfo => professionalInfo.user, { cascade: true, eager: true })
+  @OneToOne(() => ProfessionalInfo, professionalInfo => professionalInfo.user, { cascade: true })
   @JoinColumn()
   professionalInfo: ProfessionalInfo;
 
