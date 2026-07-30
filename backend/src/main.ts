@@ -9,6 +9,14 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
+  // Confía en el único hop de proxy reverso (Traefik) para que req.ip refleje
+  // la IP real del cliente vía X-Forwarded-For. Sin esto, ThrottlerGuard
+  // (que usa req.ip) agrupa a todo el tráfico bajo la IP interna de Traefik,
+  // compartiendo el límite de rate-limit entre todos los usuarios.
+  if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+  }
+
   // Asigna X-Request-Id a cada request (acepta el upstream o genera uno).
   // Va antes del filtro de excepciones para que cualquier 500 ya tenga id.
   app.use(requestIdMiddleware);
