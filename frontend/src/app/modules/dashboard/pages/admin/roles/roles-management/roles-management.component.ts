@@ -19,7 +19,6 @@ import { AlertService } from '@core/services/alert.service'
 import { PageHeaderComponent } from '../../../../../../shared/components/page-header/page-header.component'
 import { SkeletonTableComponent } from '../../../../../../shared/components/skeleton-table/skeleton-table.component'
 import { EmptyStateComponent } from '../../../../../../shared/components/empty-state/empty-state.component'
-import { NotificationService } from '../../../../../../shared/services/notification.service'
 import { Role, RolesService } from '../services/roles.service'
 
 @Component({
@@ -302,7 +301,6 @@ import { Role, RolesService } from '../services/roles.service'
 export class RolesManagementComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
   private rolesService = inject(RolesService)
-  private notificationService = inject(NotificationService)
   private fb = inject(FormBuilder)
   private alert = inject(AlertService)
 
@@ -377,7 +375,6 @@ export class RolesManagementComponent implements OnInit {
           this.isLoading = false
         },
         error: () => {
-          this.notificationService.error('Error al cargar roles')
           this.isLoading = false
         },
       })
@@ -418,13 +415,10 @@ export class RolesManagementComponent implements OnInit {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: () => {
-            this.notificationService.success('Rol actualizado')
             this.loadRoles()
             this.isFormVisible = false
           },
-          error: () => {
-            this.notificationService.error('Error al actualizar rol')
-          },
+          error: () => {},
         })
     } else {
       this.rolesService
@@ -432,17 +426,10 @@ export class RolesManagementComponent implements OnInit {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: () => {
-            this.notificationService.success('Rol creado')
             this.loadRoles()
             this.isFormVisible = false
           },
-          error: (err: any) => {
-            if (err.error?.message?.includes('duplicate')) {
-              this.notificationService.error('El rol ya existe')
-            } else {
-              this.notificationService.error('Error al crear rol')
-            }
-          },
+          error: () => {},
         })
     }
   }
@@ -464,12 +451,9 @@ export class RolesManagementComponent implements OnInit {
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
               next: () => {
-                this.notificationService.success('Rol eliminado')
                 this.loadRoles()
               },
-              error: () => {
-                this.notificationService.error('Error al eliminar rol')
-              },
+              error: () => {},
             })
         }
       })
@@ -490,16 +474,13 @@ export class RolesManagementComponent implements OnInit {
       .then(result => {
         if (result.isConfirmed) {
           this.rolesService
-            .update(role.id, { isActive: !role.isActive })
+            .setActiveStatus(role.id, !role.isActive)
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
               next: () => {
-                this.notificationService.success(
-                  `Rol ${role.isActive ? 'desactivado' : 'activado'}`,
-                )
                 this.loadRoles()
               },
-              error: () => this.notificationService.error(`Error al ${action} el rol`),
+              error: () => {},
             })
         }
       })

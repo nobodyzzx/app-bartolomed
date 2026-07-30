@@ -2,7 +2,6 @@ import { Component, DestroyRef, ElementRef, inject, OnInit } from '@angular/core
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
-import { AlertService } from '@core/services/alert.service'
 import { ErrorService } from '../../../../../../shared/components/services/error.service'
 import { SidenavService } from '../../../../../../shared/components/services/sidenav.service'
 import { VALIDATION_PATTERNS } from '../../../../../../shared/validators/validation-patterns'
@@ -172,7 +171,6 @@ export class ClinicFormComponent implements OnInit {
     private route: ActivatedRoute,
     private errorService: ErrorService,
     private sidenavService: SidenavService,
-    private alert: AlertService,
     private elRef: ElementRef,
   ) {
     this.clinicForm = this.createForm()
@@ -280,14 +278,9 @@ export class ClinicFormComponent implements OnInit {
         this.clinicsService.updateClinic(this.currentClinicId, updateDto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: () => {
             this.isLoading = false
-            this.alert
-              .success('Clínica actualizada', 'La clínica ha sido actualizada correctamente')
-              .then(() => {
-                this.router.navigate(['/dashboard/clinics/list'])
-              })
+            this.router.navigate(['/dashboard/clinics/list'])
           },
-          error: error => {
-            this.errorService.handleError(error)
+          error: () => {
             this.isLoading = false
           },
         })
@@ -304,14 +297,9 @@ export class ClinicFormComponent implements OnInit {
         this.clinicsService.createClinic(createDto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: () => {
             this.isLoading = false
-            this.alert
-              .success('Clínica creada', 'La clínica ha sido registrada correctamente.')
-              .then(() => {
-                this.router.navigate(['/dashboard/clinics/list'])
-              })
+            this.router.navigate(['/dashboard/clinics/list'])
           },
-          error: error => {
-            this.errorService.handleError(error)
+          error: () => {
             this.isLoading = false
           },
         })

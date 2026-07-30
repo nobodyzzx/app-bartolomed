@@ -1,7 +1,6 @@
 import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
-import { ErrorService } from '../../../../../../shared/components/services/error.service'
 import { Clinic, ClinicStatistics } from '../interfaces'
 import { ClinicsService } from '../services'
 
@@ -21,7 +20,6 @@ export class ClinicDashboardComponent implements OnInit {
   constructor(
     private clinicsService: ClinicsService,
     private router: Router,
-    private errorService: ErrorService,
   ) {}
 
   ngOnInit(): void {
@@ -36,8 +34,7 @@ export class ClinicDashboardComponent implements OnInit {
         this.statistics = stats
         this.isLoading = false
       },
-      error: error => {
-        this.errorService.handleError(error)
+      error: () => {
         this.isLoading = false
       },
     })
@@ -51,9 +48,7 @@ export class ClinicDashboardComponent implements OnInit {
           .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
           .slice(0, 5)
       },
-      error: error => {
-        this.errorService.handleError(error)
-      },
+      error: () => {},
     })
   }
 

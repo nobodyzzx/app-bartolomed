@@ -1,6 +1,8 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { ErrorService } from '../../../../../shared/components/services/error.service';
 import { environment } from '../../../../../environments/environments';
 import {
   AuditDistinctValues,
@@ -14,7 +16,15 @@ import {
 export class AuditService {
   private readonly base = `${environment.baseUrl}/audit`;
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly http: HttpClient,
+    private readonly errorService: ErrorService,
+  ) {}
+
+  private handleError = (error: any) => {
+    this.errorService.handleError(error);
+    return throwError(() => error);
+  };
 
   findAll(filters: AuditFilters): Observable<AuditLogsResponse> {
     let params = new HttpParams();
@@ -27,24 +37,26 @@ export class AuditService {
     if (filters.search) params = params.set('search', filters.search);
     if (filters.startDate) params = params.set('startDate', filters.startDate);
     if (filters.endDate) params = params.set('endDate', filters.endDate);
-    return this.http.get<AuditLogsResponse>(this.base, { params });
+    return this.http.get<AuditLogsResponse>(this.base, { params }).pipe(catchError(this.handleError));
   }
 
   getStats(startDate?: string, endDate?: string): Observable<AuditStats> {
     let params = new HttpParams();
     if (startDate) params = params.set('startDate', startDate);
     if (endDate) params = params.set('endDate', endDate);
-    return this.http.get<AuditStats>(`${this.base}/stats`, { params });
+    return this.http.get<AuditStats>(`${this.base}/stats`, { params }).pipe(catchError(this.handleError));
   }
 
   getDailyActivity(startDate?: string, endDate?: string): Observable<DailyActivity[]> {
     let params = new HttpParams();
     if (startDate) params = params.set('startDate', startDate);
     if (endDate) params = params.set('endDate', endDate);
-    return this.http.get<DailyActivity[]>(`${this.base}/activity`, { params });
+    return this.http
+      .get<DailyActivity[]>(`${this.base}/activity`, { params })
+      .pipe(catchError(this.handleError));
   }
 
   getDistinctValues(): Observable<AuditDistinctValues> {
-    return this.http.get<AuditDistinctValues>(`${this.base}/filters`);
+    return this.http.get<AuditDistinctValues>(`${this.base}/filters`).pipe(catchError(this.handleError));
   }
 }

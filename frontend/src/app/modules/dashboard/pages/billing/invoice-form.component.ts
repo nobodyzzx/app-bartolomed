@@ -100,7 +100,7 @@ export class InvoiceFormComponent implements OnInit {
     })
     this.clinicsService.findAll(true).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: cs => (this.clinics = cs.map(c => ({ id: c.id, name: c.name }))),
-      error: err => this.errorService.handleError(err),
+      error: () => {},
     })
   }
 

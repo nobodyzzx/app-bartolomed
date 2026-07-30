@@ -66,8 +66,7 @@ export class AssetReportsComponent implements OnInit {
         this.calculateStats()
         this.loading = false
       },
-      error: (_error: any) => {
-        this.alert.error('Error al cargar los reportes de activos')
+      error: () => {
         this.loading = false
       },
     })
@@ -118,21 +117,13 @@ export class AssetReportsComponent implements OnInit {
     }
 
     this.assetReportsService.generateReport(reportData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: async (report: AssetReport) => {
+      next: (report: AssetReport) => {
         this.reports.unshift(report)
         this.calculateStats()
         this.resetForm()
         this.generating = false
-        await this.alert.fire({
-          icon: 'success',
-          title: 'Reporte Generado',
-          text: 'El reporte se ha generado correctamente',
-          timer: 2000,
-          showConfirmButton: false,
-        })
       },
-      error: (_error: any) => {
-        this.alert.error('Error al generar el reporte')
+      error: () => {
         this.generating = false
       },
     })
@@ -169,8 +160,7 @@ export class AssetReportsComponent implements OnInit {
           showConfirmButton: false,
         })
       },
-      error: (_error: any) => {
-        this.alert.error('Error al descargar el reporte')
+      error: () => {
         this.loading = false
       },
     })
@@ -195,20 +185,12 @@ export class AssetReportsComponent implements OnInit {
 
     this.loading = true
     this.assetReportsService.deleteReport(report.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: async () => {
+      next: () => {
         this.reports = this.reports.filter(r => r.id !== report.id)
         this.calculateStats()
         this.loading = false
-        await this.alert.fire({
-          icon: 'success',
-          title: 'Reporte Eliminado',
-          text: 'El reporte se ha eliminado correctamente',
-          timer: 2000,
-          showConfirmButton: false,
-        })
       },
-      error: (_error: any) => {
-        this.alert.error('Error al eliminar el reporte')
+      error: () => {
         this.loading = false
       },
     })
@@ -277,8 +259,7 @@ export class AssetReportsComponent implements OnInit {
           this.calculateStats()
           this.loading = false
         },
-        error: (_error: any) => {
-          this.alert.error('Error al filtrar reportes por estado')
+        error: () => {
           this.loading = false
         },
       })
@@ -296,8 +277,7 @@ export class AssetReportsComponent implements OnInit {
           this.calculateStats()
           this.loading = false
         },
-        error: (_error: any) => {
-          this.alert.error('Error al filtrar reportes por tipo')
+        error: () => {
           this.loading = false
         },
       })

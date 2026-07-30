@@ -5,9 +5,7 @@ import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
 import { ActivatedRoute, Router } from '@angular/router'
-import { AlertService } from '@core/services/alert.service'
 import { ConfirmDialogComponent } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.component'
-import { ErrorService } from '../../../../../../shared/components/services/error.service'
 import { SidenavService } from '../../../../../../shared/components/services/sidenav.service'
 import { Clinic } from '../interfaces'
 import { ClinicsService } from '../services'
@@ -37,9 +35,7 @@ export class ClinicListComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private dialog: MatDialog,
-    private errorService: ErrorService,
     private sidenavService: SidenavService,
-    private alert: AlertService,
   ) {}
 
   ngOnInit(): void {
@@ -82,8 +78,7 @@ export class ClinicListComponent implements OnInit {
         this.dataSource.data = filteredClinics
         this.isLoading = false
       },
-      error: error => {
-        this.errorService.handleError(error)
+      error: () => {
         this.isLoading = false
       },
     })
@@ -97,8 +92,7 @@ export class ClinicListComponent implements OnInit {
           this.dataSource.data = clinics
           this.isLoading = false
         },
-        error: error => {
-          this.errorService.handleError(error)
+        error: () => {
           this.isLoading = false
         },
       })
@@ -140,17 +134,9 @@ export class ClinicListComponent implements OnInit {
 
         request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: () => {
-            this.alert
-              .success(
-                `Clínica ${clinic.isActive ? 'desactivada' : 'activada'}`,
-                `La clínica ha sido ${clinic.isActive ? 'desactivada' : 'activada'} correctamente`,
-              )
-              .then()
             this.loadClinics()
           },
-          error: error => {
-            this.errorService.handleError(error)
-          },
+          error: () => {},
         })
       }
     })
@@ -172,14 +158,9 @@ export class ClinicListComponent implements OnInit {
       if (result) {
         this.clinicsService.delete(clinic.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: () => {
-            this.alert
-              .success('Clínica eliminada', 'La clínica ha sido eliminada correctamente')
-              .then()
             this.loadClinics()
           },
-          error: (error: any) => {
-            this.errorService.handleError(error)
-          },
+          error: () => {},
         })
       }
     })

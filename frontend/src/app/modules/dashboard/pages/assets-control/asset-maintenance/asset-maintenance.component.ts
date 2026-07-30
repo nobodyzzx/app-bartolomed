@@ -69,8 +69,7 @@ export class AssetMaintenanceComponent implements OnInit {
         this.calculateStats()
         this.loading = false
       },
-      error: error => {
-        this.alert.error('Error al cargar mantenimientos')
+      error: () => {
         this.loading = false
       },
     })
@@ -134,16 +133,8 @@ export class AssetMaintenanceComponent implements OnInit {
         this.maintenanceForm.patchValue({ status: MaintenanceStatus.SCHEDULED })
         this.showForm = false
         this.saving = false
-        this.alert.fire({
-          icon: 'success',
-          title: 'Mantenimiento Programado',
-          text: 'El mantenimiento se ha programado correctamente',
-          timer: 2000,
-          showConfirmButton: false,
-        })
       },
-      error: error => {
-        this.alert.error('Error al crear mantenimiento')
+      error: () => {
         this.saving = false
       },
     })
@@ -170,16 +161,8 @@ export class AssetMaintenanceComponent implements OnInit {
           this.calculateStats()
         }
         this.loading = false
-        this.alert.fire({
-          icon: 'success',
-          title: 'Estado Actualizado',
-          text: 'El estado del mantenimiento se ha actualizado',
-          timer: 1500,
-          showConfirmButton: false,
-        })
       },
-      error: error => {
-        this.alert.error('Error al actualizar mantenimiento')
+      error: () => {
         this.loading = false
       },
     })
@@ -204,16 +187,8 @@ export class AssetMaintenanceComponent implements OnInit {
         this.maintenanceRecords = this.maintenanceRecords.filter(r => r.id !== record.id)
         this.calculateStats()
         this.loading = false
-        this.alert.fire({
-          icon: 'success',
-          title: 'Mantenimiento Eliminado',
-          text: 'El registro se ha eliminado correctamente',
-          timer: 2000,
-          showConfirmButton: false,
-        })
       },
-      error: error => {
-        this.alert.error('Error al eliminar mantenimiento')
+      error: () => {
         this.loading = false
       },
     })
@@ -282,8 +257,7 @@ export class AssetMaintenanceComponent implements OnInit {
           this.maintenanceRecords = records
           this.loading = false
         },
-        error: (error: any) => {
-          this.alert.error('Error al filtrar por estado')
+        error: () => {
           this.loading = false
         },
       })
@@ -300,8 +274,7 @@ export class AssetMaintenanceComponent implements OnInit {
           this.maintenanceRecords = records
           this.loading = false
         },
-        error: (error: any) => {
-          this.alert.error('Error al filtrar por tipo')
+        error: () => {
           this.loading = false
         },
       })
