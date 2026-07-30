@@ -166,8 +166,6 @@ export class PrescriptionFormComponent implements CanComponentDeactivate {
     }
   }
 
-  ngOnDestroy(): void {}
-
   // Autogenerar número de receta con patrón RX-YYYYMMDD-HHMMSS
   autoGenerateNumber() {
     const now = new Date()

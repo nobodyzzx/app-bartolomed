@@ -1,4 +1,5 @@
-import { Component, computed, effect, inject, OnInit } from '@angular/core'
+import { Component, computed, DestroyRef, effect, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router } from '@angular/router'
 import { LoadingService } from './core/services/loading.service'
 import { AuthStatus } from './modules/auth/interfaces'
@@ -13,6 +14,7 @@ import { AuthService } from './modules/auth/services/auth.service'
 export class AppComponent implements OnInit {
   private authService = inject(AuthService)
   private router = inject(Router)
+  private destroyRef = inject(DestroyRef)
   public loading = inject(LoadingService)
 
   public finishedAuthCheck = computed(() => this.authService.authStatus() !== AuthStatus.checking)
@@ -27,7 +29,7 @@ export class AppComponent implements OnInit {
     this.authService.initializeAuth().subscribe()
 
     // Mostrar barra de carga en cada navegación entre rutas
-    this.router.events.subscribe(event => {
+    this.router.events.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(event => {
       if (event instanceof NavigationStart) this.loading.show()
       if (
         event instanceof NavigationEnd ||
