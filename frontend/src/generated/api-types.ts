@@ -84,6 +84,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/my-clinics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AuthController_getMyMemberships"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AuthController_getProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["AuthController_updateProfile"];
+        trace?: never;
+    };
+    "/api/auth/change-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["AuthController_changePassword"];
+        trace?: never;
+    };
+    "/api/auth/forgot-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_requestPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_resetPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/godmode/super-admin": {
         parameters: {
             query?: never;
@@ -100,15 +180,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/private": {
+    "/api/auth/godmode/sync-super-admin-clinics": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["AuthController_testingPrivateRoute"];
+        get?: never;
         put?: never;
+        post: operations["AuthController_godmodeSyncSuperAdmins"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/smtp-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SmtpConfigController_getConfig"];
+        put: operations["SmtpConfigController_saveConfig"];
         post?: never;
         delete?: never;
         options?: never;
@@ -116,32 +212,16 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/private2": {
+    "/api/smtp-config/test": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["AuthController_privateRoute2"];
+        get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/private3": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["AuthController_privateRoute3"];
-        put?: never;
-        post?: never;
+        post: operations["SmtpConfigController_testConnection"];
         delete?: never;
         options?: never;
         head?: never;
@@ -436,6 +516,70 @@ export interface paths {
         patch: operations["PatientsController_update"];
         trace?: never;
     };
+    "/api/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AuditController_findAll"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AuditController_getStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AuditController_getDailyActivity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit/filters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AuditController_getDistinctValues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/appointments": {
         parameters: {
             query?: never;
@@ -628,6 +772,38 @@ export interface paths {
         patch: operations["MedicalRecordsController_update"];
         trace?: never;
     };
+    "/api/medical-records/pdf/consent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MedicalRecordsController_generateConsentPdf"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/medical-records/pdf/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MedicalRecordsController_generateSummaryPdf"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/medical-records/consent-forms": {
         parameters: {
             query?: never;
@@ -812,6 +988,1046 @@ export interface paths {
             cookie?: never;
         };
         get: operations["ReportsController_getStockReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/consumption": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getPharmacyConsumption"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/patients/{id}/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * R-10: Timeline unificado de un paciente (citas, registros, recetas, ventas).
+         *     GET /api/reports/patients/:id/timeline
+         */
+        get: operations["ReportsController_getPatientTimeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/transfers/efficiency": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * R-11: KPI de eficiencia de traspasos + traslados detenidos > 48h.
+         *     GET /api/reports/transfers/efficiency?startDate=&endDate=
+         */
+        get: operations["ReportsController_getTransferEfficiency"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/inventory/critical": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * R-12: Stock bajo mínimo, próximo a vencer y vencido.
+         *     GET /api/reports/inventory/critical?expiryDays=60
+         */
+        get: operations["ReportsController_getCriticalStock"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/audit/prescriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * R-13: Auditoría de recetas — lo prescrito vs. lo entregado en farmacia.
+         *     GET /api/reports/audit/prescriptions?doctorId=&startDate=&endDate=
+         */
+        get: operations["ReportsController_getPrescriptionAudit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/critical-stock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportCriticalStockPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/transfer-efficiency": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * R-14b: Exportar eficiencia de traspasos a PDF.
+         *     GET /api/reports/export/pdf/transfer-efficiency
+         */
+        get: operations["ReportsController_exportTransferEfficiencyPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/excel/critical-stock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * R-15: Exportar stock crítico a Excel.
+         *     GET /api/reports/export/excel/critical-stock
+         */
+        get: operations["ReportsController_exportCriticalStockExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/excel/pharmacy-consumption": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * R-15b: Exportar consumo de farmacia a Excel (2 hojas).
+         *     GET /api/reports/export/excel/pharmacy-consumption
+         */
+        get: operations["ReportsController_exportPharmacyConsumptionExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/rotation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getRotationReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/top-selling": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getTopSellingMedications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/margins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getProductMarginReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/daily-sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getDailySalesSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/expiry-buckets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getExpiryBucketReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/purchase-vs-consumption": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getPurchaseVsConsumption"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/by-category": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getSalesByCategory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/stock-movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getStockMovementsReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/suppliers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getSupplierAnalysis"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/prescription-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getPrescriptionDispensingSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/credit-sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getCreditSales"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/payment-methods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getSalesByPaymentMethod"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/profitability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getMonthlyProfitability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/pharmacy-rotation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportRotationPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/pharmacy-margins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportMarginsPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/pharmacy-daily-sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportDailySalesPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/pharmacy-expiry-buckets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportExpiryBucketsPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/pharmacy-profitability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportProfitabilityPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/excel/pharmacy-rotation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportRotationExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/excel/pharmacy-margins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportMarginsExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/excel/pharmacy-top-selling": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportTopSellingExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/excel/pharmacy-stock-movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportStockMovementsExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/by-pharmacist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getSalesByPharmacist"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/pharmacy-by-pharmacist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportSalesByPharmacistPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/excel/pharmacy-by-pharmacist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportSalesByPharmacistExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/pharmacist-medication-day": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getSalesByPharmacistMedicationDay"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/pharmacy-pharmacist-day": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportPharmacistDayPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/excel/pharmacy-pharmacist-day": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportPharmacistDayExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/inventory-valorized": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getValorizedInventory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/pharmacy-inventory-valorized": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportValorizedInventoryPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/excel/pharmacy-inventory-valorized": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportValorizedInventoryExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/inventory-by-category": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getInventoryByCategory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/pharmacy-inventory-by-category": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportInventoryByCategoryPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/no-movement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getMedicationsWithoutMovement"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/pharmacy-no-movement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportNoMovementPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/excel/pharmacy-no-movement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportNoMovementExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/medication-detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getSalesByMedicationDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/pharmacy-medication-detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportMedicationDetailPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/excel/pharmacy-medication-detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportMedicationDetailExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/prescription-vs-free": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getPrescriptionVsFreeSales"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/pharmacy-prescription-vs-free": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportPrescriptionVsFreePdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/sales-by-payment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getSalesByPaymentDetailed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/pharmacy-sales-by-payment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportSalesByPaymentPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/excel/pharmacy-sales-by-payment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportSalesByPaymentExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/pharmacy/monthly-comparison": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getMonthlySalesComparison"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/pharmacy-monthly-comparison": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportMonthlySalesComparisonPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/excel/pharmacy-monthly-comparison": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportMonthlySalesComparisonExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/financial": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportFinancialPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/demographics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * R-P2: Demografía de pacientes — Puppeteer PDF.
+         *     GET /api/reports/export/pdf/demographics
+         */
+        get: operations["ReportsController_exportDemographicsPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/doctor-performance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * R-P3: Rendimiento de médicos — Puppeteer PDF.
+         *     GET /api/reports/export/pdf/doctor-performance
+         */
+        get: operations["ReportsController_exportDoctorPerformancePdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/appointments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * R-P4: Estadísticas de citas — Puppeteer PDF.
+         *     GET /api/reports/export/pdf/appointments
+         */
+        get: operations["ReportsController_exportAppointmentsPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/medical-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * R-P5: Registros médicos — Puppeteer PDF.
+         *     GET /api/reports/export/pdf/medical-records
+         */
+        get: operations["ReportsController_exportMedicalRecordsPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * R-P6: Dashboard general — Puppeteer PDF.
+         *     GET /api/reports/export/pdf/dashboard
+         */
+        get: operations["ReportsController_exportDashboardPdf"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1026,6 +2242,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["PharmacySalesController_updateStatus"];
+        trace?: never;
+    };
+    "/api/pharmacy-sales/{id}/adjust-payment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["PharmacySalesController_adjustPayment"];
         trace?: never;
     };
     "/api/pharmacy-invoices": {
@@ -1348,6 +2580,22 @@ export interface paths {
         patch: operations["PrescriptionsController_update"];
         trace?: never;
     };
+    "/api/prescriptions/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PrescriptionsController_getPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/prescriptions/{id}/status": {
         parameters: {
             query?: never;
@@ -1604,6 +2852,38 @@ export interface paths {
         patch: operations["RolesController_activate"];
         trace?: never;
     };
+    "/api/seed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SeedController_seedDemo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/seed/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SeedController_resetAll"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/assets": {
         parameters: {
             query?: never;
@@ -1796,6 +3076,314 @@ export interface paths {
         patch: operations["AssetsController_update"];
         trace?: never;
     };
+    "/api/asset-transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AssetTransfersController_findAll"];
+        put?: never;
+        post: operations["AssetTransfersController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/asset-transfers/pending-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AssetTransfersController_getPendingCount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/asset-transfers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AssetTransfersController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/asset-transfers/{id}/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AssetTransfersController_getAuditLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/asset-transfers/{id}/dispatch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["AssetTransfersController_dispatch"];
+        trace?: never;
+    };
+    "/api/asset-transfers/{id}/confirm-receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["AssetTransfersController_confirmReceipt"];
+        trace?: never;
+    };
+    "/api/asset-transfers/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["AssetTransfersController_reject"];
+        trace?: never;
+    };
+    "/api/asset-transfers/{id}/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["AssetTransfersController_returnTransfer"];
+        trace?: never;
+    };
+    "/api/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista de traspasos donde la clínica es origen o destino.
+         *     GET /api/transfers?status=in_transit&page=1&limit=20
+         */
+        get: operations["StockTransfersController_findAll"];
+        put?: never;
+        /**
+         * Clínica B solicita un traspaso desde Clínica A.
+         *     POST /api/transfers
+         */
+        post: operations["StockTransfersController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/transfers/pending-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Badge: cuántos traspasos tiene pendientes esta clínica.
+         *     GET /api/transfers/pending-count
+         */
+        get: operations["StockTransfersController_getPendingCount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/transfers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalle de un traspaso (solo si la clínica es origen o destino).
+         *     GET /api/transfers/:id
+         */
+        get: operations["StockTransfersController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/transfers/{id}/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Historial de auditoría de un traspaso.
+         *     GET /api/transfers/:id/audit
+         */
+        get: operations["StockTransfersController_getAuditLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/transfers/{id}/dispatch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Clínica A despacha: reserva stock y cambia estado a EN_TRÁNSITO.
+         *     PATCH /api/transfers/:id/dispatch
+         */
+        patch: operations["StockTransfersController_dispatch"];
+        trace?: never;
+    };
+    "/api/transfers/{id}/confirm-receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Clínica B confirma recepción: deduce de A, suma a B, cierra el ciclo.
+         *     PATCH /api/transfers/:id/confirm-receipt
+         */
+        patch: operations["StockTransfersController_confirmReceipt"];
+        trace?: never;
+    };
+    "/api/transfers/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Clínica A rechaza la solicitud (estado: REQUESTED → REJECTED).
+         *     PATCH /api/transfers/:id/reject
+         */
+        patch: operations["StockTransfersController_reject"];
+        trace?: never;
+    };
+    "/api/transfers/{id}/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Clínica B devuelve el traspaso en tránsito: libera reserva en A.
+         *     PATCH /api/transfers/:id/return
+         */
+        patch: operations["StockTransfersController_returnTransfer"];
+        trace?: never;
+    };
+    "/api/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MetricsController_getMetrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1805,22 +3393,21 @@ export interface components {
             lastName?: string;
             phone?: string;
             address?: string;
-            /** Format: date-time */
             birthDate?: string;
         };
         ProfessionalInfoDto: {
             title: string;
             /** @enum {string} */
-            role: "Doctor" | "Nurse" | "Pharmacist" | "Laboratory Technician" | "Physiotherapist" | "Dentist" | "Nutritionist" | "Psychologist" | "Radiologist" | "Administrative" | "Receptionist" | "Other";
+            role?: "Doctor" | "Nurse" | "Pharmacist" | "Laboratory Technician" | "Physiotherapist" | "Dentist" | "Nutritionist" | "Psychologist" | "Radiologist" | "Administrative" | "Receptionist" | "Other";
             specialization: string;
             license: string;
-            certifications: string[];
-            /** Format: date-time */
+            certifications?: string[];
             startDate: string;
             description?: string;
             areas?: string[];
         };
         CreateUserDto: {
+            /** Format: email */
             email: string;
             password: string;
             personalInfo: components["schemas"]["PersonalInfoDto"];
@@ -1831,26 +3418,17 @@ export interface components {
              *     ]
              */
             roles: ("super-admin" | "admin" | "doctor" | "nurse" | "receptionist" | "pharmacist" | "user")[];
+            /** Format: uuid */
             clinicId?: string;
         };
         LoginUserDto: {
+            /** Format: email */
             email: string;
             password: string;
             rememberMe?: boolean;
         };
         RefreshTokenDto: {
             refreshToken: string;
-        };
-        GodBootstrapDto: {
-            email: string;
-            password: string;
-            firstName?: string;
-            lastName?: string;
-            /**
-             * @default create
-             * @enum {string}
-             */
-            mode: "create" | "promote";
         };
         ProfessionalInfo: {
             id: string;
@@ -1890,6 +3468,9 @@ export interface components {
             email: string;
             password: string;
             refreshTokenHash?: string | null;
+            passwordResetToken?: string | null;
+            /** Format: date-time */
+            passwordResetExpiresAt?: string | null;
             roles: string[];
             isActive: boolean;
             personalInfo: components["schemas"]["PersonalInfo"];
@@ -1906,10 +3487,67 @@ export interface components {
             birthDate: string;
             user: components["schemas"]["User"];
         };
+        UpdateProfileDto: {
+            firstName?: string;
+            lastName?: string;
+            phone?: string;
+            address?: string;
+            birthDate?: string;
+        };
+        ChangePasswordDto: {
+            currentPassword: string;
+            newPassword: string;
+        };
+        ForgotPasswordDto: {
+            /** Format: email */
+            email: string;
+        };
+        ResetPasswordDto: {
+            token: string;
+            newPassword: string;
+        };
+        GodBootstrapDto: {
+            /** Format: email */
+            email: string;
+            password: string;
+            firstName?: string;
+            lastName?: string;
+            /**
+             * @default create
+             * @enum {string}
+             */
+            mode: "create" | "promote";
+        };
+        UpdateSmtpConfigDto: {
+            host?: string;
+            port?: number;
+            secure?: boolean;
+            user?: string;
+            pass?: string;
+            fromName?: string;
+            /** Format: email */
+            fromEmail?: string;
+            enabled?: boolean;
+        };
+        SmtpConfig: {
+            id: number;
+            host: string;
+            port: number;
+            /** @description true → TLS (port 465), false → STARTTLS (port 587) */
+            secure: boolean;
+            user: string;
+            pass: string;
+            fromName: string;
+            fromEmail: string;
+            enabled: boolean;
+            /** Format: date-time */
+            updatedAt: string;
+        };
         CreateClinicDto: {
             name: string;
             address: string;
             phone: string;
+            /** Format: email */
             email?: string;
             description?: string;
             departamento?: string;
@@ -1919,6 +3557,7 @@ export interface components {
         };
         UpdateClinicDto: Record<string, never>;
         AddClinicMemberDto: {
+            /** Format: uuid */
             userId: string;
             /** @default [] */
             roles: string[];
@@ -1934,6 +3573,7 @@ export interface components {
             birthDate: string;
             /** @enum {string} */
             gender: "male" | "female" | "other";
+            /** Format: email */
             email?: string;
             phone?: string;
             address?: string;
@@ -1955,6 +3595,7 @@ export interface components {
             insuranceProvider?: string;
             insuranceNumber?: string;
             notes?: string;
+            /** Format: uuid */
             clinicId: string;
         };
         Patient: {
@@ -2015,11 +3656,15 @@ export interface components {
             isRecurring?: boolean;
             recurringPattern?: string;
             patientPhone?: string;
+            /** Format: email */
             patientEmail?: string;
             estimatedCost?: number;
             paymentMethod?: string;
+            /** Format: uuid */
             patientId: string;
+            /** Format: uuid */
             doctorId: string;
+            /** Format: uuid */
             clinicId: string;
         };
         Appointment: {
@@ -2080,6 +3725,8 @@ export interface components {
         CreateMedicalRecordDto: {
             /** @enum {string} */
             type: "consultation" | "emergency" | "surgery" | "follow_up" | "laboratory" | "imaging" | "other";
+            /** @enum {string} */
+            status?: "draft" | "completed" | "reviewed" | "archived";
             chiefComplaint: string;
             historyOfPresentIllness?: string;
             pastMedicalHistory?: string;
@@ -2115,8 +3762,11 @@ export interface components {
             notes?: string;
             followUpDate?: string;
             isEmergency?: boolean;
+            /** Format: uuid */
             patientId: string;
+            /** Format: uuid */
             doctorId: string;
+            /** Format: uuid */
             relatedRecordId?: string;
         };
         MedicalRecord: {
@@ -2163,6 +3813,8 @@ export interface components {
             followUpDate: string;
             isEmergency: boolean;
             isActive: boolean;
+            clinic: components["schemas"]["Clinic"];
+            clinicId: string;
             relatedRecord: components["schemas"]["MedicalRecord"];
             patient: components["schemas"]["Patient"];
             doctor: components["schemas"]["User"];
@@ -2172,6 +3824,8 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+            /** Format: date-time */
+            deletedAt?: string;
         };
         UpdateMedicalRecordDto: {
             /** @enum {string} */
@@ -2189,8 +3843,11 @@ export interface components {
             witnessName?: string;
             witnessRelationship?: string;
             notes?: string;
+            /** Format: uuid */
             patientId: string;
+            /** Format: uuid */
             doctorId: string;
+            /** Format: uuid */
             medicalRecordId?: string;
         };
         ConsentForm: {
@@ -2216,6 +3873,8 @@ export interface components {
             witnessRelationship: string;
             isActive: boolean;
             notes: string;
+            clinic: components["schemas"]["Clinic"];
+            clinicId: string;
             patient: components["schemas"]["Patient"];
             doctor: components["schemas"]["User"];
             medicalRecord: components["schemas"]["MedicalRecord"];
@@ -2243,6 +3902,7 @@ export interface components {
             name?: string;
             taxId?: string;
             contactPerson: string;
+            /** Format: email */
             email: string;
             phone?: string;
             address?: string;
@@ -2284,6 +3944,7 @@ export interface components {
         UpdateSupplierDto: {
             name?: string;
             contactPerson?: string;
+            /** Format: email */
             email?: string;
             phone?: string;
             address?: string;
@@ -2306,7 +3967,9 @@ export interface components {
             notes?: string;
         };
         CreatePurchaseOrderDto: {
+            /** Format: uuid */
             supplierId: string;
+            /** Format: uuid */
             clinicId?: string;
             orderDate: string;
             expectedDeliveryDate?: string;
@@ -2371,6 +4034,7 @@ export interface components {
             updatedAt: string;
         };
         UpdatePurchaseOrderDto: {
+            /** Format: uuid */
             supplierId?: string;
             orderDate?: string;
             expectedDeliveryDate?: string;
@@ -2387,6 +4051,7 @@ export interface components {
             notes?: string;
         };
         ReceivePurchaseOrderItemDto: {
+            /** Format: uuid */
             itemId: string;
             receivingQuantity: number;
             notes?: string;
@@ -2407,21 +4072,59 @@ export interface components {
         };
         CreatePharmacySaleDto: {
             patientId?: string;
+            patientName?: string;
             clinicId: string;
             /** @enum {string} */
-            paymentMethod: "cash" | "card" | "transfer" | "insurance";
+            paymentMethod: "cash" | "card" | "transfer" | "insurance" | "mixed" | "qr";
             taxRate?: number;
             discountAmount?: number;
             amountPaid: number;
             notes?: string;
+            /** Format: uuid */
+            prescriptionId?: string;
             prescriptionNumber?: string;
             items: components["schemas"]["CreatePharmacySaleItemDto"][];
+        };
+        Prescription: {
+            id: string;
+            prescriptionNumber: string;
+            /** @enum {string} */
+            status: "draft" | "active" | "dispensed" | "completed" | "cancelled" | "expired";
+            /** Format: date-time */
+            prescriptionDate: string;
+            /** Format: date-time */
+            expiryDate: string;
+            diagnosis: string;
+            patientInstructions: string;
+            pharmacyInstructions: string;
+            notes: string;
+            isElectronic: boolean;
+            isControlledSubstance: boolean;
+            refillsAllowed: number;
+            refillsUsed: number;
+            isActive: boolean;
+            patient: components["schemas"]["Patient"];
+            doctor: components["schemas"]["User"];
+            clinic: components["schemas"]["Clinic"];
+            items: Record<string, never>[];
+            createdBy: components["schemas"]["User"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            deletedAt?: string;
         };
         PharmacySale: {
             id: string;
             saleNumber: string;
             patientName: string;
+            clinic: components["schemas"]["Clinic"];
+            clinicId: string;
+            patient: components["schemas"]["Patient"];
             patientId: string;
+            prescription: components["schemas"]["Prescription"];
+            prescriptionId: string;
             prescriptionNumber: string;
             doctorName: string;
             /** Format: date-time */
@@ -2429,7 +4132,7 @@ export interface components {
             /** @enum {string} */
             status: "pending" | "completed" | "cancelled";
             /** @enum {string} */
-            paymentMethod: "cash" | "card" | "transfer" | "insurance";
+            paymentMethod: "cash" | "card" | "transfer" | "insurance" | "mixed" | "qr";
             subtotal: number;
             discount: number;
             tax: number;
@@ -2528,7 +4231,7 @@ export interface components {
             prescriptionNumber?: string;
             doctorName?: string;
             /** @enum {string} */
-            paymentMethod?: "cash" | "card" | "transfer" | "insurance";
+            paymentMethod?: "cash" | "card" | "transfer" | "insurance" | "mixed" | "qr";
             /** @enum {string} */
             status?: "pending" | "completed" | "cancelled";
             discount?: number;
@@ -2542,7 +4245,14 @@ export interface components {
             amountPaid?: number;
             notes?: string;
         };
+        AdjustPaymentDto: {
+            /** @enum {string} */
+            paymentMethod: "cash" | "card" | "transfer" | "insurance" | "mixed" | "qr";
+            amountPaid: number;
+            reason: string;
+        };
         CreatePharmacyInvoiceDto: {
+            /** Format: uuid */
             saleId: string;
             patientName: string;
             patientAddress?: string;
@@ -2701,37 +4411,14 @@ export interface components {
             isControlledSubstance?: boolean;
             refillsAllowed?: number;
             items: components["schemas"]["CreatePrescriptionItemDto"][];
+            /** Format: uuid */
             patientId: string;
+            /** Format: uuid */
             doctorId: string;
+            /** Format: uuid */
             clinicId: string;
-        };
-        Prescription: {
-            id: string;
-            prescriptionNumber: string;
             /** @enum {string} */
-            status: "draft" | "active" | "dispensed" | "completed" | "cancelled" | "expired";
-            /** Format: date-time */
-            prescriptionDate: string;
-            /** Format: date-time */
-            expiryDate: string;
-            diagnosis: string;
-            patientInstructions: string;
-            pharmacyInstructions: string;
-            notes: string;
-            isElectronic: boolean;
-            isControlledSubstance: boolean;
-            refillsAllowed: number;
-            refillsUsed: number;
-            isActive: boolean;
-            patient: components["schemas"]["Patient"];
-            doctor: components["schemas"]["User"];
-            clinic: components["schemas"]["Clinic"];
-            items: Record<string, never>[];
-            createdBy: components["schemas"]["User"];
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
+            status?: "draft" | "active" | "dispensed" | "completed" | "cancelled" | "expired";
         };
         UpdatePrescriptionDto: {
             /** @enum {string} */
@@ -2762,8 +4449,11 @@ export interface components {
             insuranceProvider?: string;
             insuranceClaimNumber?: string;
             insuranceCoverage?: number;
+            /** Format: uuid */
             patientId: string;
+            /** Format: uuid */
             clinicId: string;
+            /** Format: uuid */
             appointmentId?: string;
             items: components["schemas"]["CreateInvoiceItemDto"][];
         };
@@ -2815,6 +4505,7 @@ export interface components {
             reference?: string;
             transactionId?: string;
             notes?: string;
+            /** Format: uuid */
             invoiceId: string;
         };
         Payment: {
@@ -2940,7 +4631,7 @@ export interface components {
             isActive: boolean;
             clinic: components["schemas"]["Clinic"];
             assignedTo: components["schemas"]["User"];
-            maintenanceRecords: Record<string, never>[];
+            maintenanceRecords: components["schemas"]["AssetMaintenance"][];
             createdBy: components["schemas"]["User"];
             /** Format: date-time */
             createdAt: string;
@@ -3023,6 +4714,127 @@ export interface components {
             updatedAt: string;
         };
         UpdateAssetDto: Record<string, never>;
+        CreateAssetTransferItemDto: {
+            /** Format: uuid */
+            assetId: string;
+            notes?: string;
+        };
+        CreateAssetTransferDto: {
+            /** Format: uuid */
+            targetClinicId: string;
+            notes?: string;
+            items: components["schemas"]["CreateAssetTransferItemDto"][];
+        };
+        AssetTransfer: {
+            id: string;
+            transferNumber: string;
+            sourceClinicId: string;
+            sourceClinic: components["schemas"]["Clinic"];
+            targetClinicId: string;
+            targetClinic: components["schemas"]["Clinic"];
+            /** @enum {string} */
+            status: "requested" | "in_transit" | "completed" | "rejected" | "returned";
+            notes: string;
+            requestedById: string;
+            requestedBy: components["schemas"]["User"];
+            dispatchedById: string;
+            dispatchedBy: components["schemas"]["User"];
+            /** Format: date-time */
+            dispatchedAt: string;
+            receivedById: string;
+            receivedBy: components["schemas"]["User"];
+            /** Format: date-time */
+            receivedAt: string;
+            rejectionReason: string;
+            items: components["schemas"]["AssetTransferItem"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        AssetTransferItem: {
+            id: string;
+            transferId: string;
+            transfer: components["schemas"]["AssetTransfer"];
+            assetId: string;
+            asset: components["schemas"]["Asset"];
+            notes: string;
+        };
+        AssetTransferAuditLog: {
+            id: string;
+            transferId: string;
+            /** @enum {string} */
+            action: "requested" | "dispatched" | "completed" | "rejected" | "returned";
+            actorId: string;
+            actor: components["schemas"]["User"];
+            actorClinicId: string;
+            actorClinic: components["schemas"]["Clinic"];
+            snapshot: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            createdAt: string;
+        };
+        DispatchTransferDto: Record<string, never>;
+        ConfirmReceiptDto: Record<string, never>;
+        RejectTransferDto: Record<string, never>;
+        CreateStockTransferDto: Record<string, never>;
+        StockTransfer: {
+            id: string;
+            transferNumber: string;
+            sourceClinic: components["schemas"]["Clinic"];
+            sourceClinicId: string;
+            targetClinic: components["schemas"]["Clinic"];
+            targetClinicId: string;
+            /** @enum {string} */
+            status: "requested" | "in_transit" | "completed" | "rejected" | "returned";
+            notes: string;
+            requestedBy: components["schemas"]["User"];
+            requestedById: string;
+            dispatchedBy: components["schemas"]["User"];
+            dispatchedById: string;
+            /** Format: date-time */
+            dispatchedAt: string;
+            receivedBy: components["schemas"]["User"];
+            receivedById: string;
+            /** Format: date-time */
+            receivedAt: string;
+            rejectionReason: string;
+            items: components["schemas"]["StockTransferItem"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        StockTransferItem: {
+            id: string;
+            transfer: components["schemas"]["StockTransfer"];
+            transferId: string;
+            sourceStock: components["schemas"]["MedicationStock"];
+            sourceStockId: string;
+            targetStock: components["schemas"]["MedicationStock"];
+            targetStockId: string;
+            requestedQuantity: number;
+            dispatchedQuantity: number;
+            receivedQuantity: number;
+        };
+        TransferAuditLog: {
+            id: string;
+            transfer: components["schemas"]["StockTransfer"];
+            transferId: string;
+            /** @enum {string} */
+            action: "requested" | "dispatched" | "completed" | "rejected" | "returned";
+            actor: components["schemas"]["User"];
+            actorId: string;
+            actorClinic: components["schemas"]["Clinic"];
+            actorClinicId: string;
+            snapshot: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ReturnTransferDto: Record<string, never>;
     };
     responses: never;
     parameters: never;
@@ -3131,6 +4943,128 @@ export interface operations {
             };
         };
     };
+    AuthController_getMyMemberships: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_getProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+        };
+    };
+    AuthController_updateProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+        };
+    };
+    AuthController_changePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_requestPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForgotPasswordDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_resetPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     AuthController_godmodeBootstrap: {
         parameters: {
             query?: never;
@@ -3155,7 +5089,26 @@ export interface operations {
             };
         };
     };
-    AuthController_testingPrivateRoute: {
+    AuthController_godmodeSyncSuperAdmins: {
+        parameters: {
+            query?: never;
+            header: {
+                "x-god-token": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SmtpConfigController_getConfig: {
         parameters: {
             query?: never;
             header?: never;
@@ -3168,28 +5121,36 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": Record<string, never>;
+                };
             };
         };
     };
-    AuthController_privateRoute2: {
+    SmtpConfigController_saveConfig: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSmtpConfigDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SmtpConfig"];
+                };
             };
         };
     };
-    AuthController_privateRoute3: {
+    SmtpConfigController_testConnection: {
         parameters: {
             query?: never;
             header?: never;
@@ -3198,7 +5159,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3245,9 +5206,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["User"][];
-                };
+                content?: never;
             };
         };
     };
@@ -3333,8 +5292,8 @@ export interface operations {
     };
     ClinicsController_findAll: {
         parameters: {
-            query: {
-                isActive: string;
+            query?: {
+                isActive?: string;
             };
             header?: never;
             path?: never;
@@ -3627,13 +5586,19 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": Record<string, never>;
+                };
             };
         };
     };
     PatientsController_findAll: {
         parameters: {
-            query?: never;
+            query: {
+                page: number;
+                limit: number;
+                gender?: unknown;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3644,9 +5609,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["Patient"][];
-                };
+                content?: never;
             };
         };
     };
@@ -3677,6 +5640,7 @@ export interface operations {
         parameters: {
             query: {
                 term: string;
+                limit: number;
             };
             header?: never;
             path?: never;
@@ -3799,14 +5763,98 @@ export interface operations {
             };
         };
     };
+    AuditController_findAll: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                action?: string;
+                resource?: string;
+                status?: "success" | "failure";
+                userEmail?: string;
+                search?: string;
+                startDate?: string;
+                endDate?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuditController_getStats: {
+        parameters: {
+            query?: {
+                startDate?: string;
+                endDate?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuditController_getDailyActivity: {
+        parameters: {
+            query?: {
+                startDate?: string;
+                endDate?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuditController_getDistinctValues: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     AppointmentsController_findAll: {
         parameters: {
-            query: {
-                doctorId: string;
-                patientId: string;
-                status: string;
-                startDate: string;
-                endDate: string;
+            query?: {
+                doctorId?: string;
+                patientId?: string;
+                status?: string;
+                startDate?: string;
+                endDate?: string;
             };
             header?: never;
             path?: never;
@@ -3849,10 +5897,10 @@ export interface operations {
     };
     AppointmentsController_getStatistics: {
         parameters: {
-            query: {
-                doctorId: string;
-                startDate: string;
-                endDate: string;
+            query?: {
+                doctorId?: string;
+                startDate?: string;
+                endDate?: string;
             };
             header?: never;
             path?: never;
@@ -4021,17 +6069,17 @@ export interface operations {
     };
     MedicalRecordsController_findAll: {
         parameters: {
-            query: {
-                search: string;
-                type: string;
-                status: string;
-                patientId: string;
-                doctorId: string;
-                startDate: string;
-                endDate: string;
-                isEmergency: string;
-                page: string;
-                limit: string;
+            query?: {
+                search?: string;
+                type?: string;
+                status?: string;
+                patientId?: string;
+                doctorId?: string;
+                startDate?: string;
+                endDate?: string;
+                isEmergency?: string;
+                page?: string;
+                limit?: string;
             };
             header?: never;
             path?: never;
@@ -4196,12 +6244,46 @@ export interface operations {
             };
         };
     };
+    MedicalRecordsController_generateConsentPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MedicalRecordsController_generateSummaryPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     MedicalRecordsController_findAllConsentForms: {
         parameters: {
-            query: {
-                patientId: string;
-                medicalRecordId: string;
-                status: string;
+            query?: {
+                patientId?: string;
+                medicalRecordId?: string;
+                status?: string;
             };
             header?: never;
             path?: never;
@@ -4493,6 +6575,1088 @@ export interface operations {
             };
         };
     };
+    ReportsController_getPharmacyConsumption: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getPatientTimeline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getTransferEfficiency: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getCriticalStock: {
+        parameters: {
+            query: {
+                expiryDays: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getPrescriptionAudit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportCriticalStockPdf: {
+        parameters: {
+            query: {
+                expiryDays: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportTransferEfficiencyPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportCriticalStockExcel: {
+        parameters: {
+            query: {
+                expiryDays: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportPharmacyConsumptionExcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getRotationReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getTopSellingMedications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    ReportsController_getProductMarginReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    ReportsController_getDailySalesSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getExpiryBucketReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getPurchaseVsConsumption: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getSalesByCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    ReportsController_getStockMovementsReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    ReportsController_getSupplierAnalysis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    ReportsController_getPrescriptionDispensingSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getCreditSales: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getSalesByPaymentMethod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getMonthlyProfitability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportRotationPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportMarginsPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportDailySalesPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportExpiryBucketsPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportProfitabilityPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportRotationExcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportMarginsExcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportTopSellingExcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportStockMovementsExcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getSalesByPharmacist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportSalesByPharmacistPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportSalesByPharmacistExcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getSalesByPharmacistMedicationDay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportPharmacistDayPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportPharmacistDayExcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getValorizedInventory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportValorizedInventoryPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportValorizedInventoryExcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getInventoryByCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    ReportsController_exportInventoryByCategoryPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getMedicationsWithoutMovement: {
+        parameters: {
+            query: {
+                days: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportNoMovementPdf: {
+        parameters: {
+            query: {
+                days: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportNoMovementExcel: {
+        parameters: {
+            query: {
+                days: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getSalesByMedicationDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    ReportsController_exportMedicationDetailPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportMedicationDetailExcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getPrescriptionVsFreeSales: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportPrescriptionVsFreePdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getSalesByPaymentDetailed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportSalesByPaymentPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportSalesByPaymentExcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getMonthlySalesComparison: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportMonthlySalesComparisonPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportMonthlySalesComparisonExcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportFinancialPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportDemographicsPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportDoctorPerformancePdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportAppointmentsPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportMedicalRecordsPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportDashboardPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     SuppliersController_findAll: {
         parameters: {
             query?: never;
@@ -4623,9 +7787,11 @@ export interface operations {
     };
     PurchaseOrdersController_findAll: {
         parameters: {
-            query: {
-                status: string;
-                supplierId: string;
+            query?: {
+                status?: string;
+                supplierId?: string;
+                page?: number;
+                limit?: number;
             };
             header?: never;
             path?: never;
@@ -4637,9 +7803,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["PurchaseOrder"][];
-                };
+                content?: never;
             };
         };
     };
@@ -4801,10 +7965,12 @@ export interface operations {
     PharmacySalesController_findAll: {
         parameters: {
             query: {
-                status: string;
-                paymentMethod: string;
-                startDate: string;
-                endDate: string;
+                page: number;
+                limit: number;
+                status?: string;
+                paymentMethod?: string;
+                startDate?: string;
+                endDate?: string;
             };
             header?: never;
             path?: never;
@@ -4816,9 +7982,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["PharmacySale"][];
-                };
+                content?: never;
             };
         };
     };
@@ -4868,9 +8032,9 @@ export interface operations {
     };
     PharmacySalesController_getSummary: {
         parameters: {
-            query: {
-                startDate: string;
-                endDate: string;
+            query?: {
+                startDate?: string;
+                endDate?: string;
             };
             header?: never;
             path?: never;
@@ -4976,10 +8140,37 @@ export interface operations {
             };
         };
     };
+    PharmacySalesController_adjustPayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdjustPaymentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacySale"];
+                };
+            };
+        };
+    };
     PharmacyInvoicesController_findAll: {
         parameters: {
-            query: {
-                status: string;
+            query?: {
+                status?: string;
+                page?: number;
+                limit?: number;
             };
             header?: never;
             path?: never;
@@ -4991,9 +8182,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["PharmacyInvoice"][];
-                };
+                content?: never;
             };
         };
     };
@@ -5041,9 +8230,9 @@ export interface operations {
     };
     PharmacyInvoicesController_getTotalRevenue: {
         parameters: {
-            query: {
-                startDate: string;
-                endDate: string;
+            query?: {
+                startDate?: string;
+                endDate?: string;
             };
             header?: never;
             path?: never;
@@ -5189,7 +8378,10 @@ export interface operations {
     };
     InventoryController_findAllMedications: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -5200,9 +8392,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["Medication"][];
-                };
+                content?: never;
             };
         };
     };
@@ -5317,7 +8507,10 @@ export interface operations {
     };
     InventoryController_findAllStock: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -5328,9 +8521,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["MedicationStock"][];
-                };
+                content?: never;
             };
         };
     };
@@ -5378,8 +8569,8 @@ export interface operations {
     };
     InventoryController_getExpiringItems: {
         parameters: {
-            query: {
-                days: number;
+            query?: {
+                days?: number;
             };
             header?: never;
             path?: never;
@@ -5529,9 +8720,9 @@ export interface operations {
     };
     PrescriptionsController_findAll: {
         parameters: {
-            query: {
-                page: number;
-                pageSize: number;
+            query?: {
+                page?: number;
+                pageSize?: number;
             };
             header?: never;
             path?: never;
@@ -5616,6 +8807,25 @@ export interface operations {
             };
         };
     };
+    PrescriptionsController_getPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     PrescriptionsController_setStatus: {
         parameters: {
             query?: never;
@@ -5681,9 +8891,9 @@ export interface operations {
     };
     BillingController_findAllInvoices: {
         parameters: {
-            query: {
-                page: number;
-                pageSize: number;
+            query?: {
+                page?: number;
+                pageSize?: number;
             };
             header?: never;
             path?: never;
@@ -5896,8 +9106,8 @@ export interface operations {
     };
     BillingController_getStatistics: {
         parameters: {
-            query: {
-                clinicId: string;
+            query?: {
+                clinicId?: string;
             };
             header?: never;
             path?: never;
@@ -5955,8 +9165,8 @@ export interface operations {
     };
     RolesController_findAll: {
         parameters: {
-            query: {
-                isActive: string;
+            query?: {
+                isActive?: string;
             };
             header?: never;
             path?: never;
@@ -6083,6 +9293,40 @@ export interface operations {
             };
         };
     };
+    SeedController_seedDemo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SeedController_resetAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     AssetsController_findAll: {
         parameters: {
             query?: {
@@ -6095,6 +9339,8 @@ export interface operations {
                 purchaseDateFrom?: string;
                 purchaseDateTo?: string;
                 search?: string;
+                page?: number;
+                limit?: number;
             };
             header?: never;
             path?: never;
@@ -6106,9 +9352,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["Asset"][];
-                };
+                content?: never;
             };
         };
     };
@@ -6156,8 +9400,8 @@ export interface operations {
     };
     AssetsController_validateSerialNumber: {
         parameters: {
-            query: {
-                excludeId: string;
+            query?: {
+                excludeId?: string;
             };
             header?: never;
             path: {
@@ -6182,7 +9426,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                field: string;
+                field: "type" | "category" | "manufacturer" | "location";
             };
             cookie?: never;
         };
@@ -6475,6 +9719,429 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Asset"];
                 };
+            };
+        };
+    };
+    AssetTransfersController_findAll: {
+        parameters: {
+            query?: {
+                status?: "requested" | "in_transit" | "completed" | "rejected" | "returned";
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AssetTransfersController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAssetTransferDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetTransfer"];
+                };
+            };
+        };
+    };
+    AssetTransfersController_getPendingCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AssetTransfersController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetTransfer"];
+                };
+            };
+        };
+    };
+    AssetTransfersController_getAuditLog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetTransferAuditLog"][];
+                };
+            };
+        };
+    };
+    AssetTransfersController_dispatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DispatchTransferDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetTransfer"];
+                };
+            };
+        };
+    };
+    AssetTransfersController_confirmReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmReceiptDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetTransfer"];
+                };
+            };
+        };
+    };
+    AssetTransfersController_reject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectTransferDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetTransfer"];
+                };
+            };
+        };
+    };
+    AssetTransfersController_returnTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectTransferDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetTransfer"];
+                };
+            };
+        };
+    };
+    StockTransfersController_findAll: {
+        parameters: {
+            query?: {
+                status?: string;
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StockTransfersController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStockTransferDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockTransfer"];
+                };
+            };
+        };
+    };
+    StockTransfersController_getPendingCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StockTransfersController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockTransfer"];
+                };
+            };
+        };
+    };
+    StockTransfersController_getAuditLog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferAuditLog"][];
+                };
+            };
+        };
+    };
+    StockTransfersController_dispatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DispatchTransferDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockTransfer"];
+                };
+            };
+        };
+    };
+    StockTransfersController_confirmReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmReceiptDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockTransfer"];
+                };
+            };
+        };
+    };
+    StockTransfersController_reject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectTransferDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockTransfer"];
+                };
+            };
+        };
+    };
+    StockTransfersController_returnTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReturnTransferDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockTransfer"];
+                };
+            };
+        };
+    };
+    MetricsController_getMetrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
