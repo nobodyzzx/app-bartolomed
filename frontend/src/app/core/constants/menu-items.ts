@@ -160,7 +160,9 @@ export const MENU_ITEMS: MenuItem[] = [
     icon: 'analytics',
     route: '/dashboard/reports',
     allowedRoles: [UserRoles.DOCTOR, UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-    requiredPermissions: [Permission.ReportsMedical],
+    // Debe coincidir con requiredPermissions de la ruta 'reports' en dashboard-routing.module.ts
+    // (permissionsGuard usa hasAnyPermission — cualquiera de los 3 alcanza)
+    requiredPermissions: [Permission.ReportsMedical, Permission.ReportsFinancial, Permission.ReportsStock],
   },
 
   {
