@@ -28,6 +28,10 @@ services:
     volumes:
       - ./backend:/app:rw
       - backend_node_modules:/app/node_modules
+      # openapi:generate escribe en ../../frontend/src/generated relativo a backend/scripts;
+      # sin este mount el spec/tipos quedan en el filesystem efímero del contenedor y nunca
+      # llegan al host.
+      - ./frontend/src/generated:/frontend/src/generated:rw
     depends_on:
       db:
         condition: service_healthy
