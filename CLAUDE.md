@@ -56,6 +56,8 @@ cd frontend && npm test -- --include="src/app/modules/dashboard/pages/patients/p
 
 ### Type generation (backend DTOs → frontend types)
 Frontend types in `frontend/src/generated/api-types.ts` are generated from the Swagger spec — do not edit by hand. Friendly re-exports live in `api-exports.ts` (`ApiPatient`, `ApiCreatePatientDto`, …).
+
+CI enforces this: the `type-sync` job in `.github/workflows/ci.yml` regenerates both files and fails the pipeline if they drift from what's committed. Run one of these locally and commit the result whenever a DTO changes:
 ```bash
 # With backend running (HTTP fetch):
 cd frontend && npm run generate-types:fetch
@@ -64,6 +66,7 @@ cd frontend && npm run generate-types:fetch
 podman compose exec backend npm run openapi:generate
 cd frontend && npm run generate-types
 ```
+`openapi:generate` runs `nest build` first and imports the compiled `AppModule` from `dist/` — required because the `@nestjs/swagger` plugin (`nest-cli.json`) that infers DTO properties without explicit `@ApiProperty()` is an AST transform that only runs through `nest build`/`nest start`; importing straight from `src/` via bare `ts-node` skips it and produces empty (`Record<string, never>`) schemas for those DTOs. `docker-compose.yml` also mounts `./frontend/src/generated` into the backend container so this command actually writes to the host — without it the file only lands in the container's ephemeral filesystem.
 
 ## Backend Architecture (NestJS + TypeORM)
 
