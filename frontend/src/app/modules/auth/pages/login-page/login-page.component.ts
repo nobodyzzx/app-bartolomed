@@ -46,6 +46,11 @@ export class LoginPageComponent {
 
     this.authService.login(email, password, rememberMe).subscribe({
       next: () => {
+        // Reset explícito: si un guard más adelante rechaza la navegación a /dashboard y
+        // rebota de vuelta a /auth/login (ej. rol sin acceso a ningún módulo), Angular puede
+        // reutilizar esta misma instancia del componente en vez de destruirla — sin este
+        // reset, el botón queda con el spinner trabado para siempre.
+        this.isLoading = false
         if (rememberMe) {
           localStorage.setItem('rememberedEmail', email)
         } else {

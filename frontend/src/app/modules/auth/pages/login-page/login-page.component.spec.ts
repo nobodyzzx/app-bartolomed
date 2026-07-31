@@ -92,10 +92,13 @@ describe('LoginPageComponent', () => {
       expect(localStorage.getItem('rememberedEmail')).toBeNull()
     })
 
-    it('setea isLoading=true antes de llamar y no lo revierte en éxito (se navega fuera)', () => {
+    it('resetea isLoading=false en éxito antes de navegar', () => {
+      // Necesario para que el botón no quede con el spinner trabado si un guard
+      // más adelante rechaza la navegación y rebota de vuelta a /auth/login
+      // reutilizando esta misma instancia del componente.
       authService.login.and.returnValue(of(true))
       component.onSubmit()
-      expect(component.isLoading).toBeTrue()
+      expect(component.isLoading).toBeFalse()
     })
   })
 
