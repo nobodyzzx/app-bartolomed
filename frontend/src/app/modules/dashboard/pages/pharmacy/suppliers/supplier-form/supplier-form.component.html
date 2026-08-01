@@ -6,16 +6,14 @@
       [subtitle]="isEditMode ? 'Modifica los datos del proveedor' : 'Registra un nuevo proveedor'"
       (back)="goBack()"
       >
-      <ng-container actions>
-        <button
-          type="button"
-          (click)="cancel()"
-          class="btn btn-danger-outline"
-          >
-          <span class="material-symbols-outlined msz-18">cancel</span>
-          Cancelar
-        </button>
-      </ng-container>
+      <button
+        type="button"
+        (click)="cancel()"
+        class="btn btn-danger-outline"
+        >
+        <span class="material-symbols-outlined msz-18">cancel</span>
+        Cancelar
+      </button>
     </app-page-header>
 
     <form [formGroup]="supplierForm" (ngSubmit)="onSubmit()" class="space-y-6">

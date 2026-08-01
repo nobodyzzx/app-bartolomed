@@ -189,7 +189,7 @@
                 <div class="flex gap-1 items-center justify-end">
                   <button
                     type="button"
-                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
                     (click)="viewOrder(order); $event.stopPropagation()"
                     matTooltip="Ver detalle"
                     >
@@ -197,7 +197,7 @@
                   </button>
                   <button
                     type="button"
-                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0 disabled:opacity-40 disabled:cursor-not-allowed"
                     (click)="editOrder(order); $event.stopPropagation()"
                     [disabled]="order.status === 'delivered' || order.status === 'cancelled'"
                     matTooltip="Editar"
@@ -206,7 +206,7 @@
                   </button>
                   <button
                     type="button"
-                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-green-50 hover:text-green-600 transition-colors border-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors border-0 disabled:opacity-40 disabled:cursor-not-allowed"
                     (click)="approveOrder(order); $event.stopPropagation()"
                     [disabled]="order.status !== 'pending'"
                     matTooltip="Aprobar"
@@ -215,7 +215,7 @@
                   </button>
                   <button
                     type="button"
-                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors border-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0 disabled:opacity-40 disabled:cursor-not-allowed"
                     (click)="cancelOrder(order); $event.stopPropagation()"
                     [disabled]="order.status === 'delivered' || order.status === 'cancelled'"
                     matTooltip="Cancelar"

@@ -12,16 +12,14 @@
         [subtitle]="'Orden ' + order()!.orderNumber"
         (back)="goBack()"
       >
-        <ng-container actions>
-          <button
-            type="button"
-            (click)="goBack()"
-            class="btn btn-danger-outline"
-          >
-            <span class="material-symbols-outlined msz-18">cancel</span>
-            Cancelar
-          </button>
-        </ng-container>
+        <button
+          type="button"
+          (click)="goBack()"
+          class="btn btn-danger-outline"
+        >
+          <span class="material-symbols-outlined msz-18">cancel</span>
+          Cancelar
+        </button>
       </app-page-header>
 
       <!-- Stat cards resumen -->

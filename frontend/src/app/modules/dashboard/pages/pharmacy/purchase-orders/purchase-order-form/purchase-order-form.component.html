@@ -6,16 +6,14 @@
       [subtitle]="isEditMode ? 'Modifica los datos de la orden' : 'Crea una nueva orden de compra a proveedor'"
       (back)="goBack()"
       >
-      <ng-container actions>
-        <button
-          type="button"
-          (click)="cancel()"
-          class="btn btn-danger-outline"
-          >
-          <span class="material-symbols-outlined msz-18">cancel</span>
-          Cancelar
-        </button>
-      </ng-container>
+      <button
+        type="button"
+        (click)="cancel()"
+        class="btn btn-danger-outline"
+        >
+        <span class="material-symbols-outlined msz-18">cancel</span>
+        Cancelar
+      </button>
     </app-page-header>
 
     <form [formGroup]="orderForm" (ngSubmit)="onSubmit()" class="space-y-6">

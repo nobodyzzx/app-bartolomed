@@ -6,16 +6,14 @@
       [subtitle]="isEditMode ? 'Modifica los datos del medicamento' : 'Registra un nuevo medicamento en el inventario'"
       (back)="goBack()"
       >
-      <ng-container actions>
-        <button
-          type="button"
-          (click)="cancel()"
-          class="btn btn-danger-outline"
-          >
-          <span class="material-symbols-outlined msz-18">cancel</span>
-          Cancelar
-        </button>
-      </ng-container>
+      <button
+        type="button"
+        (click)="cancel()"
+        class="btn btn-danger-outline"
+        >
+        <span class="material-symbols-outlined msz-18">cancel</span>
+        Cancelar
+      </button>
     </app-page-header>
 
     <form [formGroup]="medicationForm" (ngSubmit)="onSubmit()" class="space-y-6">
