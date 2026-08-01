@@ -15,7 +15,9 @@ export class ClinicsController {
   constructor(private readonly clinicsService: ClinicsService) {}
 
   @Post()
-  @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN)
+  // ADMIN no tiene Permission.ClinicsManage (solo SUPER_ADMIN, ver comentario
+  // más abajo) — listarlo acá era decorativo, PermissionsGuard lo bloqueaba igual.
+  @Auth(ValidRoles.SUPER_ADMIN)
   @RequirePermissions(Permission.ClinicsManage)
   create(@Body() createClinicDto: CreateClinicDto, @GetUser() user: User) {
     return this.clinicsService.create(createClinicDto, user);
@@ -33,7 +35,9 @@ export class ClinicsController {
   }
 
   @Get('statistics')
-  @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN)
+  // ADMIN no tiene Permission.ClinicsManage (solo SUPER_ADMIN, ver comentario
+  // más abajo) — listarlo acá era decorativo, PermissionsGuard lo bloqueaba igual.
+  @Auth(ValidRoles.SUPER_ADMIN)
   @RequirePermissions(Permission.ClinicsManage)
   getStatistics() {
     return this.clinicsService.getClinicStatistics();
@@ -45,28 +49,36 @@ export class ClinicsController {
   }
 
   @Patch(':id')
-  @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN)
+  // ADMIN no tiene Permission.ClinicsManage (solo SUPER_ADMIN, ver comentario
+  // más abajo) — listarlo acá era decorativo, PermissionsGuard lo bloqueaba igual.
+  @Auth(ValidRoles.SUPER_ADMIN)
   @RequirePermissions(Permission.ClinicsManage)
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updateClinicDto: UpdateClinicDto) {
     return this.clinicsService.update(id, updateClinicDto);
   }
 
   @Delete(':id')
-  @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN)
+  // ADMIN no tiene Permission.ClinicsManage (solo SUPER_ADMIN, ver comentario
+  // más abajo) — listarlo acá era decorativo, PermissionsGuard lo bloqueaba igual.
+  @Auth(ValidRoles.SUPER_ADMIN)
   @RequirePermissions(Permission.ClinicsManage)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.clinicsService.remove(id);
   }
 
   @Patch(':id/activate')
-  @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN)
+  // ADMIN no tiene Permission.ClinicsManage (solo SUPER_ADMIN, ver comentario
+  // más abajo) — listarlo acá era decorativo, PermissionsGuard lo bloqueaba igual.
+  @Auth(ValidRoles.SUPER_ADMIN)
   @RequirePermissions(Permission.ClinicsManage)
   activate(@Param('id', ParseUUIDPipe) id: string) {
     return this.clinicsService.activate(id);
   }
 
   @Patch(':id/deactivate')
-  @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN)
+  // ADMIN no tiene Permission.ClinicsManage (solo SUPER_ADMIN, ver comentario
+  // más abajo) — listarlo acá era decorativo, PermissionsGuard lo bloqueaba igual.
+  @Auth(ValidRoles.SUPER_ADMIN)
   @RequirePermissions(Permission.ClinicsManage)
   deactivate(@Param('id', ParseUUIDPipe) id: string) {
     return this.clinicsService.deactivate(id);

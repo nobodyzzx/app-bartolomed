@@ -26,7 +26,11 @@ export class AssetsController {
   }
 
   @Get()
-  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
+  // DOCTOR/NURSE no tienen Permission.AssetsManage (class-level, solo
+  // ADMIN/SUPER_ADMIN) — listarlos acá era decorativo, PermissionsGuard los
+  // bloqueaba igual. El frontend tampoco enruta /dashboard/assets-control
+  // para esos roles.
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
   findAll(@Query() filters: FilterAssetsDto, @Req() req: Request) {
     const clinicId = resolveClinicId(req);
     return this.assetsService.findAll(filters, clinicId);
@@ -55,7 +59,11 @@ export class AssetsController {
 
   // ==================== MAINTENANCE ROUTES ====================
   @Get('maintenance')
-  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
+  // DOCTOR/NURSE no tienen Permission.AssetsManage (class-level, solo
+  // ADMIN/SUPER_ADMIN) — listarlos acá era decorativo, PermissionsGuard los
+  // bloqueaba igual. El frontend tampoco enruta /dashboard/assets-control
+  // para esos roles.
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
   findAllMaintenance(@Query() filters?: any, @Req() req?: Request) {
     const clinicId = req ? resolveClinicId(req) : undefined;
     return this.assetsService.findAllMaintenance(filters, clinicId);
@@ -76,7 +84,11 @@ export class AssetsController {
   }
 
   @Get('maintenance/:maintenanceId')
-  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
+  // DOCTOR/NURSE no tienen Permission.AssetsManage (class-level, solo
+  // ADMIN/SUPER_ADMIN) — listarlos acá era decorativo, PermissionsGuard los
+  // bloqueaba igual. El frontend tampoco enruta /dashboard/assets-control
+  // para esos roles.
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
   findOneMaintenance(@Param('maintenanceId', ParseUUIDPipe) id: string, @Req() req?: Request) {
     const clinicId = req ? resolveClinicId(req) : undefined;
     return this.assetsService.findOneMaintenance(id, clinicId);
@@ -98,7 +110,8 @@ export class AssetsController {
 
   // ==================== REPORTS ROUTES ====================
   @Get('reports')
-  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR)
+  // DOCTOR no tiene Permission.AssetsManage — ver nota arriba.
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
   findAllReports(@Query() filters?: any, @Req() req?: Request) {
     const clinicId = req ? resolveClinicId(req) : undefined;
     return this.assetsService.findAllReports(filters, clinicId);
@@ -112,14 +125,16 @@ export class AssetsController {
   }
 
   @Post('reports/generate')
-  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR)
+  // DOCTOR no tiene Permission.AssetsManage — ver nota arriba.
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
   generateReport(@Body() data: any, @GetUser() user: User, @Req() req?: Request) {
     const clinicId = req ? resolveClinicId(req) : undefined;
     return this.assetsService.generateReport(data, user.id, clinicId);
   }
 
   @Get('reports/:reportId')
-  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR)
+  // DOCTOR no tiene Permission.AssetsManage — ver nota arriba.
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
   findOneReport(@Param('reportId', ParseUUIDPipe) id: string, @Req() req?: Request) {
     const clinicId = req ? resolveClinicId(req) : undefined;
     return this.assetsService.findOneReport(id, clinicId);
@@ -150,7 +165,11 @@ export class AssetsController {
   }
 
   @Get(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
+  // DOCTOR/NURSE no tienen Permission.AssetsManage (class-level, solo
+  // ADMIN/SUPER_ADMIN) — listarlos acá era decorativo, PermissionsGuard los
+  // bloqueaba igual. El frontend tampoco enruta /dashboard/assets-control
+  // para esos roles.
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
   findOne(@Param('id', ParseUUIDPipe) id: string, @Req() req?: Request) {
     const clinicId = req ? resolveClinicId(req) : undefined;
     return this.assetsService.findOne(id, clinicId);

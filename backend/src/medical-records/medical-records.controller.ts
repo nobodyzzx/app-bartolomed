@@ -191,7 +191,7 @@ export class MedicalRecordsController {
   }
 
   @Post('consent-forms/:id/upload')
-  @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN, ValidRoles.USER)
+  @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
