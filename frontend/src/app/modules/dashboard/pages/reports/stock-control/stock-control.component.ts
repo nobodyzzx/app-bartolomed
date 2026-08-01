@@ -19,6 +19,7 @@ export class StockControlComponent implements OnInit {
   generating = false
   generateForm: FormGroup
   selectedReport: StockReport | null = null
+  searchTerm = ''
 
   // Stats
   totalProducts = 0
@@ -272,6 +273,14 @@ export class StockControlComponent implements OnInit {
 
   viewReport(report: StockReport): void {
     this.selectedReport = report
+  }
+
+  get filteredReports(): StockReport[] {
+    const term = this.searchTerm.trim().toLowerCase()
+    if (!term) return this.stockReports
+    return this.stockReports.filter(r =>
+      r.title.toLowerCase().includes(term) || r.type.toLowerCase().includes(term),
+    )
   }
 
   goBack(): void {

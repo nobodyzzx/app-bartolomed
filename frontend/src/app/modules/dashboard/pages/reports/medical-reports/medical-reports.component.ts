@@ -19,6 +19,7 @@ export class MedicalReportsComponent implements OnInit {
   generating = false
   generateForm: FormGroup
   selectedReport: MedicalReport | null = null
+  searchTerm = ''
 
   // Tipos de reportes adaptados al contexto boliviano
   reportTypes = [
@@ -257,6 +258,14 @@ export class MedicalReportsComponent implements OnInit {
 
   viewReport(report: MedicalReport): void {
     this.selectedReport = report
+  }
+
+  get filteredReports(): MedicalReport[] {
+    const term = this.searchTerm.trim().toLowerCase()
+    if (!term) return this.medicalReports
+    return this.medicalReports.filter(r =>
+      r.title.toLowerCase().includes(term) || r.type.toLowerCase().includes(term),
+    )
   }
 
   filterByType(type: string | null): void {

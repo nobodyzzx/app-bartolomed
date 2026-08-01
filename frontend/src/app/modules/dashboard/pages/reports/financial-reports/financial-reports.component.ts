@@ -19,6 +19,7 @@ export class FinancialReportsComponent implements OnInit {
   generating = false
   generateForm: FormGroup
   selectedReport: FinancialReport | null = null
+  searchTerm = ''
 
   // Stats
   totalReports = 0
@@ -263,6 +264,14 @@ export class FinancialReportsComponent implements OnInit {
 
   viewReport(report: FinancialReport): void {
     this.selectedReport = report
+  }
+
+  get filteredReports(): FinancialReport[] {
+    const term = this.searchTerm.trim().toLowerCase()
+    if (!term) return this.financialReports
+    return this.financialReports.filter(r =>
+      r.title.toLowerCase().includes(term) || r.type.toLowerCase().includes(term),
+    )
   }
 
   goBack(): void {

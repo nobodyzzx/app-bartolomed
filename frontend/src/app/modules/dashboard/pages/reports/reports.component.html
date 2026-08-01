@@ -14,14 +14,14 @@
         <form [formGroup]="rangeForm" class="flex flex-wrap gap-4 flex-1">
           <mat-form-field appearance="outline" class="flex-1 min-w-[180px]">
             <mat-label>Desde</mat-label>
-            <span matPrefix class="material-symbols-outlined text-slate-400 ml-1 mr-1">calendar_today</span>
+            <mat-icon matPrefix class="text-blue-400">calendar_today</mat-icon>
             <input matInput [matDatepicker]="pickerStart" formControlName="startDate" />
             <mat-datepicker-toggle matSuffix [for]="pickerStart" />
             <mat-datepicker #pickerStart />
           </mat-form-field>
           <mat-form-field appearance="outline" class="flex-1 min-w-[180px]">
             <mat-label>Hasta</mat-label>
-            <span matPrefix class="material-symbols-outlined text-slate-400 ml-1 mr-1">event</span>
+            <mat-icon matPrefix class="text-blue-400">event</mat-icon>
             <input matInput [matDatepicker]="pickerEnd" formControlName="endDate" />
             <mat-datepicker-toggle matSuffix [for]="pickerEnd" />
             <mat-datepicker #pickerEnd />
@@ -36,9 +36,14 @@
 
     <!-- ── SECCIÓN CLÍNICA ── -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-      <div class="bg-emerald-600 px-6 py-4 flex items-center gap-3">
-        <span class="material-symbols-outlined text-white text-2xl">local_hospital</span>
-        <h2 class="text-lg font-semibold text-white">Clínica</h2>
+      <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+        <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">local_hospital</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Clínica</h3>
+          <p class="text-sm text-slate-500 m-0">Pacientes, citas y actividad clínica del período</p>
+        </div>
       </div>
 
       <div class="p-6">
@@ -105,27 +110,27 @@
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadDemographics()" [disabled]="downloading['demographics']">
-            <span class="material-symbols-outlined text-emerald-600">{{downloading['demographics'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            <span class="material-symbols-outlined text-green-600">{{downloading['demographics'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
             Demografía
           </button>
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadAppointments()" [disabled]="downloading['appointments']">
-            <span class="material-symbols-outlined text-emerald-600">{{downloading['appointments'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            <span class="material-symbols-outlined text-green-600">{{downloading['appointments'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
             Citas
           </button>
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadMedicalRecords()" [disabled]="downloading['medicalRecords']">
-            <span class="material-symbols-outlined text-emerald-600">{{downloading['medicalRecords'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            <span class="material-symbols-outlined text-green-600">{{downloading['medicalRecords'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
             Historial médico
           </button>
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadDoctorPerformance()" [disabled]="downloading['performance']">
-            <span class="material-symbols-outlined text-emerald-600">{{downloading['performance'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            <span class="material-symbols-outlined text-green-600">{{downloading['performance'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
             Desempeño médicos
           </button>
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadDashboard()" [disabled]="downloading['dashboard']">
-            <span class="material-symbols-outlined text-emerald-600">{{downloading['dashboard'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            <span class="material-symbols-outlined text-green-600">{{downloading['dashboard'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
             Dashboard general
           </button>
         </div>
@@ -134,9 +139,14 @@
 
     <!-- ── SECCIÓN FINANZAS ── -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-      <div class="bg-blue-600 px-6 py-4 flex items-center gap-3">
-        <span class="material-symbols-outlined text-white text-2xl">payments</span>
-        <h2 class="text-lg font-semibold text-white">Finanzas</h2>
+      <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">payments</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Finanzas</h3>
+          <p class="text-sm text-slate-500 m-0">Facturación, cobros e ingresos del período</p>
+        </div>
       </div>
 
       <div class="p-6">
@@ -198,9 +208,14 @@
 
     <!-- ── SECCIÓN FARMACIA ── -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-      <div class="bg-orange-500 px-6 py-4 flex items-center gap-3">
-        <span class="material-symbols-outlined text-white text-2xl">medication</span>
-        <h2 class="text-lg font-semibold text-white">Farmacia</h2>
+      <div class="flex items-center gap-4 px-6 py-4 bg-orange-50 border-b border-orange-100">
+        <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">medication</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Farmacia</h3>
+          <p class="text-sm text-slate-500 m-0">Stock, vencimientos y rentabilidad del inventario</p>
+        </div>
       </div>
 
       <div class="p-6">
@@ -297,9 +312,14 @@
 
     <!-- ── SECCIÓN VENTAS POR ENCARGADO ── -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-      <div class="bg-violet-600 px-6 py-4 flex items-center gap-3">
-        <span class="material-symbols-outlined text-white text-2xl">badge</span>
-        <h2 class="text-lg font-semibold text-white">Ventas por Encargado</h2>
+      <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
+        <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">badge</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Ventas por Encargado</h3>
+          <p class="text-sm text-slate-500 m-0">Desglose de ventas por farmacéutico, día y medicamento</p>
+        </div>
       </div>
       <div class="p-6">
         <p class="text-sm text-slate-500 mb-4">Control de cuánto vendió cada farmacéutico en el período, desglosado por día y medicamento.</p>
@@ -308,12 +328,12 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadSalesByPharmacistPdf()" [disabled]="downloading['pharmPdf']">
-            <span class="material-symbols-outlined text-violet-600">{{downloading['pharmPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            <span class="material-symbols-outlined text-purple-600">{{downloading['pharmPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
             Resumen por Encargado
           </button>
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadPharmacistDayPdf()" [disabled]="downloading['pharmDayPdf']">
-            <span class="material-symbols-outlined text-violet-600">{{downloading['pharmDayPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            <span class="material-symbols-outlined text-purple-600">{{downloading['pharmDayPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
             Encargado × Día × Med.
           </button>
         </div>
@@ -322,12 +342,12 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadSalesByPharmacistExcel()" [disabled]="downloading['pharmXls']">
-            <span class="material-symbols-outlined text-violet-600">{{downloading['pharmXls'] ? 'hourglass_top' : 'table_chart'}}</span>
+            <span class="material-symbols-outlined text-purple-600">{{downloading['pharmXls'] ? 'hourglass_top' : 'table_chart'}}</span>
             Resumen Excel
           </button>
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadPharmacistDayExcel()" [disabled]="downloading['pharmDayXls']">
-            <span class="material-symbols-outlined text-violet-600">{{downloading['pharmDayXls'] ? 'hourglass_top' : 'table_chart'}}</span>
+            <span class="material-symbols-outlined text-purple-600">{{downloading['pharmDayXls'] ? 'hourglass_top' : 'table_chart'}}</span>
             Detalle Excel
           </button>
         </div>
@@ -336,9 +356,14 @@
 
     <!-- ── SECCIÓN INVENTARIO ── -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-      <div class="bg-teal-600 px-6 py-4 flex items-center gap-3">
-        <span class="material-symbols-outlined text-white text-2xl">inventory_2</span>
-        <h2 class="text-lg font-semibold text-white">Inventario</h2>
+      <div class="flex items-center gap-4 px-6 py-4 bg-teal-50 border-b border-teal-100">
+        <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">inventory_2</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Inventario</h3>
+          <p class="text-sm text-slate-500 m-0">Valorización del stock y medicamentos sin movimiento</p>
+        </div>
       </div>
       <div class="p-6">
         <p class="text-sm text-slate-500 mb-4">Valorización del stock actual, distribución por categoría y medicamentos sin movimiento.</p>
@@ -380,9 +405,14 @@
 
     <!-- ── SECCIÓN VENTAS DETALLADAS ── -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-      <div class="bg-cyan-600 px-6 py-4 flex items-center gap-3">
-        <span class="material-symbols-outlined text-white text-2xl">bar_chart</span>
-        <h2 class="text-lg font-semibold text-white">Ventas Detalladas</h2>
+      <div class="flex items-center gap-4 px-6 py-4 bg-indigo-50 border-b border-indigo-100">
+        <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">bar_chart</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Ventas Detalladas</h3>
+          <p class="text-sm text-slate-500 m-0">Márgenes por medicamento y comparativa receta vs. venta libre</p>
+        </div>
       </div>
       <div class="p-6">
         <p class="text-sm text-slate-500 mb-4">Análisis de ventas por medicamento con márgenes, y comparativa entre ventas con receta y ventas libres.</p>
@@ -391,22 +421,22 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadMedicationDetailPdf()" [disabled]="downloading['medDetPdf']">
-            <span class="material-symbols-outlined text-cyan-600">{{downloading['medDetPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            <span class="material-symbols-outlined text-indigo-600">{{downloading['medDetPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
             Ventas por Med. PDF
           </button>
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadPrescriptionVsFreePdf()" [disabled]="downloading['rxFreePdf']">
-            <span class="material-symbols-outlined text-cyan-600">{{downloading['rxFreePdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            <span class="material-symbols-outlined text-indigo-600">{{downloading['rxFreePdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
             Receta vs Libre PDF
           </button>
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadSalesByPaymentPdf()" [disabled]="downloading['payPdf']">
-            <span class="material-symbols-outlined text-cyan-600">{{downloading['payPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            <span class="material-symbols-outlined text-indigo-600">{{downloading['payPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
             Método de Pago PDF
           </button>
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadMonthlySalesComparisonPdf()" [disabled]="downloading['monthlyPdf']">
-            <span class="material-symbols-outlined text-cyan-600">{{downloading['monthlyPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            <span class="material-symbols-outlined text-indigo-600">{{downloading['monthlyPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
             Comparativo Mensual PDF
           </button>
         </div>
@@ -415,17 +445,17 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadMedicationDetailExcel()" [disabled]="downloading['medDetXls']">
-            <span class="material-symbols-outlined text-cyan-600">{{downloading['medDetXls'] ? 'hourglass_top' : 'table_chart'}}</span>
+            <span class="material-symbols-outlined text-indigo-600">{{downloading['medDetXls'] ? 'hourglass_top' : 'table_chart'}}</span>
             Ventas por Med. Excel
           </button>
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadSalesByPaymentExcel()" [disabled]="downloading['payXls']">
-            <span class="material-symbols-outlined text-cyan-600">{{downloading['payXls'] ? 'hourglass_top' : 'table_chart'}}</span>
+            <span class="material-symbols-outlined text-indigo-600">{{downloading['payXls'] ? 'hourglass_top' : 'table_chart'}}</span>
             Método de Pago Excel
           </button>
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadMonthlySalesComparisonExcel()" [disabled]="downloading['monthlyXls']">
-            <span class="material-symbols-outlined text-cyan-600">{{downloading['monthlyXls'] ? 'hourglass_top' : 'table_chart'}}</span>
+            <span class="material-symbols-outlined text-indigo-600">{{downloading['monthlyXls'] ? 'hourglass_top' : 'table_chart'}}</span>
             Comparativo Mensual Excel
           </button>
         </div>
