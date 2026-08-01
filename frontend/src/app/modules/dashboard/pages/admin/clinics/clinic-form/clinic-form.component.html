@@ -6,16 +6,14 @@
       [subtitle]="isEditMode ? 'Actualice la información de la clínica' : 'Complete el formulario para registrar una nueva clínica'"
       (back)="router.navigate(['/dashboard/clinics'])"
       >
-      <ng-container actions>
-        <button
-          type="button"
-          (click)="router.navigate(['/dashboard/clinics'])"
-          class="btn btn-danger-outline"
-          >
-          <mat-icon class="!text-[18px]">cancel</mat-icon>
-          Cancelar
-        </button>
-      </ng-container>
+      <button
+        type="button"
+        (click)="router.navigate(['/dashboard/clinics'])"
+        class="btn btn-danger-outline"
+        >
+        <span class="material-symbols-outlined msz-18">cancel</span>
+        Cancelar
+      </button>
     </app-page-header>
 
     <form [formGroup]="clinicForm" (ngSubmit)="onSubmit()" class="space-y-6">
@@ -24,7 +22,7 @@
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
           <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
-            <mat-icon class="!text-[20px]">business</mat-icon>
+            <span class="material-symbols-outlined msz-20">business</span>
           </div>
           <div>
             <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información Básica</h3>
@@ -51,7 +49,7 @@
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
           <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
-            <mat-icon class="!text-[20px]">contact_phone</mat-icon>
+            <span class="material-symbols-outlined msz-20">contact_phone</span>
           </div>
           <div>
             <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información de Contacto</h3>
@@ -79,7 +77,7 @@
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
           <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
-            <mat-icon class="!text-[20px]">location_on</mat-icon>
+            <span class="material-symbols-outlined msz-20">location_on</span>
           </div>
           <div>
             <h3 class="font-semibold text-slate-900 m-0 leading-tight">Dirección</h3>
@@ -130,7 +128,7 @@
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-amber-50 border-b border-amber-100">
           <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
-            <mat-icon class="!text-[20px]">toggle_on</mat-icon>
+            <span class="material-symbols-outlined msz-20">toggle_on</span>
           </div>
           <div>
             <h3 class="font-semibold text-slate-900 m-0 leading-tight">Estado de la Clínica</h3>
@@ -153,7 +151,7 @@
           (click)="router.navigate(['/dashboard/clinics'])"
           class="btn btn-danger-outline"
           >
-          <mat-icon class="!text-[18px]">close</mat-icon>
+          <span class="material-symbols-outlined msz-18">close</span>
           Cancelar
         </button>
         <button
@@ -165,7 +163,7 @@
             <mat-spinner diameter="18"></mat-spinner>
           }
           @if (!isLoading) {
-            <mat-icon class="!text-[18px]">save</mat-icon>
+            <span class="material-symbols-outlined msz-18">save</span>
           }
           {{ isEditMode ? 'Actualizar Clínica' : 'Registrar Clínica' }}
         </button>

@@ -2,47 +2,43 @@
   <div class="page-inner">
 
     <!-- Header -->
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h1 class="text-3xl font-bold text-slate-900 m-0">Auditoría y Logs</h1>
-        <p class="text-sm text-slate-500 mt-1">
-          Actividad del sistema {{ rangeLabel }}
-        </p>
-      </div>
-      <div class="flex items-center gap-2">
-        <!-- Auto-refresh toggle -->
-        <button
-          (click)="toggleAutoRefresh()"
-          class="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-colors"
-          [class.bg-green-100]="autoRefresh"
-          [class.text-green-700]="autoRefresh"
-          [class.bg-slate-100]="!autoRefresh"
-          [class.text-slate-600]="!autoRefresh"
-          [title]="autoRefresh ? 'Auto-refresh activo (30s) — click para pausar' : 'Activar auto-refresh cada 30s'"
-          >
-          <span class="material-symbols-outlined msz-18">
-            {{ autoRefresh ? 'pause_circle' : 'play_circle' }}
-          </span>
-          {{ autoRefresh ? 'Live' : 'Pausado' }}
-        </button>
-        <!-- Refresh manual -->
-        <button
-          (click)="manualRefresh()"
-          class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors"
-          title="Actualizar ahora"
-          >
-          <span class="material-symbols-outlined msz-20">refresh</span>
-        </button>
-        <!-- Exportar -->
-        <button
-          (click)="exportCsv()"
-          class="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
-          >
-          <span class="material-symbols-outlined msz-18">download</span>
-          CSV
-        </button>
-      </div>
-    </div>
+    <app-page-header
+      title="Auditoría y Logs"
+      [subtitle]="'Actividad del sistema ' + rangeLabel"
+      [showBack]="false"
+      >
+      <!-- Auto-refresh toggle -->
+      <button
+        (click)="toggleAutoRefresh()"
+        class="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-colors"
+        [class.bg-green-100]="autoRefresh"
+        [class.text-green-700]="autoRefresh"
+        [class.bg-slate-100]="!autoRefresh"
+        [class.text-slate-600]="!autoRefresh"
+        [title]="autoRefresh ? 'Auto-refresh activo (30s) — click para pausar' : 'Activar auto-refresh cada 30s'"
+        >
+        <span class="material-symbols-outlined msz-18">
+          {{ autoRefresh ? 'pause_circle' : 'play_circle' }}
+        </span>
+        {{ autoRefresh ? 'Live' : 'Pausado' }}
+      </button>
+      <!-- Refresh manual -->
+      <button
+        (click)="manualRefresh()"
+        class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors"
+        title="Actualizar ahora"
+        >
+        <span class="material-symbols-outlined msz-20">refresh</span>
+      </button>
+      <!-- Exportar -->
+      <button
+        (click)="exportCsv()"
+        class="btn btn-outline"
+        >
+        <span class="material-symbols-outlined msz-18">download</span>
+        CSV
+      </button>
+    </app-page-header>
 
     <!-- ── Chips de filtro rápido ──────────────────────────────────────────── -->
     <div class="flex flex-wrap gap-2 mb-6">

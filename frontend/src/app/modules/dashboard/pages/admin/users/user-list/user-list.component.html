@@ -6,16 +6,14 @@
       subtitle="Administra todos los usuarios del sistema"
       [showBack]="false"
       >
-      <ng-container actions>
-        <button
-          type="button"
-          (click)="navigateToNew()"
-          class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all border-0 text-sm"
-          >
-          <span class="material-symbols-outlined msz-18">person_add</span>
-          Nuevo Usuario
-        </button>
-      </ng-container>
+      <button
+        type="button"
+        (click)="navigateToNew()"
+        class="btn btn-primary"
+        >
+        <span class="material-symbols-outlined msz-18">person_add</span>
+        Nuevo Usuario
+      </button>
     </app-page-header>
 
     <!-- Estadísticas -->

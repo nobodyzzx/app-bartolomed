@@ -6,16 +6,14 @@
       subtitle="Complete toda la información del usuario"
       (back)="router.navigate(['/dashboard/users'])"
       >
-      <ng-container actions>
-        <button
-          type="button"
-          (click)="router.navigate(['/dashboard/users'])"
-          class="btn btn-danger-outline"
-          >
-          <span class="material-symbols-outlined msz-18">cancel</span>
-          Cancelar
-        </button>
-      </ng-container>
+      <button
+        type="button"
+        (click)="router.navigate(['/dashboard/users'])"
+        class="btn btn-danger-outline"
+        >
+        <span class="material-symbols-outlined msz-18">cancel</span>
+        Cancelar
+      </button>
     </app-page-header>
 
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-6">

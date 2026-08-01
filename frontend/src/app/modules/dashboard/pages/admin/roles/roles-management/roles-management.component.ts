@@ -40,16 +40,14 @@ import { Role, RolesService } from '../services/roles.service'
           subtitle="Administra los roles y permisos del sistema"
           [showBack]="false"
         >
-          <ng-container actions>
-            <button
-              type="button"
-              (click)="openForm()"
-              class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-purple-600 text-white hover:bg-purple-700 shadow-md hover:shadow-lg transition-all border-0 text-sm"
-            >
-              <span class="material-symbols-outlined msz-18">add</span>
-              Nuevo Rol
-            </button>
-          </ng-container>
+          <button
+            type="button"
+            (click)="openForm()"
+            class="btn btn-primary"
+          >
+            <span class="material-symbols-outlined msz-18">add</span>
+            Nuevo Rol
+          </button>
         </app-page-header>
 
         <!-- Formulario -->

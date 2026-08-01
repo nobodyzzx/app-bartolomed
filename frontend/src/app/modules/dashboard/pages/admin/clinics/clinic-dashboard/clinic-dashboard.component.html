@@ -5,24 +5,22 @@
       title="Gestión de Clínicas"
       subtitle="Administra y supervisa todas las clínicas del sistema"
       >
-      <ng-container actions>
-        <button
-          type="button"
-          (click)="navigateToClinics()"
-          class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors border-0 text-sm"
-          >
-          <span class="material-symbols-outlined msz-18">list</span>
-          Ver Lista
-        </button>
-        <button
-          type="button"
-          (click)="navigateToNewClinic()"
-          class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all border-0 text-sm"
-          >
-          <span class="material-symbols-outlined msz-18">add</span>
-          Nueva Clínica
-        </button>
-      </ng-container>
+      <button
+        type="button"
+        (click)="navigateToClinics()"
+        class="btn btn-ghost"
+        >
+        <span class="material-symbols-outlined msz-18">list</span>
+        Ver Lista
+      </button>
+      <button
+        type="button"
+        (click)="navigateToNewClinic()"
+        class="btn btn-primary"
+        >
+        <span class="material-symbols-outlined msz-18">add</span>
+        Nueva Clínica
+      </button>
     </app-page-header>
 
     <!-- Estadísticas -->
