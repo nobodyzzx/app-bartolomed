@@ -18,7 +18,7 @@ interface StatCardDef {
   color: StatCardColor
   route: string
   value: string | number
-  roles: string[]
+  roles: UserRoles[]
 }
 
 interface QuickActionDef {
@@ -26,13 +26,12 @@ interface QuickActionDef {
   icon: string
   route: string
   color: string
-  roles: string[]
+  roles: UserRoles[]
 }
 
-const ALL_ROLES: string[] = Object.values(UserRoles)
-const CLINICAL:   string[] = [UserRoles.DOCTOR, UserRoles.NURSE, UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
-const ADMIN_ONLY: string[] = [UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
-const PHARMACY:   string[] = [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
+const CLINICAL:   UserRoles[] = [UserRoles.DOCTOR, UserRoles.NURSE, UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
+const ADMIN_ONLY: UserRoles[] = [UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
+const PHARMACY:   UserRoles[] = [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
 
 @Component({
     selector: 'app-main-dashboard',
@@ -125,18 +124,6 @@ export class MainDashboardComponent implements OnInit {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   }).format(this.today)
 
-  // ── Rol del usuario autenticado ──────────────────────────────────────────
-
-  /** Rol de mayor jerarquía del usuario actual (usa RoleStateService — fuente de verdad de UI) */
-  get userRole(): string {
-    const roles = this.roleState.currentUserRoles()
-    const priority: UserRoles[] = [
-      UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.DOCTOR,
-      UserRoles.PHARMACIST,  UserRoles.NURSE, UserRoles.RECEPTIONIST,
-    ]
-    return priority.find(r => roles.includes(r)) ?? 'user'
-  }
-
   get userName(): string {
     const u = this.authService.currentUser()
     if (!u) return 'Bartolomé'
@@ -184,7 +171,7 @@ export class MainDashboardComponent implements OnInit {
         roles: PHARMACY,
       },
     ]
-    return cards.filter(c => c.roles.includes(this.userRole))
+    return cards.filter(c => this.roleState.hasAnyRole(c.roles))
   }
 
   // ── Accesos Rápidos filtrados por rol ────────────────────────────────────
@@ -210,10 +197,12 @@ export class MainDashboardComponent implements OnInit {
         roles: PHARMACY,
       },
       {
+        // NURSE tiene RecordsRead (ve el módulo) pero el backend solo permite
+        // crear/editar expedientes a DOCTOR/ADMIN — no incluir NURSE acá.
         label: 'Expediente Médico', icon: 'note_add',
         route: '/dashboard/medical-records/new',
         color: 'bg-teal-50 text-teal-600 hover:bg-teal-100 border-teal-100',
-        roles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN, UserRoles.DOCTOR, UserRoles.NURSE],
+        roles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN, UserRoles.DOCTOR],
       },
       {
         label: 'Nueva Receta', icon: 'receipt_long',
@@ -240,29 +229,29 @@ export class MainDashboardComponent implements OnInit {
         roles: PHARMACY,
       },
     ]
-    return actions.filter(a => a.roles.includes(this.userRole))
+    return actions.filter(a => this.roleState.hasAnyRole(a.roles))
   }
 
   // ── Visibilidad de secciones por rol ─────────────────────────────────────
 
   get showAppointmentsSection(): boolean {
-    return CLINICAL.includes(this.userRole)
+    return this.roleState.hasAnyRole(CLINICAL)
   }
 
   get showStockSection(): boolean {
-    return PHARMACY.includes(this.userRole)
+    return this.roleState.hasAnyRole(PHARMACY)
   }
 
   get showPatientsSection(): boolean {
-    return CLINICAL.includes(this.userRole)
+    return this.roleState.hasAnyRole(CLINICAL)
   }
 
   get showSalesCharts(): boolean {
-    return PHARMACY.includes(this.userRole)
+    return this.roleState.hasAnyRole(PHARMACY)
   }
 
   get showAppointmentChart(): boolean {
-    return CLINICAL.includes(this.userRole)
+    return this.roleState.hasAnyRole(CLINICAL)
   }
 
   // ── Alertas críticas (solo si el rol las ve) ─────────────────────────────
