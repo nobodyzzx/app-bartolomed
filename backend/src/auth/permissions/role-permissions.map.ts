@@ -56,6 +56,7 @@ export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
     Permission.AppointmentsRead,
     Permission.AppointmentsWrite,
     Permission.BillingRead,
+    Permission.BillingManage,
   ],
   [ValidRoles.PHARMACIST]: [
     Permission.PrescriptionsRead,

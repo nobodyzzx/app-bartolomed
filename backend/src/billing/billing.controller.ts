@@ -18,7 +18,7 @@ export class BillingController {
 
   // Invoice endpoints
   @Post('invoices')
-  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.RECEPTIONIST)
+  @Auth(ValidRoles.ADMIN, ValidRoles.RECEPTIONIST)
   @RequirePermissions(Permission.BillingManage)
   createInvoice(@Body() createDto: CreateInvoiceDto, @GetUser() user: User, @Req() req?: Request) {
     const scopedClinicId = req ? resolveClinicId(req) : undefined;
@@ -49,7 +49,7 @@ export class BillingController {
   }
 
   @Patch('invoices/:id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.RECEPTIONIST)
+  @Auth(ValidRoles.ADMIN, ValidRoles.RECEPTIONIST)
   @RequirePermissions(Permission.BillingManage)
   updateInvoice(@Param('id', ParseUUIDPipe) id: string, @Body() updateDto: UpdateInvoiceDto, @Req() req?: Request) {
     const scopedClinicId = req ? resolveClinicId(req) : undefined;
@@ -57,7 +57,7 @@ export class BillingController {
   }
 
   @Patch('invoices/:id/status')
-  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.RECEPTIONIST)
+  @Auth(ValidRoles.ADMIN, ValidRoles.RECEPTIONIST)
   @RequirePermissions(Permission.BillingManage)
   setInvoiceStatus(@Param('id', ParseUUIDPipe) id: string, @Body('status') status: InvoiceStatus, @Req() req?: Request) {
     const scopedClinicId = req ? resolveClinicId(req) : undefined;
@@ -116,7 +116,7 @@ export class BillingController {
   }
 
   @Get('generate/invoice-number')
-  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.RECEPTIONIST)
+  @Auth(ValidRoles.ADMIN, ValidRoles.RECEPTIONIST)
   @RequirePermissions(Permission.BillingManage)
   generateInvoiceNumber() {
     return this.billingService.generateInvoiceNumber();
