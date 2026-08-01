@@ -18,7 +18,7 @@
         @if (p.status === 'active' && !isExpired(p.expiryDate)) {
           <button
             type="button" (click)="changeStatus('dispensed')"
-            class="inline-flex items-center gap-2 px-4 h-10 rounded-full font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-all">
+            class="btn btn-primary">
             <span class="material-symbols-outlined msz-18 leading-none">local_pharmacy</span>
             Dispensar
           </button>
@@ -26,13 +26,13 @@
         @if (canRefill(p)) {
           <button
             type="button" (click)="doRefill()"
-            class="inline-flex items-center gap-2 px-4 h-10 rounded-full font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition-all">
+            class="btn btn-outline-primary">
             <span class="material-symbols-outlined msz-18 leading-none">autorenew</span>
             Resurtir
           </button>
         }
         <button type="button" (click)="print()" [disabled]="printLoading"
-          class="inline-flex items-center gap-2 px-4 h-10 rounded-full font-medium bg-slate-800 text-white hover:bg-black shadow-sm transition-all border-0 disabled:opacity-60">
+          class="btn btn-outline">
           <span class="material-symbols-outlined msz-18 leading-none">{{ printLoading ? 'hourglass_empty' : 'print' }}</span>
           {{ printLoading ? 'Generando...' : 'Imprimir' }}
         </button>
@@ -205,13 +205,13 @@
             @if (p.status === 'active' && !isExpired(p.expiryDate)) {
               <button
                 type="button" (click)="changeStatus('completed')"
-                class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-all">
+                class="btn btn-primary">
                 <span class="material-symbols-outlined msz-18 leading-none">done_all</span>
                 Marcar como completada
               </button>
             }
             <button type="button" (click)="changeStatus('cancelled')"
-              class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-all">
+              class="btn btn-danger-outline">
               <span class="material-symbols-outlined msz-18 leading-none">cancel</span>
               Cancelar receta
             </button>

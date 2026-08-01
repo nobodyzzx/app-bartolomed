@@ -7,28 +7,24 @@
       (back)="cancel()"
       >
       @if (isViewMode) {
-        <ng-container actions>
-          <button
-            type="button"
-            (click)="router.navigate(['/dashboard/patients/edit', patientId])"
-            class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all border-0 text-sm"
-            >
-            <span class="material-symbols-outlined msz-18">edit</span>
-            Editar
-          </button>
-        </ng-container>
+        <button
+          type="button"
+          (click)="router.navigate(['/dashboard/patients/edit', patientId])"
+          class="btn btn-primary"
+          >
+          <span class="material-symbols-outlined msz-18">edit</span>
+          Editar
+        </button>
       }
       @if (!isViewMode) {
-        <ng-container actions>
-          <button
-            type="button"
-            (click)="cancel()"
-            class="btn btn-danger-outline"
-            >
-            <span class="material-symbols-outlined msz-18">cancel</span>
-            Cancelar
-          </button>
-        </ng-container>
+        <button
+          type="button"
+          (click)="cancel()"
+          class="btn btn-danger-outline"
+          >
+          <span class="material-symbols-outlined msz-18">cancel</span>
+          Cancelar
+        </button>
       }
     </app-page-header>
 

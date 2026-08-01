@@ -14,16 +14,14 @@
         [subtitle]="isEditMode ? 'Actualice la información de la cita' : 'Complete el formulario para programar una cita'"
         (back)="goBack()"
         >
-        <ng-container actions>
-          <button
-            type="button"
-            (click)="goBack()"
-            class="btn btn-danger-outline"
-            >
-            <span class="material-symbols-outlined msz-18">cancel</span>
-            Cancelar
-          </button>
-        </ng-container>
+        <button
+          type="button"
+          (click)="goBack()"
+          class="btn btn-danger-outline"
+          >
+          <span class="material-symbols-outlined msz-18">cancel</span>
+          Cancelar
+        </button>
       </app-page-header>
       <form [formGroup]="appointmentForm" (ngSubmit)="onSubmit()">
         <!-- ══════════════════════════════════════════════════

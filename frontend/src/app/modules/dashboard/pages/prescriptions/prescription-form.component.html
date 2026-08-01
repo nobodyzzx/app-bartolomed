@@ -6,16 +6,14 @@
       [subtitle]="isEdit() ? 'Modifica los datos de la prescripción' : 'Completa el formulario para registrar una nueva receta'"
       (back)="goBack()"
       >
-      <ng-container actions>
-        <button
-          type="button"
-          (click)="goBack()"
-          class="btn btn-danger-outline"
-          >
-          <span class="material-symbols-outlined msz-18">cancel</span>
-          Cancelar
-        </button>
-      </ng-container>
+      <button
+        type="button"
+        (click)="goBack()"
+        class="btn btn-danger-outline"
+        >
+        <span class="material-symbols-outlined msz-18">cancel</span>
+        Cancelar
+      </button>
     </app-page-header>
 
     <!-- Loading overlay -->

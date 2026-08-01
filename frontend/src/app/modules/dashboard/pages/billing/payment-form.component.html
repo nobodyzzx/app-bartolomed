@@ -14,16 +14,14 @@
         subtitle="Registro de pagos asociados a facturas"
         (back)="cancel()"
         >
-        <ng-container actions>
-          <button
-            type="button"
-            (click)="cancel()"
-            class="btn btn-danger-outline"
-            >
-            <span class="material-symbols-outlined msz-18">cancel</span>
-            Cancelar
-          </button>
-        </ng-container>
+        <button
+          type="button"
+          (click)="cancel()"
+          class="btn btn-danger-outline"
+          >
+          <span class="material-symbols-outlined msz-18">cancel</span>
+          Cancelar
+        </button>
       </app-page-header>
       <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
         <!-- ══════════════════════════════════════════
