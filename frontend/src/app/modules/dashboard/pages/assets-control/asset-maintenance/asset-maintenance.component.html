@@ -10,12 +10,7 @@
       <button
         type="button"
         (click)="toggleForm()"
-        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium shadow-md hover:shadow-lg transition-all border-0"
-        [ngClass]="
-          showForm
-            ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            : 'bg-blue-600 text-white hover:bg-blue-700'
-        "
+        [class]="showForm ? 'btn btn-ghost' : 'btn btn-primary'"
         >
         <span class="material-symbols-outlined msz-20">{{ showForm ? 'close' : 'add' }}</span>
         {{ showForm ? 'Cancelar' : 'Programar Mantenimiento' }}
@@ -184,14 +179,14 @@
             <mat-icon matPrefix class="text-green-400">notes</mat-icon>
           </mat-form-field>
           <!-- Botones -->
-          <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-200">
+          <div class="form-action-bar">
             <button
               type="button"
             (click)="
               maintenanceForm.reset();
               maintenanceForm.patchValue({ status: maintenanceStatuses[0] })
             "
-              class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors border-0"
+              class="btn btn-ghost"
               >
               <span class="material-symbols-outlined msz-18">restart_alt</span>
               Limpiar
@@ -199,7 +194,7 @@
             <button
               type="submit"
               [disabled]="maintenanceForm.invalid || saving"
-              class="inline-flex items-center gap-2 px-6 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0"
+              class="btn btn-primary"
               >
               <span class="material-symbols-outlined msz-20" [class.animate-spin]="saving">{{
                 saving ? 'sync' : 'schedule'
@@ -331,7 +326,7 @@
                       <button
                         type="button"
                         (click)="viewRecord(record)"
-                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors border-0"
+                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
                         matTooltip="Ver detalles"
                         aria-label="Ver detalles"
                         >
@@ -340,7 +335,7 @@
                       <button
                         type="button"
                         (click)="deleteMaintenance(record)"
-                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-red-600 hover:bg-red-50 transition-colors border-0"
+                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0"
                         matTooltip="Eliminar"
                         aria-label="Eliminar"
                         >
@@ -367,157 +362,5 @@
       }
     </div>
 
-    <!-- Modal de Detalles -->
-    @if (selectedRecord) {
-      <div
-        class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-        (click)="selectedRecord = null"
-        >
-        <div
-          class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl animate-in fade-in zoom-in duration-200"
-          (click)="$event.stopPropagation()"
-          >
-          <!-- Header -->
-          <div
-            class="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-green-50 to-emerald-50"
-            >
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
-                <span class="material-symbols-outlined msz-24 text-white">{{
-                  getTypeIcon(selectedRecord.type)
-                }}</span>
-              </div>
-              <div>
-                <h4 class="text-lg font-semibold text-slate-900">{{ selectedRecord.assetName }}</h4>
-                <p class="text-sm text-slate-600">Detalles del mantenimiento</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              (click)="selectedRecord = null"
-              class="p-2 rounded-full hover:bg-white/50 transition-colors border-0"
-              >
-              <span class="material-symbols-outlined msz-20 text-slate-600">close</span>
-            </button>
-          </div>
-          <!-- Body -->
-          <div class="px-6 py-5 space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                  >ID del Activo</label
-                  >
-                  <p class="mt-1 text-sm font-medium text-slate-900">{{ selectedRecord.assetId }}</p>
-                </div>
-                <div>
-                  <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                    >Tipo de Mantenimiento</label
-                    >
-                    <p class="mt-1">
-                      <span
-                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700"
-                        >
-                        <span class="material-symbols-outlined msz-14">{{
-                          getTypeIcon(selectedRecord.type)
-                        }}</span>
-                        {{ selectedRecord.type }}
-                      </span>
-                    </p>
-                  </div>
-                  <div>
-                    <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                      >Fecha de Mantenimiento</label
-                      >
-                      <p class="mt-1 text-sm font-medium text-slate-900">
-                        {{ selectedRecord.maintenanceDate | date: 'dd/MM/yyyy HH:mm' }}
-                      </p>
-                    </div>
-                    @if (selectedRecord.nextMaintenanceDate) {
-                      <div>
-                        <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                          >Próximo Mantenimiento</label
-                          >
-                          <p class="mt-1 text-sm font-medium text-slate-900">
-                            {{ selectedRecord.nextMaintenanceDate | date: 'dd/MM/yyyy' }}
-                          </p>
-                        </div>
-                      }
-                      <div>
-                        <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                          >Estado</label
-                          >
-                          <div class="mt-1">
-                            <span
-                              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
-                              [ngClass]="getStatusClass(selectedRecord.status)"
-                              >
-                              <span class="material-symbols-outlined msz-14">{{
-                                getStatusIcon(selectedRecord.status)
-                              }}</span>
-                              {{ selectedRecord.status }}
-                            </span>
-                          </div>
-                        </div>
-                        @if (selectedRecord.cost) {
-                          <div>
-                            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                              >Costo</label
-                              >
-                              <p class="mt-1 text-sm font-medium text-slate-900">
-                                {{ formatCurrency(selectedRecord.cost) }}
-                              </p>
-                            </div>
-                          }
-                          @if (selectedRecord.performedBy) {
-                            <div>
-                              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                                >Realizado Por</label
-                                >
-                                <p class="mt-1 text-sm font-medium text-slate-900">
-                                  {{ selectedRecord.performedBy }}
-                                </p>
-                              </div>
-                            }
-                          </div>
-                          <div>
-                            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                              >Descripción</label
-                              >
-                              <p class="mt-1 text-sm text-slate-700 leading-relaxed">
-                                {{ selectedRecord.description }}
-                              </p>
-                            </div>
-                            @if (selectedRecord.notes) {
-                              <div>
-                                <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                                  >Notas Adicionales</label
-                                  >
-                                  <p class="mt-1 text-sm text-slate-700 leading-relaxed">{{ selectedRecord.notes }}</p>
-                                </div>
-                              }
-                            </div>
-                            <!-- Footer -->
-                            <div
-                              class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50"
-                              >
-                              <button
-                                type="button"
-                                (click)="selectedRecord = null"
-                                class="px-5 h-11 rounded-full bg-white text-slate-700 hover:bg-slate-100 font-medium transition-colors border border-slate-200"
-                                >
-                                Cerrar
-                              </button>
-                              <button
-                                type="button"
-                                (click)="deleteMaintenance(selectedRecord!)"
-                                class="inline-flex items-center gap-2 px-5 h-11 rounded-full bg-red-600 text-white hover:bg-red-700 font-medium transition-colors border-0"
-                                >
-                                <span class="material-symbols-outlined msz-18">delete</span>
-                                Eliminar
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      }
-                    </div>
-                  </div>
+  </div>
+</div>

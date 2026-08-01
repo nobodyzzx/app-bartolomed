@@ -1,7 +1,8 @@
 import { Location } from '@angular/common'
-import { Component, DestroyRef, HostListener, inject, OnInit, signal } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
+import { MatDialog } from '@angular/material/dialog'
 import { AlertService } from '@core/services/alert.service'
 import { ClinicContextService } from '../../../../../modules/clinics/services/clinic-context.service'
 import { Clinic } from '../../admin/clinics/interfaces'
@@ -10,11 +11,11 @@ import { AssetRegistrationService } from '../services/asset-registration.service
 import { AssetTransfersService } from '../services/asset-transfers.service'
 import {
   AssetTransfer,
-  AssetTransferAuditLog,
   AssetTransferStatus,
   BaseAsset,
   CreateAssetTransferDto,
 } from '../interfaces/assets.interfaces'
+import { AssetTransferAuditDialogComponent } from './asset-transfer-audit-dialog/asset-transfer-audit-dialog.component'
 
 @Component({
     selector: 'app-asset-transfers',
@@ -28,19 +29,15 @@ export class AssetTransfersComponent implements OnInit {
   loading = signal(false)
   loadingClinics = signal(false)
   loadingAssets = signal(false)
-  loadingAudit = signal(false)
 
   // Datos
   transfers = signal<AssetTransfer[]>([])
   clinics = signal<Clinic[]>([])
   availableAssets = signal<BaseAsset[]>([])
-  auditLogs = signal<AssetTransferAuditLog[]>([])
 
   // Estado UI
   activeFilter = signal<AssetTransferStatus | null>(null)
   showNewTransferForm = signal(false)
-  selectedTransfer = signal<AssetTransfer | null>(null)
-  showAuditModal = signal(false)
   currentClinicId = signal<string | null>(null)
 
   // Formulario de nuevo traslado
@@ -57,6 +54,7 @@ export class AssetTransfersComponent implements OnInit {
     private clinicContext: ClinicContextService,
     private alert: AlertService,
     private location: Location,
+    private dialog: MatDialog,
   ) {
     this.form = this.fb.group({
       targetClinicId: ['', Validators.required],
@@ -69,14 +67,6 @@ export class AssetTransfersComponent implements OnInit {
     this.loadTransfers()
     this.loadClinics()
     this.loadAvailableAssets()
-  }
-
-  @HostListener('document:keydown.escape')
-  onEscape(): void {
-    // Cerrar modal con Escape (requisito a11y para role="dialog")
-    if (this.showAuditModal()) {
-      this.showAuditModal.set(false)
-    }
   }
 
   loadTransfers(): void {
@@ -289,19 +279,12 @@ export class AssetTransfersComponent implements OnInit {
   }
 
   viewAudit(transfer: AssetTransfer): void {
-    this.selectedTransfer.set(transfer)
-    this.showAuditModal.set(true)
-    this.loadingAudit.set(true)
-    this.transfersService
-      .getAuditLog(transfer.id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: logs => {
-          this.auditLogs.set(logs)
-          this.loadingAudit.set(false)
-        },
-        error: () => this.loadingAudit.set(false),
-      })
+    this.dialog.open(AssetTransferAuditDialogComponent, {
+      data: transfer,
+      width: '480px',
+      maxWidth: '95vw',
+      panelClass: 'rounded-dialog',
+    })
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -345,17 +328,6 @@ export class AssetTransfersComponent implements OnInit {
       [AssetTransferStatus.RETURNED]: 'undo',
     }
     return map[status] ?? 'info'
-  }
-
-  getAuditActionLabel(action: string): string {
-    const map: Record<string, string> = {
-      requested: 'Solicitud creada',
-      dispatched: 'Activos despachados',
-      completed: 'Recepción confirmada',
-      rejected: 'Solicitud rechazada',
-      returned: 'Activos devueltos',
-    }
-    return map[action] ?? action
   }
 
   getCountByStatus(status: AssetTransferStatus): number {

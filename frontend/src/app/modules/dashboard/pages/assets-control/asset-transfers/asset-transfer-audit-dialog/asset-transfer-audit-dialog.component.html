@@ -1,0 +1,39 @@
+<div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100">
+  <div>
+    <h2 class="text-lg font-semibold text-slate-900 m-0">Historial de auditoría</h2>
+    <p class="text-sm text-slate-500 m-0">{{ transfer.transferNumber }}</p>
+  </div>
+  <button
+    type="button"
+    (click)="dialogRef.close()"
+    class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors border-0"
+  >
+    <span class="material-symbols-outlined msz-20">close</span>
+  </button>
+</div>
+
+<div class="p-6 max-h-96 overflow-y-auto">
+  @if (loading()) {
+    <div class="flex justify-center py-8"><mat-spinner diameter="36"></mat-spinner></div>
+  } @else if (auditLogs().length === 0) {
+    <p class="text-center text-slate-400 text-sm">Sin registros de auditoría</p>
+  } @else {
+    <ol class="relative border-l border-slate-200 ml-3 space-y-6">
+      @for (log of auditLogs(); track log.id) {
+        <li class="ml-6">
+          <span class="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 ring-4 ring-white">
+            <span class="material-symbols-outlined text-blue-600" style="font-size:14px">{{ getStatusIcon(log.action) }}</span>
+          </span>
+          <p class="font-semibold text-slate-800 text-sm m-0">{{ getAuditActionLabel(log.action) }}</p>
+          <p class="text-xs text-slate-500 m-0 mt-0.5">
+            {{ log.createdAt | date:'dd/MM/yyyy HH:mm' }} ·
+            {{ log.actorClinic?.name || '—' }}
+          </p>
+          @if (log.snapshot?.['reason']) {
+            <p class="text-xs text-red-600 mt-1 m-0">Motivo: {{ log.snapshot!['reason'] }}</p>
+          }
+        </li>
+      }
+    </ol>
+  }
+</div>

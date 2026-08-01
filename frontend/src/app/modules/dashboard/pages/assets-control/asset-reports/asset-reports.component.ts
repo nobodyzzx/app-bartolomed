@@ -1,6 +1,7 @@
 import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
+import { MatDialog } from '@angular/material/dialog'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import {
@@ -11,6 +12,7 @@ import {
   ReportType,
 } from '../interfaces/assets.interfaces'
 import { AssetReportsService } from '../services/asset-reports.service'
+import { AssetReportDetailDialogComponent } from './asset-report-detail-dialog/asset-report-detail-dialog.component'
 
 @Component({
     selector: 'app-asset-reports',
@@ -25,7 +27,6 @@ export class AssetReportsComponent implements OnInit {
   reports: AssetReport[] = []
   loading = false
   generating = false
-  selectedReport: AssetReport | null = null
 
   reportTypes = Object.values(ReportType)
   assetStatuses = Object.values(AssetStatus)
@@ -42,6 +43,7 @@ export class AssetReportsComponent implements OnInit {
     private assetReportsService: AssetReportsService,
     private alert: AlertService,
     private router: Router,
+    private dialog: MatDialog,
   ) {
     this.reportsForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(3)]],
@@ -167,7 +169,17 @@ export class AssetReportsComponent implements OnInit {
   }
 
   viewReport(report: AssetReport): void {
-    this.selectedReport = report
+    const dialogRef = this.dialog.open(AssetReportDetailDialogComponent, {
+      data: report,
+      width: '600px',
+      maxWidth: '95vw',
+      panelClass: 'rounded-dialog',
+    })
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === 'download') {
+        this.downloadReport(report)
+      }
+    })
   }
 
   async deleteReport(report: AssetReport): Promise<void> {

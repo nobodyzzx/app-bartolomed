@@ -7,28 +7,24 @@
       (back)="goBack()"
       >
       @if (isViewMode) {
-        <ng-container actions>
-          <button
-            type="button"
-            (click)="enableEdit()"
-            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
-            >
-            <span class="material-symbols-outlined msz-18 leading-none">edit</span>
-            Editar
-          </button>
-        </ng-container>
+        <button
+          type="button"
+          (click)="enableEdit()"
+          class="btn btn-primary"
+          >
+          <span class="material-symbols-outlined msz-18 leading-none">edit</span>
+          Editar
+        </button>
       }
       @if (!isViewMode) {
-        <ng-container actions>
-          <button
-            type="button"
-            (click)="goBack()"
-            class="btn btn-danger-outline"
-            >
-            <span class="material-symbols-outlined msz-18">cancel</span>
-            Cancelar
-          </button>
-        </ng-container>
+        <button
+          type="button"
+          (click)="goBack()"
+          class="btn btn-danger-outline"
+          >
+          <span class="material-symbols-outlined msz-18">cancel</span>
+          Cancelar
+        </button>
       }
     </app-page-header>
 

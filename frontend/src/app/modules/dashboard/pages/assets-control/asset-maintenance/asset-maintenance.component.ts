@@ -1,6 +1,7 @@
 import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
+import { MatDialog } from '@angular/material/dialog'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import {
@@ -9,6 +10,7 @@ import {
   MaintenanceType,
 } from '../interfaces/assets.interfaces'
 import { AssetMaintenanceService } from '../services/asset-maintenance.service'
+import { AssetMaintenanceDetailDialogComponent } from './asset-maintenance-detail-dialog/asset-maintenance-detail-dialog.component'
 
 @Component({
     selector: 'app-asset-maintenance',
@@ -24,7 +26,6 @@ export class AssetMaintenanceComponent implements OnInit {
   saving = false
   showForm = false
   maintenanceForm: FormGroup
-  selectedRecord: AssetMaintenance | null = null
 
   maintenanceTypes = Object.values(MaintenanceType)
   maintenanceStatuses = Object.values(MaintenanceStatus)
@@ -42,6 +43,7 @@ export class AssetMaintenanceComponent implements OnInit {
     private fb: FormBuilder,
     private alert: AlertService,
     private router: Router,
+    private dialog: MatDialog,
   ) {
     this.maintenanceForm = this.fb.group({
       assetId: ['', [Validators.required, Validators.minLength(3)]],
@@ -282,6 +284,16 @@ export class AssetMaintenanceComponent implements OnInit {
   }
 
   viewRecord(record: AssetMaintenance): void {
-    this.selectedRecord = record
+    const dialogRef = this.dialog.open(AssetMaintenanceDetailDialogComponent, {
+      data: record,
+      width: '640px',
+      maxWidth: '95vw',
+      panelClass: 'rounded-dialog',
+    })
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === 'delete') {
+        this.deleteMaintenance(record)
+      }
+    })
   }
 }

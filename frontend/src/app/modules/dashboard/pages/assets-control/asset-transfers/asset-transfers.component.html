@@ -11,7 +11,7 @@
       <button
         type="button"
         (click)="showNewTransferForm.set(true)"
-        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
+        class="btn btn-primary"
       >
         <span class="material-symbols-outlined msz-18 leading-none">add</span>
         Nuevo Traslado
@@ -168,22 +168,25 @@
           </div>
 
           <!-- Sticky action bar -->
-          <div class="sticky bottom-0 flex justify-end gap-3 pt-4 border-t border-slate-100 bg-white">
-            <button type="button" (click)="cancelNewTransfer()" class="btn btn-secondary-outline">
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              [disabled]="loading() || form.invalid || selectedAssetIds().length === 0"
-              class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all border-0"
-            >
-              @if (loading()) {
-                <mat-spinner diameter="18" color="accent"></mat-spinner>
-              } @else {
-                <span class="material-symbols-outlined msz-18 leading-none">send</span>
-              }
-              Solicitar traslado
-            </button>
+          <div class="form-action-bar">
+            <div></div>
+            <div class="flex items-center gap-3">
+              <button type="button" (click)="cancelNewTransfer()" class="btn btn-danger-outline">
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                [disabled]="loading() || form.invalid || selectedAssetIds().length === 0"
+                class="btn btn-primary"
+              >
+                @if (loading()) {
+                  <mat-spinner diameter="18" color="accent"></mat-spinner>
+                } @else {
+                  <span class="material-symbols-outlined msz-18 leading-none">send</span>
+                }
+                Solicitar traslado
+              </button>
+            </div>
           </div>
 
         </form>
@@ -282,56 +285,56 @@
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef></th>
               <td mat-cell *matCellDef="let t">
-                <div class="flex items-center gap-1 justify-end">
+                <div class="flex items-center justify-end gap-1">
 
                   <!-- Origen: despachar si está SOLICITADO -->
                   @if (t.status === AssetTransferStatus.REQUESTED && isSourceClinic(t)) {
                     <button
-                      mat-icon-button
+                      type="button"
                       (click)="dispatch(t)"
                       matTooltip="Despachar activos"
-                      class="text-blue-600 hover:bg-blue-50"
+                      class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
                     >
-                      <span class="material-symbols-outlined msz-20">local_shipping</span>
+                      <span class="material-symbols-outlined msz-18">local_shipping</span>
                     </button>
                     <button
-                      mat-icon-button
+                      type="button"
                       (click)="reject(t)"
                       matTooltip="Rechazar solicitud"
-                      class="text-red-500 hover:bg-red-50"
+                      class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0"
                     >
-                      <span class="material-symbols-outlined msz-20">cancel</span>
+                      <span class="material-symbols-outlined msz-18">cancel</span>
                     </button>
                   }
 
                   <!-- Destino: confirmar recepción o devolver si está EN TRÁNSITO -->
                   @if (t.status === AssetTransferStatus.IN_TRANSIT && isTargetClinic(t)) {
                     <button
-                      mat-icon-button
+                      type="button"
                       (click)="confirmReceipt(t)"
                       matTooltip="Confirmar recepción"
-                      class="text-green-600 hover:bg-green-50"
+                      class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors border-0"
                     >
-                      <span class="material-symbols-outlined msz-20">check_circle</span>
+                      <span class="material-symbols-outlined msz-18">check_circle</span>
                     </button>
                     <button
-                      mat-icon-button
+                      type="button"
                       (click)="returnTransfer(t)"
                       matTooltip="Devolver activos"
-                      class="text-amber-600 hover:bg-amber-50"
+                      class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0"
                     >
-                      <span class="material-symbols-outlined msz-20">undo</span>
+                      <span class="material-symbols-outlined msz-18">undo</span>
                     </button>
                   }
 
                   <!-- Ver historial de auditoría -->
                   <button
-                    mat-icon-button
+                    type="button"
                     (click)="viewAudit(t)"
                     matTooltip="Ver historial"
-                    class="text-slate-500 hover:bg-slate-50"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
                   >
-                    <span class="material-symbols-outlined msz-20">history</span>
+                    <span class="material-symbols-outlined msz-18">history</span>
                   </button>
 
                 </div>
@@ -349,58 +352,3 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     MODAL AUDITORÍA
-══════════════════════════════════════ -->
-@if (showAuditModal() && selectedTransfer()) {
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" (click)="showAuditModal.set(false)">
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="audit-modal-title"
-      class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden"
-      (click)="$event.stopPropagation()"
-    >
-      <div class="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-200">
-        <div>
-          <h3 id="audit-modal-title" class="font-semibold text-slate-900 m-0">Historial de auditoría</h3>
-          <p class="text-sm text-slate-500 m-0">{{ selectedTransfer()!.transferNumber }}</p>
-        </div>
-        <button
-          type="button"
-          (click)="showAuditModal.set(false)"
-          aria-label="Cerrar historial de auditoría"
-          class="text-slate-400 hover:text-slate-600 transition-colors"
-        >
-          <span class="material-symbols-outlined">close</span>
-        </button>
-      </div>
-
-      <div class="p-6 max-h-96 overflow-y-auto">
-        @if (loadingAudit()) {
-          <div class="flex justify-center py-8"><mat-spinner diameter="36"></mat-spinner></div>
-        } @else if (auditLogs().length === 0) {
-          <p class="text-center text-slate-400 text-sm">Sin registros de auditoría</p>
-        } @else {
-          <ol class="relative border-l border-slate-200 ml-3 space-y-6">
-            @for (log of auditLogs(); track log.id) {
-              <li class="ml-6">
-                <span class="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 ring-4 ring-white">
-                  <span class="material-symbols-outlined text-blue-600" style="font-size:14px">{{ getStatusIcon(log.action) }}</span>
-                </span>
-                <p class="font-semibold text-slate-800 text-sm m-0">{{ getAuditActionLabel(log.action) }}</p>
-                <p class="text-xs text-slate-500 m-0 mt-0.5">
-                  {{ log.createdAt | date:'dd/MM/yyyy HH:mm' }} ·
-                  {{ log.actorClinic?.name || '—' }}
-                </p>
-                @if (log.snapshot?.['reason']) {
-                  <p class="text-xs text-red-600 mt-1 m-0">Motivo: {{ log.snapshot!['reason'] }}</p>
-                }
-              </li>
-            }
-          </ol>
-        }
-      </div>
-    </div>
-  </div>
-}
