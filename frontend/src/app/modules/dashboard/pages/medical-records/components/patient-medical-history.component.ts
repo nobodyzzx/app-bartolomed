@@ -8,7 +8,9 @@ import {
 } from '@angular/core'
 import { FormControl } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
+import { Permission } from '@core/enums/permission.enum'
 import { AlertService } from '@core/services/alert.service'
+import { RoleStateService } from '@core/services/role-state.service'
 import { Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
 import { Patient } from '../../patients/interfaces'
@@ -48,7 +50,13 @@ export class PatientMedicalHistoryComponent implements OnInit, OnDestroy {
     private patientsService: PatientsService,
     private alert: AlertService,
     private cdr: ChangeDetectorRef,
+    private roleState: RoleStateService,
   ) {}
+
+  /** NURSE tiene RecordsRead (entra al módulo) pero el backend solo permite escribir a DOCTOR/ADMIN. */
+  get canWriteRecords(): boolean {
+    return this.roleState.hasPermission(Permission.RecordsWrite)
+  }
 
   ngOnInit(): void {
     this.patientId = this.route.snapshot.paramMap.get('patientId') || ''

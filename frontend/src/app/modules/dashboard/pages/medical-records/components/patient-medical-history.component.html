@@ -5,15 +5,17 @@
       [subtitle]="patient ? (patient.firstName + ' ' + patient.lastName + ' · ' + patient.documentNumber) : ''"
       (back)="goBack()"
       >
-      <button
-        type="button"
-        (click)="createNewConsultation()"
-        class="btn btn-primary"
-        aria-label="Crear nueva consulta"
-        >
-        <span class="material-symbols-outlined msz-20 leading-none">add</span>
-        Nueva Consulta
-      </button>
+      @if (canWriteRecords) {
+        <button
+          type="button"
+          (click)="createNewConsultation()"
+          class="btn btn-primary"
+          aria-label="Crear nueva consulta"
+          >
+          <span class="material-symbols-outlined msz-20 leading-none">add</span>
+          Nueva Consulta
+        </button>
+      }
     </app-page-header>
 
     <!-- Resumen Ejecutivo del Paciente -->
@@ -282,20 +284,24 @@
                                 >
                                 <span class="material-symbols-outlined text-xl">visibility</span>
                               </button>
-                              <button
-                                (click)="editRecord(record.id!)"
-                                class="w-9 h-9 rounded-lg hover:bg-amber-50 text-amber-600 transition-colors flex items-center justify-center"
-                                title="Editar expediente"
-                                >
-                                <span class="material-symbols-outlined text-xl">edit</span>
-                              </button>
-                              <button
-                                (click)="createFollowUp(record.id!)"
-                                class="w-9 h-9 rounded-lg hover:bg-green-50 text-green-600 transition-colors flex items-center justify-center"
-                                title="Crear seguimiento"
-                                >
-                                <span class="material-symbols-outlined text-xl">add_circle</span>
-                              </button>
+                              @if (canWriteRecords) {
+                                <button
+                                  (click)="editRecord(record.id!)"
+                                  class="w-9 h-9 rounded-lg hover:bg-amber-50 text-amber-600 transition-colors flex items-center justify-center"
+                                  title="Editar expediente"
+                                  >
+                                  <span class="material-symbols-outlined text-xl">edit</span>
+                                </button>
+                              }
+                              @if (canWriteRecords) {
+                                <button
+                                  (click)="createFollowUp(record.id!)"
+                                  class="w-9 h-9 rounded-lg hover:bg-green-50 text-green-600 transition-colors flex items-center justify-center"
+                                  title="Crear seguimiento"
+                                  >
+                                  <span class="material-symbols-outlined text-xl">add_circle</span>
+                                </button>
+                              }
                             </div>
                           </div>
                           <!-- Contenido del registro -->

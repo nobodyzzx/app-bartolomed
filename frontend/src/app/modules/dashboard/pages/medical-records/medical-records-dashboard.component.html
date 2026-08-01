@@ -6,14 +6,16 @@
       subtitle="Gestión completa de historiales clínicos"
       (back)="goBack()"
       >
-      <button
-        type="button"
-        (click)="createNewRecord()"
-        class="btn btn-primary"
-        >
-        <span class="material-symbols-outlined msz-18 leading-none">add</span>
-        Nuevo Expediente
-      </button>
+      @if (canWriteRecords) {
+        <button
+          type="button"
+          (click)="createNewRecord()"
+          class="btn btn-primary"
+          >
+          <span class="material-symbols-outlined msz-18 leading-none">add</span>
+          Nuevo Expediente
+        </button>
+      }
     </app-page-header>
 
     <!-- Stat cards -->
@@ -165,21 +167,25 @@
                     class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0">
                     <span class="material-symbols-outlined msz-18">visibility</span>
                   </button>
-                  <button type="button" (click)="editRecord(record); $event.stopPropagation()"
-                    matTooltip="Editar"
-                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0 disabled:opacity-40 disabled:cursor-not-allowed">
-                    <span class="material-symbols-outlined msz-18">edit</span>
-                  </button>
+                  @if (canWriteRecords) {
+                    <button type="button" (click)="editRecord(record); $event.stopPropagation()"
+                      matTooltip="Editar"
+                      class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0 disabled:opacity-40 disabled:cursor-not-allowed">
+                      <span class="material-symbols-outlined msz-18">edit</span>
+                    </button>
+                  }
                   <button type="button" (click)="viewPatientHistory(record.patient?.id); $event.stopPropagation()"
                     matTooltip="Historial del paciente"
                     class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-purple-50 hover:text-purple-600 transition-colors border-0">
                     <span class="material-symbols-outlined msz-18">history</span>
                   </button>
-                  <button type="button" (click)="deleteRecord(record); $event.stopPropagation()"
-                    matTooltip="Eliminar"
-                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0">
-                    <span class="material-symbols-outlined msz-18">delete</span>
-                  </button>
+                  @if (canWriteRecords) {
+                    <button type="button" (click)="deleteRecord(record); $event.stopPropagation()"
+                      matTooltip="Eliminar"
+                      class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0">
+                      <span class="material-symbols-outlined msz-18">delete</span>
+                    </button>
+                  }
                 </div>
               </td>
             </ng-container>

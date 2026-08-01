@@ -5,7 +5,9 @@ import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
 import { Router } from '@angular/router'
+import { Permission } from '@core/enums/permission.enum'
 import { AlertService } from '@core/services/alert.service'
+import { RoleStateService } from '@core/services/role-state.service'
 import { MedicalRecord, MedicalRecordFilters, RecordStatus, RecordType } from './interfaces'
 import { MedicalRecordsService } from './services/medical-records.service'
 
@@ -18,6 +20,12 @@ import { MedicalRecordsService } from './services/medical-records.service'
 export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
   private readonly destroyRef = inject(DestroyRef)
   private alert = inject(AlertService)
+  private roleState = inject(RoleStateService)
+
+  /** NURSE tiene RecordsRead (entra al módulo) pero el backend solo permite escribir a DOCTOR/ADMIN. */
+  get canWriteRecords(): boolean {
+    return this.roleState.hasPermission(Permission.RecordsWrite)
+  }
 
   displayedColumns: string[] = ['date', 'patient', 'type', 'chiefComplaint', 'doctor', 'status', 'actions']
 
