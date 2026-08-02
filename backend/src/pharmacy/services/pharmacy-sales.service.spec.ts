@@ -124,6 +124,16 @@ describe('PharmacySalesService', () => {
         service.create(dto as any, 'user-1', 'clinic-1'),
       ).rejects.toThrow(BadRequestException);
     });
+
+    it('relee el stock CON LOCK dentro de la transacción (bug real: antes se validaba con un valor cacheado antes de abrir la transacción, permitiendo stock negativo en ventas concurrentes)', async () => {
+      setupHappyPath({ quantity: 100 });
+
+      await service.create(baseSaleDto() as any, 'user-1', 'clinic-1');
+
+      expect(stockRepo.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({ lock: { mode: 'pessimistic_write' } }),
+      );
+    });
   });
 
   // ─── Reducción de stock ───────────────────────────────────────────────────
@@ -298,7 +308,7 @@ describe('PharmacySalesService', () => {
       movementRepo.save!.mockResolvedValue({});
       saleRepo.save!.mockResolvedValue({ ...sale, status: SaleStatus.CANCELLED });
 
-      await service.updateStatus('sale-1', { status: SaleStatus.CANCELLED });
+      await service.updateStatus('sale-1', { status: SaleStatus.CANCELLED }, 'clinic-1');
 
       // Stock debe guardarse con 10 + 5 = 15
       expect(stockRepo.save).toHaveBeenCalledWith(
@@ -318,7 +328,7 @@ describe('PharmacySalesService', () => {
       movementRepo.save!.mockResolvedValue({});
       saleRepo.save!.mockResolvedValue({ ...sale, status: SaleStatus.CANCELLED });
 
-      await service.updateStatus('sale-1', { status: SaleStatus.CANCELLED });
+      await service.updateStatus('sale-1', { status: SaleStatus.CANCELLED }, 'clinic-1');
 
       expect(movementRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({ type: MovementType.ADJUSTMENT }),
@@ -341,7 +351,7 @@ describe('PharmacySalesService', () => {
       movementRepo.save!.mockResolvedValue({});
       saleRepo.save!.mockResolvedValue({ ...sale, status: SaleStatus.CANCELLED });
 
-      await service.updateStatus('sale-1', { status: SaleStatus.CANCELLED });
+      await service.updateStatus('sale-1', { status: SaleStatus.CANCELLED }, 'clinic-1');
 
       expect(stockRepo.save).toHaveBeenCalledTimes(2);
       expect(stockRepo.save).toHaveBeenCalledWith(expect.objectContaining({ quantity: 13 })); // 10 + 3
@@ -356,7 +366,7 @@ describe('PharmacySalesService', () => {
       saleRepo.findOne!.mockResolvedValue(makeSaleWithItems(saleItems));
       saleRepo.save!.mockResolvedValue({ ...sale, status: SaleStatus.CANCELLED });
 
-      await service.updateStatus('sale-1', { status: SaleStatus.CANCELLED });
+      await service.updateStatus('sale-1', { status: SaleStatus.CANCELLED }, 'clinic-1');
 
       // No debe tocar el stock ni crear movimientos
       expect(stockRepo.findOne).not.toHaveBeenCalled();
@@ -370,7 +380,7 @@ describe('PharmacySalesService', () => {
       saleRepo.findOne!.mockResolvedValue(sale);
       saleRepo.save!.mockResolvedValue(sale);
 
-      await service.updateStatus('sale-1', { status: SaleStatus.CANCELLED });
+      await service.updateStatus('sale-1', { status: SaleStatus.CANCELLED }, 'clinic-1');
 
       expect(stockRepo.findOne).not.toHaveBeenCalled();
     });
@@ -399,6 +409,44 @@ describe('PharmacySalesService', () => {
       await expect(
         service.create(dto as any, 'user-1', 'clinic-1'),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // ─── Scoping por clínica (bug real: findOne/update/updateStatus/remove no filtraban) ──
+
+  describe('scoping por clínica', () => {
+    const otherClinicSale = { id: 'sale-1', clinicId: 'clinic-OTHER', items: [], status: SaleStatus.PENDING };
+
+    it('findOne lanza ForbiddenException si la venta pertenece a otra clínica', async () => {
+      saleRepo.findOne!.mockResolvedValue(otherClinicSale);
+
+      await expect(service.findOne('sale-1', 'clinic-1')).rejects.toThrow('Access denied to this sale');
+    });
+
+    it('findOne no filtra si no se pasa clinicId (uso interno tras create())', async () => {
+      saleRepo.findOne!.mockResolvedValue(otherClinicSale);
+
+      await expect(service.findOne('sale-1')).resolves.toEqual(otherClinicSale);
+    });
+
+    it('update propaga el ForbiddenException de findOne si la venta es de otra clínica', async () => {
+      saleRepo.findOne!.mockResolvedValue(otherClinicSale);
+
+      await expect(service.update('sale-1', {} as any, 'clinic-1')).rejects.toThrow('Access denied to this sale');
+    });
+
+    it('updateStatus propaga el ForbiddenException de findOne si la venta es de otra clínica', async () => {
+      saleRepo.findOne!.mockResolvedValue(otherClinicSale);
+
+      await expect(
+        service.updateStatus('sale-1', { status: SaleStatus.CANCELLED } as any, 'clinic-1'),
+      ).rejects.toThrow('Access denied to this sale');
+    });
+
+    it('remove propaga el ForbiddenException de findOne si la venta es de otra clínica', async () => {
+      saleRepo.findOne!.mockResolvedValue(otherClinicSale);
+
+      await expect(service.remove('sale-1', 'clinic-1')).rejects.toThrow('Access denied to this sale');
     });
   });
 });

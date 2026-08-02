@@ -62,9 +62,11 @@ export class CreateMedicationDto {
   storageCondition: StorageCondition;
 
   @IsOptional()
+  @IsBoolean()
   requiresPrescription?: boolean;
 
   @IsOptional()
+  @IsBoolean()
   isControlledSubstance?: boolean;
 
   @IsOptional()
@@ -90,9 +92,11 @@ export class CreateMedicationStockDto {
   quantity: number;
 
   @IsNumber()
+  @Min(0)
   unitCost: number;
 
   @IsNumber()
+  @Min(0)
   sellingPrice: number;
 
   @IsString()
@@ -126,10 +130,12 @@ export class UpdateMedicationStockDto {
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   unitCost?: number;
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   sellingPrice?: number;
 
   @IsOptional()
@@ -146,6 +152,7 @@ export class UpdateMedicationStockDto {
   minimumStock?: number;
 
   @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 }
 

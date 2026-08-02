@@ -30,9 +30,13 @@ export class PurchaseOrdersService {
   ) {}
 
   async create(createPurchaseOrderDto: CreatePurchaseOrderDto, createdById: string): Promise<PurchaseOrder> {
-    // Verify supplier exists
+    // Verify supplier exists and belongs to the same clinic as the order
     const supplier = await this.supplierRepository.findOne({
-      where: { id: createPurchaseOrderDto.supplierId, status: SupplierStatus.ACTIVE },
+      where: {
+        id: createPurchaseOrderDto.supplierId,
+        status: SupplierStatus.ACTIVE,
+        clinic: { id: createPurchaseOrderDto.clinicId },
+      },
     });
 
     if (!supplier) {
@@ -157,7 +161,11 @@ export class PurchaseOrdersService {
 
     if (updatePurchaseOrderDto.supplierId) {
       const supplier = await this.supplierRepository.findOne({
-        where: { id: updatePurchaseOrderDto.supplierId, status: SupplierStatus.ACTIVE },
+        where: {
+          id: updatePurchaseOrderDto.supplierId,
+          status: SupplierStatus.ACTIVE,
+          clinic: { id: purchaseOrder.clinicId },
+        },
       });
 
       if (!supplier) {
@@ -306,19 +314,16 @@ export class PurchaseOrdersService {
       if (qty < 0) throw new BadRequestException('Cantidad a recibir inválida');
       if (qty > remaining) throw new BadRequestException(`Cantidad excede lo pendiente (${remaining})`);
 
-      // Actualizar cantidad recibida
-      item.receivedQuantity = prev + qty;
-      await this.purchaseOrderItemRepository.save(item);
-
-      // Crear entrada de stock sólo por la cantidad recién recibida (delta) si hay medicationId
+      // Crear entrada de stock PRIMERO: si falla (ej. lote duplicado), no debe
+      // marcarse el ítem como recibido — antes este error se tragaba en silencio
+      // y la orden avanzaba de estado con el inventario desincronizado.
       if (qty > 0 && item.medicationId) {
-        try {
-          const expiry = it.expiryDate
-            ? new Date(it.expiryDate)
-            : new Date(order.expectedDeliveryDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000));
+        const expiry = it.expiryDate
+          ? new Date(it.expiryDate)
+          : new Date(order.expectedDeliveryDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000));
 
-          await this.inventoryService.addStock(
-            {
+        await this.inventoryService.addStock(
+          {
             medicationId: item.medicationId,
             batchNumber: it.batchNumber || `${order.orderNumber}-${item.id}-${Date.now()}`,
             quantity: qty,
@@ -330,13 +335,14 @@ export class PurchaseOrdersService {
             location: 'receiving',
             minimumStock: 10,
             clinicId: order.clinicId,
-            },
-            order.clinicId,
-          );
-        } catch {
-          // No bloquear la recepción completa por un error puntual de stock
-        }
+          },
+          order.clinicId,
+        );
       }
+
+      // Actualizar cantidad recibida solo tras confirmar que el stock se creó
+      item.receivedQuantity = prev + qty;
+      await this.purchaseOrderItemRepository.save(item);
     }
 
     // Determinar estado final

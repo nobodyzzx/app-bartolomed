@@ -307,18 +307,20 @@ describe('PurchaseOrdersService', () => {
       );
     });
 
-    it('continúa aunque addStock falle (error tolerante)', async () => {
+    it('propaga el error si addStock falla, sin marcar el ítem como recibido (bug real: antes se tragaba el error en silencio y la orden avanzaba de estado con el inventario desincronizado)', async () => {
       setupReceive([makeOrderItem()]);
       mockInventoryService.addStock.mockRejectedValue(new Error('Stock error'));
 
-      // No debe lanzar excepción; la recepción continúa
       await expect(
         service.receive(
           'po-1',
           { items: [{ itemId: 'item-1', receivingQuantity: 10 }] },
           'clinic-1',
         ),
-      ).resolves.not.toThrow();
+      ).rejects.toThrow('Stock error');
+
+      expect(itemRepo.save).not.toHaveBeenCalled();
+      expect(orderRepo.save).not.toHaveBeenCalled();
     });
   });
 });

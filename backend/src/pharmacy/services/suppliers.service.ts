@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Clinic } from '../../clinics/entities/clinic.entity';
 import { CreateSupplierDto, UpdateSupplierDto } from '../dto/supplier.dto';
 import { Supplier, SupplierStatus } from '../entities/supplier.entity';
 
@@ -11,7 +12,7 @@ export class SuppliersService {
     private supplierRepository: Repository<Supplier>,
   ) {}
 
-  async create(createSupplierDto: CreateSupplierDto): Promise<Supplier> {
+  async create(createSupplierDto: CreateSupplierDto, clinicId: string): Promise<Supplier> {
     const code = await this.generateSupplierCode();
 
     // Mapear nuevos campos a formato antiguo
@@ -36,53 +37,53 @@ export class SuppliersService {
     };
 
     const supplier = this.supplierRepository.create(supplierData);
+    supplier.clinic = { id: clinicId } as Clinic;
 
     return await this.supplierRepository.save(supplier);
   }
 
-  async findAll(): Promise<Supplier[]> {
-    // Proveedores se manejan como dato maestro global (compartido entre clínicas).
+  async findAll(clinicId: string): Promise<Supplier[]> {
     return await this.supplierRepository.find({
-      where: { status: SupplierStatus.ACTIVE },
+      where: { status: SupplierStatus.ACTIVE, clinic: { id: clinicId } },
       order: { name: 'ASC' },
     });
   }
 
-  async findOne(id: string): Promise<Supplier> {
+  async findOne(id: string, clinicId: string): Promise<Supplier> {
     const supplier = await this.supplierRepository.findOne({
       where: { id },
-      relations: ['purchaseOrders'],
+      relations: ['purchaseOrders', 'clinic'],
     });
 
     if (!supplier) {
       throw new NotFoundException(`Supplier with ID ${id} not found`);
     }
 
+    if (supplier.clinic?.id !== clinicId) {
+      throw new ForbiddenException('Access denied to this supplier');
+    }
+
     return supplier;
   }
 
-  async update(id: string, updateSupplierDto: UpdateSupplierDto): Promise<Supplier> {
-    const supplier = await this.findOne(id);
+  async update(id: string, updateSupplierDto: UpdateSupplierDto, clinicId: string): Promise<Supplier> {
+    const supplier = await this.findOne(id, clinicId);
 
     Object.assign(supplier, updateSupplierDto);
 
     return await this.supplierRepository.save(supplier);
   }
 
-  async remove(id: string): Promise<void> {
-    const supplier = await this.findOne(id);
+  async remove(id: string, clinicId: string): Promise<void> {
+    const supplier = await this.findOne(id, clinicId);
 
     // Soft delete: marcar como INACTIVE
     supplier.status = SupplierStatus.INACTIVE;
     await this.supplierRepository.save(supplier);
   }
 
-  async restore(id: string): Promise<Supplier> {
-    const supplier = await this.supplierRepository.findOne({ where: { id } });
-
-    if (!supplier) {
-      throw new NotFoundException(`Supplier with ID ${id} not found`);
-    }
+  async restore(id: string, clinicId: string): Promise<Supplier> {
+    const supplier = await this.findOne(id, clinicId);
 
     supplier.status = SupplierStatus.ACTIVE;
     return await this.supplierRepository.save(supplier);

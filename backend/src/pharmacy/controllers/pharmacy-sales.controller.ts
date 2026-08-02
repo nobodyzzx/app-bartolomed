@@ -61,18 +61,21 @@ export class PharmacySalesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.pharmacySalesService.findOne(id);
+  findOne(@Param('id') id: string, @Request() req: any) {
+    const clinicId = resolveClinicId(req);
+    return this.pharmacySalesService.findOne(id, clinicId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePharmacySaleDto: UpdatePharmacySaleDto) {
-    return this.pharmacySalesService.update(id, updatePharmacySaleDto);
+  update(@Param('id') id: string, @Body() updatePharmacySaleDto: UpdatePharmacySaleDto, @Request() req: any) {
+    const clinicId = resolveClinicId(req)!;
+    return this.pharmacySalesService.update(id, updatePharmacySaleDto, clinicId);
   }
 
   @Patch(':id/status')
-  updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdatePharmacySaleStatusDto) {
-    return this.pharmacySalesService.updateStatus(id, updateStatusDto);
+  updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdatePharmacySaleStatusDto, @Request() req: any) {
+    const clinicId = resolveClinicId(req)!;
+    return this.pharmacySalesService.updateStatus(id, updateStatusDto, clinicId);
   }
 
   @Patch(':id/adjust-payment')
@@ -88,7 +91,8 @@ export class PharmacySalesController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.pharmacySalesService.remove(id);
+  remove(@Param('id') id: string, @Request() req: any) {
+    const clinicId = resolveClinicId(req)!;
+    return this.pharmacySalesService.remove(id, clinicId);
   }
 }

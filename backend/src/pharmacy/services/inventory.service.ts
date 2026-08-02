@@ -116,11 +116,11 @@ export class InventoryService {
     }
 
     const existingStock = await this.stockRepository.findOne({
-      where: { batchNumber: createStockDto.batchNumber },
+      where: { batchNumber: createStockDto.batchNumber, clinic: { id: scopedClinicId } },
     });
 
     if (existingStock) {
-      throw new BadRequestException('Stock with this batch number already exists');
+      throw new BadRequestException('Stock with this batch number already exists in this clinic');
     }
 
     const stockData = {
@@ -294,59 +294,68 @@ export class InventoryService {
       throw new BadRequestException(`Destination clinic with id ${dto.toClinicId} not found`);
     }
 
-    // Decrease from source stock
-    source.quantity -= dto.quantity;
-    source.availableQuantity -= dto.quantity;
-    await this.stockRepository.save(source);
+    const sourceClinicId = source.clinic.id;
 
-    // Create destination stock (clone basic attributes)
-    const newBatchSuffix = `-T${Date.now()}`;
-    const destStock = this.stockRepository.create({
-      batchNumber: `${source.batchNumber}${newBatchSuffix}`,
-      quantity: dto.quantity,
-      reservedQuantity: 0,
-      availableQuantity: dto.quantity,
-      unitCost: Number(source.unitCost),
-      sellingPrice: Number(source.sellingPrice),
-      expiryDate: new Date(source.expiryDate),
-      receivedDate: new Date(),
-      supplierBatch: source.supplierBatch,
-      location: dto.location ?? undefined,
-      minimumStock: source.minimumStock,
-      medication: source.medication,
-      clinic: toClinic,
-      isActive: true,
-    });
-    const savedDest = await this.stockRepository.save(destStock);
+    const { savedSource, savedDest } = await this.stockRepository.manager.transaction(async manager => {
+      const stockRepo = manager.getRepository(MedicationStock);
+      const movementRepo = manager.getRepository(StockMovement);
 
-    // Record movements for audit trail
-    const now = new Date();
-    const outMovement = this.movementRepository.create({
-      type: MovementType.TRANSFER,
-      quantity: dto.quantity,
-      unitPrice: Number(source.unitCost),
-      reference: `to:${toClinic.id}`,
-      reason: 'transfer_out',
-      notes: dto.note ?? undefined,
-      movementDate: now,
-      stock: source,
-      isActive: true,
+      // Decrease from source stock
+      source.quantity -= dto.quantity;
+      source.availableQuantity -= dto.quantity;
+      const savedSource = await stockRepo.save(source);
+
+      // Create destination stock (clone basic attributes)
+      const newBatchSuffix = `-T${Date.now()}`;
+      const destStock = stockRepo.create({
+        batchNumber: `${source.batchNumber}${newBatchSuffix}`,
+        quantity: dto.quantity,
+        reservedQuantity: 0,
+        availableQuantity: dto.quantity,
+        unitCost: Number(source.unitCost),
+        sellingPrice: Number(source.sellingPrice),
+        expiryDate: new Date(source.expiryDate),
+        receivedDate: new Date(),
+        supplierBatch: source.supplierBatch,
+        location: dto.location ?? undefined,
+        minimumStock: source.minimumStock,
+        medication: source.medication,
+        clinic: toClinic,
+        isActive: true,
+      });
+      const savedDest = await stockRepo.save(destStock);
+
+      // Record movements for audit trail
+      const now = new Date();
+      const outMovement = movementRepo.create({
+        type: MovementType.TRANSFER,
+        quantity: dto.quantity,
+        unitPrice: Number(source.unitCost),
+        reference: `to:${toClinic.id}`,
+        reason: 'transfer_out',
+        notes: dto.note ?? undefined,
+        movementDate: now,
+        stock: savedSource,
+        isActive: true,
+      });
+      const inMovement = movementRepo.create({
+        type: MovementType.TRANSFER,
+        quantity: dto.quantity,
+        unitPrice: Number(source.unitCost),
+        reference: `from:${sourceClinicId}`,
+        reason: 'transfer_in',
+        notes: dto.note ?? undefined,
+        movementDate: now,
+        stock: savedDest,
+        isActive: true,
+      });
+      await movementRepo.save([outMovement, inMovement]);
+
+      return { savedSource, savedDest };
     });
-    const inMovement = this.movementRepository.create({
-      type: MovementType.TRANSFER,
-      quantity: dto.quantity,
-      unitPrice: Number(source.unitCost),
-      reference: `from:${source.clinic.id}`,
-      reason: 'transfer_in',
-      notes: dto.note ?? undefined,
-      movementDate: now,
-      stock: savedDest,
-      isActive: true,
-    });
-    await this.movementRepository.save([outMovement, inMovement]);
 
     return {
-      source,
+      source: savedSource,
       destination: savedDest,
       transferred: dto.quantity,
     };

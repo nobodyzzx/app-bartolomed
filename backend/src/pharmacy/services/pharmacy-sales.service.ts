@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Prescription, PrescriptionStatus } from '../../prescriptions/entities/prescription.entity';
@@ -43,28 +43,6 @@ export class PharmacySalesService {
     clinicId: string,
   ): Promise<PharmacySale> {
     const saleNumber = await this.generateSaleNumber();
-
-    // Validate stock availability for all items and cache results
-    const stockCache = new Map<string, MedicationStock>();
-    for (const itemDto of createPharmacySaleDto.items) {
-      const stock = await this.medicationStockRepository.findOne({
-        where: { id: itemDto.medicationStockId },
-        relations: ['medication'],
-      });
-
-      if (!stock) {
-        throw new NotFoundException(`Stock with ID ${itemDto.medicationStockId} not found`);
-      }
-
-      const availableQty = (stock.quantity || 0) - (stock.reservedQuantity || 0);
-      if (availableQty < itemDto.quantity) {
-        throw new BadRequestException(
-          `Insufficient stock for ${stock.medication?.name || 'product'}. Available: ${availableQty}, Requested: ${itemDto.quantity}`,
-        );
-      }
-
-      stockCache.set(itemDto.medicationStockId, stock);
-    }
 
     // Validar receta si se proporciona (cross-clinic + estado ACTIVE)
     if (createPharmacySaleDto.prescriptionId) {
@@ -129,10 +107,30 @@ export class PharmacySalesService {
 
       const sale = await saleRepo.save(pharmacySale);
 
-      // Create sale items and reduce stock immediately
+      // Create sale items and reduce stock immediately.
+      // El stock se relee CON LOCK dentro de la transacción (no se reutiliza el
+      // valor cacheado antes de abrir la transacción) para evitar que dos ventas
+      // concurrentes del mismo lote pasen ambas la validación con datos obsoletos
+      // y dejen el stock en negativo.
       for (const itemDto of items) {
+        const stock = await stockRepo.findOne({
+          where: { id: itemDto.medicationStockId },
+          relations: ['medication'],
+          lock: { mode: 'pessimistic_write' },
+        });
+
+        if (!stock) {
+          throw new NotFoundException(`Stock with ID ${itemDto.medicationStockId} not found`);
+        }
+
+        const availableQty = (stock.quantity || 0) - (stock.reservedQuantity || 0);
+        if (availableQty < itemDto.quantity) {
+          throw new BadRequestException(
+            `Insufficient stock for ${stock.medication?.name || 'product'}. Available: ${availableQty}, Requested: ${itemDto.quantity}`,
+          );
+        }
+
         const item = new PharmacySaleItem();
-        const stock = stockCache.get(itemDto.medicationStockId)!;
         item.sale = sale;
         item.saleId = sale.id;
         item.medicationStockId = itemDto.medicationStockId;
@@ -223,7 +221,7 @@ export class PharmacySalesService {
     return { data, total, page, limit };
   }
 
-  async findOne(id: string): Promise<PharmacySale> {
+  async findOne(id: string, clinicId?: string): Promise<PharmacySale> {
     const pharmacySale = await this.pharmacySaleRepository.findOne({
       where: { id },
       relations: ['items', 'soldBy'],
@@ -233,11 +231,15 @@ export class PharmacySalesService {
       throw new NotFoundException(`Pharmacy sale with ID ${id} not found`);
     }
 
+    if (clinicId && pharmacySale.clinicId !== clinicId) {
+      throw new ForbiddenException('Access denied to this sale');
+    }
+
     return pharmacySale;
   }
 
-  async update(id: string, updatePharmacySaleDto: UpdatePharmacySaleDto): Promise<PharmacySale> {
-    const pharmacySale = await this.findOne(id);
+  async update(id: string, updatePharmacySaleDto: UpdatePharmacySaleDto, clinicId: string): Promise<PharmacySale> {
+    const pharmacySale = await this.findOne(id, clinicId);
 
     if (pharmacySale.status === SaleStatus.COMPLETED) {
       throw new BadRequestException('Cannot update completed sale');
@@ -298,8 +300,8 @@ export class PharmacySalesService {
     return await this.findOne(id);
   }
 
-  async updateStatus(id: string, updateStatusDto: UpdatePharmacySaleStatusDto): Promise<PharmacySale> {
-    const pharmacySale = await this.findOne(id);
+  async updateStatus(id: string, updateStatusDto: UpdatePharmacySaleStatusDto, clinicId: string): Promise<PharmacySale> {
+    const pharmacySale = await this.findOne(id, clinicId);
 
     const previousStatus = pharmacySale.status;
     const newStatus = updateStatusDto.status;
@@ -355,8 +357,8 @@ export class PharmacySalesService {
     return await this.findOne(id);
   }
 
-  async remove(id: string): Promise<void> {
-    const pharmacySale = await this.findOne(id);
+  async remove(id: string, clinicId: string): Promise<void> {
+    const pharmacySale = await this.findOne(id, clinicId);
 
     if (pharmacySale.status === SaleStatus.COMPLETED) {
       throw new BadRequestException('Cannot delete completed sale');
@@ -490,7 +492,7 @@ export class PharmacySalesService {
     dto: AdjustPaymentDto,
     actor: { id: string; email: string; name?: string; clinicId?: string; ip?: string },
   ): Promise<PharmacySale> {
-    const sale = await this.findOne(id);
+    const sale = await this.findOne(id, actor.clinicId);
 
     if (sale.status === SaleStatus.CANCELLED) {
       throw new BadRequestException('No se puede corregir el pago de una venta cancelada');

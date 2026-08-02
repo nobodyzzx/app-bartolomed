@@ -81,21 +81,21 @@ describe('PharmacySalesController', () => {
     expect(service.getSalesSummary).toHaveBeenCalledWith(new Date('2026-01-01'), new Date('2026-01-31'), 'clinic-1');
   });
 
-  it('findOne delega solo el id (sin scoping por clínica a nivel de controller)', async () => {
-    await controller.findOne('sale-1');
-    expect(service.findOne).toHaveBeenCalledWith('sale-1');
+  it('findOne resuelve y delega el clinicId (bug real: antes no scopeaba por clínica)', async () => {
+    await controller.findOne('sale-1', makeReq());
+    expect(service.findOne).toHaveBeenCalledWith('sale-1', 'clinic-1');
   });
 
-  it('update delega id y dto', async () => {
+  it('update resuelve y delega el clinicId (bug real: antes no scopeaba por clínica)', async () => {
     const dto = { notes: 'x' } as any;
-    await controller.update('sale-1', dto);
-    expect(service.update).toHaveBeenCalledWith('sale-1', dto);
+    await controller.update('sale-1', dto, makeReq());
+    expect(service.update).toHaveBeenCalledWith('sale-1', dto, 'clinic-1');
   });
 
-  it('updateStatus delega id y dto', async () => {
+  it('updateStatus resuelve y delega el clinicId (bug real: antes no scopeaba por clínica)', async () => {
     const dto = { status: 'completed' } as any;
-    await controller.updateStatus('sale-1', dto);
-    expect(service.updateStatus).toHaveBeenCalledWith('sale-1', dto);
+    await controller.updateStatus('sale-1', dto, makeReq());
+    expect(service.updateStatus).toHaveBeenCalledWith('sale-1', dto, 'clinic-1');
   });
 
   describe('adjustPayment', () => {
@@ -124,8 +124,8 @@ describe('PharmacySalesController', () => {
     });
   });
 
-  it('remove delega el id', async () => {
-    await controller.remove('sale-1');
-    expect(service.remove).toHaveBeenCalledWith('sale-1');
+  it('remove resuelve y delega el clinicId (bug real: antes no scopeaba por clínica)', async () => {
+    await controller.remove('sale-1', makeReq());
+    expect(service.remove).toHaveBeenCalledWith('sale-1', 'clinic-1');
   });
 });
