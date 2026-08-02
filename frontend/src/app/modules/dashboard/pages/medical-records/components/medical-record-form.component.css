@@ -11,20 +11,6 @@
   border-left: 3px solid #ef4444 !important;
 }
 
-/* Custom Stepper - Hide default headers */
-::ng-deep .custom-stepper .mat-horizontal-stepper-header-container {
-  display: none !important;
-}
-
-::ng-deep .custom-stepper .mat-horizontal-content-container {
-  padding: 0 !important;
-  overflow: visible !important;
-}
-
-::ng-deep .custom-stepper {
-  background: transparent !important;
-}
-
 /* Material Symbols size utilities */
 .msz-16 {
   font-size: 16px !important;

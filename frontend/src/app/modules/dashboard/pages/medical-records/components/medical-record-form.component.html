@@ -124,7 +124,10 @@
             <span class="material-symbols-outlined msz-20">assignment_ind</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información de la Consulta</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Información de la Consulta
+              <app-section-error-badge [count]="patientInfoErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Paciente, médico y motivo principal</p>
           </div>
         </div>
@@ -277,7 +280,10 @@
             <span class="material-symbols-outlined msz-20">history</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Historia Médica del Paciente</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Historia Médica del Paciente
+              <app-section-error-badge [count]="medicalHistoryErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Antecedentes, medicamentos, alergias y sistemas</p>
           </div>
         </div>
@@ -332,7 +338,10 @@
             <span class="material-symbols-outlined msz-20">monitor_heart</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Signos Vitales</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Signos Vitales
+              <app-section-error-badge [count]="vitalSignsErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Temperatura, presión, frecuencia, saturación y medidas</p>
           </div>
         </div>
@@ -515,7 +524,10 @@
             <span class="material-symbols-outlined msz-20">healing</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Examen Físico</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Examen Físico
+              <app-section-error-badge [count]="physicalExamErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Hallazgos por sistemas — todos los campos son opcionales</p>
           </div>
         </div>
@@ -587,7 +599,10 @@
             <span class="material-symbols-outlined msz-20">analytics</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Evaluación y Plan de Tratamiento</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Evaluación y Plan de Tratamiento
+              <app-section-error-badge [count]="assessmentPlanErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Diagnóstico, plan terapéutico e instrucciones</p>
           </div>
         </div>
@@ -630,18 +645,25 @@
               <textarea matInput formControlName="patientEducation"
               placeholder="Información entregada al paciente sobre su condición..." rows="2"></textarea>
             </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Notas Adicionales</mat-label>
-              <textarea matInput formControlName="notes"
-              placeholder="Cualquier información adicional relevante..." rows="2"></textarea>
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Fecha de Seguimiento</mat-label>
-              <input matInput [matDatepicker]="followUpPicker" formControlName="followUpDate" [min]="today" placeholder="dd/mm/aaaa"/>
-              <mat-datepicker-toggle matSuffix [for]="followUpPicker"></mat-datepicker-toggle>
-              <mat-datepicker #followUpPicker startView="month"></mat-datepicker>
-            </mat-form-field>
+            @if (showMoreAssessmentPlanFields) {
+              <mat-form-field appearance="outline" class="animate-field-reveal">
+                <mat-label>Notas Adicionales</mat-label>
+                <textarea matInput formControlName="notes"
+                placeholder="Cualquier información adicional relevante..." rows="2"></textarea>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="animate-field-reveal">
+                <mat-label>Fecha de Seguimiento</mat-label>
+                <input matInput [matDatepicker]="followUpPicker" formControlName="followUpDate" [min]="today" placeholder="dd/mm/aaaa"/>
+                <mat-datepicker-toggle matSuffix [for]="followUpPicker"></mat-datepicker-toggle>
+                <mat-datepicker #followUpPicker startView="month"></mat-datepicker>
+              </mat-form-field>
+            }
           </div>
+          <button type="button" (click)="showMoreAssessmentPlanFields = !showMoreAssessmentPlanFields"
+            class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800 border-0 bg-transparent p-0 cursor-pointer">
+            <span class="material-symbols-outlined msz-18">{{ showMoreAssessmentPlanFields ? 'expand_less' : 'expand_more' }}</span>
+            {{ showMoreAssessmentPlanFields ? 'Mostrar menos campos' : 'Mostrar más campos (notas adicionales, fecha de seguimiento)' }}
+          </button>
         </div>
       </div>
       <!-- ══════════════════════════════════════════════════
@@ -653,7 +675,10 @@
             <span class="material-symbols-outlined msz-20">gavel</span>
           </div>
           <div class="flex-1">
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Consentimiento Informado <span class="text-xs font-normal text-slate-400 ml-2">Opcional</span></h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Consentimiento Informado <span class="text-xs font-normal text-slate-400 ml-2">Opcional</span>
+              <app-section-error-badge [count]="consentErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Solo requerido para procedimientos, cirugías, transfusiones o rechazos formales</p>
           </div>
         </div>
@@ -703,9 +728,12 @@
                 <div class="grid grid-cols-2 gap-4">
                   <mat-form-field appearance="outline">
                     <mat-label>Fecha del Consentimiento</mat-label>
-                    <input matInput [matDatepicker]="consentPicker" formControlName="consentDate" placeholder="dd/mm/aaaa"/>
+                    <input matInput [matDatepicker]="consentPicker" formControlName="consentDate" [max]="today" placeholder="dd/mm/aaaa"/>
                     <mat-datepicker-toggle matSuffix [for]="consentPicker"></mat-datepicker-toggle>
                     <mat-datepicker #consentPicker startView="month"></mat-datepicker>
+                    @if (consentForm.get('consentDate')?.hasError('matDatepickerMax')) {
+                      <mat-error>La fecha no puede ser futura</mat-error>
+                    }
                   </mat-form-field>
                   <mat-form-field appearance="outline">
                     <mat-label>Hora</mat-label>

@@ -15,6 +15,7 @@ import { AlertService } from '@core/services/alert.service'
 import { combineLatest, Observable, of, Subject } from 'rxjs'
 import { auditTime, catchError, map, startWith, takeUntil } from 'rxjs/operators'
 import { CanComponentDeactivate, confirmDiscardChanges } from '../../../../../core/guards/can-deactivate.guard'
+import { countInvalidFields, scrollToFirstInvalidField } from '../../../../../shared/utils/form-errors.util'
 import { User } from '../../../../auth/interfaces/user.interface'
 import { Patient } from '../../patients/interfaces'
 import { PatientsService } from '../../patients/services/patients.service'
@@ -113,6 +114,14 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
 
   // UX: detectar si el usuario cambió manualmente el formato de impresión
   private userChangedPrintTemplate = false
+
+  // Fase 2 rediseño: dentro de "Evaluación y Plan de Tratamiento", Notas Adicionales
+  // (texto libre fuera del registro clínico core) y Fecha de Seguimiento (campo de
+  // programación, no de contenido clínico) arrancan ocultos para reducir densidad
+  // visual. El resto de la sección (diagnóstico, plan de tratamiento, diferencial,
+  // instrucciones de seguimiento) permanece siempre visible por ser núcleo clínico.
+  // Se auto-expande en populateForm() si el registro YA tiene datos cargados ahí.
+  showMoreAssessmentPlanFields = false
 
   constructor(
     private fb: FormBuilder,
@@ -607,6 +616,10 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
       followUpDate: record.followUpDate ? new Date(record.followUpDate) : null,
     })
 
+    // Si el registro ya tiene datos en estos campos, mostrarlos de entrada en vez
+    // de esconderlos detrás de "Mostrar más campos".
+    this.showMoreAssessmentPlanFields = !!(record.notes || record.followUpDate)
+
     // Nota: syncPatientSearchText y syncDoctorSearchText se llaman después en loadMedicalRecord
   }
 
@@ -641,13 +654,63 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
   }
 
   private scrollToFirstError(): void {
-    requestAnimationFrame(() => {
-      const el = this.elRef.nativeElement as HTMLElement
-      const invalid = el.querySelector('.mat-form-field-invalid')
-      if (invalid) {
-        invalid.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      }
-    })
+    scrollToFirstInvalidField(this.elRef.nativeElement as HTMLElement)
+  }
+
+  // Badges de error por sección visual — clinicalDataForm y evaluationForm cubren
+  // 2 tarjetas cada uno (Historia Médica + Signos Vitales / Examen Físico +
+  // Evaluación y Plan), así que el conteo se restringe al subconjunto de campos
+  // de cada sección en vez de contar el FormGroup completo, para que el badge
+  // apunte a la tarjeta correcta. Igual que en patient-form, solo se ven después
+  // de un intento de envío fallido (markAllAsTouched en onSubmit()).
+  private static readonly MEDICAL_HISTORY_FIELDS = [
+    'historyOfPresentIllness', 'pastMedicalHistory', 'medications', 'allergies',
+    'socialHistory', 'familyHistory', 'reviewOfSystems',
+  ]
+  private static readonly VITAL_SIGNS_FIELDS = [
+    'temperature', 'systolicBP', 'diastolicBP', 'heartRate', 'respiratoryRate',
+    'oxygenSaturation', 'weight', 'height',
+  ]
+  private static readonly PHYSICAL_EXAM_FIELDS = [
+    'physicalExamination', 'generalAppearance', 'heent', 'cardiovascular',
+    'respiratory', 'abdominal', 'neurological', 'musculoskeletal', 'skin',
+  ]
+  private static readonly ASSESSMENT_PLAN_FIELDS = [
+    'assessment', 'plan', 'diagnosis', 'differentialDiagnosis', 'treatmentPlan',
+    'followUpInstructions', 'patientEducation', 'notes', 'followUpDate',
+  ]
+
+  private countInvalidIn(form: FormGroup, fields: string[]): number {
+    return fields.filter(f => {
+      const c = form.get(f)
+      return !!c && c.invalid && c.touched
+    }).length
+  }
+
+  patientInfoErrorCount(): number {
+    return countInvalidFields(this.patientInfoForm)
+  }
+
+  medicalHistoryErrorCount(): number {
+    return this.countInvalidIn(this.clinicalDataForm, MedicalRecordFormComponent.MEDICAL_HISTORY_FIELDS)
+  }
+
+  vitalSignsErrorCount(): number {
+    return this.countInvalidIn(this.clinicalDataForm, MedicalRecordFormComponent.VITAL_SIGNS_FIELDS)
+  }
+
+  physicalExamErrorCount(): number {
+    return this.countInvalidIn(this.evaluationForm, MedicalRecordFormComponent.PHYSICAL_EXAM_FIELDS)
+  }
+
+  assessmentPlanErrorCount(): number {
+    return this.countInvalidIn(this.evaluationForm, MedicalRecordFormComponent.ASSESSMENT_PLAN_FIELDS)
+  }
+
+  // consentForm no tiene campos required — siempre válido — pero se agrega el
+  // badge igual por consistencia visual con el resto de tarjetas de sección.
+  consentErrorCount(): number {
+    return countInvalidFields(this.consentForm)
   }
 
   private createMedicalRecordDto(status?: RecordStatus): CreateMedicalRecordDto {
