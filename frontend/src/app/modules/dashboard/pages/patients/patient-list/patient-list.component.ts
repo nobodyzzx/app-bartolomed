@@ -7,9 +7,14 @@ import { MatTableDataSource } from '@angular/material/table'
 import { ActivatedRoute, Router } from '@angular/router'
 import { Subject } from 'rxjs'
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
+import { UserRoles } from '@core/enums/user-roles.enum'
 import { AlertService } from '@core/services/alert.service'
+import { RoleStateService } from '@core/services/role-state.service'
 import { Gender, Patient, PatientStatistics } from '../interfaces'
 import { PatientsService } from '../services'
+
+/** Debe coincidir con @Auth(SUPER_ADMIN, ADMIN, DOCTOR) en DELETE /patients/:id */
+const DELETE_ROLES: UserRoles[] = [UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.DOCTOR]
 
 @Component({
     selector: 'app-patient-list',
@@ -19,6 +24,7 @@ import { PatientsService } from '../services'
 })
 export class PatientListComponent implements OnInit, AfterViewInit {
   private readonly destroyRef = inject(DestroyRef)
+  private readonly roleState = inject(RoleStateService)
 
   displayedColumns: string[] = ['documentNumber', 'name', 'age', 'gender', 'phone', 'actions']
   dataSource: MatTableDataSource<Patient>
@@ -182,6 +188,10 @@ export class PatientListComponent implements OnInit, AfterViewInit {
 
   editPatient(patient: Patient): void {
     this.router.navigate(['/dashboard/patients/edit', patient.id])
+  }
+
+  canDeletePatient(): boolean {
+    return this.roleState.hasAnyRole(DELETE_ROLES)
   }
 
   deletePatient(patient: Patient): void {

@@ -1,7 +1,9 @@
 import { Location } from '@angular/common'
 import { fakeAsync, TestBed, tick } from '@angular/core/testing'
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router'
+import { UserRoles } from '@core/enums/user-roles.enum'
 import { AlertService } from '@core/services/alert.service'
+import { RoleStateService } from '@core/services/role-state.service'
 import { of, ReplaySubject, throwError } from 'rxjs'
 import { Gender, Patient, PatientStatistics } from '../interfaces'
 import { PatientsService } from '../services'
@@ -14,6 +16,11 @@ describe('PatientListComponent', () => {
   let location: jasmine.SpyObj<Location>
   let alert: jasmine.SpyObj<AlertService>
   let queryParamMap$: ReplaySubject<any>
+  let roles: UserRoles[]
+
+  const fakeRoleState = {
+    hasAnyRole: (allowed: UserRoles[]) => (allowed.length === 0 ? true : allowed.some(r => roles.includes(r))),
+  }
 
   const makePatient = (overrides: Partial<Patient> = {}): Patient =>
     ({
@@ -41,6 +48,7 @@ describe('PatientListComponent', () => {
     }) as PatientStatistics
 
   const createComponent = () => {
+    TestBed.resetTestingModule()
     TestBed.configureTestingModule({
       providers: [
         PatientListComponent,
@@ -49,6 +57,7 @@ describe('PatientListComponent', () => {
         { provide: Location, useValue: location },
         { provide: AlertService, useValue: alert },
         { provide: ActivatedRoute, useValue: { queryParamMap: queryParamMap$ } },
+        { provide: RoleStateService, useValue: fakeRoleState },
       ],
     })
     return TestBed.inject(PatientListComponent)
@@ -66,6 +75,7 @@ describe('PatientListComponent', () => {
     alert = jasmine.createSpyObj('AlertService', ['error', 'success', 'fire'])
     queryParamMap$ = new ReplaySubject(1)
     queryParamMap$.next(convertToParamMap({}))
+    roles = [UserRoles.ADMIN]
 
     patientsService.getPatientStatistics.and.returnValue(of(makeStats()))
     patientsService.findAll.and.returnValue(of({ data: [makePatient()], total: 1, page: 1, limit: 25 }))
@@ -335,6 +345,24 @@ describe('PatientListComponent', () => {
 
       expect(() => component.deletePatient(makePatient({ id: 'p1' }))).not.toThrow()
       await Promise.resolve()
+    })
+  })
+
+  // ─── canDeletePatient — debe coincidir con @Auth(SUPER_ADMIN, ADMIN, DOCTOR) en el backend ─
+
+  describe('canDeletePatient', () => {
+    it('true para ADMIN, DOCTOR y SUPER_ADMIN', () => {
+      for (const role of [UserRoles.ADMIN, UserRoles.DOCTOR, UserRoles.SUPER_ADMIN]) {
+        roles = [role]
+        expect(createComponent().canDeletePatient()).toBe(true)
+      }
+    })
+
+    it('false para RECEPTIONIST y NURSE — el botón no debe mentir sobre lo que el backend permite', () => {
+      for (const role of [UserRoles.RECEPTIONIST, UserRoles.NURSE]) {
+        roles = [role]
+        expect(createComponent().canDeletePatient()).toBe(false)
+      }
     })
   })
 })

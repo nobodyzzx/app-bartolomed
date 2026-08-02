@@ -185,11 +185,13 @@
                     class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0">
                     <span class="material-symbols-outlined msz-18">edit</span>
                   </button>
-                  <button type="button" (click)="deletePatient(patient); $event.stopPropagation()"
-                    matTooltip="Eliminar"
-                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0">
-                    <span class="material-symbols-outlined msz-18">delete</span>
-                  </button>
+                  @if (canDeletePatient()) {
+                    <button type="button" (click)="deletePatient(patient); $event.stopPropagation()"
+                      matTooltip="Eliminar"
+                      class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0">
+                      <span class="material-symbols-outlined msz-18">delete</span>
+                    </button>
+                  }
                 </div>
               </td>
             </ng-container>

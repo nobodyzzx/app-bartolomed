@@ -95,7 +95,7 @@ export class PrescriptionsController {
   }
 
   @Post(':id/sign')
-  @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
+  @Auth(ValidRoles.DOCTOR)
   @RequirePermissions(Permission.PrescriptionsSign)
   sign(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request, @GetUser() user: User) {
     const clinicId = resolveClinicId(req);
