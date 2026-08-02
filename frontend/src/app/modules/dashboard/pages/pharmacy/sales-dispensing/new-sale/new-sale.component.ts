@@ -37,6 +37,7 @@ export class NewSaleComponent implements OnInit {
 
   prescriptions = signal<PrescriptionListItem[]>([])
   loadingPrescriptions = signal<boolean>(false)
+  selectedPrescriptionId = signal<string | null>(null)
 
   // Mostrar nombre del medicamento en el input del autocomplete en lugar del UUID
   stockDisplayWithFn = (stockId: string | null): string => {
@@ -163,6 +164,7 @@ export class NewSaleComponent implements OnInit {
       this.form.get('patientId')?.setValue('')
       this.selectedPatientName.set('')
       this.prescriptions.set([])
+      this.selectedPrescriptionId.set(null)
       setTimeout(() => this.patientInput?.nativeElement.focus(), 0)
       return
     }
@@ -192,6 +194,7 @@ export class NewSaleComponent implements OnInit {
     this.form.get('patientId')?.setValue('')
     this.selectedPatientName.set('')
     this.prescriptions.set([])
+    this.selectedPrescriptionId.set(null)
     setTimeout(() => this.patientInput?.nativeElement.focus(), 0)
   }
 
@@ -224,11 +227,13 @@ export class NewSaleComponent implements OnInit {
   onPrescriptionSelected(prescriptionId: string): void {
     if (!prescriptionId) {
       this.form.patchValue({ prescriptionNumber: '' })
+      this.selectedPrescriptionId.set(null)
       return
     }
     const pr = this.prescriptions().find(p => p.id === prescriptionId)
     if (!pr) return
     this.form.patchValue({ prescriptionNumber: pr.prescriptionNumber || '' })
+    this.selectedPrescriptionId.set(pr.id)
     this.applyPrescription(pr)
   }
 
@@ -494,6 +499,7 @@ export class NewSaleComponent implements OnInit {
       amountPaid: Number(this.form.value.amountPaid),
       notes: this.form.value.notes,
       prescriptionNumber: this.form.value.prescriptionNumber,
+      prescriptionId: this.selectedPrescriptionId() || undefined,
       items: this.cart.items().map((item: CartItem) => ({
         medicationStockId: item.medicationStock.id,
         quantity: Number(item.quantity),

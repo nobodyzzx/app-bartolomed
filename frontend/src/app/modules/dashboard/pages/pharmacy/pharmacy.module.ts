@@ -11,9 +11,9 @@ import { InventoryComponent } from './inventory/inventory.component'
 import { MedicationFormComponent } from './inventory/medication-form/medication-form.component'
 import { StockFormComponent } from './inventory/stock-form/stock-form.component'
 import { TransferStockComponent } from './inventory/transfer-stock/transfer-stock.component'
+import { InvoiceDetailComponent } from './invoicing/invoice-detail/invoice-detail.component'
 import { InvoicingComponent } from './invoicing/invoicing.component'
 import { MedicationsComponent } from './medications/medications.component'
-import { OrderGenerationComponent } from './order-generation/order-generation.component'
 import { PharmacyRoutingModule } from './pharmacy-routing.module'
 import { PurchaseOrderDetailComponent } from './purchase-orders/purchase-order-detail/purchase-order-detail.component'
 import { PurchaseOrderFormComponent } from './purchase-orders/purchase-order-form/purchase-order-form.component'
@@ -31,7 +31,6 @@ import { SuppliersComponent } from './suppliers/suppliers.component'
     MedicationFormComponent,
     StockFormComponent,
     MedicationsComponent,
-    OrderGenerationComponent,
     PurchaseOrdersComponent,
     PurchaseOrderDetailComponent,
     PurchaseOrderFormComponent,
@@ -56,6 +55,7 @@ import { SuppliersComponent } from './suppliers/suppliers.component'
     DecimalPipe,
     CurrencyPipe,
     SharedModule,
+    InvoiceDetailComponent, // standalone
   ],
   exports: [
     InventoryComponent,

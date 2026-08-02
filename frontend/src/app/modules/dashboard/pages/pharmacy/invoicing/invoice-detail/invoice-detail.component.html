@@ -169,9 +169,23 @@
 
     </div>
 
-    <!-- No encontrado -->
+    <!-- Venta sin factura generada todavía -->
+    <div *ngIf="!isLoading && !invoice && noInvoiceYet" class="flex flex-col items-center justify-center py-16 text-center">
+      <span class="material-symbols-outlined text-5xl text-slate-300 mb-4">receipt_long</span>
+      <h3 class="text-lg font-semibold text-slate-900 mb-1">Aún no se generó una factura para esta venta</h3>
+      <p class="text-sm text-slate-500 mb-6 max-w-md">Esta venta está completa, pero todavía no se emitió un comprobante de facturación</p>
+      <div class="flex items-center gap-3">
+        <button type="button" (click)="goBack()" class="btn btn-ghost">Volver</button>
+        <button type="button" (click)="generateInvoice()" [disabled]="isGenerating" class="btn btn-primary">
+          <span class="material-symbols-outlined msz-18 leading-none">add_circle</span>
+          {{ isGenerating ? 'Generando...' : 'Generar factura' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Error al cargar (no encontrada / sin permiso) -->
     <app-empty-state
-      *ngIf="!isLoading && !invoice"
+      *ngIf="!isLoading && !invoice && !noInvoiceYet"
       icon="receipt_long"
       title="Factura no encontrada"
       subtitle="No se pudo cargar la información de la factura"

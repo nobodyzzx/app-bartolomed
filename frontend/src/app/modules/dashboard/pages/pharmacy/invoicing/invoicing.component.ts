@@ -167,11 +167,10 @@ export class InvoicingComponent implements OnInit {
     return 0
   }
 
-  // Modo solo visualización
-  viewInvoiceDetails(invoice: any): void {
-    // Navegación opcional deshabilitada; mantener sólo lectura.
-    // Si se desea activar detalle más adelante, descomentar la línea siguiente.
-    // this.router.navigate(['/dashboard/pharmacy/invoicing', invoice.id])
+  viewInvoiceDetails(invoice: SaleRow): void {
+    // invoice.id es el id de la VENTA (esta lista deriva "facturas" de ventas completadas);
+    // el detalle busca la factura real 1:1 asociada a esa venta.
+    this.router.navigate(['/dashboard/pharmacy/invoicing', invoice.id])
   }
 
   goBack(): void {

@@ -1,13 +1,18 @@
-import { Location } from '@angular/common'
+import { CommonModule, Location } from '@angular/common'
 import { Component, DestroyRef, OnInit, inject } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
-import { ActivatedRoute, Router } from '@angular/router'
+import { ActivatedRoute } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
+import { MaterialModule } from '../../../../../../material/material.module'
+import { SharedModule } from '../../../../../../shared/shared.module'
 import { Invoice, InvoiceStatus } from '../../interfaces/pharmacy.interfaces'
 import { InvoicingService } from '../../services/invoicing.service'
+import { SalesDispensingService } from '../../services/sales-dispensing.service'
 
 @Component({
   selector: 'app-invoice-detail',
+  standalone: true,
+  imports: [CommonModule, MaterialModule, SharedModule],
   templateUrl: './invoice-detail.component.html',
   styleUrls: ['./invoice-detail.component.css'],
 })
@@ -17,34 +22,37 @@ export class InvoiceDetailComponent implements OnInit {
   invoice: Invoice | null = null
   isLoading = false
   invoiceId: string | null = null
+  /** true cuando la venta existe pero todavía no se generó una factura para ella */
+  noInvoiceYet = false
+  isGenerating = false
 
   private route = inject(ActivatedRoute)
-  private router = inject(Router)
   private location = inject(Location)
   private alert = inject(AlertService)
   private invoicingService = inject(InvoicingService)
+  private salesService = inject(SalesDispensingService)
 
   ngOnInit(): void {
+    // El listado de Facturación navega por id de VENTA (1 venta → a lo sumo 1 factura).
     this.invoiceId = this.route.snapshot.paramMap.get('id')
     if (this.invoiceId) {
       this.loadInvoice(this.invoiceId)
     }
   }
 
-  private loadInvoice(id: string): void {
+  private loadInvoice(saleId: string): void {
     this.isLoading = true
-    this.invoicingService.getInvoice(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (invoice: Invoice | undefined) => {
-        if (!invoice) {
-          this.alert.error('Error', 'Factura no encontrada')
-          this.isLoading = false
-          return
-        }
+    this.invoicingService.getInvoiceBySale(saleId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (invoice: Invoice) => {
         this.invoice = invoice
         this.isLoading = false
       },
-      error: () => {
-        this.alert.error('Error', 'No se pudo cargar la factura')
+      error: (error: any) => {
+        if (error?.status === 404) {
+          this.noInvoiceYet = true
+        } else {
+          this.alert.error('Error', 'No se pudo cargar la factura')
+        }
         this.isLoading = false
       },
     })
@@ -54,10 +62,45 @@ export class InvoiceDetailComponent implements OnInit {
     this.location.back()
   }
 
+  generateInvoice(): void {
+    if (!this.invoiceId) return
+    const saleId = this.invoiceId
+
+    this.isGenerating = true
+    this.salesService.getSaleById(saleId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: sale => {
+        const today = new Date()
+        const dueDate = new Date(today)
+        dueDate.setDate(dueDate.getDate() + 15)
+
+        this.invoicingService
+          .createInvoice({
+            saleId,
+            patientName: sale.patientName || sale.patient?.fullName || sale.patient?.name || 'Cliente',
+            invoiceDate: today.toISOString().split('T')[0],
+            dueDate: dueDate.toISOString().split('T')[0],
+          })
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              this.isGenerating = false
+              this.noInvoiceYet = false
+              this.loadInvoice(saleId)
+            },
+            error: () => {
+              this.isGenerating = false
+            },
+          })
+      },
+      error: () => {
+        this.isGenerating = false
+      },
+    })
+  }
+
   editInvoice(): void {
-    if (this.invoiceId) {
-      this.router.navigate(['/dashboard/pharmacy/invoicing/edit', this.invoiceId])
-    }
+    // No existe todavía un formulario de edición de facturas en este módulo.
+    this.alert.warning('En desarrollo', 'La edición de facturas estará disponible próximamente')
   }
 
   async printInvoice(): Promise<void> {

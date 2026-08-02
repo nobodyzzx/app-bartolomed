@@ -224,6 +224,7 @@
             </ng-container>
             <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
             <tr mat-row *matRowDef="let row; columns: displayedColumns"
+            (click)="viewInvoiceDetails(row)"
             class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors cursor-pointer"></tr>
           </table>
           <div class="table-footer">

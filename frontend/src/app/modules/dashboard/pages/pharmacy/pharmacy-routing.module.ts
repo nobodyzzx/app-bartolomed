@@ -8,6 +8,7 @@ import { InventoryComponent } from './inventory/inventory.component'
 import { MedicationFormComponent } from './inventory/medication-form/medication-form.component'
 import { StockFormComponent } from './inventory/stock-form/stock-form.component'
 import { TransferStockComponent } from './inventory/transfer-stock/transfer-stock.component'
+import { InvoiceDetailComponent } from './invoicing/invoice-detail/invoice-detail.component'
 import { InvoicingComponent } from './invoicing/invoicing.component'
 import { MedicationsComponent } from './medications/medications.component'
 import { PurchaseOrderDetailComponent } from './purchase-orders/purchase-order-detail/purchase-order-detail.component'
@@ -58,12 +59,9 @@ const routes: Routes = [
     component: InventoryComponent,
     canActivate: [permissionsGuard, roleGuard],
     data: {
-      allowedRoles: [
-        UserRoles.PHARMACIST,
-        UserRoles.DOCTOR,
-        UserRoles.ADMIN,
-        UserRoles.SUPER_ADMIN,
-      ],
+      // DOCTOR no tiene Permission.PharmacyInventoryManage (role-permissions.map.ts),
+      // así que igual quedaría bloqueado por permissionsGuard — no listarlo aquí.
+      allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
       requiredPermissions: [Permission.PharmacyInventoryManage],
     },
   },
@@ -194,12 +192,9 @@ const routes: Routes = [
     component: SalesDispensingComponent,
     canActivate: [permissionsGuard, roleGuard],
     data: {
-      allowedRoles: [
-        UserRoles.PHARMACIST,
-        UserRoles.DOCTOR,
-        UserRoles.ADMIN,
-        UserRoles.SUPER_ADMIN,
-      ],
+      // DOCTOR no tiene Permission.PharmacyDispense (role-permissions.map.ts),
+      // así que igual quedaría bloqueado por permissionsGuard — no listarlo aquí.
+      allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
       requiredPermissions: [Permission.PharmacyDispense],
     },
   },
@@ -208,12 +203,9 @@ const routes: Routes = [
     component: NewSaleComponent,
     canActivate: [permissionsGuard, roleGuard],
     data: {
-      allowedRoles: [
-        UserRoles.PHARMACIST,
-        UserRoles.DOCTOR,
-        UserRoles.ADMIN,
-        UserRoles.SUPER_ADMIN,
-      ],
+      // DOCTOR no tiene Permission.PharmacyDispense (role-permissions.map.ts),
+      // así que igual quedaría bloqueado por permissionsGuard — no listarlo aquí.
+      allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
       requiredPermissions: [Permission.PharmacyDispense],
     },
   },
@@ -222,18 +214,24 @@ const routes: Routes = [
     component: SaleDetailsComponent,
     canActivate: [permissionsGuard, roleGuard],
     data: {
-      allowedRoles: [
-        UserRoles.PHARMACIST,
-        UserRoles.DOCTOR,
-        UserRoles.ADMIN,
-        UserRoles.SUPER_ADMIN,
-      ],
+      // DOCTOR no tiene Permission.PharmacyDispense (role-permissions.map.ts),
+      // así que igual quedaría bloqueado por permissionsGuard — no listarlo aquí.
+      allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
       requiredPermissions: [Permission.PharmacyDispense],
     },
   },
   {
     path: 'invoicing',
     component: InvoicingComponent,
+    canActivate: [permissionsGuard, roleGuard],
+    data: {
+      allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+      requiredPermissions: [Permission.PharmacyBilling],
+    },
+  },
+  {
+    path: 'invoicing/:id',
+    component: InvoiceDetailComponent,
     canActivate: [permissionsGuard, roleGuard],
     data: {
       allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],

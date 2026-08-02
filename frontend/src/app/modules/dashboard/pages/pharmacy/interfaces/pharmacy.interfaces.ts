@@ -208,8 +208,6 @@ export interface Supplier {
   city?: string
   state?: string
   country?: string
-  zipCode?: string
-  postalCode?: string
   website?: string
   paymentTerms?: number
   discountRate?: number
@@ -235,7 +233,6 @@ export interface CreateSupplierDto {
   city?: string
   state?: string
   country?: string
-  postalCode?: string
   notes?: string
 }
 
@@ -336,6 +333,7 @@ export interface Sale {
   saleNumber: string
   patientId?: string
   patient?: any
+  patientName?: string
   paymentMethod: PaymentMethod
   subtotal: number
   taxRate?: number
@@ -364,6 +362,8 @@ export interface CreateSaleDto {
   amountPaid: number
   notes?: string
   prescriptionNumber?: string
+  /** Id de la receta a dispensar; el backend la valida y la marca DISPENSED al completar la venta. */
+  prescriptionId?: string
   items: CreateSaleItemDto[]
   clinicId: string
 }
