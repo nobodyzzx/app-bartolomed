@@ -10,6 +10,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { Observable, Subject } from 'rxjs'
+import { countInvalidFields, scrollToFirstInvalidField } from '../../../../shared/utils/form-errors.util'
 import { ClinicsService } from '../admin/clinics/services/clinics.service'
 import { PatientsService } from '../patients/services/patients.service'
 import { UsersService } from '../admin/users/users.service'
@@ -79,8 +80,19 @@ export class PrescriptionFormComponent implements CanComponentDeactivate {
         nonNullable: true,
         validators: [Validators.required],
       }),
-      patientId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-      doctorId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+      // disabled se fija en el estado inicial del FormControl (sintaxis { value, disabled }),
+      // no vía [disabled] en la plantilla — mezclar ambos deja al FormControl real
+      // desincronizado del DOM. Arrancan deshabilitados porque patients/doctors se cargan
+      // async en loadOptions(); se habilitan ahí mismo cuando cada lista deja de estar vacía
+      // (ver updateSelectControlDisabled()).
+      patientId: new FormControl(
+        { value: '', disabled: true },
+        { nonNullable: true, validators: [Validators.required] },
+      ),
+      doctorId: new FormControl(
+        { value: '', disabled: true },
+        { nonNullable: true, validators: [Validators.required] },
+      ),
       clinicId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
       prescriptionDate: new FormControl(new Date(), {
         nonNullable: true,
@@ -232,13 +244,25 @@ export class PrescriptionFormComponent implements CanComponentDeactivate {
   private loadOptions() {
     // Pacientes
     this.patientsService.findAll().subscribe({
-      next: result => (this.patients = result.data || []),
-      error: () => (this.patients = []),
+      next: result => {
+        this.patients = result.data || []
+        this.updateSelectControlDisabled('patientId', this.patients.length)
+      },
+      error: () => {
+        this.patients = []
+        this.updateSelectControlDisabled('patientId', 0)
+      },
     })
     // Médicos (filtrar usuarios con rol doctor)
     this.usersService.getUsers().subscribe({
-      next: result => (this.doctors = (result.data || []).filter((u: any) => (u.roles || []).includes('doctor'))),
-      error: () => (this.doctors = []),
+      next: result => {
+        this.doctors = (result.data || []).filter((u: any) => (u.roles || []).includes('doctor'))
+        this.updateSelectControlDisabled('doctorId', this.doctors.length)
+      },
+      error: () => {
+        this.doctors = []
+        this.updateSelectControlDisabled('doctorId', 0)
+      },
     })
     // Clínicas
     this.clinicsService.findAll(true).subscribe({
@@ -253,6 +277,18 @@ export class PrescriptionFormComponent implements CanComponentDeactivate {
         }
       },
     })
+  }
+
+  // Paciente/doctor arrancan deshabilitados (listas vacías hasta que cargan); habilitar/
+  // deshabilitar acá según llegue contenido, nunca vía [disabled] en la plantilla.
+  private updateSelectControlDisabled(controlName: string, optionsLength: number): void {
+    const control = this.form.get(controlName)
+    if (!control) return
+    if (optionsLength > 0) {
+      control.enable({ emitEvent: false })
+    } else {
+      control.disable({ emitEvent: false })
+    }
   }
 
   getDoctorName(doctor: any): string {
@@ -330,10 +366,31 @@ export class PrescriptionFormComponent implements CanComponentDeactivate {
   }
 
   private scrollToFirstError(): void {
-    requestAnimationFrame(() => {
-      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    })
+    scrollToFirstInvalidField(this.elRef.nativeElement as HTMLElement)
+  }
+
+  // Badges de error por sección — `form` es un único FormGroup (no uno por sección
+  // como patient-form), así que infoErrorCount() acota el conteo a los campos de esa
+  // tarjeta puntual. itemsErrorCount() suma los controles inválidos+touched de cada
+  // medicamento del FormArray (cada item es su propio FormGroup). La sección de Notas
+  // no tiene validadores, así que no necesita badge. Visibles recién tras
+  // markAllAsTouched() en doSubmit().
+  infoErrorCount(): number {
+    return countInvalidFields(this.form, [
+      'clinicId',
+      'prescriptionNumber',
+      'patientId',
+      'doctorId',
+      'prescriptionDate',
+      'expiryDate',
+    ])
+  }
+
+  itemsErrorCount(): number {
+    return this.items.controls.reduce(
+      (total, item) => total + countInvalidFields(item as FormGroup),
+      0,
+    )
   }
 
 }

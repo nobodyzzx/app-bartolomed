@@ -34,7 +34,10 @@
               <span class="material-symbols-outlined msz-20">receipt_long</span>
             </div>
             <div>
-              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información de la Receta</h3>
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+                Información de la Receta
+                <app-section-error-badge [count]="infoErrorCount()" />
+              </h3>
               <p class="text-sm text-slate-500 m-0">Paciente, médico, clínica y fechas de vigencia</p>
             </div>
           </div>
@@ -72,7 +75,7 @@
               <mat-form-field appearance="outline">
                 <mat-label>Paciente</mat-label>
                 <mat-icon matPrefix class="text-blue-400">person</mat-icon>
-                <mat-select formControlName="patientId" required [disabled]="patients.length === 0">
+                <mat-select formControlName="patientId" required>
                   @if (patients.length === 0) {
                     <mat-option disabled>No hay pacientes disponibles</mat-option>
                   }
@@ -90,7 +93,7 @@
               <mat-form-field appearance="outline">
                 <mat-label>Médico</mat-label>
                 <mat-icon matPrefix class="text-blue-400">medical_information</mat-icon>
-                <mat-select formControlName="doctorId" required [disabled]="doctors.length === 0">
+                <mat-select formControlName="doctorId" required>
                   @if (doctors.length === 0) {
                     <mat-option disabled>No hay médicos disponibles</mat-option>
                   }
@@ -141,12 +144,15 @@
               <span class="material-symbols-outlined msz-20">medication</span>
             </div>
             <div class="flex-1">
-              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Medicamentos</h3>
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+                Medicamentos
+                <app-section-error-badge [count]="itemsErrorCount()" />
+              </h3>
               <p class="text-sm text-slate-500 m-0">{{ items.length }} medicamento(s) recetado(s)</p>
             </div>
             <button type="button" (click)="addItem()"
-              class="inline-flex items-center gap-2 px-4 h-9 rounded-full font-medium bg-green-600 text-white hover:bg-green-700 shadow-sm hover:shadow-md transition-all border-0 text-sm">
-              <span class="material-symbols-outlined msz-16 leading-none">add</span>
+              class="btn btn-outline-primary">
+              <span class="material-symbols-outlined msz-18 leading-none">add</span>
               Agregar
             </button>
           </div>
@@ -166,9 +172,9 @@
                         <span class="font-semibold text-slate-700 text-sm">Medicamento #{{ i + 1 }}</span>
                       </div>
                       <button type="button" (click)="removeItem(i)"
-                        class="w-8 h-8 inline-flex items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 transition-all border-0"
+                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors border-0"
                         matTooltip="Eliminar">
-                        <span class="material-symbols-outlined msz-16">delete</span>
+                        <span class="material-symbols-outlined msz-18 leading-none">delete</span>
                       </button>
                     </div>
                     <div [formGroup]="$any(it)" class="p-5 space-y-4">
@@ -324,7 +330,7 @@
                 </div>
                 <p class="text-slate-500 text-sm mb-4">No hay medicamentos agregados</p>
                 <button type="button" (click)="addItem()"
-                  class="inline-flex items-center gap-2 px-5 h-10 rounded-full font-medium bg-green-600 text-white hover:bg-green-700 shadow-sm border-0 text-sm">
+                  class="btn btn-primary">
                   <span class="material-symbols-outlined msz-18 leading-none">add</span>
                   Agregar Primer Medicamento
                 </button>
