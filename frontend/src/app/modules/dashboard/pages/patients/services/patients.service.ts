@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core'
 import { AlertService } from '@core/services/alert.service'
 import { Observable, throwError } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
+import { ErrorService } from '../../../../../shared/components/services/error.service'
 import { environment } from '../../../../../environments/environments'
 import {
   CreatePatientDto,
@@ -22,6 +23,7 @@ export class PatientsService {
   constructor(
     private http: HttpClient,
     private alert: AlertService,
+    private errorService: ErrorService,
   ) {}
 
   private getHeaders(): HttpHeaders {
@@ -41,7 +43,7 @@ export class PatientsService {
     if (options.gender) params = params.set('gender', options.gender)
     return this.http
       .get<PaginatedResult<Patient>>(this.baseUrl, { params, headers: this.getHeaders() })
-      .pipe(catchError(error => { this.alert.error('Error al cargar pacientes'); return throwError(() => error) }))
+      .pipe(catchError(error => { this.errorService.handleError(error); return throwError(() => error) }))
   }
 
   /** Sin catchError: patient-form.component.ts distingue 404 (paciente no encontrado) de otros errores para decidir el mensaje y la navegación. */
@@ -70,7 +72,7 @@ export class PatientsService {
   removePatient(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`, { headers: this.getHeaders() }).pipe(
       tap(() => this.alert.success('Eliminado', 'El paciente ha sido eliminado.')),
-      catchError(error => { this.alert.error('No se pudo eliminar el paciente.'); return throwError(() => error) }),
+      catchError(error => { this.errorService.handleError(error); return throwError(() => error) }),
     )
   }
 
@@ -81,7 +83,7 @@ export class PatientsService {
     }
     return this.http
       .get<Patient[]>(`${this.baseUrl}/search`, { params, headers: this.getHeaders() })
-      .pipe(catchError(error => { this.alert.error('Error al buscar pacientes'); return throwError(() => error) }))
+      .pipe(catchError(error => { this.errorService.handleError(error); return throwError(() => error) }))
   }
 
   /** Sin catchError: estadística no crítica, el consumidor degrada en silencio si falla. */

@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core'
 import { AlertService } from '@core/services/alert.service'
 import { Observable, throwError } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
+import { ErrorService } from '../../../../../shared/components/services/error.service'
 import { environment } from '../../../../../environments/environments'
 import {
   ConsentForm,
@@ -24,6 +25,7 @@ export class MedicalRecordsService {
   constructor(
     private http: HttpClient,
     private alert: AlertService,
+    private errorService: ErrorService,
   ) {}
 
   // CRUD Operations para Medical Records
@@ -43,25 +45,25 @@ export class MedicalRecordsService {
 
     return this.http
       .get<{ data: MedicalRecord[]; total: number }>(this.apiUrl, { params })
-      .pipe(catchError(error => { this.alert.error('Error al cargar los expedientes médicos'); return throwError(() => error) }))
+      .pipe(catchError(error => { this.errorService.handleError(error); return throwError(() => error) }))
   }
 
   getMedicalRecordById(id: string): Observable<MedicalRecord> {
     return this.http
       .get<MedicalRecord>(`${this.apiUrl}/${id}`)
-      .pipe(catchError(error => { this.alert.error('Error al cargar el expediente médico'); return throwError(() => error) }))
+      .pipe(catchError(error => { this.errorService.handleError(error); return throwError(() => error) }))
   }
 
   getMedicalRecordsByPatient(patientId: string): Observable<MedicalRecord[]> {
     return this.http
       .get<MedicalRecord[]>(`${this.apiUrl}/patient/${patientId}`)
-      .pipe(catchError(error => { this.alert.error('No se pudo cargar el historial médico.'); return throwError(() => error) }))
+      .pipe(catchError(error => { this.errorService.handleError(error); return throwError(() => error) }))
   }
 
   getMedicalRecordsByDoctor(doctorId: string): Observable<MedicalRecord[]> {
     return this.http
       .get<MedicalRecord[]>(`${this.apiUrl}/doctor/${doctorId}`)
-      .pipe(catchError(error => { this.alert.error('Error al cargar los expedientes del doctor'); return throwError(() => error) }))
+      .pipe(catchError(error => { this.errorService.handleError(error); return throwError(() => error) }))
   }
 
   /** Crea el expediente; el mensaje varía según se guarde como borrador o completo. */
@@ -79,7 +81,7 @@ export class MedicalRecordsService {
         }),
       ),
       catchError(error => {
-        this.alert.error(isDraft ? 'Error al guardar el borrador' : 'Error al crear el expediente médico')
+        this.errorService.handleError(error)
         return throwError(() => error)
       }),
     )
@@ -98,14 +100,14 @@ export class MedicalRecordsService {
           confirmButtonText: 'Aceptar',
         }),
       ),
-      catchError(error => { this.alert.error('Error al actualizar el expediente médico'); return throwError(() => error) }),
+      catchError(error => { this.errorService.handleError(error); return throwError(() => error) }),
     )
   }
 
   deleteMedicalRecord(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
       tap(() => this.alert.success('Eliminado', 'El expediente médico ha sido eliminado.')),
-      catchError(error => { this.alert.error('No se pudo eliminar el expediente médico.'); return throwError(() => error) }),
+      catchError(error => { this.errorService.handleError(error); return throwError(() => error) }),
     )
   }
 
@@ -117,13 +119,13 @@ export class MedicalRecordsService {
     }
     return this.http
       .get<ConsentForm[]>(this.consentApiUrl, { params })
-      .pipe(catchError(error => { this.alert.error('Error al cargar los consentimientos'); return throwError(() => error) }))
+      .pipe(catchError(error => { this.errorService.handleError(error); return throwError(() => error) }))
   }
 
   getConsentFormById(id: string): Observable<ConsentForm> {
     return this.http
       .get<ConsentForm>(`${this.consentApiUrl}/${id}`)
-      .pipe(catchError(error => { this.alert.error('Error al cargar el consentimiento'); return throwError(() => error) }))
+      .pipe(catchError(error => { this.errorService.handleError(error); return throwError(() => error) }))
   }
 
   /** Crea el consentimiento inmediatamente después de crear el expediente que lo requiere. */
@@ -137,21 +139,21 @@ export class MedicalRecordsService {
           confirmButtonText: 'Aceptar',
         }),
       ),
-      catchError(error => { this.alert.error('Error al crear el formulario de consentimiento'); return throwError(() => error) }),
+      catchError(error => { this.errorService.handleError(error); return throwError(() => error) }),
     )
   }
 
   updateConsentForm(id: string, consent: Partial<ConsentForm>): Observable<ConsentForm> {
     return this.http.patch<ConsentForm>(`${this.consentApiUrl}/${id}`, consent).pipe(
       tap(() => this.alert.success('Consentimiento actualizado')),
-      catchError(error => { this.alert.error('Error al actualizar el consentimiento'); return throwError(() => error) }),
+      catchError(error => { this.errorService.handleError(error); return throwError(() => error) }),
     )
   }
 
   deleteConsentForm(id: string): Observable<void> {
     return this.http.delete<void>(`${this.consentApiUrl}/${id}`).pipe(
       tap(() => this.alert.success('Consentimiento eliminado')),
-      catchError(error => { this.alert.error('Error al eliminar el consentimiento'); return throwError(() => error) }),
+      catchError(error => { this.errorService.handleError(error); return throwError(() => error) }),
     )
   }
 
@@ -176,7 +178,7 @@ export class MedicalRecordsService {
 
     return this.http.post<ConsentForm>(`${this.consentApiUrl}/${consentId}/upload`, formData).pipe(
       tap(() => this.alert.success('Documento firmado subido correctamente')),
-      catchError(error => { this.alert.error('Error al subir el documento firmado'); return throwError(() => error) }),
+      catchError(error => { this.errorService.handleError(error); return throwError(() => error) }),
     )
   }
 
@@ -184,26 +186,26 @@ export class MedicalRecordsService {
   getMedicalRecordsStats(): Observable<any> {
     return this.http
       .get(`${this.apiUrl}/stats`)
-      .pipe(catchError(error => { this.alert.error('Error al cargar las estadísticas de expedientes'); return throwError(() => error) }))
+      .pipe(catchError(error => { this.errorService.handleError(error); return throwError(() => error) }))
   }
 
   // Generación de PDFs (backend)
   downloadConsentPdf(dto: Record<string, any>): Observable<Blob> {
     return this.http
       .post(`${this.apiUrl}/pdf/consent`, dto, { responseType: 'blob' })
-      .pipe(catchError(error => { this.alert.error('No se pudo generar el PDF del consentimiento'); return throwError(() => error) }))
+      .pipe(catchError(error => { this.errorService.handleError(error); return throwError(() => error) }))
   }
 
   downloadSummaryPdf(dto: Record<string, any>): Observable<Blob> {
     return this.http
       .post(`${this.apiUrl}/pdf/summary`, dto, { responseType: 'blob' })
-      .pipe(catchError(error => { this.alert.error('No se pudo generar el PDF del expediente'); return throwError(() => error) }))
+      .pipe(catchError(error => { this.errorService.handleError(error); return throwError(() => error) }))
   }
 
   // Obtener consentimientos por expediente médico
   getConsentFormsByMedicalRecord(medicalRecordId: string): Observable<ConsentForm[]> {
     return this.http
       .get<ConsentForm[]>(`${this.apiUrl}/${medicalRecordId}/consent-forms`)
-      .pipe(catchError(error => { this.alert.error('Error al cargar los consentimientos del expediente'); return throwError(() => error) }))
+      .pipe(catchError(error => { this.errorService.handleError(error); return throwError(() => error) }))
   }
 }
