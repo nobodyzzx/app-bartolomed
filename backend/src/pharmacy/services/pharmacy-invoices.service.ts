@@ -25,14 +25,22 @@ export class PharmacyInvoicesService {
     private pharmacySaleRepository: Repository<PharmacySale>,
   ) {}
 
-  async create(createPharmacyInvoiceDto: CreatePharmacyInvoiceDto, createdById: string): Promise<PharmacyInvoice> {
-    // Verify sale exists
+  async create(
+    createPharmacyInvoiceDto: CreatePharmacyInvoiceDto,
+    createdById: string,
+    clinicId: string,
+  ): Promise<PharmacyInvoice> {
+    // Verify sale exists and belongs to the current clinic
     const sale = await this.pharmacySaleRepository.findOne({
       where: { id: createPharmacyInvoiceDto.saleId },
     });
 
     if (!sale) {
       throw new NotFoundException(`Sale with ID ${createPharmacyInvoiceDto.saleId} not found`);
+    }
+
+    if (sale.clinicId !== clinicId) {
+      throw new ForbiddenException('Access denied to this sale');
     }
 
     // Check if invoice already exists for this sale
@@ -83,12 +91,11 @@ export class PharmacyInvoicesService {
       .createQueryBuilder('invoice')
       .leftJoinAndSelect('invoice.sale', 'sale')
       .leftJoinAndSelect('invoice.createdBy', 'createdBy')
-      .leftJoin('createdBy.clinic', 'clinic')
       .orderBy('invoice.createdAt', 'DESC')
       .take(limit)
       .skip((page - 1) * limit);
 
-    qb.andWhere('clinic.id = :clinicId', { clinicId });
+    qb.andWhere('sale.clinicId = :clinicId', { clinicId });
 
     if (status) {
       qb.andWhere('invoice.status = :status', { status });
@@ -103,17 +110,38 @@ export class PharmacyInvoicesService {
       throw new BadRequestException('clinicId is required');
     }
 
-    const pharmacyInvoice = await this.pharmacyInvoiceRepository.findOne({
-      where: { id },
-      relations: ['sale', 'sale.items', 'createdBy'],
-    });
+    // PharmacySale mapea `clinic` (relación) y `clinicId` (columna escalar) a la
+    // misma columna física `clinic_id`; leer `sale.clinicId` desde un objeto ya
+    // hidratado por una relación anidada es ambiguo y puede llegar `undefined`.
+    // Filtramos la clínica directamente en el SQL en vez de comparar post-fetch.
+    const pharmacyInvoice = await this.pharmacyInvoiceRepository
+      .createQueryBuilder('invoice')
+      .leftJoinAndSelect('invoice.sale', 'sale')
+      .leftJoinAndSelect('sale.items', 'items')
+      .leftJoinAndSelect('invoice.createdBy', 'createdBy')
+      .where('invoice.id = :id', { id })
+      .andWhere('sale.clinicId = :clinicId', { clinicId })
+      .getOne();
 
     if (!pharmacyInvoice) {
       throw new NotFoundException(`Pharmacy invoice with ID ${id} not found`);
     }
 
-    if (pharmacyInvoice.sale?.clinicId !== clinicId) {
-      throw new ForbiddenException('Access denied to this invoice');
+    return pharmacyInvoice;
+  }
+
+  async findBySale(saleId: string, clinicId: string): Promise<PharmacyInvoice> {
+    const pharmacyInvoice = await this.pharmacyInvoiceRepository
+      .createQueryBuilder('invoice')
+      .leftJoinAndSelect('invoice.sale', 'sale')
+      .leftJoinAndSelect('sale.items', 'items')
+      .leftJoinAndSelect('invoice.createdBy', 'createdBy')
+      .where('invoice.saleId = :saleId', { saleId })
+      .andWhere('sale.clinicId = :clinicId', { clinicId })
+      .getOne();
+
+    if (!pharmacyInvoice) {
+      throw new NotFoundException(`No existe una factura para la venta ${saleId}`);
     }
 
     return pharmacyInvoice;
@@ -187,13 +215,12 @@ export class PharmacyInvoicesService {
       .createQueryBuilder('invoice')
       .leftJoinAndSelect('invoice.sale', 'sale')
       .leftJoinAndSelect('invoice.createdBy', 'createdBy')
-      .leftJoin('createdBy.clinic', 'clinic')
       .where('invoice.dueDate < :today', { today })
       .andWhere('invoice.status != :paidStatus', { paidStatus: InvoiceStatus.PAID })
       .andWhere('invoice.status != :cancelledStatus', { cancelledStatus: InvoiceStatus.CANCELLED })
       .orderBy('invoice.dueDate', 'ASC');
 
-    qb.andWhere('clinic.id = :clinicId', { clinicId });
+    qb.andWhere('sale.clinicId = :clinicId', { clinicId });
 
     return await qb.getMany();
   }
@@ -205,12 +232,11 @@ export class PharmacyInvoicesService {
 
     let query = this.pharmacyInvoiceRepository
       .createQueryBuilder('invoice')
-      .leftJoin('invoice.createdBy', 'createdBy')
-      .leftJoin('createdBy.clinic', 'clinic')
+      .leftJoin('invoice.sale', 'sale')
       .select('SUM(invoice.amountPaid)', 'total')
       .where('invoice.status = :status', { status: InvoiceStatus.PAID });
 
-    query = query.andWhere('clinic.id = :clinicId', { clinicId });
+    query = query.andWhere('sale.clinicId = :clinicId', { clinicId });
 
     if (startDate && endDate) {
       query = query
@@ -229,14 +255,13 @@ export class PharmacyInvoicesService {
 
     const query = this.pharmacyInvoiceRepository
       .createQueryBuilder('invoice')
-      .leftJoin('invoice.createdBy', 'createdBy')
-      .leftJoin('createdBy.clinic', 'clinic')
+      .leftJoin('invoice.sale', 'sale')
       .select('SUM(invoice.balance)', 'total')
       .where('invoice.status IN (:...statuses)', {
         statuses: [InvoiceStatus.PENDING, InvoiceStatus.OVERDUE],
       });
 
-    query.andWhere('clinic.id = :clinicId', { clinicId });
+    query.andWhere('sale.clinicId = :clinicId', { clinicId });
 
     const result = await query.getRawOne();
 
@@ -252,12 +277,11 @@ export class PharmacyInvoicesService {
 
     const invoices = await this.pharmacyInvoiceRepository
       .createQueryBuilder('invoice')
-      .leftJoin('invoice.createdBy', 'createdBy')
-      .leftJoin('createdBy.clinic', 'clinic')
+      .leftJoin('invoice.sale', 'sale')
       .select('invoice.id', 'id')
       .where('invoice.dueDate < :today', { today })
       .andWhere('invoice.status = :pendingStatus', { pendingStatus: InvoiceStatus.PENDING })
-      .andWhere('clinic.id = :clinicId', { clinicId })
+      .andWhere('sale.clinicId = :clinicId', { clinicId })
       .getRawMany();
 
     const ids = invoices.map(row => row.id);

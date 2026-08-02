@@ -26,7 +26,7 @@ export class PharmacyInvoice {
   invoiceNumber: string;
 
   @ManyToOne(() => PharmacySale)
-  @JoinColumn({ name: 'sale_id' })
+  @JoinColumn({ name: 'saleId' })
   sale: PharmacySale;
 
   @Column('uuid')
@@ -91,7 +91,7 @@ export class PharmacyInvoice {
   notes: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'created_by' })
+  @JoinColumn({ name: 'createdById' })
   createdBy: User;
 
   @Column('uuid')

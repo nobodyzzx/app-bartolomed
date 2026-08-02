@@ -32,8 +32,15 @@ export class PharmacyInvoicesController {
 
   @Post()
   create(@Body() createPharmacyInvoiceDto: CreatePharmacyInvoiceDto, @Request() req: any) {
-    const createdById = req.user?.sub || 'system';
-    return this.pharmacyInvoicesService.create(createPharmacyInvoiceDto, createdById);
+    // req.user es la entidad User completa (JwtStrategy.validate) — no tiene `.sub`.
+    // Bug real: el fallback 'system' era el único valor usado en la práctica y
+    // siempre rompía el insert porque createdById es una columna uuid.
+    const createdById = req.user?.id;
+    if (!createdById) {
+      throw new Error('User ID not found in request');
+    }
+    const clinicId = resolveClinicId(req)!;
+    return this.pharmacyInvoicesService.create(createPharmacyInvoiceDto, createdById, clinicId);
   }
 
   @Get()
@@ -65,6 +72,12 @@ export class PharmacyInvoicesController {
   getPendingAmount(@Request() req?: any) {
     const clinicId = req ? resolveClinicId(req) : undefined;
     return this.pharmacyInvoicesService.getPendingAmount(clinicId);
+  }
+
+  @Get('by-sale/:saleId')
+  findBySale(@Param('saleId') saleId: string, @Request() req: any) {
+    const clinicId = resolveClinicId(req)!;
+    return this.pharmacyInvoicesService.findBySale(saleId, clinicId);
   }
 
   @Get(':id')

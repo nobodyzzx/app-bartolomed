@@ -3,7 +3,7 @@ import { PharmacyInvoicesService } from '../services/pharmacy-invoices.service';
 import { InvoiceStatus } from '../entities/pharmacy-invoice.entity';
 
 const makeReq = (overrides: Record<string, any> = {}) => ({
-  user: { sub: 'user-1' },
+  user: { id: 'user-1' },
   headers: { 'x-clinic-id': 'clinic-1' },
   params: {},
   ...overrides,
@@ -21,6 +21,7 @@ describe('PharmacyInvoicesController', () => {
       getTotalRevenue: jest.fn().mockResolvedValue(1000),
       getPendingAmount: jest.fn().mockResolvedValue(200),
       findOne: jest.fn().mockResolvedValue({ id: 'inv-1' }),
+      findBySale: jest.fn().mockResolvedValue({ id: 'inv-1' }),
       update: jest.fn().mockResolvedValue({ id: 'inv-1' }),
       updateStatus: jest.fn().mockResolvedValue({ id: 'inv-1' }),
       markOverdueInvoices: jest.fn().mockResolvedValue(undefined),
@@ -30,16 +31,16 @@ describe('PharmacyInvoicesController', () => {
   });
 
   describe('create', () => {
-    it('usa req.user.sub como createdById', async () => {
+    it('usa req.user.id como createdById y resuelve clinicId', async () => {
       const dto = { saleId: 'sale-1' } as any;
       await controller.create(dto, makeReq());
-      expect(service.create).toHaveBeenCalledWith(dto, 'user-1');
+      expect(service.create).toHaveBeenCalledWith(dto, 'user-1', 'clinic-1');
     });
 
-    it('usa "system" como fallback si no hay usuario en el request', async () => {
+    it('lanza Error si no hay usuario en el request (bug real: antes caía a la string "system", que rompía el insert porque createdById es uuid)', async () => {
       const dto = { saleId: 'sale-1' } as any;
-      await controller.create(dto, makeReq({ user: undefined }));
-      expect(service.create).toHaveBeenCalledWith(dto, 'system');
+      expect(() => controller.create(dto, makeReq({ user: undefined }))).toThrow('User ID not found in request');
+      expect(service.create).not.toHaveBeenCalled();
     });
   });
 
@@ -83,6 +84,11 @@ describe('PharmacyInvoicesController', () => {
   it('getPendingAmount resuelve clinicId del request', async () => {
     await controller.getPendingAmount(makeReq());
     expect(service.getPendingAmount).toHaveBeenCalledWith('clinic-1');
+  });
+
+  it('findBySale resuelve y delega saleId y clinicId', async () => {
+    await controller.findBySale('sale-1', makeReq());
+    expect(service.findBySale).toHaveBeenCalledWith('sale-1', 'clinic-1');
   });
 
   it('findOne delega id y clinicId', async () => {

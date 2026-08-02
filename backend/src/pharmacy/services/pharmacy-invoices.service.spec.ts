@@ -56,14 +56,20 @@ describe('PharmacyInvoicesService', () => {
     it('lanza NotFoundException si la venta no existe', async () => {
       (saleRepo.findOne as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.create(dto, 'user-1')).rejects.toThrow(NotFoundException);
+      await expect(service.create(dto, 'user-1', CLINIC_ID)).rejects.toThrow(NotFoundException);
+    });
+
+    it('lanza ForbiddenException si la venta pertenece a otra clínica (bug real: antes se podía facturar cross-clinic)', async () => {
+      (saleRepo.findOne as jest.Mock).mockResolvedValue(makeSale({ clinicId: 'other-clinic' }));
+
+      await expect(service.create(dto, 'user-1', CLINIC_ID)).rejects.toThrow(ForbiddenException);
     });
 
     it('lanza BadRequestException si ya existe una factura para esa venta', async () => {
       (saleRepo.findOne as jest.Mock).mockResolvedValue(makeSale());
       (invoiceRepo.findOne as jest.Mock).mockResolvedValue(makeInvoice());
 
-      await expect(service.create(dto, 'user-1')).rejects.toThrow(BadRequestException);
+      await expect(service.create(dto, 'user-1', CLINIC_ID)).rejects.toThrow(BadRequestException);
     });
 
     it('crea la factura copiando los montos de la venta y generando el número correlativo', async () => {
@@ -73,7 +79,7 @@ describe('PharmacyInvoicesService', () => {
       (invoiceRepo.create as jest.Mock).mockImplementation(x => x);
       (invoiceRepo.save as jest.Mock).mockImplementation(x => Promise.resolve(x));
 
-      const result = await service.create(dto, 'user-1');
+      const result = await service.create(dto, 'user-1', CLINIC_ID);
 
       expect(invoiceRepo.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -96,13 +102,13 @@ describe('PharmacyInvoicesService', () => {
       await expect(service.findAll(undefined)).rejects.toThrow(BadRequestException);
     });
 
-    it('filtra por clínica vía join a createdBy.clinic', async () => {
+    it('filtra por clínica vía sale.clinicId (bug real: antes filtraba por la clínica del creador, no de la venta)', async () => {
       const qb = createMockQueryBuilder({ getManyAndCount: jest.fn().mockResolvedValue([[makeInvoice()], 1]) });
       (invoiceRepo.createQueryBuilder as jest.Mock).mockReturnValue(qb);
 
       const result = await service.findAll(CLINIC_ID);
 
-      expect(qb.andWhere).toHaveBeenCalledWith('clinic.id = :clinicId', { clinicId: CLINIC_ID });
+      expect(qb.andWhere).toHaveBeenCalledWith('sale.clinicId = :clinicId', { clinicId: CLINIC_ID });
       expect(result).toEqual({ data: [makeInvoice()], total: 1, page: 1, limit: 20 });
     });
 
@@ -118,28 +124,34 @@ describe('PharmacyInvoicesService', () => {
     });
   });
 
+  // PharmacySale mapea `clinic` (relación) y `clinicId` (columna escalar) a la misma
+  // columna física `clinic_id`. Leer `sale.clinicId` desde un objeto ya hidratado por
+  // una relación anidada (invoice.sale) es ambiguo en TypeORM y puede llegar `undefined`
+  // en runtime aunque el mock del test le pase un valor — bug real detectado en vivo
+  // (findOne/findBySale devolvían 403 SIEMPRE, incluso para la clínica correcta).
+  // Por eso ahora el filtro de clínica va en el WHERE del QueryBuilder, no post-fetch,
+  // y estos tests mockean createQueryBuilder().getOne() en vez de invoiceRepo.findOne.
+  const mockFindOneQb = (invoice: PharmacyInvoice | null) => {
+    const qb = createMockQueryBuilder({ getOne: jest.fn().mockResolvedValue(invoice) });
+    (invoiceRepo.createQueryBuilder as jest.Mock).mockReturnValue(qb);
+    return qb;
+  };
+
   describe('findOne', () => {
     it('lanza BadRequestException si no se pasa clinicId', async () => {
       await expect(service.findOne('inv-1', undefined)).rejects.toThrow(BadRequestException);
     });
 
-    it('lanza NotFoundException si la factura no existe', async () => {
-      (invoiceRepo.findOne as jest.Mock).mockResolvedValue(null);
+    it('lanza NotFoundException si la factura no existe o es de otra clínica (el filtro de clínica va en el WHERE)', async () => {
+      const qb = mockFindOneQb(null);
 
       await expect(service.findOne('inv-1', CLINIC_ID)).rejects.toThrow(NotFoundException);
-    });
-
-    it('lanza ForbiddenException si la clínica de la venta no coincide', async () => {
-      (invoiceRepo.findOne as jest.Mock).mockResolvedValue(
-        makeInvoice({ sale: makeSale({ clinicId: 'other-clinic' }) }),
-      );
-
-      await expect(service.findOne('inv-1', CLINIC_ID)).rejects.toThrow(ForbiddenException);
+      expect(qb.andWhere).toHaveBeenCalledWith('sale.clinicId = :clinicId', { clinicId: CLINIC_ID });
     });
 
     it('devuelve la factura si la clínica coincide', async () => {
       const invoice = makeInvoice();
-      (invoiceRepo.findOne as jest.Mock).mockResolvedValue(invoice);
+      mockFindOneQb(invoice as any);
 
       const result = await service.findOne('inv-1', CLINIC_ID);
 
@@ -147,22 +159,40 @@ describe('PharmacyInvoicesService', () => {
     });
   });
 
+  describe('findBySale', () => {
+    it('lanza NotFoundException si la venta no tiene factura generada, o es de otra clínica (el filtro de clínica va en el WHERE)', async () => {
+      const qb = mockFindOneQb(null);
+
+      await expect(service.findBySale('sale-1', CLINIC_ID)).rejects.toThrow(NotFoundException);
+      expect(qb.andWhere).toHaveBeenCalledWith('sale.clinicId = :clinicId', { clinicId: CLINIC_ID });
+    });
+
+    it('devuelve la factura asociada a la venta', async () => {
+      const invoice = makeInvoice();
+      mockFindOneQb(invoice as any);
+
+      const result = await service.findBySale('sale-1', CLINIC_ID);
+
+      expect(result).toBe(invoice);
+    });
+  });
+
   describe('update', () => {
     it('lanza BadRequestException si la factura ya está pagada', async () => {
-      (invoiceRepo.findOne as jest.Mock).mockResolvedValue(makeInvoice({ status: InvoiceStatus.PAID }));
+      mockFindOneQb(makeInvoice({ status: InvoiceStatus.PAID }) as any);
 
       await expect(service.update('inv-1', { notes: 'x' } as any, CLINIC_ID)).rejects.toThrow(BadRequestException);
     });
 
     it('aplica los cambios y vuelve a leer la factura actualizada', async () => {
       const invoice = makeInvoice();
-      (invoiceRepo.findOne as jest.Mock).mockResolvedValue(invoice);
+      const qb = mockFindOneQb(invoice as any);
       (invoiceRepo.save as jest.Mock).mockResolvedValue(invoice);
 
       const result = await service.update('inv-1', { notes: 'Actualizado' } as any, CLINIC_ID);
 
       expect(invoiceRepo.save).toHaveBeenCalledWith(expect.objectContaining({ notes: 'Actualizado' }));
-      expect(invoiceRepo.findOne).toHaveBeenCalledTimes(2);
+      expect(qb.getOne).toHaveBeenCalledTimes(2);
       expect(result).toBe(invoice);
     });
   });
@@ -170,7 +200,7 @@ describe('PharmacyInvoicesService', () => {
   describe('updateStatus', () => {
     it('actualiza amountPaid y recalcula balance', async () => {
       const invoice = makeInvoice({ total: 100 });
-      (invoiceRepo.findOne as jest.Mock).mockResolvedValue(invoice);
+      mockFindOneQb(invoice as any);
       (invoiceRepo.save as jest.Mock).mockImplementation(x => Promise.resolve(x));
 
       await service.updateStatus('inv-1', { status: InvoiceStatus.PENDING, amountPaid: 40 } as any, CLINIC_ID);
@@ -180,7 +210,7 @@ describe('PharmacyInvoicesService', () => {
 
     it('setea paymentDate automáticamente al pasar a PAID si no tenía una', async () => {
       const invoice = makeInvoice({ paymentDate: undefined });
-      (invoiceRepo.findOne as jest.Mock).mockResolvedValue(invoice);
+      mockFindOneQb(invoice as any);
       (invoiceRepo.save as jest.Mock).mockImplementation(x => Promise.resolve(x));
 
       await service.updateStatus('inv-1', { status: InvoiceStatus.PAID } as any, CLINIC_ID);
@@ -193,7 +223,7 @@ describe('PharmacyInvoicesService', () => {
     it('no pisa paymentDate si la factura ya tenía una', async () => {
       const existingDate = new Date('2026-01-01');
       const invoice = makeInvoice({ paymentDate: existingDate });
-      (invoiceRepo.findOne as jest.Mock).mockResolvedValue(invoice);
+      mockFindOneQb(invoice as any);
       (invoiceRepo.save as jest.Mock).mockImplementation(x => Promise.resolve(x));
 
       await service.updateStatus('inv-1', { status: InvoiceStatus.PAID } as any, CLINIC_ID);
@@ -203,7 +233,7 @@ describe('PharmacyInvoicesService', () => {
 
     it('aplica paymentMethod, paymentReference y notes si vienen informados', async () => {
       const invoice = makeInvoice();
-      (invoiceRepo.findOne as jest.Mock).mockResolvedValue(invoice);
+      mockFindOneQb(invoice as any);
       (invoiceRepo.save as jest.Mock).mockImplementation(x => Promise.resolve(x));
 
       await service.updateStatus(
@@ -225,14 +255,14 @@ describe('PharmacyInvoicesService', () => {
 
   describe('remove', () => {
     it('lanza BadRequestException si la factura ya está pagada', async () => {
-      (invoiceRepo.findOne as jest.Mock).mockResolvedValue(makeInvoice({ status: InvoiceStatus.PAID }));
+      mockFindOneQb(makeInvoice({ status: InvoiceStatus.PAID }) as any);
 
       await expect(service.remove('inv-1', CLINIC_ID)).rejects.toThrow(BadRequestException);
     });
 
     it('elimina la factura si no está pagada', async () => {
       const invoice = makeInvoice();
-      (invoiceRepo.findOne as jest.Mock).mockResolvedValue(invoice);
+      mockFindOneQb(invoice as any);
 
       await service.remove('inv-1', CLINIC_ID);
 
