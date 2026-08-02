@@ -250,6 +250,10 @@ export class MainDashboardComponent implements OnInit {
     return this.roleState.hasAnyRole(PHARMACY)
   }
 
+  get showStaffSection(): boolean {
+    return this.roleState.hasAnyRole(ADMIN_ONLY)
+  }
+
   get showAppointmentChart(): boolean {
     return this.roleState.hasAnyRole(CLINICAL)
   }
@@ -289,6 +293,7 @@ export class MainDashboardComponent implements OnInit {
 
     const needsClinical = this.showAppointmentsSection || this.showPatientsSection
     const needsStock    = this.showStockSection
+    const needsStaff    = this.showStaffSection
 
     forkJoin({
       patientStats: needsClinical ? this.dashboardService.getPatientStats()            : of({ total: 0 }),
@@ -296,15 +301,16 @@ export class MainDashboardComponent implements OnInit {
       pending:      needsClinical ? this.dashboardService.getPendingAppointmentsCount() : of(0),
       stock:        needsStock    ? this.dashboardService.getLowStockAlerts()           : of([] as StockAlert[]),
       patients:     needsClinical ? this.dashboardService.getRecentPatients()           : of([] as RecentPatient[]),
+      doctors:      needsStaff    ? this.dashboardService.getDoctorsCount()             : of(0),
     }).pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ patientStats, appointments, pending, stock, patients }) => {
+        next: ({ patientStats, appointments, pending, stock, patients, doctors }) => {
           this.stats = {
             totalPatients:       patientStats.total,
             totalAppointments:   appointments.length,
             pendingAppointments: pending,
-            totalDoctors:        0,
-            monthlyRevenue:      0,
+            totalDoctors:        doctors,
+            monthlyRevenue:      this.stats.monthlyRevenue,
             lowStockItems:       stock.length,
           }
           this.recentAppointments  = appointments
@@ -375,6 +381,8 @@ export class MainDashboardComponent implements OnInit {
               fill: true,
             }],
           }
+          // El último valor del comparativo mensual (6 meses, orden ascendente) es el mes en curso.
+          this.stats.monthlyRevenue = monthly.values[monthly.values.length - 1] ?? 0
         },
         complete: () => { this.loadingCharts = false },
       })

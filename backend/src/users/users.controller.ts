@@ -1,7 +1,22 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, Query, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseUUIDPipe,
+  Query,
+  Req,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
+import { Request } from 'express';
 import { UsersService } from './services/users.service';
 import { CreateUserDto } from './dto';
-import { Auth } from '../auth/decorators/auth.decorator';
+import { Auth, AuthClinic } from '../auth/decorators';
+import { resolveClinicId } from '../auth/decorators/clinic-roles.decorator';
 import { RequirePermissions } from '../auth/permissions/permissions.decorator';
 import { Permission } from '../auth/permissions/permissions.enum';
 import { PaginationDto } from '../common/dtos/pagination.dto';
@@ -22,6 +37,12 @@ export class UsersController {
   @Auth(ValidRoles.ADMIN)
   findAll(@Query() paginationDto: PaginationDto) {
     return this.usersService.findAll(paginationDto);
+  }
+
+  @Get('statistics')
+  @AuthClinic({ roles: [ValidRoles.ADMIN] })
+  getStatistics(@Req() req: Request) {
+    return this.usersService.getClinicStatistics(resolveClinicId(req)!);
   }
 
   @Get(':id')

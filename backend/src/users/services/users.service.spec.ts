@@ -5,7 +5,7 @@ import { UsersService } from './users.service';
 import { User } from '../entities/user.entity';
 import { UserClinic } from '../entities/user-clinic.entity';
 import { Clinic } from 'src/clinics/entities/clinic.entity';
-import { createMockRepository, MockRepository } from 'src/test/helpers/mock-repository.factory';
+import { createMockRepository, createMockQueryBuilder, MockRepository } from 'src/test/helpers/mock-repository.factory';
 import { makeUser, makeClinic } from 'src/test/helpers/test-data.factory';
 
 jest.mock('bcrypt', () => ({
@@ -54,17 +54,15 @@ describe('UsersService', () => {
 
       await service.create(baseDto() as any);
 
-      expect(userRepo.create).toHaveBeenCalledWith(
-        expect.objectContaining({ password: '$hashed$' }),
-      );
+      expect(userRepo.create).toHaveBeenCalledWith(expect.objectContaining({ password: '$hashed$' }));
     });
 
     it('lanza BadRequestException si la clínica no existe', async () => {
       clinicRepo.findOne!.mockResolvedValue(null);
 
-      await expect(
-        service.create({ ...baseDto(), clinicId: 'clinic-no-existe' } as any),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.create({ ...baseDto(), clinicId: 'clinic-no-existe' } as any)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('crea membresía en user_clinics si se provee clinicId', async () => {
@@ -104,19 +102,42 @@ describe('UsersService', () => {
     });
   });
 
+  // ─── getClinicStatistics ──────────────────────────────────────────────────
+
+  describe('getClinicStatistics', () => {
+    it('cuenta doctores activos de la clínica', async () => {
+      const qb = createMockQueryBuilder({ getCount: jest.fn().mockResolvedValue(3) });
+      userClinicRepo.createQueryBuilder!.mockReturnValue(qb);
+
+      const result = await service.getClinicStatistics('clinic-1');
+
+      expect(result).toEqual({ totalDoctors: 3 });
+      expect(qb.where).toHaveBeenCalledWith('uc.clinic_id = :clinicId', { clinicId: 'clinic-1' });
+      expect(qb.andWhere).toHaveBeenCalledWith('user.isActive = true');
+      expect(qb.andWhere).toHaveBeenCalledWith(':role = ANY(uc.roles)', { role: 'doctor' });
+    });
+
+    it('retorna 0 si la clínica no tiene doctores', async () => {
+      const qb = createMockQueryBuilder({ getCount: jest.fn().mockResolvedValue(0) });
+      userClinicRepo.createQueryBuilder!.mockReturnValue(qb);
+
+      const result = await service.getClinicStatistics('clinic-sin-doctores');
+
+      expect(result).toEqual({ totalDoctors: 0 });
+    });
+  });
+
   // ─── updateStatus ─────────────────────────────────────────────────────────
 
   describe('updateStatus', () => {
     it('desactiva usuario (isActive = false)', async () => {
       const user = makeUser({ isActive: true });
       userRepo.findOne!.mockResolvedValue(user);
-      userRepo.save!.mockImplementation(async (u) => u);
+      userRepo.save!.mockImplementation(async u => u);
 
       await service.updateStatus('user-1', false);
 
-      expect(userRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ isActive: false }),
-      );
+      expect(userRepo.save).toHaveBeenCalledWith(expect.objectContaining({ isActive: false }));
     });
   });
 });

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { Clinic } from '../../clinics/entities/clinic.entity';
+import { ValidRoles } from '../../auth/interfaces';
 import { PaginationDto } from '../../common/dtos/pagination.dto';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UserClinic } from '../entities/user-clinic.entity';
@@ -26,7 +27,7 @@ export class UsersService {
       // Si se proporciona clinicId, verificar que la clínica existe
       let clinic: Clinic | undefined;
       if (clinicId) {
-        clinic = await this.clinicRepository.findOne({ where: { id: clinicId } }) ?? undefined;
+        clinic = (await this.clinicRepository.findOne({ where: { id: clinicId } })) ?? undefined;
         if (!clinic) {
           throw new BadRequestException(`Clinic with id ${clinicId} not found`);
         }
@@ -122,6 +123,18 @@ export class UsersService {
     } catch (error) {
       this.handleDBErrors(error);
     }
+  }
+
+  async getClinicStatistics(clinicId: string): Promise<{ totalDoctors: number }> {
+    const totalDoctors = await this.userClinicRepository
+      .createQueryBuilder('uc')
+      .innerJoin('uc.user', 'user')
+      .where('uc.clinic_id = :clinicId', { clinicId })
+      .andWhere('user.isActive = true')
+      .andWhere(':role = ANY(uc.roles)', { role: ValidRoles.DOCTOR })
+      .getCount();
+
+    return { totalDoctors };
   }
 
   async updateStatus(id: string, isActive: boolean) {

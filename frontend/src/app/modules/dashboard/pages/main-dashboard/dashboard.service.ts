@@ -126,6 +126,14 @@ export class DashboardService {
     )
   }
 
+  /** Total de doctores activos de la clínica desde /api/users/statistics */
+  getDoctorsCount(): Observable<number> {
+    return this.http.get<{ totalDoctors: number }>(`${this.base}/users/statistics`).pipe(
+      map(r => r.totalDoctors ?? 0),
+      catchError(() => of(0)),
+    )
+  }
+
   /** Citas pendientes de hoy (scheduled/confirmed) */
   getPendingAppointmentsCount(): Observable<number> {
     const today = new Date().toISOString().slice(0, 10)
