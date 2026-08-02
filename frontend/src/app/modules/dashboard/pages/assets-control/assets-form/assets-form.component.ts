@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
+import { scrollToFirstInvalidField } from '@shared/utils/form-errors.util'
 import { CreateAssetDto } from '../interfaces/assets.interfaces'
 import { AssetRegistrationService } from '../services/asset-registration.service'
 
@@ -54,6 +55,13 @@ export class AssetsFormComponent implements OnInit {
     { value: 'no_depreciation', label: 'Sin Depreciación' },
   ]
 
+  // Fase 2 rediseño: reduce densidad visual ocultando campos secundarios/opcionales
+  // detrás de un botón "Mostrar más campos" — se auto-expanden en loadAsset() si el
+  // activo ya tiene datos cargados en ellos, para no esconder información real.
+  showMorePurchaseFields = false
+  showMoreDepreciationFields = false
+  showMoreLocationFields = false
+
   constructor(
     private fb: FormBuilder,
     private assetService: AssetRegistrationService,
@@ -88,12 +96,12 @@ export class AssetsFormComponent implements OnInit {
 
       // Compra
       purchasePrice: ['', [Validators.required, Validators.min(0)]],
-      purchaseDate: ['', Validators.required],
+      purchaseDate: [null, Validators.required],
       vendor: [''],
       invoiceNumber: [''],
 
       // Garantía
-      warrantyExpiry: [''],
+      warrantyExpiry: [null],
 
       // Depreciación
       depreciationMethod: ['straight_line'],
@@ -108,7 +116,7 @@ export class AssetsFormComponent implements OnInit {
 
       // Mantenimiento
       maintenanceIntervalMonths: [6, [Validators.min(1)]],
-      lastMaintenanceDate: [''],
+      lastMaintenanceDate: [null],
 
       // Notas
       notes: [''],
@@ -133,7 +141,26 @@ export class AssetsFormComponent implements OnInit {
     this.isLoading = true
     this.assetService.getAssetById(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: asset => {
-        this.assetForm.patchValue(asset)
+        // El backend devuelve las fechas como string ISO (el tipo Date de BaseAsset es solo
+        // declarativo); el datepicker necesita instancias reales de Date para poder mostrarlas.
+        const raw = asset as unknown as Record<string, unknown>
+        this.assetForm.patchValue({
+          ...raw,
+          purchaseDate: raw['purchaseDate'] ? new Date(raw['purchaseDate'] as string) : null,
+          warrantyExpiry: raw['warrantyExpiry'] ? new Date(raw['warrantyExpiry'] as string) : null,
+          lastMaintenanceDate: raw['lastMaintenanceDate'] ? new Date(raw['lastMaintenanceDate'] as string) : null,
+        })
+
+        // Si el activo ya tiene datos cargados en los campos ocultos, mostrarlos de
+        // entrada en vez de esconderlos detrás de "Mostrar más campos".
+        this.showMorePurchaseFields = !!(raw['vendor'] || raw['invoiceNumber'] || raw['warrantyExpiry'])
+        this.showMoreLocationFields = !!(raw['building'] || raw['floor'])
+        this.showMoreDepreciationFields = !!(
+          (raw['depreciationMethod'] && raw['depreciationMethod'] !== 'straight_line') ||
+          (typeof raw['usefulLifeYears'] === 'number' && raw['usefulLifeYears'] !== 10) ||
+          (typeof raw['salvageValue'] === 'number' && raw['salvageValue'] !== 0)
+        )
+
         this.isLoading = false
       },
       error: () => {
@@ -169,10 +196,48 @@ export class AssetsFormComponent implements OnInit {
   }
 
   private scrollToFirstError(): void {
-    requestAnimationFrame(() => {
-      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    })
+    scrollToFirstInvalidField(this.elRef.nativeElement as HTMLElement)
+  }
+
+  // Badges de error por sección — cuentan controles inválidos+touched de los campos
+  // de cada tarjeta visual (un único FormGroup, sin subgrupos por sección).
+  basicInfoErrorCount(): number {
+    return this.countSectionErrors(['name', 'description', 'type', 'category'])
+  }
+
+  manufacturerErrorCount(): number {
+    return this.countSectionErrors(['manufacturer', 'model', 'serialNumber'])
+  }
+
+  statusErrorCount(): number {
+    return this.countSectionErrors(['status', 'condition'])
+  }
+
+  purchaseInfoErrorCount(): number {
+    return this.countSectionErrors(['purchasePrice', 'purchaseDate', 'vendor', 'invoiceNumber', 'warrantyExpiry'])
+  }
+
+  depreciationErrorCount(): number {
+    return this.countSectionErrors(['depreciationMethod', 'usefulLifeYears', 'salvageValue'])
+  }
+
+  locationErrorCount(): number {
+    return this.countSectionErrors(['location', 'room', 'building', 'floor'])
+  }
+
+  maintenanceErrorCount(): number {
+    return this.countSectionErrors(['maintenanceIntervalMonths', 'lastMaintenanceDate'])
+  }
+
+  notesErrorCount(): number {
+    return this.countSectionErrors(['notes'])
+  }
+
+  private countSectionErrors(fieldNames: string[]): number {
+    return fieldNames.filter(name => {
+      const c = this.assetForm.get(name)
+      return !!c && c.invalid && c.touched
+    }).length
   }
 
   goBack(): void {

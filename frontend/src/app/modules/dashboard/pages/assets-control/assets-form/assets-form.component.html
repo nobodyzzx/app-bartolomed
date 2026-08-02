@@ -37,7 +37,10 @@
             <span class="material-symbols-outlined msz-20">info</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información Básica</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Información Básica
+              <app-section-error-badge [count]="basicInfoErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Nombre, tipo, descripción y categoría</p>
           </div>
         </div>
@@ -91,7 +94,10 @@
             <span class="material-symbols-outlined msz-20">manufacturing</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Fabricante y Modelo</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Fabricante y Modelo
+              <app-section-error-badge [count]="manufacturerErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Fabricante, modelo y número de serie</p>
           </div>
         </div>
@@ -131,7 +137,10 @@
             <span class="material-symbols-outlined msz-20">health_and_safety</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Estado y Condición</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Estado y Condición
+              <app-section-error-badge [count]="statusErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Estado operativo y condición física del activo</p>
           </div>
         </div>
@@ -167,7 +176,10 @@
             <span class="material-symbols-outlined msz-20">shopping_cart</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información de Compra</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Información de Compra
+              <app-section-error-badge [count]="purchaseInfoErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Precio, fechas, proveedor y garantía</p>
           </div>
         </div>
@@ -185,30 +197,45 @@
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Fecha de Compra</mat-label>
               <mat-icon matPrefix class="text-green-400">calendar_today</mat-icon>
-              <input matInput type="date" formControlName="purchaseDate" required />
+              <input matInput [matDatepicker]="purchaseDatePicker" formControlName="purchaseDate" placeholder="dd/mm/aaaa" required />
+              <mat-datepicker-toggle matIconSuffix [for]="purchaseDatePicker" />
+              <mat-datepicker #purchaseDatePicker />
               @if (assetForm.get('purchaseDate')?.hasError('required')) {
                 <mat-error>La fecha de compra es requerida</mat-error>
               }
             </mat-form-field>
 
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Proveedor</mat-label>
-              <mat-icon matPrefix class="text-green-400">store</mat-icon>
-              <input matInput formControlName="vendor" placeholder="Nombre del proveedor" />
-            </mat-form-field>
+            @if (showMorePurchaseFields) {
+              <mat-form-field appearance="outline" class="w-full animate-field-reveal">
+                <mat-label>Proveedor</mat-label>
+                <mat-icon matPrefix class="text-green-400">store</mat-icon>
+                <input matInput formControlName="vendor" placeholder="Nombre del proveedor" />
+              </mat-form-field>
 
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Número de Factura</mat-label>
-              <mat-icon matPrefix class="text-green-400">receipt</mat-icon>
-              <input matInput formControlName="invoiceNumber" placeholder="Ej: INV-2024-001" />
-            </mat-form-field>
+              <mat-form-field appearance="outline" class="w-full animate-field-reveal">
+                <mat-label>Número de Factura</mat-label>
+                <mat-icon matPrefix class="text-green-400">receipt</mat-icon>
+                <input matInput formControlName="invoiceNumber" placeholder="Ej: INV-2024-001" />
+              </mat-form-field>
 
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Vencimiento de Garantía</mat-label>
-              <mat-icon matPrefix class="text-green-400">verified</mat-icon>
-              <input matInput type="date" formControlName="warrantyExpiry" />
-            </mat-form-field>
+              <mat-form-field appearance="outline" class="w-full animate-field-reveal">
+                <mat-label>Vencimiento de Garantía</mat-label>
+                <mat-icon matPrefix class="text-green-400">verified</mat-icon>
+                <input matInput [matDatepicker]="warrantyExpiryPicker" formControlName="warrantyExpiry" placeholder="dd/mm/aaaa" />
+                <mat-datepicker-toggle matIconSuffix [for]="warrantyExpiryPicker" />
+                <mat-datepicker #warrantyExpiryPicker />
+              </mat-form-field>
+            }
           </div>
+
+          <button
+            type="button"
+            (click)="showMorePurchaseFields = !showMorePurchaseFields"
+            class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800 border-0 bg-transparent p-0 cursor-pointer"
+          >
+            <span class="material-symbols-outlined msz-18">{{ showMorePurchaseFields ? 'expand_less' : 'expand_more' }}</span>
+            {{ showMorePurchaseFields ? 'Mostrar menos campos' : 'Mostrar más campos (proveedor, factura, garantía)' }}
+          </button>
         </div>
       </div>
 
@@ -219,34 +246,50 @@
             <span class="material-symbols-outlined msz-20">trending_down</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Depreciación</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Depreciación
+              <app-section-error-badge [count]="depreciationErrorCount()" />
+              <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium ml-2">Opcional</span>
+            </h3>
             <p class="text-sm text-slate-500 m-0">Método, vida útil y valor residual</p>
           </div>
         </div>
         <div class="p-6">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Método de Depreciación</mat-label>
-              <mat-icon matPrefix class="text-teal-400">calculate</mat-icon>
-              <mat-select formControlName="depreciationMethod">
-                @for (method of depreciationMethods; track method) {
-                  <mat-option [value]="method.value">{{ method.label }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
+          @if (showMoreDepreciationFields) {
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-field-reveal">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Método de Depreciación</mat-label>
+                <mat-icon matPrefix class="text-teal-400">calculate</mat-icon>
+                <mat-select formControlName="depreciationMethod">
+                  @for (method of depreciationMethods; track method) {
+                    <mat-option [value]="method.value">{{ method.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
 
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Vida Útil (años)</mat-label>
-              <mat-icon matPrefix class="text-teal-400">schedule</mat-icon>
-              <input matInput type="number" formControlName="usefulLifeYears" min="1" />
-            </mat-form-field>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Vida Útil (años)</mat-label>
+                <mat-icon matPrefix class="text-teal-400">schedule</mat-icon>
+                <input matInput type="number" formControlName="usefulLifeYears" min="1" />
+              </mat-form-field>
 
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Valor Residual</mat-label>
-              <mat-icon matPrefix class="text-teal-400">savings</mat-icon>
-              <input matInput type="number" formControlName="salvageValue" min="0" />
-            </mat-form-field>
-          </div>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Valor Residual</mat-label>
+                <mat-icon matPrefix class="text-teal-400">savings</mat-icon>
+                <input matInput type="number" formControlName="salvageValue" min="0" />
+              </mat-form-field>
+            </div>
+          }
+
+          <button
+            type="button"
+            (click)="showMoreDepreciationFields = !showMoreDepreciationFields"
+            class="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800 border-0 bg-transparent p-0 cursor-pointer"
+            [class.mt-4]="showMoreDepreciationFields"
+          >
+            <span class="material-symbols-outlined msz-18">{{ showMoreDepreciationFields ? 'expand_less' : 'expand_more' }}</span>
+            {{ showMoreDepreciationFields ? 'Ocultar depreciación' : 'Configurar depreciación (método, vida útil, valor residual)' }}
+          </button>
         </div>
       </div>
 
@@ -257,7 +300,10 @@
             <span class="material-symbols-outlined msz-20">location_on</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Ubicación</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Ubicación
+              <app-section-error-badge [count]="locationErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Sala, edificio y piso del activo</p>
           </div>
         </div>
@@ -275,18 +321,29 @@
               <input matInput formControlName="room" placeholder="Ej: 102" />
             </mat-form-field>
 
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Edificio</mat-label>
-              <mat-icon matPrefix class="text-slate-400">apartment</mat-icon>
-              <input matInput formControlName="building" placeholder="Ej: Edificio Principal" />
-            </mat-form-field>
+            @if (showMoreLocationFields) {
+              <mat-form-field appearance="outline" class="w-full animate-field-reveal">
+                <mat-label>Edificio</mat-label>
+                <mat-icon matPrefix class="text-slate-400">apartment</mat-icon>
+                <input matInput formControlName="building" placeholder="Ej: Edificio Principal" />
+              </mat-form-field>
 
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Piso</mat-label>
-              <mat-icon matPrefix class="text-slate-400">layers</mat-icon>
-              <input matInput formControlName="floor" placeholder="Ej: 1" />
-            </mat-form-field>
+              <mat-form-field appearance="outline" class="w-full animate-field-reveal">
+                <mat-label>Piso</mat-label>
+                <mat-icon matPrefix class="text-slate-400">layers</mat-icon>
+                <input matInput formControlName="floor" placeholder="Ej: 1" />
+              </mat-form-field>
+            }
           </div>
+
+          <button
+            type="button"
+            (click)="showMoreLocationFields = !showMoreLocationFields"
+            class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800 border-0 bg-transparent p-0 cursor-pointer"
+          >
+            <span class="material-symbols-outlined msz-18">{{ showMoreLocationFields ? 'expand_less' : 'expand_more' }}</span>
+            {{ showMoreLocationFields ? 'Mostrar menos campos' : 'Mostrar más campos (edificio, piso)' }}
+          </button>
         </div>
       </div>
 
@@ -297,7 +354,10 @@
             <span class="material-symbols-outlined msz-20">build</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Mantenimiento</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Mantenimiento
+              <app-section-error-badge [count]="maintenanceErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Intervalo y último mantenimiento</p>
           </div>
         </div>
@@ -312,7 +372,9 @@
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Último Mantenimiento</mat-label>
               <mat-icon matPrefix class="text-amber-400">history</mat-icon>
-              <input matInput type="date" formControlName="lastMaintenanceDate" />
+              <input matInput [matDatepicker]="lastMaintenanceDatePicker" formControlName="lastMaintenanceDate" placeholder="dd/mm/aaaa" />
+              <mat-datepicker-toggle matIconSuffix [for]="lastMaintenanceDatePicker" />
+              <mat-datepicker #lastMaintenanceDatePicker />
             </mat-form-field>
           </div>
         </div>
@@ -325,7 +387,10 @@
             <span class="material-symbols-outlined msz-20">note</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Notas Adicionales</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Notas Adicionales
+              <app-section-error-badge [count]="notesErrorCount()" />
+            </h3>
           </div>
         </div>
         <div class="p-6">
