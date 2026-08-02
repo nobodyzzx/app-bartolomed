@@ -134,12 +134,12 @@
             </ng-container>
             <ng-container matColumnDef="gender">
               <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Género</span>
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Sexo</span>
               </th>
               <td mat-cell *matCellDef="let patient" class="px-6 py-4">
                 <app-status-badge
-                  [label]="patient.gender === Gender.MALE ? 'Masculino' : patient.gender === Gender.FEMALE ? 'Femenino' : 'Otro'"
-                  [color]="patient.gender === Gender.MALE ? 'indigo' : patient.gender === Gender.FEMALE ? 'pink' : 'slate'"
+                  [label]="patient.gender === Gender.MALE ? 'Masculino' : 'Femenino'"
+                  [color]="patient.gender === Gender.MALE ? 'indigo' : 'pink'"
                   />
               </td>
             </ng-container>

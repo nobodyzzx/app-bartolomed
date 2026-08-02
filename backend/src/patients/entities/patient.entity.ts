@@ -14,7 +14,6 @@ import { User } from '../../users/entities/user.entity';
 export enum Gender {
   MALE = 'male',
   FEMALE = 'female',
-  OTHER = 'other',
 }
 
 export enum BloodType {
