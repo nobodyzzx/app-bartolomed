@@ -109,28 +109,28 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           <app-stat-card
             label="Consultas"
-            [value]="getTypeCount('CONSULTATION')"
+            [value]="getTypeCount(RecordType.CONSULTATION)"
             sublabel="Consultas generales"
             icon="medical_services"
             color="blue"
           />
           <app-stat-card
             label="Emergencias"
-            [value]="getTypeCount('EMERGENCY')"
+            [value]="getTypeCount(RecordType.EMERGENCY)"
             sublabel="Atención urgente"
             icon="emergency"
             color="red"
           />
           <app-stat-card
             label="Seguimientos"
-            [value]="getTypeCount('FOLLOW_UP')"
+            [value]="getTypeCount(RecordType.FOLLOW_UP)"
             sublabel="Reconsultas"
             icon="refresh"
             color="green"
           />
           <app-stat-card
             label="Cirugías"
-            [value]="getTypeCount('SURGERY')"
+            [value]="getTypeCount(RecordType.SURGERY)"
             sublabel="Procedimientos quirúrgicos"
             icon="healing"
             color="purple"
