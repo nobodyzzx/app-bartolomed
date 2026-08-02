@@ -9,19 +9,18 @@ import { EmptyStateComponent } from './components/empty-state/empty-state.compon
 import { NavbarComponent } from './components/navbar/navbar.component'
 import { PageHeaderComponent } from './components/page-header/page-header.component'
 import { SearchBarComponent } from './components/search-bar/search-bar.component'
+import { SectionErrorBadgeComponent } from './components/section-error-badge/section-error-badge.component'
 import { SidebarMenuItemComponent } from './components/sidebar/sidebar-menu-item/sidebar-menu-item.component'
 import { SidebarComponent } from './components/sidebar/sidebar.component'
 import { SkeletonTableComponent } from './components/skeleton-table/skeleton-table.component'
 import { StatCardComponent } from './components/stat-card/stat-card.component'
 import { StatusBadgeComponent } from './components/status-badge/status-badge.component'
-import { PhoneMaskDirective } from './directives/phone-mask.directive'
 
 @NgModule({
   declarations: [
     SidebarComponent,
     SidebarMenuItemComponent,
     NavbarComponent,
-    PhoneMaskDirective,
     ConfirmDialogComponent,
   ],
   imports: [
@@ -37,13 +36,13 @@ import { PhoneMaskDirective } from './directives/phone-mask.directive'
     EmptyStateComponent,
     SkeletonTableComponent,
     StatusBadgeComponent,
+    SectionErrorBadgeComponent,
   ],
   exports: [
     SidebarComponent,
     NavbarComponent,
     CommonModule,
     MaterialModule,
-    PhoneMaskDirective,
     ConfirmDialogComponent,
     // Componentes compartidos y directivas de terceros
     BaseChartDirective,
@@ -53,6 +52,7 @@ import { PhoneMaskDirective } from './directives/phone-mask.directive'
     EmptyStateComponent,
     SkeletonTableComponent,
     StatusBadgeComponent,
+    SectionErrorBadgeComponent,
   ],
 })
 export class SharedModule {}
