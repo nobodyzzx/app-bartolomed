@@ -25,7 +25,10 @@
             <span class="material-symbols-outlined msz-20">business</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información Básica</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Información Básica
+              <app-section-error-badge [count]="basicInfoErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Datos principales de la clínica</p>
           </div>
         </div>
@@ -52,7 +55,10 @@
             <span class="material-symbols-outlined msz-20">contact_phone</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información de Contacto</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Información de Contacto
+              <app-section-error-badge [count]="contactErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Datos de contacto de la clínica</p>
           </div>
         </div>
@@ -80,7 +86,10 @@
             <span class="material-symbols-outlined msz-20">location_on</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Dirección</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Dirección
+              <app-section-error-badge [count]="addressErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Ubicación de la clínica</p>
           </div>
         </div>
@@ -131,7 +140,10 @@
             <span class="material-symbols-outlined msz-20">toggle_on</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Estado de la Clínica</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Estado de la Clínica
+              <app-section-error-badge [count]="statusErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Activar o desactivar la clínica</p>
           </div>
         </div>

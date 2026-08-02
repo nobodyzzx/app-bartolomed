@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { ErrorService } from '../../../../../../shared/components/services/error.service'
+import { scrollToFirstInvalidField } from '../../../../../../shared/utils/form-errors.util'
 import { VALIDATION_PATTERNS } from '../../../../../../shared/validators/validation-patterns'
 import { CreateClinicDto, UpdateClinicDto } from '../interfaces'
 import { ClinicsService } from '../services'
@@ -312,10 +313,32 @@ export class ClinicFormComponent implements OnInit {
   }
 
   private scrollToFirstError(): void {
-    requestAnimationFrame(() => {
-      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    })
+    scrollToFirstInvalidField(this.elRef.nativeElement as HTMLElement)
+  }
+
+  // Badges de error por sección — cuentan controles inválidos+touched de los campos
+  // de cada tarjeta visual (un único FormGroup, sin subgrupos por sección).
+  basicInfoErrorCount(): number {
+    return this.countSectionErrors(['name', 'description'])
+  }
+
+  contactErrorCount(): number {
+    return this.countSectionErrors(['phone', 'email'])
+  }
+
+  addressErrorCount(): number {
+    return this.countSectionErrors(['address', 'departamento', 'provincia', 'localidad'])
+  }
+
+  statusErrorCount(): number {
+    return this.countSectionErrors(['isActive'])
+  }
+
+  private countSectionErrors(fieldNames: string[]): number {
+    return fieldNames.filter(name => {
+      const c = this.clinicForm.get(name)
+      return !!c && c.invalid && c.touched
+    }).length
   }
 
   onCancel() {
