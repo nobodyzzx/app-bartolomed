@@ -33,7 +33,10 @@
               <span class="material-symbols-outlined msz-20">people</span>
             </div>
             <div>
-              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Participantes</h3>
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+                Participantes
+                <app-section-error-badge [count]="participantsErrorCount()" />
+              </h3>
               <p class="text-sm text-slate-500 m-0">Paciente, doctor y clínica</p>
             </div>
           </div>
@@ -41,7 +44,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Paciente</mat-label>
-                <mat-select formControlName="patientId" required [disabled]="patients.length === 0">
+                <mat-select formControlName="patientId" required>
                   @if (patients.length === 0) {
                     <mat-option disabled>No hay pacientes disponibles</mat-option>
                   }
@@ -58,7 +61,7 @@
               </mat-form-field>
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Doctor</mat-label>
-                <mat-select formControlName="doctorId" required [disabled]="doctors.length === 0"
+                <mat-select formControlName="doctorId" required
                   (selectionChange)="checkAvailability()">
                   @if (doctors.length === 0) {
                     <mat-option disabled>No hay doctores disponibles</mat-option>
@@ -76,7 +79,7 @@
               </mat-form-field>
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Clínica</mat-label>
-                <mat-select formControlName="clinicId" required [disabled]="clinics.length === 0">
+                <mat-select formControlName="clinicId" required>
                   @if (clinics.length === 0) {
                     <mat-option disabled>No hay clínicas disponibles</mat-option>
                   }
@@ -101,7 +104,10 @@
               <span class="material-symbols-outlined msz-20">schedule</span>
             </div>
             <div>
-              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Fecha y Hora</h3>
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+                Fecha y Hora
+                <app-section-error-badge [count]="scheduleErrorCount()" />
+              </h3>
               <p class="text-sm text-slate-500 m-0">Programe la fecha y duración de la cita</p>
             </div>
           </div>
@@ -109,12 +115,15 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Fecha</mat-label>
-                <input matInput [matDatepicker]="datePicker" formControlName="appointmentDate" required (dateChange)="checkAvailability()" placeholder="DD/MM/AAAA" readonly/>
+                <input matInput [matDatepicker]="datePicker" formControlName="appointmentDate" required (dateChange)="checkAvailability()" placeholder="DD/MM/AAAA" [min]="today" readonly/>
                 <mat-icon matPrefix class="text-green-400">calendar_today</mat-icon>
                 <mat-datepicker-toggle matSuffix [for]="datePicker"></mat-datepicker-toggle>
                 <mat-datepicker #datePicker></mat-datepicker>
                 @if (appointmentForm.get('appointmentDate')?.hasError('required')) {
                   <mat-error>La fecha es obligatoria</mat-error>
+                }
+                @if (appointmentForm.get('appointmentDate')?.hasError('matDatepickerMin')) {
+                  <mat-error>La fecha no puede ser en el pasado</mat-error>
                 }
               </mat-form-field>
               <mat-form-field appearance="outline" class="w-full">
@@ -149,7 +158,10 @@
               <span class="material-symbols-outlined msz-20">category</span>
             </div>
             <div>
-              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Clasificación</h3>
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+                Clasificación
+                <app-section-error-badge [count]="classificationErrorCount()" />
+              </h3>
               <p class="text-sm text-slate-500 m-0">Tipo y prioridad de la cita</p>
             </div>
           </div>
@@ -196,7 +208,10 @@
               <span class="material-symbols-outlined msz-20">description</span>
             </div>
             <div>
-              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Detalles de la Consulta</h3>
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+                Detalles de la Consulta
+                <app-section-error-badge [count]="detailsErrorCount()" />
+              </h3>
               <p class="text-sm text-slate-500 m-0">Motivo y observaciones adicionales</p>
             </div>
           </div>

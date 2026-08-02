@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormControl, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
+import { countInvalidFields, scrollToFirstInvalidField } from '../../../../shared/utils/form-errors.util'
 import { User } from '../../../auth/interfaces/user.interface'
 import { Clinic } from '../admin/clinics/interfaces'
 import { ClinicsService } from '../admin/clinics/services/clinics.service'
@@ -61,10 +62,18 @@ export class AppointmentFormComponent implements OnInit {
     { value: 120, label: '2 horas' },
   ]
 
+  // Límite del datepicker de la cita: no se puede agendar en el pasado.
+  protected readonly today = new Date()
+
   public appointmentForm: FormGroup = new FormGroup({
-    patientId: new FormControl('', Validators.required),
-    doctorId: new FormControl('', Validators.required),
-    clinicId: new FormControl('', Validators.required),
+    // disabled se fija en el estado inicial del FormControl (sintaxis { value, disabled }),
+    // no vía [disabled] en la plantilla — mezclar ambos deja al FormControl real
+    // desincronizado del DOM. Arrancan deshabilitados porque patients/doctors/clinics se
+    // cargan async en loadInitialData(); se habilitan ahí mismo cuando cada lista deja de
+    // estar vacía (ver updateSelectControlDisabled()).
+    patientId: new FormControl({ value: '', disabled: true }, Validators.required),
+    doctorId: new FormControl({ value: '', disabled: true }, Validators.required),
+    clinicId: new FormControl({ value: '', disabled: true }, Validators.required),
     appointmentDate: new FormControl<Date | null>(null, Validators.required),
     appointmentTime: new FormControl('', Validators.required),
     duration: new FormControl(30, Validators.required),
@@ -131,6 +140,7 @@ export class AppointmentFormComponent implements OnInit {
     this.patientsService.findAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: patients => {
         this.patients = patients.data.filter(p => p.isActive)
+        this.updateSelectControlDisabled('patientId', this.patients.length)
       },
       error: () => {},
     })
@@ -139,6 +149,7 @@ export class AppointmentFormComponent implements OnInit {
     this.usersService.getUsers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: result => {
         this.doctors = result.data.filter(u => u.isActive && u.roles.includes('doctor'))
+        this.updateSelectControlDisabled('doctorId', this.doctors.length)
       },
       error: () => {},
     })
@@ -147,6 +158,7 @@ export class AppointmentFormComponent implements OnInit {
     this.clinicsService.findAll(true).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: clinics => {
         this.clinics = clinics
+        this.updateSelectControlDisabled('clinicId', this.clinics.length)
         // Si solo hay una clínica, pre-seleccionarla
         if (this.clinics.length === 1) {
           this.appointmentForm.patchValue({
@@ -159,6 +171,18 @@ export class AppointmentFormComponent implements OnInit {
         this.isLoading = false
       },
     })
+  }
+
+  // Paciente/doctor/clínica arrancan deshabilitados (listas vacías hasta que cargan);
+  // habilitar/deshabilitar acá según llegue contenido, nunca vía [disabled] en la plantilla.
+  private updateSelectControlDisabled(controlName: string, optionsLength: number): void {
+    const control = this.appointmentForm.get(controlName)
+    if (!control) return
+    if (optionsLength > 0) {
+      control.enable({ emitEvent: false })
+    } else {
+      control.disable({ emitEvent: false })
+    }
   }
 
   loadAppointmentData(id: string): void {
@@ -304,10 +328,26 @@ export class AppointmentFormComponent implements OnInit {
   }
 
   private scrollToFirstError(): void {
-    requestAnimationFrame(() => {
-      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    })
+    scrollToFirstInvalidField(this.elRef.nativeElement as HTMLElement)
+  }
+
+  // Badges de error por sección — appointmentForm es un único FormGroup (no uno por
+  // sección como patient-form), así que cada método acota el conteo a los campos de su
+  // propia tarjeta visual. Visibles recién tras markAllAsTouched() en onSubmit().
+  participantsErrorCount(): number {
+    return countInvalidFields(this.appointmentForm, ['patientId', 'doctorId', 'clinicId'])
+  }
+
+  scheduleErrorCount(): number {
+    return countInvalidFields(this.appointmentForm, ['appointmentDate', 'appointmentTime', 'duration'])
+  }
+
+  classificationErrorCount(): number {
+    return countInvalidFields(this.appointmentForm, ['appointmentType', 'priority'])
+  }
+
+  detailsErrorCount(): number {
+    return countInvalidFields(this.appointmentForm, ['reason', 'notes'])
   }
 
   goBack() {
