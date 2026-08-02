@@ -78,7 +78,9 @@ describe('PatientFormComponent', () => {
     it('prefija insuranceForm.clinicId con el contexto de clínica activo', () => {
       clinicCtx.clinicId = 'clinic-9'
       component = createComponent()
-      expect(component.insuranceForm.value.clinicId).toBe('clinic-9')
+      // clinicId queda disabled cuando hay contexto de clínica — .value lo excluye a
+      // propósito (comportamiento estándar de Angular); getRawValue() sí lo incluye.
+      expect(component.insuranceForm.getRawValue().clinicId).toBe('clinic-9')
       expect(component.ctxClinicId).toBe('clinic-9')
     })
 
@@ -110,7 +112,7 @@ describe('PatientFormComponent', () => {
       clinicCtx.clinicId = 'clinic-1'
       component = createComponent()
       component.ngOnInit()
-      expect(component.insuranceForm.value.clinicId).toBe('clinic-1')
+      expect(component.insuranceForm.getRawValue().clinicId).toBe('clinic-1')
     })
 
     it('si el contexto no está en la lista cargada, busca y agrega esa clínica', () => {

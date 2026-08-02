@@ -6,6 +6,7 @@ import { of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 import { AlertService } from '../../../../../core/services/alert.service'
 import { CanComponentDeactivate, confirmDiscardChanges } from '../../../../../core/guards/can-deactivate.guard'
+import { countInvalidFields, scrollToFirstInvalidField } from '../../../../../shared/utils/form-errors.util'
 import { VALIDATION_PATTERNS } from '../../../../../shared/validators/validation-patterns'
 import { ClinicContextService } from '../../../../clinics/services/clinic-context.service'
 import { Clinic } from '../../admin/clinics/interfaces/clinic.interface'
@@ -16,7 +17,6 @@ import { PatientsService } from '../services'
 @Component({
     selector: 'app-patient-form',
     templateUrl: './patient-form.component.html',
-    styleUrl: './patient-form.component.css',
     standalone: false
 })
 export class PatientFormComponent implements OnInit, CanComponentDeactivate {
@@ -47,14 +47,26 @@ export class PatientFormComponent implements OnInit, CanComponentDeactivate {
   clinics: Clinic[] = []
   isClinicsLoading = false
 
+  // Fase 2 rediseño: Grupo Sanguíneo/Estado Civil/Ocupación arrancan ocultos para
+  // reducir la densidad visual de "Información Personal" — se auto-expande en
+  // populateForms() si el paciente ya tiene alguno de estos datos cargados.
+  showMorePersonalFields = false
+
   // Contexto de clínica (si existe, bloquea selector)
   public readonly ctxClinicId: string | null = null
+
+  // Límites del datepicker de fecha de nacimiento: sin fechas futuras ni edades irreales (>150 años)
+  protected readonly today = new Date()
+  protected readonly minBirthDate = new Date(
+    this.today.getFullYear() - 150,
+    this.today.getMonth(),
+    this.today.getDate(),
+  )
 
   // Options for dropdowns
   protected readonly genderOptions = [
     { value: Gender.MALE, label: 'Masculino' },
     { value: Gender.FEMALE, label: 'Femenino' },
-    { value: Gender.OTHER, label: 'Otro' },
   ]
 
   protected readonly maritalStatusOptions = [
@@ -76,6 +88,50 @@ export class PatientFormComponent implements OnInit, CanComponentDeactivate {
     { value: BloodType.O_NEGATIVE, label: 'O-' },
   ]
 
+  // País, departamento y ciudad — app de alcance nacional (Bolivia), por defecto La Paz/Yungas
+  protected readonly departmentOptions = [
+    'La Paz', 'Cochabamba', 'Santa Cruz', 'Oruro', 'Potosí', 'Chuquisaca', 'Tarija', 'Beni', 'Pando',
+  ]
+  protected readonly countryOptions = [
+    'Bolivia', 'Perú', 'Chile', 'Argentina', 'Brasil', 'Paraguay', 'Colombia', 'Ecuador',
+  ]
+  // Ciudades principales de La Paz + municipios de Sud Yungas (zona de cobertura de las clínicas seed)
+  protected readonly cityOptions = [
+    'La Paz', 'El Alto', 'Viacha', 'Achocalla', 'Coroico', 'Caranavi', 'Copacabana', 'Sorata', 'Guanay',
+    'Palos Blancos', 'Chulumani', 'Irupana', 'Yanacachi', 'Cajuata',
+  ]
+
+  filteredCountries(): string[] {
+    return this.filterOptions(this.countryOptions, this.contactInfoForm?.get('country')?.value)
+  }
+
+  filteredCities(): string[] {
+    return this.filterOptions(this.cityOptions, this.contactInfoForm?.get('city')?.value)
+  }
+
+  /**
+   * Si el valor actual ya coincide exacto con una opción (recién seleccionada, o el
+   * default sin tocar), devuelve la lista completa — así el usuario ve todas las
+   * opciones al abrir el panel sin tener que borrar lo que ya está escrito. Solo
+   * filtra por coincidencia parcial mientras está escribiendo texto nuevo.
+   */
+  private filterOptions(options: string[], rawValue: unknown): string[] {
+    const v = String(rawValue ?? '').toLowerCase()
+    if (!v || options.some(o => o.toLowerCase() === v)) return options
+    return options.filter(o => o.toLowerCase().includes(v))
+  }
+
+  // El select de Departamento y el autocomplete de Ciudad solo tienen sentido para
+  // Bolivia (y, para Ciudad, solo dentro de La Paz) — fuera de ahí no hay lista curada,
+  // así que se muestran como texto libre para no sugerir opciones erróneas.
+  isBoliviaSelected(): boolean {
+    return this.contactInfoForm?.get('country')?.value === 'Bolivia'
+  }
+
+  isLaPazSelected(): boolean {
+    return this.contactInfoForm?.get('state')?.value === 'La Paz'
+  }
+
   constructor(
     private fb: FormBuilder,
     public router: Router,
@@ -93,6 +149,31 @@ export class PatientFormComponent implements OnInit, CanComponentDeactivate {
   ngOnInit(): void {
     this.loadClinics()
     this.checkEditMode()
+    this.watchLocationChanges()
+  }
+
+  /**
+   * Limpia Departamento/Ciudad cuando dejan de aplicar (país ya no es Bolivia, o
+   * departamento ya no es La Paz) — evita dejar un valor "huérfano" visible como
+   * texto libre que no corresponde a la nueva selección. No dispara durante
+   * populateForms() porque ese patchValue usa { emitEvent: false }.
+   */
+  private watchLocationChanges(): void {
+    this.contactInfoForm.get('country')!.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(country => {
+        if (country !== 'Bolivia') {
+          this.contactInfoForm.patchValue({ state: '', city: '' }, { emitEvent: false })
+        }
+      })
+
+    this.contactInfoForm.get('state')!.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(state => {
+        if (state !== 'La Paz') {
+          this.contactInfoForm.get('city')!.setValue('', { emitEvent: false })
+        }
+      })
   }
 
   private initializeForms(): void {
@@ -117,14 +198,14 @@ export class PatientFormComponent implements OnInit, CanComponentDeactivate {
     })
 
     // Paso 2: Información de Contacto
+    // Teléfono: app de alcance nacional (Bolivia) — 8 dígitos, sin prefijo +591.
     this.contactInfoForm = this.fb.group({
       email: ['', [Validators.email]],
-      phone: ['', [Validators.pattern(VALIDATION_PATTERNS.phone)]],
+      phone: ['', [Validators.pattern(VALIDATION_PATTERNS.phoneBolivia)]],
       address: [''],
       city: [''],
-      state: [''],
-      zipCode: [''],
-      country: [''],
+      state: ['La Paz'],
+      country: ['Bolivia'],
     })
 
     // Información médica se gestionará en Expedientes Médicos (no en el alta del paciente)
@@ -132,7 +213,7 @@ export class PatientFormComponent implements OnInit, CanComponentDeactivate {
     // Paso 4: Contacto de Emergencia
     this.emergencyContactForm = this.fb.group({
       emergencyContactName: [''],
-      emergencyContactPhone: ['', [Validators.pattern(VALIDATION_PATTERNS.phone)]],
+      emergencyContactPhone: ['', [Validators.pattern(VALIDATION_PATTERNS.phoneBolivia)]],
       emergencyContactRelationship: [''],
     })
 
@@ -140,7 +221,10 @@ export class PatientFormComponent implements OnInit, CanComponentDeactivate {
     this.insuranceForm = this.fb.group({
       insuranceProvider: [''],
       insuranceNumber: [''],
-      clinicId: [this.clinicCtx.clinicId, Validators.required],
+      // disabled se fija acá (estado inicial del FormControl), no vía [disabled] en la
+      // plantilla — mezclar ambos hace que Angular ignore el binding de plantilla y deja
+      // el FormControl real desincronizado del DOM.
+      clinicId: [{ value: this.clinicCtx.clinicId, disabled: !!this.ctxClinicId }, Validators.required],
     })
   }
 
@@ -274,15 +358,20 @@ export class PatientFormComponent implements OnInit, CanComponentDeactivate {
       occupation: patient.occupation,
     })
 
+    // Si el paciente ya tiene alguno de estos datos, mostrarlos de entrada en vez
+    // de esconderlos detrás de "Mostrar más campos".
+    this.showMorePersonalFields = !!(patient.bloodType || patient.maritalStatus || patient.occupation)
+
+    // emitEvent: false — no debe disparar watchLocationChanges() (limpiaría
+    // state/city recién asignados si el paciente no es de Bolivia/La Paz).
     this.contactInfoForm.patchValue({
       email: patient.email,
       phone: patient.phone,
       address: patient.address,
       city: patient.city,
       state: patient.state,
-      zipCode: patient.zipCode,
       country: patient.country,
-    })
+    }, { emitEvent: false })
 
     // Información médica se completará en el expediente (omitida en alta)
 
@@ -351,7 +440,7 @@ export class PatientFormComponent implements OnInit, CanComponentDeactivate {
     if (p['lastName']?.invalid)       missing.push('Apellidos')
     if (p['documentNumber']?.invalid) missing.push('Número de documento (CI)')
     if (p['birthDate']?.invalid)      missing.push('Fecha de nacimiento')
-    if (p['gender']?.invalid)         missing.push('Género')
+    if (p['gender']?.invalid)         missing.push('Sexo')
     if (c['email']?.invalid)          missing.push('Correo electrónico (formato inválido)')
     if (c['phone']?.invalid)          missing.push('Teléfono (formato inválido)')
     if (i['clinicId']?.invalid)       missing.push('Clínica asignada')
@@ -370,13 +459,26 @@ export class PatientFormComponent implements OnInit, CanComponentDeactivate {
   }
 
   private scrollToFirstError(): void {
-    requestAnimationFrame(() => {
-      const el = this.elRef.nativeElement as HTMLElement
-      const invalid = el.querySelector('.mat-form-field-invalid')
-      if (invalid) {
-        invalid.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      }
-    })
+    scrollToFirstInvalidField(this.elRef.nativeElement as HTMLElement)
+  }
+
+  // Badges de error por sección — cuentan controles inválidos+touched de cada
+  // sub-formulario, visibles recién después de un intento de envío fallido
+  // (markAllAsTouched en onSubmit() es lo que los "touched" de golpe).
+  personalInfoErrorCount(): number {
+    return countInvalidFields(this.personalInfoForm)
+  }
+
+  contactInfoErrorCount(): number {
+    return countInvalidFields(this.contactInfoForm)
+  }
+
+  emergencyContactErrorCount(): number {
+    return countInvalidFields(this.emergencyContactForm)
+  }
+
+  insuranceErrorCount(): number {
+    return countInvalidFields(this.insuranceForm)
   }
 
   // Utilidad: calcular edad para mostrar junto a la fecha de nacimiento
@@ -455,7 +557,9 @@ export class PatientFormComponent implements OnInit, CanComponentDeactivate {
     const contactData = this.contactInfoForm.value
     // Sin información médica en este flujo; se completará en Expedientes Médicos
     const emergencyData = this.emergencyContactForm.value
-    const insuranceData = this.insuranceForm.value
+    // getRawValue(): clinicId puede estar disabled (bloqueado al contexto de clínica);
+    // .value excluiría controles disabled y se perdería el dato al guardar.
+    const insuranceData = this.insuranceForm.getRawValue()
 
     const raw = {
       ...personalData,

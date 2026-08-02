@@ -39,13 +39,16 @@
             <span class="material-symbols-outlined msz-20">person</span>
           </div>
           <div>
-            <h3 class="text-base font-semibold text-slate-900 leading-tight">Información Personal</h3>
+            <h3 class="text-base font-semibold text-slate-900 leading-tight flex items-center">
+              Información Personal
+              <app-section-error-badge [count]="personalInfoErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 leading-tight">Datos de identificación del paciente</p>
           </div>
         </div>
 
         <form [formGroup]="personalInfoForm" class="p-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5">
 
             <mat-form-field appearance="outline">
               <mat-label>Nombres</mat-label>
@@ -107,11 +110,18 @@
             <mat-form-field appearance="outline">
               <mat-label>Fecha de Nacimiento</mat-label>
               <mat-icon matPrefix class="text-blue-400">calendar_today</mat-icon>
-              <input matInput [matDatepicker]="picker" formControlName="birthDate" />
+              <input matInput [matDatepicker]="picker" formControlName="birthDate"
+                [min]="minBirthDate" [max]="today" placeholder="dd/mm/aaaa" />
               <mat-datepicker-toggle matIconSuffix [for]="picker" />
               <mat-datepicker #picker />
               @if (personalInfoForm.get('birthDate')?.hasError('required')) {
                 <mat-error>La fecha de nacimiento es requerida</mat-error>
+              }
+              @if (personalInfoForm.get('birthDate')?.hasError('matDatepickerMax')) {
+                <mat-error>La fecha no puede ser futura</mat-error>
+              }
+              @if (personalInfoForm.get('birthDate')?.hasError('matDatepickerMin')) {
+                <mat-error>Ingrese una fecha válida (máx. 150 años)</mat-error>
               }
               @if (getAge() !== null) {
                 <mat-hint>Edad: {{ getAge() }} años</mat-hint>
@@ -119,7 +129,7 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline">
-              <mat-label>Género</mat-label>
+              <mat-label>Sexo</mat-label>
               <mat-icon matPrefix class="text-blue-400">wc</mat-icon>
               <mat-select formControlName="gender">
                 @for (opt of genderOptions; track opt) {
@@ -127,38 +137,49 @@
                 }
               </mat-select>
               @if (personalInfoForm.get('gender')?.hasError('required')) {
-                <mat-error>El género es requerido</mat-error>
+                <mat-error>El sexo es requerido</mat-error>
               }
             </mat-form-field>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Grupo Sanguíneo</mat-label>
-              <mat-icon matPrefix class="text-blue-400">water_drop</mat-icon>
-              <mat-select formControlName="bloodType">
-                <mat-option [value]="null">No especificado</mat-option>
-                @for (opt of bloodTypeOptions; track opt) {
-                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
+            @if (showMorePersonalFields) {
+              <mat-form-field appearance="outline" class="animate-field-reveal">
+                <mat-label>Grupo Sanguíneo</mat-label>
+                <mat-icon matPrefix class="text-blue-400">water_drop</mat-icon>
+                <mat-select formControlName="bloodType">
+                  <mat-option [value]="null">No especificado</mat-option>
+                  @for (opt of bloodTypeOptions; track opt) {
+                    <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Estado Civil</mat-label>
-              <mat-icon matPrefix class="text-blue-400">people</mat-icon>
-              <mat-select formControlName="maritalStatus">
-                @for (opt of maritalStatusOptions; track opt) {
-                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
+              <mat-form-field appearance="outline" class="animate-field-reveal">
+                <mat-label>Estado Civil</mat-label>
+                <mat-icon matPrefix class="text-blue-400">people</mat-icon>
+                <mat-select formControlName="maritalStatus">
+                  @for (opt of maritalStatusOptions; track opt) {
+                    <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
 
-            <mat-form-field appearance="outline" class="md:col-span-2">
-              <mat-label>Ocupación</mat-label>
-              <mat-icon matPrefix class="text-blue-400">work</mat-icon>
-              <input matInput formControlName="occupation" placeholder="Ingrese ocupación" />
-            </mat-form-field>
+              <mat-form-field appearance="outline" class="md:col-span-2 animate-field-reveal">
+                <mat-label>Ocupación</mat-label>
+                <mat-icon matPrefix class="text-blue-400">work</mat-icon>
+                <input matInput formControlName="occupation" placeholder="Ingrese ocupación" />
+              </mat-form-field>
+            }
 
           </div>
+
+          <button
+            type="button"
+            (click)="showMorePersonalFields = !showMorePersonalFields"
+            class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800 border-0 bg-transparent p-0 cursor-pointer"
+          >
+            <span class="material-symbols-outlined msz-18">{{ showMorePersonalFields ? 'expand_less' : 'expand_more' }}</span>
+            {{ showMorePersonalFields ? 'Mostrar menos campos' : 'Mostrar más campos (grupo sanguíneo, estado civil, ocupación)' }}
+          </button>
         </form>
       </div>
 
@@ -171,13 +192,16 @@
             <span class="material-symbols-outlined msz-20">contact_mail</span>
           </div>
           <div>
-            <h3 class="text-base font-semibold text-slate-900 leading-tight">Contacto</h3>
+            <h3 class="text-base font-semibold text-slate-900 leading-tight flex items-center">
+              Contacto
+              <app-section-error-badge [count]="contactInfoErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 leading-tight">Información de contacto y ubicación</p>
           </div>
         </div>
 
         <form [formGroup]="contactInfoForm" class="p-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5">
 
             <mat-form-field appearance="outline">
               <mat-label>Email</mat-label>
@@ -191,9 +215,9 @@
             <mat-form-field appearance="outline">
               <mat-label>Teléfono</mat-label>
               <mat-icon matPrefix class="text-green-400">phone</mat-icon>
-              <input matInput formControlName="phone" placeholder="+591-xxxxxxxx" appPhoneMask />
+              <input matInput formControlName="phone" placeholder="Ej: 70123456" maxlength="8" />
               @if (contactInfoForm.get('phone')?.hasError('pattern')) {
-                <mat-error>Formato inválido. Ej: +591-70123456</mat-error>
+                <mat-error>Debe empezar con 6 o 7 y tener 8 dígitos. Ej: 70123456</mat-error>
               }
             </mat-form-field>
 
@@ -206,25 +230,41 @@
             <mat-form-field appearance="outline">
               <mat-label>Ciudad</mat-label>
               <mat-icon matPrefix class="text-green-400">location_city</mat-icon>
-              <input matInput formControlName="city" placeholder="Ciudad" />
+              @if (isBoliviaSelected() && isLaPazSelected()) {
+                <input matInput formControlName="city" placeholder="Ciudad" [matAutocomplete]="autoCity" />
+                <mat-autocomplete #autoCity="matAutocomplete">
+                  @for (c of filteredCities(); track c) {
+                    <mat-option [value]="c">{{ c }}</mat-option>
+                  }
+                </mat-autocomplete>
+              } @else {
+                <input matInput formControlName="city" placeholder="Ciudad" />
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Estado / Departamento</mat-label>
               <mat-icon matPrefix class="text-green-400">map</mat-icon>
-              <input matInput formControlName="state" placeholder="Estado" />
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Código Postal</mat-label>
-              <mat-icon matPrefix class="text-green-400">local_post_office</mat-icon>
-              <input matInput formControlName="zipCode" placeholder="Código postal" />
+              @if (isBoliviaSelected()) {
+                <mat-select formControlName="state">
+                  @for (d of departmentOptions; track d) {
+                    <mat-option [value]="d">{{ d }}</mat-option>
+                  }
+                </mat-select>
+              } @else {
+                <input matInput formControlName="state" placeholder="Estado / Provincia" />
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>País</mat-label>
               <mat-icon matPrefix class="text-green-400">public</mat-icon>
-              <input matInput formControlName="country" placeholder="País" />
+              <input matInput formControlName="country" placeholder="País" [matAutocomplete]="autoCountry" />
+              <mat-autocomplete #autoCountry="matAutocomplete">
+                @for (c of filteredCountries(); track c) {
+                  <mat-option [value]="c">{{ c }}</mat-option>
+                }
+              </mat-autocomplete>
             </mat-form-field>
 
           </div>
@@ -243,13 +283,14 @@
             <div class="flex items-center gap-2">
               <h3 class="text-base font-semibold text-slate-900 leading-tight">Contacto de Emergencia</h3>
               <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">Opcional</span>
+              <app-section-error-badge [count]="emergencyContactErrorCount()" />
             </div>
             <p class="text-sm text-slate-500 leading-tight">Persona de contacto en caso de emergencia</p>
           </div>
         </div>
 
         <form [formGroup]="emergencyContactForm" class="p-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5">
 
             <mat-form-field appearance="outline">
               <mat-label>Nombre Completo</mat-label>
@@ -260,9 +301,9 @@
             <mat-form-field appearance="outline">
               <mat-label>Teléfono</mat-label>
               <mat-icon matPrefix class="text-orange-400">phone</mat-icon>
-              <input matInput formControlName="emergencyContactPhone" placeholder="+591-xxxxxxxx" appPhoneMask />
+              <input matInput formControlName="emergencyContactPhone" placeholder="Ej: 70654321" maxlength="8" />
               @if (emergencyContactForm.get('emergencyContactPhone')?.hasError('pattern')) {
-                <mat-error>Formato inválido. Ej: +591-70654321</mat-error>
+                <mat-error>Debe empezar con 6 o 7 y tener 8 dígitos. Ej: 70654321</mat-error>
               }
             </mat-form-field>
 
@@ -288,13 +329,14 @@
             <div class="flex items-center gap-2">
               <h3 class="text-base font-semibold text-slate-900 leading-tight">Seguro Médico</h3>
               <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">Opcional</span>
+              <app-section-error-badge [count]="insuranceErrorCount()" />
             </div>
             <p class="text-sm text-slate-500 leading-tight">Información de cobertura médica y clínica</p>
           </div>
         </div>
 
         <form [formGroup]="insuranceForm" class="p-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5">
 
             <mat-form-field appearance="outline">
               <mat-label>Proveedor de Seguro</mat-label>
@@ -311,7 +353,7 @@
             <mat-form-field appearance="outline">
               <mat-label>Clínica</mat-label>
               <mat-icon matPrefix class="text-purple-400">local_hospital</mat-icon>
-              <mat-select formControlName="clinicId" [disabled]="!!ctxClinicId">
+              <mat-select formControlName="clinicId">
                 <mat-select-trigger>{{ getSelectedClinicName() || 'Seleccione una clínica' }}</mat-select-trigger>
                 @if (isClinicsLoading) {
                   <mat-option disabled>Cargando clínicas...</mat-option>
