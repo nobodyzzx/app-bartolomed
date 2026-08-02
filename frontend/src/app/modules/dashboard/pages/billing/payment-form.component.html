@@ -33,7 +33,10 @@
               <span class="material-symbols-outlined msz-20">payments</span>
             </div>
             <div>
-              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Datos del Pago</h3>
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+                Datos del Pago
+                <app-section-error-badge [count]="paymentDataErrorCount()" />
+              </h3>
               <p class="text-sm text-slate-500 m-0">Información general del registro</p>
             </div>
           </div>
@@ -50,11 +53,14 @@
               <mat-form-field appearance="outline">
                 <mat-label>Fecha de Pago</mat-label>
                 <mat-icon matPrefix class="text-blue-400">calendar_today</mat-icon>
-                <input matInput [matDatepicker]="pickerDate" formControlName="paymentDate" />
+                <input matInput [matDatepicker]="pickerDate" formControlName="paymentDate" [max]="today" />
                 <mat-datepicker-toggle matIconSuffix [for]="pickerDate"></mat-datepicker-toggle>
                 <mat-datepicker #pickerDate></mat-datepicker>
-                @if (form.get('paymentDate')?.invalid) {
-                  <mat-error>Fecha inválida</mat-error>
+                @if (form.get('paymentDate')?.hasError('required')) {
+                  <mat-error>Fecha requerida</mat-error>
+                }
+                @if (form.get('paymentDate')?.hasError('matDatepickerMax')) {
+                  <mat-error>La fecha no puede ser futura</mat-error>
                 }
               </mat-form-field>
               <mat-form-field appearance="outline">
@@ -95,7 +101,10 @@
               <span class="material-symbols-outlined msz-20">receipt_long</span>
             </div>
             <div>
-              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Factura Asociada</h3>
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+                Factura Asociada
+                <app-section-error-badge [count]="invoiceErrorCount()" />
+              </h3>
               <p class="text-sm text-slate-500 m-0">Factura a la que aplica el pago</p>
             </div>
           </div>
@@ -104,7 +113,7 @@
               <mat-form-field appearance="outline">
                 <mat-label>ID Factura</mat-label>
                 <mat-icon matPrefix class="text-purple-400">receipt_long</mat-icon>
-                <input matInput formControlName="invoiceId" [value]="invoice?.id" />
+                <input matInput formControlName="invoiceId" />
                 @if (form.get('invoiceId')?.invalid) {
                   <mat-error>Requerido</mat-error>
                 }
@@ -139,7 +148,10 @@
               <span class="material-symbols-outlined msz-20">account_balance_wallet</span>
             </div>
             <div>
-              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Detalle de Pago</h3>
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+                Detalle de Pago
+                <app-section-error-badge [count]="paymentDetailErrorCount()" />
+              </h3>
               <p class="text-sm text-slate-500 m-0">Monto, método y referencia</p>
             </div>
           </div>

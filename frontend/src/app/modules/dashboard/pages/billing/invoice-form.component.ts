@@ -1,13 +1,32 @@
 import { Component, DestroyRef, ElementRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
-import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms'
+import {
+  AbstractControl,
+  FormArray,
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { ErrorService } from '../../../../shared/components/services/error.service'
+import { countInvalidFields, scrollToFirstInvalidField } from '../../../../shared/utils/form-errors.util'
 import { ClinicsService } from '../admin/clinics/services/clinics.service'
 import { PatientsService } from '../patients/services/patients.service'
 import { BillingService, InvoiceDto, InvoiceItemDto, InvoiceResponse } from './billing.service'
 import { ClinicOption, PatientOption } from './interfaces/billing-ui.interfaces'
+
+// Validador cruzado: la fecha de vencimiento no puede ser anterior a la de emisión
+function dueDateOrderValidator(group: AbstractControl): ValidationErrors | null {
+  const issueDate = group.get('issueDate')?.value
+  const dueDate = group.get('dueDate')?.value
+  if (!issueDate || !dueDate) return null
+  const issue = new Date(issueDate)
+  const due = new Date(dueDate)
+  return due >= issue ? null : { dueDateOrder: true }
+}
 
 @Component({
     selector: 'app-invoice-form',
@@ -23,6 +42,12 @@ export class InvoiceFormComponent implements OnInit {
   loading = false
   patients: PatientOption[] = []
   clinics: ClinicOption[] = []
+  readonly today = new Date()
+
+  get minDueDate(): Date {
+    const issueDate = this.form?.get('issueDate')?.value
+    return issueDate ? new Date(issueDate) : this.today
+  }
 
   get items(): FormArray {
     return this.form.get('items') as FormArray
@@ -59,19 +84,22 @@ export class InvoiceFormComponent implements OnInit {
   }
 
   buildForm(): void {
-    this.form = this.fb.group({
-      invoiceNumber: ['', [Validators.required]],
-      patientId: ['', [Validators.required]],
-      clinicId: ['', [Validators.required]],
-      issueDate: [new Date(), [Validators.required]],
-      dueDate: [null, [Validators.required]],
-      taxRate: [0, [Validators.min(0)]],
-      discountRate: [0, [Validators.min(0)]],
-      discountAmount: [0, [Validators.min(0)]],
-      notes: [''],
-      terms: [''],
-      items: this.fb.array([]),
-    })
+    this.form = this.fb.group(
+      {
+        invoiceNumber: ['', [Validators.required]],
+        patientId: ['', [Validators.required]],
+        clinicId: ['', [Validators.required]],
+        issueDate: [new Date(), [Validators.required]],
+        dueDate: [null, [Validators.required]],
+        taxRate: [0, [Validators.min(0)]],
+        discountRate: [0, [Validators.min(0)]],
+        discountAmount: [0, [Validators.min(0)]],
+        notes: [''],
+        terms: [''],
+        items: this.fb.array([]),
+      },
+      { validators: dueDateOrderValidator },
+    )
 
     // Item inicial
     this.addItem()
@@ -195,10 +223,42 @@ export class InvoiceFormComponent implements OnInit {
   }
 
   private scrollToFirstError(): void {
-    requestAnimationFrame(() => {
-      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    })
+    scrollToFirstInvalidField(this.elRef.nativeElement as HTMLElement)
+  }
+
+  // Badges de error por sección — visibles recién después de un intento de envío
+  // fallido (markAllAsTouched() en submit() es lo que los "touched" de golpe).
+  // El form es un único FormGroup dividido visualmente en tarjetas, así que se
+  // filtra por nombre de campo en vez de reusar countInvalidFields() directo.
+  invoiceDataErrorCount(): number {
+    const fields = ['invoiceNumber', 'patientId', 'clinicId', 'issueDate', 'dueDate']
+    let count = fields.filter(name => {
+      const c = this.form.get(name)
+      return !!c && c.invalid && c.touched
+    }).length
+    if (this.form.hasError('dueDateOrder') && this.form.get('dueDate')?.touched) count++
+    return count
+  }
+
+  // Ítems son un FormArray de FormGroup — se suma countInvalidFields() de cada uno.
+  itemsErrorCount(): number {
+    return this.items.controls.reduce((sum, ctrl) => sum + countInvalidFields(ctrl as FormGroup), 0)
+  }
+
+  totalsErrorCount(): number {
+    const fields = ['discountRate', 'discountAmount', 'taxRate']
+    return fields.filter(name => {
+      const c = this.form.get(name)
+      return !!c && c.invalid && c.touched
+    }).length
+  }
+
+  notesErrorCount(): number {
+    const fields = ['notes', 'terms']
+    return fields.filter(name => {
+      const c = this.form.get(name)
+      return !!c && c.invalid && c.touched
+    }).length
   }
 
   async generateInvoiceNumber(): Promise<void> {

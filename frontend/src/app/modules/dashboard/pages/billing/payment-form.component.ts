@@ -6,6 +6,7 @@ import { AlertService } from '@core/services/alert.service'
 import { of } from 'rxjs'
 import { switchMap, tap } from 'rxjs/operators'
 import { ErrorService } from '../../../../shared/components/services/error.service'
+import { scrollToFirstInvalidField } from '../../../../shared/utils/form-errors.util'
 import { Clinic } from '../admin/clinics/interfaces/clinic.interface'
 import { ClinicsService } from '../admin/clinics/services/clinics.service'
 import { Patient } from '../patients/interfaces/patient.interface'
@@ -38,6 +39,7 @@ export class PaymentFormComponent implements OnInit {
   patients: Patient[] = []
   clinics: Clinic[] = []
   invoice: InvoiceResponse | null = null
+  readonly today = new Date()
 
   constructor(
     private fb: FormBuilder,
@@ -132,10 +134,30 @@ export class PaymentFormComponent implements OnInit {
   }
 
   private scrollToFirstError(): void {
-    requestAnimationFrame(() => {
-      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    })
+    scrollToFirstInvalidField(this.elRef.nativeElement as HTMLElement)
+  }
+
+  // Badges de error por sección — visibles recién después de un intento de envío
+  // fallido (markAllAsTouched() en submit() es lo que los "touched" de golpe).
+  // El form es un único FormGroup dividido visualmente en tarjetas, así que se
+  // filtra por nombre de campo en vez de reusar countInvalidFields() directo.
+  private countFieldsInvalid(names: string[]): number {
+    return names.filter(name => {
+      const c = this.form.get(name)
+      return !!c && c.invalid && c.touched
+    }).length
+  }
+
+  paymentDataErrorCount(): number {
+    return this.countFieldsInvalid(['paymentNumber', 'paymentDate', 'patientId', 'clinicId'])
+  }
+
+  invoiceErrorCount(): number {
+    return this.countFieldsInvalid(['invoiceId'])
+  }
+
+  paymentDetailErrorCount(): number {
+    return this.countFieldsInvalid(['amount', 'method', 'reference', 'notes'])
   }
 
   cancel() {
