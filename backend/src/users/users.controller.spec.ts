@@ -11,7 +11,9 @@ describe('UsersController', () => {
     usersService = {
       create: jest.fn().mockResolvedValue({ id: 'user-1' }),
       findAll: jest.fn().mockResolvedValue({ data: [], total: 0 }),
-      getClinicStatistics: jest.fn().mockResolvedValue({ totalDoctors: 2 }),
+      getClinicStatistics: jest
+        .fn()
+        .mockResolvedValue({ totalDoctors: 2, totalNurses: 1, totalReceptionists: 1, totalPharmacists: 1 }),
       findOne: jest.fn().mockResolvedValue({ id: 'user-1' }),
       updateStatus: jest.fn().mockResolvedValue(undefined),
       update: jest.fn().mockResolvedValue({ id: 'user-1', email: 'nuevo@example.com' }),
@@ -38,7 +40,7 @@ describe('UsersController', () => {
     const req = { headers: { 'x-clinic-id': 'clinic-1' }, params: {} } as any;
     const result = await controller.getStatistics(req);
     expect(usersService.getClinicStatistics).toHaveBeenCalledWith('clinic-1');
-    expect(result).toEqual({ totalDoctors: 2 });
+    expect(result).toEqual({ totalDoctors: 2, totalNurses: 1, totalReceptionists: 1, totalPharmacists: 1 });
   });
 
   it('findOne delega el id', async () => {

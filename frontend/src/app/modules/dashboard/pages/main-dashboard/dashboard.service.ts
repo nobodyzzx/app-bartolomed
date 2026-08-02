@@ -18,10 +18,11 @@ export class DashboardService {
     )
   }
 
-  /** Citas de hoy desde /api/appointments */
-  getTodayAppointments(): Observable<RecentAppointment[]> {
+  /** Citas de hoy desde /api/appointments. doctorId acota a las citas de un médico (vista "Mis citas"). */
+  getTodayAppointments(doctorId?: string): Observable<RecentAppointment[]> {
     const today = new Date().toISOString().slice(0, 10)
-    const params = new HttpParams().set('date', today).set('limit', '20')
+    let params = new HttpParams().set('date', today).set('limit', '20')
+    if (doctorId) params = params.set('doctorId', doctorId)
     return this.http.get<any>(`${this.base}/appointments`, { params }).pipe(
       map(r => {
         const items: any[] = Array.isArray(r) ? r : (r.data ?? r.items ?? [])
@@ -126,18 +127,24 @@ export class DashboardService {
     )
   }
 
-  /** Total de doctores activos de la clínica desde /api/users/statistics */
-  getDoctorsCount(): Observable<number> {
-    return this.http.get<{ totalDoctors: number }>(`${this.base}/users/statistics`).pipe(
-      map(r => r.totalDoctors ?? 0),
-      catchError(() => of(0)),
+  /** Personal activo de la clínica por rol desde /api/users/statistics */
+  getStaffStatistics(): Observable<StaffStatistics> {
+    return this.http.get<StaffStatistics>(`${this.base}/users/statistics`).pipe(
+      map(r => ({
+        totalDoctors:       r.totalDoctors ?? 0,
+        totalNurses:        r.totalNurses ?? 0,
+        totalReceptionists: r.totalReceptionists ?? 0,
+        totalPharmacists:   r.totalPharmacists ?? 0,
+      })),
+      catchError(() => of({ totalDoctors: 0, totalNurses: 0, totalReceptionists: 0, totalPharmacists: 0 })),
     )
   }
 
-  /** Citas pendientes de hoy (scheduled/confirmed) */
-  getPendingAppointmentsCount(): Observable<number> {
+  /** Citas pendientes de hoy (scheduled/confirmed). doctorId acota a las de un médico. */
+  getPendingAppointmentsCount(doctorId?: string): Observable<number> {
     const today = new Date().toISOString().slice(0, 10)
-    const params = new HttpParams().set('date', today).set('status', 'scheduled').set('limit', '100')
+    let params = new HttpParams().set('date', today).set('status', 'scheduled').set('limit', '100')
+    if (doctorId) params = params.set('doctorId', doctorId)
     return this.http.get<any>(`${this.base}/appointments`, { params }).pipe(
       map(r => {
         const items: any[] = Array.isArray(r) ? r : (r.data ?? r.items ?? [])
@@ -146,4 +153,29 @@ export class DashboardService {
       catchError(() => of(0)),
     )
   }
+
+  /** Resumen de facturación (facturas pendientes/vencidas y monto por cobrar) desde /api/billing/statistics */
+  getBillingSummary(): Observable<BillingSummary> {
+    return this.http.get<any>(`${this.base}/billing/statistics`).pipe(
+      map(r => ({
+        pendingInvoices: r.pending ?? 0,
+        overdueInvoices: r.overdue ?? 0,
+        pendingRevenue:  Number(r.pendingRevenue ?? 0),
+      })),
+      catchError(() => of({ pendingInvoices: 0, overdueInvoices: 0, pendingRevenue: 0 })),
+    )
+  }
+}
+
+export interface StaffStatistics {
+  totalDoctors: number
+  totalNurses: number
+  totalReceptionists: number
+  totalPharmacists: number
+}
+
+export interface BillingSummary {
+  pendingInvoices: number
+  overdueInvoices: number
+  pendingRevenue: number
 }

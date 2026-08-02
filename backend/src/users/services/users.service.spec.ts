@@ -105,25 +105,48 @@ describe('UsersService', () => {
   // ─── getClinicStatistics ──────────────────────────────────────────────────
 
   describe('getClinicStatistics', () => {
-    it('cuenta doctores activos de la clínica', async () => {
-      const qb = createMockQueryBuilder({ getCount: jest.fn().mockResolvedValue(3) });
-      userClinicRepo.createQueryBuilder!.mockReturnValue(qb);
+    /** Cada llamada a countByRole crea su propio QueryBuilder — uno por rol, en orden. Devuelve los qb creados. */
+    const mockCountsInOrder = (...counts: number[]) => {
+      const qbs = counts.map(count => createMockQueryBuilder({ getCount: jest.fn().mockResolvedValue(count) }));
+      qbs.forEach(qb => userClinicRepo.createQueryBuilder!.mockImplementationOnce(() => qb));
+      return qbs;
+    };
+
+    it('cuenta personal activo por rol de la clínica', async () => {
+      mockCountsInOrder(3, 2, 1, 4); // doctors, nurses, receptionists, pharmacists
 
       const result = await service.getClinicStatistics('clinic-1');
 
-      expect(result).toEqual({ totalDoctors: 3 });
-      expect(qb.where).toHaveBeenCalledWith('uc.clinic_id = :clinicId', { clinicId: 'clinic-1' });
-      expect(qb.andWhere).toHaveBeenCalledWith('user.isActive = true');
-      expect(qb.andWhere).toHaveBeenCalledWith(':role = ANY(uc.roles)', { role: 'doctor' });
+      expect(result).toEqual({
+        totalDoctors: 3,
+        totalNurses: 2,
+        totalReceptionists: 1,
+        totalPharmacists: 4,
+      });
     });
 
-    it('retorna 0 si la clínica no tiene doctores', async () => {
-      const qb = createMockQueryBuilder({ getCount: jest.fn().mockResolvedValue(0) });
-      userClinicRepo.createQueryBuilder!.mockReturnValue(qb);
+    it('filtra por clínica, activos y rol en cada conteo', async () => {
+      const [doctorsQb, nursesQb] = mockCountsInOrder(1, 0, 0, 0);
 
-      const result = await service.getClinicStatistics('clinic-sin-doctores');
+      await service.getClinicStatistics('clinic-1');
 
-      expect(result).toEqual({ totalDoctors: 0 });
+      expect(doctorsQb.where).toHaveBeenCalledWith('uc.clinic_id = :clinicId', { clinicId: 'clinic-1' });
+      expect(doctorsQb.andWhere).toHaveBeenCalledWith('user.isActive = true');
+      expect(doctorsQb.andWhere).toHaveBeenCalledWith(':role = ANY(uc.roles)', { role: 'doctor' });
+      expect(nursesQb.andWhere).toHaveBeenCalledWith(':role = ANY(uc.roles)', { role: 'nurse' });
+    });
+
+    it('retorna 0 en todos los roles si la clínica no tiene personal', async () => {
+      mockCountsInOrder(0, 0, 0, 0);
+
+      const result = await service.getClinicStatistics('clinic-sin-personal');
+
+      expect(result).toEqual({
+        totalDoctors: 0,
+        totalNurses: 0,
+        totalReceptionists: 0,
+        totalPharmacists: 0,
+      });
     });
   });
 

@@ -32,6 +32,11 @@ interface QuickActionDef {
 const CLINICAL:   UserRoles[] = [UserRoles.DOCTOR, UserRoles.NURSE, UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
 const ADMIN_ONLY: UserRoles[] = [UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
 const PHARMACY:   UserRoles[] = [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
+// Mismos roles que tienen Permission.BillingRead/BillingManage (role-permissions.map.ts) —
+// PHARMACIST queda afuera a propósito: su facturación es PharmacyBilling, un permiso distinto.
+const BILLING:    UserRoles[] = [UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
+// Roles que ven "todas" las citas/pacientes de la clínica en vez de solo las propias.
+const BROAD_VIEW: UserRoles[] = [UserRoles.NURSE, UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
 
 @Component({
     selector: 'app-main-dashboard',
@@ -49,9 +54,15 @@ export class MainDashboardComponent implements OnInit {
     totalPatients: 0,
     totalAppointments: 0,
     totalDoctors: 0,
+    totalNurses: 0,
+    totalReceptionists: 0,
+    totalPharmacists: 0,
     monthlyRevenue: 0,
     pendingAppointments: 0,
     lowStockItems: 0,
+    pendingInvoices: 0,
+    overdueInvoices: 0,
+    pendingRevenue: 0,
   }
 
   recentAppointments: RecentAppointment[] = []
@@ -133,6 +144,9 @@ export class MainDashboardComponent implements OnInit {
   // ── KPI Cards filtrados por rol ──────────────────────────────────────────
 
   get visibleStatCards(): StatCardDef[] {
+    const totalStaff = this.stats.totalDoctors + this.stats.totalNurses
+      + this.stats.totalReceptionists + this.stats.totalPharmacists
+
     const cards: StatCardDef[] = [
       {
         label: 'Total Pacientes', sublabel: 'Registrados',
@@ -141,21 +155,21 @@ export class MainDashboardComponent implements OnInit {
         roles: CLINICAL,
       },
       {
-        label: 'Citas Hoy', sublabel: 'Programadas',
+        label: this.isDoctorOnlyView ? 'Mis Citas Hoy' : 'Citas Hoy', sublabel: 'Programadas',
         icon: 'calendar_today', color: 'green', route: '/dashboard/appointments',
         value: this.stats.totalAppointments,
         roles: CLINICAL,
       },
       {
-        label: 'Por Confirmar', sublabel: 'Citas pendientes',
+        label: 'Por Confirmar', sublabel: this.isDoctorOnlyView ? 'Mis citas pendientes' : 'Citas pendientes',
         icon: 'pending_actions', color: 'amber', route: '/dashboard/appointments',
         value: this.stats.pendingAppointments,
         roles: CLINICAL,
       },
       {
-        label: 'Doctores', sublabel: 'Personal activo',
+        label: 'Personal Activo', sublabel: this.staffBreakdownLabel(totalStaff),
         icon: 'medical_services', color: 'purple', route: '/dashboard/users',
-        value: this.stats.totalDoctors,
+        value: totalStaff,
         roles: ADMIN_ONLY,
       },
       {
@@ -165,13 +179,35 @@ export class MainDashboardComponent implements OnInit {
         roles: PHARMACY,
       },
       {
-        label: 'Ingresos Mes', sublabel: 'Facturación',
+        label: 'Ventas Farmacia', sublabel: 'Este mes',
         icon: 'attach_money', color: 'orange', route: '/dashboard/reports/financial-reports',
         value: this.formatCurrency(this.stats.monthlyRevenue),
         roles: PHARMACY,
       },
+      {
+        label: 'Facturas Pendientes', sublabel: this.stats.overdueInvoices > 0 ? `${this.stats.overdueInvoices} vencida(s)` : 'Por cobrar',
+        icon: 'receipt_long', color: 'amber', route: '/dashboard/billing/invoices',
+        value: this.stats.pendingInvoices,
+        roles: BILLING,
+      },
+      {
+        label: 'Por Cobrar', sublabel: 'Monto pendiente',
+        icon: 'payments', color: 'red', route: '/dashboard/billing/invoices',
+        value: this.formatCurrency(this.stats.pendingRevenue),
+        roles: BILLING,
+      },
     ]
     return cards.filter(c => this.roleState.hasAnyRole(c.roles))
+  }
+
+  private staffBreakdownLabel(totalStaff: number): string {
+    if (totalStaff === 0) return 'Personal activo'
+    const parts: string[] = []
+    if (this.stats.totalDoctors > 0) parts.push(`${this.stats.totalDoctors} doctor(es)`)
+    if (this.stats.totalNurses > 0) parts.push(`${this.stats.totalNurses} enfermero(s)`)
+    if (this.stats.totalReceptionists > 0) parts.push(`${this.stats.totalReceptionists} recepción`)
+    if (this.stats.totalPharmacists > 0) parts.push(`${this.stats.totalPharmacists} farmacia`)
+    return parts.join(' · ')
   }
 
   // ── Accesos Rápidos filtrados por rol ────────────────────────────────────
@@ -258,12 +294,30 @@ export class MainDashboardComponent implements OnInit {
     return this.roleState.hasAnyRole(CLINICAL)
   }
 
+  get showBillingSection(): boolean {
+    return this.roleState.hasAnyRole(BILLING)
+  }
+
+  /**
+   * Un DOCTOR sin ningún otro rol "de vista amplia" (NURSE/RECEPTIONIST/ADMIN) ve solo
+   * sus propias citas en vez de las de toda la clínica. Un híbrido (ej. DOCTOR+ADMIN)
+   * mantiene la vista completa — no reducir el alcance de un usuario con más de un rol.
+   */
+  get isDoctorOnlyView(): boolean {
+    return this.roleState.hasRole(UserRoles.DOCTOR) && !this.roleState.hasAnyRole(BROAD_VIEW)
+  }
+
+  private get currentDoctorId(): string | undefined {
+    return this.isDoctorOnlyView ? this.authService.currentUser()?.id : undefined
+  }
+
   // ── Alertas críticas (solo si el rol las ve) ─────────────────────────────
 
   get hasCriticalAlerts(): boolean {
-    const stockAlert = this.showStockSection && this.stats.lowStockItems > 0
-    const apptAlert  = this.showAppointmentsSection && this.stats.pendingAppointments > 0
-    return stockAlert || apptAlert
+    const stockAlert   = this.showStockSection && this.stats.lowStockItems > 0
+    const apptAlert    = this.showAppointmentsSection && this.stats.pendingAppointments > 0
+    const billingAlert = this.showBillingSection && this.stats.overdueInvoices > 0
+    return stockAlert || apptAlert || billingAlert
   }
 
   constructor(
@@ -294,24 +348,33 @@ export class MainDashboardComponent implements OnInit {
     const needsClinical = this.showAppointmentsSection || this.showPatientsSection
     const needsStock    = this.showStockSection
     const needsStaff    = this.showStaffSection
+    const needsBilling  = this.showBillingSection
+    const doctorId      = this.currentDoctorId
 
     forkJoin({
-      patientStats: needsClinical ? this.dashboardService.getPatientStats()            : of({ total: 0 }),
-      appointments: needsClinical ? this.dashboardService.getTodayAppointments()        : of([] as RecentAppointment[]),
-      pending:      needsClinical ? this.dashboardService.getPendingAppointmentsCount() : of(0),
-      stock:        needsStock    ? this.dashboardService.getLowStockAlerts()           : of([] as StockAlert[]),
-      patients:     needsClinical ? this.dashboardService.getRecentPatients()           : of([] as RecentPatient[]),
-      doctors:      needsStaff    ? this.dashboardService.getDoctorsCount()             : of(0),
+      patientStats: needsClinical ? this.dashboardService.getPatientStats()                     : of({ total: 0 }),
+      appointments: needsClinical ? this.dashboardService.getTodayAppointments(doctorId)         : of([] as RecentAppointment[]),
+      pending:      needsClinical ? this.dashboardService.getPendingAppointmentsCount(doctorId)  : of(0),
+      stock:        needsStock    ? this.dashboardService.getLowStockAlerts()                    : of([] as StockAlert[]),
+      patients:     needsClinical ? this.dashboardService.getRecentPatients()                    : of([] as RecentPatient[]),
+      staff:        needsStaff    ? this.dashboardService.getStaffStatistics()                   : of({ totalDoctors: 0, totalNurses: 0, totalReceptionists: 0, totalPharmacists: 0 }),
+      billing:      needsBilling  ? this.dashboardService.getBillingSummary()                    : of({ pendingInvoices: 0, overdueInvoices: 0, pendingRevenue: 0 }),
     }).pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ patientStats, appointments, pending, stock, patients, doctors }) => {
+        next: ({ patientStats, appointments, pending, stock, patients, staff, billing }) => {
           this.stats = {
             totalPatients:       patientStats.total,
             totalAppointments:   appointments.length,
             pendingAppointments: pending,
-            totalDoctors:        doctors,
+            totalDoctors:        staff.totalDoctors,
+            totalNurses:         staff.totalNurses,
+            totalReceptionists:  staff.totalReceptionists,
+            totalPharmacists:    staff.totalPharmacists,
             monthlyRevenue:      this.stats.monthlyRevenue,
             lowStockItems:       stock.length,
+            pendingInvoices:     billing.pendingInvoices,
+            overdueInvoices:     billing.overdueInvoices,
+            pendingRevenue:      billing.pendingRevenue,
           }
           this.recentAppointments  = appointments
           this.todayAppointments   = appointments

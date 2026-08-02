@@ -2,9 +2,15 @@ export interface DashboardStats {
   totalPatients: number
   totalAppointments: number
   totalDoctors: number
+  totalNurses: number
+  totalReceptionists: number
+  totalPharmacists: number
   monthlyRevenue: number
   pendingAppointments: number
   lowStockItems: number
+  pendingInvoices: number
+  overdueInvoices: number
+  pendingRevenue: number
 }
 
 export interface RecentAppointment {

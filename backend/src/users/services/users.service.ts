@@ -125,16 +125,29 @@ export class UsersService {
     }
   }
 
-  async getClinicStatistics(clinicId: string): Promise<{ totalDoctors: number }> {
-    const totalDoctors = await this.userClinicRepository
-      .createQueryBuilder('uc')
-      .innerJoin('uc.user', 'user')
-      .where('uc.clinic_id = :clinicId', { clinicId })
-      .andWhere('user.isActive = true')
-      .andWhere(':role = ANY(uc.roles)', { role: ValidRoles.DOCTOR })
-      .getCount();
+  async getClinicStatistics(clinicId: string): Promise<{
+    totalDoctors: number;
+    totalNurses: number;
+    totalReceptionists: number;
+    totalPharmacists: number;
+  }> {
+    const countByRole = (role: ValidRoles) =>
+      this.userClinicRepository
+        .createQueryBuilder('uc')
+        .innerJoin('uc.user', 'user')
+        .where('uc.clinic_id = :clinicId', { clinicId })
+        .andWhere('user.isActive = true')
+        .andWhere(':role = ANY(uc.roles)', { role })
+        .getCount();
 
-    return { totalDoctors };
+    const [totalDoctors, totalNurses, totalReceptionists, totalPharmacists] = await Promise.all([
+      countByRole(ValidRoles.DOCTOR),
+      countByRole(ValidRoles.NURSE),
+      countByRole(ValidRoles.RECEPTIONIST),
+      countByRole(ValidRoles.PHARMACIST),
+    ]);
+
+    return { totalDoctors, totalNurses, totalReceptionists, totalPharmacists };
   }
 
   async updateStatus(id: string, isActive: boolean) {
