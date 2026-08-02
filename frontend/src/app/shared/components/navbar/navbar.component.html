@@ -146,7 +146,7 @@
                 </button>
               }
               @if (showBillingAlertRow() && alertCounts().overdueInvoices > 0) {
-                <button mat-menu-item routerLink="/dashboard/billing/invoices" class="!min-h-[48px]">
+                <button mat-menu-item routerLink="/dashboard/billing" class="!min-h-[48px]">
                   <span class="flex items-center gap-2.5">
                     <span class="material-symbols-outlined msz-18 text-rose-500">receipt_long</span>
                     <span class="text-sm text-slate-700">{{ alertCounts().overdueInvoices }} factura(s) vencida(s)</span>

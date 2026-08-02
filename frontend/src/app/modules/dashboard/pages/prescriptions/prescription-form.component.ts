@@ -357,7 +357,7 @@ export class PrescriptionFormComponent implements CanComponentDeactivate {
           if (savedId) {
             this.router.navigate(['/dashboard/prescriptions', savedId])
           } else {
-            this.router.navigate(['../list'])
+            this.router.navigate(['/dashboard/prescriptions'])
           }
         })
       },

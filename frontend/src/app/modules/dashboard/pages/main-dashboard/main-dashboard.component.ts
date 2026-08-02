@@ -181,13 +181,13 @@ export class MainDashboardComponent implements OnInit {
       },
       {
         label: 'Facturas Pendientes', sublabel: this.stats.overdueInvoices > 0 ? `${this.stats.overdueInvoices} vencida(s)` : 'Por cobrar',
-        icon: 'receipt_long', color: 'amber', route: '/dashboard/billing/invoices',
+        icon: 'receipt_long', color: 'amber', route: '/dashboard/billing',
         value: this.stats.pendingInvoices,
         roles: BILLING_ROLES,
       },
       {
         label: 'Por Cobrar', sublabel: 'Monto pendiente',
-        icon: 'payments', color: 'red', route: '/dashboard/billing/invoices',
+        icon: 'payments', color: 'red', route: '/dashboard/billing',
         value: this.formatCurrency(this.stats.pendingRevenue),
         roles: BILLING_ROLES,
       },
