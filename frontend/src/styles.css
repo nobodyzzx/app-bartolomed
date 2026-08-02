@@ -334,11 +334,24 @@ p, h1, h2, h3, h4, h5, h6 {
 
 .clinic-menu { margin-top: 8px !important; }
 
+/* El panel exterior de Material trae su propio max-width por defecto (~280px), más chico
+   que el min-width:320px que le pedimos al contenido de abajo — sin igualarlo acá, el
+   contenido se desborda del panel y aparece un scroll horizontal fantasma. */
+.clinic-menu.mat-mdc-menu-panel,
+.patient-search-menu.mat-mdc-menu-panel {
+  min-width: 320px !important;
+  max-width: 320px !important;
+}
+
 .clinic-menu .mat-mdc-menu-content {
   padding: 0 !important;
   max-height: 480px !important;
   overflow-y: auto !important;
   min-width: 320px !important;
+}
+
+.patient-search-menu .mat-mdc-menu-content {
+  padding: 0 !important;
 }
 
 .clinic-menu .mat-mdc-menu-content::-webkit-scrollbar { width: 6px; }
