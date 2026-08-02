@@ -133,7 +133,7 @@ const routes: Routes = [
       },
       {
         path: 'pharmacy-orders',
-        redirectTo: 'pharmacy/order-generation',
+        redirectTo: 'pharmacy/purchase-orders',
         pathMatch: 'full',
       },
       {
