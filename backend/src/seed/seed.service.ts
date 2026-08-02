@@ -544,7 +544,7 @@ export class SeedService implements OnModuleInit {
             address: 'Plaza Principal s/n',
             city: d.city,
             state: 'La Paz',
-            country: 'BO',
+            country: 'Bolivia',
             clinic,
             createdBy,
             isActive: true,
@@ -739,9 +739,9 @@ export class SeedService implements OnModuleInit {
 
   private async createDemoSuppliers(clinic: Clinic, createdBy: User): Promise<{ id: string }[]> {
     const supplierDefs = [
-      { code: `PROV-${clinic.id.slice(0, 4)}-001`, name: 'Distribuidora Farmacéutica Andina S.R.L.',  contactPerson: 'Luis Mamani',    email: 'ventas@farmandina.bo',   phone: '22301234', city: 'La Paz',       country: 'BO' },
-      { code: `PROV-${clinic.id.slice(0, 4)}-002`, name: 'Laboratorios Inti Bolivia',                 contactPerson: 'María Quispe',   email: 'pedidos@labinti.bo',     phone: '22305678', city: 'Cochabamba',   country: 'BO' },
-      { code: `PROV-${clinic.id.slice(0, 4)}-003`, name: 'MedSupply Yungas',                          contactPerson: 'Pedro Condori',  email: 'info@medsupply.bo',      phone: '72399001', city: 'Chulumani',    country: 'BO' },
+      { code: `PROV-${clinic.id.slice(0, 4)}-001`, name: 'Distribuidora Farmacéutica Andina S.R.L.',  contactPerson: 'Luis Mamani',    email: 'ventas@farmandina.bo',   phone: '22301234', city: 'La Paz',       country: 'Bolivia' },
+      { code: `PROV-${clinic.id.slice(0, 4)}-002`, name: 'Laboratorios Inti Bolivia',                 contactPerson: 'María Quispe',   email: 'pedidos@labinti.bo',     phone: '22305678', city: 'Cochabamba',   country: 'Bolivia' },
+      { code: `PROV-${clinic.id.slice(0, 4)}-003`, name: 'MedSupply Yungas',                          contactPerson: 'Pedro Condori',  email: 'info@medsupply.bo',      phone: '72399001', city: 'Chulumani',    country: 'Bolivia' },
     ];
 
     const suppliers: { id: string }[] = [];
@@ -1100,7 +1100,7 @@ export class SeedService implements OnModuleInit {
           email, phone, address, city, state, country,
           "bloodType", "insuranceProvider", "isActive",
           clinic_id, "createdBy", "createdAt", "updatedAt"
-        ) VALUES ($1,$2,$3,'CI',$4,$5,$6,$7,'Plaza Principal s/n',$8,'La Paz','BO',
+        ) VALUES ($1,$2,$3,'CI',$4,$5,$6,$7,'Plaza Principal s/n',$8,'La Paz','Bolivia',
                   $9,$10,true,$11,$12,NOW(),NOW())
         RETURNING id
       `, [
