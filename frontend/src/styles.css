@@ -147,7 +147,7 @@ p, h1, h2, h3, h4, h5, h6 {
 }
 
 /* ============================================================
-   5. MAT-SELECT — flecha + panel blanco puro
+   5. MAT-SELECT / MAT-AUTOCOMPLETE / MAT-DATEPICKER — flecha + panel blanco puro
    ============================================================ */
 .mat-mdc-select .mdc-select__dropdown-icon {
   width: 28px !important;
@@ -201,6 +201,117 @@ p, h1, h2, h3, h4, h5, h6 {
 
 .mat-mdc-menu-panel:not(.sidebar-menu-panel) .mat-mdc-menu-item:hover:not([disabled]) {
   background-color: #f8fafc !important;
+}
+
+/* Panel del autocomplete (buscador de paciente/doctor, etc.): mismo tratamiento */
+.mat-mdc-autocomplete-panel {
+  background-color: #ffffff !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px -4px rgb(0 0 0 / .12), 0 0 0 1px rgb(0 0 0 / .04) !important;
+}
+
+.mat-mdc-autocomplete-panel .mat-mdc-option {
+  background-color: transparent !important;
+  color: #0f172a !important; /* slate-900 */
+}
+
+.mat-mdc-autocomplete-panel .mat-mdc-option:hover:not(.mdc-list-item--disabled),
+.mat-mdc-autocomplete-panel .mat-mdc-option:focus:not(.mdc-list-item--disabled) {
+  background-color: #f8fafc !important; /* slate-50 */
+}
+
+.mat-mdc-autocomplete-panel .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) {
+  background-color: #eff6ff !important; /* blue-50 */
+  color: #2563eb !important;            /* blue-600 */
+}
+
+/* Panel del datepicker (calendario): blanco puro, sin gris Material */
+.mat-datepicker-content {
+  background-color: #ffffff !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px -4px rgb(0 0 0 / .12), 0 0 0 1px rgb(0 0 0 / .04) !important;
+}
+
+.mat-datepicker-content .mat-calendar {
+  background-color: #ffffff !important;
+}
+
+/* Campos disabled (ej. Clínica bloqueada al contexto): Material por defecto los deja
+   con texto y borde muy tenues, casi ilegibles contra el fondo blanco. Mantenemos la
+   señal de "bloqueado" con un fondo slate-50 sutil, pero con texto y borde legibles. */
+.mat-mdc-form-field.mat-form-field-disabled .mdc-text-field {
+  background-color: #f8fafc !important; /* slate-50 */
+}
+
+.mat-mdc-form-field.mat-form-field-disabled .mdc-notched-outline__leading,
+.mat-mdc-form-field.mat-form-field-disabled .mdc-notched-outline__notch,
+.mat-mdc-form-field.mat-form-field-disabled .mdc-notched-outline__trailing {
+  border-color: #cbd5e1 !important; /* slate-300, no el gris apagado por defecto */
+}
+
+.mat-mdc-form-field.mat-form-field-disabled .mat-mdc-select-value,
+.mat-mdc-form-field.mat-form-field-disabled .mat-mdc-select-min-line,
+.mat-mdc-form-field.mat-form-field-disabled input.mat-mdc-input-element,
+.mat-mdc-form-field.mat-form-field-disabled .mdc-floating-label {
+  color: #334155 !important; /* slate-700, en vez del gris casi invisible por defecto */
+  -webkit-text-fill-color: #334155 !important;
+}
+
+/* Rediseño visual — bordes de mat-form-field más livianos en reposo (menos "cajita"
+   marcada todo el tiempo), foco más claro y marcado. Piloteado en patient-form,
+   aprobado 2026-08-01, ahora global para todos los formularios. */
+.mat-mdc-form-field:not(.mat-form-field-invalid):not(.mat-focused):not(.mat-form-field-disabled)
+  .mdc-notched-outline__leading,
+.mat-mdc-form-field:not(.mat-form-field-invalid):not(.mat-focused):not(.mat-form-field-disabled)
+  .mdc-notched-outline__notch,
+.mat-mdc-form-field:not(.mat-form-field-invalid):not(.mat-focused):not(.mat-form-field-disabled)
+  .mdc-notched-outline__trailing {
+  border-color: #e2e8f0 !important; /* slate-200 */
+  border-width: 1px !important;
+}
+
+.mat-mdc-form-field.mat-focused:not(.mat-form-field-invalid) .mdc-notched-outline__leading,
+.mat-mdc-form-field.mat-focused:not(.mat-form-field-invalid) .mdc-notched-outline__notch,
+.mat-mdc-form-field.mat-focused:not(.mat-form-field-invalid) .mdc-notched-outline__trailing {
+  border-color: #2563eb !important; /* blue-600 */
+  border-width: 2px !important;
+}
+
+/* El "notch" trae de fábrica un border-left que solo existe para cerrar el hueco de la
+   etiqueta flotante — con el borde grueso/azul de arriba se ve como una segunda línea
+   pegada al ícono de matPrefix. El borde inferior ya da continuidad visual, así que se
+   quita sin perder el efecto de "hueco" del label. */
+.mdc-notched-outline__notch {
+  border-left: none !important;
+}
+
+/* El cambio de color/grosor de borde al enfocar/desenfocar sea una transición suave
+   en vez de un salto instantáneo. */
+.mdc-notched-outline__leading,
+.mdc-notched-outline__notch,
+.mdc-notched-outline__trailing {
+  transition: border-color .15s ease, border-width .15s ease !important;
+}
+
+/* Fase 4 (pulido) — microinteracciones ============================ */
+
+/* Aparición suave del badge de errores por sección (SectionErrorBadgeComponent) */
+@keyframes badgePopIn {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-badge-pop {
+  animation: badgePopIn .2s ease-out;
+}
+
+/* Revelado suave de campos detrás de "Mostrar más campos" (patient-form,
+   assets-form, medical-record-form) — en vez de aparecer de golpe. */
+@keyframes fieldReveal {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-field-reveal {
+  animation: fieldReveal .25s ease-out;
 }
 
 /* ============================================================
