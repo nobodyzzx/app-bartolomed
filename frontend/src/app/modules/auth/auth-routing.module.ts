@@ -9,6 +9,17 @@ import { SelectClinicPageComponent } from './pages/select-clinic-page/select-cli
 
 const routes: Routes = [
   {
+    // Debe ir ANTES del path:'' de abajo: ese padre usa matching por prefijo
+    // (default, necesario para que sus children resuelvan) con un '**' interno,
+    // así que si va después, ese wildcard intercepta 'select-clinic' primero y
+    // nunca se llega a esta ruta — guestGuard entra en vez de authGuard y, como
+    // el usuario ya está autenticado, redirige a /dashboard, que redirige de
+    // nuevo a /auth/select-clinic → loop infinito (bug real, visto en producción).
+    path: 'select-clinic',
+    component: SelectClinicPageComponent,
+    canActivate: [authGuard],   // Requiere auth pero NO bloquea usuarios autenticados
+  },
+  {
     path: '',
     component: AuthLayoutComponent,
     canActivate: [guestGuard],   // Solo login/reset-password bloquean usuarios autenticados
@@ -17,11 +28,6 @@ const routes: Routes = [
       { path: 'reset-password', component: ResetPasswordPageComponent },
       { path: '**', redirectTo: 'login' },
     ],
-  },
-  {
-    path: 'select-clinic',
-    component: SelectClinicPageComponent,
-    canActivate: [authGuard],   // Requiere auth pero NO bloquea usuarios autenticados
   },
 ];
 
