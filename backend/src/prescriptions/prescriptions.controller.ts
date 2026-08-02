@@ -83,7 +83,7 @@ export class PrescriptionsController {
   }
 
   @Patch(':id/status')
-  @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
+  @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   setStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body('status') status: PrescriptionStatus,
