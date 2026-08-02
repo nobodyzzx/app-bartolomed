@@ -27,7 +27,10 @@
             <span class="material-symbols-outlined msz-20">medication</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información Básica</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Información Básica
+              <app-section-error-badge [count]="basicInfoErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Identificación y datos del medicamento</p>
           </div>
         </div>
@@ -41,7 +44,7 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Nombre comercial *</mat-label>
+              <mat-label>Nombre comercial</mat-label>
               <mat-icon matPrefix class="text-blue-400">sell</mat-icon>
               <input matInput formControlName="nombreComercial" placeholder="Ej: Tafirol 500" />
               @if (medicationForm.get('nombreComercial')?.hasError('required')) {
@@ -57,7 +60,7 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Principio activo *</mat-label>
+              <mat-label>Principio activo</mat-label>
               <mat-icon matPrefix class="text-blue-400">science</mat-icon>
               <input matInput formControlName="principioActivo" placeholder="Ej: Paracetamol" />
               @if (medicationForm.get('principioActivo')?.hasError('required')) {
@@ -86,14 +89,17 @@
             <span class="material-symbols-outlined msz-20">labs</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Concentración y Presentación</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Concentración y Presentación
+              <app-section-error-badge [count]="presentationErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Forma farmacéutica y vía de administración</p>
           </div>
         </div>
         <div class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Valor de concentración *</mat-label>
+              <mat-label>Valor de concentración</mat-label>
               <mat-icon matPrefix class="text-purple-400">numbers</mat-icon>
               <input
                 matInput
@@ -116,7 +122,7 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Unidad *</mat-label>
+              <mat-label>Unidad</mat-label>
               <mat-icon matPrefix class="text-purple-400">straighten</mat-icon>
               <mat-select formControlName="concentracionUnidad">
                 @for (u of concentrationUnits; track u) {
@@ -126,7 +132,7 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Forma farmacéutica *</mat-label>
+              <mat-label>Forma farmacéutica</mat-label>
               <mat-icon matPrefix class="text-purple-400">medication_liquid</mat-icon>
               <mat-select formControlName="formaFarmaceutica">
                 @for (f of dosageForms; track f) {
@@ -141,7 +147,7 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Vía de administración *</mat-label>
+              <mat-label>Vía de administración</mat-label>
               <mat-icon matPrefix class="text-purple-400">route</mat-icon>
               <mat-select formControlName="viaAdministracion">
                 @for (v of administrationRoutes; track v) {

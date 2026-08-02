@@ -4,88 +4,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
+import { scrollToFirstInvalidField } from '@shared/utils/form-errors.util'
+import { VALIDATION_PATTERNS } from '@shared/validators/validation-patterns'
 import {
   CreateSupplierDto,
   SupplierType,
   UpdateSupplierDto,
 } from '../../interfaces/pharmacy.interfaces'
 import { SuppliersService } from '../../services/suppliers.service'
-
-interface Country {
-  code: string
-  name: string
-  states: string[]
-}
-
-const COUNTRIES: Country[] = [
-  {
-    code: 'BO',
-    name: 'Bolivia',
-    states: [
-      'Chuquisaca',
-      'La Paz',
-      'Cochabamba',
-      'Oruro',
-      'Potosí',
-      'Tarija',
-      'Santa Cruz',
-      'Beni',
-      'Pando',
-    ],
-  },
-  {
-    code: 'MX',
-    name: 'México',
-    states: [
-      'Aguascalientes',
-      'Baja California',
-      'Baja California Sur',
-      'Campeche',
-      'Chiapas',
-      'Chihuahua',
-      'Ciudad de México',
-      'Coahuila',
-      'Colima',
-      'Durango',
-      'Guanajuato',
-      'Guerrero',
-      'Hidalgo',
-      'Jalisco',
-      'México',
-      'Michoacán',
-      'Morelos',
-      'Nayarit',
-      'Nuevo León',
-      'Oaxaca',
-      'Puebla',
-      'Querétaro',
-      'Quintana Roo',
-      'San Luis Potosí',
-      'Sinaloa',
-      'Sonora',
-      'Tabasco',
-      'Tamaulipas',
-      'Tlaxcala',
-      'Veracruz',
-      'Yucatán',
-      'Zacatecas',
-    ],
-  },
-  {
-    code: 'US',
-    name: 'Estados Unidos',
-    states: ['California', 'Texas', 'Florida', 'New York', 'Illinois'],
-  },
-  {
-    code: 'CO',
-    name: 'Colombia',
-    states: ['Bogotá D.C.', 'Antioquia', 'Valle del Cauca', 'Cundinamarca', 'Atlántico'],
-  },
-  { code: 'AR', name: 'Argentina', states: ['Buenos Aires', 'Córdoba', 'Santa Fe', 'Mendoza'] },
-  { code: 'CL', name: 'Chile', states: ['Santiago', 'Valparaíso', 'Concepción'] },
-  { code: 'PE', name: 'Perú', states: ['Lima', 'Arequipa', 'Cusco'] },
-  { code: 'ES', name: 'España', states: ['Madrid', 'Barcelona', 'Valencia'] },
-]
 
 @Component({
     selector: 'app-supplier-form',
@@ -102,8 +28,38 @@ export class SupplierFormComponent implements OnInit {
   supplierId: string | null = null
 
   readonly supplierTypes = Object.values(SupplierType)
-  readonly countries = COUNTRIES
-  availableStates = signal<string[]>([])
+
+  // País y departamento — mismo catálogo y patrón que patient-form (app de alcance
+  // nacional, Bolivia por defecto). Ciudad queda como texto libre siempre: a
+  // diferencia de pacientes, los proveedores no se limitan a La Paz/Yungas.
+  protected readonly departmentOptions = [
+    'La Paz', 'Cochabamba', 'Santa Cruz', 'Oruro', 'Potosí', 'Chuquisaca', 'Tarija', 'Beni', 'Pando',
+  ]
+  protected readonly countryOptions = [
+    'Bolivia', 'Perú', 'Chile', 'Argentina', 'Brasil', 'Paraguay', 'Colombia', 'Ecuador',
+  ]
+
+  filteredCountries(): string[] {
+    return this.filterOptions(this.countryOptions, this.supplierForm?.get('country')?.value)
+  }
+
+  /**
+   * Si el valor actual ya coincide exacto con una opción (recién seleccionada, o el
+   * default sin tocar), devuelve la lista completa — así el usuario ve todas las
+   * opciones al abrir el panel sin tener que borrar lo que ya está escrito. Solo
+   * filtra por coincidencia parcial mientras está escribiendo texto nuevo.
+   */
+  private filterOptions(options: string[], rawValue: unknown): string[] {
+    const v = String(rawValue ?? '').toLowerCase()
+    if (!v || options.some(o => o.toLowerCase() === v)) return options
+    return options.filter(o => o.toLowerCase().includes(v))
+  }
+
+  // El select de Departamento solo tiene sentido para Bolivia — fuera de ahí no hay
+  // lista curada, así que se muestra como texto libre para no sugerir opciones erróneas.
+  isBoliviaSelected(): boolean {
+    return this.supplierForm?.get('country')?.value === 'Bolivia'
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -124,9 +80,23 @@ export class SupplierFormComponent implements OnInit {
       this.loadSupplier()
     }
 
-    this.supplierForm.get('country')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(countryCode => {
-      this.onCountryChange(countryCode)
-    })
+    this.watchLocationChanges()
+  }
+
+  /**
+   * Limpia Departamento/Ciudad cuando el país deja de ser Bolivia — evita dejar un
+   * valor "huérfano" visible como texto libre que no corresponde a la nueva
+   * selección. No dispara durante loadSupplier() porque ese patchValue usa
+   * { emitEvent: false }.
+   */
+  private watchLocationChanges(): void {
+    this.supplierForm.get('country')!.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(country => {
+        if (country !== 'Bolivia') {
+          this.supplierForm.patchValue({ state: '', city: '' }, { emitEvent: false })
+        }
+      })
   }
 
   initForm(): void {
@@ -137,29 +107,13 @@ export class SupplierFormComponent implements OnInit {
       tipoProveedor: [SupplierType.MEDICAMENTOS, Validators.required],
       contactPerson: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      phone: [''],
-      country: ['', Validators.required],
-      state: [{ value: '', disabled: true }, Validators.required],
+      phone: ['', [Validators.pattern(VALIDATION_PATTERNS.phoneBolivia)]],
+      country: ['Bolivia', Validators.required],
+      state: [''],
       city: [''],
       address: [''],
-      postalCode: [''],
       notes: [''],
     })
-  }
-
-  onCountryChange(countryCode: string): void {
-    const country = this.countries.find(c => c.code === countryCode)
-    const stateControl = this.supplierForm.get('state')
-
-    if (country && country.states.length > 0) {
-      this.availableStates.set(country.states)
-      stateControl?.enable()
-      stateControl?.setValue('')
-    } else {
-      this.availableStates.set([])
-      stateControl?.disable()
-      stateControl?.setValue('')
-    }
   }
 
   loadSupplier(): void {
@@ -167,6 +121,8 @@ export class SupplierFormComponent implements OnInit {
     this.loading.set(true)
     this.suppliersService.getById(this.supplierId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: supplier => {
+        // emitEvent: false — no debe disparar watchLocationChanges() (limpiaría
+        // state/city recién asignados si el proveedor no es de Bolivia).
         this.supplierForm.patchValue({
           nombreComercial: supplier.nombreComercial,
           razonSocial: supplier.razonSocial || '',
@@ -179,13 +135,8 @@ export class SupplierFormComponent implements OnInit {
           state: supplier.state || '',
           city: supplier.city || '',
           address: supplier.address || '',
-          postalCode: supplier.postalCode || '',
           notes: supplier.notes || '',
-        })
-        // Actualizar estados disponibles si hay país seleccionado
-        if (supplier.country) {
-          this.onCountryChange(supplier.country)
-        }
+        }, { emitEvent: false })
         this.loading.set(false)
       },
       error: () => {
@@ -214,10 +165,9 @@ export class SupplierFormComponent implements OnInit {
       email: formValue.email,
       phone: formValue.phone || undefined,
       country: formValue.country,
-      state: formValue.state,
+      state: formValue.state || undefined,
       city: formValue.city || undefined,
       address: formValue.address || undefined,
-      postalCode: formValue.postalCode || undefined,
       notes: formValue.notes || undefined,
     }
 
@@ -261,10 +211,32 @@ export class SupplierFormComponent implements OnInit {
   }
 
   private scrollToFirstError(): void {
-    requestAnimationFrame(() => {
-      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    })
+    scrollToFirstInvalidField(this.elRef.nativeElement as HTMLElement)
+  }
+
+  // Badges de error por sección — cuentan controles inválidos+touched de los campos
+  // de cada tarjeta visual (un único FormGroup, sin subgrupos por sección).
+  fiscalInfoErrorCount(): number {
+    return this.countSectionErrors(['nombreComercial', 'razonSocial', 'idTributario', 'tipoProveedor'])
+  }
+
+  contactErrorCount(): number {
+    return this.countSectionErrors(['contactPerson', 'email', 'phone'])
+  }
+
+  locationErrorCount(): number {
+    return this.countSectionErrors(['country', 'state', 'city', 'address'])
+  }
+
+  notesErrorCount(): number {
+    return this.countSectionErrors(['notes'])
+  }
+
+  private countSectionErrors(fieldNames: string[]): number {
+    return fieldNames.filter(name => {
+      const c = this.supplierForm.get(name)
+      return !!c && c.invalid && c.touched
+    }).length
   }
 
   getSupplierTypeLabel(type: SupplierType): string {

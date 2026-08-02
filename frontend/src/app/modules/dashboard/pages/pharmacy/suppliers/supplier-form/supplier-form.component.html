@@ -27,7 +27,10 @@
             <span class="material-symbols-outlined msz-20">receipt_long</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información Fiscal</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Información Fiscal
+              <app-section-error-badge [count]="fiscalInfoErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Razón social, ID tributario y tipo de proveedor</p>
           </div>
         </div>
@@ -65,6 +68,9 @@
                 <mat-option value="insumos">Insumos</mat-option>
                 <mat-option value="servicios">Servicios</mat-option>
               </mat-select>
+              @if (supplierForm.get('tipoProveedor')?.hasError('required')) {
+                <mat-error>Requerido</mat-error>
+              }
             </mat-form-field>
           </div>
         </div>
@@ -79,7 +85,10 @@
             <span class="material-symbols-outlined msz-20">contact_phone</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Contacto</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Contacto
+              <app-section-error-badge [count]="contactErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Persona de contacto, email y teléfono</p>
           </div>
         </div>
@@ -107,7 +116,10 @@
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Teléfono</mat-label>
               <mat-icon matPrefix class="text-green-400">phone</mat-icon>
-              <input matInput formControlName="phone" />
+              <input matInput formControlName="phone" placeholder="Ej: 70123456" maxlength="8" />
+              @if (supplierForm.get('phone')?.hasError('pattern')) {
+                <mat-error>Debe empezar con 6 o 7 y tener 8 dígitos. Ej: 70123456</mat-error>
+              }
             </mat-form-field>
           </div>
         </div>
@@ -122,7 +134,10 @@
             <span class="material-symbols-outlined msz-20">location_on</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Ubicación</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Ubicación
+              <app-section-error-badge [count]="locationErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">País, estado, ciudad y dirección</p>
           </div>
         </div>
@@ -131,22 +146,27 @@
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>País *</mat-label>
               <mat-icon matPrefix class="text-purple-400">public</mat-icon>
-              <mat-select formControlName="country">
-                @for (c of countries; track c) {
-                  <mat-option [value]="c.code">{{ c.name }}</mat-option>
+              <input matInput formControlName="country" placeholder="País" [matAutocomplete]="autoCountry" />
+              <mat-autocomplete #autoCountry="matAutocomplete">
+                @for (c of filteredCountries(); track c) {
+                  <mat-option [value]="c">{{ c }}</mat-option>
                 }
-              </mat-select>
+              </mat-autocomplete>
+              @if (supplierForm.get('country')?.hasError('required')) {
+                <mat-error>Requerido</mat-error>
+              }
             </mat-form-field>
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Estado *</mat-label>
+              <mat-label>Estado / Departamento</mat-label>
               <mat-icon matPrefix class="text-purple-400">map</mat-icon>
-              <mat-select formControlName="state">
-                @for (st of availableStates(); track st) {
-                  <mat-option [value]="st">{{ st }}</mat-option>
-                }
-              </mat-select>
-              @if (!availableStates().length) {
-                <mat-hint>Selecciona país primero</mat-hint>
+              @if (isBoliviaSelected()) {
+                <mat-select formControlName="state">
+                  @for (d of departmentOptions; track d) {
+                    <mat-option [value]="d">{{ d }}</mat-option>
+                  }
+                </mat-select>
+              } @else {
+                <input matInput formControlName="state" placeholder="Estado / Provincia" />
               }
             </mat-form-field>
           </div>
@@ -157,16 +177,11 @@
               <input matInput formControlName="city" />
             </mat-form-field>
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Código postal</mat-label>
-              <mat-icon matPrefix class="text-purple-400">markunread_mailbox</mat-icon>
-              <input matInput formControlName="postalCode" />
+              <mat-label>Dirección</mat-label>
+              <mat-icon matPrefix class="text-purple-400">home</mat-icon>
+              <input matInput formControlName="address" />
             </mat-form-field>
           </div>
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Dirección</mat-label>
-            <mat-icon matPrefix class="text-purple-400">home</mat-icon>
-            <input matInput formControlName="address" />
-          </mat-form-field>
         </div>
       </div>
 
@@ -179,7 +194,10 @@
             <span class="material-symbols-outlined msz-20">notes</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Notas</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Notas
+              <app-section-error-badge [count]="notesErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Observaciones adicionales</p>
           </div>
         </div>

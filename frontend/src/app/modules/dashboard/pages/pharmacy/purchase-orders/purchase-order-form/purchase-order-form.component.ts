@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
+import { countInvalidFields, scrollToFirstInvalidField } from '../../../../../../shared/utils/form-errors.util'
 import { Medication, Supplier } from '../../interfaces/pharmacy.interfaces'
 import { InventoryService } from '../../services/inventory.service'
 import { PurchaseOrdersService } from '../../services/purchase-orders.service'
@@ -26,6 +27,7 @@ export class PurchaseOrderFormComponent implements OnInit {
   suppliers = signal<Supplier[]>([])
   medications = signal<Medication[]>([])
   selectedSupplier = signal<Supplier | null>(null)
+  protected readonly today = new Date()
 
   constructor(
     private fb: FormBuilder,
@@ -68,6 +70,13 @@ export class PurchaseOrderFormComponent implements OnInit {
 
   get items(): FormArray {
     return this.orderForm.get('items') as FormArray
+  }
+
+  /** Fecha mínima permitida para la entrega esperada: la fecha de la orden (o hoy si aún no se definió). */
+  get minExpectedDeliveryDate(): Date {
+    const orderDateValue = this.orderForm?.get('orderDate')?.value
+    const parsed = orderDateValue ? new Date(orderDateValue) : null
+    return parsed && !isNaN(parsed.getTime()) ? parsed : this.today
   }
 
   get totalAmount(): number {
@@ -250,10 +259,24 @@ export class PurchaseOrderFormComponent implements OnInit {
   }
 
   private scrollToFirstError(): void {
-    requestAnimationFrame(() => {
-      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    })
+    scrollToFirstInvalidField(this.elRef.nativeElement as HTMLElement)
+  }
+
+  // Badges de error por sección — visibles recién después de un intento de envío
+  // fallido (markAllAsTouched() en onSubmit() es lo que los "touched" de golpe).
+  // "Información General" son campos top-level del orderForm, así que se filtra
+  // por nombre. "Items de la Orden" es un FormArray: se suma countInvalidFields()
+  // de cada FormGroup hijo.
+  generalInfoErrorCount(): number {
+    const fields = ['supplierId', 'orderDate', 'expectedDeliveryDate', 'notes']
+    return fields.filter(name => {
+      const c = this.orderForm.get(name)
+      return !!c && c.invalid && c.touched
+    }).length
+  }
+
+  itemsErrorCount(): number {
+    return this.items.controls.reduce((sum, ctrl) => sum + countInvalidFields(ctrl as FormGroup), 0)
   }
 
   goBack(): void {

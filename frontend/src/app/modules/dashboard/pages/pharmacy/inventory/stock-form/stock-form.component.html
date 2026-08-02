@@ -27,7 +27,10 @@
             <span class="material-symbols-outlined msz-20">medication</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Medicamento</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Medicamento
+              <app-section-error-badge [count]="medicationErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Seleccione el medicamento del catálogo</p>
           </div>
         </div>
@@ -81,7 +84,10 @@
             <span class="material-symbols-outlined msz-20">inventory_2</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información del Lote</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Información del Lote
+              <app-section-error-badge [count]="batchInfoErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Número de lote, cantidad, vencimiento y ubicación</p>
           </div>
         </div>
@@ -133,6 +139,7 @@
                 matInput
                 [matDatepicker]="pickerExp"
                 formControlName="expiryDate"
+                [min]="today"
                 placeholder="Seleccione fecha"
                 />
               <mat-datepicker-toggle matIconSuffix [for]="pickerExp"></mat-datepicker-toggle>
@@ -140,6 +147,11 @@
               @if (stockForm.get('expiryDate')?.hasError('required')) {
                 <mat-error>
                   La fecha de vencimiento es requerida
+                </mat-error>
+              }
+              @if (stockForm.get('expiryDate')?.hasError('matDatepickerMin')) {
+                <mat-error>
+                  La fecha de vencimiento debe ser futura
                 </mat-error>
               }
             </mat-form-field>
@@ -163,7 +175,10 @@
             <span class="material-symbols-outlined msz-20">payments</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Costos</h3>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Costos
+              <app-section-error-badge [count]="costsErrorCount()" />
+            </h3>
             <p class="text-sm text-slate-500 m-0">Precio de costo, venta y stock mínimo</p>
           </div>
         </div>
@@ -171,7 +186,7 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Costo unitario *</mat-label>
-              <span matTextPrefix>$ &nbsp;</span>
+              <span matTextPrefix>Bs </span>
               <input
                 matInput
                 type="number"
@@ -194,7 +209,7 @@
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Precio de venta *</mat-label>
-              <span matTextPrefix>$ &nbsp;</span>
+              <span matTextPrefix>Bs </span>
               <input
                 matInput
                 type="number"
@@ -211,6 +226,11 @@
               @if (stockForm.get('sellingPrice')?.hasError('min')) {
                 <mat-error>
                   Debe ser mayor a 0
+                </mat-error>
+              }
+              @if (stockForm.get('sellingPrice')?.hasError('priceBelowCost')) {
+                <mat-error>
+                  El precio de venta no puede ser menor al costo unitario
                 </mat-error>
               }
             </mat-form-field>

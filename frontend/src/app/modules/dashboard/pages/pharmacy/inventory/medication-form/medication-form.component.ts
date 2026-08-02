@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
+import { countInvalidFields, scrollToFirstInvalidField } from '../../../../../../shared/utils/form-errors.util'
 import {
   CreateMedicationDto,
   MedicationCategory,
@@ -149,23 +150,49 @@ export class MedicationFormComponent implements OnInit {
     }
 
     this.loading = true
-    this.inventoryService.createMedication(dto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.alertService.success('Éxito', 'Medicamento creado correctamente')
-        this.router.navigate(['/dashboard/pharmacy/inventory'])
-      },
-      error: () => {
-        this.alertService.error('Error', 'No se pudo crear el medicamento')
-        this.loading = false
-      },
-    })
+    if (this.isEditMode && this.medicationId) {
+      this.inventoryService.updateMedication(this.medicationId, dto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: () => {
+          this.alertService.success('Éxito', 'Medicamento actualizado correctamente')
+          this.router.navigate(['/dashboard/pharmacy/inventory'])
+        },
+        error: () => {
+          this.alertService.error('Error', 'No se pudo actualizar el medicamento')
+          this.loading = false
+        },
+      })
+    } else {
+      this.inventoryService.createMedication(dto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: () => {
+          this.alertService.success('Éxito', 'Medicamento creado correctamente')
+          this.router.navigate(['/dashboard/pharmacy/inventory'])
+        },
+        error: () => {
+          this.alertService.error('Error', 'No se pudo crear el medicamento')
+          this.loading = false
+        },
+      })
+    }
   }
 
   private scrollToFirstError(): void {
-    requestAnimationFrame(() => {
-      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    })
+    scrollToFirstInvalidField(this.elRef.nativeElement as HTMLElement)
+  }
+
+  // Badges de error por sección — medicationForm es un único FormGroup (no uno por
+  // sección como patient-form), así que cada método acota el conteo a los campos de su
+  // propia tarjeta visual. Visibles recién tras markAllAsTouched() en onSubmit().
+  basicInfoErrorCount(): number {
+    return countInvalidFields(this.medicationForm, ['nombreComercial', 'principioActivo'])
+  }
+
+  presentationErrorCount(): number {
+    return countInvalidFields(this.medicationForm, [
+      'concentracionValor',
+      'concentracionUnidad',
+      'formaFarmaceutica',
+      'viaAdministracion',
+    ])
   }
 
   goBack(): void {

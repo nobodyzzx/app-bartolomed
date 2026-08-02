@@ -1,12 +1,52 @@
 import { Location } from '@angular/common'
 import { Component, DestroyRef, ElementRef, inject, OnInit, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
-import { FormBuilder, FormGroup, Validators } from '@angular/forms'
+import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
+import { scrollToFirstInvalidField } from '../../../../../../shared/utils/form-errors.util'
 import { ClinicContextService } from '../../../../../clinics/services/clinic-context.service'
 import { CreateMedicationStockDto, Medication } from '../../interfaces/pharmacy.interfaces'
 import { InventoryService } from '../../services/inventory.service'
+
+/**
+ * Validador cruzado a nivel de FormGroup: el precio de venta no puede ser
+ * menor al costo unitario. El error se setea directamente en el control
+ * `sellingPrice` (preservando sus errores propios) para que se muestre
+ * como mat-error en tiempo real en ese campo.
+ */
+function sellingPriceValidator(group: AbstractControl): ValidationErrors | null {
+  const unitCost = group.get('unitCost')
+  const sellingPrice = group.get('sellingPrice')
+  if (!unitCost || !sellingPrice) return null
+
+  const unitCostValue = Number(unitCost.value)
+  const sellingPriceValue = Number(sellingPrice.value)
+
+  if (
+    unitCost.value === null ||
+    unitCost.value === '' ||
+    sellingPrice.value === null ||
+    sellingPrice.value === '' ||
+    isNaN(unitCostValue) ||
+    isNaN(sellingPriceValue)
+  ) {
+    if (sellingPrice.hasError('priceBelowCost')) {
+      const { priceBelowCost, ...rest } = sellingPrice.errors || {}
+      sellingPrice.setErrors(Object.keys(rest).length ? rest : null)
+    }
+    return null
+  }
+
+  if (sellingPriceValue < unitCostValue) {
+    sellingPrice.setErrors({ ...sellingPrice.errors, priceBelowCost: true })
+  } else if (sellingPrice.hasError('priceBelowCost')) {
+    const { priceBelowCost, ...rest } = sellingPrice.errors || {}
+    sellingPrice.setErrors(Object.keys(rest).length ? rest : null)
+  }
+
+  return null
+}
 
 @Component({
     selector: 'app-stock-form',
@@ -23,6 +63,7 @@ export class StockFormComponent implements OnInit {
   stockId: string | null = null
   medications = signal<Medication[]>([])
   clinicId: string | null = null
+  protected readonly today = new Date()
 
   constructor(
     private fb: FormBuilder,
@@ -54,16 +95,19 @@ export class StockFormComponent implements OnInit {
   }
 
   initForm(): void {
-    this.stockForm = this.fb.group({
-      medicationId: ['', Validators.required],
-      batchNumber: ['', [Validators.required, Validators.minLength(3)]],
-      quantity: [null, [Validators.required, Validators.min(1)]],
-      unitCost: [null, [Validators.required, Validators.min(0.01)]],
-      sellingPrice: [null, [Validators.required, Validators.min(0.01)]],
-      expiryDate: [null, Validators.required],
-      location: [''],
-      minimumStock: [null, Validators.min(0)],
-    })
+    this.stockForm = this.fb.group(
+      {
+        medicationId: ['', Validators.required],
+        batchNumber: ['', [Validators.required, Validators.minLength(3)]],
+        quantity: [null, [Validators.required, Validators.min(1)]],
+        unitCost: [null, [Validators.required, Validators.min(0.01)]],
+        sellingPrice: [null, [Validators.required, Validators.min(0.01)]],
+        expiryDate: [null, Validators.required],
+        location: [''],
+        minimumStock: [null, Validators.min(0)],
+      },
+      { validators: [sellingPriceValidator] },
+    )
   }
 
   loadMedications(): void {
@@ -186,10 +230,30 @@ export class StockFormComponent implements OnInit {
   }
 
   private scrollToFirstError(): void {
-    requestAnimationFrame(() => {
-      const el = this.elRef.nativeElement.querySelector('.mat-form-field-invalid')
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    })
+    scrollToFirstInvalidField(this.elRef.nativeElement as HTMLElement)
+  }
+
+  // Badges de error por sección — visibles recién después de un intento de envío
+  // fallido (markAllAsTouched() en onSubmit() es lo que los "touched" de golpe).
+  // El form es un único FormGroup dividido visualmente en tarjetas, así que se
+  // filtra por nombre de campo en vez de reusar countInvalidFields() directo.
+  private countFieldsInvalid(names: string[]): number {
+    return names.filter(name => {
+      const c = this.stockForm.get(name)
+      return !!c && c.invalid && c.touched
+    }).length
+  }
+
+  medicationErrorCount(): number {
+    return this.countFieldsInvalid(['medicationId'])
+  }
+
+  batchInfoErrorCount(): number {
+    return this.countFieldsInvalid(['batchNumber', 'quantity', 'expiryDate', 'location'])
+  }
+
+  costsErrorCount(): number {
+    return this.countFieldsInvalid(['unitCost', 'sellingPrice', 'minimumStock'])
   }
 
   goBack(): void {
