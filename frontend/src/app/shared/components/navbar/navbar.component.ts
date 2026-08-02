@@ -1,15 +1,30 @@
-import { Component, computed, inject, OnInit } from '@angular/core'
-import { Router } from '@angular/router'
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
+import { NavigationEnd, Router } from '@angular/router'
+import { forkJoin, interval, of } from 'rxjs'
+import { filter } from 'rxjs/operators'
 
+import { BILLING_ROLES, CLINICAL_ROLES, PHARMACY_ROLES } from '@core/constants/role-groups'
 import { UserRoles } from '@core/enums/user-roles.enum'
 import { RoleStateService } from '@core/services/role-state.service'
 import { AuthService } from '../../../modules/auth/services/auth.service'
 import { ClinicContextService } from '../../../modules/clinics/services/clinic-context.service'
 import { Clinic } from '../../../modules/dashboard/pages/admin/clinics/interfaces/clinic.interface'
 import { ClinicsService } from '../../../modules/dashboard/pages/admin/clinics/services/clinics.service'
+// DashboardService vive bajo la página del dashboard, pero está providedIn:'root' y no depende de
+// nada module-scoped — se reutiliza acá para no duplicar las mismas 3 llamadas de "alertas" que ya
+// arma el dashboard (stock bajo / citas pendientes / facturas vencidas), ahora accesibles desde
+// cualquier página vía la campanita del navbar.
+import { DashboardService } from '../../../modules/dashboard/pages/main-dashboard/dashboard.service'
+import { Patient } from '../../../modules/dashboard/pages/patients/interfaces'
+import { PatientsService } from '../../../modules/dashboard/pages/patients/services/patients.service'
 import { SidenavService } from '../services/sidenav.service'
+import { BreadcrumbCrumb, buildBreadcrumb } from './breadcrumb.util'
 
 const CLINIC_SEARCH_THRESHOLD = 5
+const ALERTS_REFRESH_MS = 60_000
+const PATIENT_SEARCH_MIN_LENGTH = 2
+const PATIENT_SEARCH_DEBOUNCE_MS = 250
 
 const ROLE_LABELS: Record<string, string> = {
   'super-admin': 'Super Admin',
@@ -29,6 +44,12 @@ const ROLE_PRIORITY: UserRoles[] = [
   UserRoles.RECEPTIONIST,
 ]
 
+interface AlertCounts {
+  lowStock: number
+  pendingAppointments: number
+  overdueInvoices: number
+}
+
 @Component({
     selector: 'share-navbar',
     templateUrl: './navbar.component.html',
@@ -41,7 +62,10 @@ export class NavbarComponent implements OnInit {
   private sidenavService = inject(SidenavService)
   private clinicCtx = inject(ClinicContextService)
   private clinicsService = inject(ClinicsService)
+  private dashboardService = inject(DashboardService)
+  private patientsService = inject(PatientsService)
   private router = inject(Router)
+  private destroyRef = inject(DestroyRef)
 
   public isExpanded = this.sidenavService.isExpanded
   public isMobileOpen = this.sidenavService.isMobileOpen
@@ -86,9 +110,44 @@ export class NavbarComponent implements OnInit {
 
   private _searchLower = ''
 
+  // ── Breadcrumb (reutiliza MENU_ITEMS, la misma fuente que el sidebar) ─────
+
+  public breadcrumb = signal<BreadcrumbCrumb[]>(buildBreadcrumb(this.router.url))
+
+  // ── Búsqueda global de pacientes (visible solo para roles clínicos) ───────
+
+  public showPatientSearch = computed(() => this.roleState.hasAnyRole(CLINICAL_ROLES))
+  public patientSearchTerm = signal('')
+  public patientSearchResults = signal<Patient[]>([])
+  public patientSearchLoading = signal(false)
+  private patientSearchTimer?: ReturnType<typeof setTimeout>
+
+  // ── Campana de alertas (stock bajo / citas pendientes / facturas vencidas) ─
+
+  // CLINICAL_ROLES ya incluye ADMIN/SUPER_ADMIN, así que cubre a los 3 grupos con roles funcionales
+  // (PHARMACIST y RECEPTIONIST no están en CLINICAL_ROLES, por eso se agregan explícitos).
+  public showAlertsBell = computed(() =>
+    this.roleState.hasAnyRole([...CLINICAL_ROLES, ...PHARMACY_ROLES, ...BILLING_ROLES]),
+  )
+  public showStockAlertRow = computed(() => this.roleState.hasAnyRole(PHARMACY_ROLES))
+  public showAppointmentsAlertRow = computed(() => this.roleState.hasAnyRole(CLINICAL_ROLES))
+  public showBillingAlertRow = computed(() => this.roleState.hasAnyRole(BILLING_ROLES))
+  public alertCounts = signal<AlertCounts>({ lowStock: 0, pendingAppointments: 0, overdueInvoices: 0 })
+  public totalAlerts = computed(() => {
+    const c = this.alertCounts()
+    return c.lowStock + c.pendingAppointments + c.overdueInvoices
+  })
+
   ngOnInit() {
     this.loadClinics()
     this.selectedClinicId = this.clinicCtx.clinicId
+
+    this.loadAlerts()
+    interval(ALERTS_REFRESH_MS).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.loadAlerts())
+
+    this.router.events
+      .pipe(filter(e => e instanceof NavigationEnd), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.breadcrumb.set(buildBreadcrumb(this.router.url)))
   }
 
   toggleSidenav() {
@@ -164,5 +223,69 @@ export class NavbarComponent implements OnInit {
 
   trackClinicById(_index: number, clinic: Clinic): string {
     return clinic.id
+  }
+
+  // ── Búsqueda global de pacientes ────────────────────────────────────────
+
+  onPatientSearchInput(value: string): void {
+    this.patientSearchTerm.set(value)
+    if (this.patientSearchTimer) clearTimeout(this.patientSearchTimer)
+
+    const term = value.trim()
+    if (term.length < PATIENT_SEARCH_MIN_LENGTH) {
+      this.patientSearchResults.set([])
+      this.patientSearchLoading.set(false)
+      return
+    }
+
+    this.patientSearchLoading.set(true)
+    this.patientSearchTimer = setTimeout(() => {
+      const clinicId = this.clinicCtx.clinicId || undefined
+      this.patientsService.searchPatients(term, clinicId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: patients => {
+          this.patientSearchResults.set(patients || [])
+          this.patientSearchLoading.set(false)
+        },
+        error: () => {
+          this.patientSearchResults.set([])
+          this.patientSearchLoading.set(false)
+        },
+      })
+    }, PATIENT_SEARCH_DEBOUNCE_MS)
+  }
+
+  goToPatient(patientId: string): void {
+    this.resetPatientSearch()
+    this.router.navigate(['/dashboard/patients/view', patientId])
+  }
+
+  resetPatientSearch(): void {
+    if (this.patientSearchTimer) clearTimeout(this.patientSearchTimer)
+    this.patientSearchTerm.set('')
+    this.patientSearchResults.set([])
+    this.patientSearchLoading.set(false)
+  }
+
+  // ── Campana de alertas ──────────────────────────────────────────────────
+
+  private loadAlerts(): void {
+    const needsStock = this.roleState.hasAnyRole(PHARMACY_ROLES)
+    const needsAppointments = this.roleState.hasAnyRole(CLINICAL_ROLES)
+    const needsBilling = this.roleState.hasAnyRole(BILLING_ROLES)
+    if (!needsStock && !needsAppointments && !needsBilling) return
+
+    forkJoin({
+      stock: needsStock ? this.dashboardService.getLowStockAlerts() : of([]),
+      pending: needsAppointments ? this.dashboardService.getPendingAppointmentsCount() : of(0),
+      billing: needsBilling
+        ? this.dashboardService.getBillingSummary()
+        : of({ pendingInvoices: 0, overdueInvoices: 0, pendingRevenue: 0 }),
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(({ stock, pending, billing }) => {
+      this.alertCounts.set({
+        lowStock: stock.length,
+        pendingAppointments: pending,
+        overdueInvoices: billing.overdueInvoices,
+      })
+    })
   }
 }

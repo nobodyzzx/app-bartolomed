@@ -1,6 +1,7 @@
 import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
+import { ADMIN_ONLY_ROLES, BILLING_ROLES, CLINICAL_ROLES, PHARMACY_ROLES } from '@core/constants/role-groups'
 import { UserRoles } from '@core/enums/user-roles.enum'
 import { RoleStateService } from '@core/services/role-state.service'
 import { StatCardColor } from '@shared/components/stat-card/stat-card.component'
@@ -29,12 +30,6 @@ interface QuickActionDef {
   roles: UserRoles[]
 }
 
-const CLINICAL:   UserRoles[] = [UserRoles.DOCTOR, UserRoles.NURSE, UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
-const ADMIN_ONLY: UserRoles[] = [UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
-const PHARMACY:   UserRoles[] = [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
-// Mismos roles que tienen Permission.BillingRead/BillingManage (role-permissions.map.ts) —
-// PHARMACIST queda afuera a propósito: su facturación es PharmacyBilling, un permiso distinto.
-const BILLING:    UserRoles[] = [UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
 // Roles que ven "todas" las citas/pacientes de la clínica en vez de solo las propias.
 const BROAD_VIEW: UserRoles[] = [UserRoles.NURSE, UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
 
@@ -152,49 +147,49 @@ export class MainDashboardComponent implements OnInit {
         label: 'Total Pacientes', sublabel: 'Registrados',
         icon: 'people', color: 'blue', route: '/dashboard/patients',
         value: this.stats.totalPatients,
-        roles: CLINICAL,
+        roles: CLINICAL_ROLES,
       },
       {
         label: this.isDoctorOnlyView ? 'Mis Citas Hoy' : 'Citas Hoy', sublabel: 'Programadas',
         icon: 'calendar_today', color: 'green', route: '/dashboard/appointments',
         value: this.stats.totalAppointments,
-        roles: CLINICAL,
+        roles: CLINICAL_ROLES,
       },
       {
         label: 'Por Confirmar', sublabel: this.isDoctorOnlyView ? 'Mis citas pendientes' : 'Citas pendientes',
         icon: 'pending_actions', color: 'amber', route: '/dashboard/appointments',
         value: this.stats.pendingAppointments,
-        roles: CLINICAL,
+        roles: CLINICAL_ROLES,
       },
       {
         label: 'Personal Activo', sublabel: this.staffBreakdownLabel(totalStaff),
         icon: 'medical_services', color: 'purple', route: '/dashboard/users',
         value: totalStaff,
-        roles: ADMIN_ONLY,
+        roles: ADMIN_ONLY_ROLES,
       },
       {
         label: 'Stock Bajo', sublabel: 'Medicamentos',
         icon: 'inventory_2', color: 'red', route: '/dashboard/pharmacy/inventory',
         value: this.stats.lowStockItems,
-        roles: PHARMACY,
+        roles: PHARMACY_ROLES,
       },
       {
         label: 'Ventas Farmacia', sublabel: 'Este mes',
         icon: 'attach_money', color: 'orange', route: '/dashboard/reports/financial-reports',
         value: this.formatCurrency(this.stats.monthlyRevenue),
-        roles: PHARMACY,
+        roles: PHARMACY_ROLES,
       },
       {
         label: 'Facturas Pendientes', sublabel: this.stats.overdueInvoices > 0 ? `${this.stats.overdueInvoices} vencida(s)` : 'Por cobrar',
         icon: 'receipt_long', color: 'amber', route: '/dashboard/billing/invoices',
         value: this.stats.pendingInvoices,
-        roles: BILLING,
+        roles: BILLING_ROLES,
       },
       {
         label: 'Por Cobrar', sublabel: 'Monto pendiente',
         icon: 'payments', color: 'red', route: '/dashboard/billing/invoices',
         value: this.formatCurrency(this.stats.pendingRevenue),
-        roles: BILLING,
+        roles: BILLING_ROLES,
       },
     ]
     return cards.filter(c => this.roleState.hasAnyRole(c.roles))
@@ -224,13 +219,13 @@ export class MainDashboardComponent implements OnInit {
         label: 'Nueva Cita', icon: 'event_available',
         route: '/dashboard/appointments/new',
         color: 'bg-green-50 text-green-600 hover:bg-green-100 border-green-100',
-        roles: [...CLINICAL],
+        roles: [...CLINICAL_ROLES],
       },
       {
         label: 'Nueva Venta', icon: 'point_of_sale',
         route: '/dashboard/pharmacy/sales-dispensing/new',
         color: 'bg-purple-50 text-purple-600 hover:bg-purple-100 border-purple-100',
-        roles: PHARMACY,
+        roles: PHARMACY_ROLES,
       },
       {
         // NURSE tiene RecordsRead (ve el módulo) pero el backend solo permite
@@ -262,7 +257,7 @@ export class MainDashboardComponent implements OnInit {
         label: 'Ver Inventario', icon: 'inventory',
         route: '/dashboard/pharmacy/inventory',
         color: 'bg-orange-50 text-orange-600 hover:bg-orange-100 border-orange-100',
-        roles: PHARMACY,
+        roles: PHARMACY_ROLES,
       },
     ]
     return actions.filter(a => this.roleState.hasAnyRole(a.roles))
@@ -271,31 +266,31 @@ export class MainDashboardComponent implements OnInit {
   // ── Visibilidad de secciones por rol ─────────────────────────────────────
 
   get showAppointmentsSection(): boolean {
-    return this.roleState.hasAnyRole(CLINICAL)
+    return this.roleState.hasAnyRole(CLINICAL_ROLES)
   }
 
   get showStockSection(): boolean {
-    return this.roleState.hasAnyRole(PHARMACY)
+    return this.roleState.hasAnyRole(PHARMACY_ROLES)
   }
 
   get showPatientsSection(): boolean {
-    return this.roleState.hasAnyRole(CLINICAL)
+    return this.roleState.hasAnyRole(CLINICAL_ROLES)
   }
 
   get showSalesCharts(): boolean {
-    return this.roleState.hasAnyRole(PHARMACY)
+    return this.roleState.hasAnyRole(PHARMACY_ROLES)
   }
 
   get showStaffSection(): boolean {
-    return this.roleState.hasAnyRole(ADMIN_ONLY)
+    return this.roleState.hasAnyRole(ADMIN_ONLY_ROLES)
   }
 
   get showAppointmentChart(): boolean {
-    return this.roleState.hasAnyRole(CLINICAL)
+    return this.roleState.hasAnyRole(CLINICAL_ROLES)
   }
 
   get showBillingSection(): boolean {
-    return this.roleState.hasAnyRole(BILLING)
+    return this.roleState.hasAnyRole(BILLING_ROLES)
   }
 
   /**
