@@ -2,11 +2,17 @@ import { ElementRef } from '@angular/core'
 import { TestBed } from '@angular/core/testing'
 import { FormBuilder } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
+import { Permission } from '@core/enums/permission.enum'
+import { RoleStateService } from '@core/services/role-state.service'
 import { of, throwError } from 'rxjs'
 import { AlertService } from '../../../../../core/services/alert.service'
 import { ClinicContextService } from '../../../../clinics/services/clinic-context.service'
 import { Clinic } from '../../admin/clinics/interfaces/clinic.interface'
 import { ClinicsService } from '../../admin/clinics/services'
+import { AppointmentsService } from '../../appointments/services/appointments.service'
+import { BillingService } from '../../billing/billing.service'
+import { MedicalRecordsService } from '../../medical-records/services/medical-records.service'
+import { PrescriptionsService } from '../../prescriptions/prescriptions.service'
 import { Gender, Patient } from '../interfaces'
 import { PatientsService } from '../services'
 import { PatientFormComponent } from './patient-form.component'
@@ -19,6 +25,13 @@ describe('PatientFormComponent', () => {
   let alert: jasmine.SpyObj<AlertService>
   let router: jasmine.SpyObj<Router>
   let route: { paramMap: any; snapshot: { data: Record<string, any> } }
+  let permissions: Permission[]
+  let appointmentsService: jasmine.SpyObj<AppointmentsService>
+  let medicalRecordsService: jasmine.SpyObj<MedicalRecordsService>
+  let prescriptionsService: jasmine.SpyObj<PrescriptionsService>
+  let billingService: jasmine.SpyObj<BillingService>
+
+  const fakeRoleState = { hasPermission: (p: Permission) => permissions.includes(p) }
 
   const makeClinic = (overrides: Partial<Clinic> = {}): Clinic =>
     ({ id: 'clinic-1', name: 'Norte', address: 'x', phone: 'x', isActive: true, ...overrides }) as Clinic
@@ -54,6 +67,11 @@ describe('PatientFormComponent', () => {
         { provide: ClinicsService, useValue: clinicsService },
         { provide: ClinicContextService, useValue: clinicCtx },
         { provide: AlertService, useValue: alert },
+        { provide: RoleStateService, useValue: fakeRoleState },
+        { provide: AppointmentsService, useValue: appointmentsService },
+        { provide: MedicalRecordsService, useValue: medicalRecordsService },
+        { provide: PrescriptionsService, useValue: prescriptionsService },
+        { provide: BillingService, useValue: billingService },
       ],
     })
     return TestBed.inject(PatientFormComponent)
@@ -72,6 +90,21 @@ describe('PatientFormComponent', () => {
     alert = jasmine.createSpyObj('AlertService', ['fire'])
     alert.fire.and.returnValue(Promise.resolve({ isConfirmed: false } as any))
     router = jasmine.createSpyObj('Router', ['navigate'])
+
+    permissions = [
+      Permission.AppointmentsRead,
+      Permission.RecordsRead,
+      Permission.PrescriptionsRead,
+      Permission.BillingRead,
+    ]
+    appointmentsService = jasmine.createSpyObj('AppointmentsService', ['getAppointments'])
+    appointmentsService.getAppointments.and.returnValue(of([]))
+    medicalRecordsService = jasmine.createSpyObj('MedicalRecordsService', ['getMedicalRecordsByPatient'])
+    medicalRecordsService.getMedicalRecordsByPatient.and.returnValue(of([]))
+    prescriptionsService = jasmine.createSpyObj('PrescriptionsService', ['list'])
+    prescriptionsService.list.and.returnValue(of({ total: 0 }))
+    billingService = jasmine.createSpyObj('BillingService', ['listInvoices'])
+    billingService.listInvoices.and.returnValue(of({ total: 0 }))
   })
 
   describe('constructor / initializeForms', () => {
@@ -192,6 +225,95 @@ describe('PatientFormComponent', () => {
 
       expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Error al Cargar Paciente' }))
       expect(router.navigate).toHaveBeenCalledWith(['/dashboard/patients'])
+    })
+  })
+
+  describe('Accesos rápidos (modo vista)', () => {
+    beforeEach(() => {
+      patientsService.findOne.and.returnValue(of(makePatient({ id: 'patient-1' })))
+    })
+
+    it('pide conteos solo de los módulos que el rol tiene permiso de ver', () => {
+      permissions = [Permission.RecordsRead]
+      component = createComponent({ id: 'patient-1' }, { viewMode: true })
+
+      component.ngOnInit()
+
+      expect(medicalRecordsService.getMedicalRecordsByPatient).toHaveBeenCalledWith('patient-1')
+      expect(appointmentsService.getAppointments).not.toHaveBeenCalled()
+      expect(prescriptionsService.list).not.toHaveBeenCalled()
+      expect(billingService.listInvoices).not.toHaveBeenCalled()
+    })
+
+    it('muestra los conteos reales una vez cargados', () => {
+      appointmentsService.getAppointments.and.returnValue(of([{}, {}] as any))
+      medicalRecordsService.getMedicalRecordsByPatient.and.returnValue(of([{}] as any))
+      prescriptionsService.list.and.returnValue(of({ total: 3 }))
+      billingService.listInvoices.and.returnValue(of({ total: 5 }))
+      component = createComponent({ id: 'patient-1' }, { viewMode: true })
+
+      component.ngOnInit()
+
+      expect(component.relatedCounts).toEqual({
+        appointments: 2,
+        medicalRecords: 1,
+        prescriptions: 3,
+        invoices: 5,
+      })
+    })
+
+    it('no pide ningún conteo relacionado fuera del modo vista (edición/creación)', () => {
+      component = createComponent({ id: 'patient-1' })
+
+      component.ngOnInit()
+
+      expect(medicalRecordsService.getMedicalRecordsByPatient).not.toHaveBeenCalled()
+      expect(appointmentsService.getAppointments).not.toHaveBeenCalled()
+    })
+
+    it('hasAnyQuickAccess es false si el rol no tiene ningún permiso relevante', () => {
+      permissions = []
+      component = createComponent({ id: 'patient-1' }, { viewMode: true })
+
+      expect(component.hasAnyQuickAccess).toBeFalse()
+    })
+  })
+
+  describe('navegación de accesos rápidos', () => {
+    beforeEach(() => {
+      patientsService.findOne.and.returnValue(of(makePatient({ id: 'patient-1' })))
+      component = createComponent({ id: 'patient-1' }, { viewMode: true })
+      component.ngOnInit()
+    })
+
+    it('goToAppointments navega con patientId como query param', () => {
+      component.goToAppointments()
+      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/appointments'], {
+        queryParams: { patientId: 'patient-1' },
+      })
+    })
+
+    it('goToMedicalHistory navega a la ruta dedicada de historial del paciente', () => {
+      component.goToMedicalHistory()
+      expect(router.navigate).toHaveBeenCalledWith([
+        '/dashboard/medical-records/patient',
+        'patient-1',
+        'history',
+      ])
+    })
+
+    it('goToPrescriptions navega con patientId como query param', () => {
+      component.goToPrescriptions()
+      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/prescriptions'], {
+        queryParams: { patientId: 'patient-1' },
+      })
+    })
+
+    it('goToBilling navega con patientId como query param', () => {
+      component.goToBilling()
+      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/billing'], {
+        queryParams: { patientId: 'patient-1' },
+      })
     })
   })
 

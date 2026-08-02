@@ -1,6 +1,6 @@
 import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
-import { Router } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import {
   Appointment,
@@ -23,6 +23,10 @@ export class AppointmentsPageComponent implements OnInit {
   loading: boolean = false
   searchTerm: string = ''
   selectedStatus: string = 'all'
+
+  // Filtro por paciente (llegando desde "Accesos Rápidos" en la ficha del paciente)
+  patientIdFilter: string | null = null
+  patientNameFilter: string | null = null
 
   readonly statusColors: { [key: string]: string } = {
     scheduled: 'bg-blue-100 text-blue-800',
@@ -60,6 +64,7 @@ export class AppointmentsPageComponent implements OnInit {
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private appointmentsService: AppointmentsService,
     private alert: AlertService,
   ) {}
@@ -69,21 +74,26 @@ export class AppointmentsPageComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.patientIdFilter = this.route.snapshot.queryParamMap.get('patientId')
     this.loadAppointments()
   }
 
   loadAppointments() {
     this.loading = true
-    const today = new Date()
-    const filters: AppointmentFilters = {
-      startDate: today.toISOString(),
-    }
+    // Filtrado por paciente (desde "Accesos Rápidos" en su ficha): se quiere ver todo su
+    // historial, no solo desde hoy — el default "desde hoy" solo aplica a la vista general.
+    const filters: AppointmentFilters = this.patientIdFilter
+      ? { patientId: this.patientIdFilter }
+      : { startDate: new Date().toISOString() }
 
     this.appointmentsService.getAppointments(filters).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: appointments => {
         this.appointments = appointments.sort((a, b) => {
           return new Date(a.appointmentDate).getTime() - new Date(b.appointmentDate).getTime()
         })
+        this.patientNameFilter = this.patientIdFilter && appointments[0]
+          ? `${appointments[0].patient.firstName} ${appointments[0].patient.lastName}`
+          : null
         this.applyFilters()
         this.loading = false
       },
@@ -91,6 +101,13 @@ export class AppointmentsPageComponent implements OnInit {
         this.loading = false
       },
     })
+  }
+
+  clearPatientFilter(): void {
+    this.router.navigate([], { queryParams: {} })
+    this.patientIdFilter = null
+    this.patientNameFilter = null
+    this.loadAppointments()
   }
 
   applyFilters() {

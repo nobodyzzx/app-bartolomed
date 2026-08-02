@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing'
-import { Router } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { of } from 'rxjs'
 import { Prescription } from './interfaces/prescription-ui.interface'
@@ -34,13 +34,18 @@ describe('PrescriptionListComponent', () => {
       ...overrides,
     }) as Prescription
 
-  const createComponent = () => {
+  const createComponent = (patientIdParam: string | null = null) => {
+    TestBed.resetTestingModule()
     TestBed.configureTestingModule({
       providers: [
         PrescriptionListComponent,
         { provide: PrescriptionsService, useValue: prescriptionsService },
         { provide: Router, useValue: router },
         { provide: AlertService, useValue: alert },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: { get: (k: string) => (k === 'patientId' ? patientIdParam : null) } } },
+        },
       ],
     })
     return TestBed.inject(PrescriptionListComponent)
@@ -127,6 +132,52 @@ describe('PrescriptionListComponent', () => {
       component.setStatusFilter('dispensed')
 
       expect(prescriptionsService.list).toHaveBeenCalledWith(1, 100, { status: 'dispensed' })
+    })
+  })
+
+  describe('filtro por paciente (llegando desde "Accesos Rápidos" en la ficha del paciente)', () => {
+    it('sin patientId en la URL, no filtra por paciente', () => {
+      prescriptionsService.list.and.returnValue(of({ items: [] }))
+      component = createComponent(null)
+
+      component.ngOnInit()
+
+      expect(prescriptionsService.list).toHaveBeenCalledWith(1, 100, {})
+      expect(component.patientIdFilter).toBeNull()
+    })
+
+    it('con patientId en la URL, lo agrega al filtro server-side', () => {
+      prescriptionsService.list.and.returnValue(of({ items: [] }))
+      component = createComponent('patient-1')
+
+      component.ngOnInit()
+
+      expect(prescriptionsService.list).toHaveBeenCalledWith(1, 100, { patientId: 'patient-1' })
+      expect(component.patientIdFilter).toBe('patient-1')
+    })
+
+    it('deriva el nombre del paciente filtrado de la primera receta recibida', () => {
+      prescriptionsService.list.and.returnValue(
+        of({ items: [makePrescription({ patient: { id: 'p1', firstName: 'Ana', lastName: 'Gómez', documentNumber: '1' } })] }),
+      )
+      component = createComponent('patient-1')
+
+      component.ngOnInit()
+
+      expect(component.patientNameFilter).toBe('Ana Gómez')
+    })
+
+    it('clearPatientFilter limpia el filtro y recarga sin patientId', () => {
+      prescriptionsService.list.and.returnValue(of({ items: [] }))
+      component = createComponent('patient-1')
+      component.ngOnInit()
+
+      component.clearPatientFilter()
+
+      expect(component.patientIdFilter).toBeNull()
+      expect(component.patientNameFilter).toBeNull()
+      expect(prescriptionsService.list).toHaveBeenCalledWith(1, 100, {})
+      expect(router.navigate).toHaveBeenCalledWith([], { queryParams: {} })
     })
   })
 })

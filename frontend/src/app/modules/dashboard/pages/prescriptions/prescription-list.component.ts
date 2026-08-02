@@ -1,6 +1,6 @@
 import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
-import { Router } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { Prescription } from './interfaces/prescription-ui.interface'
 import { PrescriptionsService } from './prescriptions.service'
@@ -29,13 +29,19 @@ export class PrescriptionListComponent implements OnInit {
   searchTerm = ''
   selectedStatus = ''
 
+  // Filtro por paciente (llegando desde "Accesos Rápidos" en la ficha del paciente)
+  patientIdFilter: string | null = null
+  patientNameFilter: string | null = null
+
   constructor(
     private prescriptionsService: PrescriptionsService,
     private router: Router,
+    private route: ActivatedRoute,
     private alert: AlertService,
   ) {}
 
   ngOnInit(): void {
+    this.patientIdFilter = this.route.snapshot.queryParamMap.get('patientId')
     this.loadPrescriptions()
   }
 
@@ -48,6 +54,7 @@ export class PrescriptionListComponent implements OnInit {
     // client-side en filteredPrescriptions.
     if (this.selectedStatus && this.selectedStatus !== 'expired') filter.status = this.selectedStatus
     if (this.searchTerm?.trim()) filter.search = this.searchTerm.trim()
+    if (this.patientIdFilter) filter.patientId = this.patientIdFilter
 
     this.prescriptionsService.list(1, 100, filter).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (response: any) => {
@@ -56,6 +63,9 @@ export class PrescriptionListComponent implements OnInit {
           this.selectedStatus === 'expired'
             ? this.prescriptions.filter(p => this.isEffectivelyExpired(p))
             : this.prescriptions
+        this.patientNameFilter = this.patientIdFilter && this.prescriptions[0]
+          ? `${this.prescriptions[0].patient?.firstName ?? ''} ${this.prescriptions[0].patient?.lastName ?? ''}`.trim()
+          : null
         this.loading = false
       },
       error: () => {
@@ -67,6 +77,13 @@ export class PrescriptionListComponent implements OnInit {
         })
       },
     })
+  }
+
+  clearPatientFilter(): void {
+    this.router.navigate([], { queryParams: {} })
+    this.patientIdFilter = null
+    this.patientNameFilter = null
+    this.loadPrescriptions()
   }
 
   onSearch(): void {

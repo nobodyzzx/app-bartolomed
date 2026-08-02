@@ -1,6 +1,6 @@
 import { Location } from '@angular/common'
 import { TestBed } from '@angular/core/testing'
-import { Router } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { of, throwError } from 'rxjs'
 import { BillingPageComponent } from './billing.page.component'
@@ -25,7 +25,8 @@ describe('BillingPageComponent', () => {
       ...overrides,
     }) as RecentInvoice
 
-  const createComponent = () => {
+  const createComponent = (patientIdParam: string | null = null) => {
+    TestBed.resetTestingModule()
     TestBed.configureTestingModule({
       providers: [
         BillingPageComponent,
@@ -33,6 +34,10 @@ describe('BillingPageComponent', () => {
         { provide: AlertService, useValue: alert },
         { provide: BillingService, useValue: billingService },
         { provide: Location, useValue: location },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: { get: (k: string) => (k === 'patientId' ? patientIdParam : null) } } },
+        },
       ],
     })
     return TestBed.inject(BillingPageComponent)
@@ -129,8 +134,8 @@ describe('BillingPageComponent', () => {
       expect(component.formatDate('2026-03-15')).toMatch(/\d{2}\/\d{2}\/2026/)
     })
 
-    it('formatCurrency formatea a EUR', () => {
-      expect(component.formatCurrency(1234.5)).toContain('€')
+    it('formatCurrency formatea a Bs (BOB) — app de alcance boliviano, no EUR', () => {
+      expect(component.formatCurrency(1234.5)).toContain('Bs')
     })
   })
 
@@ -183,6 +188,58 @@ describe('BillingPageComponent', () => {
         title: 'Búsqueda',
         text: 'Buscando: "juan". Funcionalidad en desarrollo.',
       })
+    })
+  })
+
+  describe('filtro por paciente (llegando desde "Accesos Rápidos" en la ficha del paciente)', () => {
+    beforeEach(() => {
+      billingService.getStatistics.and.returnValue(of({} as any))
+    })
+
+    it('sin patientId en la URL, pide solo las 5 recientes sin filtro', () => {
+      billingService.listInvoices.and.returnValue(of({ items: [] }))
+      component = createComponent(null)
+
+      component.ngOnInit()
+
+      expect(billingService.listInvoices).toHaveBeenCalledWith(1, 5, {})
+      expect(component.patientIdFilter).toBeNull()
+    })
+
+    it('con patientId en la URL, pide TODAS las facturas de ese paciente (no solo 5)', () => {
+      billingService.listInvoices.and.returnValue(
+        of({ items: Array.from({ length: 8 }, (_, i) => makeInvoice({ id: `inv-${i}` })) }),
+      )
+      component = createComponent('patient-1')
+
+      component.ngOnInit()
+
+      expect(billingService.listInvoices).toHaveBeenCalledWith(1, 100, { patientId: 'patient-1' })
+      expect(component.recentInvoices.length).toBe(8)
+    })
+
+    it('deriva el nombre del paciente filtrado de la primera factura recibida', () => {
+      billingService.listInvoices.and.returnValue(
+        of({ items: [makeInvoice({ patient: { firstName: 'Ana', lastName: 'Gómez' } as any })] }),
+      )
+      component = createComponent('patient-1')
+
+      component.ngOnInit()
+
+      expect(component.patientNameFilter).toBe('Ana Gómez')
+    })
+
+    it('clearPatientFilter limpia el filtro y recarga sin patientId', () => {
+      billingService.listInvoices.and.returnValue(of({ items: [] }))
+      component = createComponent('patient-1')
+      component.ngOnInit()
+
+      component.clearPatientFilter()
+
+      expect(component.patientIdFilter).toBeNull()
+      expect(component.patientNameFilter).toBeNull()
+      expect(billingService.listInvoices).toHaveBeenCalledWith(1, 5, {})
+      expect(router.navigate).toHaveBeenCalledWith([], { queryParams: {} })
     })
   })
 })

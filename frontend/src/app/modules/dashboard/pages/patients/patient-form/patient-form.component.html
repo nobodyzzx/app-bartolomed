@@ -31,6 +31,78 @@
     <div class="space-y-6">
 
       <!-- ══════════════════════════════════════════
+      ACCESOS RÁPIDOS (solo modo vista) — datos relacionados del paciente en
+      Citas/Expedientes/Recetas/Facturación, cada uno visible solo si el rol
+      tiene el permiso real del módulo destino (mismo criterio que el propio
+      guard de esa ruta, para no mostrar un acceso que 403 al hacer clic).
+      ══════════════════════════════════════════ -->
+      @if (isViewMode && hasAnyQuickAccess) {
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div class="flex items-center gap-4 px-6 py-5 bg-slate-50 border-b border-slate-100">
+            <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined msz-20">explore</span>
+            </div>
+            <div>
+              <h3 class="text-base font-semibold text-slate-900 leading-tight">Accesos Rápidos</h3>
+              <p class="text-xs text-slate-500 m-0">Citas, expedientes, recetas y facturas de este paciente</p>
+            </div>
+          </div>
+          <div class="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            @if (isLoadingRelated) {
+              @for (_ of [1,2,3,4]; track $index) {
+                <div class="h-24 bg-slate-100 rounded-2xl animate-pulse"></div>
+              }
+            } @else {
+              @if (showRecordsQuickAccess()) {
+                <app-stat-card
+                  label="Expedientes"
+                  [value]="relatedCounts.medicalRecords"
+                  sublabel="Historial médico"
+                  icon="description"
+                  color="blue"
+                  [clickable]="true"
+                  (cardClick)="goToMedicalHistory()"
+                />
+              }
+              @if (showAppointmentsQuickAccess()) {
+                <app-stat-card
+                  label="Citas"
+                  [value]="relatedCounts.appointments"
+                  sublabel="Historial de citas"
+                  icon="calendar_today"
+                  color="green"
+                  [clickable]="true"
+                  (cardClick)="goToAppointments()"
+                />
+              }
+              @if (showPrescriptionsQuickAccess()) {
+                <app-stat-card
+                  label="Recetas"
+                  [value]="relatedCounts.prescriptions"
+                  sublabel="Recetas electrónicas"
+                  icon="receipt_long"
+                  color="purple"
+                  [clickable]="true"
+                  (cardClick)="goToPrescriptions()"
+                />
+              }
+              @if (showBillingQuickAccess()) {
+                <app-stat-card
+                  label="Facturas"
+                  [value]="relatedCounts.invoices"
+                  sublabel="Facturación y pagos"
+                  icon="payments"
+                  color="amber"
+                  [clickable]="true"
+                  (cardClick)="goToBilling()"
+                />
+              }
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ══════════════════════════════════════════
       SECCIÓN 1 — Información Personal (azul)
       ══════════════════════════════════════════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">

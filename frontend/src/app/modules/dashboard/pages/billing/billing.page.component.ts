@@ -1,7 +1,7 @@
 import { Location } from '@angular/common'
 import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
-import { Router } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { BillingService } from './billing.service'
 import { BillingStatistics, RecentInvoice } from './interfaces/billing-ui.interfaces'
@@ -21,14 +21,20 @@ export class BillingPageComponent implements OnInit {
   isLoading = false
   displayedColumns: string[] = ['number', 'patient', 'date', 'amount', 'status', 'actions']
 
+  // Filtro por paciente (llegando desde "Accesos Rápidos" en la ficha del paciente)
+  patientIdFilter: string | null = null
+  patientNameFilter: string | null = null
+
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private alert: AlertService,
     private billingService: BillingService,
     private location: Location,
   ) {}
 
   ngOnInit(): void {
+    this.patientIdFilter = this.route.snapshot.queryParamMap.get('patientId')
     this.loadData()
   }
 
@@ -56,11 +62,17 @@ export class BillingPageComponent implements OnInit {
       },
     })
 
-    // Cargar facturas recientes
-    this.billingService.listInvoices(1, 5).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    // Facturas: "recientes" (top 5) en la vista general, o TODAS las del paciente cuando
+    // se llega filtrado desde "Accesos Rápidos" en su ficha.
+    const filter = this.patientIdFilter ? { patientId: this.patientIdFilter } : {}
+    const pageSize = this.patientIdFilter ? 100 : 5
+    this.billingService.listInvoices(1, pageSize, filter).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (response: any) => {
         const invoices = response.items || []
-        this.recentInvoices = invoices.slice(0, 5)
+        this.recentInvoices = this.patientIdFilter ? invoices : invoices.slice(0, 5)
+        this.patientNameFilter = this.patientIdFilter && invoices[0]
+          ? `${invoices[0].patient?.firstName ?? ''} ${invoices[0].patient?.lastName ?? ''}`.trim()
+          : null
       },
       error: error => {
         this.alert.error(
@@ -70,6 +82,13 @@ export class BillingPageComponent implements OnInit {
         this.recentInvoices = []
       },
     })
+  }
+
+  clearPatientFilter(): void {
+    this.router.navigate([], { queryParams: {} })
+    this.patientIdFilter = null
+    this.patientNameFilter = null
+    this.loadData()
   }
 
   getPatientName(invoice: RecentInvoice): string {
@@ -108,9 +127,9 @@ export class BillingPageComponent implements OnInit {
   }
 
   formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat('es-BO', {
       style: 'currency',
-      currency: 'EUR',
+      currency: 'BOB',
     }).format(amount)
   }
 

@@ -2,8 +2,10 @@ import { Component, DestroyRef, ElementRef, inject, OnInit } from '@angular/core
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
-import { of } from 'rxjs'
+import { forkJoin, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
+import { Permission } from '@core/enums/permission.enum'
+import { RoleStateService } from '@core/services/role-state.service'
 import { AlertService } from '../../../../../core/services/alert.service'
 import { CanComponentDeactivate, confirmDiscardChanges } from '../../../../../core/guards/can-deactivate.guard'
 import { countInvalidFields, scrollToFirstInvalidField } from '../../../../../shared/utils/form-errors.util'
@@ -11,8 +13,19 @@ import { VALIDATION_PATTERNS } from '../../../../../shared/validators/validation
 import { ClinicContextService } from '../../../../clinics/services/clinic-context.service'
 import { Clinic } from '../../admin/clinics/interfaces/clinic.interface'
 import { ClinicsService } from '../../admin/clinics/services'
+import { AppointmentsService } from '../../appointments/services/appointments.service'
+import { BillingService } from '../../billing/billing.service'
+import { MedicalRecordsService } from '../../medical-records/services/medical-records.service'
+import { PrescriptionsService } from '../../prescriptions/prescriptions.service'
 import { BloodType, CreatePatientDto, Gender, MaritalStatus, Patient } from '../interfaces'
 import { PatientsService } from '../services'
+
+interface RelatedCounts {
+  appointments: number
+  medicalRecords: number
+  prescriptions: number
+  invoices: number
+}
 
 @Component({
     selector: 'app-patient-form',
@@ -37,6 +50,10 @@ export class PatientFormComponent implements OnInit, CanComponentDeactivate {
   isEditMode = false
   isViewMode = false
   patientId: string | null = null
+
+  // Accesos rápidos (solo en modo vista) — conteos de datos relacionados del paciente
+  relatedCounts: RelatedCounts = { appointments: 0, medicalRecords: 0, prescriptions: 0, invoices: 0 }
+  isLoadingRelated = false
 
   // Marca puesta antes de cualquier navegación intencional para que el
   // canDeactivate guard no vuelva a preguntar (el usuario ya decidió en su
@@ -140,6 +157,11 @@ export class PatientFormComponent implements OnInit, CanComponentDeactivate {
     private clinicsService: ClinicsService,
     private clinicCtx: ClinicContextService,
     private alert: AlertService,
+    private roleState: RoleStateService,
+    private appointmentsService: AppointmentsService,
+    private medicalRecordsService: MedicalRecordsService,
+    private prescriptionsService: PrescriptionsService,
+    private billingService: BillingService,
   ) {
     // fijar contexto si existe
     this.ctxClinicId = this.clinicCtx?.clinicId ?? null
@@ -340,9 +362,91 @@ export class PatientFormComponent implements OnInit, CanComponentDeactivate {
       .subscribe(patient => {
         if (patient) {
           this.populateForms(patient)
+          if (this.isViewMode) this.loadRelatedCounts(patient.id)
         }
         this.isLoading = false
       })
+  }
+
+  // ── Accesos rápidos (solo modo vista) ──────────────────────────────────
+
+  showAppointmentsQuickAccess(): boolean {
+    return this.roleState.hasPermission(Permission.AppointmentsRead)
+  }
+
+  showRecordsQuickAccess(): boolean {
+    return this.roleState.hasPermission(Permission.RecordsRead)
+  }
+
+  showPrescriptionsQuickAccess(): boolean {
+    return this.roleState.hasPermission(Permission.PrescriptionsRead)
+  }
+
+  showBillingQuickAccess(): boolean {
+    return this.roleState.hasPermission(Permission.BillingRead)
+  }
+
+  get hasAnyQuickAccess(): boolean {
+    return (
+      this.showAppointmentsQuickAccess() ||
+      this.showRecordsQuickAccess() ||
+      this.showPrescriptionsQuickAccess() ||
+      this.showBillingQuickAccess()
+    )
+  }
+
+  private loadRelatedCounts(patientId: string): void {
+    this.isLoadingRelated = true
+    forkJoin({
+      appointments: this.showAppointmentsQuickAccess()
+        ? this.appointmentsService.getAppointments({ patientId })
+        : of([]),
+      medicalRecords: this.showRecordsQuickAccess()
+        ? this.medicalRecordsService.getMedicalRecordsByPatient(patientId)
+        : of([]),
+      prescriptions: this.showPrescriptionsQuickAccess()
+        ? this.prescriptionsService.list(1, 1, { patientId })
+        : of({ total: 0 }),
+      invoices: this.showBillingQuickAccess()
+        ? this.billingService.listInvoices(1, 1, { patientId })
+        : of({ total: 0 }),
+    })
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError(() =>
+          of({
+            appointments: [] as unknown[],
+            medicalRecords: [] as unknown[],
+            prescriptions: { total: 0 },
+            invoices: { total: 0 },
+          }),
+        ),
+      )
+      .subscribe(({ appointments, medicalRecords, prescriptions, invoices }) => {
+        this.relatedCounts = {
+          appointments: appointments.length,
+          medicalRecords: medicalRecords.length,
+          prescriptions: prescriptions?.total ?? 0,
+          invoices: invoices?.total ?? 0,
+        }
+        this.isLoadingRelated = false
+      })
+  }
+
+  goToAppointments(): void {
+    this.router.navigate(['/dashboard/appointments'], { queryParams: { patientId: this.patientId } })
+  }
+
+  goToMedicalHistory(): void {
+    this.router.navigate(['/dashboard/medical-records/patient', this.patientId, 'history'])
+  }
+
+  goToPrescriptions(): void {
+    this.router.navigate(['/dashboard/prescriptions'], { queryParams: { patientId: this.patientId } })
+  }
+
+  goToBilling(): void {
+    this.router.navigate(['/dashboard/billing'], { queryParams: { patientId: this.patientId } })
   }
 
   private populateForms(patient: Patient): void {
