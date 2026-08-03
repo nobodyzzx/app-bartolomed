@@ -425,11 +425,11 @@ export class ReportsPdfService {
   private demographicsHtml(data: any): string {
     const total = data.totalPatients ?? 0;
     const genders = data.genderDistribution ?? [];
-    const ages = data.ageGroupDistribution ?? [];
+    const ages = data.ageDistribution ?? [];
     const blood = data.bloodTypeDistribution ?? [];
 
     const genderLabels = (g: any) => g.gender === 'M' ? 'Masculino' : g.gender === 'F' ? 'Femenino' : (g.gender ?? 'No especificado');
-    const ageOrder = ['Under 18','18-30','31-50','51-70','Over 70'];
+    const ageOrder = ['Menor de 18','18-30','31-50','51-70','Mayor de 70'];
     const sortedAges = [...ages].sort((a: any, b: any) => ageOrder.indexOf(a.ageGroup) - ageOrder.indexOf(b.ageGroup));
 
     const genderChartHtml = genders.length > 0
@@ -559,17 +559,21 @@ export class ReportsPdfService {
     const statusColors: Record<string, string> = {
       completed: 'badge-green',
       scheduled: 'badge-blue',
+      confirmed: 'badge-blue',
       cancelled: 'badge-red',
       no_show: 'badge-amber',
       in_progress: 'badge-blue',
+      rescheduled: 'badge-amber',
     };
 
     const statusLabels: Record<string, string> = {
       completed: 'Completada',
       scheduled: 'Programada',
+      confirmed: 'Confirmada',
       cancelled: 'Cancelada',
       no_show: 'No se presentó',
       in_progress: 'En progreso',
+      rescheduled: 'Reprogramada',
     };
 
     const statusChartHtml = statusDist.length > 0
@@ -1507,7 +1511,7 @@ export class ReportsPdfService {
             labels: data.map(r => r.month ?? '-'),
             datasets: [
               { label: 'Ingresos', data: data.map(r => Number(r.revenue ?? 0)), backgroundColor: '#3b82f6', borderRadius: 4 },
-              { label: 'COGS',     data: data.map(r => Number(r.cogs ?? 0)),    backgroundColor: '#ef4444', borderRadius: 4 },
+              { label: 'CMV',      data: data.map(r => Number(r.cogs ?? 0)),    backgroundColor: '#ef4444', borderRadius: 4 },
               { label: 'Margen',   data: data.map(r => Number(r.grossMargin ?? 0)), backgroundColor: '#10b981', borderRadius: 4 },
             ],
           },
@@ -1528,14 +1532,14 @@ export class ReportsPdfService {
       ${this.meta([
         ['Generado', this.nowBO()],
         ['Ingresos Totales', this.fmtBs(totalRevenue)],
-        ['COGS Total', this.fmtBs(totalCogs)],
+        ['CMV Total', this.fmtBs(totalCogs)],
         ['Margen Bruto', this.fmtBs(totalMargin)],
         ['Margen %', this.fmtPct(avgMarginPct)],
       ])}
       <div class="cnt">
         <div class="kpi-grid">
           ${this.kpiCard('Ingresos Totales', this.fmtBs(totalRevenue), 'Ventas completadas', 'blue')}
-          ${this.kpiCard('COGS Total', this.fmtBs(totalCogs), 'Costo de mercadería vendida', 'red')}
+          ${this.kpiCard('CMV Total', this.fmtBs(totalCogs), 'Costo de mercadería vendida', 'red')}
           ${this.kpiCard('Margen Bruto', this.fmtBs(totalMargin), 'Ganancia bruta', 'green')}
           ${this.kpiCard('Margen %', this.fmtPct(avgMarginPct), 'Del período total', 'purple')}
         </div>
@@ -1544,7 +1548,7 @@ export class ReportsPdfService {
 
         ${data.length > 0 ? this.section('Detalle por Mes',
           this.table(
-            ['Mes', 'Ingresos', 'COGS', 'Margen Bruto', 'Margen %'],
+            ['Mes', 'Ingresos', 'CMV', 'Margen Bruto', 'Margen %'],
             tableRows,
             ['', 'num', 'num', 'num', 'center'],
           )

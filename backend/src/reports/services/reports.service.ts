@@ -41,7 +41,7 @@ export class ReportsService {
 
   private requireClinicId(filters: ReportFilters): string {
     if (!filters.clinicId) {
-      throw new BadRequestException('clinicId is required');
+      throw new BadRequestException('clinicId es requerido');
     }
     return filters.clinicId;
   }
@@ -85,11 +85,11 @@ export class ReportsService {
 
     // Distribución por grupos de edad
     const ageExpr = `CASE
-          WHEN EXTRACT(YEAR FROM AGE(patient."birthDate")) < 18 THEN 'Under 18'
+          WHEN EXTRACT(YEAR FROM AGE(patient."birthDate")) < 18 THEN 'Menor de 18'
           WHEN EXTRACT(YEAR FROM AGE(patient."birthDate")) BETWEEN 18 AND 30 THEN '18-30'
           WHEN EXTRACT(YEAR FROM AGE(patient."birthDate")) BETWEEN 31 AND 50 THEN '31-50'
           WHEN EXTRACT(YEAR FROM AGE(patient."birthDate")) BETWEEN 51 AND 70 THEN '51-70'
-          ELSE 'Over 70'
+          ELSE 'Mayor de 70'
         END`;
     const ageDistribution = await queryBuilder
       .clone()

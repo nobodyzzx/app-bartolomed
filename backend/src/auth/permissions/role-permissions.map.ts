@@ -49,6 +49,12 @@ export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
     Permission.RecordsWriteVitals,
     Permission.AppointmentsRead,
     Permission.AppointmentsWrite,
+    // Habilita GET /reports/patients/:id/timeline (R-10) — el endpoint ya
+    // tenía @Auth(ADMIN, DOCTOR, NURSE), pero sin este permiso PermissionsGuard
+    // (chequeo a nivel de clase en ReportsController) bloqueaba a NURSE con
+    // 403 antes de llegar al chequeo de rol. Coherente con RecordsRead: ver
+    // el timeline clínico de un paciente es parte de la atención de enfermería.
+    Permission.ReportsMedical,
   ],
   [ValidRoles.RECEPTIONIST]: [
     Permission.PatientsRead,

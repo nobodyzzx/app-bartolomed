@@ -101,12 +101,28 @@ export class AdvancedReportsService {
   async getPatientTimeline(patientId: string, clinicId: string) {
     if (!patientId) throw new BadRequestException('patientId es requerido');
 
-    // Usamos SQL nativo con UNION ALL porque TypeORM QB no soporta UNION
+    // Usamos SQL nativo con UNION ALL porque TypeORM QB no soporta UNION.
+    // Bug real (tres capas, todas causaban 500 — nunca antes se había
+    // ejecutado este endpoint, sin consumidor en el frontend):
+    // (1) las 4 ramas usaban nombres de columna en snake_case
+    // (appointment_date, is_active, created_at, deleted_at, prescription_date,
+    // prescription_number, sale_date, sale_number) que no existen — las
+    // columnas reales están en camelCase (verificado con \d contra la DB
+    // real). medical_records tampoco tiene "title" ni "content"; se usan
+    // chiefComplaint y notes, que sí existen.
+    // (2) event_date mezclaba tipos incompatibles entre ramas —
+    // appointmentDate es timestamptz, createdAt/saleDate son timestamp sin
+    // zona y prescriptionDate es date; Postgres no resuelve un tipo común
+    // automáticamente para ese UNION (42804). Se castea cada uno a
+    // timestamptz explícitamente.
+    // (3) COALESCE(mr."chiefComplaint", mr.status) fallaba porque status es
+    // un enum de Postgres (medical_records_status_enum), no text — Postgres
+    // no puede unificar tipos dentro de un COALESCE tampoco. Cast a ::text.
     const rows = await this.dataSource.query<Array<Record<string, unknown>>>(`
       SELECT
         'appointment'    AS event_type,
         a.id             AS event_id,
-        a.appointment_date AS event_date,
+        a."appointmentDate"::timestamptz AS event_date,
         a.clinic_id,
         c.name           AS clinic_name,
         CONCAT('Cita: ', a.type, ' — ', a.status) AS summary,
@@ -114,47 +130,47 @@ export class AdvancedReportsService {
       FROM appointments a
       LEFT JOIN clinics c ON c.id = a.clinic_id
       WHERE a.patient_id = $1
-        AND a.is_active  = true
+        AND a."isActive" = true
 
       UNION ALL
 
       SELECT
         'medical_record' AS event_type,
         mr.id            AS event_id,
-        mr.created_at    AS event_date,
+        mr."createdAt"::timestamptz AS event_date,
         mr.clinic_id,
         c.name           AS clinic_name,
-        CONCAT('Registro: ', mr.type, ' — ', mr.title) AS summary,
-        mr.content       AS detail
+        CONCAT('Registro: ', mr.type, ' — ', COALESCE(mr."chiefComplaint", mr.status::text)) AS summary,
+        mr.notes         AS detail
       FROM medical_records mr
       LEFT JOIN clinics c ON c.id = mr.clinic_id
       WHERE mr.patient_id = $1
-        AND mr.deleted_at IS NULL
+        AND mr."deletedAt" IS NULL
 
       UNION ALL
 
       SELECT
         'prescription'   AS event_type,
         p.id             AS event_id,
-        p.prescription_date AS event_date,
+        p."prescriptionDate"::timestamptz AS event_date,
         p.clinic_id,
         c.name           AS clinic_name,
-        CONCAT('Receta: ', p.prescription_number, ' — ', p.status) AS summary,
+        CONCAT('Receta: ', p."prescriptionNumber", ' — ', p.status) AS summary,
         p.diagnosis      AS detail
       FROM prescriptions p
       LEFT JOIN clinics c ON c.id = p.clinic_id
       WHERE p.patient_id = $1
-        AND p.deleted_at IS NULL
+        AND p."deletedAt" IS NULL
 
       UNION ALL
 
       SELECT
         'pharmacy_sale'  AS event_type,
         ps.id            AS event_id,
-        ps.sale_date     AS event_date,
+        ps."saleDate"::timestamptz AS event_date,
         ps.clinic_id,
         c.name           AS clinic_name,
-        CONCAT('Venta farmacia: ', ps.sale_number) AS summary,
+        CONCAT('Venta farmacia: ', ps."saleNumber") AS summary,
         ps.notes         AS detail
       FROM pharmacy_sales ps
       LEFT JOIN clinics c ON c.id = ps.clinic_id

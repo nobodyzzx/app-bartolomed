@@ -278,14 +278,18 @@ describe('ReportsPdfService', () => {
     const html = (data: any) => (service as any).demographicsHtml(data);
 
     it('ordena los grupos de edad según el orden clínico esperado', () => {
+      // Bug real: el service lee data.ageDistribution (la clave que realmente
+      // devuelve ReportsService.getPatientDemographicsReport()), no
+      // data.ageGroupDistribution — con esa clave el gráfico de edad quedaba
+      // siempre vacío. Los labels van en español, coherentes con reports.service.ts.
       const result = html({
         totalPatients: 10,
-        ageGroupDistribution: [
-          { ageGroup: 'Over 70', count: 1 },
-          { ageGroup: 'Under 18', count: 2 },
+        ageDistribution: [
+          { ageGroup: 'Mayor de 70', count: 1 },
+          { ageGroup: 'Menor de 18', count: 2 },
         ],
       });
-      expect(result.indexOf('Under 18')).toBeLessThan(result.indexOf('Over 70'));
+      expect(result.indexOf('Menor de 18')).toBeLessThan(result.indexOf('Mayor de 70'));
     });
 
     it('traduce M/F y deja "No especificado" para valores nulos', () => {

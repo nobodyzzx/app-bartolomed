@@ -283,7 +283,7 @@ export class ExportService {
       { header: 'Genérico',     key: 'genericName',    width: 24 },
       { header: 'Costo Unit.',  key: 'unitCost',       width: 14 },
       { header: 'Precio Venta', key: 'sellingPrice',   width: 14 },
-      { header: 'Qty Vendida',  key: 'qtySold',        width: 14 },
+      { header: 'Cant. Vendida', key: 'qtySold',       width: 14 },
       { header: 'Margen Bs',    key: 'marginAbs',      width: 16 },
       { header: 'Margen %',     key: 'marginPct',      width: 12 },
     ];
@@ -313,7 +313,7 @@ export class ExportService {
       { header: 'Medicamento',  key: 'medicationName', width: 32 },
       { header: 'Genérico',     key: 'genericName',    width: 24 },
       { header: 'Categoría',    key: 'category',       width: 16 },
-      { header: 'Qty Total',    key: 'totalQty',       width: 14 },
+      { header: 'Cant. Total',  key: 'totalQty',       width: 14 },
       { header: 'Ingresos Bs',  key: 'totalRevenue',   width: 16 },
       { header: 'Precio Prom.', key: 'avgUnitPrice',   width: 14 },
     ];
