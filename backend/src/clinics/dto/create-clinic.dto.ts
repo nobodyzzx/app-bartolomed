@@ -14,7 +14,7 @@ export class CreateClinicDto {
   @IsString()
   @MinLength(8)
   @MaxLength(8)
-  @Matches(/^[67]\d{7}$/i, { message: 'Phone must be 8 digits starting with 6 or 7' })
+  @Matches(/^[67]\d{7}$/i, { message: 'El teléfono debe tener 8 dígitos y empezar con 6 o 7' })
   phone: string;
 
   @IsOptional()

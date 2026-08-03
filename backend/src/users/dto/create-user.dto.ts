@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  ArrayMinSize,
   IsArray,
   IsEmail,
   IsEnum,
@@ -37,6 +38,7 @@ export class CreateUserDto {
   professionalInfo?: ProfessionalInfoDto;
 
   @IsArray()
+  @ArrayMinSize(1, { message: 'El usuario debe tener al menos un rol' })
   @IsEnum(ValidRoles, { each: true })
   @IsOptional()
   roles?: ValidRoles[] = [ValidRoles.USER];

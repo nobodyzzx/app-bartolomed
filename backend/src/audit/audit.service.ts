@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
+import { ValidRoles } from '../auth/interfaces';
+import { User } from '../users/entities/user.entity';
 import { FilterAuditDto } from './dto/filter-audit.dto';
 import { AuditLog } from './entities/audit-log.entity';
 
@@ -41,12 +43,27 @@ export class AuditService {
     }
   }
 
-  async findAll(filter: FilterAuditDto) {
+  private isSuperAdmin(actor: User): boolean {
+    return actor.roles?.includes(ValidRoles.SUPER_ADMIN) ?? false;
+  }
+
+  // SUPER_ADMIN audita el sistema completo; un ADMIN solo su propia clínica
+  // activa — antes ningún endpoint de consulta filtraba por clinicId pese a
+  // que la entidad tiene la columna e índice pensados exactamente para esto.
+  private scopeToClinic(qb: SelectQueryBuilder<AuditLog>, actor: User, clinicId: string): SelectQueryBuilder<AuditLog> {
+    if (this.isSuperAdmin(actor)) return qb;
+    return qb.andWhere('log.clinicId = :scopedClinicId', { scopedClinicId: clinicId });
+  }
+
+  async findAll(filter: FilterAuditDto, actor: User, clinicId: string) {
     const { page = 1, pageSize = 50, action, resource, status, userEmail, search, startDate, endDate } = filter;
     const skip = (page - 1) * pageSize;
 
-    const qb = this.auditLogRepository
-      .createQueryBuilder('log')
+    const qb = this.scopeToClinic(
+      this.auditLogRepository.createQueryBuilder('log'),
+      actor,
+      clinicId,
+    )
       .orderBy('log.createdAt', 'DESC')
       .skip(skip)
       .take(pageSize);
@@ -74,7 +91,7 @@ export class AuditService {
     return { items, total, page, pageSize };
   }
 
-  async getStats(startDate?: string, endDate?: string) {
+  async getStats(startDate: string | undefined, endDate: string | undefined, actor: User, clinicId: string) {
     const start = startDate
       ? new Date(startDate)
       : (() => {
@@ -95,26 +112,24 @@ export class AuditService {
           return d;
         })();
 
+    const scoped = () => this.scopeToClinic(this.auditLogRepository.createQueryBuilder('log'), actor, clinicId);
+
     const [total, errors, logins, failedLogins] = await Promise.all([
-      this.auditLogRepository
-        .createQueryBuilder('log')
+      scoped()
         .where('log.createdAt >= :start', { start })
         .andWhere('log.createdAt <= :end', { end })
         .getCount(),
-      this.auditLogRepository
-        .createQueryBuilder('log')
+      scoped()
         .where('log.status = :status', { status: 'failure' })
         .andWhere('log.createdAt >= :start', { start })
         .andWhere('log.createdAt <= :end', { end })
         .getCount(),
-      this.auditLogRepository
-        .createQueryBuilder('log')
+      scoped()
         .where('log.action = :action', { action: 'LOGIN' })
         .andWhere('log.createdAt >= :start', { start })
         .andWhere('log.createdAt <= :end', { end })
         .getCount(),
-      this.auditLogRepository
-        .createQueryBuilder('log')
+      scoped()
         .where('log.action = :action', { action: 'LOGIN' })
         .andWhere('log.status = :status', { status: 'failure' })
         .andWhere('log.createdAt >= :start', { start })
@@ -123,8 +138,7 @@ export class AuditService {
     ]);
 
     const [topUsersRaw, topResourcesRaw, topIpRaw] = await Promise.all([
-      this.auditLogRepository
-        .createQueryBuilder('log')
+      scoped()
         .select('log.userEmail', 'email')
         .addSelect('COUNT(*)', 'count')
         .where('log.createdAt >= :start', { start })
@@ -134,8 +148,7 @@ export class AuditService {
         .orderBy('count', 'DESC')
         .limit(5)
         .getRawMany(),
-      this.auditLogRepository
-        .createQueryBuilder('log')
+      scoped()
         .select('log.resource', 'resource')
         .addSelect('COUNT(*)', 'count')
         .where('log.createdAt >= :start', { start })
@@ -144,8 +157,7 @@ export class AuditService {
         .orderBy('count', 'DESC')
         .limit(5)
         .getRawMany(),
-      this.auditLogRepository
-        .createQueryBuilder('log')
+      scoped()
         .select('log.ipAddress', 'ip')
         .addSelect('COUNT(*)', 'count')
         .where('log.createdAt >= :start', { start })
@@ -169,7 +181,7 @@ export class AuditService {
     };
   }
 
-  async getDailyActivity(startDate?: string, endDate?: string) {
+  async getDailyActivity(startDate: string | undefined, endDate: string | undefined, actor: User, clinicId: string) {
     const start = startDate
       ? new Date(startDate)
       : (() => {
@@ -191,8 +203,7 @@ export class AuditService {
           return d;
         })();
 
-    const raw = await this.auditLogRepository
-      .createQueryBuilder('log')
+    const raw = await this.scopeToClinic(this.auditLogRepository.createQueryBuilder('log'), actor, clinicId)
       .select("TO_CHAR(log.createdAt, 'YYYY-MM-DD')", 'date')
       .addSelect('COUNT(*)', 'total')
       .addSelect("SUM(CASE WHEN log.status = 'failure' THEN 1 ELSE 0 END)", 'errors')
@@ -209,16 +220,14 @@ export class AuditService {
     }));
   }
 
-  async getDistinctValues() {
+  async getDistinctValues(actor: User, clinicId: string) {
     const [resources, actions] = await Promise.all([
-      this.auditLogRepository
-        .createQueryBuilder('log')
+      this.scopeToClinic(this.auditLogRepository.createQueryBuilder('log'), actor, clinicId)
         .select('DISTINCT log.resource', 'resource')
         .orderBy('log.resource', 'ASC')
         .getRawMany()
         .then(rows => rows.map(r => r.resource as string)),
-      this.auditLogRepository
-        .createQueryBuilder('log')
+      this.scopeToClinic(this.auditLogRepository.createQueryBuilder('log'), actor, clinicId)
         .select('DISTINCT log.action', 'action')
         .orderBy('log.action', 'ASC')
         .getRawMany()

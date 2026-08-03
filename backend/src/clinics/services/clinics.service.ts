@@ -55,6 +55,14 @@ export class ClinicsService {
     await this.userClinicRepo.save(memberships);
   }
 
+  // Bug real (fuga de datos): findAll/findOne/searchClinics cargaban
+  // relations: ['users', 'createdBy'] — cualquier usuario autenticado
+  // (GET /clinics no tiene guard de rol, es de uso general: selector de
+  // clínica en el navbar, traslados de activos, formularios) recibía el
+  // roster completo de staff (email, roles) de TODAS las clínicas del
+  // sistema, no solo la propia. Ningún consumidor real del frontend lee
+  // esas relaciones — se quitan; quien necesite el roster de una clínica
+  // usa GET /clinics/:clinicId/members (ya scoped por clínica).
   async findAll(isActive?: boolean): Promise<Clinic[]> {
     const whereConditions: any = {};
 
@@ -64,7 +72,6 @@ export class ClinicsService {
 
     return await this.clinicRepository.find({
       where: whereConditions,
-      relations: ['users', 'createdBy'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -72,11 +79,10 @@ export class ClinicsService {
   async findOne(id: string): Promise<Clinic> {
     const clinic = await this.clinicRepository.findOne({
       where: { id, isActive: true },
-      relations: ['users', 'createdBy'],
     });
 
     if (!clinic) {
-      throw new NotFoundException(`Clinic with id ${id} not found`);
+      throw new NotFoundException(`Clínica con id ${id} no encontrada`);
     }
 
     return clinic;
@@ -102,7 +108,7 @@ export class ClinicsService {
   async activate(id: string): Promise<Clinic> {
     const clinic = await this.clinicRepository.findOne({ where: { id } });
     if (!clinic) {
-      throw new NotFoundException(`Clinic with id ${id} not found`);
+      throw new NotFoundException(`Clínica con id ${id} no encontrada`);
     }
 
     clinic.isActive = true;
@@ -118,8 +124,6 @@ export class ClinicsService {
   async searchClinics(searchTerm: string): Promise<Clinic[]> {
     return await this.clinicRepository
       .createQueryBuilder('clinic')
-      .leftJoinAndSelect('clinic.createdBy', 'createdBy')
-      .leftJoinAndSelect('clinic.users', 'users')
       .where('clinic.isActive = :isActive', { isActive: true })
       .andWhere(
         '(clinic.name ILIKE :searchTerm OR clinic.address ILIKE :searchTerm OR clinic.departamento ILIKE :searchTerm OR clinic.provincia ILIKE :searchTerm OR clinic.localidad ILIKE :searchTerm)',
@@ -190,9 +194,9 @@ export class ClinicsService {
   async addMemberWithRoles(clinicId: string, dto: AddClinicMemberDto): Promise<Clinic> {
     const clinic = await this.findOne(clinicId);
     const user = await this.userRepository.findOne({ where: { id: dto.userId } });
-    if (!user) throw new NotFoundException(`User with id ${dto.userId} not found`);
+    if (!user) throw new NotFoundException(`Usuario con id ${dto.userId} no encontrado`);
     const existing = await this.userClinicRepo.findOne({ where: { user: { id: user.id }, clinic: { id: clinic.id } } });
-    if (existing) throw new BadRequestException('User is already assigned to this clinic');
+    if (existing) throw new BadRequestException('El usuario ya está asignado a esta clínica');
     const uc = this.userClinicRepo.create({ user, clinic, roles: dto.roles ?? [] });
     await this.userClinicRepo.save(uc);
     return clinic;
@@ -201,7 +205,7 @@ export class ClinicsService {
   async updateMemberRoles(clinicId: string, userId: string, dto: UpdateClinicMemberDto): Promise<Clinic> {
     const clinic = await this.findOne(clinicId);
     const membership = await this.userClinicRepo.findOne({ where: { user: { id: userId }, clinic: { id: clinicId } } });
-    if (!membership) throw new NotFoundException('Membership not found');
+    if (!membership) throw new NotFoundException('Membresía no encontrada');
     membership.roles = dto.roles ?? [];
     await this.userClinicRepo.save(membership);
     return clinic;
@@ -244,6 +248,6 @@ export class ClinicsService {
       throw new BadRequestException(error.detail.replace('Key ', ''));
     }
     this.logger.error(error.message, error.stack);
-    throw new BadRequestException('Please check server logs');
+    throw new BadRequestException('Ocurrió un error inesperado, revise los logs del servidor');
   }
 }
