@@ -8,6 +8,7 @@ import {
   AssetReport,
   AssetStatus,
   GenerateReportDto,
+  ReportFormat,
   ReportStatus,
   ReportType,
 } from '../interfaces/assets.interfaces'
@@ -52,7 +53,7 @@ export class AssetReportsComponent implements OnInit {
       dateFrom: [''],
       dateTo: [''],
       status: [''],
-      format: ['pdf', Validators.required],
+      format: [ReportFormat.PDF, Validators.required],
     })
   }
 
@@ -105,17 +106,17 @@ export class AssetReportsComponent implements OnInit {
 
     this.generating = true
     const formValue = this.reportsForm.value
+    const toDateOnly = (value: string | null) => (value ? new Date(value).toISOString().split('T')[0] : undefined)
 
     const reportData: GenerateReportDto = {
       title: formValue.title,
       type: formValue.reportType,
       description: formValue.description || undefined,
       format: formValue.format,
-      filters: {
-        status: formValue.status || undefined,
-        dateFrom: formValue.dateFrom || undefined,
-        dateTo: formValue.dateTo || undefined,
-      },
+      date: new Date().toISOString().split('T')[0],
+      dateFrom: toDateOnly(formValue.dateFrom),
+      dateTo: toDateOnly(formValue.dateTo),
+      filters: formValue.status ? { status: formValue.status } : undefined,
     }
 
     this.assetReportsService.generateReport(reportData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
@@ -147,8 +148,9 @@ export class AssetReportsComponent implements OnInit {
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        const extension = report.filePath?.split('.').pop() || 'pdf'
-        a.download = `${report.title.replace(/\s+/g, '-')}.${extension}`
+        // El backend siempre sirve CSV en /download (ver AssetsService.downloadReport),
+        // independientemente del `format` elegido al generar el reporte.
+        a.download = `${report.title.replace(/\s+/g, '-')}.csv`
         document.body.appendChild(a)
         a.click()
         document.body.removeChild(a)
@@ -226,14 +228,16 @@ export class AssetReportsComponent implements OnInit {
       [AssetStatus.INACTIVE]: 'Inactivo',
       [AssetStatus.MAINTENANCE]: 'En Mantenimiento',
       [AssetStatus.RETIRED]: 'Retirado',
-      [AssetStatus.DISPOSED]: 'Desechado',
+      [AssetStatus.SOLD]: 'Vendido',
+      [AssetStatus.LOST]: 'Perdido',
+      [AssetStatus.DAMAGED]: 'Dañado',
     }
     return statusLabels[status] || status
   }
 
   resetForm(): void {
     this.reportsForm.reset()
-    this.reportsForm.patchValue({ format: 'pdf' })
+    this.reportsForm.patchValue({ format: ReportFormat.PDF })
   }
 
   goBack(): void {
@@ -260,12 +264,15 @@ export class AssetReportsComponent implements OnInit {
     return icons[status] || 'info'
   }
 
+  // Antes llamaba a getReportsByStatus()/getReportsByType(), endpoints que
+  // nunca existieron en el backend (404 real al hacer click en las tarjetas).
+  // GET /assets/reports ya soporta status/type como query params.
   filterByStatus(status: ReportStatus | null): void {
-    if (status === null) {
-      this.loadReports()
-    } else {
-      this.loading = true
-      this.assetReportsService.getReportsByStatus(status).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.loading = true
+    this.assetReportsService
+      .getReports(status ? { status } : undefined)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
         next: (reports: AssetReport[]) => {
           this.reports = reports
           this.calculateStats()
@@ -275,15 +282,14 @@ export class AssetReportsComponent implements OnInit {
           this.loading = false
         },
       })
-    }
   }
 
   filterByType(type: ReportType | null): void {
-    if (type === null) {
-      this.loadReports()
-    } else {
-      this.loading = true
-      this.assetReportsService.getReportsByType(type).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.loading = true
+    this.assetReportsService
+      .getReports(type ? { type } : undefined)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
         next: (reports: AssetReport[]) => {
           this.reports = reports
           this.calculateStats()
@@ -293,6 +299,5 @@ export class AssetReportsComponent implements OnInit {
           this.loading = false
         },
       })
-    }
   }
 }

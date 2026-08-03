@@ -1,6 +1,6 @@
 import { Component, Inject } from '@angular/core'
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog'
-import { AssetReport, ReportStatus } from '../../interfaces/assets.interfaces'
+import { AssetReport, ReportStatus, ReportType } from '../../interfaces/assets.interfaces'
 
 @Component({
     selector: 'app-asset-report-detail-dialog',
@@ -14,6 +14,18 @@ export class AssetReportDetailDialogComponent {
     public dialogRef: MatDialogRef<AssetReportDetailDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public report: AssetReport,
   ) {}
+
+  getReportTypeDisplay(type: ReportType): string {
+    const typeLabels: Record<ReportType, string> = {
+      [ReportType.LOCATION]: 'Por Ubicación',
+      [ReportType.STATUS]: 'Por Estado',
+      [ReportType.MAINTENANCE]: 'Mantenimiento',
+      [ReportType.DEPRECIATION]: 'Depreciación',
+      [ReportType.OBSOLETE]: 'Obsoletos',
+      [ReportType.FINANCIAL]: 'Financiero',
+    }
+    return typeLabels[type] || type
+  }
 
   getStatusClass(status: ReportStatus): string {
     const classes: Record<ReportStatus, string> = {

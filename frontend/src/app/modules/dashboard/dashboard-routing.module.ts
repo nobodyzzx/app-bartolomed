@@ -195,7 +195,7 @@ const routes: Routes = [
       // Rutas legacy de activos (redirect a nuevas rutas)
       {
         path: 'asset-registry',
-        redirectTo: 'assets-control/registration',
+        redirectTo: 'assets-control/inventory',
         pathMatch: 'full',
       },
       {

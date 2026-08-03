@@ -211,7 +211,7 @@
                   class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
                   [ngClass]="getStatusColor(asset.status)"
                   >
-                  {{ asset.status }}
+                  {{ getStatusLabel(asset.status) }}
                 </span>
               </td>
             </ng-container>

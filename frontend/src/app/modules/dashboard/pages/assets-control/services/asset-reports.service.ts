@@ -22,8 +22,16 @@ export class AssetReportsService {
     private alert: AlertService,
   ) {}
 
-  getReports(): Observable<AssetReport[]> {
-    return this.http.get<AssetReport[]>(this.apiUrl).pipe(
+  // Antes había endpoints separados getReportsByType()/getReportsByStatus()
+  // (/assets/reports/type/:x, /status/:x) que nunca existieron en el backend
+  // — 404 real al hacer click en las tarjetas de filtro. GET /assets/reports
+  // ya soporta status/type como query params.
+  getReports(filters?: { status?: ReportStatus; type?: ReportType }): Observable<AssetReport[]> {
+    const params: any = {}
+    if (filters?.status) params.status = filters.status
+    if (filters?.type) params.type = filters.type
+
+    return this.http.get<AssetReport[]>(this.apiUrl, { params }).pipe(
       catchError(error => {
         this.alert.error('Error al cargar los reportes de activos')
         return throwError(() => error)
@@ -35,24 +43,6 @@ export class AssetReportsService {
     return this.http.get<AssetReport>(`${this.apiUrl}/${id}`).pipe(
       catchError(error => {
         this.alert.error('Error al cargar el reporte')
-        return throwError(() => error)
-      }),
-    )
-  }
-
-  getReportsByType(type: ReportType): Observable<AssetReport[]> {
-    return this.http.get<AssetReport[]>(`${this.apiUrl}/type/${type}`).pipe(
-      catchError(error => {
-        this.alert.error('Error al filtrar reportes por tipo')
-        return throwError(() => error)
-      }),
-    )
-  }
-
-  getReportsByStatus(status: ReportStatus): Observable<AssetReport[]> {
-    return this.http.get<AssetReport[]>(`${this.apiUrl}/status/${status}`).pipe(
-      catchError(error => {
-        this.alert.error('Error al filtrar reportes por estado')
         return throwError(() => error)
       }),
     )
@@ -126,15 +116,5 @@ export class AssetReportsService {
           return throwError(() => error)
         }),
       )
-  }
-
-  scheduleReport(reportData: GenerateReportDto & { schedule: string }): Observable<AssetReport> {
-    return this.http.post<AssetReport>(`${this.apiUrl}/schedule`, reportData).pipe(
-      tap(() => this.alert.success('Reporte programado')),
-      catchError(error => {
-        this.alert.error('Error al programar el reporte')
-        return throwError(() => error)
-      }),
-    )
   }
 }

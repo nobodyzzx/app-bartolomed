@@ -61,7 +61,19 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
     [AssetStatus.INACTIVE]: 'bg-slate-100 text-slate-700',
     [AssetStatus.MAINTENANCE]: 'bg-amber-100 text-amber-800',
     [AssetStatus.RETIRED]: 'bg-red-100 text-red-800',
-    [AssetStatus.DISPOSED]: 'bg-slate-200 text-slate-600',
+    [AssetStatus.SOLD]: 'bg-slate-200 text-slate-600',
+    [AssetStatus.LOST]: 'bg-red-200 text-red-900',
+    [AssetStatus.DAMAGED]: 'bg-orange-100 text-orange-800',
+  }
+
+  private readonly statusLabels: Record<string, string> = {
+    [AssetStatus.ACTIVE]: 'Activo',
+    [AssetStatus.INACTIVE]: 'Inactivo',
+    [AssetStatus.MAINTENANCE]: 'En Mantenimiento',
+    [AssetStatus.RETIRED]: 'Retirado',
+    [AssetStatus.SOLD]: 'Vendido',
+    [AssetStatus.LOST]: 'Perdido',
+    [AssetStatus.DAMAGED]: 'Dañado',
   }
 
   constructor(
@@ -192,6 +204,10 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
 
   getStatusColor(status: string): string {
     return this.statusColors[status] ?? 'bg-slate-100 text-slate-700'
+  }
+
+  getStatusLabel(status: string): string {
+    return this.statusLabels[status] ?? status
   }
 
   getTypeLabel(type: string): string {

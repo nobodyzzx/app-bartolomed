@@ -95,10 +95,11 @@
             <mat-label>Formato de Exportación</mat-label>
             <mat-icon matPrefix class="text-purple-400">description</mat-icon>
             <mat-select formControlName="format">
-              <mat-option value="pdf">PDF</mat-option>
-              <mat-option value="excel">Excel</mat-option>
-              <mat-option value="csv">CSV</mat-option>
+              <mat-option value="PDF">PDF</mat-option>
+              <mat-option value="EXCEL">Excel</mat-option>
+              <mat-option value="CSV">CSV</mat-option>
             </mat-select>
+            <mat-hint>La descarga siempre se genera en formato CSV, compatible con Excel</mat-hint>
           </mat-form-field>
 
           <!-- Fecha Desde -->
@@ -127,10 +128,11 @@
               <mat-option value="">Todos</mat-option>
               @for (status of assetStatuses; track status) {
                 <mat-option [value]="status">
-                  {{ status }}
+                  {{ getStatusDisplay(status) }}
                 </mat-option>
               }
             </mat-select>
+            <mat-hint>Limita el reporte a activos con este estado</mat-hint>
           </mat-form-field>
 
           <!-- Descripción -->
@@ -233,14 +235,11 @@
                   </td>
                   <td class="px-6 py-4">
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                      {{ report.type }}
+                      {{ getReportTypeDisplay(report.type) }}
                     </span>
                   </td>
                   <td class="px-6 py-4">
-                    <div class="text-sm text-slate-700">
-                      <div class="font-medium">{{ report.date | date: 'dd/MM/yyyy' }}</div>
-                      <div class="text-xs text-slate-500">{{ report.date | date: 'HH:mm' }}</div>
-                    </div>
+                    <div class="text-sm text-slate-700 font-medium">{{ report.date | date: 'dd/MM/yyyy' }}</div>
                   </td>
                   <td class="px-6 py-4">
                     <span

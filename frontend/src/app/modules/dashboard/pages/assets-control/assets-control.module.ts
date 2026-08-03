@@ -12,12 +12,10 @@ import { AssetReportsComponent } from './asset-reports/asset-reports.component'
 import { AssetTransferAuditDialogComponent } from './asset-transfers/asset-transfer-audit-dialog/asset-transfer-audit-dialog.component'
 import { AssetTransfersComponent } from './asset-transfers/asset-transfers.component'
 import { AssetsControlRoutingModule } from './assets-control-routing.module'
-import { AssetsControlComponent } from './assets-control.component'
 import { AssetsFormComponent } from './assets-form/assets-form.component'
 
 @NgModule({
   declarations: [
-    AssetsControlComponent,
     AssetsFormComponent,
     AssetMaintenanceComponent,
     AssetMaintenanceDetailDialogComponent,

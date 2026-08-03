@@ -8,8 +8,6 @@ import {
   AssetMaintenance,
   CreateMaintenanceDto,
   MaintenanceFilters,
-  MaintenanceStatus,
-  MaintenanceType,
   UpdateMaintenanceDto,
 } from '../interfaces/assets.interfaces'
 
@@ -103,20 +101,6 @@ export class AssetMaintenanceService {
     )
   }
 
-  getUpcomingMaintenance(days: number = 30): Observable<AssetMaintenance[]> {
-    return this.http
-      .get<AssetMaintenance[]>(`${this.apiUrl}/upcoming`, {
-        params: { days: days.toString() },
-      })
-      .pipe(catchError(error => { this.alert.error('Error al cargar mantenimientos próximos'); return throwError(() => error) }))
-  }
-
-  getOverdueMaintenance(): Observable<AssetMaintenance[]> {
-    return this.http
-      .get<AssetMaintenance[]>(`${this.apiUrl}/overdue`)
-      .pipe(catchError(error => { this.alert.error('Error al cargar mantenimientos vencidos'); return throwError(() => error) }))
-  }
-
   getMaintenanceStats(): Observable<{
     total: number
     completed: number
@@ -137,39 +121,4 @@ export class AssetMaintenanceService {
       .pipe(catchError(error => { this.alert.error('Error al cargar estadísticas de mantenimiento'); return throwError(() => error) }))
   }
 
-  getMaintenanceByAsset(assetId: string): Observable<AssetMaintenance[]> {
-    return this.http
-      .get<AssetMaintenance[]>(`${this.apiUrl}/asset/${assetId}`)
-      .pipe(catchError(error => { this.alert.error('Error al cargar mantenimientos del activo'); return throwError(() => error) }))
-  }
-
-  getMaintenanceByStatus(status: MaintenanceStatus): Observable<AssetMaintenance[]> {
-    return this.http
-      .get<AssetMaintenance[]>(`${this.apiUrl}/status/${status}`)
-      .pipe(catchError(error => { this.alert.error('Error al filtrar por estado'); return throwError(() => error) }))
-  }
-
-  getMaintenanceByType(type: MaintenanceType): Observable<AssetMaintenance[]> {
-    return this.http
-      .get<AssetMaintenance[]>(`${this.apiUrl}/type/${type}`)
-      .pipe(catchError(error => { this.alert.error('Error al filtrar por tipo'); return throwError(() => error) }))
-  }
-
-  schedulePreventiveMaintenance(
-    assetId: string,
-    intervalMonths: number,
-  ): Observable<AssetMaintenance[]> {
-    return this.http
-      .post<AssetMaintenance[]>(`${this.apiUrl}/schedule-preventive`, {
-        assetId,
-        intervalMonths,
-      })
-      .pipe(
-        tap(() => this.alert.success('Mantenimiento preventivo programado')),
-        catchError(error => {
-          this.alert.error('Error al programar mantenimiento preventivo')
-          return throwError(() => error)
-        }),
-      )
-  }
 }

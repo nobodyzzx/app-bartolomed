@@ -9,6 +9,9 @@ import { ConfirmDialogData } from './confirm-dialog.interface';
     standalone: false
 })
 export class ConfirmDialogComponent {
+  inputValue = '';
+  inputError = '';
+
   constructor(
     public dialogRef: MatDialogRef<ConfirmDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: ConfirmDialogData
@@ -19,6 +22,16 @@ export class ConfirmDialogComponent {
   }
 
   onConfirm(): void {
-    this.dialogRef.close(true);
+    if (!this.data.inputLabel) {
+      this.dialogRef.close(true);
+      return;
+    }
+
+    const value = this.inputValue.trim();
+    if (this.data.inputRequired && !value) {
+      this.inputError = 'Este campo es requerido';
+      return;
+    }
+    this.dialogRef.close({ confirmed: true, value });
   }
 }

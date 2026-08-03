@@ -187,7 +187,7 @@ export class AssetsFormComponent implements OnInit {
     request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.isSubmitting = false
-        this.router.navigate(['/dashboard/assets-control/list'])
+        this.router.navigate(['/dashboard/assets-control/inventory'])
       },
       error: () => {
         this.isSubmitting = false

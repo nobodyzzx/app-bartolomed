@@ -6,10 +6,13 @@ import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import {
   AssetMaintenance,
+  AssetStatus,
+  BaseAsset,
   MaintenanceStatus,
   MaintenanceType,
 } from '../interfaces/assets.interfaces'
 import { AssetMaintenanceService } from '../services/asset-maintenance.service'
+import { AssetRegistrationService } from '../services/asset-registration.service'
 import { AssetMaintenanceDetailDialogComponent } from './asset-maintenance-detail-dialog/asset-maintenance-detail-dialog.component'
 
 @Component({
@@ -30,6 +33,13 @@ export class AssetMaintenanceComponent implements OnInit {
   maintenanceTypes = Object.values(MaintenanceType)
   maintenanceStatuses = Object.values(MaintenanceStatus)
 
+  // Activos reales de la clínica para el selector — antes "ID del Activo" era
+  // texto libre (matInput con placeholder "Ej: AST-001"), que el backend
+  // rechazaba con 500 (invalid input syntax for type uuid) porque assetId
+  // debe ser un UUID real de la tabla assets.
+  availableAssets: BaseAsset[] = []
+  loadingAssets = false
+
   // Estadísticas
   totalRecords = 0
   scheduledCount = 0
@@ -40,27 +50,44 @@ export class AssetMaintenanceComponent implements OnInit {
 
   constructor(
     private maintenanceService: AssetMaintenanceService,
+    private assetsService: AssetRegistrationService,
     private fb: FormBuilder,
     private alert: AlertService,
     private router: Router,
     private dialog: MatDialog,
   ) {
     this.maintenanceForm = this.fb.group({
-      assetId: ['', [Validators.required, Validators.minLength(3)]],
-      assetName: ['', [Validators.required, Validators.minLength(3)]],
-      maintenanceDate: ['', Validators.required],
+      assetId: ['', Validators.required],
+      title: ['', [Validators.required, Validators.minLength(3)]],
+      scheduledDate: ['', Validators.required],
       nextMaintenanceDate: [''],
-      description: ['', [Validators.required, Validators.minLength(10)]],
+      description: [''],
       type: ['', Validators.required],
-      status: [MaintenanceStatus.SCHEDULED, Validators.required],
-      cost: [0, [Validators.min(0)]],
-      performedBy: [''],
+      estimatedCost: [0, [Validators.min(0)]],
+      technician: [''],
       notes: [''],
     })
   }
 
   ngOnInit(): void {
     this.loadMaintenanceRecords()
+    this.loadAvailableAssets()
+  }
+
+  loadAvailableAssets(): void {
+    this.loadingAssets = true
+    this.assetsService
+      .getAssets({ status: AssetStatus.ACTIVE }, 1, 100)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: result => {
+          this.availableAssets = result.data
+          this.loadingAssets = false
+        },
+        error: () => {
+          this.loadingAssets = false
+        },
+      })
   }
 
   loadMaintenanceRecords(): void {
@@ -92,8 +119,8 @@ export class AssetMaintenanceComponent implements OnInit {
       r => r.status === MaintenanceStatus.DELAYED,
     ).length
     this.totalCost = this.maintenanceRecords
-      .filter(r => r.cost !== undefined)
-      .reduce((sum, r) => sum + (r.cost || 0), 0)
+      .filter(r => r.actualCost !== undefined || r.estimatedCost !== undefined)
+      .reduce((sum, r) => sum + (r.actualCost ?? r.estimatedCost ?? 0), 0)
   }
 
   async onScheduleMaintenance(): Promise<void> {
@@ -107,10 +134,12 @@ export class AssetMaintenanceComponent implements OnInit {
       return
     }
 
+    const selectedAsset = this.availableAssets.find(a => a.id === this.maintenanceForm.value.assetId)
+
     const result = await this.alert.fire({
       icon: 'question',
       title: '¿Programar Mantenimiento?',
-      text: `Se programará mantenimiento para ${this.maintenanceForm.value.assetName}`,
+      text: `Se programará mantenimiento para ${selectedAsset?.name || 'el activo seleccionado'}`,
       showCancelButton: true,
       confirmButtonText: 'Programar',
       cancelButtonText: 'Cancelar',
@@ -119,12 +148,16 @@ export class AssetMaintenanceComponent implements OnInit {
     if (!result.isConfirmed) return
 
     this.saving = true
+    const formValue = this.maintenanceForm.value
     const maintenanceData = {
-      ...this.maintenanceForm.value,
-      maintenanceDate: new Date(this.maintenanceForm.value.maintenanceDate),
-      nextMaintenanceDate: this.maintenanceForm.value.nextMaintenanceDate
-        ? new Date(this.maintenanceForm.value.nextMaintenanceDate)
-        : undefined,
+      assetId: formValue.assetId,
+      title: formValue.title,
+      description: formValue.description || undefined,
+      type: formValue.type,
+      scheduledDate: new Date(formValue.scheduledDate).toISOString().split('T')[0],
+      estimatedCost: formValue.estimatedCost || undefined,
+      technician: formValue.technician || undefined,
+      notes: formValue.notes || undefined,
     }
 
     this.maintenanceService.createMaintenance(maintenanceData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
@@ -132,7 +165,6 @@ export class AssetMaintenanceComponent implements OnInit {
         this.maintenanceRecords.unshift(newRecord)
         this.calculateStats()
         this.maintenanceForm.reset()
-        this.maintenanceForm.patchValue({ status: MaintenanceStatus.SCHEDULED })
         this.showForm = false
         this.saving = false
       },
@@ -174,7 +206,7 @@ export class AssetMaintenanceComponent implements OnInit {
     const result = await this.alert.fire({
       icon: 'warning',
       title: '¿Eliminar Mantenimiento?',
-      text: `¿Está seguro de eliminar el mantenimiento de "${record.assetName}"? Esta acción no se puede deshacer.`,
+      text: `¿Está seguro de eliminar el mantenimiento de "${record.asset?.name || record.title}"? Esta acción no se puede deshacer.`,
       showCancelButton: true,
       confirmButtonText: 'Eliminar',
       cancelButtonText: 'Cancelar',
@@ -241,7 +273,6 @@ export class AssetMaintenanceComponent implements OnInit {
     this.showForm = !this.showForm
     if (!this.showForm) {
       this.maintenanceForm.reset()
-      this.maintenanceForm.patchValue({ status: MaintenanceStatus.SCHEDULED })
     }
   }
 
@@ -249,12 +280,16 @@ export class AssetMaintenanceComponent implements OnInit {
     this.router.navigate(['/dashboard'])
   }
 
+  // Antes llamaba a getMaintenanceByStatus()/getMaintenanceByType(), endpoints
+  // que nunca existieron en el backend (404 real al hacer click en las
+  // tarjetas). GET /assets/maintenance ya soporta status/type como query
+  // params — se reusa el mismo método que la carga inicial.
   filterByStatus(status: MaintenanceStatus | null): void {
-    if (status === null) {
-      this.loadMaintenanceRecords()
-    } else {
-      this.loading = true
-      this.maintenanceService.getMaintenanceByStatus(status).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.loading = true
+    this.maintenanceService
+      .getMaintenanceRecords(status ? { status } : undefined)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
         next: (records: AssetMaintenance[]) => {
           this.maintenanceRecords = records
           this.loading = false
@@ -263,15 +298,14 @@ export class AssetMaintenanceComponent implements OnInit {
           this.loading = false
         },
       })
-    }
   }
 
   filterByType(type: MaintenanceType | null): void {
-    if (type === null) {
-      this.loadMaintenanceRecords()
-    } else {
-      this.loading = true
-      this.maintenanceService.getMaintenanceByType(type).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.loading = true
+    this.maintenanceService
+      .getMaintenanceRecords(type ? { type } : undefined)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
         next: (records: AssetMaintenance[]) => {
           this.maintenanceRecords = records
           this.loading = false
@@ -280,7 +314,6 @@ export class AssetMaintenanceComponent implements OnInit {
           this.loading = false
         },
       })
-    }
   }
 
   viewRecord(record: AssetMaintenance): void {

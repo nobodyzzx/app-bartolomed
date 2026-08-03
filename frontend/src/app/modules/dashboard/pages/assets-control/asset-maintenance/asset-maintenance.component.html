@@ -78,33 +78,33 @@
         </div>
         <form [formGroup]="maintenanceForm" (ngSubmit)="onScheduleMaintenance()" class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <!-- ID del Activo -->
+            <!-- Activo -->
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>ID del Activo</mat-label>
-              <input matInput formControlName="assetId" placeholder="Ej: AST-001" />
-              <mat-icon matPrefix class="text-green-400">tag</mat-icon>
-              @if (maintenanceForm.get('assetId')?.hasError('required')) {
-                <mat-error>
-                  El ID es requerido
-                </mat-error>
-              }
-              @if (maintenanceForm.get('assetId')?.hasError('minlength')) {
-                <mat-error>
-                  Mínimo 3 caracteres
-                </mat-error>
-              }
-            </mat-form-field>
-            <!-- Nombre del Activo -->
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Nombre del Activo</mat-label>
-              <input matInput formControlName="assetName" placeholder="Nombre del equipo" />
+              <mat-label>Activo</mat-label>
+              <mat-select formControlName="assetId">
+                @for (asset of availableAssets; track asset.id) {
+                  <mat-option [value]="asset.id">
+                    {{ asset.name }} @if (asset.assetTag) { ({{ asset.assetTag }}) }
+                  </mat-option>
+                }
+              </mat-select>
               <mat-icon matPrefix class="text-green-400">inventory_2</mat-icon>
-              <mat-error>El nombre es requerido (mín. 3 caracteres)</mat-error>
+              @if (loadingAssets) {
+                <mat-hint>Cargando activos...</mat-hint>
+              }
+              <mat-error>Seleccione un activo</mat-error>
+            </mat-form-field>
+            <!-- Título -->
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Título</mat-label>
+              <input matInput formControlName="title" placeholder="Ej: Mantenimiento preventivo anual" />
+              <mat-icon matPrefix class="text-green-400">title</mat-icon>
+              <mat-error>El título es requerido (mín. 3 caracteres)</mat-error>
             </mat-form-field>
             <!-- Fecha de Mantenimiento -->
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Fecha de Mantenimiento</mat-label>
-              <input matInput [matDatepicker]="maintenancePicker" formControlName="maintenanceDate" />
+              <input matInput [matDatepicker]="maintenancePicker" formControlName="scheduledDate" />
               <mat-datepicker-toggle matIconSuffix [for]="maintenancePicker"></mat-datepicker-toggle>
               <mat-datepicker #maintenancePicker></mat-datepicker>
               <mat-error>Seleccione una fecha</mat-error>
@@ -129,29 +129,17 @@
               <mat-icon matPrefix class="text-green-400">category</mat-icon>
               <mat-error>Seleccione un tipo</mat-error>
             </mat-form-field>
-            <!-- Estado -->
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Estado</mat-label>
-              <mat-select formControlName="status">
-                @for (status of maintenanceStatuses; track status) {
-                  <mat-option [value]="status">
-                    {{ status }}
-                  </mat-option>
-                }
-              </mat-select>
-              <mat-icon matPrefix class="text-green-400">schedule</mat-icon>
-            </mat-form-field>
             <!-- Costo -->
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Costo Estimado</mat-label>
-              <input matInput type="number" formControlName="cost" placeholder="0.00" />
-              <span matTextPrefix>$ &nbsp;</span>
+              <input matInput type="number" formControlName="estimatedCost" placeholder="0.00" />
+              <span matTextPrefix>Bs &nbsp;</span>
               <mat-error>El costo debe ser mayor a 0</mat-error>
             </mat-form-field>
-            <!-- Realizado por -->
+            <!-- Técnico -->
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Realizado por</mat-label>
-              <input matInput formControlName="performedBy" placeholder="Nombre del técnico" />
+              <mat-label>Técnico</mat-label>
+              <input matInput formControlName="technician" placeholder="Nombre del técnico" />
               <mat-icon matPrefix class="text-green-400">person</mat-icon>
             </mat-form-field>
           </div>
@@ -182,10 +170,7 @@
           <div class="form-action-bar">
             <button
               type="button"
-            (click)="
-              maintenanceForm.reset();
-              maintenanceForm.patchValue({ status: maintenanceStatuses[0] })
-            "
+              (click)="maintenanceForm.reset()"
               class="btn btn-ghost"
               >
               <span class="material-symbols-outlined msz-18">restart_alt</span>
@@ -264,8 +249,10 @@
                         <span class="material-symbols-outlined msz-20 text-blue-600">inventory_2</span>
                       </div>
                       <div>
-                        <p class="text-sm font-medium text-slate-900">{{ record.assetName }}</p>
-                        <p class="text-xs text-slate-500">ID: {{ record.assetId }}</p>
+                        <p class="text-sm font-medium text-slate-900">{{ record.asset?.name || record.title }}</p>
+                        @if (record.asset?.assetTag) {
+                          <p class="text-xs text-slate-500">{{ record.asset?.assetTag }}</p>
+                        }
                       </div>
                     </div>
                   </td>
@@ -281,10 +268,7 @@
                   </td>
                   <td class="px-6 py-4">
                     <div class="text-sm text-slate-700">
-                      <div class="font-medium">{{ record.maintenanceDate | date: 'dd/MM/yyyy' }}</div>
-                      <div class="text-xs text-slate-500">
-                        {{ record.maintenanceDate | date: 'HH:mm' }}
-                      </div>
+                      <div class="font-medium">{{ record.scheduledDate | date: 'dd/MM/yyyy' }}</div>
                     </div>
                   </td>
                   <td class="px-6 py-4">
@@ -316,10 +300,10 @@
                     </mat-menu>
                   </td>
                   <td class="px-6 py-4">
-                    <p class="text-sm font-medium text-slate-700">{{ formatCurrency(record.cost) }}</p>
+                    <p class="text-sm font-medium text-slate-700">{{ formatCurrency(record.actualCost ?? record.estimatedCost) }}</p>
                   </td>
                   <td class="px-6 py-4">
-                    <p class="text-sm text-slate-700">{{ record.performedBy || 'N/A' }}</p>
+                    <p class="text-sm text-slate-700">{{ record.technician || 'N/A' }}</p>
                   </td>
                   <td class="px-6 py-4">
                     <div class="flex items-center justify-end gap-1">
