@@ -5,7 +5,6 @@ import { Clinic } from '../clinics/entities/clinic.entity';
 import { AssetsController } from './assets.controller';
 import { AssetsService } from './assets.service';
 import { AssetTransfersController } from './controllers/asset-transfers.controller';
-import { AssetInventory } from './entities/asset-inventory.entity';
 import { AssetMaintenance } from './entities/asset-maintenance.entity';
 import { AssetReport } from './entities/asset-report.entity';
 import {
@@ -21,7 +20,6 @@ import { AssetTransfersService } from './services/asset-transfers.service';
     TypeOrmModule.forFeature([
       Asset,
       AssetMaintenance,
-      AssetInventory,
       AssetReport,
       AssetTransfer,
       AssetTransferItem,

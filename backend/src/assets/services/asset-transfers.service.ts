@@ -217,13 +217,17 @@ export class AssetTransfersService {
       }
       this.assertSourceClinic(transfer, clinicId);
 
-      // Marcar todos los activos como INACTIVE (en tránsito)
+      // Marcar todos los activos como INACTIVE (en tránsito).
+      // Se revalida el estado acá: entre create() y dispatch() alguien pudo
+      // dar de baja el activo (DELETE /assets/:id → RETIRED) fuera de este
+      // flujo — sin este chequeo, despachar lo "revivía" a INACTIVE igual.
       for (const item of transfer.items) {
         const asset = await em.findOne(Asset, {
           where: { id: item.assetId },
           lock: { mode: 'pessimistic_write' },
         });
         if (!asset) throw new NotFoundException(`Activo ${item.assetId} no encontrado`);
+        this.assertAssetAvailableForTransfer(asset);
         asset.status = AssetStatus.INACTIVE;
         await em.save(Asset, asset);
       }
@@ -254,13 +258,15 @@ export class AssetTransfersService {
       }
       this.assertTargetClinic(transfer, clinicId);
 
-      // Transferir activos a la clínica destino
+      // Transferir activos a la clínica destino. Misma revalidación que en
+      // dispatch(): el activo pudo ser dado de baja mientras estaba en tránsito.
       for (const item of transfer.items) {
         const asset = await em.findOne(Asset, {
           where: { id: item.assetId },
           lock: { mode: 'pessimistic_write' },
         });
         if (!asset) throw new NotFoundException(`Activo ${item.assetId} no encontrado`);
+        this.assertAssetAvailableForTransfer(asset);
         asset.clinic = { id: transfer.targetClinicId } as Clinic;
         asset.status = AssetStatus.ACTIVE;
         await em.save(Asset, asset);
@@ -342,6 +348,13 @@ export class AssetTransfersService {
   // ─── Helpers privados ─────────────────────────────────────────────────────
 
   private async generateTransferNumber(em: EntityManager): Promise<string> {
+    // Advisory lock scoped a la transacción: serializa la generación de
+    // números entre transacciones concurrentes (antes dos create() en
+    // paralelo podían calcular el mismo seq vía em.count() sin lock, y el
+    // segundo request veía un 500 genérico de violación del UNIQUE en vez
+    // de un número correcto). Se libera solo al terminar la transacción.
+    await em.query('SELECT pg_advisory_xact_lock(hashtext($1))', ['asset_transfer_number']);
+
     const year = new Date().getFullYear();
     const count = await em.count(AssetTransfer);
     const seq = String(count + 1).padStart(6, '0');
@@ -356,15 +369,33 @@ export class AssetTransfersService {
   }
 
   private async loadTransferForUpdate(em: EntityManager, id: string): Promise<AssetTransfer> {
-    const transfer = await em.findOne(AssetTransfer, {
-      where: { id },
-      relations: ['items', 'items.asset'],
-      lock: { mode: 'pessimistic_write' },
-    });
+    // Bug real: em.findOne con relations + lock pessimistic_write generaba un
+    // FOR UPDATE sobre TODO el resultado, incluyendo los LEFT JOIN de
+    // items/items.asset — Postgres lo rechaza con "FOR UPDATE cannot be
+    // applied to the nullable side of an outer join" (500 real en cada
+    // dispatch/confirmReceipt). Con setLock + lockTables el FOR UPDATE
+    // aplica solo a la fila de "transfer", que es lo único que hace falta
+    // bloquear.
+    const transfer = await em
+      .createQueryBuilder(AssetTransfer, 'transfer')
+      .leftJoinAndSelect('transfer.items', 'items')
+      .leftJoinAndSelect('items.asset', 'asset')
+      .where('transfer.id = :id', { id })
+      .setLock('pessimistic_write', undefined, ['transfer'])
+      .getOne();
     if (!transfer) {
       throw new NotFoundException(`Traslado ${id} no encontrado`);
     }
     return transfer;
+  }
+
+  private assertAssetAvailableForTransfer(asset: Asset): void {
+    const terminal: AssetStatus[] = [AssetStatus.RETIRED, AssetStatus.SOLD, AssetStatus.LOST];
+    if (terminal.includes(asset.status)) {
+      throw new BadRequestException(
+        `El activo "${asset.name}" (${asset.assetTag}) fue dado de baja (estado: ${asset.status}) mientras el traslado estaba en curso`,
+      );
+    }
   }
 
   private assertClinicAccess(transfer: AssetTransfer, clinicId: string): void {

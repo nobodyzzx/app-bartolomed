@@ -13,6 +13,8 @@ import { Request } from 'express';
 import { Auth, AuthClinic } from '../../auth/decorators';
 import { resolveClinicId } from '../../auth/decorators/clinic-roles.decorator';
 import { GetUser } from '../../auth/decorators/get-user.decorator';
+import { RequirePermissions } from '../../auth/permissions/permissions.decorator';
+import { Permission } from '../../auth/permissions/permissions.enum';
 import { ValidRoles } from '../../auth/interfaces';
 import { User } from '../../users/entities/user.entity';
 import {
@@ -24,8 +26,16 @@ import {
 } from '../dto/asset-transfer.dto';
 import { AssetTransfersService } from '../services/asset-transfers.service';
 
+// DOCTOR/NURSE tenían acceso de lectura acá (@Auth incluía ambos roles en
+// findAll/findOne) pero sin @RequirePermissions — como PermissionsGuard
+// retorna true cuando no hay permisos requeridos, pasaban igual y veían
+// datos financieros de activos (purchasePrice, currentValue, vendor) que
+// AssetsController les bloquea explícitamente. Ninguna pantalla del frontend
+// los usa tampoco (assets-control sólo enruta ADMIN/SUPER_ADMIN). Se alinea
+// con Permission.AssetsManage, igual que el resto del módulo.
 @Controller('asset-transfers')
 @AuthClinic({ roles: [ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN] })
+@RequirePermissions(Permission.AssetsManage)
 export class AssetTransfersController {
   constructor(private readonly service: AssetTransfersService) {}
 
@@ -36,7 +46,7 @@ export class AssetTransfersController {
   }
 
   @Get()
-  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
   findAll(@Query() filters: FilterAssetTransfersDto, @Req() req: Request) {
     return this.service.findAll(resolveClinicId(req)!, filters);
   }
@@ -48,7 +58,7 @@ export class AssetTransfersController {
   }
 
   @Get(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
+  @Auth(ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
   findOne(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     return this.service.findOne(id, resolveClinicId(req)!);
   }

@@ -51,14 +51,27 @@ const makeTransfer = (overrides: Partial<AssetTransfer> = {}): AssetTransfer =>
 
 // ─── EntityManager mock ───────────────────────────────────────────────────────
 
-const makeEm = (overrides: Record<string, jest.Mock> = {}) => ({
-  findOne: jest.fn(),
-  find: jest.fn(),
-  create: jest.fn().mockImplementation((_cls: any, data: any) => ({ ...data })),
-  save: jest.fn().mockImplementation((_cls: any, data: any) => Promise.resolve(data)),
-  count: jest.fn().mockResolvedValue(0),
-  ...overrides,
-});
+const makeEm = (overrides: Record<string, jest.Mock> = {}) => {
+  const em: Record<string, jest.Mock> = {
+    findOne: jest.fn(),
+    find: jest.fn(),
+    create: jest.fn().mockImplementation((_cls: any, data: any) => ({ ...data })),
+    save: jest.fn().mockImplementation((_cls: any, data: any) => Promise.resolve(data)),
+    count: jest.fn().mockResolvedValue(0),
+    query: jest.fn().mockResolvedValue(undefined), // pg_advisory_xact_lock en generateTransferNumber
+    ...overrides,
+  };
+  // loadTransferForUpdate() usa createQueryBuilder+setLock (ver comentario en el
+  // service) — getOne() delega al mismo em.findOne mockeado por cada test, así los
+  // .mockResolvedValueOnce() encadenados existentes siguen funcionando sin cambios.
+  em.createQueryBuilder = jest.fn().mockReturnValue({
+    leftJoinAndSelect: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    setLock: jest.fn().mockReturnThis(),
+    getOne: jest.fn().mockImplementation(() => em.findOne()),
+  });
+  return em;
+};
 
 const makeMockDataSource = (em: ReturnType<typeof makeEm>) => ({
   transaction: jest.fn().mockImplementation(async (fn: (em: any) => Promise<any>) => fn(em)),
@@ -312,6 +325,17 @@ describe('AssetTransfersService', () => {
         BadRequestException,
       );
     });
+
+    it('lanza BadRequestException si el activo fue dado de baja mientras el traslado estaba pendiente (bug real: antes lo "revivía" a INACTIVE igual)', async () => {
+      const transfer = makeTransfer({ status: AssetTransferStatus.REQUESTED });
+      em.findOne
+        .mockResolvedValueOnce(transfer) // loadTransferForUpdate
+        .mockResolvedValueOnce(makeAsset({ status: AssetStatus.RETIRED })); // asset dado de baja
+
+      await expect(service.dispatch(TRANSFER_ID, {}, USER_ID, SOURCE_CLINIC)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
   });
 
   // ─── confirmReceipt ───────────────────────────────────────────────────────
@@ -347,6 +371,17 @@ describe('AssetTransfersService', () => {
 
       await expect(
         service.confirmReceipt(TRANSFER_ID, {}, USER_ID, SOURCE_CLINIC),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('lanza BadRequestException si el activo fue dado de baja mientras estaba en tránsito', async () => {
+      const transfer = makeTransfer({ status: AssetTransferStatus.IN_TRANSIT });
+      em.findOne
+        .mockResolvedValueOnce(transfer) // loadTransferForUpdate
+        .mockResolvedValueOnce(makeAsset({ status: AssetStatus.LOST })); // asset dado de baja
+
+      await expect(
+        service.confirmReceipt(TRANSFER_ID, {}, USER_ID, TARGET_CLINIC),
       ).rejects.toThrow(BadRequestException);
     });
   });

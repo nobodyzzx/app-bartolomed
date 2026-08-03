@@ -4,7 +4,8 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AssetsService } from './assets.service';
 import { Asset, AssetStatus, AssetType, AssetCondition, DepreciationMethod } from './entities/asset.entity';
 import { AssetMaintenance, MaintenanceStatus, MaintenanceType } from './entities/asset-maintenance.entity';
-import { AssetReport, ReportStatus, ReportType } from './entities/asset-report.entity';
+import { AssetReport, ReportFormat, ReportStatus, ReportType } from './entities/asset-report.entity';
+import { AssetTransferItem } from './entities/asset-transfer.entity';
 import {
   createMockRepository,
   createMockQueryBuilder,
@@ -63,14 +64,19 @@ const makeMaintenance = (overrides: Partial<AssetMaintenance> = {}): AssetMainte
   } as any);
 
 const makeReport = (overrides: Partial<AssetReport> = {}): AssetReport =>
-  ({
+  // Instancia real (no un objeto plano) para que markAsCompleted()/markAsFailed()/
+  // canBeDownloaded() — métodos de la entidad que generateReport()/downloadReport()
+  // invocan de verdad — existan en runtime durante los tests.
+  Object.assign(new AssetReport(), {
     id: 'report-1',
+    title: 'Reporte de prueba',
     status: ReportStatus.PENDING,
     type: ReportType.STATUS,
+    format: ReportFormat.PDF,
     clinicId: CLINIC_ID,
     generatedById: USER_ID,
     ...overrides,
-  } as any);
+  });
 
 // ─── suite ────────────────────────────────────────────────────────────────────
 
@@ -79,6 +85,7 @@ describe('AssetsService', () => {
   let assetRepo: MockRepository<Asset>;
   let maintenanceRepo: MockRepository<AssetMaintenance>;
   let reportRepo: MockRepository<AssetReport>;
+  let transferItemRepo: MockRepository<AssetTransferItem>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -87,6 +94,7 @@ describe('AssetsService', () => {
         { provide: getRepositoryToken(Asset), useValue: createMockRepository() },
         { provide: getRepositoryToken(AssetMaintenance), useValue: createMockRepository() },
         { provide: getRepositoryToken(AssetReport), useValue: createMockRepository() },
+        { provide: getRepositoryToken(AssetTransferItem), useValue: createMockRepository() },
       ],
     }).compile();
 
@@ -94,6 +102,12 @@ describe('AssetsService', () => {
     assetRepo = module.get(getRepositoryToken(Asset));
     maintenanceRepo = module.get(getRepositoryToken(AssetMaintenance));
     reportRepo = module.get(getRepositoryToken(AssetReport));
+    transferItemRepo = module.get(getRepositoryToken(AssetTransferItem));
+
+    // remove() consulta traslados activos por defecto sin ninguno encontrado;
+    // los tests que sí quieren simular un traslado activo lo sobreescriben.
+    const noActiveTransferQb = createMockQueryBuilder({ getOne: jest.fn().mockResolvedValue(null) });
+    transferItemRepo.createQueryBuilder!.mockReturnValue(noActiveTransferQb);
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -143,6 +157,19 @@ describe('AssetsService', () => {
       expect(assetRepo.save).not.toHaveBeenCalled();
     });
 
+    it('valida el serial duplicado con scope de clínica (bug real: antes buscaba en todas las clínicas)', async () => {
+      const dto = makeCreateAssetDto({ serialNumber: 'SN-001' });
+      assetRepo.findOne!.mockResolvedValue(null);
+      assetRepo.create!.mockReturnValue(makeAsset());
+      assetRepo.save!.mockResolvedValue(makeAsset());
+
+      await service.create(dto as any, USER_ID, CLINIC_ID);
+
+      expect(assetRepo.findOne).toHaveBeenCalledWith({
+        where: { serialNumber: 'SN-001', clinic: { id: CLINIC_ID } },
+      });
+    });
+
     it('no verifica duplicado si no se envía serialNumber', async () => {
       const dto = makeCreateAssetDto(); // sin serialNumber
       const saved = makeAsset();
@@ -174,7 +201,7 @@ describe('AssetsService', () => {
 
       expect(result).toEqual({ data: assets, total: 1, page: 1, limit: 25 });
       expect(qb.where).toHaveBeenCalledWith('asset.isActive = :isActive', { isActive: true });
-      expect(qb.andWhere).toHaveBeenCalledWith('clinic.id = :clinicId', { clinicId: CLINIC_ID });
+      expect(qb.andWhere).toHaveBeenCalledWith('clinic.id = :scopedClinicId', { scopedClinicId: CLINIC_ID });
     });
 
     it('aplica filtro por status cuando se proporciona', async () => {
@@ -215,15 +242,8 @@ describe('AssetsService', () => {
       );
     });
 
-    it('no filtra por clínica si no se pasa clinicId', async () => {
-      const qb = createMockQueryBuilder({ getManyAndCount: jest.fn().mockResolvedValue([[], 0]) });
-      assetRepo.createQueryBuilder!.mockReturnValue(qb);
-
-      await service.findAll();
-
-      const calls = (qb.andWhere as jest.Mock).mock.calls.map(c => c[0]);
-      const hasClinicFilter = calls.some(c => String(c).includes('clinicId'));
-      expect(hasClinicFilter).toBe(false);
+    it('lanza BadRequestException si no se pasa clinicId (bug real: antes devolvía activos de TODAS las clínicas en silencio)', async () => {
+      await expect(service.findAll()).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -278,6 +298,18 @@ describe('AssetsService', () => {
       await expect(
         service.update('asset-1', { serialNumber: 'SN-NEW' } as any, CLINIC_ID),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('valida el serial duplicado con scope de clínica al actualizar', async () => {
+      const asset = makeAsset({ serialNumber: 'SN-OLD' });
+      assetRepo.findOne!.mockResolvedValueOnce(asset).mockResolvedValueOnce(null);
+      assetRepo.save!.mockResolvedValue(asset);
+
+      await service.update('asset-1', { serialNumber: 'SN-NEW' } as any, CLINIC_ID);
+
+      expect(assetRepo.findOne).toHaveBeenLastCalledWith({
+        where: { serialNumber: 'SN-NEW', clinic: { id: CLINIC_ID } },
+      });
     });
 
     it('permite actualizar serial si es el mismo activo', async () => {
@@ -347,6 +379,26 @@ describe('AssetsService', () => {
       expect(assetRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({ isActive: false, status: AssetStatus.RETIRED }),
       );
+    });
+
+    it('lanza BadRequestException si el activo ya está SOLD (transición inválida, antes se forzaba RETIRED igual)', async () => {
+      const asset = makeAsset({ status: AssetStatus.SOLD });
+      assetRepo.findOne!.mockResolvedValue(asset);
+
+      await expect(service.remove('asset-1', CLINIC_ID)).rejects.toThrow(BadRequestException);
+      expect(assetRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('lanza BadRequestException si el activo tiene un traslado en curso (bug real: antes no se chequeaba)', async () => {
+      const asset = makeAsset({ status: AssetStatus.ACTIVE });
+      assetRepo.findOne!.mockResolvedValue(asset);
+      const activeTransferQb = createMockQueryBuilder({
+        getOne: jest.fn().mockResolvedValue({ id: 'item-1' }),
+      });
+      transferItemRepo.createQueryBuilder!.mockReturnValue(activeTransferQb);
+
+      await expect(service.remove('asset-1', CLINIC_ID)).rejects.toThrow(BadRequestException);
+      expect(assetRepo.save).not.toHaveBeenCalled();
     });
   });
 
@@ -454,7 +506,7 @@ describe('AssetsService', () => {
 
     it('lanza BadRequestException si no se pasa assetId', async () => {
       await expect(
-        service.createMaintenance({ title: 'Sin activo' }, USER_ID, CLINIC_ID),
+        service.createMaintenance({ title: 'Sin activo' } as any, USER_ID, CLINIC_ID),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -462,7 +514,7 @@ describe('AssetsService', () => {
       assetRepo.findOne!.mockResolvedValue(makeAsset({ status: AssetStatus.RETIRED }));
 
       await expect(
-        service.createMaintenance({ assetId: 'asset-1' }, USER_ID, CLINIC_ID),
+        service.createMaintenance({ assetId: 'asset-1', title: 'X', scheduledDate: '2026-05-01' }, USER_ID, CLINIC_ID),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -470,7 +522,7 @@ describe('AssetsService', () => {
       assetRepo.findOne!.mockResolvedValue(makeAsset({ status: AssetStatus.SOLD }));
 
       await expect(
-        service.createMaintenance({ assetId: 'asset-1' }, USER_ID, CLINIC_ID),
+        service.createMaintenance({ assetId: 'asset-1', title: 'X', scheduledDate: '2026-05-01' }, USER_ID, CLINIC_ID),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -478,13 +530,13 @@ describe('AssetsService', () => {
       assetRepo.findOne!.mockResolvedValue(makeAsset({ status: AssetStatus.LOST }));
 
       await expect(
-        service.createMaintenance({ assetId: 'asset-1' }, USER_ID, CLINIC_ID),
+        service.createMaintenance({ assetId: 'asset-1', title: 'X', scheduledDate: '2026-05-01' }, USER_ID, CLINIC_ID),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('lanza BadRequestException si no se proporciona clinicId', async () => {
       await expect(
-        service.createMaintenance({ assetId: 'asset-1' }, USER_ID),
+        service.createMaintenance({ assetId: 'asset-1', title: 'X', scheduledDate: '2026-05-01' }, USER_ID),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -589,18 +641,17 @@ describe('AssetsService', () => {
   // ─── generateReport ───────────────────────────────────────────────────────
 
   describe('generateReport', () => {
-    it('crea un reporte con estado PENDING', async () => {
+    const baseDto = () => ({ title: 'Activos por estado', type: ReportType.STATUS, format: ReportFormat.PDF, date: '2026-08-02' });
+
+    it('crea el reporte, genera los datos y lo marca COMPLETED (bug real: antes markAsCompleted() nunca se invocaba y quedaba PENDING para siempre)', async () => {
       const report = makeReport();
       reportRepo.create!.mockReturnValue(report);
-      reportRepo.save!.mockResolvedValue(report);
+      reportRepo.save!.mockImplementation(async (r: any) => r);
+      const qb = createMockQueryBuilder({ getRawMany: jest.fn().mockResolvedValue([{ assetTag: 'A-1' }]) });
+      assetRepo.createQueryBuilder!.mockReturnValue(qb);
 
-      const result = await service.generateReport(
-        { type: ReportType.STATUS },
-        USER_ID,
-        CLINIC_ID,
-      );
+      const result = await service.generateReport(baseDto() as any, USER_ID, CLINIC_ID);
 
-      expect(result).toEqual(report);
       expect(reportRepo.create).toHaveBeenCalledWith(
         expect.objectContaining({
           status: ReportStatus.PENDING,
@@ -608,12 +659,55 @@ describe('AssetsService', () => {
           clinicId: CLINIC_ID,
         }),
       );
+      expect(result.status).toBe(ReportStatus.COMPLETED);
+      expect(result.data).toEqual([{ assetTag: 'A-1' }]);
+      expect(result.recordCount).toBe(1);
+    });
+
+    it('marca el reporte FAILED si la generación de datos falla, sin lanzar la excepción al caller', async () => {
+      const report = makeReport();
+      reportRepo.create!.mockReturnValue(report);
+      reportRepo.save!.mockImplementation(async (r: any) => r);
+      assetRepo.createQueryBuilder!.mockImplementation(() => {
+        throw new Error('DB caída');
+      });
+
+      const result = await service.generateReport(baseDto() as any, USER_ID, CLINIC_ID);
+
+      expect(result.status).toBe(ReportStatus.FAILED);
+      expect(result.errorMessage).toBe('DB caída');
     });
 
     it('lanza BadRequestException si no se proporciona clinicId', async () => {
       await expect(
-        service.generateReport({ type: ReportType.STATUS }, USER_ID),
+        service.generateReport(baseDto() as any, USER_ID),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('downloadReport', () => {
+    it('lanza BadRequestException si el reporte no está COMPLETED', async () => {
+      reportRepo.findOne!.mockResolvedValue(makeReport({ status: ReportStatus.PENDING }));
+
+      await expect(service.downloadReport('report-1', CLINIC_ID)).rejects.toThrow(BadRequestException);
+    });
+
+    it('devuelve el contenido en CSV a partir de report.data', async () => {
+      reportRepo.findOne!.mockResolvedValue(
+        makeReport({
+          status: ReportStatus.COMPLETED,
+          filePath: 'x',
+          fileName: 'reporte-activos',
+          data: [{ assetTag: 'A-1', name: 'Ecógrafo' }],
+        }),
+      );
+
+      const result = await service.downloadReport('report-1', CLINIC_ID);
+
+      expect(result.contentType).toContain('text/csv');
+      expect(result.fileName).toBe('reporte-activos.csv');
+      expect(result.content).toContain('assetTag,name');
+      expect(result.content).toContain('"A-1","Ecógrafo"');
     });
   });
 

@@ -12,11 +12,14 @@ export interface PaginatedResult<T> {
   page: number;
   limit: number;
 }
+import { CreateAssetMaintenanceDto, UpdateAssetMaintenanceDto } from './dto/asset-maintenance.dto';
+import { GenerateReportDto } from './dto/asset-report.dto';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { FilterAssetsDto } from './dto/filter-assets.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
 import { AssetMaintenance, MaintenanceStatus } from './entities/asset-maintenance.entity';
-import { AssetReport, ReportStatus } from './entities/asset-report.entity';
+import { AssetReport, ReportStatus, ReportType } from './entities/asset-report.entity';
+import { AssetTransferItem, AssetTransferStatus } from './entities/asset-transfer.entity';
 import { Asset, AssetStatus } from './entities/asset.entity';
 
 @Injectable()
@@ -30,6 +33,8 @@ export class AssetsService {
     private readonly maintenanceRepository: Repository<AssetMaintenance>,
     @InjectRepository(AssetReport)
     private readonly reportRepository: Repository<AssetReport>,
+    @InjectRepository(AssetTransferItem)
+    private readonly transferItemRepository: Repository<AssetTransferItem>,
   ) {}
 
   private requireClinicId(clinicId?: string): string {
@@ -44,10 +49,10 @@ export class AssetsService {
     // Generar asset tag único
     const assetTag = await this.generateAssetTag(createAssetDto.type);
 
-    // Validar serial number único si se proporciona
+    // Validar serial number único dentro de la clínica
     if (createAssetDto.serialNumber) {
       const exists = await this.assetRepository.findOne({
-        where: { serialNumber: createAssetDto.serialNumber },
+        where: { serialNumber: createAssetDto.serialNumber, clinic: { id: scopedClinicId } },
       });
       if (exists) {
         throw new BadRequestException('El número de serie ya existe');
@@ -65,6 +70,7 @@ export class AssetsService {
   }
 
   async findAll(filters?: FilterAssetsDto, clinicId?: string): Promise<PaginatedResult<Asset>> {
+    const scopedClinicId = this.requireClinicId(clinicId);
     const page = filters?.page ?? 1;
     const limit = filters?.limit ?? 25;
 
@@ -72,11 +78,8 @@ export class AssetsService {
       .createQueryBuilder('asset')
       .leftJoinAndSelect('asset.clinic', 'clinic')
       .leftJoinAndSelect('asset.createdBy', 'createdBy')
-      .where('asset.isActive = :isActive', { isActive: true });
-
-    if (clinicId) {
-      queryBuilder.andWhere('clinic.id = :clinicId', { clinicId });
-    }
+      .where('asset.isActive = :isActive', { isActive: true })
+      .andWhere('clinic.id = :scopedClinicId', { scopedClinicId });
 
     if (filters) {
       if (filters.status) {
@@ -146,10 +149,10 @@ export class AssetsService {
   async update(id: string, updateAssetDto: UpdateAssetDto, clinicId?: string): Promise<Asset> {
     const asset = await this.findOne(id, clinicId);
 
-    // Validar serial number único si se actualiza
+    // Validar serial number único dentro de la clínica
     if (updateAssetDto.serialNumber && updateAssetDto.serialNumber !== asset.serialNumber) {
       const exists = await this.assetRepository.findOne({
-        where: { serialNumber: updateAssetDto.serialNumber },
+        where: { serialNumber: updateAssetDto.serialNumber, clinic: { id: asset.clinic.id } },
       });
       if (exists) {
         throw new BadRequestException('El número de serie ya existe');
@@ -166,6 +169,26 @@ export class AssetsService {
 
   async remove(id: string, clinicId?: string): Promise<void> {
     const asset = await this.findOne(id, clinicId);
+
+    // Antes se forzaba RETIRED sin pasar por assertAssetStatusTransition() (que
+    // bloquea, por ejemplo, SOLD → *) y sin chequear traslados activos — se
+    // podía dar de baja un activo en medio de un traslado en curso, y luego
+    // dispatch()/confirmReceipt() lo "revivían" igual (ver assertAssetAvailableForTransfer).
+    this.assertAssetStatusTransition(asset.status, AssetStatus.RETIRED);
+
+    const activeTransfer = await this.transferItemRepository
+      .createQueryBuilder('item')
+      .innerJoin('item.transfer', 'transfer')
+      .where('item.asset_id = :assetId', { assetId: id })
+      .andWhere('transfer.status IN (:...statuses)', {
+        statuses: [AssetTransferStatus.REQUESTED, AssetTransferStatus.IN_TRANSIT],
+      })
+      .getOne();
+
+    if (activeTransfer) {
+      throw new BadRequestException('No se puede dar de baja un activo con un traslado en curso');
+    }
+
     asset.status = AssetStatus.RETIRED;
     asset.isActive = false;
     await this.assetRepository.save(asset);
@@ -184,6 +207,7 @@ export class AssetsService {
   }
 
   async getStats(clinicId?: string): Promise<any> {
+    const scopedClinicId = this.requireClinicId(clinicId);
     // Agregaciones en SQL: cada COUNT/SUM ocurre en Postgres en lugar de
     // cargar todas las filas a Node. Tres queries en paralelo:
     //   1) Conteos por status + sumas monetarias
@@ -194,11 +218,10 @@ export class AssetsService {
     // entidad cargada; los mantenemos como queries acotadas usando los
     // mismos predicados que tienen los métodos de la entidad.
     const scoped = <T extends ObjectLiteral>(qb: SelectQueryBuilder<T>) => {
-      qb.where('asset.isActive = :isActive', { isActive: true });
-      if (clinicId) {
-        qb.leftJoin('asset.clinic', 'clinic').andWhere('clinic.id = :clinicId', { clinicId });
-      }
-      return qb;
+      return qb
+        .where('asset.isActive = :isActive', { isActive: true })
+        .leftJoin('asset.clinic', 'clinic')
+        .andWhere('clinic.id = :scopedClinicId', { scopedClinicId });
     };
 
     const summaryQb = scoped(
@@ -251,21 +274,20 @@ export class AssetsService {
         .groupBy('asset.condition'),
     );
 
-    const warrantyQb = scoped(
-      this.assetRepository
-        .createQueryBuilder('asset')
-        .select('COUNT(*)', 'count')
-        .andWhere('asset.warrantyEndDate IS NOT NULL')
-        .andWhere('asset.warrantyEndDate >= NOW()'),
-    );
+    // Bug real (doble): (1) scoped() llama a .where(), que en TypeORM
+    // REEMPLAZA todo el WHERE existente en vez de sumarlo — si el .andWhere()
+    // de garantía/mantenimiento se encadenaba ANTES de scoped(), quedaba
+    // descartado en silencio y el filtro nunca aplicaba (underWarranty/
+    // maintenanceDue devolvían siempre el total). (2) la columna real es
+    // warrantyExpiry, no warrantyEndDate. Por eso ahora scoped() se aplica
+    // primero sobre un queryBuilder vacío y el resto se encadena después.
+    const warrantyQb = scoped(this.assetRepository.createQueryBuilder('asset').select('COUNT(*)', 'count'))
+      .andWhere('asset.warrantyExpiry IS NOT NULL')
+      .andWhere('asset.warrantyExpiry >= NOW()');
 
-    const maintenanceDueQb = scoped(
-      this.assetRepository
-        .createQueryBuilder('asset')
-        .select('COUNT(*)', 'count')
-        .andWhere('asset.nextMaintenanceDate IS NOT NULL')
-        .andWhere('asset.nextMaintenanceDate <= NOW()'),
-    );
+    const maintenanceDueQb = scoped(this.assetRepository.createQueryBuilder('asset').select('COUNT(*)', 'count'))
+      .andWhere('asset.nextMaintenanceDate IS NOT NULL')
+      .andWhere('asset.nextMaintenanceDate <= NOW()');
 
     const [summary, typeRows, conditionRows, warrantyRow, maintenanceDueRow] = await Promise.all([
       summaryQb.getRawOne<{
@@ -307,16 +329,14 @@ export class AssetsService {
     field: 'type' | 'manufacturer' | 'location' | 'category',
     clinicId?: string,
   ): Promise<string[]> {
+    const scopedClinicId = this.requireClinicId(clinicId);
     const queryBuilder = this.assetRepository
       .createQueryBuilder('asset')
       .leftJoin('asset.clinic', 'clinic')
       .select(`DISTINCT asset.${field}`, 'value')
       .where('asset.isActive = :isActive', { isActive: true })
-      .andWhere(`asset.${field} IS NOT NULL`);
-
-    if (clinicId) {
-      queryBuilder.andWhere('clinic.id = :clinicId', { clinicId });
-    }
+      .andWhere(`asset.${field} IS NOT NULL`)
+      .andWhere('clinic.id = :scopedClinicId', { scopedClinicId });
 
     const results = await queryBuilder.getRawMany();
     return results.map(r => r.value).filter(Boolean);
@@ -333,24 +353,30 @@ export class AssetsService {
 
   // ==================== MAINTENANCE METHODS ====================
   async findAllMaintenance(filters?: any, clinicId?: string): Promise<AssetMaintenance[]> {
+    const scopedClinicId = this.requireClinicId(clinicId);
     const qb = this.maintenanceRepository
       .createQueryBuilder('maintenance')
       .leftJoinAndSelect('maintenance.asset', 'asset')
       .leftJoin('asset.clinic', 'clinic')
       .leftJoinAndSelect('maintenance.scheduledBy', 'scheduledBy')
       .leftJoinAndSelect('maintenance.completedBy', 'completedBy')
+      .where('clinic.id = :scopedClinicId', { scopedClinicId })
       .orderBy('maintenance.scheduledDate', 'DESC')
       // Cap defensivo mientras este endpoint no expone paginación al cliente.
       // Si se alcanza, queda registro en logs y conviene migrar el consumidor
       // a una variante paginada.
       .take(MAX_UNPAGINATED_ROWS);
 
-    if (clinicId) {
-      qb.andWhere('clinic.id = :clinicId', { clinicId });
-    }
-
     if (filters?.status) {
       qb.andWhere('maintenance.status = :status', { status: filters.status });
+    }
+
+    if (filters?.type) {
+      qb.andWhere('maintenance.type = :type', { type: filters.type });
+    }
+
+    if (filters?.assetId) {
+      qb.andWhere('maintenance.assetId = :assetId', { assetId: filters.assetId });
     }
 
     const rows = await qb.getMany();
@@ -376,7 +402,7 @@ export class AssetsService {
     return maintenance;
   }
 
-  async createMaintenance(data: any, userId: string, clinicId?: string): Promise<AssetMaintenance> {
+  async createMaintenance(data: CreateAssetMaintenanceDto, userId: string, clinicId?: string): Promise<AssetMaintenance> {
     const scopedClinicId = this.requireClinicId(clinicId);
     if (!data?.assetId) {
       throw new BadRequestException('assetId is required');
@@ -397,7 +423,7 @@ export class AssetsService {
     return Array.isArray(saved) ? saved[0] : saved;
   }
 
-  async updateMaintenance(id: string, data: any, clinicId?: string, userId?: string): Promise<AssetMaintenance> {
+  async updateMaintenance(id: string, data: UpdateAssetMaintenanceDto, clinicId?: string, userId?: string): Promise<AssetMaintenance> {
     const maintenance = await this.findOneMaintenance(id, clinicId);
     const asset = await this.findOne(maintenance.assetId, clinicId);
 
@@ -432,6 +458,7 @@ export class AssetsService {
   }
 
   async getMaintenanceStats(clinicId?: string): Promise<any> {
+    const scopedClinicId = this.requireClinicId(clinicId);
     // Agregado en SQL: una sola query con CASE/SUM, sin cargar entidades.
     const qb = this.maintenanceRepository
       .createQueryBuilder('maintenance')
@@ -459,11 +486,9 @@ export class AssetsService {
         cancelled: MaintenanceStatus.CANCELLED,
       });
 
-    if (clinicId) {
-      qb.leftJoin('maintenance.asset', 'asset')
-        .leftJoin('asset.clinic', 'clinic')
-        .andWhere('clinic.id = :clinicId', { clinicId });
-    }
+    qb.leftJoin('maintenance.asset', 'asset')
+      .leftJoin('asset.clinic', 'clinic')
+      .andWhere('clinic.id = :scopedClinicId', { scopedClinicId });
 
     const row = await qb.getRawOne<{
       total: string;
@@ -485,18 +510,20 @@ export class AssetsService {
 
   // ==================== REPORTS METHODS ====================
   async findAllReports(filters?: any, clinicId?: string): Promise<AssetReport[]> {
+    const scopedClinicId = this.requireClinicId(clinicId);
     const qb = this.reportRepository
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.generatedBy', 'generatedBy')
       .leftJoinAndSelect('report.clinic', 'clinic')
+      .where('clinic.id = :scopedClinicId', { scopedClinicId })
       .orderBy('report.createdAt', 'DESC');
-
-    if (clinicId) {
-      qb.andWhere('clinic.id = :clinicId', { clinicId });
-    }
 
     if (filters?.status) {
       qb.andWhere('report.status = :status', { status: filters.status });
+    }
+
+    if (filters?.type) {
+      qb.andWhere('report.type = :type', { type: filters.type });
     }
 
     return qb.getMany();
@@ -516,7 +543,7 @@ export class AssetsService {
     return report;
   }
 
-  async generateReport(data: any, userId: string, clinicId?: string): Promise<AssetReport> {
+  async generateReport(data: GenerateReportDto, userId: string, clinicId?: string): Promise<AssetReport> {
     const scopedClinicId = this.requireClinicId(clinicId);
     const report = this.reportRepository.create({
       ...data,
@@ -526,7 +553,138 @@ export class AssetsService {
     });
 
     const saved = await this.reportRepository.save(report);
-    return Array.isArray(saved) ? saved[0] : saved;
+    const reportEntity = Array.isArray(saved) ? saved[0] : saved;
+
+    // Generación síncrona: los reportes de este módulo son agregaciones sobre
+    // los propios activos de la clínica, no un job pesado que justifique cola
+    // async. Antes markAsCompleted() nunca se invocaba y todo reporte quedaba
+    // PENDING para siempre.
+    try {
+      const statusFilter = (reportEntity.filters as { status?: AssetStatus } | null)?.status;
+      const rows = await this.buildReportData(
+        reportEntity.type,
+        scopedClinicId,
+        reportEntity.dateFrom,
+        reportEntity.dateTo,
+        statusFilter,
+      );
+      reportEntity.data = rows;
+      const fileName = `${reportEntity.title.replace(/\s+/g, '_')}-${reportEntity.id.slice(0, 8)}`;
+      reportEntity.markAsCompleted(fileName, 0, rows.length);
+      reportEntity.fileName = fileName;
+    } catch (error) {
+      reportEntity.markAsFailed(error instanceof Error ? error.message : 'Error desconocido al generar el reporte');
+    }
+
+    return await this.reportRepository.save(reportEntity);
+  }
+
+  async downloadReport(
+    id: string,
+    clinicId?: string,
+  ): Promise<{ fileName: string; contentType: string; content: string }> {
+    const report = await this.findOneReport(id, clinicId);
+    if (!report.canBeDownloaded()) {
+      throw new BadRequestException('El reporte todavía no está listo para descargar');
+    }
+
+    const rows: Record<string, any>[] = Array.isArray(report.data) ? report.data : [];
+    // El campo `format` se guarda para referencia, pero la descarga siempre
+    // sirve CSV (abre en Excel igual) — generar PDF/XLSX reales requeriría
+    // sumar una dependencia de renderizado que excede el alcance de este fix.
+    const content = this.toCsv(rows);
+    return {
+      fileName: `${report.fileName || 'reporte'}.csv`,
+      contentType: 'text/csv; charset=utf-8',
+      content,
+    };
+  }
+
+  private async buildReportData(
+    type: AssetReport['type'],
+    clinicId: string,
+    dateFrom?: Date,
+    dateTo?: Date,
+    statusFilter?: AssetStatus,
+  ): Promise<Record<string, any>[]> {
+    const base = this.assetRepository
+      .createQueryBuilder('asset')
+      .leftJoin('asset.clinic', 'clinic')
+      .where('asset.isActive = :isActive', { isActive: true })
+      .andWhere('clinic.id = :clinicId', { clinicId });
+
+    if (dateFrom) base.andWhere('asset.purchaseDate >= :dateFrom', { dateFrom });
+    if (dateTo) base.andWhere('asset.purchaseDate <= :dateTo', { dateTo });
+    // No aplica al tipo MAINTENANCE: esa rama consulta maintenanceRepository,
+    // no `base` (los registros de mantenimiento no tienen su propio "status" de activo).
+    if (statusFilter) base.andWhere('asset.status = :statusFilter', { statusFilter });
+
+    switch (type) {
+      case ReportType.LOCATION:
+        return base
+          .select(['asset.assetTag AS "assetTag"', 'asset.name AS "name"', 'asset.location AS "location"', 'asset.room AS "room"', 'asset.status AS "status"'])
+          .orderBy('asset.location', 'ASC')
+          .getRawMany();
+      case ReportType.STATUS:
+        return base
+          .select(['asset.assetTag AS "assetTag"', 'asset.name AS "name"', 'asset.status AS "status"', 'asset.condition AS "condition"'])
+          .orderBy('asset.status', 'ASC')
+          .getRawMany();
+      case ReportType.MAINTENANCE:
+        return this.maintenanceRepository
+          .createQueryBuilder('maintenance')
+          .leftJoin('maintenance.asset', 'asset')
+          .leftJoin('asset.clinic', 'clinic')
+          .where('clinic.id = :clinicId', { clinicId })
+          .select([
+            'asset.assetTag AS "assetTag"',
+            'asset.name AS "assetName"',
+            'maintenance.type AS "type"',
+            'maintenance.status AS "status"',
+            'maintenance.scheduledDate AS "scheduledDate"',
+            'maintenance.actualCost AS "actualCost"',
+          ])
+          .orderBy('maintenance.scheduledDate', 'DESC')
+          .getRawMany();
+      case ReportType.DEPRECIATION:
+        return base
+          .select([
+            'asset.assetTag AS "assetTag"',
+            'asset.name AS "name"',
+            'asset.purchasePrice AS "purchasePrice"',
+            'asset.currentValue AS "currentValue"',
+            'asset.accumulatedDepreciation AS "accumulatedDepreciation"',
+          ])
+          .orderBy('asset.accumulatedDepreciation', 'DESC')
+          .getRawMany();
+      case ReportType.OBSOLETE:
+        return base
+          .andWhere('asset.condition IN (:...poor)', { poor: ['poor', 'critical'] })
+          .select(['asset.assetTag AS "assetTag"', 'asset.name AS "name"', 'asset.condition AS "condition"', 'asset.purchaseDate AS "purchaseDate"'])
+          .orderBy('asset.purchaseDate', 'ASC')
+          .getRawMany();
+      case ReportType.FINANCIAL:
+        return base
+          .select([
+            'asset.assetTag AS "assetTag"',
+            'asset.name AS "name"',
+            'asset.purchasePrice AS "purchasePrice"',
+            'asset.currentValue AS "currentValue"',
+            'asset.totalMaintenanceCost AS "totalMaintenanceCost"',
+          ])
+          .orderBy('asset.purchasePrice', 'DESC')
+          .getRawMany();
+      default:
+        return base.select(['asset.assetTag AS "assetTag"', 'asset.name AS "name"']).getRawMany();
+    }
+  }
+
+  private toCsv(rows: Record<string, any>[]): string {
+    if (rows.length === 0) return '';
+    const headers = Object.keys(rows[0]);
+    const escape = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const lines = [headers.join(','), ...rows.map(r => headers.map(h => escape(r[h])).join(','))];
+    return lines.join('\n');
   }
 
   async deleteReport(id: string, clinicId?: string): Promise<void> {

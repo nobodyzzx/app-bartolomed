@@ -26,6 +26,7 @@ describe('AssetsController', () => {
       findAllReports: jest.fn().mockResolvedValue({ data: [], total: 0 }),
       getReportsStats: jest.fn().mockResolvedValue({ total: 0 }),
       generateReport: jest.fn().mockResolvedValue({ id: 'report-1' }),
+      downloadReport: jest.fn().mockResolvedValue({ fileName: 'reporte.csv', contentType: 'text/csv', content: 'a,b\n1,2' }),
       findOneReport: jest.fn().mockResolvedValue({ id: 'report-1' }),
       deleteReport: jest.fn().mockResolvedValue(undefined),
       update: jest.fn().mockResolvedValue({ id: 'asset-1' }),
@@ -79,7 +80,7 @@ describe('AssetsController', () => {
   });
 
   it('createMaintenance delega data, userId y clinicId', async () => {
-    const data = { title: 'Mantenimiento' };
+    const data = { title: 'Mantenimiento' } as any;
     await controller.createMaintenance(data, user, makeReq());
     expect(service.createMaintenance).toHaveBeenCalledWith(data, 'user-1', 'clinic-1');
   });
@@ -90,7 +91,7 @@ describe('AssetsController', () => {
   });
 
   it('updateMaintenance delega id, data, clinicId y userId', async () => {
-    const data = { status: 'completed' };
+    const data = { status: 'completed' } as any;
     await controller.updateMaintenance('maint-1', data, makeReq(), user);
     expect(service.updateMaintenance).toHaveBeenCalledWith('maint-1', data, 'clinic-1', 'user-1');
   });
@@ -112,7 +113,7 @@ describe('AssetsController', () => {
   });
 
   it('generateReport delega data, userId y clinicId', async () => {
-    const data = { type: 'status' };
+    const data = { type: 'status' } as any;
     await controller.generateReport(data, user, makeReq());
     expect(service.generateReport).toHaveBeenCalledWith(data, 'user-1', 'clinic-1');
   });
@@ -120,6 +121,15 @@ describe('AssetsController', () => {
   it('findOneReport delega id y clinicId', async () => {
     await controller.findOneReport('report-1', makeReq());
     expect(service.findOneReport).toHaveBeenCalledWith('report-1', 'clinic-1');
+  });
+
+  it('downloadReport arma la respuesta HTTP con Content-Type/Content-Disposition y envía el contenido (endpoint nuevo, antes no existía)', async () => {
+    const res = { setHeader: jest.fn(), send: jest.fn() } as any;
+    await controller.downloadReport('report-1', res, makeReq());
+    expect(service.downloadReport).toHaveBeenCalledWith('report-1', 'clinic-1');
+    expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/csv');
+    expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename="reporte.csv"');
+    expect(res.send).toHaveBeenCalledWith('a,b\n1,2');
   });
 
   it('deleteReport delega id y clinicId', async () => {

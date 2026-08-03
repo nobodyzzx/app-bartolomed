@@ -12,7 +12,6 @@ import { SmtpConfig } from './mail/entities/smtp-config.entity';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { Appointment } from './appointments/entities/appointment.entity';
 import { AssetsModule } from './assets/assets.module';
-import { AssetInventory } from './assets/entities/asset-inventory.entity';
 import { AssetMaintenance } from './assets/entities/asset-maintenance.entity';
 import { AssetReport } from './assets/entities/asset-report.entity';
 import {
@@ -90,7 +89,6 @@ import { UsersModule } from './users/users.module';
         Payment,
         Asset,
         AssetMaintenance,
-        AssetInventory,
         AssetReport,
         AssetTransfer,
         AssetTransferItem,
