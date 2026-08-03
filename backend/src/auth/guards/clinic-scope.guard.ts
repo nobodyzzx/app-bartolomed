@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { DataSource } from 'typeorm';
+import { Clinic } from '../../clinics/entities/clinic.entity';
 import { UserClinic } from '../../users/entities/user-clinic.entity';
 import { User } from '../../users/entities/user.entity';
 import { ValidRoles } from '../../users/interfaces';
@@ -24,6 +25,18 @@ export class ClinicScopeGuard implements CanActivate {
     const clinicId = resolveClinicId(req);
     if (!clinicId) throw new ForbiddenException('clinicId is required (param or header x-clinic-id)');
 
+    // Bug real: desactivar una clínica no revocaba las sesiones ya
+    // autenticadas de sus miembros — un JWT vigente (hasta 2h) seguía
+    // operando sobre una clínica recién desactivada porque este guard solo
+    // validaba membresía, nunca el estado de la clínica en sí.
+    const clinic = await this.dataSource.getRepository(Clinic).findOne({
+      where: { id: clinicId },
+      select: { id: true, isActive: true },
+    });
+    if (!clinic || !clinic.isActive) {
+      throw new ForbiddenException('La clínica no está activa');
+    }
+
     // Validar membresía usando clinicIds del JWT (sin DB lookup)
     const clinicIds = user.clinicIds ?? [];
     const isMember = clinicIds.includes(clinicId);
@@ -38,10 +51,12 @@ export class ClinicScopeGuard implements CanActivate {
         if (!membership) throw new ForbiddenException('User is not member of this clinic');
 
         const requiredClinicRoles =
-          this.reflector.getAllAndOverride<string[]>(META_CLINIC_ROLES, [context.getHandler(), context.getClass()]) || [];
+          this.reflector.getAllAndOverride<string[]>(META_CLINIC_ROLES, [context.getHandler(), context.getClass()]) ||
+          [];
         if (requiredClinicRoles.length === 0) return true;
         const hasRole = membership.roles.some(r => requiredClinicRoles.includes(r));
-        if (!hasRole) throw new ForbiddenException(`User lacks required clinic roles: ${requiredClinicRoles.join(', ')}`);
+        if (!hasRole)
+          throw new ForbiddenException(`User lacks required clinic roles: ${requiredClinicRoles.join(', ')}`);
         return true;
       }
       throw new ForbiddenException('User is not member of this clinic');

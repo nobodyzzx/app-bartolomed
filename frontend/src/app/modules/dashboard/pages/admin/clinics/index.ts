@@ -1,5 +1,4 @@
 // Components
-export * from './clinic-dashboard/clinic-dashboard.component';
 export * from './clinic-form/clinic-form.component';
 export * from './clinic-list/clinic-list.component';
 

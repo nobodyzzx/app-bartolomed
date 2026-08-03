@@ -18,7 +18,8 @@ const routes: Routes = [
   },
   {
     path: 'view/:id',
-    component: ClinicFormComponent
+    component: ClinicFormComponent,
+    data: { readonly: true }
   }
 ];
 

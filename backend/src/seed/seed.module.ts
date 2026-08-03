@@ -6,7 +6,6 @@ import { MedicalRecord } from '../medical-records/entities/medical-record.entity
 import { Patient } from '../patients/entities/patient.entity';
 import { Medication, MedicationStock } from '../pharmacy/entities/pharmacy.entity';
 import { Prescription, PrescriptionItem } from '../prescriptions/entities/prescription.entity';
-import { Role } from '../roles/entities/role.entity';
 import { PersonalInfo } from '../users/entities/personal-info.entity';
 import { ProfessionalInfo } from '../users/entities/professional-info.entity';
 import { UserClinic } from '../users/entities/user-clinic.entity';
@@ -17,7 +16,6 @@ import { SeedService } from './seed.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Role,
       User,
       UserClinic,
       PersonalInfo,

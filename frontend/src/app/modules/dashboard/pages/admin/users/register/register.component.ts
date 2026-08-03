@@ -3,30 +3,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormControl, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
+import { ASSIGNABLE_ROLES } from '@core/constants/assignable-roles'
+import { VALIDATION_PATTERNS } from '../../../../../../shared/validators/validation-patterns'
 import { of } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { ErrorService } from '../../../../../../shared/components/services/error.service'
-import { Role, RolesService } from '../../roles/services/roles.service'
 import { ClinicsService } from '../../clinics/services/clinics.service'
 import { UsersService } from '../users.service'
-
-// Enums actualizados basados en el backend
-export enum ValidRoles {
-  SUPER_ADMIN = 'super-admin',
-  ADMIN = 'admin',
-  DOCTOR = 'doctor',
-  NURSE = 'nurse',
-  RECEPTIONIST = 'receptionist',
-  PHARMACIST = 'pharmacist',
-  USER = 'user',
-}
-
-export interface UserRoleItem {
-  value: ValidRoles
-  label: string
-  icon: string
-  description: string
-}
 
 export interface Clinic {
   id: string
@@ -47,8 +30,7 @@ export class UserRegisterComponent implements OnInit {
   isEditMode: boolean = false
   userId: string | null = null
   clinics: Clinic[] = []
-  availableRoles: Role[] = []
-  isLoadingRoles: boolean = false
+  availableRoles = ASSIGNABLE_ROLES
   isActive: boolean = true
   private originalIsActive: boolean = true
 
@@ -94,7 +76,7 @@ export class UserRegisterComponent implements OnInit {
     personalInfo: new FormGroup({
       firstName: new FormControl('', Validators.required),
       lastName:  new FormControl('', Validators.required),
-      phone:     new FormControl(''),
+      phone:     new FormControl('', [Validators.pattern(VALIDATION_PATTERNS.phoneBolivia)]),
       address:   new FormControl(''),
       birthDate: new FormControl(null),   // opcional
     }),
@@ -112,7 +94,6 @@ export class UserRegisterComponent implements OnInit {
   constructor(
     private usersService: UsersService,
     private clinicsService: ClinicsService,
-    private rolesService: RolesService,
     public router: Router,
     private route: ActivatedRoute,
     private errorService: ErrorService,
@@ -122,9 +103,6 @@ export class UserRegisterComponent implements OnInit {
   ngOnInit() {
     // Cargar clínicas activas
     this.loadClinics()
-
-    // Cargar roles disponibles
-    this.loadRoles()
 
     // Verificar si estamos en modo edición
     this.route.paramMap
@@ -149,7 +127,7 @@ export class UserRegisterComponent implements OnInit {
         },
         error: error => {
           this.errorService.handleError(error)
-          this.router.navigate(['/dashboard/users/list'])
+          this.router.navigate(['/dashboard/users'])
         },
       })
   }
@@ -160,19 +138,6 @@ export class UserRegisterComponent implements OnInit {
         this.clinics = clinics
       },
       error: () => {},
-    })
-  }
-
-  loadRoles() {
-    this.isLoadingRoles = true
-    this.rolesService.findAll(true).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: roles => {
-        this.availableRoles = roles
-        this.isLoadingRoles = false
-      },
-      error: () => {
-        this.isLoadingRoles = false
-      },
     })
   }
 
@@ -288,7 +253,7 @@ export class UserRegisterComponent implements OnInit {
           this.alert
             .success('Usuario creado', 'El usuario ha sido registrado correctamente.')
             .then(() => {
-              this.router.navigate(['/dashboard/users/list'])
+              this.router.navigate(['/dashboard/users'])
             })
         },
         error: error => {

@@ -179,13 +179,6 @@ export const MENU_ITEMS: MenuItem[] = [
         requiredPermissions: [Permission.UsersManage],
       },
       {
-        label: 'Gestión de Roles',
-        icon: 'security',
-        route: '/dashboard/roles',
-        allowedRoles: [UserRoles.SUPER_ADMIN], // Solo SUPER_ADMIN
-        requiredPermissions: [Permission.RolesManage],
-      },
-      {
         label: 'Auditoría y Logs',
         icon: 'history',
         route: '/dashboard/audit',

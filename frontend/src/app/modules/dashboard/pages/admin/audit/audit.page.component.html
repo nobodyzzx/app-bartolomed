@@ -20,7 +20,7 @@
         <span class="material-symbols-outlined msz-18">
           {{ autoRefresh ? 'pause_circle' : 'play_circle' }}
         </span>
-        {{ autoRefresh ? 'Live' : 'Pausado' }}
+        {{ autoRefresh ? 'En vivo' : 'Pausado' }}
       </button>
       <!-- Refresh manual -->
       <button
@@ -44,7 +44,7 @@
     <div class="flex flex-wrap gap-2 mb-6">
       @for (q of quickFilters; track q) {
         <button
-          (click)="applyQuickFilter(q.days)"
+          (click)="applyQuickFilter(q)"
           class="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
           >
           {{ q.label }}

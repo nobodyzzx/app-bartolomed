@@ -41,8 +41,6 @@ import { PharmacyModule } from './pharmacy/pharmacy.module';
 import { Prescription, PrescriptionItem } from './prescriptions/entities/prescription.entity';
 import { PrescriptionsModule } from './prescriptions/prescriptions.module';
 import { ReportsModule } from './reports/reports.module';
-import { Role } from './roles/entities/role.entity';
-import { RolesModule } from './roles/roles.module';
 import { SeedModule } from './seed/seed.module';
 import {
   StockTransfer,
@@ -102,7 +100,6 @@ import { UsersModule } from './users/users.module';
         PharmacySale,
         PharmacySaleItem,
         PharmacyInvoice,
-        Role,
         StockTransfer,
         StockTransferItem,
         TransferAuditLog,
@@ -133,7 +130,6 @@ import { UsersModule } from './users/users.module';
     PharmacyModule,
     PrescriptionsModule,
     BillingModule,
-    RolesModule,
     SeedModule,
     AssetsModule,
     TransfersModule,

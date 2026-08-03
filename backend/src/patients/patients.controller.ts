@@ -14,6 +14,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { SkipAutoAudit } from '../audit/decorators/skip-auto-audit.decorator';
 import { resolveClinicId } from '../auth/decorators/clinic-roles.decorator';
 import { Auth, AuthClinic, GetUser } from '../auth/decorators';
 import { RequirePermissions } from '../auth/permissions/permissions.decorator';
@@ -82,6 +83,7 @@ export class PatientsController {
 
   @Patch(':id')
   @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.RECEPTIONIST)
+  @SkipAutoAudit()
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updatePatientDto: UpdatePatientDto, @Req() req: Request) {
     const clinicId = resolveClinicId(req);
     if (updatePatientDto.clinicId && clinicId && updatePatientDto.clinicId !== clinicId) {
@@ -94,6 +96,7 @@ export class PatientsController {
 
   @Delete(':id')
   @Auth(ValidRoles.SUPER_ADMIN, ValidRoles.ADMIN, ValidRoles.DOCTOR)
+  @SkipAutoAudit()
   remove(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const clinicId = resolveClinicId(req);
     const user = (req as any).user;

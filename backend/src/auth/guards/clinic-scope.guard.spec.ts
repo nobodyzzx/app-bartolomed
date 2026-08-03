@@ -2,6 +2,7 @@ import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { DataSource } from 'typeorm';
 
+import { Clinic } from '../../clinics/entities/clinic.entity';
 import { ValidRoles } from '../../users/interfaces';
 import { ClinicScopeGuard } from './clinic-scope.guard';
 
@@ -32,14 +33,18 @@ describe('ClinicScopeGuard', () => {
   let reflector: Reflector;
   let dataSource: jest.Mocked<DataSource>;
   let userClinicRepo: { findOne: jest.Mock };
+  let clinicRepo: { findOne: jest.Mock };
   let guard: ClinicScopeGuard;
 
   beforeEach(() => {
     reflector = new Reflector();
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([]);
     userClinicRepo = { findOne: jest.fn() };
+    // Activa por defecto: la mayoría de los tests no le importa el estado de
+    // la clínica, sólo membresía/roles — los que sí lo prueban lo sobrescriben.
+    clinicRepo = { findOne: jest.fn().mockResolvedValue({ id: CLINIC_A, isActive: true }) };
     dataSource = {
-      getRepository: jest.fn().mockReturnValue(userClinicRepo),
+      getRepository: jest.fn((entity: unknown) => (entity === Clinic ? clinicRepo : userClinicRepo)),
     } as unknown as jest.Mocked<DataSource>;
 
     guard = new ClinicScopeGuard(reflector, dataSource);
@@ -108,6 +113,24 @@ describe('ClinicScopeGuard', () => {
     const user: MockUser = { id: USER_ID, roles: [ValidRoles.DOCTOR], clinicIds: [CLINIC_A] };
     const ctx = buildContext(buildRequest(user, CLINIC_A));
     await expect(guard.canActivate(ctx)).resolves.toBe(true);
+  });
+
+  // Bug real: desactivar una clínica no revocaba sesiones ya autenticadas —
+  // el guard solo validaba membresía, nunca isActive de la clínica en sí.
+  it('rechaza si la clínica ya no está activa', async () => {
+    clinicRepo.findOne.mockResolvedValue({ id: CLINIC_A, isActive: false });
+    const user: MockUser = { id: USER_ID, roles: [ValidRoles.DOCTOR], clinicIds: [CLINIC_A] };
+    const ctx = buildContext(buildRequest(user, CLINIC_A));
+    await expect(guard.canActivate(ctx)).rejects.toThrow(/no está activa/);
+    expect(userClinicRepo.findOne).not.toHaveBeenCalled();
+  });
+
+  it('SUPER_ADMIN pasa aunque la clínica esté inactiva (necesita reactivarla)', async () => {
+    clinicRepo.findOne.mockResolvedValue({ id: CLINIC_A, isActive: false });
+    const user: MockUser = { id: USER_ID, roles: [ValidRoles.SUPER_ADMIN] };
+    const ctx = buildContext(buildRequest(user, CLINIC_A));
+    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    expect(clinicRepo.findOne).not.toHaveBeenCalled();
   });
 
   it('resuelve clinicId desde param de ruta', async () => {

@@ -1,7 +1,9 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { AuditService } from './audit.service';
+import { SKIP_AUTO_AUDIT_KEY } from './decorators/skip-auto-audit.decorator';
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
@@ -16,17 +18,24 @@ export class AuditInterceptor implements NestInterceptor {
     '/api/patients',
     '/api/medical-records',
     '/api/prescriptions',
-    '/api/pharmacy/sales',
-    '/api/pharmacy/invoices',
-    '/api/invoices',
+    '/api/pharmacy-sales',
+    '/api/pharmacy-invoices',
+    '/api/billing/invoices',
     '/api/assets',
     '/api/users',
   ];
 
-  constructor(private readonly auditService: AuditService) {}
+  constructor(
+    private readonly auditService: AuditService,
+    private readonly reflector: Reflector,
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     if (context.getType() !== 'http') return next.handle();
+
+    if (this.reflector.getAllAndOverride<boolean>(SKIP_AUTO_AUDIT_KEY, [context.getHandler(), context.getClass()])) {
+      return next.handle();
+    }
 
     const req = context.switchToHttp().getRequest();
     const { method, path, headers } = req as {
@@ -44,13 +53,14 @@ export class AuditInterceptor implements NestInterceptor {
     if (!isMutation && !isAuthPath && !isSensitiveGet) return next.handle();
     if (this.skipPaths.some(p => (path as string).startsWith(p))) return next.handle();
 
-    const ipAddress =
-      ((headers['x-forwarded-for'] as string) ?? '').split(',')[0].trim() || (req as { ip: string }).ip;
+    const ipAddress = ((headers['x-forwarded-for'] as string) ?? '').split(',')[0].trim() || (req as { ip: string }).ip;
     const clinicId = headers['x-clinic-id'];
     const startTime = Date.now();
 
     const buildEntry = (statusCode: number, extra?: Record<string, unknown>) => {
-      const user = (req as { user?: { id?: string; email?: string; personalInfo?: { firstName?: string; lastName?: string } } }).user;
+      const user = (
+        req as { user?: { id?: string; email?: string; personalInfo?: { firstName?: string; lastName?: string } } }
+      ).user;
       const userName =
         user?.personalInfo?.firstName && user?.personalInfo?.lastName
           ? `${user.personalInfo.firstName} ${user.personalInfo.lastName}`

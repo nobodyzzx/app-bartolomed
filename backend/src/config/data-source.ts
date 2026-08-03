@@ -29,7 +29,6 @@ import { Medication, MedicationStock, StockMovement } from '../pharmacy/entities
 import { PurchaseOrder, PurchaseOrderItem } from '../pharmacy/entities/purchase-order.entity';
 import { Supplier } from '../pharmacy/entities/supplier.entity';
 import { Prescription, PrescriptionItem } from '../prescriptions/entities/prescription.entity';
-import { Role } from '../roles/entities/role.entity';
 import {
   StockTransfer,
   StockTransferItem,
@@ -77,7 +76,6 @@ export const AppDataSource = new DataSource({
     PharmacySale,
     PharmacySaleItem,
     PharmacyInvoice,
-    Role,
     StockTransfer,
     StockTransferItem,
     TransferAuditLog,

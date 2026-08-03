@@ -118,7 +118,7 @@
                 <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha inicio</span>
               </th>
               <td mat-cell *matCellDef="let user" class="px-6 py-4 text-sm text-slate-600">
-                {{ formatDate(user.startDate) }}
+                {{ formatDate(user.professionalInfo?.startDate) }}
               </td>
             </ng-container>
             <ng-container matColumnDef="roles">
@@ -157,10 +157,10 @@
                   </button>
                   <mat-menu #addRoleMenu="matMenu">
                     @if (getAvailableRolesFor(user).length > 0) {
-                      @for (r of getAvailableRolesFor(user); track r) {
+                      @for (r of getAvailableRolesFor(user); track r.value) {
                         <button mat-menu-item
-                          (click)="addRoleToUser(user, r.name)">
-                          {{ r.name }}
+                          (click)="addRoleToUser(user, r.value)">
+                          {{ r.label }}
                         </button>
                       }
                     } @else {

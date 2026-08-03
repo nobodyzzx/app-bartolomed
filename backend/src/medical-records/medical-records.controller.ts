@@ -20,6 +20,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { Auth, AuthClinic, GetUser } from '../auth/decorators';
+import { SkipAutoAudit } from '../audit/decorators/skip-auto-audit.decorator';
 import { resolveClinicId } from '../auth/decorators/clinic-roles.decorator';
 import { RequirePermissions } from '../auth/permissions/permissions.decorator';
 import { Permission } from '../auth/permissions/permissions.enum';
@@ -116,6 +117,7 @@ export class MedicalRecordsController {
 
   @Patch(':id')
   @Auth(ValidRoles.DOCTOR, ValidRoles.ADMIN)
+  @SkipAutoAudit()
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateMedicalRecordDto: UpdateMedicalRecordDto,

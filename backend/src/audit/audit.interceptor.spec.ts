@@ -1,4 +1,5 @@
 import { CallHandler, ExecutionContext } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { lastValueFrom, of, throwError } from 'rxjs';
 import { AuditInterceptor } from './audit.interceptor';
 import { AuditService } from './audit.service';
@@ -22,6 +23,8 @@ const buildRequest = (overrides: Partial<MockRequest> = {}): MockRequest => ({
 const buildContext = (req: MockRequest, statusCode = 200, type: 'http' | 'rpc' = 'http'): ExecutionContext =>
   ({
     getType: () => type,
+    getHandler: () => ({}),
+    getClass: () => ({}),
     switchToHttp: () => ({
       getRequest: () => req,
       getResponse: () => ({ statusCode }),
@@ -38,11 +41,14 @@ const buildErrorHandler = (error: unknown): CallHandler => ({
 
 describe('AuditInterceptor', () => {
   let auditService: jest.Mocked<AuditService>;
+  let reflector: Reflector;
   let interceptor: AuditInterceptor;
 
   beforeEach(() => {
     auditService = { log: jest.fn().mockResolvedValue(undefined) } as unknown as jest.Mocked<AuditService>;
-    interceptor = new AuditInterceptor(auditService);
+    reflector = new Reflector();
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
+    interceptor = new AuditInterceptor(auditService, reflector);
   });
 
   describe('filtrado de qué se audita', () => {
@@ -93,6 +99,39 @@ describe('AuditInterceptor', () => {
       await lastValueFrom(interceptor.intercept(ctx, handler) as any);
 
       expect(auditService.log).toHaveBeenCalledWith(expect.objectContaining({ action: 'VIEW' }));
+    });
+
+    // Bug real: sensitiveGetPrefixes tenía '/api/pharmacy/sales', '/api/pharmacy/invoices'
+    // e '/api/invoices' — ninguna coincide con la ruta real de esos controllers
+    // (pharmacy-sales, pharmacy-invoices, billing/invoices), así que ver el
+    // detalle de una venta/factura nunca quedaba registrado como VIEW.
+    it.each([
+      ['/api/pharmacy-sales/abc', 'venta de farmacia'],
+      ['/api/pharmacy-invoices/abc', 'factura de farmacia'],
+      ['/api/billing/invoices/abc', 'factura de facturación'],
+    ])('audita un GET sobre %s (%s) como VIEW', async path => {
+      const req = buildRequest({ method: 'GET', path });
+      const ctx = buildContext(req);
+      const handler = buildHandler();
+
+      await lastValueFrom(interceptor.intercept(ctx, handler) as any);
+
+      expect(auditService.log).toHaveBeenCalledWith(expect.objectContaining({ action: 'VIEW' }));
+    });
+
+    // Bug real: 4 endpoints (patients update/remove, medical-records update,
+    // pharmacy-sales adjust-payment) llamaban a AuditService.log() a mano
+    // ADEMÁS del interceptor global — 2 filas por mutación. @SkipAutoAudit()
+    // en el controller le dice al interceptor que no duplique esa fila.
+    it('no audita si el handler tiene @SkipAutoAudit()', async () => {
+      const req = buildRequest({ method: 'PATCH', path: '/api/patients/abc' });
+      const ctx = buildContext(req);
+      const handler = buildHandler();
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(true);
+
+      await lastValueFrom(interceptor.intercept(ctx, handler) as any);
+
+      expect(auditService.log).not.toHaveBeenCalled();
     });
 
     it('audita cualquier mutación aunque el recurso no sea "sensible"', async () => {

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { UserClinic } from '../../users/entities/user-clinic.entity';
 import { User } from '../../users/entities/user.entity';
 import { CreateClinicDto, UpdateClinicDto } from '../dto';
@@ -17,17 +17,23 @@ export class ClinicsService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(UserClinic)
     private readonly userClinicRepo: Repository<UserClinic>,
+    private readonly dataSource: DataSource,
   ) {}
 
+  // Bug real: sin transacción, si linkSuperAdminsToClinic() fallaba después
+  // de guardar la clínica, esta quedaba persistida sin rollback (clínica
+  // huérfana, sin ningún SUPER_ADMIN vinculado).
   async create(createClinicDto: CreateClinicDto, user: User): Promise<Clinic> {
     try {
-      const clinic = this.clinicRepository.create({
-        ...createClinicDto,
-        createdBy: user,
+      return await this.dataSource.transaction(async (em: EntityManager) => {
+        const clinic = em.create(Clinic, {
+          ...createClinicDto,
+          createdBy: user,
+        });
+        const saved = await em.save(Clinic, clinic);
+        await this.linkSuperAdminsToClinic(em, saved);
+        return saved;
       });
-      const saved = await this.clinicRepository.save(clinic);
-      await this.linkSuperAdminsToClinic(saved);
-      return saved;
     } catch (error) {
       this.handleDBErrors(error);
     }
@@ -37,22 +43,22 @@ export class ClinicsService {
    * Vincula todos los SUPER_ADMIN existentes a la clínica recién creada.
    * Garantiza que cualquier super admin tenga acceso a todas las clínicas.
    */
-  private async linkSuperAdminsToClinic(clinic: Clinic): Promise<void> {
-    const superAdmins = await this.userRepository
-      .createQueryBuilder('u')
+  private async linkSuperAdminsToClinic(em: EntityManager, clinic: Clinic): Promise<void> {
+    const superAdmins = await em
+      .createQueryBuilder(User, 'u')
       .where(':role = ANY(u.roles)', { role: 'super-admin' })
       .getMany();
 
     if (superAdmins.length === 0) return;
 
     const memberships = superAdmins.map(sa =>
-      this.userClinicRepo.create({
+      em.create(UserClinic, {
         user: sa,
         clinic,
         roles: ['admin', 'super-admin'],
       }),
     );
-    await this.userClinicRepo.save(memberships);
+    await em.save(UserClinic, memberships);
   }
 
   // Bug real (fuga de datos): findAll/findOne/searchClinics cargaban
@@ -88,8 +94,20 @@ export class ClinicsService {
     return clinic;
   }
 
+  /** A diferencia de findOne(), no filtra por isActive — para editar/reactivar una clínica desactivada. */
+  private async findAnyStatus(id: string): Promise<Clinic> {
+    const clinic = await this.clinicRepository.findOne({ where: { id } });
+    if (!clinic) {
+      throw new NotFoundException(`Clínica con id ${id} no encontrada`);
+    }
+    return clinic;
+  }
+
+  // Bug real: usaba findOne() (filtra isActive:true) — una vez desactivada
+  // una clínica, PATCH /clinics/:id daba 404 y no había forma de corregir
+  // sus datos antes de reactivarla "a ciegas".
   async update(id: string, updateClinicDto: UpdateClinicDto): Promise<Clinic> {
-    const clinic = await this.findOne(id);
+    const clinic = await this.findAnyStatus(id);
 
     try {
       Object.assign(clinic, updateClinicDto);
@@ -106,11 +124,7 @@ export class ClinicsService {
   }
 
   async activate(id: string): Promise<Clinic> {
-    const clinic = await this.clinicRepository.findOne({ where: { id } });
-    if (!clinic) {
-      throw new NotFoundException(`Clínica con id ${id} no encontrada`);
-    }
-
+    const clinic = await this.findAnyStatus(id);
     clinic.isActive = true;
     return await this.clinicRepository.save(clinic);
   }
@@ -172,11 +186,6 @@ export class ClinicsService {
       clinicsWithUsers,
       clinicsWithPatients,
     };
-  }
-
-  async addUserToClinic(userId: string, clinicId: string): Promise<Clinic> {
-    // Mantener compatibilidad: delegar a nuevo método con roles vacíos
-    return this.addMemberWithRoles(clinicId, { userId, roles: [] });
   }
 
   async removeUserFromClinic(userId: string, clinicId: string): Promise<Clinic> {

@@ -7,9 +7,9 @@ import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { UserRoles } from '@core/enums/user-roles.enum'
 import { RoleStateService } from '@core/services/role-state.service'
+import { ASSIGNABLE_ROLES, AssignableRole } from '@core/constants/assignable-roles'
 import { User } from '../../../../../auth/interfaces'
 import { ProfessionalRoles } from '../../../../interfaces/professionalRoles.enum'
-import { Role, RolesService } from '../../roles/services/roles.service'
 import { UserDetailDialogComponent } from '../user-detail-dialog/user-detail-dialog.component'
 import { UsersService } from '../users.service'
 
@@ -24,7 +24,7 @@ export class UserListComponent implements OnInit {
 
   isExpanded: boolean = true
   ProfessionalRoles = ProfessionalRoles
-  availableRoles: Role[] = []
+  availableRoles = ASSIGNABLE_ROLES
 
   displayedColumns: string[] = ['fullName', 'phone', 'roles', 'startDate', 'isActive', 'actions']
   dataSource: MatTableDataSource<User>
@@ -40,7 +40,6 @@ export class UserListComponent implements OnInit {
 
   constructor(
     private usersService: UsersService,
-    private rolesService: RolesService,
     private router: Router,
     private alert: AlertService,
     private dialog: MatDialog,
@@ -51,16 +50,21 @@ export class UserListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadUsers()
-    this.rolesService.findAll(true).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({ next: roles => (this.availableRoles = roles) })
   }
 
   ngAfterViewInit() {
     this.dataSource.paginator = this.paginator
   }
 
+  // Bug real: getUsers() sin argumentos siempre traía limit=25/offset=0, y el
+  // MatPaginator solo paginaba client-side ese array — usuarios 26+ quedaban
+  // invisibles. No hay búsqueda server-side para /users (solo limit/offset),
+  // así que en vez de armar paginación real se trae todo el staff de la
+  // clínica de una vez (tamaño realista para este negocio) para que el
+  // buscador y el paginador sigan operando sobre el set completo.
   loadUsers(): void {
     this.isLoading = true
-    this.usersService.getUsers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.usersService.getUsers(500).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: result => {
         this.allUsers = result.data
         this.users = result.data
@@ -178,14 +182,14 @@ export class UserListComponent implements OnInit {
     this.router.navigate(['/dashboard/users/edit', user.id])
   }
 
-  getAvailableRolesFor(user: User): Role[] {
+  getAvailableRolesFor(user: User): AssignableRole[] {
     // Bug real: cualquier ADMIN podía otorgarse (o a cualquiera) el rol
     // super-admin con un clic — se oculta esa opción salvo que el propio
     // usuario logueado ya sea SUPER_ADMIN. El backend igual lo rechaza con
     // 403 (defensa en profundidad, no es el único control).
     const isSuperAdmin = this.roleState.hasRole(UserRoles.SUPER_ADMIN)
     return this.availableRoles.filter(
-      r => !(user.roles ?? []).includes(r.name) && (isSuperAdmin || r.name !== 'super-admin'),
+      r => !(user.roles ?? []).includes(r.value) && (isSuperAdmin || r.value !== UserRoles.SUPER_ADMIN),
     )
   }
 

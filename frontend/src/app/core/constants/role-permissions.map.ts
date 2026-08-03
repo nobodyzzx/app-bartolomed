@@ -64,6 +64,10 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
     Permission.PharmacyBilling,
     Permission.ReportsStock,
   ],
+  [UserRoles.LABORATORY]: [
+    // Preparado para el futuro módulo de laboratorio — sin permisos ni
+    // pantallas propias todavía.
+  ],
 }
 
 export function permissionsForRoles(roles: UserRoles[]): Permission[] {

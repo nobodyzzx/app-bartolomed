@@ -2,8 +2,8 @@
   <div class="page-inner">
 
     <app-page-header
-      [title]="isEditMode ? 'Editar Clínica' : 'Nueva Clínica'"
-      [subtitle]="isEditMode ? 'Actualice la información de la clínica' : 'Complete el formulario para registrar una nueva clínica'"
+      [title]="isViewMode ? 'Ver Clínica' : (isEditMode ? 'Editar Clínica' : 'Nueva Clínica')"
+      [subtitle]="isViewMode ? 'Datos de la clínica (solo lectura)' : (isEditMode ? 'Actualice la información de la clínica' : 'Complete el formulario para registrar una nueva clínica')"
       (back)="router.navigate(['/dashboard/clinics'])"
       >
       <button
@@ -12,7 +12,7 @@
         class="btn btn-danger-outline"
         >
         <span class="material-symbols-outlined msz-18">cancel</span>
-        Cancelar
+        {{ isViewMode ? 'Volver' : 'Cancelar' }}
       </button>
     </app-page-header>
 
@@ -164,21 +164,23 @@
           class="btn btn-danger-outline"
           >
           <span class="material-symbols-outlined msz-18">close</span>
-          Cancelar
+          {{ isViewMode ? 'Volver' : 'Cancelar' }}
         </button>
-        <button
-          type="submit"
-          [disabled]="clinicForm.invalid || isLoading"
-          class="btn btn-primary"
-          >
-          @if (isLoading) {
-            <mat-spinner diameter="18"></mat-spinner>
-          }
-          @if (!isLoading) {
-            <span class="material-symbols-outlined msz-18">save</span>
-          }
-          {{ isEditMode ? 'Actualizar Clínica' : 'Registrar Clínica' }}
-        </button>
+        @if (!isViewMode) {
+          <button
+            type="submit"
+            [disabled]="clinicForm.invalid || isLoading"
+            class="btn btn-primary"
+            >
+            @if (isLoading) {
+              <mat-spinner diameter="18"></mat-spinner>
+            }
+            @if (!isLoading) {
+              <span class="material-symbols-outlined msz-18">save</span>
+            }
+            {{ isEditMode ? 'Actualizar Clínica' : 'Registrar Clínica' }}
+          </button>
+        }
       </div>
 
     </form>

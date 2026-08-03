@@ -139,16 +139,6 @@ export const routes: Routes = [
         },
       },
       {
-        path: 'roles',
-        loadComponent: () =>
-          import('./pages/admin/roles/roles.component').then(m => m.RolesComponent),
-        canActivate: [roleGuard, permissionsGuard],
-        data: {
-          allowedRoles: [UserRoles.SUPER_ADMIN],
-          requiredPermissions: [Permission.RolesManage],
-        },
-      },
-      {
         path: 'config',
         loadComponent: () =>
           import('./pages/admin/config/config.component').then(m => m.ConfigComponent),

@@ -80,17 +80,4 @@ export class ClinicsService {
     return this.http.get<ClinicStatistics>(`${this.baseUrl}/statistics`).pipe(catchError(this.handleError));
   }
 
-  addUserToClinic(userId: string, clinicId: string): Observable<Clinic> {
-    return this.http.post<Clinic>(`${this.baseUrl}/${clinicId}/users/${userId}`, {}).pipe(
-      tap(() => this.alert.success('Usuario agregado a la clínica')),
-      catchError(this.handleError),
-    );
-  }
-
-  removeUserFromClinic(userId: string, clinicId: string): Observable<Clinic> {
-    return this.http.delete<Clinic>(`${this.baseUrl}/${clinicId}/users/${userId}`).pipe(
-      tap(() => this.alert.success('Usuario removido de la clínica')),
-      catchError(this.handleError),
-    );
-  }
 }

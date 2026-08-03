@@ -9,7 +9,6 @@ import { rolesSyncGuard } from '@core/guards/roles-sync.guard'
 import { authGuard } from '../auth/guards'
 import { DashboardLayoutComponent } from './layouts/dashboard-layout/dashboard-layout.component'
 import { MainDashboardComponent } from './pages/main-dashboard/main-dashboard.component'
-import { RolesManagementComponent } from './pages/admin/roles/roles-management/roles-management.component'
 
 const routes: Routes = [
   {
@@ -256,15 +255,6 @@ const routes: Routes = [
         data: {
           allowedRoles: [UserRoles.SUPER_ADMIN],
           requiredPermissions: [Permission.ClinicsManage],
-        },
-      },
-      {
-        path: 'roles',
-        component: RolesManagementComponent,
-        canActivate: [permissionsGuard, roleGuard],
-        data: {
-          allowedRoles: [UserRoles.SUPER_ADMIN],
-          requiredPermissions: [Permission.RolesManage],
         },
       },
       {

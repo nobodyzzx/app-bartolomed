@@ -72,15 +72,12 @@
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Roles</mat-label>
             <mat-icon matPrefix class="text-blue-400">admin_panel_settings</mat-icon>
-            <mat-select formControlName="roles" multiple [disabled]="isLoadingRoles">
+            <mat-select formControlName="roles" multiple>
               <mat-select-trigger>
                 {{ registerForm.get('roles')?.value?.length || 0 }} roles seleccionados
               </mat-select-trigger>
-              @if (isLoadingRoles) {
-                <mat-option disabled>Cargando roles...</mat-option>
-              }
-              @for (role of availableRoles; track role) {
-                <mat-option [value]="role.name">{{ role.name }}</mat-option>
+              @for (role of availableRoles; track role.value) {
+                <mat-option [value]="role.value">{{ role.label }}</mat-option>
               }
             </mat-select>
             @if (registerForm.get('roles')?.hasError('required')) {
@@ -157,7 +154,10 @@
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Teléfono</mat-label>
             <mat-icon matPrefix class="text-green-400">phone</mat-icon>
-            <input matInput formControlName="phone" placeholder="+591 70000000" />
+            <input matInput formControlName="phone" placeholder="Ej: 70123456" maxlength="8" />
+            @if (registerForm.get('personalInfo.phone')?.hasError('pattern')) {
+              <mat-error>Debe ser un número boliviano válido (8 dígitos, empieza con 6 o 7)</mat-error>
+            }
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">

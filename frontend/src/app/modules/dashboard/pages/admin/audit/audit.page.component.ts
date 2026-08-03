@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup } from '@angular/forms'
 import { PageEvent } from '@angular/material/paginator'
 import { ChartData, ChartOptions } from 'chart.js'
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs'
+import { AlertService } from '@core/services/alert.service'
 import { AuditService } from './audit.service'
 import {
   AuditDistinctValues,
@@ -77,14 +78,20 @@ export class AuditPageComponent implements OnInit {
     { value: 'failure', label: 'Fallido' },
   ]
 
-  readonly quickFilters = [
+  readonly quickFilters: { label: string; days: number; calendarMonth?: boolean }[] = [
     { label: 'Hoy',          days: 1  },
     { label: 'Ayer',         days: -1 },
     { label: 'Últimos 7 días', days: 7 },
-    { label: 'Este mes',     days: 30 },
+    // Bug real: antes usaba days:30 (ventana rodante) — la etiqueta "Este mes"
+    // mentía después del día ~3 del mes. calendarMonth fuerza el mes calendario real.
+    { label: 'Este mes',     days: 30, calendarMonth: true },
   ]
 
-  constructor(private readonly auditService: AuditService, private readonly fb: FormBuilder) {
+  constructor(
+    private readonly auditService: AuditService,
+    private readonly fb: FormBuilder,
+    private readonly alert: AlertService,
+  ) {
     this.filterForm = this.fb.group({
       search:    [null],
       action:    [null],
@@ -100,7 +107,7 @@ export class AuditPageComponent implements OnInit {
 
   ngOnInit(): void {
     // Rango por defecto: últimos 7 días
-    this.applyQuickFilter(7)
+    this.applyQuickFilter({ days: 7 })
 
     // Búsqueda con debounce
     this.searchSubject
@@ -185,12 +192,15 @@ export class AuditPageComponent implements OnInit {
 
   // ─── Filtros y navegación ──────────────────────────────────────────────────
 
-  applyQuickFilter(days: number): void {
+  applyQuickFilter(filter: { days: number; calendarMonth?: boolean }): void {
+    const { days, calendarMonth } = filter
     const end = new Date()
     end.setHours(23, 59, 59, 999)
     const start = new Date()
     start.setHours(0, 0, 0, 0)
-    if (days === -1) {
+    if (calendarMonth) {
+      start.setDate(1)
+    } else if (days === -1) {
       start.setDate(start.getDate() - 1)
       end.setDate(end.getDate() - 1)
     } else {
@@ -247,11 +257,26 @@ export class AuditPageComponent implements OnInit {
 
   // ─── Exportar CSV ──────────────────────────────────────────────────────────
 
+  // Bug real: pedía pageSize:5000 (el máximo del DTO) y descargaba eso sin
+  // comparar contra el total ni avisar — si el filtro superaba 5000 eventos,
+  // el CSV quedaba incompleto en silencio.
+  private static readonly CSV_EXPORT_LIMIT = 5000
+
   exportCsv(): void {
-    const filters = { ...this.buildFilters(), page: 1, pageSize: 5000 }
+    const filters = { ...this.buildFilters(), page: 1, pageSize: AuditPageComponent.CSV_EXPORT_LIMIT }
     this.auditService.findAll(filters)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({ next: r => this.downloadCsv(r.items) })
+      .subscribe({
+        next: r => {
+          this.downloadCsv(r.items)
+          if (r.total > AuditPageComponent.CSV_EXPORT_LIMIT) {
+            this.alert.warning(
+              'Exportación incompleta',
+              `Se exportaron ${AuditPageComponent.CSV_EXPORT_LIMIT} de ${r.total} eventos. Achica el rango de fechas o los filtros para exportar el resto.`,
+            )
+          }
+        },
+      })
   }
 
   private buildFilters(): AuditFilters {

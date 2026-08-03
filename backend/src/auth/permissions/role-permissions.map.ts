@@ -71,6 +71,10 @@ export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
     Permission.PharmacyBilling,
     Permission.ReportsStock,
   ],
+  [ValidRoles.LABORATORY]: [
+    // Preparado para el futuro módulo de laboratorio — sin endpoints propios
+    // todavía, no se ofrece como opción asignable en la UI de administración.
+  ],
   [ValidRoles.USER]: [
     // Acceso mínimo, configurable
   ],

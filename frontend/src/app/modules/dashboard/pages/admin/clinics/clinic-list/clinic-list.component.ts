@@ -137,12 +137,15 @@ export class ClinicListComponent implements OnInit {
     })
   }
 
+  // Bug real: el diálogo decía "esta acción no se puede deshacer", pero
+  // DELETE /clinics/:id es exactamente el mismo cambio que desactivar
+  // (isActive=false) — se revierte con un clic en "Activar".
   deleteClinic(clinic: Clinic) {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '400px',
       data: {
         title: 'Eliminar Clínica',
-        message: `¿Está seguro que desea eliminar la clínica "${clinic.name}"? Esta acción no se puede deshacer.`,
+        message: `¿Está seguro que desea eliminar la clínica "${clinic.name}"? Quedará inactiva y se puede reactivar luego desde el listado.`,
         confirmText: 'Eliminar',
         cancelText: 'Cancelar',
         isDestructive: true,

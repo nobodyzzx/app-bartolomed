@@ -47,7 +47,7 @@ export class AuthService {
 
   async create(createUserDto: CreateUserDto) {
     try {
-      const { password, roles = [ValidRoles.USER], ...userData } = createUserDto;
+      const { password, roles, ...userData } = createUserDto;
 
       const user = this.userRepository.create({
         ...userData,

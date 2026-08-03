@@ -19,6 +19,10 @@ export class ClinicFormComponent implements OnInit {
 
   clinicForm: FormGroup
   isEditMode = false
+  // Bug real: /dashboard/clinics/view/:id usaba este mismo componente que
+  // /edit/:id sin distinguir modo — "Ver detalles" era en realidad un
+  // formulario totalmente editable.
+  isViewMode = false
   isLoading = false
   currentClinicId: string | null = null
 
@@ -175,11 +179,17 @@ export class ClinicFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.isViewMode = !!this.route.snapshot.data['readonly']
+    if (this.isViewMode) this.clinicForm.disable()
+
     this.route.params.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       if (params['id']) {
         this.isEditMode = true
         this.currentClinicId = params['id']
         this.loadClinic(params['id'])
+      } else {
+        // Modo crear: poblar provincias del departamento por defecto (La Paz).
+        this.onDepartamentoChange(this.clinicForm.get('departamento')!.value)
       }
     })
 
@@ -205,7 +215,10 @@ export class ClinicFormComponent implements OnInit {
       ],
       email: ['', [Validators.email]],
       description: [''],
-      departamento: [''],
+      // Checklist de formularios: precargar Bolivia/La Paz por defecto (mismo
+      // patrón que patient-form.component.ts) — provincia/localidad quedan
+      // libres para que el usuario elija.
+      departamento: ['La Paz'],
       provincia: [''],
       localidad: [''],
       isActive: [true],
@@ -246,7 +259,7 @@ export class ClinicFormComponent implements OnInit {
       error: error => {
         this.errorService.handleError(error)
         this.isLoading = false
-        this.router.navigate(['/dashboard/clinics/list'])
+        this.router.navigate(['/dashboard/clinics'])
       },
     })
   }
@@ -274,7 +287,7 @@ export class ClinicFormComponent implements OnInit {
         this.clinicsService.updateClinic(this.currentClinicId, updateDto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: () => {
             this.isLoading = false
-            this.router.navigate(['/dashboard/clinics/list'])
+            this.router.navigate(['/dashboard/clinics'])
           },
           error: () => {
             this.isLoading = false
@@ -293,7 +306,7 @@ export class ClinicFormComponent implements OnInit {
         this.clinicsService.createClinic(createDto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: () => {
             this.isLoading = false
-            this.router.navigate(['/dashboard/clinics/list'])
+            this.router.navigate(['/dashboard/clinics'])
           },
           error: () => {
             this.isLoading = false
@@ -342,7 +355,7 @@ export class ClinicFormComponent implements OnInit {
   }
 
   onCancel() {
-    this.router.navigate(['/dashboard/clinics/list'])
+    this.router.navigate(['/dashboard/clinics'])
   }
 
   getErrorMessage(fieldName: string): string {

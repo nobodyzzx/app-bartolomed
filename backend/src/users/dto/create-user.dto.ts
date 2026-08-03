@@ -37,11 +37,13 @@ export class CreateUserDto {
   @IsOptional()
   professionalInfo?: ProfessionalInfoDto;
 
+  // Sin @IsOptional() ni default: un usuario creado sin roles explícitos
+  // quedaba con roles=['user'] (permisos vacíos) sin ningún aviso — cuenta
+  // fantasma sin ningún acceso real. Ahora se exige explícito.
   @IsArray()
   @ArrayMinSize(1, { message: 'El usuario debe tener al menos un rol' })
   @IsEnum(ValidRoles, { each: true })
-  @IsOptional()
-  roles?: ValidRoles[] = [ValidRoles.USER];
+  roles: ValidRoles[];
 
   @IsOptional()
   @IsUUID()

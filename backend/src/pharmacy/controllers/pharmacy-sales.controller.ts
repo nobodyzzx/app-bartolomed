@@ -1,10 +1,28 @@
-import { Body, Controller, DefaultValuePipe, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, Request } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  Request,
+} from '@nestjs/common';
 import { AuthClinic } from '../../auth/decorators';
+import { SkipAutoAudit } from '../../audit/decorators/skip-auto-audit.decorator';
 import { resolveClinicId } from '../../auth/decorators/clinic-roles.decorator';
 import { RequirePermissions } from '../../auth/permissions/permissions.decorator';
 import { Permission } from '../../auth/permissions/permissions.enum';
 import { ValidRoles } from '../../auth/interfaces';
-import { AdjustPaymentDto, CreatePharmacySaleDto, UpdatePharmacySaleDto, UpdatePharmacySaleStatusDto } from '../dto/pharmacy-sale.dto';
+import {
+  AdjustPaymentDto,
+  CreatePharmacySaleDto,
+  UpdatePharmacySaleDto,
+  UpdatePharmacySaleStatusDto,
+} from '../dto/pharmacy-sale.dto';
 import { SaleStatus } from '../entities/pharmacy-sale.entity';
 import { PharmacySalesService } from '../services/pharmacy-sales.service';
 
@@ -79,12 +97,15 @@ export class PharmacySalesController {
   }
 
   @Patch(':id/adjust-payment')
+  @SkipAutoAudit()
   adjustPayment(@Param('id') id: string, @Body() dto: AdjustPaymentDto, @Request() req: any) {
     const user = req.user;
     return this.pharmacySalesService.adjustPayment(id, dto, {
       id: user?.id ?? user?.sub,
       email: user?.email ?? '',
-      name: user?.personalInfo ? `${user.personalInfo.firstName ?? ''} ${user.personalInfo.lastName ?? ''}`.trim() : undefined,
+      name: user?.personalInfo
+        ? `${user.personalInfo.firstName ?? ''} ${user.personalInfo.lastName ?? ''}`.trim()
+        : undefined,
       clinicId: resolveClinicId(req) ?? undefined,
       ip: req.ip,
     });
