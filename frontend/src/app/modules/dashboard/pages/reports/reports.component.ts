@@ -1,8 +1,10 @@
 import { Component, inject, OnInit } from '@angular/core'
 import { FormBuilder, FormGroup } from '@angular/forms'
 import { Router } from '@angular/router'
+import { Permission } from '@core/enums/permission.enum'
+import { RoleStateService } from '@core/services/role-state.service'
 import { ChartData, ChartOptions } from 'chart.js'
-import { forkJoin } from 'rxjs'
+import { Observable, forkJoin } from 'rxjs'
 import { finalize } from 'rxjs/operators'
 import { ReportsService } from './services/reports.service'
 
@@ -15,13 +17,30 @@ export class ReportsComponent implements OnInit {
   private router = inject(Router)
   private fb = inject(FormBuilder)
   private reportsService = inject(ReportsService)
+  private roleState = inject(RoleStateService)
+
+  readonly Permission = Permission
+
+  // Cada sección de la página llama a endpoints con @Auth/permisos distintos
+  // en el backend (ver reports.controller.ts) — antes se mostraban las 6
+  // secciones y ~50 botones a todos los roles por igual, sin importar si el
+  // usuario realmente podía generarlos.
+  get canViewMedical(): boolean {
+    return this.roleState.hasPermission(Permission.ReportsMedical)
+  }
+
+  get canViewFinancial(): boolean {
+    return this.roleState.hasPermission(Permission.ReportsFinancial)
+  }
+
+  get canViewStock(): boolean {
+    return this.roleState.hasPermission(Permission.ReportsStock)
+  }
 
   rangeForm: FormGroup = this.fb.group({ startDate: [null], endDate: [null] })
 
   loadingStats = false
   downloading: Record<string, boolean> = {}
-  seeding = false
-  resetting = false
 
   patientStats: any = null
   appointmentStats: any = null
@@ -89,20 +108,37 @@ export class ReportsComponent implements OnInit {
     this.revenueChart = null
     this.paymentMethodsChart = null
 
-    forkJoin({
-      patients:     this.reportsService.getPatientStats(params),
-      appointments: this.reportsService.getAppointmentStats(params),
-      financial:    this.reportsService.getFinancialStats(params),
-      stock:        this.reportsService.getStockStats(params),
-      payments:     this.reportsService.getPaymentMethodStats(params),
-    }).pipe(finalize(() => (this.loadingStats = false)))
+    // Bug real: forkJoin con las 5 llamadas fijas fallaba completo si UNA
+    // sola devolvía 403 (p. ej. DOCTOR no tiene ReportsFinancial/ReportsStock,
+    // PHARMACIST no tiene ReportsMedical) — la página quedaba en blanco
+    // incluso para los datos que el rol sí puede ver. Ahora solo se piden los
+    // reportes permitidos por el rol actual.
+    const requests: Record<string, Observable<any>> = {}
+    if (this.canViewMedical) {
+      requests['patients'] = this.reportsService.getPatientStats(params)
+      requests['appointments'] = this.reportsService.getAppointmentStats(params)
+    }
+    if (this.canViewFinancial) {
+      requests['financial'] = this.reportsService.getFinancialStats(params)
+      requests['payments'] = this.reportsService.getPaymentMethodStats(params)
+    }
+    if (this.canViewStock) {
+      requests['stock'] = this.reportsService.getStockStats(params)
+    }
+
+    if (Object.keys(requests).length === 0) {
+      this.loadingStats = false
+      return
+    }
+
+    forkJoin(requests).pipe(finalize(() => (this.loadingStats = false)))
       .subscribe({
-        next: ({ patients, appointments, financial, stock, payments }) => {
-          this.patientStats     = patients
-          this.appointmentStats = appointments
-          this.financialStats   = financial
-          this.stockStats       = stock
-          this.buildCharts(patients, appointments, financial, payments)
+        next: (result: Record<string, any>) => {
+          this.patientStats     = result['patients'] ?? null
+          this.appointmentStats = result['appointments'] ?? null
+          this.financialStats   = result['financial'] ?? null
+          this.stockStats       = result['stock'] ?? null
+          this.buildCharts(result['patients'], result['appointments'], result['financial'], result['payments'])
         },
         error: () => {},
       })
@@ -173,28 +209,6 @@ export class ReportsComponent implements OnInit {
 
   goBack(): void { this.router.navigateByUrl('/dashboard/home') }
 
-  repopulateDemo(): void {
-    if (!confirm('¿Repoblar todos los datos demo? Esto eliminará los datos actuales y los regenerará.')) return
-    this.seeding = true
-    this.reportsService.repopulateData()
-      .pipe(finalize(() => { this.seeding = false; this.loadStats() }))
-      .subscribe({
-        next: () => alert('Datos demo repoblados correctamente.'),
-        error: (e: any) => alert('Error al repoblar: ' + (e?.error?.message ?? e?.message ?? 'Error desconocido')),
-      })
-  }
-
-  resetDemoData(): void {
-    if (!confirm('¿Eliminar TODOS los datos? Esta acción no se puede deshacer.')) return
-    this.resetting = true
-    this.reportsService.resetAllData()
-      .pipe(finalize(() => { this.resetting = false }))
-      .subscribe({
-        next: () => alert('Datos eliminados. Usa "Repoblar demo" para regenerarlos.'),
-        error: (e: any) => alert('Error al eliminar: ' + (e?.error?.message ?? e?.message ?? 'Error desconocido')),
-      })
-  }
-
   // ── Helpers ───────────────────────────────────────────────────────────────
   get attendanceRate(): number {
     const total = +(this.appointmentStats?.totalAppointments ?? 0)
@@ -232,7 +246,7 @@ export class ReportsComponent implements OnInit {
 
     // Grupos de edad
     if (patients?.ageDistribution?.length) {
-      const order = ['Under 18', '18-30', '31-50', '51-70', 'Over 70']
+      const order = ['Menor de 18', '18-30', '31-50', '51-70', 'Mayor de 70']
       const sorted = [...patients.ageDistribution].sort(
         (a: any, b: any) => order.indexOf(a.ageGroup) - order.indexOf(b.ageGroup)
       )
@@ -250,8 +264,9 @@ export class ReportsComponent implements OnInit {
     // Estado de citas
     if (appointments?.statusDistribution?.length) {
       const statusLabels: Record<string, string> = {
-        scheduled: 'Programada', completed: 'Completada',
-        cancelled: 'Cancelada', no_show: 'No asistió',
+        scheduled: 'Programada', confirmed: 'Confirmada', in_progress: 'En progreso',
+        completed: 'Completada', cancelled: 'Cancelada', no_show: 'No asistió',
+        rescheduled: 'Reprogramada',
       }
       this.appointmentStatusChart = {
         labels: appointments.statusDistribution.map((s: any) => statusLabels[s.status] ?? s.status),

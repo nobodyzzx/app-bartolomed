@@ -165,20 +165,23 @@ const routes: Routes = [
           ],
         },
       },
-      // Rutas legacy de reportes (redirect a nuevas rutas)
+      // Rutas legacy de reportes (redirect a la página unificada de Reportes —
+      // medical-reports/financial-reports/stock-control eran componentes
+      // huérfanos con datos mock, nunca declarados en ningún módulo; sus
+      // rutas hijas nunca existieron, 404 real).
       {
         path: 'medical-reports',
-        redirectTo: 'reports/medical-reports',
+        redirectTo: 'reports',
         pathMatch: 'full',
       },
       {
         path: 'financial-reports',
-        redirectTo: 'reports/financial-reports',
+        redirectTo: 'reports',
         pathMatch: 'full',
       },
       {
         path: 'stock-control',
-        redirectTo: 'reports/stock-control',
+        redirectTo: 'reports',
         pathMatch: 'full',
       },
       // Rutas de activos

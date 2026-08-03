@@ -45,6 +45,9 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
     Permission.RecordsWriteVitals,
     Permission.AppointmentsRead,
     Permission.AppointmentsWrite,
+    // Espejo de backend/src/auth/permissions/role-permissions.map.ts — habilita
+    // ver el timeline clínico de un paciente (GET /reports/patients/:id/timeline).
+    Permission.ReportsMedical,
   ],
   [UserRoles.RECEPTIONIST]: [
     Permission.PatientsRead,

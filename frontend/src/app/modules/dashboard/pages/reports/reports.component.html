@@ -35,6 +35,7 @@
     </div>
 
     <!-- ── SECCIÓN CLÍNICA ── -->
+    @if (canViewMedical) {
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
       <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
         <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
@@ -123,6 +124,7 @@
             <span class="material-symbols-outlined text-green-600">{{downloading['medicalRecords'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
             Historial médico
           </button>
+          @if (canViewFinancial) {
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadDoctorPerformance()" [disabled]="downloading['performance']">
             <span class="material-symbols-outlined text-green-600">{{downloading['performance'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
@@ -133,11 +135,14 @@
             <span class="material-symbols-outlined text-green-600">{{downloading['dashboard'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
             Dashboard general
           </button>
+          }
         </div>
       </div>
     </div>
+    }
 
     <!-- ── SECCIÓN FINANZAS ── -->
+    @if (canViewFinancial) {
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
       <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
         <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
@@ -205,8 +210,10 @@
         </div>
       </div>
     </div>
+    }
 
     <!-- ── SECCIÓN FARMACIA ── -->
+    @if (canViewStock) {
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
       <div class="flex items-center gap-4 px-6 py-4 bg-orange-50 border-b border-orange-100">
         <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0">
@@ -242,11 +249,13 @@
             <span class="material-symbols-outlined text-orange-500">{{downloading['critStockPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
             Stock crítico PDF
           </button>
+          @if (canViewFinancial) {
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadTransfersPdf()" [disabled]="downloading['transfers']">
             <span class="material-symbols-outlined text-orange-500">{{downloading['transfers'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
             Eficiencia traslados
           </button>
+          }
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadRotationPdf()" [disabled]="downloading['rotPdf']">
             <span class="material-symbols-outlined text-orange-500">{{downloading['rotPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
@@ -309,8 +318,10 @@
         </div>
       </div>
     </div>
+    }
 
     <!-- ── SECCIÓN VENTAS POR ENCARGADO ── -->
+    @if (canViewStock) {
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
       <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
         <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
@@ -353,8 +364,10 @@
         </div>
       </div>
     </div>
+    }
 
     <!-- ── SECCIÓN INVENTARIO ── -->
+    @if (canViewStock) {
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
       <div class="flex items-center gap-4 px-6 py-4 bg-teal-50 border-b border-teal-100">
         <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center flex-shrink-0">
@@ -402,8 +415,10 @@
         </div>
       </div>
     </div>
+    }
 
     <!-- ── SECCIÓN VENTAS DETALLADAS ── -->
+    @if (canViewStock) {
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
       <div class="flex items-center gap-4 px-6 py-4 bg-indigo-50 border-b border-indigo-100">
         <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
@@ -461,6 +476,7 @@
         </div>
       </div>
     </div>
+    }
 
   </div>
 </div>
