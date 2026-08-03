@@ -5,6 +5,8 @@ import { MatPaginator } from '@angular/material/paginator'
 import { MatTableDataSource } from '@angular/material/table'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
+import { UserRoles } from '@core/enums/user-roles.enum'
+import { RoleStateService } from '@core/services/role-state.service'
 import { User } from '../../../../../auth/interfaces'
 import { ProfessionalRoles } from '../../../../interfaces/professionalRoles.enum'
 import { Role, RolesService } from '../../roles/services/roles.service'
@@ -33,6 +35,8 @@ export class UserListComponent implements OnInit {
   isLoading = false
 
   @ViewChild(MatPaginator) paginator!: MatPaginator
+
+  private readonly roleState = inject(RoleStateService)
 
   constructor(
     private usersService: UsersService,
@@ -175,15 +179,36 @@ export class UserListComponent implements OnInit {
   }
 
   getAvailableRolesFor(user: User): Role[] {
-    return this.availableRoles.filter(r => !(user.roles ?? []).includes(r.name))
+    // Bug real: cualquier ADMIN podía otorgarse (o a cualquiera) el rol
+    // super-admin con un clic — se oculta esa opción salvo que el propio
+    // usuario logueado ya sea SUPER_ADMIN. El backend igual lo rechaza con
+    // 403 (defensa en profundidad, no es el único control).
+    const isSuperAdmin = this.roleState.hasRole(UserRoles.SUPER_ADMIN)
+    return this.availableRoles.filter(
+      r => !(user.roles ?? []).includes(r.name) && (isSuperAdmin || r.name !== 'super-admin'),
+    )
   }
 
   addRoleToUser(user: User, roleName: string): void {
-    const newRoles = [...(user.roles ?? []), roleName]
-    this.usersService.updateUser({ id: user.id, roles: newRoles }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => this.loadUsers(),
-      error: () => this.alert.error('Error', 'No se pudo agregar el rol'),
-    })
+    const nombre = `${user.personalInfo?.firstName ?? ''} ${user.personalInfo?.lastName ?? ''}`.trim() || user.email
+    this.alert
+      .fire({
+        title: `¿Agregar rol "${roleName}"?`,
+        text: `Se agregará el rol a ${nombre}`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, agregar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+      })
+      .then(result => {
+        if (!result.isConfirmed) return
+        const newRoles = [...(user.roles ?? []), roleName]
+        this.usersService.updateUser({ id: user.id, roles: newRoles }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+          next: () => this.loadUsers(),
+          error: () => this.alert.error('Error', 'No se pudo agregar el rol'),
+        })
+      })
   }
 
   removeRoleFromUser(user: User, role: string): void {
