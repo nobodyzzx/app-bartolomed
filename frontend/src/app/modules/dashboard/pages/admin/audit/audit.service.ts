@@ -33,7 +33,6 @@ export class AuditService {
     if (filters.action) params = params.set('action', filters.action);
     if (filters.resource) params = params.set('resource', filters.resource);
     if (filters.status) params = params.set('status', filters.status);
-    if (filters.userEmail) params = params.set('userEmail', filters.userEmail);
     if (filters.search) params = params.set('search', filters.search);
     if (filters.startDate) params = params.set('startDate', filters.startDate);
     if (filters.endDate) params = params.set('endDate', filters.endDate);

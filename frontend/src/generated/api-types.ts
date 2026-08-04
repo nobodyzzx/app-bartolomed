@@ -260,6 +260,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/statistics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["UsersController_getStatistics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/{id}": {
         parameters: {
             query?: never;
@@ -2324,6 +2340,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/pharmacy-invoices/by-sale/{saleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PharmacyInvoicesController_findBySale"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pharmacy-invoices/{id}": {
         parameters: {
             query?: never;
@@ -2804,54 +2836,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/roles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["RolesController_findAll"];
-        put?: never;
-        post: operations["RolesController_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/roles/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["RolesController_findOne"];
-        put?: never;
-        post?: never;
-        delete: operations["RolesController_remove"];
-        options?: never;
-        head?: never;
-        patch: operations["RolesController_update"];
-        trace?: never;
-    };
-    "/api/roles/{id}/activate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: operations["RolesController_activate"];
-        trace?: never;
-    };
     "/api/seed": {
         parameters: {
             query?: never;
@@ -3038,6 +3022,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["AssetsController_generateReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assets/reports/{reportId}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AssetsController_downloadReport"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3393,6 +3393,9 @@ export interface components {
             lastName?: string;
             phone?: string;
             address?: string;
+            city?: string;
+            state?: string;
+            country?: string;
             birthDate?: string;
         };
         ProfessionalInfoDto: {
@@ -3412,12 +3415,7 @@ export interface components {
             password: string;
             personalInfo: components["schemas"]["PersonalInfoDto"];
             professionalInfo?: components["schemas"]["ProfessionalInfoDto"];
-            /**
-             * @default [
-             *       "user"
-             *     ]
-             */
-            roles: ("super-admin" | "admin" | "doctor" | "nurse" | "receptionist" | "pharmacist" | "user")[];
+            roles: ("super-admin" | "admin" | "doctor" | "nurse" | "receptionist" | "pharmacist" | "laboratory" | "user")[];
             /** Format: uuid */
             clinicId?: string;
         };
@@ -3483,6 +3481,9 @@ export interface components {
             lastName: string;
             phone: string;
             address: string;
+            city: string;
+            state: string;
+            country: string;
             /** Format: date-time */
             birthDate: string;
             user: components["schemas"]["User"];
@@ -3543,6 +3544,7 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
+        UpdateUserDto: Record<string, never>;
         CreateClinicDto: {
             name: string;
             address: string;
@@ -3572,7 +3574,7 @@ export interface components {
             documentType?: string;
             birthDate: string;
             /** @enum {string} */
-            gender: "male" | "female" | "other";
+            gender: "male" | "female";
             /** Format: email */
             email?: string;
             phone?: string;
@@ -3607,7 +3609,7 @@ export interface components {
             /** Format: date-time */
             birthDate: string;
             /** @enum {string} */
-            gender: "male" | "female" | "other";
+            gender: "male" | "female";
             email: string;
             phone: string;
             address: string;
@@ -4529,24 +4531,6 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
-        CreateRoleDto: {
-            name: string;
-            description?: string;
-            permissions?: string[];
-            isActive?: boolean;
-        };
-        Role: {
-            id: string;
-            name: string;
-            description?: string;
-            permissions: string[];
-            isActive: boolean;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-        };
-        UpdateRoleDto: Record<string, never>;
         CreateAssetDto: {
             name: string;
             description?: string;
@@ -4672,6 +4656,39 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
+        CreateAssetMaintenanceDto: {
+            /** Format: uuid */
+            assetId: string;
+            title: string;
+            description?: string;
+            /** @enum {string} */
+            type?: "Preventivo" | "Correctivo" | "Emergencia" | "Calibración" | "Inspección";
+            scheduledDate: string;
+            estimatedCost?: number;
+            technician?: string;
+            vendor?: string;
+            notes?: string;
+            priority?: number;
+        };
+        UpdateAssetMaintenanceDto: {
+            title?: string;
+            description?: string;
+            /** @enum {string} */
+            type?: "Preventivo" | "Correctivo" | "Emergencia" | "Calibración" | "Inspección";
+            /** @enum {string} */
+            status?: "Programado" | "En Progreso" | "Completado" | "Cancelado" | "Retrasado";
+            scheduledDate?: string;
+            completedDate?: string;
+            estimatedCost?: number;
+            actualCost?: number;
+            technician?: string;
+            vendor?: string;
+            workPerformed?: string;
+            partsReplaced?: string;
+            notes?: string;
+            priority?: number;
+            nextMaintenanceDate?: string;
+        };
         AssetReport: {
             id: string;
             title: string;
@@ -4712,6 +4729,19 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+        };
+        GenerateReportDto: {
+            title: string;
+            description?: string;
+            /** @enum {string} */
+            type: "Por Ubicación" | "Por Estado" | "Mantenimiento" | "Depreciación" | "Obsoletos" | "Financiero";
+            /** @enum {string} */
+            format: "PDF" | "EXCEL" | "CSV" | "JSON";
+            date: string;
+            dateFrom?: string;
+            dateTo?: string;
+            parameters?: Record<string, never>;
+            filters?: Record<string, never>;
         };
         UpdateAssetDto: Record<string, never>;
         CreateAssetTransferItemDto: {
@@ -5210,6 +5240,23 @@ export interface operations {
             };
         };
     };
+    UsersController_getStatistics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     UsersController_findOne: {
         parameters: {
             query?: never;
@@ -5259,7 +5306,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -5771,7 +5822,6 @@ export interface operations {
                 action?: string;
                 resource?: string;
                 status?: "success" | "failure";
-                userEmail?: string;
                 search?: string;
                 startDate?: string;
                 endDate?: string;
@@ -5793,8 +5843,8 @@ export interface operations {
     AuditController_getStats: {
         parameters: {
             query?: {
-                startDate?: string;
-                endDate?: string;
+                endDate?: unknown;
+                startDate?: unknown;
             };
             header?: never;
             path?: never;
@@ -5813,8 +5863,8 @@ export interface operations {
     AuditController_getDailyActivity: {
         parameters: {
             query?: {
-                startDate?: string;
-                endDate?: string;
+                endDate?: unknown;
+                startDate?: unknown;
             };
             header?: never;
             path?: never;
@@ -8269,6 +8319,27 @@ export interface operations {
             };
         };
     };
+    PharmacyInvoicesController_findBySale: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                saleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyInvoice"];
+                };
+            };
+        };
+    };
     PharmacyInvoicesController_findOne: {
         parameters: {
             query?: never;
@@ -9163,136 +9234,6 @@ export interface operations {
             };
         };
     };
-    RolesController_findAll: {
-        parameters: {
-            query?: {
-                isActive?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Role"][];
-                };
-            };
-        };
-    };
-    RolesController_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateRoleDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Role"];
-                };
-            };
-        };
-    };
-    RolesController_findOne: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Role"];
-                };
-            };
-        };
-    };
-    RolesController_remove: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    RolesController_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateRoleDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Role"];
-                };
-            };
-        };
-    };
-    RolesController_activate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Role"];
-                };
-            };
-        };
-    };
     SeedController_seedDemo: {
         parameters: {
             query?: never;
@@ -9468,7 +9409,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAssetMaintenanceDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
@@ -9548,7 +9493,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAssetMaintenanceDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -9605,7 +9554,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateReportDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
@@ -9614,6 +9567,25 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AssetReport"];
                 };
+            };
+        };
+    };
+    AssetsController_downloadReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reportId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

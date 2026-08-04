@@ -48,7 +48,6 @@ export interface AuditFilters {
   action?: string;
   resource?: string;
   status?: string;
-  userEmail?: string;
   search?: string;
   startDate?: string;
   endDate?: string;

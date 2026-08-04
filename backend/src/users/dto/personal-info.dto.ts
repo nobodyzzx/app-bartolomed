@@ -17,6 +17,18 @@ export class PersonalInfoDto {
   address?: string;
 
   @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @IsOptional()
   @IsDateString()
   birthDate?: string;
 }

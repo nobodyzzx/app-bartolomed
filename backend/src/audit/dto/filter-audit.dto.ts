@@ -29,10 +29,6 @@ export class FilterAuditDto {
 
   @IsOptional()
   @IsString()
-  userEmail?: string;
-
-  @IsOptional()
-  @IsString()
   search?: string;
 
   @IsOptional()

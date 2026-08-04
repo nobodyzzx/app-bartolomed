@@ -173,6 +173,46 @@
             <mat-icon matPrefix class="text-green-400">home</mat-icon>
             <input matInput formControlName="address" placeholder="Ingrese dirección completa" />
           </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>País</mat-label>
+            <mat-icon matPrefix class="text-green-400">public</mat-icon>
+            <input matInput formControlName="country" placeholder="País" [matAutocomplete]="autoCountry" />
+            <mat-autocomplete #autoCountry="matAutocomplete">
+              @for (c of filteredCountries(); track c) {
+                <mat-option [value]="c">{{ c }}</mat-option>
+              }
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Estado / Departamento</mat-label>
+            <mat-icon matPrefix class="text-green-400">map</mat-icon>
+            @if (isBoliviaSelected()) {
+              <mat-select formControlName="state">
+                @for (d of departmentOptions; track d) {
+                  <mat-option [value]="d">{{ d }}</mat-option>
+                }
+              </mat-select>
+            } @else {
+              <input matInput formControlName="state" placeholder="Estado / Provincia" />
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Ciudad</mat-label>
+            <mat-icon matPrefix class="text-green-400">location_city</mat-icon>
+            @if (isBoliviaSelected() && isLaPazSelected()) {
+              <input matInput formControlName="city" placeholder="Ciudad" [matAutocomplete]="autoCity" />
+              <mat-autocomplete #autoCity="matAutocomplete">
+                @for (c of filteredCities(); track c) {
+                  <mat-option [value]="c">{{ c }}</mat-option>
+                }
+              </mat-autocomplete>
+            } @else {
+              <input matInput formControlName="city" placeholder="Ciudad" />
+            }
+          </mat-form-field>
         </div>
       </div>
 

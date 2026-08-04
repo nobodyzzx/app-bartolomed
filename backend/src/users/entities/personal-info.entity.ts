@@ -18,6 +18,15 @@ export class PersonalInfo {
   @Column('text', { nullable: true })
   address: string;
 
+  @Column('text', { nullable: true })
+  city: string;
+
+  @Column('text', { nullable: true })
+  state: string;
+
+  @Column('text', { nullable: true })
+  country: string;
+
   @Column('date', { nullable: true })
   birthDate: Date;
 

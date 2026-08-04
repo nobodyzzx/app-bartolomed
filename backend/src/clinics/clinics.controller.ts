@@ -84,18 +84,22 @@ export class ClinicsController {
     return this.clinicsService.deactivate(id);
   }
 
-  // Membership management scoped by clinic: SUPER_ADMIN o admin de ESA clínica.
-  // Sin @RequirePermissions aquí a propósito: ClinicsManage no está asignado a ningún
-  // rol global salvo SUPER_ADMIN (via spread de todos los permisos), así que agregarlo
-  // bloquearía a cualquier admin scoped-a-clínica antes de que ClinicScopeGuard llegue
-  // a evaluar clinicRoles — que es precisamente el control de acceso que estos endpoints
-  // necesitan (ya verifica membresía + rol 'admin' en esa clínica vía UserClinic).
+  // Ver el roster es intencionalmente abierto a cualquier miembro de la clínica
+  // (no solo admins) — en una clínica chica todo el staff se conoce, y no hay
+  // dato sensible más allá de nombre/rol/teléfono de colegas. @AuthClinic() sin
+  // clinicRoles exige membresía (vía ClinicScopeGuard) pero no rol 'admin'.
   @Get(':clinicId/members')
   @AuthClinic()
   getMembers(@Param('clinicId', ParseUUIDPipe) clinicId: string) {
     return this.clinicsService.getClinicMembers(clinicId);
   }
 
+  // Mutar membresía sí queda restringido a SUPER_ADMIN o admin de ESA clínica.
+  // Sin @RequirePermissions aquí a propósito: ClinicsManage no está asignado a ningún
+  // rol global salvo SUPER_ADMIN (via spread de todos los permisos), así que agregarlo
+  // bloquearía a cualquier admin scoped-a-clínica antes de que ClinicScopeGuard llegue
+  // a evaluar clinicRoles — que es precisamente el control de acceso que estos endpoints
+  // necesitan (ya verifica membresía + rol 'admin' en esa clínica vía UserClinic).
   @Post(':clinicId/members')
   @AuthClinic({ clinicRoles: ['admin'] })
   addMember(@Param('clinicId', ParseUUIDPipe) clinicId: string, @Body() dto: AddClinicMemberDto) {

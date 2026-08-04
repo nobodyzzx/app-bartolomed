@@ -56,7 +56,7 @@ export class AuditService {
   }
 
   async findAll(filter: FilterAuditDto, actor: User, clinicId: string) {
-    const { page = 1, pageSize = 50, action, resource, status, userEmail, search, startDate, endDate } = filter;
+    const { page = 1, pageSize = 50, action, resource, status, search, startDate, endDate } = filter;
     const skip = (page - 1) * pageSize;
 
     const qb = this.scopeToClinic(
@@ -71,7 +71,6 @@ export class AuditService {
     if (action) qb.andWhere('log.action = :action', { action });
     if (resource) qb.andWhere('log.resource = :resource', { resource });
     if (status) qb.andWhere('log.status = :status', { status });
-    if (userEmail) qb.andWhere('log.userEmail ILIKE :userEmail', { userEmail: `%${userEmail}%` });
     if (search) {
       qb.andWhere(
         '(log.userEmail ILIKE :search OR log.resource ILIKE :search OR log.path ILIKE :search OR log.userName ILIKE :search)',
