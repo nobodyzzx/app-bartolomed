@@ -41,8 +41,13 @@ export class AuthService {
     this._authStatus.set(AuthStatus.authenticated)
     // Sincronizar roles con RoleStateService (fuente de verdad de UI)
     this.roleState.syncRoles(this.roleState.normalizeRoles(user.roles))
-    // Hidratar contexto de clínica con la clínica principal del usuario
-    if (user.clinic?.id) {
+    // Hidratar contexto de clínica con la clínica principal del usuario — solo si
+    // todavía no hay una clínica activa seleccionada. setAuthentication() se llama en
+    // login(), checkAuthStatus() (recarga de página) Y refreshAccessToken() (renovación
+    // silenciosa de token) — sin este guard, cada recarga o refresh pisaba la selección
+    // manual del usuario en el header y la devolvía a su clínica "principal", rompiendo
+    // en silencio cualquier trabajo en curso en otra clínica.
+    if (user.clinic?.id && !this.clinicCtx.clinicId) {
       this.clinicCtx.setClinic(user.clinic.id)
     }
     if (rememberMe) {

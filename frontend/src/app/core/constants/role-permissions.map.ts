@@ -25,6 +25,10 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
 
     Permission.AssetsManage,
 
+    Permission.LabRead,
+    Permission.LabOrder,
+    Permission.LabResultEnter,
+
     Permission.UsersManage,
     Permission.RolesManage,
     Permission.SettingsManage,
@@ -38,6 +42,8 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
     Permission.PrescriptionsRead,
     Permission.PrescriptionsSign,
     Permission.ReportsMedical,
+    Permission.LabRead,
+    Permission.LabOrder,
   ],
   [UserRoles.NURSE]: [
     Permission.PatientsRead,
@@ -48,6 +54,7 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
     // Espejo de backend/src/auth/permissions/role-permissions.map.ts — habilita
     // ver el timeline clínico de un paciente (GET /reports/patients/:id/timeline).
     Permission.ReportsMedical,
+    Permission.LabRead,
   ],
   [UserRoles.RECEPTIONIST]: [
     Permission.PatientsRead,
@@ -65,8 +72,8 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
     Permission.ReportsStock,
   ],
   [UserRoles.LABORATORY]: [
-    // Preparado para el futuro módulo de laboratorio — sin permisos ni
-    // pantallas propias todavía.
+    Permission.LabRead,
+    Permission.LabResultEnter,
   ],
 }
 

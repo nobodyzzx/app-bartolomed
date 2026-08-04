@@ -101,6 +101,22 @@ const routes: Routes = [
         },
       },
       {
+        path: 'laboratory',
+        loadChildren: () =>
+          import('./pages/laboratory/laboratory.module').then(m => m.LaboratoryModule),
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [
+            UserRoles.DOCTOR,
+            UserRoles.NURSE,
+            UserRoles.LABORATORY,
+            UserRoles.ADMIN,
+            UserRoles.SUPER_ADMIN,
+          ],
+          requiredPermissions: [Permission.LabRead],
+        },
+      },
+      {
         path: 'billing',
         loadChildren: () => import('./pages/billing/billing.module').then(m => m.BillingModule),
         canActivate: [permissionsGuard, roleGuard],

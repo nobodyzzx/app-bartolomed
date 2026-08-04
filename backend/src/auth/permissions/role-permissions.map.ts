@@ -29,6 +29,10 @@ export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
 
     Permission.AssetsManage,
 
+    Permission.LabRead,
+    Permission.LabOrder,
+    Permission.LabResultEnter,
+
     Permission.UsersManage,
     Permission.RolesManage,
     Permission.SettingsManage,
@@ -42,6 +46,8 @@ export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
     Permission.PrescriptionsRead,
     Permission.PrescriptionsSign,
     Permission.ReportsMedical,
+    Permission.LabRead,
+    Permission.LabOrder,
   ],
   [ValidRoles.NURSE]: [
     Permission.PatientsRead,
@@ -55,6 +61,9 @@ export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
     // 403 antes de llegar al chequeo de rol. Coherente con RecordsRead: ver
     // el timeline clínico de un paciente es parte de la atención de enfermería.
     Permission.ReportsMedical,
+    // Igual criterio que RecordsRead: ver resultados de laboratorio es parte
+    // de la atención de enfermería, sin poder solicitar ni cargar resultados.
+    Permission.LabRead,
   ],
   [ValidRoles.RECEPTIONIST]: [
     Permission.PatientsRead,
@@ -72,8 +81,8 @@ export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
     Permission.ReportsStock,
   ],
   [ValidRoles.LABORATORY]: [
-    // Preparado para el futuro módulo de laboratorio — sin endpoints propios
-    // todavía, no se ofrece como opción asignable en la UI de administración.
+    Permission.LabRead,
+    Permission.LabResultEnter,
   ],
   [ValidRoles.USER]: [
     // Acceso mínimo, configurable

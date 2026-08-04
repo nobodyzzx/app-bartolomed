@@ -19,4 +19,5 @@ export const ASSIGNABLE_ROLES: AssignableRole[] = [
   { value: UserRoles.NURSE, label: 'Enfermero/a' },
   { value: UserRoles.RECEPTIONIST, label: 'Recepcionista' },
   { value: UserRoles.PHARMACIST, label: 'Farmacéutico' },
+  { value: UserRoles.LABORATORY, label: 'Laboratorio' },
 ]

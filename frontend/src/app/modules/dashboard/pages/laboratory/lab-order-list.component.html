@@ -1,0 +1,167 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      title="Laboratorio"
+      subtitle="Órdenes de análisis clínicos e imagenología"
+      (back)="goBack()"
+      >
+      @if (canOrder()) {
+        <button
+          type="button"
+          (click)="createOrder()"
+          class="btn btn-primary"
+          >
+          <span class="material-symbols-outlined msz-18 leading-none">add</span>
+          Nueva Orden
+        </button>
+      }
+    </app-page-header>
+
+    @if (patientIdFilter) {
+      <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-blue-500">filter_alt</span>
+          <p class="text-sm text-blue-900 m-0">
+            Mostrando órdenes de <strong>{{ patientNameFilter || 'este paciente' }}</strong>
+          </p>
+        </div>
+        <button type="button" (click)="clearPatientFilter()" class="btn btn-ghost">
+          <span class="material-symbols-outlined msz-16">close</span>
+          Quitar filtro
+        </button>
+      </div>
+    }
+
+    <!-- Stat cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <app-stat-card
+        label="Total" [value]="orders.length" sublabel="Órdenes registradas"
+        icon="biotech" color="blue"
+        [active]="selectedStatus === ''" [clickable]="true"
+        (cardClick)="setStatusFilter('')"
+        />
+      <app-stat-card
+        label="Pendientes" [value]="getPendingCount()" sublabel="En proceso"
+        icon="hourglass_top" color="amber"
+        [active]="false" [clickable]="false"
+        />
+      <app-stat-card
+        label="Completadas" [value]="getCountByStatus('completed')" sublabel="Con resultado final"
+        icon="task_alt" color="green"
+        [active]="selectedStatus === 'completed'" [clickable]="true"
+        (cardClick)="setStatusFilter('completed')"
+        />
+      <app-stat-card
+        label="Canceladas" [value]="getCountByStatus('cancelled')" sublabel="Descartadas"
+        icon="cancel" color="red"
+        [active]="selectedStatus === 'cancelled'" [clickable]="true"
+        (cardClick)="setStatusFilter('cancelled')"
+        />
+    </div>
+
+    <!-- Tabla -->
+    <div class="table-container">
+
+      <div class="table-toolbar">
+        <app-search-bar
+          placeholder="Paciente, número de orden..."
+          [value]="searchTerm"
+          [showClear]="!!(searchTerm || selectedStatus)"
+          (valueChange)="searchTerm = $event; onSearch()"
+          (cleared)="searchTerm = ''; setStatusFilter('')"
+          />
+      </div>
+
+      @if (loading) {
+        <app-skeleton-table [rows]="6" [columns]="6" />
+      }
+
+      @if (!loading && orders.length === 0) {
+        <app-empty-state
+          icon="biotech"
+          title="Sin órdenes de laboratorio"
+          [subtitle]="searchTerm || selectedStatus ? 'Intenta ajustar los filtros' : 'Comienza creando la primera orden de laboratorio'"
+          [actionLabel]="!searchTerm && !selectedStatus && canOrder() ? 'Nueva Orden' : ''"
+          (action)="createOrder()"
+          />
+      }
+
+      @if (!loading && orders.length > 0) {
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-slate-100">
+              <tr>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Nº Orden</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Médico</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estudios</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Resultados</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              @for (o of orders; track o) {
+                <tr (click)="viewOrder(o)" class="table-row-hover">
+                  <td class="px-6 py-4">
+                    <span class="font-mono text-sm font-semibold text-slate-700">{{ o.orderNumber }}</span>
+                    <div class="text-xs text-slate-400 mt-0.5">{{ o.orderDate | date: 'dd/MM/yyyy' }}</div>
+                    @if (o.isUrgent) {
+                      <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 mt-0.5 inline-block">Urgente</span>
+                    }
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-9 h-9 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center flex-shrink-0 font-semibold text-sm">
+                        {{ getPatientInitials(o) }}
+                      </div>
+                      <div>
+                        <div class="font-medium text-slate-900">{{ o.patient.firstName }} {{ o.patient.lastName }}</div>
+                        <div class="text-xs text-slate-400">CI: {{ o.patient.documentNumber }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 text-sm text-slate-700">
+                    Dr. {{ o.doctor.personalInfo?.firstName || o.doctor.email }}
+                  </td>
+                  <td class="px-6 py-4">
+                    @if (o.items?.length) {
+                      <div class="flex flex-wrap gap-1.5">
+                        @for (item of o.items.slice(0, 2); track item) {
+                          <span class="text-xs px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700">
+                            {{ item.testName }}
+                          </span>
+                        }
+                        @if (o.items.length > 2) {
+                          <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                            +{{ o.items.length - 2 }}
+                          </span>
+                        }
+                      </div>
+                    }
+                    @if (!o.items?.length) {
+                      <span class="text-xs text-slate-400">—</span>
+                    }
+                  </td>
+                  <td class="px-6 py-4 text-sm text-slate-700">{{ resultCount(o) }}</td>
+                  <td class="px-6 py-4">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                      [ngClass]="getStatusBadgeClass(o.status)">
+                      {{ getStatusLabel(o.status) }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <div class="table-footer">
+            <span class="text-sm text-slate-500">
+              Mostrando <span class="font-semibold text-slate-700">{{ orders.length }}</span> órdenes
+            </span>
+          </div>
+        </div>
+      }
+
+    </div>
+  </div>
+</div>

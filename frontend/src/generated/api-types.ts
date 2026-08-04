@@ -2676,6 +2676,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lab-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LabOrdersController_findAll"];
+        put?: never;
+        post: operations["LabOrdersController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lab-orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LabOrdersController_findOne"];
+        put?: never;
+        post?: never;
+        delete: operations["LabOrdersController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["LabOrdersController_update"];
+        trace?: never;
+    };
+    "/api/lab-orders/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["LabOrdersController_setStatus"];
+        trace?: never;
+    };
+    "/api/lab-orders/{id}/items/{itemId}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["LabOrdersController_enterResult"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/billing/invoices": {
         parameters: {
             query?: never;
@@ -4426,6 +4490,61 @@ export interface components {
             /** @enum {string} */
             status?: "draft" | "active" | "dispensed" | "completed" | "cancelled" | "expired";
             refillsUsed?: number;
+        };
+        CreateLabOrderItemDto: {
+            testName: string;
+            /** @enum {string} */
+            category: "blood" | "imaging" | "other";
+            specimenType?: string;
+        };
+        CreateLabOrderDto: {
+            orderNumber: string;
+            orderDate: string;
+            clinicalNotes?: string;
+            isUrgent?: boolean;
+            items: components["schemas"]["CreateLabOrderItemDto"][];
+            /** Format: uuid */
+            patientId: string;
+            /** Format: uuid */
+            doctorId: string;
+            /** Format: uuid */
+            clinicId: string;
+            /** Format: uuid */
+            medicalRecordId?: string;
+        };
+        LabOrder: {
+            id: string;
+            orderNumber: string;
+            /** @enum {string} */
+            status: "requested" | "sample_collected" | "in_progress" | "completed" | "cancelled";
+            /** Format: date-time */
+            orderDate: string;
+            clinicalNotes: string;
+            isUrgent: boolean;
+            patient: components["schemas"]["Patient"];
+            doctor: components["schemas"]["User"];
+            clinic: components["schemas"]["Clinic"];
+            medicalRecord: components["schemas"]["MedicalRecord"];
+            items: Record<string, never>[];
+            createdBy: components["schemas"]["User"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            deletedAt?: string;
+        };
+        UpdateLabOrderDto: {
+            /** @enum {string} */
+            status?: "requested" | "sample_collected" | "in_progress" | "completed" | "cancelled";
+        };
+        EnterLabResultDto: {
+            resultValue?: string;
+            resultUnit?: string;
+            referenceRange?: string;
+            isAbnormal?: boolean;
+            resultNotes?: string;
+            resultFileUrl?: string;
         };
         CreateInvoiceItemDto: {
             description: string;
@@ -8960,6 +9079,161 @@ export interface operations {
             };
         };
     };
+    LabOrdersController_findAll: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LabOrdersController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateLabOrderDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabOrder"];
+                };
+            };
+        };
+    };
+    LabOrdersController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabOrder"];
+                };
+            };
+        };
+    };
+    LabOrdersController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    LabOrdersController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLabOrderDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabOrder"];
+                };
+            };
+        };
+    };
+    LabOrdersController_setStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabOrder"];
+                };
+            };
+        };
+    };
+    LabOrdersController_enterResult: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnterLabResultDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabOrder"];
+                };
+            };
+        };
+    };
     BillingController_findAllInvoices: {
         parameters: {
             query?: {
@@ -9367,7 +9641,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                field: "type" | "category" | "manufacturer" | "location";
+                field: "type" | "location" | "manufacturer" | "category";
             };
             cookie?: never;
         };

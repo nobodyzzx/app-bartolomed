@@ -68,6 +68,7 @@ export class RoleStateService {
         case UserRoles.DOCTOR:
         case UserRoles.ADMIN:
         case UserRoles.SUPER_ADMIN:
+        case UserRoles.LABORATORY:
           normalized.add(value as UserRoles)
           break
         case 'super_user':

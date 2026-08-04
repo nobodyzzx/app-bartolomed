@@ -198,6 +198,23 @@ describe('AuthService', () => {
 
       httpMock.expectOne(`${BASE}/auth/check-status`).flush(null, { status: 401, statusText: 'Unauthorized' })
     })
+
+    it('no pisa una clínica ya seleccionada al restaurar sesión en una recarga de página', done => {
+      // Bug real: checkAuthStatus() corre en cada recarga (DashboardLayoutComponent),
+      // y antes del fix llamaba setClinic(user.clinic.id) sin condición — devolviendo
+      // en silencio al usuario a su clínica "principal" aunque hubiera elegido otra
+      // manualmente en el header. Con clinicId ya poblado, el hidratador debe no-opear.
+      ;(clinicCtx as any).clinicId = 'clinica-elegida-por-el-usuario'
+      localStorage.setItem('token', 'existing-token')
+      const user = makeUser({ clinic: { id: 'clinica-principal-del-usuario', name: 'Principal' } })
+
+      service.checkAuthStatus().subscribe(() => {
+        expect(clinicCtx.setClinic).not.toHaveBeenCalled()
+        done()
+      })
+
+      httpMock.expectOne(`${BASE}/auth/check-status`).flush({ user, token: 'existing-token' })
+    })
   })
 
   describe('logout', () => {
@@ -251,6 +268,21 @@ describe('AuthService', () => {
       })
 
       httpMock.expectOne(`${BASE}/auth/refresh`).flush(null, { status: 401, statusText: 'Unauthorized' })
+    })
+
+    it('no pisa una clínica ya seleccionada en una renovación silenciosa de token', done => {
+      // Mismo bug que en checkAuthStatus: refreshAccessToken() corre en segundo plano
+      // (interceptor de 401, o el timer de SessionService) sin que el usuario lo note —
+      // no debe resetear su clínica activa de vuelta a la "principal" del usuario.
+      ;(clinicCtx as any).clinicId = 'clinica-elegida-por-el-usuario'
+      const user = makeUser({ clinic: { id: 'clinica-principal-del-usuario', name: 'Principal' } })
+
+      service.refreshAccessToken().subscribe(() => {
+        expect(clinicCtx.setClinic).not.toHaveBeenCalled()
+        done()
+      })
+
+      httpMock.expectOne(`${BASE}/auth/refresh`).flush({ user, token: 'jwt-token' })
     })
   })
 

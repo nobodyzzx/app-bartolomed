@@ -33,6 +33,7 @@ const ROLE_LABELS: Record<string, string> = {
   nurse: 'Enfermero/a',
   receptionist: 'Recepcionista',
   pharmacist: 'Farmacéutico',
+  laboratory: 'Laboratorio',
 }
 
 const ROLE_PRIORITY: UserRoles[] = [
@@ -42,6 +43,7 @@ const ROLE_PRIORITY: UserRoles[] = [
   UserRoles.PHARMACIST,
   UserRoles.NURSE,
   UserRoles.RECEPTIONIST,
+  UserRoles.LABORATORY,
 ]
 
 interface AlertCounts {

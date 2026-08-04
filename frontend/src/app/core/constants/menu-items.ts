@@ -134,6 +134,13 @@ export const MENU_ITEMS: MenuItem[] = [
     ],
   },
   {
+    label: 'Laboratorio',
+    icon: 'biotech',
+    route: '/dashboard/laboratory',
+    allowedRoles: [UserRoles.DOCTOR, UserRoles.NURSE, UserRoles.LABORATORY, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+    requiredPermissions: [Permission.LabRead],
+  },
+  {
     label: 'Control de Activos',
     icon: 'warehouse',
     route: '/assets',

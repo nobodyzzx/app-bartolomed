@@ -38,6 +38,8 @@ import { Medication, MedicationStock, StockMovement } from './pharmacy/entities/
 import { PurchaseOrder, PurchaseOrderItem } from './pharmacy/entities/purchase-order.entity';
 import { Supplier } from './pharmacy/entities/supplier.entity';
 import { PharmacyModule } from './pharmacy/pharmacy.module';
+import { LabOrder, LabOrderItem } from './lab-orders/entities/lab-order.entity';
+import { LabOrdersModule } from './lab-orders/lab-orders.module';
 import { Prescription, PrescriptionItem } from './prescriptions/entities/prescription.entity';
 import { PrescriptionsModule } from './prescriptions/prescriptions.module';
 import { ReportsModule } from './reports/reports.module';
@@ -82,6 +84,8 @@ import { UsersModule } from './users/users.module';
         MedicalReport,
         Prescription,
         PrescriptionItem,
+        LabOrder,
+        LabOrderItem,
         Invoice,
         InvoiceItem,
         Payment,
@@ -129,6 +133,7 @@ import { UsersModule } from './users/users.module';
     ReportsModule,
     PharmacyModule,
     PrescriptionsModule,
+    LabOrdersModule,
     BillingModule,
     SeedModule,
     AssetsModule,

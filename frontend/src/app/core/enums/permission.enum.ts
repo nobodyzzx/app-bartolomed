@@ -33,6 +33,11 @@ export enum Permission {
   // Activos
   AssetsManage = 'assets.manage',
 
+  // Laboratorio
+  LabRead = 'lab.read',
+  LabOrder = 'lab.order',
+  LabResultEnter = 'lab.result.enter',
+
   // Administración
   UsersManage = 'users.manage',
   RolesManage = 'roles.manage',
