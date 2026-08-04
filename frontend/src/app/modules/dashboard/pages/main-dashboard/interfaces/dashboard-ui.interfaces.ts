@@ -5,6 +5,7 @@ export interface DashboardStats {
   totalNurses: number
   totalReceptionists: number
   totalPharmacists: number
+  totalLaboratory: number
   monthlyRevenue: number
   pendingAppointments: number
   lowStockItems: number

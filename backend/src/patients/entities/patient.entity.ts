@@ -37,6 +37,13 @@ export enum MaritalStatus {
 
 @Entity('patients')
 @Index(['clinic', 'createdAt'])
+// Único solo entre pacientes activos: al "eliminar" (soft-delete) un paciente
+// su CI queda libre para reutilizarse sin necesidad de mutarlo (ver remove()
+// en patients.service.ts) — antes esto se lograba reescribiendo documentNumber
+// a `DEL_<timestamp>_<CI>`, lo que corrompía el CI mostrado en PDFs históricos
+// (recetas) generados después del borrado, porque esos documentos leen la
+// relación viva al paciente en vez de un snapshot.
+@Index('UQ_patients_document_number_active', ['documentNumber'], { unique: true, where: '"isActive" = true' })
 export class Patient {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -47,7 +54,7 @@ export class Patient {
   @Column('text')
   lastName: string;
 
-  @Column('text', { unique: true })
+  @Column('text')
   documentNumber: string;
 
   @Column('text', { nullable: true })

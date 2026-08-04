@@ -88,6 +88,7 @@ export class PharmacySalesService {
     pharmacySale.paymentMethod = createPharmacySaleDto.paymentMethod;
     pharmacySale.subtotal = subtotal;
     pharmacySale.tax = taxAmount;
+    pharmacySale.taxRate = taxRate;
     pharmacySale.discount = discountAmount;
     pharmacySale.total = totalAmount;
     pharmacySale.amountPaid = createPharmacySaleDto.amountPaid;
@@ -285,7 +286,11 @@ export class PharmacySalesService {
       }
 
       const discount = updatePharmacySaleDto.discount || 0;
-      const tax = (subtotal - discount) * 0.13;
+      // Bug real (auditoría de interrelación de módulos, 2026-08-04): usaba
+      // 0.13 hardcodeado en vez de la tasa con la que se creó la venta
+      // (ej. una venta exenta con taxRate: 0 quedaba recalculada al 13% al
+      // editar sus ítems). taxRate ahora se persiste en create().
+      const tax = (subtotal - discount) * Number(pharmacySale.taxRate ?? 0.13);
       const total = subtotal - discount + tax;
       const change = pharmacySale.amountPaid ? Math.max(0, pharmacySale.amountPaid - total) : 0;
 

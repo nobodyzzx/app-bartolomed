@@ -6,7 +6,6 @@ export enum Permission {
   // Expedientes
   RecordsRead = 'records.read',
   RecordsWrite = 'records.write',
-  RecordsWriteVitals = 'records.write.vitals',
 
   // Citas
   AppointmentsRead = 'appointments.read',

@@ -6,6 +6,7 @@ import {
   IsDateString,
   IsBoolean,
   IsArray,
+  ArrayMinSize,
   IsEnum,
   ValidateNested,
   Min,
@@ -108,7 +109,13 @@ export class CreatePrescriptionDto {
   @Max(10)
   refillsAllowed?: number;
 
+  // Bug real (auditoría de interrelación de módulos, 2026-08-04): lab-orders
+  // (calcado de este DTO) sí exige @ArrayMinSize(1) — este no lo tenía.
+  // create() fija status ACTIVE por defecto y nunca pasa por
+  // validateStatusTransition() (que sí exige ítems para firmar), así que
+  // POST /prescriptions con items: [] creaba una receta ACTIVE sin ítems.
   @IsArray()
+  @ArrayMinSize(1, { message: 'La receta debe tener al menos un medicamento' })
   @ValidateNested({ each: true })
   @Type(() => CreatePrescriptionItemDto)
   items: CreatePrescriptionItemDto[];

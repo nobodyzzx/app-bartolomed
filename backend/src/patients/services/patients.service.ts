@@ -1,11 +1,15 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { AuditService } from '../../audit/audit.service';
 import { Patient, Gender } from '../entities/patient.entity';
 import { CreatePatientDto, UpdatePatientDto } from '../dto';
 import { User } from '../../users/entities/user.entity';
 import { Clinic } from '../../clinics/entities/clinic.entity';
+import { Appointment, AppointmentStatus } from '../../appointments/entities/appointment.entity';
+import { Prescription, PrescriptionStatus } from '../../prescriptions/entities/prescription.entity';
+import { Invoice, InvoiceStatus } from '../../billing/entities/billing.entity';
+import { LabOrder, LabOrderStatus } from '../../lab-orders/entities/lab-order.entity';
 
 export interface PaginatedResult<T> {
   data: T[];
@@ -21,6 +25,14 @@ export class PatientsService {
     private readonly patientRepository: Repository<Patient>,
     @InjectRepository(Clinic)
     private readonly clinicRepository: Repository<Clinic>,
+    @InjectRepository(Appointment)
+    private readonly appointmentRepository: Repository<Appointment>,
+    @InjectRepository(Prescription)
+    private readonly prescriptionRepository: Repository<Prescription>,
+    @InjectRepository(Invoice)
+    private readonly invoiceRepository: Repository<Invoice>,
+    @InjectRepository(LabOrder)
+    private readonly labOrderRepository: Repository<LabOrder>,
     private readonly auditService: AuditService,
   ) {}
 
@@ -38,9 +50,12 @@ export class PatientsService {
     try {
       this.ensureBirthDateNotFuture(createPatientDto.birthDate);
 
-      // Verificar que la clínica existe
+      // Verificar que la clínica existe y está activa (prescriptions/lab-orders
+      // ya filtraban isActive aquí; patients no lo hacía, y como ClinicScopeGuard
+      // deja pasar a SUPER_ADMIN sin chequear isActive, era la única puerta
+      // abierta para crear datos en una clínica desactivada).
       const clinic = await this.clinicRepository.findOne({
-        where: { id: createPatientDto.clinicId },
+        where: { id: createPatientDto.clinicId, isActive: true },
       });
 
       if (!clinic) {
@@ -199,6 +214,51 @@ export class PatientsService {
     return saved;
   }
 
+  private async assertNoActiveRelatedRecords(patientId: string, clinicId: string): Promise<void> {
+    const [appointments, prescriptions, invoices, labOrders] = await Promise.all([
+      this.appointmentRepository.count({
+        where: {
+          patient: { id: patientId },
+          clinic: { id: clinicId },
+          status: In([AppointmentStatus.SCHEDULED, AppointmentStatus.CONFIRMED, AppointmentStatus.IN_PROGRESS]),
+        },
+      }),
+      this.prescriptionRepository.count({
+        where: {
+          patient: { id: patientId },
+          clinic: { id: clinicId },
+          status: In([PrescriptionStatus.DRAFT, PrescriptionStatus.ACTIVE, PrescriptionStatus.DISPENSED]),
+        },
+      }),
+      this.invoiceRepository.count({
+        where: {
+          patient: { id: patientId },
+          clinic: { id: clinicId },
+          status: In([InvoiceStatus.PENDING, InvoiceStatus.PARTIALLY_PAID, InvoiceStatus.OVERDUE]),
+        },
+      }),
+      this.labOrderRepository.count({
+        where: {
+          patient: { id: patientId },
+          clinic: { id: clinicId },
+          status: In([LabOrderStatus.REQUESTED, LabOrderStatus.SAMPLE_COLLECTED, LabOrderStatus.IN_PROGRESS]),
+        },
+      }),
+    ]);
+
+    const pending: string[] = [];
+    if (appointments > 0) pending.push(`${appointments} cita(s) pendiente(s)`);
+    if (prescriptions > 0) pending.push(`${prescriptions} receta(s) sin cerrar`);
+    if (invoices > 0) pending.push(`${invoices} factura(s) sin cobrar`);
+    if (labOrders > 0) pending.push(`${labOrders} orden(es) de laboratorio en curso`);
+
+    if (pending.length > 0) {
+      throw new ConflictException(
+        `No se puede eliminar al paciente: tiene ${pending.join(', ')}. Resuélvalos o cancélelos antes de eliminar al paciente.`,
+      );
+    }
+  }
+
   async remove(
     id: string,
     clinicId?: string,
@@ -206,9 +266,12 @@ export class PatientsService {
   ): Promise<void> {
     const patient = await this.findOne(id, clinicId);
     const patientName = `${patient.firstName} ${patient.lastName}`;
+    await this.assertNoActiveRelatedRecords(patient.id, patient.clinic.id);
+    // Soft-delete: no se muta documentNumber. El índice único ahora es parcial
+    // (WHERE isActive = true, ver patient.entity.ts), así que el CI queda
+    // libre para reutilizarse sin corromper el CI mostrado en PDFs históricos
+    // (recetas) que leen la relación viva al paciente.
     patient.isActive = false;
-    // Liberar el documentNumber para que el mismo CI pueda registrarse de nuevo
-    patient.documentNumber = `DEL_${Date.now()}_${patient.documentNumber}`;
     await this.patientRepository.save(patient);
 
     if (actor?.id) {

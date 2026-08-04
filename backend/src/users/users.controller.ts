@@ -57,8 +57,12 @@ export class UsersController {
     return this.usersService.findOne(id, actor, resolveClinicId(req)!);
   }
 
+  // Bug real encontrado en verificación en vivo (auditoría de interrelación
+  // de módulos, 2026-08-04): con @HttpCode(204) el body se descarta siempre
+  // (spec HTTP: 204 No Content no lleva body), así que el aviso pendingWork
+  // que ahora devuelve updateStatus() nunca llegaba al frontend.
   @Patch(':id/status')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body('isActive') isActive: boolean,

@@ -5,6 +5,10 @@ import { AuditService } from 'src/audit/audit.service';
 import { PatientsService } from './patients.service';
 import { Patient } from '../entities/patient.entity';
 import { Clinic } from 'src/clinics/entities/clinic.entity';
+import { Appointment } from 'src/appointments/entities/appointment.entity';
+import { Prescription } from 'src/prescriptions/entities/prescription.entity';
+import { Invoice } from 'src/billing/entities/billing.entity';
+import { LabOrder } from 'src/lab-orders/entities/lab-order.entity';
 import { createMockRepository, MockRepository } from 'src/test/helpers/mock-repository.factory';
 import { makeClinic, makePatient, makeCreatePatientDto, makeUser } from 'src/test/helpers/test-data.factory';
 
@@ -12,6 +16,10 @@ describe('PatientsService', () => {
   let service: PatientsService;
   let patientRepo: MockRepository<Patient>;
   let clinicRepo: MockRepository<Clinic>;
+  let appointmentRepo: MockRepository<Appointment>;
+  let prescriptionRepo: MockRepository<Prescription>;
+  let invoiceRepo: MockRepository<Invoice>;
+  let labOrderRepo: MockRepository<LabOrder>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -19,6 +27,10 @@ describe('PatientsService', () => {
         PatientsService,
         { provide: getRepositoryToken(Patient), useValue: createMockRepository() },
         { provide: getRepositoryToken(Clinic), useValue: createMockRepository() },
+        { provide: getRepositoryToken(Appointment), useValue: createMockRepository() },
+        { provide: getRepositoryToken(Prescription), useValue: createMockRepository() },
+        { provide: getRepositoryToken(Invoice), useValue: createMockRepository() },
+        { provide: getRepositoryToken(LabOrder), useValue: createMockRepository() },
         { provide: AuditService, useValue: { log: jest.fn() } },
       ],
     }).compile();
@@ -26,6 +38,16 @@ describe('PatientsService', () => {
     service = module.get<PatientsService>(PatientsService);
     patientRepo = module.get(getRepositoryToken(Patient));
     clinicRepo = module.get(getRepositoryToken(Clinic));
+    appointmentRepo = module.get(getRepositoryToken(Appointment));
+    prescriptionRepo = module.get(getRepositoryToken(Prescription));
+    invoiceRepo = module.get(getRepositoryToken(Invoice));
+    labOrderRepo = module.get(getRepositoryToken(LabOrder));
+
+    // Por defecto, sin registros activos pendientes (remove() no debe bloquear)
+    appointmentRepo.count!.mockResolvedValue(0);
+    prescriptionRepo.count!.mockResolvedValue(0);
+    invoiceRepo.count!.mockResolvedValue(0);
+    labOrderRepo.count!.mockResolvedValue(0);
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -126,10 +148,75 @@ describe('PatientsService', () => {
       );
     });
 
+    /**
+     * Regresión: bug corregido en la auditoría de interrelación de módulos
+     * (2026-08-04). remove() reescribía documentNumber a `DEL_<timestamp>_<CI>`
+     * para liberar el CI, lo que corrompía el CI mostrado en PDFs históricos
+     * (recetas) de ese paciente generados después del borrado. El índice
+     * único ahora es parcial (solo entre activos), así que remove() ya no
+     * necesita mutar el CI.
+     */
+    it('no reescribe documentNumber al hacer soft-delete', async () => {
+      const patient = makePatient({ documentNumber: '12345678' });
+      patientRepo.findOne!.mockResolvedValue(patient);
+      patientRepo.save!.mockResolvedValue({ ...patient, isActive: false });
+
+      await service.remove('patient-1', 'clinic-1');
+
+      expect(patientRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ documentNumber: '12345678' }),
+      );
+    });
+
     it('lanza NotFoundException si el paciente no existe', async () => {
       patientRepo.findOne!.mockResolvedValue(null);
 
       await expect(service.remove('no-existe', 'clinic-1')).rejects.toThrow(NotFoundException);
+    });
+
+    /**
+     * Regresión: bug corregido en la auditoría de interrelación de módulos
+     * (2026-08-04). remove() no validaba citas/recetas/facturas/lab-orders
+     * activas del paciente antes de desactivarlo — quedaban huérfanas.
+     */
+    it('rechaza el borrado si el paciente tiene citas SCHEDULED/CONFIRMED/IN_PROGRESS', async () => {
+      patientRepo.findOne!.mockResolvedValue(makePatient());
+      appointmentRepo.count!.mockResolvedValue(2);
+
+      await expect(service.remove('patient-1', 'clinic-1')).rejects.toThrow(ConflictException);
+      expect(patientRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('rechaza el borrado si el paciente tiene recetas DRAFT/ACTIVE/DISPENSED', async () => {
+      patientRepo.findOne!.mockResolvedValue(makePatient());
+      prescriptionRepo.count!.mockResolvedValue(1);
+
+      await expect(service.remove('patient-1', 'clinic-1')).rejects.toThrow(ConflictException);
+      expect(patientRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('rechaza el borrado si el paciente tiene facturas PENDING/PARTIALLY_PAID/OVERDUE', async () => {
+      patientRepo.findOne!.mockResolvedValue(makePatient());
+      invoiceRepo.count!.mockResolvedValue(1);
+
+      await expect(service.remove('patient-1', 'clinic-1')).rejects.toThrow(ConflictException);
+      expect(patientRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('rechaza el borrado si el paciente tiene órdenes de laboratorio en curso', async () => {
+      patientRepo.findOne!.mockResolvedValue(makePatient());
+      labOrderRepo.count!.mockResolvedValue(1);
+
+      await expect(service.remove('patient-1', 'clinic-1')).rejects.toThrow(ConflictException);
+      expect(patientRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('permite el borrado cuando no hay registros activos relacionados', async () => {
+      const patient = makePatient();
+      patientRepo.findOne!.mockResolvedValue(patient);
+      patientRepo.save!.mockResolvedValue({ ...patient, isActive: false });
+
+      await expect(service.remove('patient-1', 'clinic-1')).resolves.toBeUndefined();
     });
   });
 

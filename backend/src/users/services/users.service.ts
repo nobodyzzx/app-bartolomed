@@ -7,10 +7,13 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Clinic } from '../../clinics/entities/clinic.entity';
 import { ValidRoles } from '../../auth/interfaces';
 import { PaginationDto } from '../../common/dtos/pagination.dto';
+import { Appointment, AppointmentStatus } from '../../appointments/entities/appointment.entity';
+import { Prescription, PrescriptionStatus } from '../../prescriptions/entities/prescription.entity';
+import { LabOrder, LabOrderStatus } from '../../lab-orders/entities/lab-order.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UserClinic } from '../entities/user-clinic.entity';
@@ -25,6 +28,12 @@ export class UsersService {
     private readonly clinicRepository: Repository<Clinic>,
     @InjectRepository(UserClinic)
     private readonly userClinicRepository: Repository<UserClinic>,
+    @InjectRepository(Appointment)
+    private readonly appointmentRepository: Repository<Appointment>,
+    @InjectRepository(Prescription)
+    private readonly prescriptionRepository: Repository<Prescription>,
+    @InjectRepository(LabOrder)
+    private readonly labOrderRepository: Repository<LabOrder>,
   ) {}
 
   private isSuperAdmin(actor: User): boolean {
@@ -185,6 +194,7 @@ export class UsersService {
     totalNurses: number;
     totalReceptionists: number;
     totalPharmacists: number;
+    totalLaboratory: number;
   }> {
     const countByRole = (role: ValidRoles) =>
       this.userClinicRepository
@@ -195,14 +205,50 @@ export class UsersService {
         .andWhere(':role = ANY(uc.roles)', { role })
         .getCount();
 
-    const [totalDoctors, totalNurses, totalReceptionists, totalPharmacists] = await Promise.all([
+    // Bug real (auditoría de interrelación de módulos, 2026-08-04): no se
+    // actualizó al agregar el rol LABORATORY (2026-08-04) — el KPI "Personal
+    // Activo" del dashboard quedaba subcontado en 1 por cada usuario
+    // solo-laboratorio, sin ningún indicio visual de que faltaba.
+    const [totalDoctors, totalNurses, totalReceptionists, totalPharmacists, totalLaboratory] = await Promise.all([
       countByRole(ValidRoles.DOCTOR),
       countByRole(ValidRoles.NURSE),
       countByRole(ValidRoles.RECEPTIONIST),
       countByRole(ValidRoles.PHARMACIST),
+      countByRole(ValidRoles.LABORATORY),
     ]);
 
-    return { totalDoctors, totalNurses, totalReceptionists, totalPharmacists };
+    return { totalDoctors, totalNurses, totalReceptionists, totalPharmacists, totalLaboratory };
+  }
+
+  // Bug real (auditoría de interrelación de módulos, 2026-08-04): desactivar
+  // a un médico no revisaba ni avisaba sobre sus citas futuras, recetas
+  // activas u órdenes de laboratorio pendientes — quedaban asignadas a un
+  // médico ya inactivo sin que nadie lo notara. No bloqueamos (un admin
+  // puede necesitar desactivar urgentemente), solo avisamos con los conteos
+  // para que decida con información completa.
+  private async getPendingWorkForDoctor(doctorId: string): Promise<{
+    appointments: number;
+    prescriptions: number;
+    labOrders: number;
+  }> {
+    const [appointments, prescriptions, labOrders] = await Promise.all([
+      this.appointmentRepository.count({
+        where: {
+          doctor: { id: doctorId },
+          status: In([AppointmentStatus.SCHEDULED, AppointmentStatus.CONFIRMED]),
+        },
+      }),
+      this.prescriptionRepository.count({
+        where: { doctor: { id: doctorId }, status: In([PrescriptionStatus.ACTIVE, PrescriptionStatus.DISPENSED]) },
+      }),
+      this.labOrderRepository.count({
+        where: {
+          doctor: { id: doctorId },
+          status: In([LabOrderStatus.REQUESTED, LabOrderStatus.SAMPLE_COLLECTED, LabOrderStatus.IN_PROGRESS]),
+        },
+      }),
+    ]);
+    return { appointments, prescriptions, labOrders };
   }
 
   async updateStatus(id: string, isActive: boolean, actor: User, activeClinicId: string) {
@@ -210,6 +256,13 @@ export class UsersService {
     this.assertCanMutateTarget(actor, user);
     user.isActive = isActive;
     await this.userRepository.save(user);
+
+    if (isActive || !user.roles?.includes(ValidRoles.DOCTOR)) {
+      return {};
+    }
+    const pendingWork = await this.getPendingWorkForDoctor(id);
+    const hasPendingWork = pendingWork.appointments > 0 || pendingWork.prescriptions > 0 || pendingWork.labOrders > 0;
+    return hasPendingWork ? { pendingWork } : {};
   }
 
   async remove(id: string, actor: User, activeClinicId: string) {

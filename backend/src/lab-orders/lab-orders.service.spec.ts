@@ -3,6 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { LabOrdersService } from './lab-orders.service';
 import { LabOrder, LabOrderItem, LabOrderStatus, LabTestCategory } from './entities/lab-order.entity';
+import { MedicalRecord } from 'src/medical-records/entities/medical-record.entity';
 import { Patient } from 'src/patients/entities/patient.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Clinic } from 'src/clinics/entities/clinic.entity';
@@ -29,6 +30,7 @@ describe('LabOrdersService', () => {
   let patientRepo: MockRepository<Patient>;
   let userRepo: MockRepository<User>;
   let clinicRepo: MockRepository<Clinic>;
+  let medicalRecordRepo: MockRepository<MedicalRecord>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -39,6 +41,7 @@ describe('LabOrdersService', () => {
         { provide: getRepositoryToken(Patient), useValue: createMockRepository() },
         { provide: getRepositoryToken(User), useValue: createMockRepository() },
         { provide: getRepositoryToken(Clinic), useValue: createMockRepository() },
+        { provide: getRepositoryToken(MedicalRecord), useValue: createMockRepository() },
       ],
     }).compile();
 
@@ -48,6 +51,7 @@ describe('LabOrdersService', () => {
     patientRepo = module.get(getRepositoryToken(Patient));
     userRepo = module.get(getRepositoryToken(User));
     clinicRepo = module.get(getRepositoryToken(Clinic));
+    medicalRecordRepo = module.get(getRepositoryToken(MedicalRecord));
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -99,6 +103,51 @@ describe('LabOrdersService', () => {
 
       const result = await service.create(baseDto() as any, undefined, 'clinic-1');
       expect(result.status).toBe(LabOrderStatus.REQUESTED);
+      expect(medicalRecordRepo.findOne).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Regresión: bug real corregido en la auditoría de interrelación de
+     * módulos (2026-08-04). medicalRecordId se enlazaba sin validar que
+     * exista, ni que pertenezca al mismo paciente/clínica de la orden —
+     * a diferencia de patient/doctor/clinic, que sí se validaban.
+     */
+    it('rechaza si medicalRecordId no existe o no pertenece al paciente/clínica', async () => {
+      patientRepo.findOne!.mockResolvedValue(makePatient());
+      userRepo.findOne!.mockResolvedValue(makeUser());
+      clinicRepo.findOne!.mockResolvedValue(makeClinic());
+      medicalRecordRepo.findOne!.mockResolvedValue(null);
+
+      await expect(
+        service.create({ ...baseDto(), medicalRecordId: 'record-de-otro-paciente' } as any, undefined, 'clinic-1'),
+      ).rejects.toThrow(NotFoundException);
+      expect(orderRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('acepta medicalRecordId cuando pertenece al mismo paciente y clínica', async () => {
+      patientRepo.findOne!.mockResolvedValue(makePatient());
+      userRepo.findOne!.mockResolvedValue(makeUser());
+      clinicRepo.findOne!.mockResolvedValue(makeClinic());
+      medicalRecordRepo.findOne!.mockResolvedValue({ id: 'record-1' });
+      orderRepo.create!.mockImplementation((v: any) => v);
+      orderRepo.save!.mockImplementation(async (v: any) => v);
+
+      const result = await service.create(
+        { ...baseDto(), medicalRecordId: 'record-1' } as any,
+        undefined,
+        'clinic-1',
+      );
+
+      expect(medicalRecordRepo.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            id: 'record-1',
+            patient: { id: 'patient-1' },
+            clinic: { id: 'clinic-1' },
+          }),
+        }),
+      );
+      expect(result.medicalRecord).toEqual({ id: 'record-1' });
     });
   });
 

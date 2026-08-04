@@ -142,6 +142,22 @@ describe('PrescriptionsService', () => {
 
       await expect(service.sign('rx-1', 'clinic-1', doctor as any)).rejects.toThrow(BadRequestException);
     });
+
+    /**
+     * Regresión: bug real corregido en la auditoría de interrelación de
+     * módulos (2026-08-04). canAdminSign comparaba contra el string crudo
+     * 'super_admin' (guion bajo) en vez de ValidRoles.SUPER_ADMIN
+     * ('super-admin', con guion) — un SUPER_ADMIN sin el rol 'admin'
+     * explícito en su array nunca podía firmar la receta de otro médico.
+     */
+    it('permite firmar a un SUPER_ADMIN sin el rol admin explícito', async () => {
+      const rx = makePrescription({ status: PrescriptionStatus.DRAFT });
+      rxRepo.findOne!.mockResolvedValue(rx);
+      rxRepo.save!.mockImplementation(async (v) => v);
+      const superAdmin = makeUser({ id: 'super-99', roles: [ValidRoles.SUPER_ADMIN] });
+
+      await expect(service.sign('rx-1', 'clinic-1', superAdmin as any)).resolves.toBeDefined();
+    });
   });
 
   // ─── refill ───────────────────────────────────────────────────────────────
@@ -170,5 +186,41 @@ describe('PrescriptionsService', () => {
 
       await expect(service.refill('rx-1', 'clinic-1')).rejects.toThrow(BadRequestException);
     });
+
+    it('permite refill de una receta ACTIVE con recambios disponibles', async () => {
+      const rx = makePrescription({
+        status: PrescriptionStatus.ACTIVE,
+        refillsAllowed: 3,
+        refillsUsed: 0,
+        expiryDate: new Date(Date.now() + 86_400_000),
+      });
+      rxRepo.findOne!.mockResolvedValue(rx);
+      rxRepo.save!.mockImplementation(async (v) => v);
+
+      const result = await service.refill('rx-1', 'clinic-1');
+      expect(result.status).toBe(PrescriptionStatus.DISPENSED);
+    });
+
+    /**
+     * Regresión: bug real corregido en la auditoría de interrelación de
+     * módulos (2026-08-04). refill() no validaba el status actual antes de
+     * forzar DISPENSED — podía reactivar una receta CANCELLED o DRAFT
+     * saltándose la máquina de estados de validateStatusTransition().
+     */
+    it.each([PrescriptionStatus.CANCELLED, PrescriptionStatus.DRAFT, PrescriptionStatus.COMPLETED, PrescriptionStatus.EXPIRED])(
+      'rechaza refill de una receta en estado %s',
+      async status => {
+        const rx = makePrescription({
+          status,
+          refillsAllowed: 3,
+          refillsUsed: 0,
+          expiryDate: new Date(Date.now() + 86_400_000),
+        });
+        rxRepo.findOne!.mockResolvedValue(rx);
+
+        await expect(service.refill('rx-1', 'clinic-1')).rejects.toThrow(BadRequestException);
+        expect(rxRepo.save).not.toHaveBeenCalled();
+      },
+    );
   });
 });

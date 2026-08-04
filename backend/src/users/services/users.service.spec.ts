@@ -5,6 +5,9 @@ import { UsersService } from './users.service';
 import { User } from '../entities/user.entity';
 import { UserClinic } from '../entities/user-clinic.entity';
 import { Clinic } from 'src/clinics/entities/clinic.entity';
+import { Appointment } from 'src/appointments/entities/appointment.entity';
+import { Prescription } from 'src/prescriptions/entities/prescription.entity';
+import { LabOrder } from 'src/lab-orders/entities/lab-order.entity';
 import { createMockRepository, createMockQueryBuilder, MockRepository } from 'src/test/helpers/mock-repository.factory';
 import { makeUser, makeClinic } from 'src/test/helpers/test-data.factory';
 
@@ -27,6 +30,9 @@ describe('UsersService', () => {
   let userRepo: MockRepository<User>;
   let clinicRepo: MockRepository<Clinic>;
   let userClinicRepo: MockRepository<UserClinic>;
+  let appointmentRepo: MockRepository<Appointment>;
+  let prescriptionRepo: MockRepository<Prescription>;
+  let labOrderRepo: MockRepository<LabOrder>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -35,6 +41,9 @@ describe('UsersService', () => {
         { provide: getRepositoryToken(User), useValue: createMockRepository() },
         { provide: getRepositoryToken(Clinic), useValue: createMockRepository() },
         { provide: getRepositoryToken(UserClinic), useValue: createMockRepository() },
+        { provide: getRepositoryToken(Appointment), useValue: createMockRepository() },
+        { provide: getRepositoryToken(Prescription), useValue: createMockRepository() },
+        { provide: getRepositoryToken(LabOrder), useValue: createMockRepository() },
       ],
     }).compile();
 
@@ -42,6 +51,13 @@ describe('UsersService', () => {
     userRepo = module.get(getRepositoryToken(User));
     clinicRepo = module.get(getRepositoryToken(Clinic));
     userClinicRepo = module.get(getRepositoryToken(UserClinic));
+    appointmentRepo = module.get(getRepositoryToken(Appointment));
+    prescriptionRepo = module.get(getRepositoryToken(Prescription));
+    labOrderRepo = module.get(getRepositoryToken(LabOrder));
+
+    appointmentRepo.count!.mockResolvedValue(0);
+    prescriptionRepo.count!.mockResolvedValue(0);
+    labOrderRepo.count!.mockResolvedValue(0);
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -228,7 +244,7 @@ describe('UsersService', () => {
     };
 
     it('cuenta personal activo por rol de la clínica', async () => {
-      mockCountsInOrder(3, 2, 1, 4); // doctors, nurses, receptionists, pharmacists
+      mockCountsInOrder(3, 2, 1, 4, 1); // doctors, nurses, receptionists, pharmacists, laboratory
 
       const result = await service.getClinicStatistics('clinic-1');
 
@@ -237,11 +253,12 @@ describe('UsersService', () => {
         totalNurses: 2,
         totalReceptionists: 1,
         totalPharmacists: 4,
+        totalLaboratory: 1,
       });
     });
 
     it('filtra por clínica, activos y rol en cada conteo', async () => {
-      const [doctorsQb, nursesQb] = mockCountsInOrder(1, 0, 0, 0);
+      const [doctorsQb, nursesQb] = mockCountsInOrder(1, 0, 0, 0, 0);
 
       await service.getClinicStatistics('clinic-1');
 
@@ -252,7 +269,7 @@ describe('UsersService', () => {
     });
 
     it('retorna 0 en todos los roles si la clínica no tiene personal', async () => {
-      mockCountsInOrder(0, 0, 0, 0);
+      mockCountsInOrder(0, 0, 0, 0, 0);
 
       const result = await service.getClinicStatistics('clinic-sin-personal');
 
@@ -261,7 +278,24 @@ describe('UsersService', () => {
         totalNurses: 0,
         totalReceptionists: 0,
         totalPharmacists: 0,
+        totalLaboratory: 0,
       });
+    });
+
+    /**
+     * Regresión: bug real corregido en la auditoría de interrelación de
+     * módulos (2026-08-04). El conteo de personal no se actualizó al agregar
+     * el rol LABORATORY — subcontaba el KPI "Personal Activo" del dashboard
+     * en 1 por cada usuario solo-laboratorio, sin ningún indicio visual.
+     */
+    it('cuenta personal con rol LABORATORY', async () => {
+      const qbs = mockCountsInOrder(0, 0, 0, 0, 2);
+      const laboratoryQb = qbs[4];
+
+      const result = await service.getClinicStatistics('clinic-1');
+
+      expect(result.totalLaboratory).toBe(2);
+      expect(laboratoryQb.andWhere).toHaveBeenCalledWith(':role = ANY(uc.roles)', { role: 'laboratory' });
     });
   });
 
@@ -285,6 +319,57 @@ describe('UsersService', () => {
       await expect(service.updateStatus('user-1', false, makeAdmin(), ACTIVE_CLINIC)).rejects.toThrow(
         ForbiddenException,
       );
+    });
+
+    /**
+     * Regresión: bug real corregido en la auditoría de interrelación de
+     * módulos (2026-08-04). Desactivar a un médico no revisaba ni avisaba
+     * sobre sus citas futuras, recetas activas u órdenes de laboratorio
+     * pendientes. No bloqueamos, solo avisamos con los conteos.
+     */
+    it('devuelve pendingWork con los conteos al desactivar un médico con trabajo pendiente', async () => {
+      const user = makeUser({ isActive: true, clinic: { id: ACTIVE_CLINIC }, roles: ['doctor'] });
+      userRepo.findOne!.mockResolvedValue(user);
+      userRepo.save!.mockImplementation(async u => u);
+      appointmentRepo.count!.mockResolvedValue(2);
+      prescriptionRepo.count!.mockResolvedValue(1);
+      labOrderRepo.count!.mockResolvedValue(3);
+
+      const result = await service.updateStatus('user-1', false, makeAdmin(), ACTIVE_CLINIC);
+
+      expect(result).toEqual({ pendingWork: { appointments: 2, prescriptions: 1, labOrders: 3 } });
+    });
+
+    it('no devuelve pendingWork si el médico desactivado no tiene trabajo pendiente', async () => {
+      const user = makeUser({ isActive: true, clinic: { id: ACTIVE_CLINIC }, roles: ['doctor'] });
+      userRepo.findOne!.mockResolvedValue(user);
+      userRepo.save!.mockImplementation(async u => u);
+
+      const result = await service.updateStatus('user-1', false, makeAdmin(), ACTIVE_CLINIC);
+
+      expect(result).toEqual({});
+    });
+
+    it('no calcula pendingWork para roles que no son doctor', async () => {
+      const user = makeUser({ isActive: true, clinic: { id: ACTIVE_CLINIC }, roles: ['nurse'] });
+      userRepo.findOne!.mockResolvedValue(user);
+      userRepo.save!.mockImplementation(async u => u);
+
+      const result = await service.updateStatus('user-1', false, makeAdmin(), ACTIVE_CLINIC);
+
+      expect(result).toEqual({});
+      expect(appointmentRepo.count).not.toHaveBeenCalled();
+    });
+
+    it('no calcula pendingWork al REACTIVAR un médico', async () => {
+      const user = makeUser({ isActive: false, clinic: { id: ACTIVE_CLINIC }, roles: ['doctor'] });
+      userRepo.findOne!.mockResolvedValue(user);
+      userRepo.save!.mockImplementation(async u => u);
+
+      const result = await service.updateStatus('user-1', true, makeAdmin(), ACTIVE_CLINIC);
+
+      expect(result).toEqual({});
+      expect(appointmentRepo.count).not.toHaveBeenCalled();
     });
   });
 

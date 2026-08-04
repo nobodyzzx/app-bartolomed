@@ -44,7 +44,7 @@ describe('MainDashboardComponent', () => {
     dashboardService.getLowStockAlerts.and.returnValue(of([]))
     dashboardService.getRecentPatients.and.returnValue(of([]))
     dashboardService.getStaffStatistics.and.returnValue(
-      of({ totalDoctors: 3, totalNurses: 2, totalReceptionists: 1, totalPharmacists: 1 }),
+      of({ totalDoctors: 3, totalNurses: 2, totalReceptionists: 1, totalPharmacists: 1, totalLaboratory: 0 }),
     )
     dashboardService.getBillingSummary.and.returnValue(of({ pendingInvoices: 5, overdueInvoices: 2, pendingRevenue: 1200 }))
     dashboardService.getWeeklySales.and.returnValue(of({ labels: [], values: [] }))
@@ -111,6 +111,28 @@ describe('MainDashboardComponent', () => {
 
       expect(card?.value).toBe(7)
       expect(card?.sublabel).toBe('3 doctor(es) · 2 enfermero(s) · 1 recepción · 1 farmacia')
+    })
+  })
+
+  // ─── visibleQuickActions ────────────────────────────────────────────────
+
+  describe('visibleQuickActions', () => {
+    /**
+     * Regresión: bug real corregido en la auditoría de interrelación de
+     * módulos (2026-08-04). LABORATORY no aparecía en ningún grupo de roles
+     * del dashboard principal (CLINICAL_ROLES/PHARMACY_ROLES/BILLING_ROLES/
+     * ADMIN_ONLY_ROLES) — un usuario solo-laboratorio veía la home
+     * completamente vacía pese a tener acceso pleno al módulo Laboratorio.
+     * 3ra recurrencia del mismo patrón que role-state.service.ts y
+     * sidebar/navbar ROLE_LABELS.
+     */
+    it('LABORATORY ve al menos el acceso rápido "Laboratorio" (no queda con la home vacía)', () => {
+      roles = [UserRoles.LABORATORY]
+      const component = createComponent()
+      const labels = component.visibleQuickActions.map(a => a.label)
+
+      expect(labels).toContain('Laboratorio')
+      expect(component.visibleQuickActions.length).toBeGreaterThan(0)
     })
   })
 

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Clinic } from '../clinics/entities/clinic.entity';
 import { Patient } from '../patients/entities/patient.entity';
 import { User } from '../users/entities/user.entity';
+import { ValidRoles } from '../auth/interfaces';
 import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { UpdatePrescriptionDto } from './dto/update-prescription.dto';
 import { Prescription, PrescriptionItem, PrescriptionStatus } from './entities/prescription.entity';
@@ -218,6 +219,14 @@ export class PrescriptionsService {
 
   async refill(id: string, clinicId?: string): Promise<Prescription> {
     const pres = await this.findOne(id, clinicId);
+    // Bug real (auditoría de interrelación de módulos, 2026-08-04): refill()
+    // no validaba el status actual antes de forzar DISPENSED — permitía
+    // reactivar una receta CANCELLED o DRAFT saltándose la máquina de
+    // estados de validateStatusTransition(). canBeRefilled() ya expresa el
+    // invariante correcto (solo ACTIVE), pero nunca se usaba aquí.
+    if (pres.status !== PrescriptionStatus.ACTIVE) {
+      throw new BadRequestException(`Cannot refill a prescription with status ${pres.status}`);
+    }
     const today = new Date();
     if (today > new Date(pres.expiryDate)) {
       throw new BadRequestException('Prescription is expired');
@@ -263,8 +272,12 @@ export class PrescriptionsService {
       if (new Date(prescription.expiryDate) < new Date()) {
         throw new BadRequestException('Cannot sign an expired prescription');
       }
+      // Bug real (auditoría de interrelación de módulos, 2026-08-04): comparaba
+      // contra el string crudo 'super_admin' (guion bajo) — el valor real del
+      // enum es ValidRoles.SUPER_ADMIN = 'super-admin' (con guion). Un usuario
+      // con roles=['super-admin'] sin 'admin' explícito nunca matcheaba.
       const roles = Array.isArray(actor.roles) ? actor.roles : [];
-      const canAdminSign = roles.includes('admin') || roles.includes('super_admin');
+      const canAdminSign = roles.includes(ValidRoles.ADMIN) || roles.includes(ValidRoles.SUPER_ADMIN);
       if (actor.id !== prescription.doctor.id && !canAdminSign) {
         throw new BadRequestException('Only prescribing doctor or admin can sign this prescription');
       }

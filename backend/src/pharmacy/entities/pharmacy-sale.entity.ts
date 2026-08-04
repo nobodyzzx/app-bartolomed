@@ -95,6 +95,14 @@ export class PharmacySale {
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   tax: number;
 
+  // Bug real (auditoría de interrelación de módulos, 2026-08-04): la tasa
+  // usada en create() no se persistía en ningún lado, así que update() —
+  // que recalcula subtotal/impuesto/total al editar los ítems de una venta —
+  // no tenía forma de conocerla y usaba 0.13 hardcodeado, ignorando ventas
+  // creadas con una tasa distinta (ej. exentas, taxRate: 0).
+  @Column('decimal', { precision: 5, scale: 4, default: 0.13 })
+  taxRate: number;
+
   @Column('decimal', { precision: 10, scale: 2 })
   total: number;
 

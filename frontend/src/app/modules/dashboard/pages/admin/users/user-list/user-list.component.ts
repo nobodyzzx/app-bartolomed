@@ -289,14 +289,27 @@ export class UserListComponent implements OnInit {
       .then(result => {
         if (result.isConfirmed) {
           this.usersService.updateUserStatus(user.id, !user.isActive).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-            next: () => {
+            next: response => {
               this.loadUsers()
-              this.alert
-                .success(
-                  `Usuario ${user.isActive ? 'desactivado' : 'activado'}`,
-                  `El usuario ha sido ${user.isActive ? 'desactivado' : 'activado'} correctamente`,
+              const pending = response?.pendingWork
+              const hasPending = !!pending && (pending.appointments > 0 || pending.prescriptions > 0 || pending.labOrders > 0)
+              if (hasPending) {
+                const items: string[] = []
+                if (pending!.appointments > 0) items.push(`${pending!.appointments} cita(s) futura(s)`)
+                if (pending!.prescriptions > 0) items.push(`${pending!.prescriptions} receta(s) sin cerrar`)
+                if (pending!.labOrders > 0) items.push(`${pending!.labOrders} orden(es) de laboratorio en curso`)
+                this.alert.warning(
+                  'Usuario desactivado',
+                  `${nombre} quedó desactivado, pero tiene ${items.join(', ')} asignadas. Reasígnelas o adviértalo al resto del equipo.`,
                 )
-                .then()
+              } else {
+                this.alert
+                  .success(
+                    `Usuario ${user.isActive ? 'desactivado' : 'activado'}`,
+                    `El usuario ha sido ${user.isActive ? 'desactivado' : 'activado'} correctamente`,
+                  )
+                  .then()
+              }
             },
             error: () => {
               this.alert.error('Error', `No se pudo ${action} el usuario`)

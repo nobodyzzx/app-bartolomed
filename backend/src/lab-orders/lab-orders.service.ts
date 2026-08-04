@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Clinic } from '../clinics/entities/clinic.entity';
+import { MedicalRecord } from '../medical-records/entities/medical-record.entity';
 import { Patient } from '../patients/entities/patient.entity';
 import { User } from '../users/entities/user.entity';
 import { CreateLabOrderDto } from './dto/create-lab-order.dto';
@@ -22,6 +23,8 @@ export class LabOrdersService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Clinic)
     private readonly clinicRepository: Repository<Clinic>,
+    @InjectRepository(MedicalRecord)
+    private readonly medicalRecordRepository: Repository<MedicalRecord>,
   ) {}
 
   async create(createDto: CreateLabOrderDto, createdBy?: User, scopedClinicId?: string, validatedPatient?: Patient): Promise<LabOrder> {
@@ -41,6 +44,19 @@ export class LabOrdersService {
     const clinic = await this.clinicRepository.findOne({ where: { id: createDto.clinicId, isActive: true } });
     if (!clinic) throw new NotFoundException('Clinic not found');
 
+    // Bug real (auditoría de interrelación de módulos, 2026-08-04):
+    // medicalRecordId se enlazaba sin validar que exista, ni que pertenezca
+    // al mismo paciente/clínica de la orden — a diferencia de patient/doctor/
+    // clinic, que sí se validan arriba. Permitía vincular una orden de
+    // laboratorio a un expediente médico de otro paciente o de otra clínica.
+    let medicalRecord: MedicalRecord | undefined;
+    if (createDto.medicalRecordId) {
+      medicalRecord = (await this.medicalRecordRepository.findOne({
+        where: { id: createDto.medicalRecordId, patient: { id: patient.id }, clinic: { id: scopedClinicId } },
+      })) ?? undefined;
+      if (!medicalRecord) throw new NotFoundException('Medical record not found');
+    }
+
     const entity = this.labOrderRepository.create({
       orderNumber: createDto.orderNumber,
       orderDate: new Date(createDto.orderDate),
@@ -51,7 +67,7 @@ export class LabOrdersService {
       clinic,
       items: (createDto.items || []) as any,
       status: LabOrderStatus.REQUESTED,
-      ...(createDto.medicalRecordId ? { medicalRecord: { id: createDto.medicalRecordId } as any } : {}),
+      ...(medicalRecord ? { medicalRecord } : {}),
     });
 
     if (createdBy) entity.createdBy = createdBy;

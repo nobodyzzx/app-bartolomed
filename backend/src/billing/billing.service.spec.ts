@@ -5,7 +5,7 @@ import { BillingService } from './billing.service';
 import { Invoice, InvoiceItem, InvoiceStatus, Payment } from './entities/billing.entity';
 import { Patient } from 'src/patients/entities/patient.entity';
 import { Clinic } from 'src/clinics/entities/clinic.entity';
-import { Appointment } from 'src/appointments/entities/appointment.entity';
+import { Appointment, AppointmentStatus } from 'src/appointments/entities/appointment.entity';
 import { User } from 'src/users/entities/user.entity';
 import { createMockRepository, MockRepository } from 'src/test/helpers/mock-repository.factory';
 import { makeClinic, makePatient, makeUser } from 'src/test/helpers/test-data.factory';
@@ -124,6 +124,38 @@ describe('BillingService', () => {
       await expect(service.create(baseDto() as any, makeUser() as any, 'clinic-1')).rejects.toThrow(NotFoundException);
     });
 
+    /**
+     * Regresión: bug real corregido en la auditoría de interrelación de
+     * módulos (2026-08-04). patients/billing no filtraban isActive:true al
+     * buscar la clínica (prescriptions/lab-orders sí lo hacían) — y como
+     * ClinicScopeGuard deja pasar a SUPER_ADMIN sin chequear isActive, era
+     * una puerta abierta para facturar en una clínica desactivada.
+     */
+    it('rechaza si la clínica existe pero está desactivada', async () => {
+      patientRepo.findOne!.mockResolvedValue(makePatient());
+      clinicRepo.findOne!.mockResolvedValue(null); // el filtro isActive:true no la encuentra
+
+      await expect(service.create(baseDto() as any, makeUser() as any, 'clinic-1')).rejects.toThrow(NotFoundException);
+      expect(clinicRepo.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ isActive: true }) }),
+      );
+    });
+
+    /**
+     * Regresión: bug real corregido en la auditoría de interrelación de
+     * módulos (2026-08-04). No se validaba el status de la cita — se podía
+     * crear y cobrar una factura vinculada a una cita ya CANCELLED.
+     */
+    it('rechaza facturar una cita CANCELLED', async () => {
+      patientRepo.findOne!.mockResolvedValue(makePatient());
+      clinicRepo.findOne!.mockResolvedValue(makeClinic());
+      appointmentRepo.findOne!.mockResolvedValue({ id: 'appt-1', status: AppointmentStatus.CANCELLED });
+
+      await expect(
+        service.create({ ...baseDto(), appointmentId: 'appt-1' } as any, makeUser() as any, 'clinic-1'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('calcula subtotal correctamente: 2×100 + 3×50 = 350', async () => {
       const dto = {
         ...baseDto(),
@@ -193,6 +225,16 @@ describe('BillingService', () => {
       await expect(service.update('inv-1', { appointmentId: 'appt-inexistente' } as any, 'clinic-1')).rejects.toThrow(
         NotFoundException,
       );
+    });
+
+    it('rechaza vincular una cita CANCELLED al actualizar la factura', async () => {
+      const invoice = makeInvoice({ status: InvoiceStatus.DRAFT });
+      managerInvoiceRepo.findOne!.mockResolvedValueOnce(invoice);
+      appointmentRepo.findOne!.mockResolvedValue({ id: 'appt-1', status: AppointmentStatus.CANCELLED });
+
+      await expect(
+        service.update('inv-1', { appointmentId: 'appt-1' } as any, 'clinic-1'),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

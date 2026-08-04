@@ -147,19 +147,45 @@ describe('AdvancedReportsService', () => {
   });
 
   describe('getPatientTimeline (R-10)', () => {
-    it('devuelve totalEvents, clinicsInvolved únicos y el timeline crudo', async () => {
+    it('devuelve totalEvents, clinicsInvolved y el timeline crudo', async () => {
       dataSource.query.mockResolvedValue([
         { event_type: 'appointment', clinic_id: CLINIC_ID, clinic_name: 'Clínica Norte' },
         { event_type: 'prescription', clinic_id: CLINIC_ID, clinic_name: 'Clínica Norte' },
-        { event_type: 'medical_record', clinic_id: 'other-clinic', clinic_name: 'Clínica Sur' },
       ]);
 
       const result = await service.getPatientTimeline('patient-1', CLINIC_ID);
 
       expect(result.patientId).toBe('patient-1');
-      expect(result.totalEvents).toBe(3);
-      expect(result.clinicsInvolved).toEqual(['Clínica Norte', 'Clínica Sur']);
-      expect(dataSource.query).toHaveBeenCalledWith(expect.stringContaining('UNION ALL'), ['patient-1']);
+      expect(result.totalEvents).toBe(2);
+      expect(result.clinicsInvolved).toEqual(['Clínica Norte']);
+    });
+
+    /**
+     * Regresión: bug crítico corregido en la auditoría de interrelación de
+     * módulos (2026-08-04). Ninguna de las 4 ramas del UNION ALL filtraba por
+     * clinic_id (solo se seleccionaba para mostrarlo) — cualquier usuario con
+     * acceso al endpoint podía leer el timeline clínico completo de un
+     * paciente de OTRA clínica con solo su UUID. Verificamos que el query
+     * nativo reciba clinicId como segundo parámetro y que cada rama del SQL
+     * filtre explícitamente por él.
+     */
+    it('filtra por clinicId en las 5 ramas del UNION ALL (citas, registros, recetas, ventas, lab-orders)', async () => {
+      dataSource.query.mockResolvedValue([]);
+
+      await service.getPatientTimeline('patient-1', CLINIC_ID);
+
+      expect(dataSource.query).toHaveBeenCalledWith(expect.stringContaining('UNION ALL'), ['patient-1', CLINIC_ID]);
+      const sql = dataSource.query.mock.calls[0][0] as string;
+      expect(sql).toContain('a.clinic_id = $2');
+      expect(sql).toContain('mr.clinic_id = $2');
+      expect(sql).toContain('p.clinic_id = $2');
+      expect(sql).toContain('ps.clinic_id = $2');
+      expect(sql).toContain('lo.clinic_id = $2');
+      expect(sql).toContain('FROM lab_orders lo');
+    });
+
+    it('exige clinicId', async () => {
+      await expect(service.getPatientTimeline('patient-1', '')).rejects.toThrow(BadRequestException);
     });
 
     it('filtra clinic_name falsy del set de clínicas involucradas', async () => {

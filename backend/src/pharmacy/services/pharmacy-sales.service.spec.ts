@@ -449,4 +449,53 @@ describe('PharmacySalesService', () => {
       await expect(service.remove('sale-1', 'clinic-1')).rejects.toThrow('Access denied to this sale');
     });
   });
+
+  // ─── update: recálculo de totales al editar ítems ────────────────────────
+
+  describe('update — recálculo de totales al editar ítems', () => {
+    /**
+     * Regresión: bug real corregido en la auditoría de interrelación de
+     * módulos (2026-08-04). update() recalculaba el impuesto con 0.13
+     * hardcodeado en vez de la tasa con la que se creó la venta (persistida
+     * ahora en taxRate) — una venta exenta (taxRate: 0) quedaba recalculada
+     * al 13% al editar sus ítems.
+     */
+    it('usa la taxRate original de la venta (exenta), no 13% fijo', async () => {
+      const sale = { id: 'sale-1', clinicId: 'clinic-1', status: SaleStatus.PENDING, taxRate: 0, items: [] };
+      saleRepo.findOne!.mockResolvedValue(sale);
+      saleItemRepo.delete!.mockResolvedValue({});
+      saleItemRepo.create!.mockImplementation((v: any) => v);
+      saleItemRepo.save!.mockResolvedValue({});
+      saleRepo.save!.mockImplementation(async (v: any) => v);
+
+      await service.update(
+        'sale-1',
+        { items: [{ medicationStockId: 'stock-1', quantity: 2, unitPrice: 50 }] } as any,
+        'clinic-1',
+      );
+
+      const saved = saleRepo.save!.mock.calls[0][0];
+      expect(saved.tax).toBe(0);
+      expect(saved.total).toBe(100);
+    });
+
+    it('usa la taxRate original de la venta (13%) al editar ítems', async () => {
+      const sale = { id: 'sale-1', clinicId: 'clinic-1', status: SaleStatus.PENDING, taxRate: 0.13, items: [] };
+      saleRepo.findOne!.mockResolvedValue(sale);
+      saleItemRepo.delete!.mockResolvedValue({});
+      saleItemRepo.create!.mockImplementation((v: any) => v);
+      saleItemRepo.save!.mockResolvedValue({});
+      saleRepo.save!.mockImplementation(async (v: any) => v);
+
+      await service.update(
+        'sale-1',
+        { items: [{ medicationStockId: 'stock-1', quantity: 2, unitPrice: 50 }] } as any,
+        'clinic-1',
+      );
+
+      const saved = saleRepo.save!.mock.calls[0][0];
+      expect(saved.tax).toBeCloseTo(13);
+      expect(saved.total).toBeCloseTo(113);
+    });
+  });
 });

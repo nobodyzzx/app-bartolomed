@@ -135,8 +135,9 @@ export class DashboardService {
         totalNurses:        r.totalNurses ?? 0,
         totalReceptionists: r.totalReceptionists ?? 0,
         totalPharmacists:   r.totalPharmacists ?? 0,
+        totalLaboratory:    r.totalLaboratory ?? 0,
       })),
-      catchError(() => of({ totalDoctors: 0, totalNurses: 0, totalReceptionists: 0, totalPharmacists: 0 })),
+      catchError(() => of({ totalDoctors: 0, totalNurses: 0, totalReceptionists: 0, totalPharmacists: 0, totalLaboratory: 0 })),
     )
   }
 
@@ -172,6 +173,7 @@ export interface StaffStatistics {
   totalNurses: number
   totalReceptionists: number
   totalPharmacists: number
+  totalLaboratory: number
 }
 
 export interface BillingSummary {

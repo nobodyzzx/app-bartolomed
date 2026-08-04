@@ -13,6 +13,14 @@ export interface PaginatedResult<T> {
   offset: number
 }
 
+export interface UpdateUserStatusResponse {
+  pendingWork?: {
+    appointments: number
+    prescriptions: number
+    labOrders: number
+  }
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -78,8 +86,8 @@ export class UsersService {
     )
   }
 
-  updateUserStatus(userId: string, isActive: boolean): Observable<void> {
-    return this.http.patch<void>(`${this.baseUrl}/users/${userId}/status`, { isActive }).pipe(
+  updateUserStatus(userId: string, isActive: boolean): Observable<UpdateUserStatusResponse> {
+    return this.http.patch<UpdateUserStatusResponse>(`${this.baseUrl}/users/${userId}/status`, { isActive }).pipe(
       catchError(error => {
         this.errorService.handleError(error)
         return throwError(() => error)

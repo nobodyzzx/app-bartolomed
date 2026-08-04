@@ -40,7 +40,7 @@ import { ConsentPdfDto, SummaryPdfDto } from './dto/pdf.dto';
 
 @Controller('medical-records')
 @AuthClinic()
-@RequirePermissions(Permission.RecordsRead, Permission.RecordsWrite, Permission.RecordsWriteVitals)
+@RequirePermissions(Permission.RecordsRead, Permission.RecordsWrite)
 export class MedicalRecordsController {
   constructor(
     private readonly medicalRecordsService: MedicalRecordsService,

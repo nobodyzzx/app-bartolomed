@@ -52,7 +52,6 @@ export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
   [ValidRoles.NURSE]: [
     Permission.PatientsRead,
     Permission.RecordsRead,
-    Permission.RecordsWriteVitals,
     Permission.AppointmentsRead,
     Permission.AppointmentsWrite,
     // Habilita GET /reports/patients/:id/timeline (R-10) — el endpoint ya

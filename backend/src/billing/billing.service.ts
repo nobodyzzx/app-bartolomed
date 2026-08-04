@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Appointment } from '../appointments/entities/appointment.entity';
+import { Appointment, AppointmentStatus } from '../appointments/entities/appointment.entity';
 import { Clinic } from '../clinics/entities/clinic.entity';
 import { Patient } from '../patients/entities/patient.entity';
 import { User } from '../users/entities/user.entity';
@@ -44,9 +44,12 @@ export class BillingService {
       });
       if (!patient) throw new NotFoundException('Patient not found');
 
-      // Verificar que la clínica existe
+      // Verificar que la clínica existe y está activa (prescriptions/lab-orders
+      // ya filtraban isActive aquí; billing no lo hacía, y como ClinicScopeGuard
+      // deja pasar a SUPER_ADMIN sin chequear isActive, era una puerta abierta
+      // para facturar en una clínica desactivada).
       const clinic = await this.clinicRepository.findOne({
-        where: { id: createDto.clinicId },
+        where: { id: createDto.clinicId, isActive: true },
       });
       if (!clinic) throw new NotFoundException('Clinic not found');
 
@@ -57,6 +60,12 @@ export class BillingService {
           where: { id: createDto.appointmentId, clinic: { id: scopedClinicId }, patient: { id: patient.id } },
         });
         if (!foundAppointment) throw new NotFoundException('Appointment not found');
+        // Bug real (auditoría de interrelación de módulos, 2026-08-04): no se
+        // validaba el status de la cita — se podía crear y cobrar una factura
+        // vinculada a una cita ya CANCELLED.
+        if (foundAppointment.status === AppointmentStatus.CANCELLED) {
+          throw new BadRequestException('No se puede facturar una cita cancelada');
+        }
         appointment = foundAppointment;
       }
 
@@ -204,6 +213,9 @@ export class BillingService {
           },
         });
         if (!appointment) throw new NotFoundException('Appointment not found');
+        if (appointment.status === AppointmentStatus.CANCELLED) {
+          throw new BadRequestException('No se puede facturar una cita cancelada');
+        }
         invoice.appointment = appointment;
       }
 

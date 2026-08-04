@@ -52,6 +52,7 @@ export class MainDashboardComponent implements OnInit {
     totalNurses: 0,
     totalReceptionists: 0,
     totalPharmacists: 0,
+    totalLaboratory: 0,
     monthlyRevenue: 0,
     pendingAppointments: 0,
     lowStockItems: 0,
@@ -140,7 +141,7 @@ export class MainDashboardComponent implements OnInit {
 
   get visibleStatCards(): StatCardDef[] {
     const totalStaff = this.stats.totalDoctors + this.stats.totalNurses
-      + this.stats.totalReceptionists + this.stats.totalPharmacists
+      + this.stats.totalReceptionists + this.stats.totalPharmacists + this.stats.totalLaboratory
 
     const cards: StatCardDef[] = [
       {
@@ -202,6 +203,7 @@ export class MainDashboardComponent implements OnInit {
     if (this.stats.totalNurses > 0) parts.push(`${this.stats.totalNurses} enfermero(s)`)
     if (this.stats.totalReceptionists > 0) parts.push(`${this.stats.totalReceptionists} recepción`)
     if (this.stats.totalPharmacists > 0) parts.push(`${this.stats.totalPharmacists} farmacia`)
+    if (this.stats.totalLaboratory > 0) parts.push(`${this.stats.totalLaboratory} laboratorio`)
     return parts.join(' · ')
   }
 
@@ -258,6 +260,18 @@ export class MainDashboardComponent implements OnInit {
         route: '/dashboard/pharmacy/inventory',
         color: 'bg-orange-50 text-orange-600 hover:bg-orange-100 border-orange-100',
         roles: PHARMACY_ROLES,
+      },
+      {
+        // Bug real (auditoría de interrelación de módulos, 2026-08-04):
+        // LABORATORY no aparecía en ningún grupo de roles de este dashboard
+        // (CLINICAL_ROLES/PHARMACY_ROLES/BILLING_ROLES/ADMIN_ONLY_ROLES), así
+        // que un usuario solo-laboratorio veía la home completamente vacía
+        // pese a tener acceso pleno al módulo Laboratorio. 3ra recurrencia del
+        // mismo patrón que role-state.service.ts y sidebar/navbar ROLE_LABELS.
+        label: 'Laboratorio', icon: 'biotech',
+        route: '/dashboard/laboratory',
+        color: 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100 border-cyan-100',
+        roles: [UserRoles.DOCTOR, UserRoles.LABORATORY, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
       },
     ]
     return actions.filter(a => this.roleState.hasAnyRole(a.roles))
@@ -352,7 +366,7 @@ export class MainDashboardComponent implements OnInit {
       pending:      needsClinical ? this.dashboardService.getPendingAppointmentsCount(doctorId)  : of(0),
       stock:        needsStock    ? this.dashboardService.getLowStockAlerts()                    : of([] as StockAlert[]),
       patients:     needsClinical ? this.dashboardService.getRecentPatients()                    : of([] as RecentPatient[]),
-      staff:        needsStaff    ? this.dashboardService.getStaffStatistics()                   : of({ totalDoctors: 0, totalNurses: 0, totalReceptionists: 0, totalPharmacists: 0 }),
+      staff:        needsStaff    ? this.dashboardService.getStaffStatistics()                   : of({ totalDoctors: 0, totalNurses: 0, totalReceptionists: 0, totalPharmacists: 0, totalLaboratory: 0 }),
       billing:      needsBilling  ? this.dashboardService.getBillingSummary()                    : of({ pendingInvoices: 0, overdueInvoices: 0, pendingRevenue: 0 }),
     }).pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -365,6 +379,7 @@ export class MainDashboardComponent implements OnInit {
             totalNurses:         staff.totalNurses,
             totalReceptionists:  staff.totalReceptionists,
             totalPharmacists:    staff.totalPharmacists,
+            totalLaboratory:     staff.totalLaboratory,
             monthlyRevenue:      this.stats.monthlyRevenue,
             lowStockItems:       stock.length,
             pendingInvoices:     billing.pendingInvoices,

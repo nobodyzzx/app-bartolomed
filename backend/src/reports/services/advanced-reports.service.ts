@@ -100,6 +100,7 @@ export class AdvancedReportsService {
 
   async getPatientTimeline(patientId: string, clinicId: string) {
     if (!patientId) throw new BadRequestException('patientId es requerido');
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
 
     // Usamos SQL nativo con UNION ALL porque TypeORM QB no soporta UNION.
     // Bug real (tres capas, todas causaban 500 — nunca antes se había
@@ -118,6 +119,16 @@ export class AdvancedReportsService {
     // (3) COALESCE(mr."chiefComplaint", mr.status) fallaba porque status es
     // un enum de Postgres (medical_records_status_enum), no text — Postgres
     // no puede unificar tipos dentro de un COALESCE tampoco. Cast a ::text.
+    //
+    // Bug real (auditoría de interrelación de módulos, 2026-08-04): ninguna
+    // de las 4 ramas filtraba por clinic_id (solo se seleccionaba para
+    // mostrarlo) — cualquier usuario con acceso a ESTE endpoint en CUALQUIER
+    // clínica podía leer el timeline clínico completo (citas, diagnósticos,
+    // ventas) de un paciente de OTRA clínica con solo su UUID. Había una
+    // variable `belongsToClinic` calculada pero nunca aplicada (el `if` que
+    // debía filtrar tenía el cuerpo vacío). Ahora clinic_id se filtra en las
+    // 5 ramas (se agrega también lab_orders, que no existía cuando se separó
+    // este endpoint del resto y quedó sin la rama correspondiente).
     const rows = await this.dataSource.query<Array<Record<string, unknown>>>(`
       SELECT
         'appointment'    AS event_type,
@@ -130,6 +141,7 @@ export class AdvancedReportsService {
       FROM appointments a
       LEFT JOIN clinics c ON c.id = a.clinic_id
       WHERE a.patient_id = $1
+        AND a.clinic_id = $2
         AND a."isActive" = true
 
       UNION ALL
@@ -145,6 +157,7 @@ export class AdvancedReportsService {
       FROM medical_records mr
       LEFT JOIN clinics c ON c.id = mr.clinic_id
       WHERE mr.patient_id = $1
+        AND mr.clinic_id = $2
         AND mr."deletedAt" IS NULL
 
       UNION ALL
@@ -160,6 +173,7 @@ export class AdvancedReportsService {
       FROM prescriptions p
       LEFT JOIN clinics c ON c.id = p.clinic_id
       WHERE p.patient_id = $1
+        AND p.clinic_id = $2
         AND p."deletedAt" IS NULL
 
       UNION ALL
@@ -175,17 +189,27 @@ export class AdvancedReportsService {
       FROM pharmacy_sales ps
       LEFT JOIN clinics c ON c.id = ps.clinic_id
       WHERE ps.patient_id = $1
+        AND ps.clinic_id = $2
+
+      UNION ALL
+
+      SELECT
+        'lab_order'      AS event_type,
+        lo.id            AS event_id,
+        lo."orderDate"::timestamptz AS event_date,
+        lo.clinic_id,
+        c.name           AS clinic_name,
+        CONCAT('Orden de laboratorio: ', lo."orderNumber", ' — ', lo.status::text) AS summary,
+        lo."clinicalNotes" AS detail
+      FROM lab_orders lo
+      LEFT JOIN clinics c ON c.id = lo.clinic_id
+      WHERE lo.patient_id = $1
+        AND lo.clinic_id = $2
+        AND lo."deletedAt" IS NULL
 
       ORDER BY event_date DESC
       LIMIT 200
-    `, [patientId]);
-
-    // Si se proporciona clinicId verificamos que el paciente sea accesible
-    const belongsToClinic = rows.some(r => r['clinic_id'] === clinicId);
-    if (rows.length > 0 && !belongsToClinic) {
-      // Permite acceso cross-clínica de lectura — solo filtramos si NO hay ningún evento en la clínica
-      // (el guard de cross-clinic-access ya fue evaluado antes de llegar aquí)
-    }
+    `, [patientId, clinicId]);
 
     return {
       patientId,

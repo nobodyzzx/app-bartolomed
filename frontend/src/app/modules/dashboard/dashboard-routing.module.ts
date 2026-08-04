@@ -167,8 +167,14 @@ const routes: Routes = [
         loadChildren: () => import('./pages/reports/reports.module').then(m => m.ReportsModule),
         canActivate: [permissionsGuard, roleGuard],
         data: {
+          // NURSE tiene Permission.ReportsMedical (ve solo la sección médica —
+          // reports.component.ts gatea cada sección por permiso) pero faltaba
+          // aquí — el permiso backend no habilitaba nada real porque roleGuard
+          // bloqueaba antes de llegar a permissionsGuard (bug real, auditoría
+          // de interrelación de módulos, 2026-08-04).
           allowedRoles: [
             UserRoles.DOCTOR,
+            UserRoles.NURSE,
             UserRoles.PHARMACIST,
             UserRoles.ADMIN,
             UserRoles.SUPER_ADMIN,
