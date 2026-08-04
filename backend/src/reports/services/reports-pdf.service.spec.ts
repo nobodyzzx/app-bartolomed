@@ -1,197 +1,34 @@
-import * as fs from 'fs';
-import puppeteer from 'puppeteer-core';
+import { Test, TestingModule } from '@nestjs/testing';
 import { ReportsPdfService } from './reports-pdf.service';
+import { TypstCompilerService } from '../../pdf/typst-compiler.service';
+import { ChartRasterizerService } from '../../pdf/chart-rasterizer.service';
 
-jest.mock('puppeteer-core', () => ({ __esModule: true, default: { launch: jest.fn() } }));
-
-const mockLaunch = puppeteer.launch as jest.Mock;
-let mockReadFileSync: jest.SpyInstance;
-
-const makePage = (pdfBuf: Buffer = Buffer.from('%PDF-1.4')) => ({
-  setContent: jest.fn().mockResolvedValue(undefined),
-  waitForFunction: jest.fn().mockResolvedValue(undefined),
-  pdf: jest.fn().mockResolvedValue(pdfBuf),
-});
-
-const makeBrowser = (overrides: Record<string, any> = {}) => ({
-  newPage: jest.fn().mockResolvedValue(makePage()),
-  close: jest.fn().mockResolvedValue(undefined),
-  process: jest.fn().mockReturnValue({ kill: jest.fn() }),
-  ...overrides,
-});
+const mockTypstCompile = jest.fn();
+const mockRasterize = jest.fn();
 
 describe('ReportsPdfService', () => {
   let service: ReportsPdfService;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
-    mockReadFileSync = jest
-      .spyOn(fs, 'readFileSync')
-      .mockImplementation((_path, encoding) =>
-        encoding === 'utf8' ? 'fake-bytes' : (Buffer.from('fake-bytes') as any),
-      );
-    service = new ReportsPdfService();
+    mockTypstCompile.mockResolvedValue(Buffer.from('%PDF-TYPST'));
+    mockRasterize.mockResolvedValue(Buffer.from('fake-png-bytes'));
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ReportsPdfService,
+        { provide: TypstCompilerService, useValue: { compile: mockTypstCompile } },
+        { provide: ChartRasterizerService, useValue: { rasterize: mockRasterize } },
+      ],
+    }).compile();
+
+    service = module.get(ReportsPdfService);
   });
 
-  afterEach(() => {
-    mockReadFileSync.mockRestore();
-  });
-
-  describe('constructor (logo64 / chartJs)', () => {
-    it('carga logo64 y chartJs si ambos archivos existen', () => {
-      expect((service as any).logo64).toBe(Buffer.from('fake-bytes').toString('base64'));
-      expect((service as any).chartJs).toBe('fake-bytes');
-    });
-
-    it('deja logo64 vacío si falla la lectura del logo', () => {
-      mockReadFileSync.mockImplementationOnce(() => {
-        throw new Error('ENOENT logo');
-      });
-      const s = new ReportsPdfService();
-      expect((s as any).logo64).toBe('');
-    });
-
-    it('deja chartJs vacío si falla la lectura de chart.umd.js', () => {
-      mockReadFileSync.mockReturnValueOnce(Buffer.from('logo-ok')).mockImplementationOnce(() => {
-        throw new Error('ENOENT chart');
-      });
-      const s = new ReportsPdfService();
-      expect((s as any).chartJs).toBe('');
-    });
-  });
-
-  describe('render() / generate*Pdf() — pipeline de Puppeteer (compartido por los 21 reportes)', () => {
-    it('lanza Puppeteer, espera window.__chartsReady y devuelve el PDF como Buffer', async () => {
-      const page = makePage(Buffer.from('%PDF-CONTENT'));
-      const browser = makeBrowser({ newPage: jest.fn().mockResolvedValue(page) });
-      mockLaunch.mockResolvedValue(browser);
-
-      const result = await service.generateDashboardPdf({});
-
-      expect(mockLaunch).toHaveBeenCalledWith(
-        expect.objectContaining({ executablePath: '/usr/bin/chromium', headless: true }),
-      );
-      expect(page.setContent).toHaveBeenCalledWith(expect.stringContaining('Dashboard'), { waitUntil: 'load' });
-      expect(page.waitForFunction).toHaveBeenCalled();
-      expect(page.pdf).toHaveBeenCalledWith(expect.objectContaining({ format: 'A4', printBackground: true }));
-      expect(browser.close).toHaveBeenCalled();
-      expect(result).toEqual(Buffer.from('%PDF-CONTENT'));
-    });
-
-    it('no rompe si waitForFunction expira (catch silencioso)', async () => {
-      const page = makePage();
-      (page.waitForFunction as jest.Mock).mockRejectedValue(new Error('timeout'));
-      const browser = makeBrowser({ newPage: jest.fn().mockResolvedValue(page) });
-      mockLaunch.mockResolvedValue(browser);
-
-      await expect(service.generateDashboardPdf({})).resolves.toBeInstanceOf(Buffer);
-    });
-
-    it('si browser.close() falla, intenta SIGKILL y no rompe el flujo', async () => {
-      const kill = jest.fn();
-      const browser = makeBrowser({
-        close: jest.fn().mockRejectedValue(new Error('close failed')),
-        process: jest.fn().mockReturnValue({ kill }),
-      });
-      mockLaunch.mockResolvedValue(browser);
-
-      await service.generateDashboardPdf({});
-
-      expect(kill).toHaveBeenCalledWith('SIGKILL');
-    });
-
-    it('si close() y process().kill() fallan, no propaga el error de limpieza', async () => {
-      const browser = makeBrowser({
-        close: jest.fn().mockRejectedValue(new Error('close failed')),
-        process: jest.fn().mockImplementation(() => {
-          throw new Error('no process');
-        }),
-      });
-      mockLaunch.mockResolvedValue(browser);
-
-      await expect(service.generateDashboardPdf({})).resolves.toBeInstanceOf(Buffer);
-    });
-
-    it('si page.pdf() falla, propaga el error pero igual cierra el browser', async () => {
-      const page = makePage();
-      (page.pdf as jest.Mock).mockRejectedValue(new Error('render failed'));
-      const browser = makeBrowser({ newPage: jest.fn().mockResolvedValue(page) });
-      mockLaunch.mockResolvedValue(browser);
-
-      await expect(service.generateDashboardPdf({})).rejects.toThrow('render failed');
-      expect(browser.close).toHaveBeenCalled();
-    });
-
-    it('usa PUPPETEER_EXECUTABLE_PATH si está seteado', async () => {
-      process.env.PUPPETEER_EXECUTABLE_PATH = '/custom/chrome';
-      mockLaunch.mockResolvedValue(makeBrowser());
-
-      await service.generateDashboardPdf({});
-
-      expect(mockLaunch).toHaveBeenCalledWith(expect.objectContaining({ executablePath: '/custom/chrome' }));
-      delete process.env.PUPPETEER_EXECUTABLE_PATH;
-    });
-  });
-
-  describe('wiring de los 21 generate*Pdf() públicos', () => {
-    it('cada método público delega en el builder HTML correcto (detecta copy-paste entre reportes)', async () => {
-      const capturedHtml: string[] = [];
-
-      const cases: Array<[() => Promise<Buffer>, string]> = [
-        [() => service.generateFinancialPdf({}), 'Reporte Financiero'],
-        [() => service.generateDemographicsPdf({}), 'Demografía de Pacientes'],
-        [() => service.generateDoctorPerformancePdf({}), 'Rendimiento de Médicos'],
-        [() => service.generateAppointmentsPdf({}), 'Estadísticas de Citas'],
-        [() => service.generateMedicalRecordsPdf({}), 'Registros Médicos'],
-        [() => service.generateDashboardPdf({}), 'Resumen General'],
-        [() => service.generateCriticalStockPdf({}), 'Stock Crítico'],
-        [() => service.generateTransferEfficiencyPdf({}), 'Eficiencia de Traspasos'],
-        [() => service.generateRotationPdf([]), 'Rotación y Días de Stock'],
-        [() => service.generateMarginsPdf([]), 'Márgenes por Producto'],
-        [() => service.generateDailySalesPdf({}), 'Ventas Diarias'],
-        [() => service.generateExpiryBucketsPdf({}), 'Vencimientos por Período'],
-        [() => service.generateProfitabilityPdf([]), 'Rentabilidad Mensual'],
-        [() => service.generateSalesByPharmacistPdf([]), 'Ventas por Farmacéutico'],
-        [() => service.generatePharmacistDayMedicationPdf({}), 'Detalle Encargado'],
-        [() => service.generateValorizedInventoryPdf({}), 'Inventario General Valorizado'],
-        [() => service.generateInventoryByCategoryPdf([]), 'Inventario por Categoría'],
-        [() => service.generateNoMovementPdf({}), 'Medicamentos Sin Movimiento'],
-        [() => service.generateMedicationDetailPdf([]), 'Ventas por Medicamento'],
-        [() => service.generatePrescriptionVsFreePdf({}), 'Ventas con Receta vs'],
-        [() => service.generateSalesByPaymentMethodPdf({}), 'Ventas por Método de Pago'],
-        [() => service.generateMonthlySalesComparisonPdf({}), 'Comparativo Mensual de Ventas'],
-      ];
-
-      for (const [call, expectedTitle] of cases) {
-        const page = makePage();
-        mockLaunch.mockResolvedValue(makeBrowser({ newPage: jest.fn().mockResolvedValue(page) }));
-
-        await call();
-
-        const html = (page.setContent as jest.Mock).mock.calls[0][0];
-        expect(html).toContain(expectedTitle);
-        capturedHtml.push(html);
-      }
-
-      expect(capturedHtml).toHaveLength(cases.length);
-    });
-  });
-
-  describe('helpers compartidos (usados por los 21 builders)', () => {
-    const esc = (s?: string | null) => (service as any).esc(s);
+  describe('helpers compartidos (fmtNum/fmtBs/fmtPct)', () => {
     const fmtNum = (n: any, d?: number) => (service as any).fmtNum(n, d);
     const fmtBs = (n: any) => (service as any).fmtBs(n);
     const fmtPct = (n: any) => (service as any).fmtPct(n);
-
-    it('esc escapa &, < y >', () => {
-      expect(esc('A & B <script>')).toBe('A &amp; B &lt;script&gt;');
-    });
-
-    it('esc devuelve cadena vacía para valores falsy', () => {
-      expect(esc(undefined)).toBe('');
-      expect(esc(null)).toBe('');
-      expect(esc('')).toBe('');
-    });
 
     it('fmtNum formatea con separador de miles es-BO y decimales configurables', () => {
       expect(fmtNum(1234.5, 1)).toBe('1.234,5');
@@ -209,64 +46,84 @@ describe('ReportsPdfService', () => {
     it('fmtPct agrega "%" con 1 decimal', () => {
       expect(fmtPct(33.333)).toBe('33,3%');
     });
+  });
 
-    it('table arma thead/tbody y aplica clases de alineación por columna', () => {
-      const html = (service as any).table(['A', 'B'], [['1', '2']], ['num', 'center']);
-      expect(html).toContain('<th>A</th>');
-      expect(html).toContain('class="num">1</td>');
-      expect(html).toContain('class="center">2</td>');
-    });
+  describe('wiring de los 22 generate*Pdf() públicos', () => {
+    it('cada método público compila vía TypstCompilerService con el título correcto (detecta copy-paste entre reportes)', async () => {
+      const cases: Array<[() => Promise<Buffer>, string]> = [
+        [() => service.generateFinancialPdf({} as any), 'Reporte Financiero'],
+        [() => service.generateDemographicsPdf({} as any), 'Demografía de Pacientes'],
+        [() => service.generateDoctorPerformancePdf({} as any), 'Rendimiento de Médicos'],
+        [() => service.generateAppointmentsPdf({} as any), 'Estadísticas de Citas'],
+        [() => service.generateMedicalRecordsPdf({} as any), 'Registros Médicos'],
+        [() => service.generateDashboardPdf({} as any), 'Resumen General'],
+        [() => service.generateCriticalStockPdf({} as any), 'Stock Crítico'],
+        [() => service.generateTransferEfficiencyPdf({} as any), 'Eficiencia de Traspasos'],
+        [() => service.generateRotationPdf([]), 'Rotación y Días de Stock'],
+        [() => service.generateMarginsPdf([]), 'Márgenes por Producto'],
+        [() => service.generateDailySalesPdf({} as any), 'Ventas Diarias'],
+        [() => service.generateExpiryBucketsPdf({} as any), 'Vencimientos por Período'],
+        [() => service.generateProfitabilityPdf([]), 'Rentabilidad Mensual'],
+        [() => service.generateSalesByPharmacistPdf([]), 'Ventas por Farmacéutico'],
+        [() => service.generatePharmacistDayMedicationPdf({} as any), 'Encargado'],
+        [() => service.generateValorizedInventoryPdf({} as any), 'Inventario General Valorizado'],
+        [() => service.generateInventoryByCategoryPdf([]), 'Inventario por Categoría'],
+        [() => service.generateNoMovementPdf({} as any), 'Medicamentos Sin Movimiento'],
+        [() => service.generateMedicationDetailPdf([]), 'Ventas por Medicamento'],
+        [() => service.generatePrescriptionVsFreePdf({} as any), 'Ventas con Receta vs'],
+        [() => service.generateSalesByPaymentMethodPdf({} as any), 'Ventas por Método de Pago'],
+        [() => service.generateMonthlySalesComparisonPdf({} as any), 'Comparativo Mensual de Ventas'],
+      ];
 
-    it('section envuelve el body con título escapado', () => {
-      const html = (service as any).section('Título <raro>', '<p>body</p>');
-      expect(html).toContain('Título &lt;raro&gt;');
-      expect(html).toContain('<p>body</p>');
-    });
+      expect(cases).toHaveLength(22);
 
-    it('noData devuelve el mensaje estándar de "sin datos"', () => {
-      expect((service as any).noData()).toContain('Sin datos disponibles');
-    });
-
-    it('header incluye el logo en base64 si está disponible, y lo omite si no', () => {
-      const withLogo = (service as any).header('Título');
-      expect(withLogo).toContain('data:image/png;base64,');
-
-      (service as any).logo64 = '';
-      const withoutLogo = (service as any).header('Título');
-      expect(withoutLogo).not.toContain('<img');
-    });
-
-    it('barChart calcula el ancho porcentual relativo a max, capado a 100', () => {
-      const html = (service as any).barChart([
-        { label: 'A', value: 5, max: 10 },
-        { label: 'B', value: 20, max: 10 },
-      ]);
-      expect(html).toContain('width:50.0%');
-      expect(html).toContain('width:100.0%');
-    });
-
-    it('barChart usa 0% si max es 0 (evita división por cero)', () => {
-      const html = (service as any).barChart([{ label: 'A', value: 5, max: 0 }]);
-      expect(html).toContain('width:0.0%');
+      for (const [call, expectedTitle] of cases) {
+        mockTypstCompile.mockClear();
+        await call();
+        const [source] = mockTypstCompile.mock.calls[0];
+        expect(source).toContain(expectedTitle);
+      }
     });
   });
 
-  describe('financialHtml', () => {
-    const html = (data: any) => (service as any).financialHtml(data);
+  describe('generateFinancialPdf / financialTypst (Typst)', () => {
+    const typ = (data: any, revenue = '#noData()', payment = '#noData()') =>
+      (service as any).financialTypst(data, revenue, payment);
 
-    it('calcula collectionRate y usa noData si no hay datos mensuales/de pago', () => {
-      const result = html({ summary: { totalBilled: 1000, totalCollected: 250 } });
+    it('rasteriza el gráfico de ingresos mensuales y el de métodos de pago cuando hay datos', async () => {
+      await service.generateFinancialPdf({
+        monthlyRevenue: [{ month: '2026-01', totalBilled: 1000, totalPaid: 800 }],
+        paymentMethods: [{ method: 'cash', totalAmount: 500 }],
+      } as any);
+
+      expect(mockRasterize).toHaveBeenCalledTimes(2);
+      expect(mockRasterize).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'bar', data: expect.objectContaining({ labels: ['2026-01'] }) }),
+        520,
+        200,
+      );
+      expect(mockRasterize).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'doughnut' }),
+        260,
+        180,
+      );
+    });
+
+    it('calcula collectionRate y usa noData si no hay datos mensuales/de pago', async () => {
+      await service.generateFinancialPdf({ summary: { totalBilled: 1000, totalCollected: 250 } } as any);
+      expect(mockRasterize).not.toHaveBeenCalled();
+
+      const result = typ({ summary: { totalBilled: 1000, totalCollected: 250 } });
       expect(result).toContain('25.0%');
-      expect(result).toContain('Sin datos disponibles');
     });
 
     it('collectionRate es "0.0" si totalBilled es 0', () => {
-      const result = html({ summary: { totalBilled: 0 } });
+      const result = typ({ summary: { totalBilled: 0 } });
       expect(result).toContain('0.0%');
     });
 
     it('renderiza la tabla mensual si hay datos', () => {
-      const result = html({
+      const result = typ({
         summary: {},
         monthlyRevenue: [{ month: '2026-01', revenue: 100, collected: 80, invoiceCount: 5 }],
       });
@@ -274,61 +131,82 @@ describe('ReportsPdfService', () => {
     });
   });
 
-  describe('demographicsHtml', () => {
-    const html = (data: any) => (service as any).demographicsHtml(data);
+  describe('generateDemographicsPdf / demographicsTypst (Typst)', () => {
+    const typ = (data: any, gender = '#noData()', age = '#noData()') =>
+      (service as any).demographicsTypst(data, gender, age);
 
-    it('ordena los grupos de edad según el orden clínico esperado', () => {
-      // Bug real: el service lee data.ageDistribution (la clave que realmente
-      // devuelve ReportsService.getPatientDemographicsReport()), no
-      // data.ageGroupDistribution — con esa clave el gráfico de edad quedaba
-      // siempre vacío. Los labels van en español, coherentes con reports.service.ts.
-      const result = html({
+    it('ordena los grupos de edad según el orden clínico esperado antes de rasterizar el gráfico', async () => {
+      // Bug real (heredado de la versión Puppeteer): el service lee
+      // data.ageDistribution (la clave que realmente devuelve
+      // ReportsService.getPatientDemographicsReport()), no ageGroupDistribution.
+      await service.generateDemographicsPdf({
         totalPatients: 10,
         ageDistribution: [
           { ageGroup: 'Mayor de 70', count: 1 },
           { ageGroup: 'Menor de 18', count: 2 },
         ],
-      });
-      expect(result.indexOf('Menor de 18')).toBeLessThan(result.indexOf('Mayor de 70'));
+      } as any);
+
+      expect(mockRasterize).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ labels: ['Menor de 18', 'Mayor de 70'] }) }),
+        280,
+        180,
+      );
     });
 
-    it('traduce M/F y deja "No especificado" para valores nulos', () => {
-      const result = html({ genderDistribution: [{ gender: null, count: 1 }] });
-      expect(result).toBeDefined();
+    /**
+     * Regresión: el enum Gender de patient.entity.ts usa 'male'/'female'
+     * (no 'M'/'F') — bug real encontrado en vivo donde la traducción nunca
+     * disparaba y el gráfico mostraba el valor crudo en inglés.
+     */
+    it('traduce male/female y deja "No especificado" para valores nulos', async () => {
+      await service.generateDemographicsPdf({
+        genderDistribution: [
+          { gender: 'male', count: 1 },
+          { gender: 'female', count: 1 },
+          { gender: null, count: 1 },
+        ],
+      } as any);
+      expect(mockRasterize).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ labels: ['Masculino', 'Femenino', 'No especificado'] }) }),
+        240,
+        180,
+      );
     });
 
     it('usa noData en la tabla de tipo de sangre si viene vacía', () => {
-      const result = html({});
-      expect(result).toContain('Sin datos disponibles');
+      const result = typ({});
+      expect(result).toContain('#noData()');
     });
   });
 
-  describe('doctorPerformanceHtml', () => {
-    const html = (data: any) => (service as any).doctorPerformanceHtml(data);
+  describe('generateDoctorPerformancePdf / doctorPerformanceTypst (Typst)', () => {
+    const typ = (data: any, chart = '#noData()') => (service as any).doctorPerformanceTypst(data, chart);
 
     it('colorea la tasa de cancelación según el umbral (>20 rojo, >10 ámbar, resto verde)', () => {
-      const result = html({
+      const result = typ({
         doctorPerformance: [
-          { doctorName: 'Alta', completedAppointments: 5, cancelledAppointments: 5 },
-          { doctorName: 'Media', completedAppointments: 9, cancelledAppointments: 1 },
-          { doctorName: 'Baja', completedAppointments: 10, cancelledAppointments: 0 },
+          { doctorName: 'Alta', completedAppointments: 5, cancelledAppointments: 5 }, // 50% → rojo
+          { doctorName: 'Media', completedAppointments: 8, cancelledAppointments: 1 }, // 11.1% → ámbar
+          { doctorName: 'Baja', completedAppointments: 10, cancelledAppointments: 0 }, // 0% → verde
         ],
       });
-      expect(result).toContain('badge-red');
-      expect(result).toContain('badge-amber');
-      expect(result).toContain('badge-green');
+      expect(result).toContain('color: "red"');
+      expect(result).toContain('color: "amber"');
+      expect(result).toContain('color: "green"');
     });
 
     it('usa noData si no hay médicos', () => {
-      expect(html({})).toContain('Sin datos disponibles');
+      expect(typ({})).toContain('#noData()');
     });
   });
 
-  describe('appointmentsHtml', () => {
-    const html = (data: any) => (service as any).appointmentsHtml(data);
+  describe('generateAppointmentsPdf / appointmentsTypst (Typst)', () => {
+    const typ = (data: any, status = '#noData()', trend = '#noData()') =>
+      (service as any).appointmentsTypst(data, status, trend);
 
     it('traduce los estados conocidos y calcula % del total', () => {
-      const result = html({
+      const result = typ({
         summary: { totalAppointments: 10 },
         statusDistribution: [
           { status: 'completed', count: 5 },
@@ -336,35 +214,66 @@ describe('ReportsPdfService', () => {
         ],
       });
       expect(result).toContain('Completada');
-      expect(result).toContain('badge-gray'); // status desconocido
+      expect(result).toContain('color: "gray"'); // status desconocido
     });
 
     it('el % es 0 si totalAppointments no viene informado', () => {
-      const result = html({ summary: {}, statusDistribution: [{ status: 'completed', count: 1 }] });
+      const result = typ({ summary: {}, statusDistribution: [{ status: 'completed', count: 1 }] });
       expect(result).toContain('0,0%');
     });
-  });
 
-  describe('medicalRecordsHtml', () => {
-    const html = (data: any) => (service as any).medicalRecordsHtml(data);
+    /**
+     * Regresión: ReportsService.getAppointmentStatisticsReport() devuelve
+     * { totalAppointments, statusDistribution, monthlyDistribution,
+     * cancellationRate } SIN envolver en `summary`, y el campo de tendencia
+     * mensual se llama `monthlyDistribution`, no `monthlyTrend` — bug real
+     * heredado de Puppeteer, encontrado en vivo (todo el KPI grid superior
+     * quedaba en cero pese a haber citas reales).
+     */
+    it('normaliza el shape real del backend (sin summary, monthlyDistribution) antes de compilar', async () => {
+      await service.generateAppointmentsPdf({
+        totalAppointments: 10,
+        cancellationRate: 20,
+        statusDistribution: [
+          { status: 'completed', count: 5 },
+          { status: 'cancelled', count: 2 },
+        ],
+        monthlyDistribution: [{ month: '2026-01', count: 10 }],
+      } as any);
 
-    it('renderiza barChart + tabla si hay byType, y noData si no', () => {
-      const withData = html({ summary: {}, byType: [{ recordType: 'consultation', count: 3 }] });
-      expect(withData).toContain('consultation');
-
-      const withoutData = html({ summary: {} });
-      expect(withoutData).toContain('Sin datos disponibles');
+      const source = mockTypstCompile.mock.calls[0][0];
+      expect(source).toContain('kpiCard("Total Citas", "10"');
+      expect(source).toContain('kpiCard("Completadas", "5"');
+      expect(source).toContain('kpiCard("Canceladas", "2"');
+      expect(mockRasterize).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ labels: ['2026-01'] }) }),
+        310,
+        180,
+      );
     });
   });
 
-  describe('criticalStockHtml', () => {
-    const html = (data: any) => (service as any).criticalStockHtml(data);
+  describe('generateMedicalRecordsPdf / medicalRecordsTypst (Typst)', () => {
+    const typ = (data: any) => (service as any).medicalRecordsTypst(data);
+
+    it('renderiza hBarChart + tabla si hay byType, y noData si no', () => {
+      const withData = typ({ summary: {}, byType: [{ recordType: 'consultation', count: 3 }] });
+      expect(withData).toContain('consultation');
+      expect(withData).toContain('#hBarChart((');
+
+      const withoutData = typ({ summary: {} });
+      expect(withoutData).toContain('#noData()');
+    });
+  });
+
+  describe('generateCriticalStockPdf / criticalStockTypst (Typst)', () => {
+    const typ = (data: any) => (service as any).criticalStockTypst(data);
 
     it('agrega la sección de vencidos solo si expired trae elementos', () => {
-      const withoutExpired = html({ belowMinimum: [], expiringSoon: [], expired: [], summary: {} });
+      const withoutExpired = typ({ belowMinimum: [], expiringSoon: [], expired: [], summary: {} });
       expect(withoutExpired).not.toContain('⚠ Ya Vencidos');
 
-      const withExpired = html({
+      const withExpired = typ({
         belowMinimum: [],
         expiringSoon: [],
         expired: [{ medication: { name: 'X' }, availableQuantity: 2, unitCost: 5 }],
@@ -374,129 +283,187 @@ describe('ReportsPdfService', () => {
     });
   });
 
-  describe('transferEfficiencyHtml', () => {
-    const html = (data: any) => (service as any).transferEfficiencyHtml(data);
+  describe('generateTransferEfficiencyPdf / transferEfficiencyTypst (Typst)', () => {
+    const typ = (data: any) => (service as any).transferEfficiencyTypst(data);
 
     it('muestra la alerta y la tabla de detenidos solo si stalledCount > 0', () => {
-      const withoutStalled = html({ kpiByRoute: [], stalledTransfers: [], stalledCount: 0 });
+      const withoutStalled = typ({ kpiByRoute: [], stalledTransfers: [], stalledCount: 0 });
       expect(withoutStalled).not.toContain('traslado(s) detenido(s)');
 
-      const withStalled = html({ kpiByRoute: [], stalledTransfers: [{ transferNumber: 'T1' }], stalledCount: 2 });
+      const withStalled = typ({ kpiByRoute: [], stalledTransfers: [{ transferNumber: 'T1' }], stalledCount: 2 });
       expect(withStalled).toContain('2 traslado(s) detenido(s)');
       expect(withStalled).toContain('Traslados Detenidos (+48 horas)');
     });
   });
 
-  describe('dashboardHtml', () => {
+  describe('generateDashboardPdf / dashboardTypst (Typst)', () => {
     it('renderiza con defaults vacíos si no viene ninguna sección', () => {
-      const result = (service as any).dashboardHtml({});
+      const result = (service as any).dashboardTypst({});
       expect(result).toContain('Resumen General');
     });
   });
 
-  describe('rotationHtml', () => {
-    const html = (data: any[]) => (service as any).rotationHtml(data);
+  describe('generateRotationPdf / rotationTypst (Typst)', () => {
+    const typ = (data: any[]) => (service as any).rotationTypst(data);
 
     it('agrupa por alertLevel y solo muestra las secciones con elementos', () => {
-      const result = html([
+      const result = typ([
         { medicationName: 'A', alertLevel: 'critical', daysRemaining: 3 },
         { medicationName: 'B', alertLevel: 'warning', daysRemaining: 15 },
       ]);
       expect(result).toContain('Estado Crítico — Menos de 7 días');
       expect(result).toContain('Requieren Atención — Menos de 30 días');
-      expect(result).not.toContain('<div class="sec"><div class="sec-hd">Estado Normal</div>');
+      expect(result).not.toContain('#section("Estado Normal")');
     });
 
     it('muestra ∞ cuando daysRemaining >= 9999', () => {
-      const result = html([{ medicationName: 'A', alertLevel: 'ok', daysRemaining: 9999 }]);
+      const result = typ([{ medicationName: 'A', alertLevel: 'ok', daysRemaining: 9999 }]);
       expect(result).toContain('∞');
     });
   });
 
-  describe('marginsHtml', () => {
-    const html = (data: any[]) => (service as any).marginsHtml(data);
+  describe('marginsTypst', () => {
+    const typ = (data: any[]) => (service as any).marginsTypst(data);
 
     it('colorea el badge de margen según el umbral (>=20 verde, >=10 ámbar, resto rojo)', () => {
-      const result = html([
+      const result = typ([
         { medicationName: 'Alto', marginPct: 25 },
         { medicationName: 'Medio', marginPct: 12 },
         { medicationName: 'Bajo', marginPct: 5 },
       ]);
-      expect(result).toContain('badge-green');
-      expect(result).toContain('badge-amber');
-      expect(result).toContain('badge-red');
+      expect(result).toContain('color: "green"');
+      expect(result).toContain('color: "amber"');
+      expect(result).toContain('color: "red"');
     });
 
     it('avgMarginPct es 0 si no hay ingresos', () => {
-      const result = html([{ medicationName: 'A' }]);
+      const result = typ([{ medicationName: 'A' }]);
       expect(result).toContain('0,0%');
+    });
+
+    it('usa #noData() si no hay productos', () => {
+      const result = typ([]);
+      expect(result).toContain('#noData()');
+    });
+
+    /**
+     * Regresión: un nombre de medicamento con comillas no debe romper el
+     * `.typ` generado (ver typst-escape.util.ts).
+     */
+    it('escapa comillas dobles en nombres de medicamento', () => {
+      const result = typ([{ medicationName: 'Jarabe "Fuerte"', marginPct: 15 }]);
+      expect(result).toContain('Jarabe \\"Fuerte\\"');
     });
   });
 
-  describe('dailySalesHtml', () => {
-    const html = (data: any) => (service as any).dailySalesHtml(data);
+  describe('generateDailySalesPdf (con gráfico)', () => {
+    it('rasteriza el gráfico de barras y compila vía Typst', async () => {
+      const result = await service.generateDailySalesPdf({
+        dailySales: [{ date: new Date('2026-01-01'), totalRevenue: 100, ticketCount: 2, avgTicket: 50 }],
+      } as any);
+
+      expect(mockRasterize).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'bar',
+          data: expect.objectContaining({
+            labels: ['2026-01-01'],
+            datasets: [expect.objectContaining({ label: 'Ingresos (Bs)', data: [100], backgroundColor: '#f97316' })],
+          }),
+        }),
+        540,
+        200,
+      );
+      expect(mockTypstCompile).toHaveBeenCalledWith(
+        expect.stringContaining('Ventas Diarias'),
+        [{ filename: 'chart-revenue.png', buffer: Buffer.from('fake-png-bytes') }],
+      );
+      expect(result).toEqual(Buffer.from('%PDF-TYPST'));
+    });
+
+    it('usa #noData() y no rasteriza nada si no hay ventas diarias', async () => {
+      await service.generateDailySalesPdf({} as any);
+
+      expect(mockRasterize).not.toHaveBeenCalled();
+      expect(mockTypstCompile).toHaveBeenCalledWith(expect.stringContaining('#noData()'), []);
+    });
+  });
+
+  describe('dailySalesTypst', () => {
+    const typ = (data: any, chart = '#noData()') => (service as any).dailySalesTypst(data, chart);
 
     it('calcula avgTicket y formatea la fecha (Date o string)', () => {
-      const result = html({ dailySales: [{ date: new Date('2026-01-01'), totalRevenue: 100, ticketCount: 2 }] });
+      const result = typ({ dailySales: [{ date: new Date('2026-01-01'), totalRevenue: 100, ticketCount: 2 }] });
       expect(result).toContain('2026-01-01');
     });
 
     it('omite el detalle diario y el desglose de pago si vienen vacíos', () => {
-      const result = html({});
+      const result = typ({});
       expect(result).not.toContain('Detalle Diario');
       expect(result).not.toContain('Desglose por Método de Pago');
     });
   });
 
-  describe('expiryBucketsHtml', () => {
-    const html = (data: any) => (service as any).expiryBucketsHtml(data);
+  describe('generateExpiryBucketsPdf / expiryBucketsTypst (Typst)', () => {
+    const typ = (data: any) => (service as any).expiryBucketsTypst(data);
 
     it('solo renderiza las secciones de buckets que tienen elementos', () => {
-      const result = html({ already_expired: [{ medicationName: 'A', stockValue: 10 }], summary: {} });
+      const result = typ({ already_expired: [{ medicationName: 'A', stockValue: 10 }], summary: {} });
       expect(result).toContain('Ya Vencidos — Acción Inmediata');
       expect(result).not.toContain('Vencen en Menos de 30 Días');
     });
   });
 
-  describe('profitabilityHtml (vía generateProfitabilityPdf)', () => {
-    const html = (data: any[]) => (service as any).profitabilityHtml(data);
+  describe('generateProfitabilityPdf / profitabilityTypst (Typst)', () => {
+    const typ = (data: any[], chart = '#noData()') => (service as any).profitabilityTypst(data, chart);
 
     it('colorea el margen según umbral y calcula avgMarginPct', () => {
-      const result = html([{ month: '2026-01', revenue: 1000, cogs: 700, grossMargin: 300, grossMarginPct: 30 }]);
-      expect(result).toContain('badge-green');
+      const result = typ([{ month: '2026-01', revenue: 1000, cogs: 700, grossMargin: 300, grossMarginPct: 30 }]);
+      expect(result).toContain('color: "green"');
       expect(result).toContain('30,0%');
     });
 
     it('avgMarginPct es 0 si no hay revenue', () => {
-      const result = html([{ month: '2026-01', revenue: 0, cogs: 0 }]);
+      const result = typ([{ month: '2026-01', revenue: 0, cogs: 0 }]);
       expect(result).toContain('0,0%');
+    });
+
+    it('omite la sección "Detalle por Mes" por completo si no hay filas', () => {
+      const result = typ([]);
+      expect(result).not.toContain('Detalle por Mes');
     });
   });
 
-  describe('salesByPharmacistHtml', () => {
+  describe('generateSalesByPharmacistPdf / salesByPharmacistTypst (Typst)', () => {
+    const typ = (data: any[], chart = '#noData()') => (service as any).salesByPharmacistTypst(data, chart);
+
     it('suma totales y renderiza el detalle por farmacéutico', () => {
-      const result = (service as any).salesByPharmacistHtml([
+      const result = typ([
         { pharmacistName: 'Ana', totalRevenue: 500, totalUnits: 10, salesCount: 3, revenuePct: 100 },
       ]);
       expect(result).toContain('Ana');
       expect(result).toContain('Bs 500,00');
     });
+
+    it('omite la sección "Detalle por Encargado" por completo si no hay datos', () => {
+      const result = typ([]);
+      expect(result).not.toContain('Detalle por Encargado');
+    });
   });
 
-  describe('pharmacistDayMedicationHtml', () => {
+  describe('generatePharmacistDayMedicationPdf / pharmacistDayMedicationTypst (Typst)', () => {
     it('limita el detalle a 200 filas y usa noData si no hay filas', () => {
-      const withoutRows = (service as any).pharmacistDayMedicationHtml({});
-      expect(withoutRows).toContain('Sin datos disponibles');
+      const withoutRows = (service as any).pharmacistDayMedicationTypst({});
+      expect(withoutRows).toContain('#noData()');
 
       const rows = Array.from({ length: 3 }, (_, i) => ({ pharmacistName: `P${i}`, medicationName: 'A', qtySold: 1 }));
-      const withRows = (service as any).pharmacistDayMedicationHtml({ rows });
+      const withRows = (service as any).pharmacistDayMedicationTypst({ rows });
       expect(withRows).toContain('Detalle Completo (máx. 200 filas)');
     });
   });
 
-  describe('valorizedInventoryHtml', () => {
-    it('traduce el status a label + clase de badge, con default badge-green si es desconocido', () => {
-      const result = (service as any).valorizedInventoryHtml({
+  describe('generateValorizedInventoryPdf / valorizedInventoryTypst (Typst)', () => {
+    it('traduce el status a label + color de badge, con default "green" si es desconocido', () => {
+      const result = (service as any).valorizedInventoryTypst({
         rows: [
           { medicationName: 'A', status: 'critico' },
           { medicationName: 'B', status: 'desconocido' },
@@ -505,22 +472,26 @@ describe('ReportsPdfService', () => {
       });
       expect(result).toContain('Crítico');
       expect(result).toContain('desconocido'); // status no mapeado se muestra tal cual
+      expect(result).toContain('color: "green"'); // default para status desconocido
     });
   });
 
-  describe('inventoryByCategoryHtml', () => {
-    it('marca en ámbar/rojo lowStockCount y expiringSoonCount cuando son > 0', () => {
-      const result = (service as any).inventoryByCategoryHtml([
+  describe('generateInventoryByCategoryPdf / inventoryByCategoryTypst (Typst)', () => {
+    const typ = (data: any[], chart = '#noData()') => (service as any).inventoryByCategoryTypst(data, chart);
+
+    it('marca en ámbar/rojo lowStockCount y expiringSoonCount cuando son > 0, sin badge si son 0', () => {
+      const result = typ([
         { category: 'Antibióticos', lowStockCount: 2, expiringSoonCount: 1 },
+        { category: 'Analgésicos', lowStockCount: 0, expiringSoonCount: 0 },
       ]);
-      expect(result).toContain('badge-amber');
-      expect(result).toContain('badge-red');
+      expect(result).toContain('badge("2", color: "amber")');
+      expect(result).toContain('badge("1", color: "red")');
     });
   });
 
-  describe('noMovementHtml', () => {
+  describe('generateNoMovementPdf / noMovementTypst (Typst)', () => {
     it('usa "Sin ventas" cuando no hay lastSaleDate y formatea Date/string indistintamente', () => {
-      const result = (service as any).noMovementHtml({
+      const result = (service as any).noMovementTypst({
         rows: [
           { medicationName: 'A', lastSaleDate: null },
           { medicationName: 'B', lastSaleDate: new Date('2026-01-01') },
@@ -532,20 +503,33 @@ describe('ReportsPdfService', () => {
     });
   });
 
-  describe('medicationDetailHtml', () => {
-    it('limita el chart a los primeros 15 y colorea el badge de margen', () => {
-      const result = (service as any).medicationDetailHtml([
-        { medicationName: 'A', marginPct: 25 },
-        { medicationName: 'B', marginPct: 5 },
-      ]);
-      expect(result).toContain('badge-green');
-      expect(result).toContain('badge-red');
+  describe('generateMedicationDetailPdf / medicationDetailTypst (Typst)', () => {
+    it('limita el chart a los primeros 15 medicamentos', async () => {
+      const data = Array.from({ length: 20 }, (_, i) => ({ medicationName: `Med${i}`, totalRevenue: i, grossMargin: i }));
+      await service.generateMedicationDetailPdf(data as any);
+
+      const rasterizedConfig = mockRasterize.mock.calls[0][0];
+      expect(rasterizedConfig.data.labels).toHaveLength(15);
+    });
+
+    it('colorea el badge de margen', () => {
+      const result = (service as any).medicationDetailTypst(
+        [
+          { medicationName: 'A', marginPct: 25 },
+          { medicationName: 'B', marginPct: 5 },
+        ],
+        '#noData()',
+      );
+      expect(result).toContain('color: "green"');
+      expect(result).toContain('color: "red"');
     });
   });
 
-  describe('prescriptionVsFreeHtml', () => {
+  describe('generatePrescriptionVsFreePdf / prescriptionVsFreeTypst (Typst)', () => {
+    const typ = (data: any, chart = '#noData()') => (service as any).prescriptionVsFreeTypst(data, chart);
+
     it('separa con_receta vs libre y limita a 15 medicamentos por tabla', () => {
-      const result = (service as any).prescriptionVsFreeHtml({
+      const result = typ({
         summary: [
           { type: 'con_receta', totalRevenue: 300, pct: 30 },
           { type: 'libre', totalRevenue: 700, pct: 70 },
@@ -556,15 +540,17 @@ describe('ReportsPdfService', () => {
       expect(result).toContain('Venta Libre');
     });
 
-    it('usa objeto vacío si el tipo no aparece en el summary', () => {
-      const result = (service as any).prescriptionVsFreeHtml({ summary: [], byMedication: [] });
-      expect(result).toContain('Sin datos disponibles');
+    it('usa noData si el tipo no aparece en el summary', () => {
+      const result = typ({ summary: [], byMedication: [] });
+      expect(result).toContain('#noData()');
     });
   });
 
-  describe('salesByPaymentMethodHtml', () => {
-    it('traduce métodos conocidos y omite el detalle diario si viene vacío', () => {
-      const result = (service as any).salesByPaymentMethodHtml({
+  describe('generateSalesByPaymentMethodPdf / salesByPaymentMethodTypst (Typst)', () => {
+    const typ = (data: any, chart = '#noData()') => (service as any).salesByPaymentMethodTypst(data, chart);
+
+    it('traduce métodos conocidos y omite el detalle diario por completo si viene vacío', () => {
+      const result = typ({
         summary: [{ method: 'qr', totalRevenue: 100, salesCount: 2, pct: 100 }],
         daily: [],
         grandTotal: 100,
@@ -572,11 +558,28 @@ describe('ReportsPdfService', () => {
       expect(result).toContain('QR');
       expect(result).not.toContain('Detalle Diario por Método');
     });
+
+    it('arma un config de Chart.js válido para el gráfico de dona (bug heredado de Puppeteer: antes faltaba envolver en `data:`)', async () => {
+      await service.generateSalesByPaymentMethodPdf({
+        summary: [{ method: 'cash', totalRevenue: 100 }],
+      } as any);
+
+      expect(mockRasterize).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'doughnut',
+          data: expect.objectContaining({ labels: ['Efectivo'], datasets: expect.any(Array) }),
+        }),
+        320,
+        200,
+      );
+    });
   });
 
-  describe('monthlySalesComparisonHtml', () => {
+  describe('generateMonthlySalesComparisonPdf / monthlySalesComparisonTypst (Typst)', () => {
+    const typ = (data: any, chart = '#noData()') => (service as any).monthlySalesComparisonTypst(data, chart);
+
     it('muestra flecha verde para crecimiento positivo, roja para negativo y "—" para null', () => {
-      const result = (service as any).monthlySalesComparisonHtml({
+      const result = typ({
         rows: [
           { month: '2026-01', revenueGrowth: null },
           { month: '2026-02', revenueGrowth: 10 },
@@ -586,7 +589,22 @@ describe('ReportsPdfService', () => {
       });
       expect(result).toContain('▲');
       expect(result).toContain('▼');
-      expect(result).toContain('>—<');
+      expect(result).toContain('"—"');
+    });
+
+    it('arma un config de Chart.js válido para el gráfico de barras (bug heredado de Puppeteer: antes faltaba envolver en `data:`)', async () => {
+      await service.generateMonthlySalesComparisonPdf({
+        rows: [{ month: '2026-01', totalRevenue: 100, salesCount: 5 }],
+      } as any);
+
+      expect(mockRasterize).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'bar',
+          data: expect.objectContaining({ labels: ['2026-01'], datasets: expect.any(Array) }),
+        }),
+        560,
+        220,
+      );
     });
   });
 });

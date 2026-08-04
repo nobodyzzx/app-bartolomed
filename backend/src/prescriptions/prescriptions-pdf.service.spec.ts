@@ -1,24 +1,9 @@
-import * as fs from 'fs';
-import puppeteer from 'puppeteer-core';
+import { Test, TestingModule } from '@nestjs/testing';
 import { PrescriptionsPdfService } from './prescriptions-pdf.service';
+import { TypstCompilerService } from '../pdf/typst-compiler.service';
 import { Prescription, PrescriptionStatus } from './entities/prescription.entity';
 
-jest.mock('puppeteer-core', () => ({ __esModule: true, default: { launch: jest.fn() } }));
-
-const mockLaunch = puppeteer.launch as jest.Mock;
-let mockReadFileSync: jest.SpyInstance;
-
-const makePage = (pdfBuf: Buffer = Buffer.from('%PDF-1.4')) => ({
-  setContent: jest.fn().mockResolvedValue(undefined),
-  pdf: jest.fn().mockResolvedValue(pdfBuf),
-});
-
-const makeBrowser = (overrides: Record<string, any> = {}) => ({
-  newPage: jest.fn().mockResolvedValue(makePage()),
-  close: jest.fn().mockResolvedValue(undefined),
-  process: jest.fn().mockReturnValue({ kill: jest.fn() }),
-  ...overrides,
-});
+const mockTypstCompile = jest.fn();
 
 const makePrescription = (overrides: Partial<Prescription> = {}): Prescription =>
   ({
@@ -30,7 +15,7 @@ const makePrescription = (overrides: Partial<Prescription> = {}): Prescription =
     notes: null,
     patient: {
       firstName: 'María & José',
-      lastName: 'Pérez <Test>',
+      lastName: 'Pérez "Test"',
       documentNumber: '1234567',
     },
     doctor: {
@@ -55,154 +40,74 @@ const makePrescription = (overrides: Partial<Prescription> = {}): Prescription =
   }) as unknown as Prescription;
 
 describe('PrescriptionsPdfService', () => {
-  beforeEach(() => {
+  let service: PrescriptionsPdfService;
+
+  beforeEach(async () => {
     jest.clearAllMocks();
-    mockReadFileSync = jest.spyOn(fs, 'readFileSync').mockReturnValue(Buffer.from('fake-logo-bytes'));
-    delete process.env.PUPPETEER_EXECUTABLE_PATH;
+    mockTypstCompile.mockResolvedValue(Buffer.from('%PDF-TYPST'));
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        PrescriptionsPdfService,
+        { provide: TypstCompilerService, useValue: { compile: mockTypstCompile } },
+      ],
+    }).compile();
+
+    service = module.get(PrescriptionsPdfService);
   });
 
-  afterEach(() => {
-    mockReadFileSync.mockRestore();
-  });
-
-  describe('constructor / logo', () => {
-    it('carga el logo en base64 si el archivo existe', () => {
-      mockReadFileSync.mockReturnValue(Buffer.from('logo-bytes'));
-      const service = new PrescriptionsPdfService();
-      expect((service as any).logo64).toBe(Buffer.from('logo-bytes').toString('base64'));
-    });
-
-    it('deja logo64 vacío si falla la lectura del archivo', () => {
-      mockReadFileSync.mockImplementation(() => {
-        throw new Error('ENOENT');
-      });
-      const service = new PrescriptionsPdfService();
-      expect((service as any).logo64).toBe('');
-    });
-  });
-
-  describe('generate() / render()', () => {
-    let service: PrescriptionsPdfService;
-
-    beforeEach(() => {
-      service = new PrescriptionsPdfService();
-    });
-
-    it('lanza Puppeteer con el executablePath por defecto y devuelve el PDF como Buffer', async () => {
-      const page = makePage(Buffer.from('%PDF-CONTENT'));
-      const browser = makeBrowser({ newPage: jest.fn().mockResolvedValue(page) });
-      mockLaunch.mockResolvedValue(browser);
-
+  describe('generate()', () => {
+    it('compila vía TypstCompilerService y devuelve el PDF como Buffer', async () => {
       const result = await service.generate(makePrescription());
 
-      expect(mockLaunch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          executablePath: '/usr/bin/chromium',
-          headless: true,
-          args: expect.arrayContaining(['--no-sandbox', '--disable-setuid-sandbox']),
-        }),
-      );
-      expect(page.setContent).toHaveBeenCalledWith(expect.stringContaining('RX-0001'), { waitUntil: 'networkidle0' });
-      expect(page.pdf).toHaveBeenCalledWith(expect.objectContaining({ format: 'letter', printBackground: true }));
-      expect(browser.close).toHaveBeenCalled();
-      expect(result).toEqual(Buffer.from('%PDF-CONTENT'));
-      expect(Buffer.isBuffer(result)).toBe(true);
-    });
-
-    it('usa PUPPETEER_EXECUTABLE_PATH si está seteado', async () => {
-      process.env.PUPPETEER_EXECUTABLE_PATH = '/custom/chrome';
-      const browser = makeBrowser();
-      mockLaunch.mockResolvedValue(browser);
-
-      await service.generate(makePrescription());
-
-      expect(mockLaunch).toHaveBeenCalledWith(expect.objectContaining({ executablePath: '/custom/chrome' }));
-    });
-
-    it('si browser.close() falla, intenta SIGKILL sobre el proceso y no rompe el flujo', async () => {
-      const kill = jest.fn();
-      const browser = makeBrowser({
-        close: jest.fn().mockRejectedValue(new Error('close failed')),
-        process: jest.fn().mockReturnValue({ kill }),
-      });
-      mockLaunch.mockResolvedValue(browser);
-
-      const result = await service.generate(makePrescription());
-
-      expect(browser.close).toHaveBeenCalled();
-      expect(kill).toHaveBeenCalledWith('SIGKILL');
-      expect(Buffer.isBuffer(result)).toBe(true);
-    });
-
-    it('si close() y process().kill() fallan, no propaga el error de limpieza', async () => {
-      const browser = makeBrowser({
-        close: jest.fn().mockRejectedValue(new Error('close failed')),
-        process: jest.fn().mockImplementation(() => {
-          throw new Error('no process');
-        }),
-      });
-      mockLaunch.mockResolvedValue(browser);
-
-      await expect(service.generate(makePrescription())).resolves.toBeInstanceOf(Buffer);
-    });
-
-    it('si page.pdf() falla, propaga el error pero igual cierra el browser (finally)', async () => {
-      const page = makePage();
-      (page.pdf as jest.Mock).mockRejectedValue(new Error('render failed'));
-      const browser = makeBrowser({ newPage: jest.fn().mockResolvedValue(page) });
-      mockLaunch.mockResolvedValue(browser);
-
-      await expect(service.generate(makePrescription())).rejects.toThrow('render failed');
-      expect(browser.close).toHaveBeenCalled();
+      expect(mockTypstCompile).toHaveBeenCalledWith(expect.stringContaining('RX-0001'));
+      expect(result).toEqual(Buffer.from('%PDF-TYPST'));
     });
   });
 
-  describe('buildHtml (contenido de la receta)', () => {
-    let service: PrescriptionsPdfService;
-    const buildHtml = (p: Prescription) => (service as any).buildHtml(p);
+  describe('prescriptionTypst (contenido de la receta)', () => {
+    const typ = (p: Prescription) => (service as any).prescriptionTypst(p);
 
-    beforeEach(() => {
-      service = new PrescriptionsPdfService();
-    });
-
-    it('escapa caracteres especiales del nombre del paciente', () => {
-      const html = buildHtml(makePrescription());
-      expect(html).toContain('María &amp; José');
-      expect(html).toContain('Pérez &lt;Test&gt;');
+    it('escapa comillas y barras en el nombre del paciente (nunca inyecta markup crudo)', () => {
+      const result = typ(makePrescription());
+      expect(result).toContain('Pérez \\"Test\\"');
+      expect(result).toContain('María & José');
     });
 
     it('incluye el nombre y especialidad del médico prescriptor', () => {
-      const html = buildHtml(makePrescription());
-      expect(html).toContain('Dr. Carla Gómez');
-      expect(html).toContain('Pediatría');
+      const result = typ(makePrescription());
+      expect(result).toContain('Dr. Carla Gómez');
+      expect(result).toContain('Pediatría');
     });
 
     it('usa "—" para el médico si no viene en la receta', () => {
-      const html = buildHtml(makePrescription({ doctor: undefined }));
-      expect(html).toContain('<div class="val">—</div>');
+      const result = typ(makePrescription({ doctor: undefined }));
+      expect(result).toContain(`field("Médico Prescriptor", "—")`);
     });
 
-    it('traduce el estado a español con statusLabel', () => {
-      const html = buildHtml(makePrescription({ status: PrescriptionStatus.DISPENSED }));
-      expect(html).toContain('Dispensada');
+    it('traduce el estado a español y colorea el badge', () => {
+      const result = typ(makePrescription({ status: PrescriptionStatus.DISPENSED }));
+      expect(result).toContain('"Dispensada"');
+      expect(result).toContain('color: "blue"');
     });
 
     it('deja el código de estado desconocido tal cual si no está en el mapa', () => {
-      const html = buildHtml(makePrescription({ status: 'weird-status' as PrescriptionStatus }));
-      expect(html).toContain('weird-status');
+      const result = typ(makePrescription({ status: 'weird-status' as PrescriptionStatus }));
+      expect(result).toContain('"weird-status"');
+      expect(result).toContain('color: "gray"'); // default
     });
 
     it('renderiza cada medicamento con su forma farmacéutica traducida e instrucciones', () => {
-      const html = buildHtml(makePrescription());
-      expect(html).toContain('Amoxicilina');
-      expect(html).toContain('Tableta');
-      expect(html).toContain('Vía oral');
-      expect(html).toContain('Tomar con alimentos');
-      expect(html).toContain('7 días');
+      const result = typ(makePrescription());
+      expect(result).toContain('Amoxicilina');
+      expect(result).toContain('Tableta');
+      expect(result).toContain('Vía oral');
+      expect(result).toContain('Tomar con alimentos');
+      expect(result).toContain('7 días');
     });
 
     it('omite el bloque de instrucciones si el item no las trae', () => {
-      const html = buildHtml(
+      const result = typ(
         makePrescription({
           items: [
             {
@@ -216,35 +121,47 @@ describe('PrescriptionsPdfService', () => {
           ],
         }),
       );
-      expect(html).not.toContain('<div class="med-instr">');
-      expect(html).toContain('—'); // duration ausente
+      expect(result).not.toContain('style: "italic"');
     });
 
     it('muestra el mensaje "Sin medicamentos" si items está vacío', () => {
-      const html = buildHtml(makePrescription({ items: [] }));
-      expect(html).toContain('Sin medicamentos');
+      const result = typ(makePrescription({ items: [] }));
+      expect(result).toContain('Sin medicamentos');
     });
 
     it('incluye la sección de notas solo si vienen en la receta', () => {
-      const withNotes = buildHtml(makePrescription({ notes: 'Reposo relativo' }));
+      const withNotes = typ(makePrescription({ notes: 'Reposo relativo' }));
       expect(withNotes).toContain('Reposo relativo');
+      expect(withNotes).toContain('Notas e Indicaciones');
 
-      const withoutNotes = buildHtml(makePrescription({ notes: undefined }));
+      const withoutNotes = typ(makePrescription({ notes: undefined }));
       expect(withoutNotes).not.toContain('Notas e Indicaciones');
     });
 
-    it('renderiza el logo en base64 si está disponible', () => {
-      const html = buildHtml(makePrescription());
-      expect(html).toContain('data:image/png;base64,');
-    });
-
-    it('no renderiza tag de imagen si no hay logo', () => {
-      mockReadFileSync.mockImplementation(() => {
-        throw new Error('ENOENT');
-      });
-      const noLogoService = new PrescriptionsPdfService();
-      const html = (noLogoService as any).buildHtml(makePrescription());
-      expect(html).not.toContain('<img');
+    /**
+     * Regresión: todo el texto dinámico (nombre de medicamento, instrucciones,
+     * notas) debe pasar como argumento de función Typst (typstString), nunca
+     * embebido directo en un bloque `[...]` de markup — un nombre con `*` o
+     * `#` ahí sería reinterpretado como sintaxis Typst en vez de texto literal.
+     */
+    it('escapa caracteres especiales de Typst en nombre de medicamento e instrucciones', () => {
+      const result = typ(
+        makePrescription({
+          items: [
+            {
+              medicationName: 'Jarabe "Fuerte" #1',
+              strength: '10mg',
+              dosageForm: 'jarabe',
+              quantity: '1',
+              dosage: '5ml',
+              frequency: 'cada 12 horas',
+              instructions: 'Agitar *bien* antes de usar',
+            } as any,
+          ],
+        }),
+      );
+      expect(result).toContain('Jarabe \\"Fuerte\\" #1');
+      expect(result).toContain('Agitar *bien* antes de usar');
     });
   });
 });

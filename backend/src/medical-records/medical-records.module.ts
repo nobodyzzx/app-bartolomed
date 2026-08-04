@@ -9,12 +9,14 @@ import { MedicalRecordsPdfService } from './services/medical-records-pdf.service
 import { MedicalRecordsController } from './medical-records.controller';
 import { MedicalRecord, ConsentForm } from './entities';
 import { AuthModule } from '../auth/auth.module';
+import { PdfModule } from '../pdf/pdf.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([MedicalRecord, ConsentForm]),
     AuthModule,
     AuditModule,
+    PdfModule,
     MulterModule.register({
       storage: diskStorage({
         destination: './uploads/consent-forms',

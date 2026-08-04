@@ -5,13 +5,14 @@ import { Clinic } from '../clinics/entities/clinic.entity';
 import { Patient } from '../patients/entities/patient.entity';
 import { User } from '../users/entities/user.entity';
 import { PatientsModule } from '../patients/patients.module';
+import { PdfModule } from '../pdf/pdf.module';
 import { Prescription, PrescriptionItem } from './entities/prescription.entity';
 import { PrescriptionsController } from './prescriptions.controller';
 import { PrescriptionsService } from './prescriptions.service';
 import { PrescriptionsPdfService } from './prescriptions-pdf.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Prescription, PrescriptionItem, Patient, User, Clinic]), PatientsModule, AuditModule],
+  imports: [TypeOrmModule.forFeature([Prescription, PrescriptionItem, Patient, User, Clinic]), PatientsModule, AuditModule, PdfModule],
   providers: [PrescriptionsService, PrescriptionsPdfService],
   controllers: [PrescriptionsController],
 })

@@ -1150,7 +1150,7 @@ export class AdvancedReportsService {
 
     return this.dataSource.query(`
       SELECT
-        COALESCE(med.category, 'Sin categoría')                              AS category,
+        COALESCE(med.category::text, 'Sin categoría')                        AS category,
         COUNT(DISTINCT med.id)::int                                          AS "productCount",
         SUM(ms."availableQuantity")::int                                     AS "totalUnits",
         ROUND(SUM(ms."availableQuantity" * ms."unitCost")::numeric, 2)       AS "totalCostValue",

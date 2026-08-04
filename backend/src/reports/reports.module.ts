@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
+import { PdfModule } from '../pdf/pdf.module';
 import { Appointment } from '../appointments/entities/appointment.entity';
 import { MedicalRecord } from '../medical-records/entities/medical-record.entity';
 import { Patient } from '../patients/entities/patient.entity';
@@ -31,6 +32,7 @@ import { ReportsService } from './services/reports.service';
       StockTransfer,
     ]),
     AuthModule,
+    PdfModule,
   ],
   controllers: [ReportsController],
   providers: [ReportsService, AdvancedReportsService, ExportService, ReportsPdfService],
