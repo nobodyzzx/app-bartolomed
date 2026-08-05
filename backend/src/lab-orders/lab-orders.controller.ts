@@ -6,7 +6,7 @@ import { RequirePermissions } from '../auth/permissions/permissions.decorator';
 import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
 import { Patient } from '../patients/entities/patient.entity';
-import { ActivePatientPipe } from '../patients/pipes/active-patient.pipe';
+import { OptionalActivePatientPipe } from '../patients/pipes/optional-active-patient.pipe';
 import { User } from '../users/entities/user.entity';
 import { CreateLabOrderDto, UpdateLabOrderDto, EnterLabResultDto } from './dto';
 import { LabOrderStatus } from './entities/lab-order.entity';
@@ -23,7 +23,7 @@ export class LabOrdersController {
   @RequirePermissions(Permission.LabOrder)
   create(
     @Body() createDto: CreateLabOrderDto,
-    @Body('patientId', ActivePatientPipe) patient: Patient,
+    @Body('patientId', OptionalActivePatientPipe) patient: Patient | undefined,
     @GetUser() user: User,
     @Req() req: Request,
   ) {

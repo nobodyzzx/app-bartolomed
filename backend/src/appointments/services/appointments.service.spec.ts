@@ -6,6 +6,7 @@ import { Appointment, AppointmentStatus } from '../entities/appointment.entity';
 import { Patient } from 'src/patients/entities/patient.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Clinic } from 'src/clinics/entities/clinic.entity';
+import { ChargesService } from '../../charges/charges.service';
 import { createMockRepository, createMockQueryBuilder, MockRepository } from 'src/test/helpers/mock-repository.factory';
 import { makeClinic, makeUser, makePatient, makeAppointment } from 'src/test/helpers/test-data.factory';
 
@@ -27,6 +28,11 @@ describe('AppointmentsService', () => {
         { provide: getRepositoryToken(Patient), useValue: createMockRepository() },
         { provide: getRepositoryToken(User), useValue: createMockRepository() },
         { provide: getRepositoryToken(Clinic), useValue: createMockRepository() },
+        // Fase 2 de facturación: completar una cita genera su cargo.
+        {
+          provide: ChargesService,
+          useValue: { createForCompletedAppointment: jest.fn().mockResolvedValue(null) },
+        },
       ],
     }).compile();
 

@@ -54,9 +54,19 @@ export class LabOrder {
   @Column('boolean', { default: false })
   isUrgent: boolean;
 
-  @ManyToOne(() => Patient)
+  /**
+   * Nullable desde la Fase 2 de facturación: el laboratorio recibe pacientes
+   * **derivados de otro consultorio**, que vienen solo por el examen y no
+   * tienen ficha en esta clínica. Antes era obligatorio y no había forma de
+   * registrarlos. Cuando no hay ficha se usa `patientName`.
+   */
+  @ManyToOne(() => Patient, { nullable: true })
   @JoinColumn({ name: 'patient_id' })
-  patient: Patient;
+  patient: Patient | null;
+
+  /** Nombre libre del paciente derivado, cuando no hay ficha. */
+  @Column('text', { name: 'patient_name', nullable: true })
+  patientName: string | null;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'doctor_id' })
@@ -116,6 +126,27 @@ export class LabOrderItem {
 
   @Column('text', { nullable: true })
   specimenType: string;
+
+  /**
+   * Precio del examen tomado del catálogo al crear la orden. Se copia en vez
+   * de referenciarse, igual que en `Charge`: si sube la tarifa, lo ya cobrado
+   * no cambia.
+   */
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    name: 'unit_price',
+    nullable: true,
+    transformer: {
+      to: (value: number | null) => value,
+      from: (value: string | null) => (value === null ? null : parseFloat(value)),
+    },
+  })
+  unitPrice: number | null;
+
+  /** Servicio del tarifario del que salió el precio, si se encontró. */
+  @Column('uuid', { name: 'service_price_id', nullable: true })
+  servicePriceId: string | null;
 
   @Column('text', { nullable: true })
   resultValue: string;

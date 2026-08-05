@@ -1753,6 +1753,384 @@
         ]
       }
     },
+    "/api/charges": {
+      "post": {
+        "operationId": "ChargesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChargeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Charge"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Charges"
+        ]
+      },
+      "get": {
+        "operationId": "ChargesController_findAll",
+        "parameters": [
+          {
+            "name": "patientId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "origin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Charges"
+        ]
+      }
+    },
+    "/api/charges/patient/{patientId}/pending": {
+      "get": {
+        "operationId": "ChargesController_findPendingByPatient",
+        "parameters": [
+          {
+            "name": "patientId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Cuenta abierta del paciente: lo que debe hoy.",
+        "tags": [
+          "Charges"
+        ]
+      }
+    },
+    "/api/charges/{id}": {
+      "get": {
+        "operationId": "ChargesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Charge"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Charges"
+        ]
+      }
+    },
+    "/api/charges/{id}/cancel": {
+      "patch": {
+        "operationId": "ChargesController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelChargeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Charge"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Charges"
+        ]
+      }
+    },
+    "/api/service-prices": {
+      "post": {
+        "operationId": "ServicePricesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateServicePriceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicePrice"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ServicePrices"
+        ]
+      },
+      "get": {
+        "operationId": "ServicePricesController_findAll",
+        "parameters": [
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "consultation",
+                "laboratory",
+                "procedure",
+                "other"
+              ]
+            }
+          },
+          {
+            "name": "appointmentType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "consultation",
+                "follow_up",
+                "emergency",
+                "surgery",
+                "laboratory",
+                "imaging",
+                "vaccination",
+                "therapy",
+                "other"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Busca en código y nombre.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "isActive",
+            "required": false,
+            "in": "query",
+            "description": "Llega como string por querystring. Sin este `Transform`, `'false'` sería\ntruthy y el filtro devolvería siempre los activos.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ServicePrices"
+        ]
+      }
+    },
+    "/api/service-prices/{id}": {
+      "get": {
+        "operationId": "ServicePricesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicePrice"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ServicePrices"
+        ]
+      },
+      "patch": {
+        "operationId": "ServicePricesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateServicePriceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicePrice"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ServicePrices"
+        ]
+      },
+      "delete": {
+        "operationId": "ServicePricesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ServicePrices"
+        ]
+      }
+    },
     "/api/medical-records": {
       "post": {
         "operationId": "MedicalRecordsController_create",
@@ -5485,206 +5863,6 @@
         ]
       }
     },
-    "/api/service-prices": {
-      "post": {
-        "operationId": "ServicePricesController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateServicePriceDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServicePrice"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "ServicePrices"
-        ]
-      },
-      "get": {
-        "operationId": "ServicePricesController_findAll",
-        "parameters": [
-          {
-            "name": "category",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "consultation",
-                "laboratory",
-                "procedure",
-                "other"
-              ]
-            }
-          },
-          {
-            "name": "appointmentType",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "consultation",
-                "follow_up",
-                "emergency",
-                "surgery",
-                "laboratory",
-                "imaging",
-                "vaccination",
-                "therapy",
-                "other"
-              ]
-            }
-          },
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "description": "Busca en código y nombre.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "isActive",
-            "required": false,
-            "in": "query",
-            "description": "Llega como string por querystring. Sin este `Transform`, `'false'` sería\ntruthy y el filtro devolvería siempre los activos.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "ServicePrices"
-        ]
-      }
-    },
-    "/api/service-prices/{id}": {
-      "get": {
-        "operationId": "ServicePricesController_findOne",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServicePrice"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "ServicePrices"
-        ]
-      },
-      "patch": {
-        "operationId": "ServicePricesController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateServicePriceDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServicePrice"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "ServicePrices"
-        ]
-      },
-      "delete": {
-        "operationId": "ServicePricesController_remove",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "ServicePrices"
-        ]
-      }
-    },
     "/api/billing/invoices": {
       "post": {
         "operationId": "BillingController_createInvoice",
@@ -8660,6 +8838,411 @@
           }
         }
       },
+      "CreateChargeDto": {
+        "type": "object",
+        "properties": {
+          "patientId": {
+            "type": "string",
+            "description": "Opcional: laboratorio y farmacia atienden gente sin ficha.",
+            "format": "uuid"
+          },
+          "patientName": {
+            "type": "string"
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "consultation",
+              "laboratory",
+              "pharmacy",
+              "other"
+            ]
+          },
+          "servicePriceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number",
+            "minimum": 1
+          },
+          "listPrice": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "description",
+          "listPrice"
+        ]
+      },
+      "Charge": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "clinic": {
+            "$ref": "#/components/schemas/Clinic"
+          },
+          "clinicId": {
+            "type": "string"
+          },
+          "patient": {
+            "nullable": true,
+            "description": "Nullable a propósito: laboratorio y farmacia atienden gente sin consulta y\na veces sin ficha — pacientes derivados de otro consultorio que vienen\nsolo por el examen, o compra de mostrador. Mismo criterio que\n`PharmacySale`, que ya lo resolvía así.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Patient"
+              }
+            ]
+          },
+          "patientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "patientName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nombre libre cuando no hay ficha de paciente."
+          },
+          "origin": {
+            "enum": [
+              "consultation",
+              "laboratory",
+              "pharmacy",
+              "other"
+            ],
+            "type": "string"
+          },
+          "originId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Id del registro que originó el cargo (cita, ítem de orden de laboratorio,\nventa de farmacia). Sin FK: apunta a tablas distintas según el `origin`."
+          },
+          "servicePriceId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Servicio del catálogo del que salió el precio, si vino de ahí."
+          },
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "listPrice": {
+            "type": "number",
+            "description": "Precio de catálogo al momento de generar el cargo. Se **copia**, no se\nreferencia: si mañana sube la tarifa, lo ya cobrado no cambia."
+          },
+          "unitPrice": {
+            "type": "number",
+            "description": "Precio efectivamente cobrado (list_price − descuento unitario)."
+          },
+          "discountAmount": {
+            "type": "number"
+          },
+          "discountReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "discountAuthorizedBy": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              }
+            ]
+          },
+          "discountAuthorizedById": {
+            "type": "string",
+            "nullable": true
+          },
+          "discountDisplay": {
+            "enum": [
+              "itemized",
+              "absorbed"
+            ],
+            "type": "string"
+          },
+          "total": {
+            "type": "number"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "invoiced",
+              "cancelled"
+            ],
+            "type": "string"
+          },
+          "invoiceId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Se llena al emitir la factura que incluye este cargo (Fase 3)."
+          },
+          "createdBy": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              }
+            ]
+          },
+          "createdById": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "clinic",
+          "clinicId",
+          "patient",
+          "patientId",
+          "patientName",
+          "origin",
+          "originId",
+          "servicePriceId",
+          "description",
+          "quantity",
+          "listPrice",
+          "unitPrice",
+          "discountAmount",
+          "discountReason",
+          "discountAuthorizedBy",
+          "discountAuthorizedById",
+          "discountDisplay",
+          "total",
+          "status",
+          "invoiceId",
+          "createdBy",
+          "createdById",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CancelChargeDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Obligatorio: anular un cargo sin motivo deja la caja sin explicación.",
+            "minLength": 3,
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "CreateServicePriceDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Único por clínica — el servicio devuelve 409 si ya existe.",
+            "minLength": 2,
+            "maxLength": 30
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "consultation",
+              "laboratory",
+              "procedure",
+              "other"
+            ]
+          },
+          "appointmentType": {
+            "type": "string",
+            "description": "Solo tiene sentido en `CONSULTATION`: es lo que permite resolver la tarifa\nde una cita automáticamente. Se valida condicionalmente para que no se\ncuele en un examen de laboratorio, donde no significaría nada.",
+            "enum": [
+              "consultation",
+              "follow_up",
+              "emergency",
+              "surgery",
+              "laboratory",
+              "imaging",
+              "vaccination",
+              "therapy",
+              "other"
+            ]
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "category",
+          "price"
+        ]
+      },
+      "ServicePrice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "description": "Código corto para búsqueda rápida en el punto de cobro. Único por clínica."
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "category": {
+            "enum": [
+              "consultation",
+              "laboratory",
+              "procedure",
+              "other"
+            ],
+            "type": "string"
+          },
+          "appointmentType": {
+            "nullable": true,
+            "description": "Solo para `CONSULTATION`: liga la tarifa al tipo de cita, de modo que al\ncompletar una cita se pueda resolver su precio sin intervención manual.",
+            "enum": [
+              "consultation",
+              "follow_up",
+              "emergency",
+              "surgery",
+              "laboratory",
+              "imaging",
+              "vaccination",
+              "therapy",
+              "other"
+            ],
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "description": "`transformer` explícito: sin él TypeORM devuelve los `decimal` como\nstring y cualquier aritmética directa produce NaN o concatenación — el\nmismo defecto que ya apareció en la tasa de cobro del reporte financiero."
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "clinic": {
+            "$ref": "#/components/schemas/Clinic"
+          },
+          "clinicId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "description",
+          "category",
+          "appointmentType",
+          "price",
+          "isActive",
+          "clinic",
+          "clinicId",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateServicePriceDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Único por clínica — el servicio devuelve 409 si ya existe.",
+            "minLength": 2,
+            "maxLength": 30
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "consultation",
+              "laboratory",
+              "procedure",
+              "other"
+            ],
+            "type": "string"
+          },
+          "appointmentType": {
+            "description": "Solo tiene sentido en `CONSULTATION`: es lo que permite resolver la tarifa\nde una cita automáticamente. Se valida condicionalmente para que no se\ncuele en un examen de laboratorio, donde no significaría nada.",
+            "enum": [
+              "consultation",
+              "follow_up",
+              "emergency",
+              "surgery",
+              "laboratory",
+              "imaging",
+              "vaccination",
+              "therapy",
+              "other"
+            ],
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
       "CreateMedicalRecordDto": {
         "type": "object",
         "properties": {
@@ -11245,6 +11828,11 @@
           },
           "specimenType": {
             "type": "string"
+          },
+          "servicePriceId": {
+            "type": "string",
+            "description": "Servicio del tarifario que fija el precio del examen. Si no se envía, se\nintenta resolver por nombre contra el catálogo; si tampoco hay match, el\nexamen queda sin precio y no genera cargo.",
+            "format": "uuid"
           }
         },
         "required": [
@@ -11276,7 +11864,13 @@
           },
           "patientId": {
             "type": "string",
+            "description": "Opcional desde la Fase 2 de facturación: el laboratorio atiende pacientes\nderivados de otro consultorio, sin ficha en esta clínica. Debe venir\n`patientId` **o** `patientName`.",
             "format": "uuid"
+          },
+          "patientName": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 120
           },
           "doctorId": {
             "type": "string",
@@ -11295,7 +11889,6 @@
           "orderNumber",
           "orderDate",
           "items",
-          "patientId",
           "doctorId",
           "clinicId"
         ]
@@ -11330,7 +11923,19 @@
             "type": "boolean"
           },
           "patient": {
-            "$ref": "#/components/schemas/Patient"
+            "nullable": true,
+            "description": "Nullable desde la Fase 2 de facturación: el laboratorio recibe pacientes\n**derivados de otro consultorio**, que vienen solo por el examen y no\ntienen ficha en esta clínica. Antes era obligatorio y no había forma de\nregistrarlos. Cuando no hay ficha se usa `patientName`.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Patient"
+              }
+            ]
+          },
+          "patientName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nombre libre del paciente derivado, cuando no hay ficha."
           },
           "doctor": {
             "$ref": "#/components/schemas/User"
@@ -11371,6 +11976,7 @@
           "clinicalNotes",
           "isUrgent",
           "patient",
+          "patientName",
           "doctor",
           "clinic",
           "medicalRecord",
@@ -11415,195 +12021,6 @@
           },
           "resultFileUrl": {
             "type": "string"
-          }
-        }
-      },
-      "CreateServicePriceDto": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string",
-            "description": "Único por clínica — el servicio devuelve 409 si ya existe.",
-            "minLength": 2,
-            "maxLength": 30
-          },
-          "name": {
-            "type": "string",
-            "minLength": 2,
-            "maxLength": 120
-          },
-          "description": {
-            "type": "string"
-          },
-          "category": {
-            "type": "string",
-            "enum": [
-              "consultation",
-              "laboratory",
-              "procedure",
-              "other"
-            ]
-          },
-          "appointmentType": {
-            "type": "string",
-            "description": "Solo tiene sentido en `CONSULTATION`: es lo que permite resolver la tarifa\nde una cita automáticamente. Se valida condicionalmente para que no se\ncuele en un examen de laboratorio, donde no significaría nada.",
-            "enum": [
-              "consultation",
-              "follow_up",
-              "emergency",
-              "surgery",
-              "laboratory",
-              "imaging",
-              "vaccination",
-              "therapy",
-              "other"
-            ]
-          },
-          "price": {
-            "type": "number",
-            "minimum": 0
-          },
-          "isActive": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "code",
-          "name",
-          "category",
-          "price"
-        ]
-      },
-      "ServicePrice": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "code": {
-            "type": "string",
-            "description": "Código corto para búsqueda rápida en el punto de cobro. Único por clínica."
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "category": {
-            "enum": [
-              "consultation",
-              "laboratory",
-              "procedure",
-              "other"
-            ],
-            "type": "string"
-          },
-          "appointmentType": {
-            "nullable": true,
-            "description": "Solo para `CONSULTATION`: liga la tarifa al tipo de cita, de modo que al\ncompletar una cita se pueda resolver su precio sin intervención manual.",
-            "enum": [
-              "consultation",
-              "follow_up",
-              "emergency",
-              "surgery",
-              "laboratory",
-              "imaging",
-              "vaccination",
-              "therapy",
-              "other"
-            ],
-            "type": "string"
-          },
-          "price": {
-            "type": "number",
-            "description": "`transformer` explícito: sin él TypeORM devuelve los `decimal` como\nstring y cualquier aritmética directa produce NaN o concatenación — el\nmismo defecto que ya apareció en la tasa de cobro del reporte financiero."
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "clinic": {
-            "$ref": "#/components/schemas/Clinic"
-          },
-          "clinicId": {
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "deletedAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "code",
-          "name",
-          "description",
-          "category",
-          "appointmentType",
-          "price",
-          "isActive",
-          "clinic",
-          "clinicId",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "UpdateServicePriceDto": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string",
-            "description": "Único por clínica — el servicio devuelve 409 si ya existe.",
-            "minLength": 2,
-            "maxLength": 30
-          },
-          "name": {
-            "type": "string",
-            "minLength": 2,
-            "maxLength": 120
-          },
-          "description": {
-            "type": "string"
-          },
-          "category": {
-            "enum": [
-              "consultation",
-              "laboratory",
-              "procedure",
-              "other"
-            ],
-            "type": "string"
-          },
-          "appointmentType": {
-            "description": "Solo tiene sentido en `CONSULTATION`: es lo que permite resolver la tarifa\nde una cita automáticamente. Se valida condicionalmente para que no se\ncuele en un examen de laboratorio, donde no significaría nada.",
-            "enum": [
-              "consultation",
-              "follow_up",
-              "emergency",
-              "surgery",
-              "laboratory",
-              "imaging",
-              "vaccination",
-              "therapy",
-              "other"
-            ],
-            "type": "string"
-          },
-          "price": {
-            "type": "number",
-            "minimum": 0
-          },
-          "isActive": {
-            "type": "boolean"
           }
         }
       },

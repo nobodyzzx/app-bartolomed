@@ -3,6 +3,8 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { LabOrdersService } from './lab-orders.service';
 import { LabOrder, LabOrderItem, LabOrderStatus, LabTestCategory } from './entities/lab-order.entity';
+import { ChargesService } from '../charges/charges.service';
+import { ServicePricesService } from '../service-prices/service-prices.service';
 import { MedicalRecord } from 'src/medical-records/entities/medical-record.entity';
 import { Patient } from 'src/patients/entities/patient.entity';
 import { User } from 'src/users/entities/user.entity';
@@ -42,6 +44,13 @@ describe('LabOrdersService', () => {
         { provide: getRepositoryToken(User), useValue: createMockRepository() },
         { provide: getRepositoryToken(Clinic), useValue: createMockRepository() },
         { provide: getRepositoryToken(MedicalRecord), useValue: createMockRepository() },
+        // Fase 2 de facturación: crear una orden resuelve precios del
+        // tarifario y genera cargos.
+        {
+          provide: ServicePricesService,
+          useValue: { findOne: jest.fn(), findLaboratoryPriceByName: jest.fn().mockResolvedValue(null) },
+        },
+        { provide: ChargesService, useValue: { create: jest.fn() } },
       ],
     }).compile();
 

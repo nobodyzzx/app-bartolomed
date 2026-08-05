@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ChargesModule } from '../charges/charges.module';
+import { ServicePricesModule } from '../service-prices/service-prices.module';
 import { AuditModule } from '../audit/audit.module';
 import { Clinic } from '../clinics/entities/clinic.entity';
 import { MedicalRecord } from '../medical-records/entities/medical-record.entity';
@@ -15,6 +17,8 @@ import { LabOrdersService } from './lab-orders.service';
     TypeOrmModule.forFeature([LabOrder, LabOrderItem, Patient, User, Clinic, MedicalRecord]),
     PatientsModule,
     AuditModule,
+    ServicePricesModule,
+    ChargesModule,
   ],
   providers: [LabOrdersService],
   controllers: [LabOrdersController],

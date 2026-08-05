@@ -9,19 +9,20 @@ import { Prescription } from '../prescriptions/entities/prescription.entity';
 import { Invoice } from '../billing/entities/billing.entity';
 import { LabOrder } from '../lab-orders/entities/lab-order.entity';
 import { ActivePatientPipe } from './pipes/active-patient.pipe';
+import { OptionalActivePatientPipe } from './pipes/optional-active-patient.pipe';
 import { Patient } from './entities/patient.entity';
 import { PatientsController } from './patients.controller';
 import { PatientsService } from './services/patients.service';
 
 @Module({
   controllers: [PatientsController],
-  providers: [PatientsService, ActivePatientPipe],
+  providers: [PatientsService, ActivePatientPipe, OptionalActivePatientPipe],
   imports: [
     TypeOrmModule.forFeature([Patient, Clinic, Appointment, Prescription, Invoice, LabOrder]),
     AuthModule,
     ClinicsModule,
     AuditModule,
   ],
-  exports: [TypeOrmModule, PatientsService, ActivePatientPipe],
+  exports: [TypeOrmModule, PatientsService, ActivePatientPipe, OptionalActivePatientPipe],
 })
 export class PatientsModule {}

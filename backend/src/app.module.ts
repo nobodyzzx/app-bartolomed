@@ -40,6 +40,8 @@ import { Supplier } from './pharmacy/entities/supplier.entity';
 import { PharmacyModule } from './pharmacy/pharmacy.module';
 import { LabOrder, LabOrderItem } from './lab-orders/entities/lab-order.entity';
 import { LabOrdersModule } from './lab-orders/lab-orders.module';
+import { Charge } from './charges/entities/charge.entity';
+import { ChargesModule } from './charges/charges.module';
 import { ServicePrice } from './service-prices/entities/service-price.entity';
 import { ServicePricesModule } from './service-prices/service-prices.module';
 import { Prescription, PrescriptionItem } from './prescriptions/entities/prescription.entity';
@@ -89,6 +91,7 @@ import { UsersModule } from './users/users.module';
         LabOrder,
         LabOrderItem,
         ServicePrice,
+        Charge,
         Invoice,
         InvoiceItem,
         Payment,
@@ -138,6 +141,7 @@ import { UsersModule } from './users/users.module';
     PrescriptionsModule,
     LabOrdersModule,
     ServicePricesModule,
+    ChargesModule,
     BillingModule,
     SeedModule,
     AssetsModule,

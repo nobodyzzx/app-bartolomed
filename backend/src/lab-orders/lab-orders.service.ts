@@ -1,17 +1,22 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ChargesService } from '../charges/charges.service';
+import { ChargeOrigin } from '../charges/entities/charge.entity';
 import { Clinic } from '../clinics/entities/clinic.entity';
 import { MedicalRecord } from '../medical-records/entities/medical-record.entity';
 import { Patient } from '../patients/entities/patient.entity';
 import { User } from '../users/entities/user.entity';
-import { CreateLabOrderDto } from './dto/create-lab-order.dto';
+import { ServicePricesService } from '../service-prices/service-prices.service';
+import { CreateLabOrderDto, CreateLabOrderItemDto } from './dto/create-lab-order.dto';
 import { UpdateLabOrderDto } from './dto/update-lab-order.dto';
 import { EnterLabResultDto } from './dto/enter-lab-result.dto';
 import { LabOrder, LabOrderItem, LabOrderStatus } from './entities/lab-order.entity';
 
 @Injectable()
 export class LabOrdersService {
+  private readonly logger = new Logger(LabOrdersService.name);
+
   constructor(
     @InjectRepository(LabOrder)
     private readonly labOrderRepository: Repository<LabOrder>,
@@ -25,6 +30,8 @@ export class LabOrdersService {
     private readonly clinicRepository: Repository<Clinic>,
     @InjectRepository(MedicalRecord)
     private readonly medicalRecordRepository: Repository<MedicalRecord>,
+    private readonly servicePricesService: ServicePricesService,
+    private readonly chargesService: ChargesService,
   ) {}
 
   async create(createDto: CreateLabOrderDto, createdBy?: User, scopedClinicId?: string, validatedPatient?: Patient): Promise<LabOrder> {
@@ -33,10 +40,18 @@ export class LabOrdersService {
       throw new BadRequestException('clinicId mismatch with current clinic context');
     }
 
-    const patient = validatedPatient ?? await this.patientRepository.findOne({
-      where: { id: createDto.patientId, clinic: { id: scopedClinicId }, isActive: true },
-    });
-    if (!patient) throw new NotFoundException('Patient not found');
+    // El paciente puede no existir como ficha: el laboratorio recibe derivados
+    // de otro consultorio. El DTO ya garantiza que venga `patientId` o
+    // `patientName`.
+    let patient: Patient | null = null;
+    if (createDto.patientId) {
+      patient =
+        validatedPatient ??
+        (await this.patientRepository.findOne({
+          where: { id: createDto.patientId, clinic: { id: scopedClinicId }, isActive: true },
+        }));
+      if (!patient) throw new NotFoundException('Patient not found');
+    }
 
     const doctor = await this.userRepository.findOne({ where: { id: createDto.doctorId } });
     if (!doctor) throw new NotFoundException('Doctor not found');
@@ -51,11 +66,20 @@ export class LabOrdersService {
     // laboratorio a un expediente médico de otro paciente o de otra clínica.
     let medicalRecord: MedicalRecord | undefined;
     if (createDto.medicalRecordId) {
+      if (!patient) {
+        throw new BadRequestException(
+          'No se puede vincular un expediente a una orden sin paciente registrado',
+        );
+      }
       medicalRecord = (await this.medicalRecordRepository.findOne({
         where: { id: createDto.medicalRecordId, patient: { id: patient.id }, clinic: { id: scopedClinicId } },
       })) ?? undefined;
       if (!medicalRecord) throw new NotFoundException('Medical record not found');
     }
+
+    // Precio de cada examen resuelto contra el tarifario antes de guardar, para
+    // que el ítem conserve con qué precio se pidió.
+    const pricedItems = await this.resolveItemPrices(createDto.items ?? [], scopedClinicId);
 
     const entity = this.labOrderRepository.create({
       orderNumber: createDto.orderNumber,
@@ -63,16 +87,89 @@ export class LabOrdersService {
       clinicalNotes: createDto.clinicalNotes,
       isUrgent: !!createDto.isUrgent,
       patient,
+      patientName: patient ? null : (createDto.patientName ?? null),
       doctor,
       clinic,
-      items: (createDto.items || []) as any,
+      items: pricedItems as any,
       status: LabOrderStatus.REQUESTED,
       ...(medicalRecord ? { medicalRecord } : {}),
     });
 
     if (createdBy) entity.createdBy = createdBy;
 
-    return await this.labOrderRepository.save(entity);
+    const saved = await this.labOrderRepository.save(entity);
+
+    await this.createChargesForOrder(saved, scopedClinicId, createdBy?.id);
+
+    return saved;
+  }
+
+  /**
+   * Adjunta a cada examen su precio del tarifario. Si no se encuentra, el
+   * examen queda sin precio y no genera cargo — pedir un análisis no puede
+   * fallar porque el catálogo esté incompleto.
+   */
+  private async resolveItemPrices(
+    items: CreateLabOrderItemDto[],
+    clinicId: string,
+  ): Promise<
+    Array<
+      Omit<CreateLabOrderItemDto, 'servicePriceId'> & {
+        unitPrice: number | null;
+        servicePriceId: string | null;
+      }
+    >
+  > {
+    return Promise.all(
+      items.map(async item => {
+        const tariff = item.servicePriceId
+          ? await this.servicePricesService
+              .findOne(item.servicePriceId, clinicId)
+              .catch(() => null)
+          : await this.servicePricesService.findLaboratoryPriceByName(item.testName, clinicId);
+
+        return {
+          ...item,
+          unitPrice: tariff ? tariff.price : null,
+          servicePriceId: tariff ? tariff.id : null,
+        };
+      }),
+    );
+  }
+
+  /** Un cargo por examen con precio conocido. */
+  private async createChargesForOrder(
+    order: LabOrder,
+    clinicId: string,
+    createdById?: string,
+  ): Promise<void> {
+    for (const item of order.items ?? []) {
+      if (item.unitPrice === null || item.unitPrice === undefined) {
+        this.logger.warn(
+          `Examen "${item.testName}" de la orden ${order.orderNumber} sin precio en el tarifario: no genera cargo`,
+        );
+        continue;
+      }
+
+      try {
+        await this.chargesService.create({
+          clinicId,
+          patientId: order.patient?.id ?? null,
+          patientName: order.patientName,
+          origin: ChargeOrigin.LABORATORY,
+          originId: item.id,
+          servicePriceId: item.servicePriceId,
+          description: item.testName,
+          listPrice: item.unitPrice,
+          createdById,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `No se pudo generar el cargo del examen "${item.testName}" (orden ${order.orderNumber}): ${message}`,
+        );
+      }
+    }
   }
 
   async findAll(page = 1, pageSize = 20, filter: any = {}, clinicId?: string) {

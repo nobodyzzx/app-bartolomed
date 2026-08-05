@@ -6,6 +6,7 @@ import { CreateAppointmentDto, UpdateAppointmentDto } from '../dto/index';
 import { User } from '../../users/entities/user.entity';
 import { Patient } from '../../patients/entities/patient.entity';
 import { Clinic } from '../../clinics/entities/clinic.entity';
+import { ChargesService } from '../../charges/charges.service';
 
 const BLOCKING_APPOINTMENT_STATUSES = [
   AppointmentStatus.SCHEDULED,
@@ -24,6 +25,7 @@ export class AppointmentsService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Clinic)
     private readonly clinicRepository: Repository<Clinic>,
+    private readonly chargesService: ChargesService,
   ) {}
 
   async create(createAppointmentDto: CreateAppointmentDto, user: User): Promise<Appointment> {
@@ -236,7 +238,20 @@ export class AppointmentsService {
     appointment.completedAt = new Date();
     appointment.updatedBy = user;
 
-    return await this.appointmentRepository.save(appointment);
+    const saved = await this.appointmentRepository.save(appointment);
+
+    // Cerrar la consulta es lo que la vuelve cobrable. `createForCompleted...`
+    // no lanza a propósito: cerrar una cita es una acción clínica y no puede
+    // quedar bloqueada porque falte configurar el tarifario.
+    await this.chargesService.createForCompletedAppointment({
+      appointmentId: saved.id,
+      appointmentType: saved.type,
+      clinicId: appointment.clinic?.id ?? clinicId!,
+      patientId: appointment.patient?.id,
+      createdById: user?.id,
+    });
+
+    return saved;
   }
 
   async getDoctorAvailability(

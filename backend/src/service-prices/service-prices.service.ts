@@ -91,6 +91,28 @@ export class ServicePricesService {
     });
   }
 
+  /**
+   * Resuelve el precio de un examen por su nombre. Es el puente entre el
+   * `testName` de texto libre de las órdenes y el catálogo — mientras el
+   * frontend no obligue a elegir del tarifario, la coincidencia por nombre es
+   * lo único disponible. Insensible a mayúsculas y espacios de sobra.
+   */
+  async findLaboratoryPriceByName(
+    testName: string,
+    clinicId?: string,
+  ): Promise<ServicePrice | null> {
+    const scopedClinicId = this.requireClinicId(clinicId);
+    if (!testName?.trim()) return null;
+
+    return this.repository
+      .createQueryBuilder('sp')
+      .where('sp.clinic_id = :clinicId', { clinicId: scopedClinicId })
+      .andWhere('sp.category = :category', { category: ServiceCategory.LABORATORY })
+      .andWhere('sp.is_active = true')
+      .andWhere('LOWER(TRIM(sp.name)) = LOWER(TRIM(:testName))', { testName })
+      .getOne();
+  }
+
   async update(id: string, dto: UpdateServicePriceDto, user: User, clinicId?: string): Promise<ServicePrice> {
     const scopedClinicId = this.requireClinicId(clinicId);
     const existing = await this.findOne(id, scopedClinicId);

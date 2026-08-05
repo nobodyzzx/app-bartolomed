@@ -708,6 +708,103 @@ export interface paths {
         patch: operations["AppointmentsController_cancel"];
         trace?: never;
     };
+    "/api/charges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ChargesController_findAll"];
+        put?: never;
+        post: operations["ChargesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/charges/patient/{patientId}/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cuenta abierta del paciente: lo que debe hoy. */
+        get: operations["ChargesController_findPendingByPatient"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/charges/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ChargesController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/charges/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["ChargesController_cancel"];
+        trace?: never;
+    };
+    "/api/service-prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ServicePricesController_findAll"];
+        put?: never;
+        post: operations["ServicePricesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/service-prices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ServicePricesController_findOne"];
+        put?: never;
+        post?: never;
+        delete: operations["ServicePricesController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["ServicePricesController_update"];
+        trace?: never;
+    };
     "/api/medical-records": {
         parameters: {
             query?: never;
@@ -2756,38 +2853,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/service-prices": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ServicePricesController_findAll"];
-        put?: never;
-        post: operations["ServicePricesController_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/service-prices/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ServicePricesController_findOne"];
-        put?: never;
-        post?: never;
-        delete: operations["ServicePricesController_remove"];
-        options?: never;
-        head?: never;
-        patch: operations["ServicePricesController_update"];
-        trace?: never;
-    };
     "/api/billing/invoices": {
         parameters: {
             query?: never;
@@ -3820,6 +3885,141 @@ export interface components {
             finalCost?: number;
             paymentMethod?: string;
         };
+        CreateChargeDto: {
+            /**
+             * Format: uuid
+             * @description Opcional: laboratorio y farmacia atienden gente sin ficha.
+             */
+            patientId?: string;
+            patientName?: string;
+            /** @enum {string} */
+            origin?: "consultation" | "laboratory" | "pharmacy" | "other";
+            /** Format: uuid */
+            servicePriceId?: string;
+            description: string;
+            quantity?: number;
+            listPrice: number;
+        };
+        Charge: {
+            id: string;
+            clinic: components["schemas"]["Clinic"];
+            clinicId: string;
+            /**
+             * @description Nullable a propósito: laboratorio y farmacia atienden gente sin consulta y
+             *     a veces sin ficha — pacientes derivados de otro consultorio que vienen
+             *     solo por el examen, o compra de mostrador. Mismo criterio que
+             *     `PharmacySale`, que ya lo resolvía así.
+             */
+            patient: components["schemas"]["Patient"] | null;
+            patientId: string | null;
+            /** @description Nombre libre cuando no hay ficha de paciente. */
+            patientName: string | null;
+            /** @enum {string} */
+            origin: "consultation" | "laboratory" | "pharmacy" | "other";
+            /**
+             * @description Id del registro que originó el cargo (cita, ítem de orden de laboratorio,
+             *     venta de farmacia). Sin FK: apunta a tablas distintas según el `origin`.
+             */
+            originId: string | null;
+            /** @description Servicio del catálogo del que salió el precio, si vino de ahí. */
+            servicePriceId: string | null;
+            description: string;
+            quantity: number;
+            /**
+             * @description Precio de catálogo al momento de generar el cargo. Se **copia**, no se
+             *     referencia: si mañana sube la tarifa, lo ya cobrado no cambia.
+             */
+            listPrice: number;
+            /** @description Precio efectivamente cobrado (list_price − descuento unitario). */
+            unitPrice: number;
+            discountAmount: number;
+            discountReason: string | null;
+            discountAuthorizedBy: components["schemas"]["User"] | null;
+            discountAuthorizedById: string | null;
+            /** @enum {string} */
+            discountDisplay: "itemized" | "absorbed";
+            total: number;
+            /** @enum {string} */
+            status: "pending" | "invoiced" | "cancelled";
+            /** @description Se llena al emitir la factura que incluye este cargo (Fase 3). */
+            invoiceId: string | null;
+            createdBy: components["schemas"]["User"] | null;
+            createdById: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            deletedAt?: string;
+        };
+        CancelChargeDto: {
+            /** @description Obligatorio: anular un cargo sin motivo deja la caja sin explicación. */
+            reason: string;
+        };
+        CreateServicePriceDto: {
+            /** @description Único por clínica — el servicio devuelve 409 si ya existe. */
+            code: string;
+            name: string;
+            description?: string;
+            /** @enum {string} */
+            category: "consultation" | "laboratory" | "procedure" | "other";
+            /**
+             * @description Solo tiene sentido en `CONSULTATION`: es lo que permite resolver la tarifa
+             *     de una cita automáticamente. Se valida condicionalmente para que no se
+             *     cuele en un examen de laboratorio, donde no significaría nada.
+             * @enum {string}
+             */
+            appointmentType?: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other";
+            price: number;
+            isActive?: boolean;
+        };
+        ServicePrice: {
+            id: string;
+            /** @description Código corto para búsqueda rápida en el punto de cobro. Único por clínica. */
+            code: string;
+            name: string;
+            description: string | null;
+            /** @enum {string} */
+            category: "consultation" | "laboratory" | "procedure" | "other";
+            /**
+             * @description Solo para `CONSULTATION`: liga la tarifa al tipo de cita, de modo que al
+             *     completar una cita se pueda resolver su precio sin intervención manual.
+             * @enum {string|null}
+             */
+            appointmentType: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other" | null;
+            /**
+             * @description `transformer` explícito: sin él TypeORM devuelve los `decimal` como
+             *     string y cualquier aritmética directa produce NaN o concatenación — el
+             *     mismo defecto que ya apareció en la tasa de cobro del reporte financiero.
+             */
+            price: number;
+            isActive: boolean;
+            clinic: components["schemas"]["Clinic"];
+            clinicId: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            deletedAt?: string;
+        };
+        UpdateServicePriceDto: {
+            /** @description Único por clínica — el servicio devuelve 409 si ya existe. */
+            code?: string;
+            name?: string;
+            description?: string;
+            /** @enum {string} */
+            category?: "consultation" | "laboratory" | "procedure" | "other";
+            /**
+             * @description Solo tiene sentido en `CONSULTATION`: es lo que permite resolver la tarifa
+             *     de una cita automáticamente. Se valida condicionalmente para que no se
+             *     cuele en un examen de laboratorio, donde no significaría nada.
+             * @enum {string}
+             */
+            appointmentType?: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other";
+            price?: number;
+            isActive?: boolean;
+        };
         CreateMedicalRecordDto: {
             /** @enum {string} */
             type: "consultation" | "emergency" | "surgery" | "follow_up" | "laboratory" | "imaging" | "other";
@@ -4529,6 +4729,13 @@ export interface components {
             /** @enum {string} */
             category: "blood" | "imaging" | "other";
             specimenType?: string;
+            /**
+             * Format: uuid
+             * @description Servicio del tarifario que fija el precio del examen. Si no se envía, se
+             *     intenta resolver por nombre contra el catálogo; si tampoco hay match, el
+             *     examen queda sin precio y no genera cargo.
+             */
+            servicePriceId?: string;
         };
         CreateLabOrderDto: {
             orderNumber: string;
@@ -4536,8 +4743,14 @@ export interface components {
             clinicalNotes?: string;
             isUrgent?: boolean;
             items: components["schemas"]["CreateLabOrderItemDto"][];
-            /** Format: uuid */
-            patientId: string;
+            /**
+             * Format: uuid
+             * @description Opcional desde la Fase 2 de facturación: el laboratorio atiende pacientes
+             *     derivados de otro consultorio, sin ficha en esta clínica. Debe venir
+             *     `patientId` **o** `patientName`.
+             */
+            patientId?: string;
+            patientName?: string;
             /** Format: uuid */
             doctorId: string;
             /** Format: uuid */
@@ -4554,7 +4767,15 @@ export interface components {
             orderDate: string;
             clinicalNotes: string;
             isUrgent: boolean;
-            patient: components["schemas"]["Patient"];
+            /**
+             * @description Nullable desde la Fase 2 de facturación: el laboratorio recibe pacientes
+             *     **derivados de otro consultorio**, que vienen solo por el examen y no
+             *     tienen ficha en esta clínica. Antes era obligatorio y no había forma de
+             *     registrarlos. Cuando no hay ficha se usa `patientName`.
+             */
+            patient: components["schemas"]["Patient"] | null;
+            /** @description Nombre libre del paciente derivado, cuando no hay ficha. */
+            patientName: string | null;
             doctor: components["schemas"]["User"];
             clinic: components["schemas"]["Clinic"];
             medicalRecord: components["schemas"]["MedicalRecord"];
@@ -4578,70 +4799,6 @@ export interface components {
             isAbnormal?: boolean;
             resultNotes?: string;
             resultFileUrl?: string;
-        };
-        CreateServicePriceDto: {
-            /** @description Único por clínica — el servicio devuelve 409 si ya existe. */
-            code: string;
-            name: string;
-            description?: string;
-            /** @enum {string} */
-            category: "consultation" | "laboratory" | "procedure" | "other";
-            /**
-             * @description Solo tiene sentido en `CONSULTATION`: es lo que permite resolver la tarifa
-             *     de una cita automáticamente. Se valida condicionalmente para que no se
-             *     cuele en un examen de laboratorio, donde no significaría nada.
-             * @enum {string}
-             */
-            appointmentType?: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other";
-            price: number;
-            isActive?: boolean;
-        };
-        ServicePrice: {
-            id: string;
-            /** @description Código corto para búsqueda rápida en el punto de cobro. Único por clínica. */
-            code: string;
-            name: string;
-            description: string | null;
-            /** @enum {string} */
-            category: "consultation" | "laboratory" | "procedure" | "other";
-            /**
-             * @description Solo para `CONSULTATION`: liga la tarifa al tipo de cita, de modo que al
-             *     completar una cita se pueda resolver su precio sin intervención manual.
-             * @enum {string|null}
-             */
-            appointmentType: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other" | null;
-            /**
-             * @description `transformer` explícito: sin él TypeORM devuelve los `decimal` como
-             *     string y cualquier aritmética directa produce NaN o concatenación — el
-             *     mismo defecto que ya apareció en la tasa de cobro del reporte financiero.
-             */
-            price: number;
-            isActive: boolean;
-            clinic: components["schemas"]["Clinic"];
-            clinicId: string;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-            /** Format: date-time */
-            deletedAt?: string;
-        };
-        UpdateServicePriceDto: {
-            /** @description Único por clínica — el servicio devuelve 409 si ya existe. */
-            code?: string;
-            name?: string;
-            description?: string;
-            /** @enum {string} */
-            category?: "consultation" | "laboratory" | "procedure" | "other";
-            /**
-             * @description Solo tiene sentido en `CONSULTATION`: es lo que permite resolver la tarifa
-             *     de una cita automáticamente. Se valida condicionalmente para que no se
-             *     cuele en un examen de laboratorio, donde no significaría nada.
-             * @enum {string}
-             */
-            appointmentType?: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other";
-            price?: number;
-            isActive?: boolean;
         };
         CreateInvoiceItemDto: {
             description: string;
@@ -6331,6 +6488,234 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Appointment"];
+                };
+            };
+        };
+    };
+    ChargesController_findAll: {
+        parameters: {
+            query?: {
+                patientId?: string;
+                status?: string;
+                origin?: string;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ChargesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateChargeDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Charge"];
+                };
+            };
+        };
+    };
+    ChargesController_findPendingByPatient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ChargesController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Charge"];
+                };
+            };
+        };
+    };
+    ChargesController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelChargeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Charge"];
+                };
+            };
+        };
+    };
+    ServicePricesController_findAll: {
+        parameters: {
+            query?: {
+                category?: "consultation" | "laboratory" | "procedure" | "other";
+                appointmentType?: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other";
+                /** @description Busca en código y nombre. */
+                search?: string;
+                /**
+                 * @description Llega como string por querystring. Sin este `Transform`, `'false'` sería
+                 *     truthy y el filtro devolvería siempre los activos.
+                 */
+                isActive?: string;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ServicePricesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateServicePriceDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServicePrice"];
+                };
+            };
+        };
+    };
+    ServicePricesController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServicePrice"];
+                };
+            };
+        };
+    };
+    ServicePricesController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ServicePricesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateServicePriceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServicePrice"];
                 };
             };
         };
@@ -9346,123 +9731,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LabOrder"];
-                };
-            };
-        };
-    };
-    ServicePricesController_findAll: {
-        parameters: {
-            query?: {
-                category?: "consultation" | "laboratory" | "procedure" | "other";
-                appointmentType?: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other";
-                /** @description Busca en código y nombre. */
-                search?: string;
-                /**
-                 * @description Llega como string por querystring. Sin este `Transform`, `'false'` sería
-                 *     truthy y el filtro devolvería siempre los activos.
-                 */
-                isActive?: string;
-                page?: number;
-                pageSize?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ServicePricesController_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateServicePriceDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ServicePrice"];
-                };
-            };
-        };
-    };
-    ServicePricesController_findOne: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ServicePrice"];
-                };
-            };
-        };
-    };
-    ServicePricesController_remove: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ServicePricesController_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateServicePriceDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ServicePrice"];
                 };
             };
         };

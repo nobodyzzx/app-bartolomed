@@ -67,6 +67,10 @@ export type ApiCreateInvoiceItemDto = components['schemas']['CreateInvoiceItemDt
 export type ApiPayment = components['schemas']['Payment']
 export type ApiCreatePaymentDto = components['schemas']['CreatePaymentDto']
 
+// ─── Cargos (cuenta del paciente) ─────────────────────────────────────────────
+export type ApiCharge = components['schemas']['Charge']
+export type ApiCreateChargeDto = components['schemas']['CreateChargeDto']
+
 // ─── Catálogo de precios ──────────────────────────────────────────────────────
 export type ApiServicePrice = components['schemas']['ServicePrice']
 export type ApiCreateServicePriceDto = components['schemas']['CreateServicePriceDto']
