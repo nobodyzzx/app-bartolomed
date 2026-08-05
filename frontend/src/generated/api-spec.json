@@ -3831,7 +3831,7 @@
             "description": ""
           }
         },
-        "summary": "R-P2: Demografía de pacientes — Puppeteer PDF.\nGET /api/reports/export/pdf/demographics",
+        "summary": "R-P2: Demografía de pacientes — PDF con gráficos.\nGET /api/reports/export/pdf/demographics",
         "tags": [
           "Reports"
         ]
@@ -3846,7 +3846,7 @@
             "description": ""
           }
         },
-        "summary": "R-P3: Rendimiento de médicos — Puppeteer PDF.\nGET /api/reports/export/pdf/doctor-performance",
+        "summary": "R-P3: Rendimiento de médicos — PDF con gráficos.\nGET /api/reports/export/pdf/doctor-performance",
         "tags": [
           "Reports"
         ]
@@ -3861,7 +3861,7 @@
             "description": ""
           }
         },
-        "summary": "R-P4: Estadísticas de citas — Puppeteer PDF.\nGET /api/reports/export/pdf/appointments",
+        "summary": "R-P4: Estadísticas de citas — PDF con gráficos.\nGET /api/reports/export/pdf/appointments",
         "tags": [
           "Reports"
         ]
@@ -3876,7 +3876,7 @@
             "description": ""
           }
         },
-        "summary": "R-P5: Registros médicos — Puppeteer PDF.\nGET /api/reports/export/pdf/medical-records",
+        "summary": "R-P5: Registros médicos — PDF con gráficos.\nGET /api/reports/export/pdf/medical-records",
         "tags": [
           "Reports"
         ]
@@ -3891,7 +3891,7 @@
             "description": ""
           }
         },
-        "summary": "R-P6: Dashboard general — Puppeteer PDF.\nGET /api/reports/export/pdf/dashboard",
+        "summary": "R-P6: Dashboard general — PDF con gráficos.\nGET /api/reports/export/pdf/dashboard",
         "tags": [
           "Reports"
         ]

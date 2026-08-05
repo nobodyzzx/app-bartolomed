@@ -2151,7 +2151,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * R-P2: Demografía de pacientes — Puppeteer PDF.
+         * R-P2: Demografía de pacientes — PDF con gráficos.
          *     GET /api/reports/export/pdf/demographics
          */
         get: operations["ReportsController_exportDemographicsPdf"];
@@ -2171,7 +2171,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * R-P3: Rendimiento de médicos — Puppeteer PDF.
+         * R-P3: Rendimiento de médicos — PDF con gráficos.
          *     GET /api/reports/export/pdf/doctor-performance
          */
         get: operations["ReportsController_exportDoctorPerformancePdf"];
@@ -2191,7 +2191,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * R-P4: Estadísticas de citas — Puppeteer PDF.
+         * R-P4: Estadísticas de citas — PDF con gráficos.
          *     GET /api/reports/export/pdf/appointments
          */
         get: operations["ReportsController_exportAppointmentsPdf"];
@@ -2211,7 +2211,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * R-P5: Registros médicos — Puppeteer PDF.
+         * R-P5: Registros médicos — PDF con gráficos.
          *     GET /api/reports/export/pdf/medical-records
          */
         get: operations["ReportsController_exportMedicalRecordsPdf"];
@@ -2231,7 +2231,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * R-P6: Dashboard general — Puppeteer PDF.
+         * R-P6: Dashboard general — PDF con gráficos.
          *     GET /api/reports/export/pdf/dashboard
          */
         get: operations["ReportsController_exportDashboardPdf"];

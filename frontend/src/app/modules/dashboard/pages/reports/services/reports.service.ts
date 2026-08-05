@@ -12,15 +12,18 @@ export class ReportsService {
 
   constructor(private http: HttpClient) {}
 
-  // ─── Descarga de PDFs Puppeteer (endpoints reales) ────────────────────────
+  // ─── Descarga de reportes en PDF ──────────────────────────────────────────
 
   /**
-   * Descarga un PDF generado por Puppeteer y lo abre en el navegador.
+   * Descarga un reporte en PDF y dispara la descarga en el navegador.
+   *
+   * (El nombre anterior era `downloadReportPdf`: los PDF se generan con
+   * Typst desde la migración, Puppeteer ya no está en el proyecto.)
    * @param endpoint Sufijo después de /api/reports/export/pdf/
    * @param filename Nombre del archivo descargado
    * @param params Parámetros de query opcionales (startDate, endDate, etc.)
    */
-  downloadPuppeteerPdf(
+  downloadReportPdf(
     endpoint: string,
     filename: string,
     params: Record<string, string> = {},
@@ -41,48 +44,48 @@ export class ReportsService {
 
   downloadFinancialPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('financial', `reporte-financiero-${date}.pdf`, params)
+    return this.downloadReportPdf('financial', `reporte-financiero-${date}.pdf`, params)
   }
 
   /** Control de ingresos: origen, descuentos y cuentas por cobrar. */
   downloadRevenueControlPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('revenue-control', `control-ingresos-${date}.pdf`, params)
+    return this.downloadReportPdf('revenue-control', `control-ingresos-${date}.pdf`, params)
   }
 
   downloadDemographicsPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('demographics', `demografia-pacientes-${date}.pdf`, params)
+    return this.downloadReportPdf('demographics', `demografia-pacientes-${date}.pdf`, params)
   }
 
   downloadDoctorPerformancePdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('doctor-performance', `rendimiento-medicos-${date}.pdf`, params)
+    return this.downloadReportPdf('doctor-performance', `rendimiento-medicos-${date}.pdf`, params)
   }
 
   downloadAppointmentsPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('appointments', `estadisticas-citas-${date}.pdf`, params)
+    return this.downloadReportPdf('appointments', `estadisticas-citas-${date}.pdf`, params)
   }
 
   downloadMedicalRecordsPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('medical-records', `registros-medicos-${date}.pdf`, params)
+    return this.downloadReportPdf('medical-records', `registros-medicos-${date}.pdf`, params)
   }
 
   downloadDashboardPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('dashboard', `dashboard-${date}.pdf`, params)
+    return this.downloadReportPdf('dashboard', `dashboard-${date}.pdf`, params)
   }
 
   downloadCriticalStockPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('critical-stock', `stock-critico-${date}.pdf`, params)
+    return this.downloadReportPdf('critical-stock', `stock-critico-${date}.pdf`, params)
   }
 
   downloadTransferEfficiencyPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('transfer-efficiency', `eficiencia-traslados-${date}.pdf`, params)
+    return this.downloadReportPdf('transfer-efficiency', `eficiencia-traslados-${date}.pdf`, params)
   }
 
   private downloadBlob(path: string, filename: string, params: Record<string, string> = {}): Observable<Blob> {
@@ -114,27 +117,27 @@ export class ReportsService {
 
   downloadRotationPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('pharmacy-rotation', `rotacion-stock-${date}.pdf`, params)
+    return this.downloadReportPdf('pharmacy-rotation', `rotacion-stock-${date}.pdf`, params)
   }
 
   downloadMarginsPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('pharmacy-margins', `margenes-producto-${date}.pdf`, params)
+    return this.downloadReportPdf('pharmacy-margins', `margenes-producto-${date}.pdf`, params)
   }
 
   downloadDailySalesPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('pharmacy-daily-sales', `ventas-diarias-${date}.pdf`, params)
+    return this.downloadReportPdf('pharmacy-daily-sales', `ventas-diarias-${date}.pdf`, params)
   }
 
   downloadExpiryBucketsPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('pharmacy-expiry-buckets', `vencimientos-${date}.pdf`, params)
+    return this.downloadReportPdf('pharmacy-expiry-buckets', `vencimientos-${date}.pdf`, params)
   }
 
   downloadProfitabilityPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('pharmacy-profitability', `rentabilidad-mensual-${date}.pdf`, params)
+    return this.downloadReportPdf('pharmacy-profitability', `rentabilidad-mensual-${date}.pdf`, params)
   }
 
   // ─── Farmacia: nuevos Excels ──────────────────────────────────────────────
@@ -163,7 +166,7 @@ export class ReportsService {
 
   downloadSalesByPharmacistPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('pharmacy-by-pharmacist', `ventas-farmaceutico-${date}.pdf`, params)
+    return this.downloadReportPdf('pharmacy-by-pharmacist', `ventas-farmaceutico-${date}.pdf`, params)
   }
 
   downloadSalesByPharmacistExcel(params: Record<string, string> = {}): Observable<Blob> {
@@ -175,7 +178,7 @@ export class ReportsService {
 
   downloadPharmacistDayMedicationPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('pharmacy-pharmacist-day', `encargado-dia-medicamento-${date}.pdf`, params)
+    return this.downloadReportPdf('pharmacy-pharmacist-day', `encargado-dia-medicamento-${date}.pdf`, params)
   }
 
   downloadPharmacistDayMedicationExcel(params: Record<string, string> = {}): Observable<Blob> {
@@ -187,7 +190,7 @@ export class ReportsService {
 
   downloadValorizedInventoryPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('pharmacy-inventory-valorized', `inventario-valorizado-${date}.pdf`, params)
+    return this.downloadReportPdf('pharmacy-inventory-valorized', `inventario-valorizado-${date}.pdf`, params)
   }
 
   downloadValorizedInventoryExcel(params: Record<string, string> = {}): Observable<Blob> {
@@ -199,14 +202,14 @@ export class ReportsService {
 
   downloadInventoryByCategoryPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('pharmacy-inventory-by-category', `inventario-categorias-${date}.pdf`, params)
+    return this.downloadReportPdf('pharmacy-inventory-by-category', `inventario-categorias-${date}.pdf`, params)
   }
 
   // ─── B3: Sin movimiento ───────────────────────────────────────────────────
 
   downloadNoMovementPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('pharmacy-no-movement', `sin-movimiento-${date}.pdf`, params)
+    return this.downloadReportPdf('pharmacy-no-movement', `sin-movimiento-${date}.pdf`, params)
   }
 
   downloadNoMovementExcel(params: Record<string, string> = {}): Observable<Blob> {
@@ -218,7 +221,7 @@ export class ReportsService {
 
   downloadMedicationDetailPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('pharmacy-medication-detail', `ventas-medicamento-${date}.pdf`, params)
+    return this.downloadReportPdf('pharmacy-medication-detail', `ventas-medicamento-${date}.pdf`, params)
   }
 
   downloadMedicationDetailExcel(params: Record<string, string> = {}): Observable<Blob> {
@@ -230,7 +233,7 @@ export class ReportsService {
 
   downloadPrescriptionVsFreePdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('pharmacy-prescription-vs-free', `receta-vs-libre-${date}.pdf`, params)
+    return this.downloadReportPdf('pharmacy-prescription-vs-free', `receta-vs-libre-${date}.pdf`, params)
   }
 
   // ─── Datos reales para el hub de reportes ─────────────────────────────────
@@ -285,7 +288,7 @@ export class ReportsService {
 
   // ─── C3: Ventas por método de pago ───────────────────────────────────────
 
-  // Bug real: pasaban '/reports/export/pdf/...' a downloadPuppeteerPdf(), que ya
+  // Bug real: pasaban '/reports/export/pdf/...' a downloadReportPdf(), que ya
   // antepone this.apiUrl (…/reports) — el prefijo quedaba duplicado
   // (…/reports/export/pdf//reports/export/pdf/...) y los 2 botones PDF de esta
   // sección daban 404 siempre. downloadSalesByPaymentExcel/
@@ -294,7 +297,7 @@ export class ReportsService {
   // (que también antepone apiUrl), duplicándolo una segunda vez.
   downloadSalesByPaymentPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('pharmacy-sales-by-payment', `ventas-metodo-pago-${date}.pdf`, params)
+    return this.downloadReportPdf('pharmacy-sales-by-payment', `ventas-metodo-pago-${date}.pdf`, params)
   }
 
   downloadSalesByPaymentExcel(params: Record<string, string> = {}): Observable<Blob> {
@@ -306,7 +309,7 @@ export class ReportsService {
 
   downloadMonthlySalesComparisonPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
-    return this.downloadPuppeteerPdf('pharmacy-monthly-comparison', `comparativo-mensual-${date}.pdf`, params)
+    return this.downloadReportPdf('pharmacy-monthly-comparison', `comparativo-mensual-${date}.pdf`, params)
   }
 
   downloadMonthlySalesComparisonExcel(params: Record<string, string> = {}): Observable<Blob> {

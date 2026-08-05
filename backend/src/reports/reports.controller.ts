@@ -770,10 +770,10 @@ export class ReportsController {
     );
   }
 
-  // ─── Exportación Puppeteer HTML→PDF (R-P1..R-P5) ─────────────────────────
+  // ─── Exportación a PDF con gráficos (R-P1..R-P6) ─────────────────────────
 
   /**
-   * R-P1: Reporte financiero completo con gráficos — Puppeteer PDF.
+   * R-P1: Reporte financiero completo con gráficos — PDF con gráficos.
    * GET /api/reports/export/pdf/financial
    */
   @Get('export/pdf/financial')
@@ -793,7 +793,7 @@ export class ReportsController {
   }
 
   /**
-   * R-P2: Demografía de pacientes — Puppeteer PDF.
+   * R-P2: Demografía de pacientes — PDF con gráficos.
    * GET /api/reports/export/pdf/demographics
    */
   @Get('export/pdf/demographics')
@@ -808,7 +808,7 @@ export class ReportsController {
   }
 
   /**
-   * R-P3: Rendimiento de médicos — Puppeteer PDF.
+   * R-P3: Rendimiento de médicos — PDF con gráficos.
    * GET /api/reports/export/pdf/doctor-performance
    */
   @Get('export/pdf/doctor-performance')
@@ -823,7 +823,7 @@ export class ReportsController {
   }
 
   /**
-   * R-P4: Estadísticas de citas — Puppeteer PDF.
+   * R-P4: Estadísticas de citas — PDF con gráficos.
    * GET /api/reports/export/pdf/appointments
    */
   @Get('export/pdf/appointments')
@@ -838,7 +838,7 @@ export class ReportsController {
   }
 
   /**
-   * R-P5: Registros médicos — Puppeteer PDF.
+   * R-P5: Registros médicos — PDF con gráficos.
    * GET /api/reports/export/pdf/medical-records
    */
   @Get('export/pdf/medical-records')
@@ -853,7 +853,7 @@ export class ReportsController {
   }
 
   /**
-   * R-P6: Dashboard general — Puppeteer PDF.
+   * R-P6: Dashboard general — PDF con gráficos.
    * GET /api/reports/export/pdf/dashboard
    */
   @Get('export/pdf/dashboard')
