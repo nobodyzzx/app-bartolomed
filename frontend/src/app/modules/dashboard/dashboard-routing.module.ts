@@ -117,6 +117,15 @@ const routes: Routes = [
         },
       },
       {
+        path: 'checkout',
+        loadChildren: () => import('./pages/checkout/checkout.module').then(m => m.CheckoutModule),
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+          requiredPermissions: [Permission.BillingManage],
+        },
+      },
+      {
         // Recepción entra para consultar precios al cobrar; solo ADMIN puede
         // modificarlos (el backend exige SettingsManage para escribir).
         path: 'service-prices',

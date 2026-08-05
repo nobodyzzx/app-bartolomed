@@ -82,6 +82,13 @@ export const MENU_ITEMS: MenuItem[] = [
         requiredPermissions: [Permission.BillingRead],
       },
       {
+        label: 'Punto de Cobro',
+        icon: 'point_of_sale',
+        route: '/dashboard/checkout',
+        allowedRoles: [UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+        requiredPermissions: [Permission.BillingManage],
+      },
+      {
         label: 'Tarifario',
         icon: 'price_change',
         route: '/dashboard/service-prices',

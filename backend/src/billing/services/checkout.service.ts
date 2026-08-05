@@ -9,6 +9,13 @@ import { Invoice, InvoiceItem, InvoiceStatus, Payment, PaymentStatus } from '../
 import { prorateDiscount, round2 } from '../utils/discount-proration.util';
 import { ReceiptPdfService } from './receipt-pdf.service';
 
+/** Último instante del día actual, para que una factura no nazca vencida. */
+function endOfToday(): Date {
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  return end;
+}
+
 /**
  * Punto de cobro: convierte un conjunto de cargos pendientes en una factura.
  *
@@ -55,7 +62,10 @@ export class CheckoutService {
         invoiceNumber: await this.nextInvoiceNumber(manager.getRepository(Invoice)),
         status: this.resolveStatus(totalAmount, paidAmount),
         issueDate: new Date(),
-        dueDate: new Date(),
+        // Fin del día de emisión, no "ahora": el hook de la entidad marca la
+        // factura OVERDUE en cuanto `now > dueDate`, así que un cobro parcial
+        // nacía vencido milisegundos después de emitirse.
+        dueDate: endOfToday(),
         subtotal,
         discountAmount: discountTotal,
         totalAmount,
