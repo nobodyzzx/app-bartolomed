@@ -205,6 +205,141 @@ export class ReportsPdfService {
     return this.typstCompiler.compile(this.transferEfficiencyTypst(data));
   }
 
+  /**
+   * Control de ingresos: de dónde vino el dinero, cuánto se descontó y qué
+   * falta cobrar. A diferencia del resumen financiero, sale de los cargos, así
+   * que sabe el concepto de cada boliviano.
+   */
+  async generateRevenueControlPdf(data: {
+    revenue: any;
+    discounts: any;
+    receivables: any;
+    period?: string;
+  }): Promise<Buffer> {
+    const { revenue, discounts, receivables } = data;
+    const summary = revenue?.summary ?? {};
+    const assets: Array<{ filename: string; buffer: Buffer }> = [];
+
+    const chartConfig = {
+      type: 'doughnut',
+      data: {
+        labels: revenue?.byOrigin?.map((r: any) => r.label) ?? [],
+        datasets: [
+          {
+            data: revenue?.byOrigin?.map((r: any) => Number(r.collected)) ?? [],
+            backgroundColor: this.PALETTE_MIXED,
+          },
+        ],
+      },
+      options: { plugins: { legend: { position: 'right' } } },
+    };
+
+    const originChart =
+      (revenue?.byOrigin ?? []).length > 0
+        ? await this.rasterizeChart(assets, 'chart-origen.png', chartConfig, 640, 360)
+        : '';
+
+    const kpis = `
+  #kpiGrid((
+    kpiCard(${typstString('Cobrado')}, ${typstString(this.fmtBs(summary.collected))}, ${typstString('Cargos facturados')}, color: "green"),
+    kpiCard(${typstString('Por Cobrar')}, ${typstString(this.fmtBs(summary.pending))}, ${typstString('Cuentas abiertas')}, color: "amber"),
+    kpiCard(${typstString('Descontado')}, ${typstString(this.fmtBs(summary.discount))}, ${typstString(`${this.fmtNum(summary.discountRate, 2)}% del potencial`)}, color: "purple"),
+    kpiCard(${typstString('Ingreso Potencial')}, ${typstString(this.fmtBs(summary.gross))}, ${typstString('Antes de descuentos')}, color: "blue"),
+  ))
+`;
+
+    const originSection = this.typstTableSection(
+      'Ingresos por Origen',
+      ['Concepto', 'Cargos', 'Bruto', 'Descuento', 'Cobrado', 'Pendiente'],
+      (revenue?.byOrigin ?? []).map((r: any) => [
+        `strong(${typstString(r.label)})`,
+        typstString(this.fmtNum(r.count)),
+        typstString(this.fmtBs(r.gross)),
+        typstString(this.fmtBs(r.discount)),
+        typstString(this.fmtBs(r.collected)),
+        typstString(this.fmtBs(r.pending)),
+      ]),
+      ['left', 'right', 'right', 'right', 'right', 'right'],
+    );
+
+    const chartSection = originChart
+      ? `#section(${typstString('Distribución de lo Cobrado')})[
+    #align(center, image("chart-origen.png", width: 68%))
+  ]`
+      : '';
+
+    // El total descontado incluye los "absorbidos", que el recibo del paciente
+    // no menciona: este reporte es el único lugar donde constan.
+    const hidden = Number(discounts?.summary?.hiddenOperations ?? 0);
+    const hiddenNote =
+      hidden > 0
+        ? `#block(width: 100%, fill: rgb("#fef3c7"), stroke: 1pt + rgb("#d97706"), radius: 6pt, inset: (x: 12pt, y: 8pt), above: 10pt, below: 10pt)[
+    #text(size: 8.5pt, fill: rgb("#92400e"))[#strong[${this.fmtNum(hidden)} descuento(s)] no aparecen en el recibo del paciente por haberse absorbido en el precio. Solo constan aquí.]
+  ]`
+        : '';
+
+    const discountByUser = this.typstTableSection(
+      'Descuentos por Usuario',
+      ['Usuario', 'Operaciones', 'Total', 'Mayor'],
+      (discounts?.byUser ?? []).map((u: any) => [
+        typstString(u.userEmail),
+        typstString(this.fmtNum(u.count)),
+        `strong(${typstString(this.fmtBs(u.total))})`,
+        typstString(this.fmtBs(u.max)),
+      ]),
+      ['left', 'right', 'right', 'right'],
+    );
+
+    const discountByReason = this.typstTableSection(
+      'Descuentos por Motivo',
+      ['Motivo', 'Operaciones', 'Total'],
+      (discounts?.byReason ?? []).map((r: any) => [
+        typstString(r.reason),
+        typstString(this.fmtNum(r.count)),
+        typstString(this.fmtBs(r.total)),
+      ]),
+      ['left', 'right', 'right'],
+      'omit',
+      ['3fr', '1fr', '1fr'],
+    );
+
+    const receivablesSection = this.typstTableSection(
+      'Cuentas por Cobrar',
+      ['Paciente', 'Cargos', 'Antigüedad', 'Saldo'],
+      (receivables?.items ?? []).map((r: any) => [
+        typstString(r.patient),
+        typstString(this.fmtNum(r.charges)),
+        typstString(`${this.fmtNum(r.daysOutstanding)} día(s)`),
+        `strong(${typstString(this.fmtBs(r.amount))})`,
+      ]),
+      ['left', 'right', 'right', 'right'],
+    );
+
+    const body = `${kpis}
+  ${originSection}
+  ${chartSection}
+  ${hiddenNote}
+  ${discountByUser}
+  ${discountByReason}
+  ${receivablesSection}
+  `;
+
+    const source = this.wrapTypstDoc(
+      'Control de Ingresos',
+      'Ingresos',
+      [
+        ['Generado', this.nowBO()],
+        ['Período', data.period ?? 'Todo el histórico'],
+        ['Cobrado', this.fmtBs(summary.collected)],
+        ['Por cobrar', this.fmtBs(summary.pending)],
+        ['Descontado', this.fmtBs(summary.discount)],
+      ],
+      body,
+    );
+
+    return this.typstCompiler.compile(source, assets);
+  }
+
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   private fmtNum(n: Numeric, decimals = 0): string {

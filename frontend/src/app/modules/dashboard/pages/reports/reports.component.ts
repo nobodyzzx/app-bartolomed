@@ -167,6 +167,7 @@ export class ReportsComponent implements OnInit {
   downloadAppointments()       { this.download('appointments',   () => this.reportsService.downloadAppointmentsPdf(this.buildParams())) }
   downloadMedicalRecords()     { this.download('medicalRecords', () => this.reportsService.downloadMedicalRecordsPdf(this.buildParams())) }
   downloadDoctorPerformance()  { this.download('performance',    () => this.reportsService.downloadDoctorPerformancePdf(this.buildParams())) }
+  downloadRevenueControl()     { this.download('revenueControl', () => this.reportsService.downloadRevenueControlPdf(this.buildParams())) }
   downloadDashboard()          { this.download('dashboard',      () => this.reportsService.downloadDashboardPdf(this.buildParams())) }
   downloadFinancial()          { this.download('financial',      () => this.reportsService.downloadFinancialPdf(this.buildParams())) }
   downloadCriticalStockPdf()   { this.download('critStockPdf',   () => this.reportsService.downloadCriticalStockPdf(this.buildParams())) }

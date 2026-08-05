@@ -44,6 +44,12 @@ export class ReportsService {
     return this.downloadPuppeteerPdf('financial', `reporte-financiero-${date}.pdf`, params)
   }
 
+  /** Control de ingresos: origen, descuentos y cuentas por cobrar. */
+  downloadRevenueControlPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadPuppeteerPdf('revenue-control', `control-ingresos-${date}.pdf`, params)
+  }
+
   downloadDemographicsPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = new Date().toISOString().slice(0, 10)
     return this.downloadPuppeteerPdf('demographics', `demografia-pacientes-${date}.pdf`, params)

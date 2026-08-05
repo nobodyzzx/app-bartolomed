@@ -205,6 +205,40 @@ export class ReportsController {
   }
 
   /**
+   * Control de ingresos en PDF: origen del dinero, descuentos otorgados y
+   * cuentas por cobrar, en un solo documento.
+   */
+  @Get('export/pdf/revenue-control')
+  @Auth(ValidRoles.ADMIN)
+  async exportRevenueControlPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    try {
+      const scoped = this.scope(filters, req);
+      const [revenue, discounts, receivables] = await Promise.all([
+        this.revenueReportsService.getRevenueByOrigin(scoped),
+        this.revenueReportsService.getDiscountsReport(scoped),
+        this.revenueReportsService.getReceivables(scoped),
+      ]);
+      const period = scoped.dateRange
+        ? `${new Date(scoped.dateRange.startDate).toLocaleDateString('es-BO')} a ${new Date(scoped.dateRange.endDate).toLocaleDateString('es-BO')}`
+        : undefined;
+
+      const buf = await this.reportsPdfService.generateRevenueControlPdf({
+        revenue,
+        discounts,
+        receivables,
+        period,
+      });
+      const filename = `control-ingresos-${new Date().toISOString().slice(0, 10)}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.end(buf);
+    } catch (e) {
+      this.logger.error('[RevenueControlPdf ERROR]', e instanceof Error ? e.stack : String(e));
+      res.status(500).json({ error: String(e) });
+    }
+  }
+
+  /**
    * R-14b: Exportar eficiencia de traspasos a PDF.
    * GET /api/reports/export/pdf/transfer-efficiency
    */
