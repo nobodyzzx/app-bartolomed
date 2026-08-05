@@ -1,4 +1,17 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { Auth, AuthClinic, GetUser } from '../auth/decorators';
 import { resolveClinicId } from '../auth/decorators/clinic-roles.decorator';
@@ -6,15 +19,49 @@ import { RequirePermissions } from '../auth/permissions/permissions.decorator';
 import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
 import { User } from '../users/entities/user.entity';
+import { Response } from 'express';
 import { BillingService } from './billing.service';
+import { CheckoutDto } from './dto/checkout.dto';
 import { CreateInvoiceDto, CreatePaymentDto, UpdateInvoiceDto } from './dto';
 import { InvoiceStatus } from './entities/billing.entity';
+import { CheckoutService } from './services/checkout.service';
+import { ReceiptPdfService } from './services/receipt-pdf.service';
 
 @Controller('billing')
 @AuthClinic()
 @RequirePermissions(Permission.BillingRead, Permission.BillingManage)
 export class BillingController {
-  constructor(private readonly billingService: BillingService) {}
+  constructor(
+    private readonly billingService: BillingService,
+    private readonly checkoutService: CheckoutService,
+    private readonly receiptPdfService: ReceiptPdfService,
+  ) {}
+
+  /**
+   * Punto de cobro: convierte los cargos pendientes seleccionados en una
+   * factura, con los descuentos que correspondan y el pago si se cobra en el
+   * mismo acto.
+   */
+  @Post('checkout')
+  @Auth(ValidRoles.ADMIN, ValidRoles.RECEPTIONIST, ValidRoles.SUPER_ADMIN)
+  @RequirePermissions(Permission.BillingManage)
+  checkout(@Body() dto: CheckoutDto, @GetUser() user: User, @Req() req: Request) {
+    return this.checkoutService.checkout(dto, user, resolveClinicId(req));
+  }
+
+  /** Recibo en PDF. `display` decide solo cómo se imprime el descuento. */
+  @Get('invoices/:id/receipt')
+  async receipt(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+    @Req() req: Request,
+    @Query('display') display?: string,
+  ) {
+    const { buffer, fileName } = await this.checkoutService.buildReceipt(id, display, resolveClinicId(req));
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.send(buffer);
+  }
 
   // Invoice endpoints
   @Post('invoices')
@@ -27,7 +74,12 @@ export class BillingController {
 
   @Get('invoices')
   @RequirePermissions(Permission.BillingRead)
-  findAllInvoices(@Query('page') page?: number, @Query('pageSize') pageSize?: number, @Query() query?: any, @Req() req?: Request) {
+  findAllInvoices(
+    @Query('page') page?: number,
+    @Query('pageSize') pageSize?: number,
+    @Query() query?: any,
+    @Req() req?: Request,
+  ) {
     const p = page ? Number(page) : 1;
     const ps = pageSize ? Number(pageSize) : 20;
     const filter = { ...query };
@@ -59,7 +111,11 @@ export class BillingController {
   @Patch('invoices/:id/status')
   @Auth(ValidRoles.ADMIN, ValidRoles.RECEPTIONIST)
   @RequirePermissions(Permission.BillingManage)
-  setInvoiceStatus(@Param('id', ParseUUIDPipe) id: string, @Body('status') status: InvoiceStatus, @Req() req?: Request) {
+  setInvoiceStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('status') status: InvoiceStatus,
+    @Req() req?: Request,
+  ) {
     const scopedClinicId = req ? resolveClinicId(req) : undefined;
     return this.billingService.setStatus(id, status, scopedClinicId);
   }

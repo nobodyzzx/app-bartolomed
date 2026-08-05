@@ -5863,6 +5863,70 @@
         ]
       }
     },
+    "/api/billing/checkout": {
+      "post": {
+        "operationId": "BillingController_checkout",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckoutDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Punto de cobro: convierte los cargos pendientes seleccionados en una\nfactura, con los descuentos que correspondan y el pago si se cobra en el\nmismo acto.",
+        "tags": [
+          "Billing"
+        ]
+      }
+    },
+    "/api/billing/invoices/{id}/receipt": {
+      "get": {
+        "operationId": "BillingController_receipt",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "display",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Recibo en PDF. `display` decide solo cómo se imprime el descuento.",
+        "tags": [
+          "Billing"
+        ]
+      }
+    },
     "/api/billing/invoices": {
       "post": {
         "operationId": "BillingController_createInvoice",
@@ -12024,116 +12088,125 @@
           }
         }
       },
-      "CreateInvoiceItemDto": {
+      "ChargeDiscountDto": {
         "type": "object",
         "properties": {
-          "description": {
-            "type": "string"
+          "chargeId": {
+            "type": "string",
+            "format": "uuid"
           },
-          "quantity": {
-            "type": "number",
-            "minimum": 1
-          },
-          "unitPrice": {
+          "amount": {
             "type": "number",
             "minimum": 0
           },
-          "serviceCode": {
-            "type": "string"
+          "reason": {
+            "type": "string",
+            "description": "Obligatorio: un descuento sin motivo deja la caja sin explicación.",
+            "minLength": 3,
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "chargeId",
+          "amount",
+          "reason"
+        ]
+      },
+      "GlobalDiscountDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "minimum": 0
           },
-          "category": {
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "amount",
+          "reason"
+        ]
+      },
+      "CheckoutPaymentDto": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "credit_card",
+              "debit_card",
+              "bank_transfer",
+              "check",
+              "insurance",
+              "other"
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "reference": {
             "type": "string"
           }
         },
         "required": [
-          "description",
-          "quantity",
-          "unitPrice"
+          "method",
+          "amount"
         ]
       },
-      "CreateInvoiceDto": {
+      "CheckoutDto": {
         "type": "object",
         "properties": {
-          "invoiceNumber": {
-            "type": "string"
+          "chargeIds": {
+            "description": "Cargos que el paciente decide pagar ahora. Puede ser un subconjunto: el\nresto sigue pendiente en su cuenta.",
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           },
-          "status": {
-            "type": "string",
-            "enum": [
-              "draft",
-              "pending",
-              "paid",
-              "partially_paid",
-              "overdue",
-              "cancelled",
-              "refunded"
+          "lineDiscounts": {
+            "description": "Descuentos aplicados a líneas puntuales.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChargeDiscountDto"
+            }
+          },
+          "globalDiscount": {
+            "description": "Descuento sobre el total, que se prorratea entre las líneas.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GlobalDiscountDto"
+              }
             ]
           },
-          "issueDate": {
-            "format": "date-time",
-            "type": "string"
+          "discountDisplay": {
+            "type": "string",
+            "description": "Cómo se imprime el descuento en el recibo. **No altera ningún dato ni\nningún reporte**: los importes guardados son los mismos en ambos modos.",
+            "enum": [
+              "itemized",
+              "absorbed"
+            ]
           },
-          "dueDate": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "taxRate": {
-            "type": "number",
-            "minimum": 0
-          },
-          "discountRate": {
-            "type": "number",
-            "minimum": 0
-          },
-          "discountAmount": {
-            "type": "number",
-            "minimum": 0
+          "payment": {
+            "description": "Pago en el mismo acto. Si se omite, la factura queda pendiente de cobro.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CheckoutPaymentDto"
+              }
+            ]
           },
           "notes": {
             "type": "string"
-          },
-          "terms": {
-            "type": "string"
-          },
-          "isInsuranceClaim": {
-            "type": "boolean"
-          },
-          "insuranceProvider": {
-            "type": "string"
-          },
-          "insuranceClaimNumber": {
-            "type": "string"
-          },
-          "insuranceCoverage": {
-            "type": "number",
-            "minimum": 0
-          },
-          "patientId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "clinicId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "appointmentId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CreateInvoiceItemDto"
-            }
           }
         },
         "required": [
-          "invoiceNumber",
-          "issueDate",
-          "dueDate",
-          "patientId",
-          "clinicId",
-          "items"
+          "chargeIds"
         ]
       },
       "Invoice": {
@@ -12272,6 +12345,118 @@
           "createdBy",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "CreateInvoiceItemDto": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number",
+            "minimum": 1
+          },
+          "unitPrice": {
+            "type": "number",
+            "minimum": 0
+          },
+          "serviceCode": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "description",
+          "quantity",
+          "unitPrice"
+        ]
+      },
+      "CreateInvoiceDto": {
+        "type": "object",
+        "properties": {
+          "invoiceNumber": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "pending",
+              "paid",
+              "partially_paid",
+              "overdue",
+              "cancelled",
+              "refunded"
+            ]
+          },
+          "issueDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "dueDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "taxRate": {
+            "type": "number",
+            "minimum": 0
+          },
+          "discountRate": {
+            "type": "number",
+            "minimum": 0
+          },
+          "discountAmount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "notes": {
+            "type": "string"
+          },
+          "terms": {
+            "type": "string"
+          },
+          "isInsuranceClaim": {
+            "type": "boolean"
+          },
+          "insuranceProvider": {
+            "type": "string"
+          },
+          "insuranceClaimNumber": {
+            "type": "string"
+          },
+          "insuranceCoverage": {
+            "type": "number",
+            "minimum": 0
+          },
+          "patientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clinicId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "appointmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateInvoiceItemDto"
+            }
+          }
+        },
+        "required": [
+          "invoiceNumber",
+          "issueDate",
+          "dueDate",
+          "patientId",
+          "clinicId",
+          "items"
         ]
       },
       "UpdateInvoiceDto": {

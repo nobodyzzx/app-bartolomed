@@ -2853,6 +2853,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/billing/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Punto de cobro: convierte los cargos pendientes seleccionados en una
+         *     factura, con los descuentos que correspondan y el pago si se cobra en el
+         *     mismo acto.
+         */
+        post: operations["BillingController_checkout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/invoices/{id}/receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recibo en PDF. `display` decide solo cómo se imprime el descuento. */
+        get: operations["BillingController_receipt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/billing/invoices": {
         parameters: {
             query?: never;
@@ -4800,37 +4838,42 @@ export interface components {
             resultNotes?: string;
             resultFileUrl?: string;
         };
-        CreateInvoiceItemDto: {
-            description: string;
-            quantity: number;
-            unitPrice: number;
-            serviceCode?: string;
-            category?: string;
+        ChargeDiscountDto: {
+            /** Format: uuid */
+            chargeId: string;
+            amount: number;
+            /** @description Obligatorio: un descuento sin motivo deja la caja sin explicación. */
+            reason: string;
         };
-        CreateInvoiceDto: {
-            invoiceNumber: string;
+        GlobalDiscountDto: {
+            amount: number;
+            reason: string;
+        };
+        CheckoutPaymentDto: {
             /** @enum {string} */
-            status?: "draft" | "pending" | "paid" | "partially_paid" | "overdue" | "cancelled" | "refunded";
-            /** Format: date-time */
-            issueDate: string;
-            /** Format: date-time */
-            dueDate: string;
-            taxRate?: number;
-            discountRate?: number;
-            discountAmount?: number;
+            method: "cash" | "credit_card" | "debit_card" | "bank_transfer" | "check" | "insurance" | "other";
+            amount: number;
+            reference?: string;
+        };
+        CheckoutDto: {
+            /**
+             * @description Cargos que el paciente decide pagar ahora. Puede ser un subconjunto: el
+             *     resto sigue pendiente en su cuenta.
+             */
+            chargeIds: string[];
+            /** @description Descuentos aplicados a líneas puntuales. */
+            lineDiscounts?: components["schemas"]["ChargeDiscountDto"][];
+            /** @description Descuento sobre el total, que se prorratea entre las líneas. */
+            globalDiscount?: components["schemas"]["GlobalDiscountDto"];
+            /**
+             * @description Cómo se imprime el descuento en el recibo. **No altera ningún dato ni
+             *     ningún reporte**: los importes guardados son los mismos en ambos modos.
+             * @enum {string}
+             */
+            discountDisplay?: "itemized" | "absorbed";
+            /** @description Pago en el mismo acto. Si se omite, la factura queda pendiente de cobro. */
+            payment?: components["schemas"]["CheckoutPaymentDto"];
             notes?: string;
-            terms?: string;
-            isInsuranceClaim?: boolean;
-            insuranceProvider?: string;
-            insuranceClaimNumber?: string;
-            insuranceCoverage?: number;
-            /** Format: uuid */
-            patientId: string;
-            /** Format: uuid */
-            clinicId: string;
-            /** Format: uuid */
-            appointmentId?: string;
-            items: components["schemas"]["CreateInvoiceItemDto"][];
         };
         Invoice: {
             id: string;
@@ -4866,6 +4909,38 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+        };
+        CreateInvoiceItemDto: {
+            description: string;
+            quantity: number;
+            unitPrice: number;
+            serviceCode?: string;
+            category?: string;
+        };
+        CreateInvoiceDto: {
+            invoiceNumber: string;
+            /** @enum {string} */
+            status?: "draft" | "pending" | "paid" | "partially_paid" | "overdue" | "cancelled" | "refunded";
+            /** Format: date-time */
+            issueDate: string;
+            /** Format: date-time */
+            dueDate: string;
+            taxRate?: number;
+            discountRate?: number;
+            discountAmount?: number;
+            notes?: string;
+            terms?: string;
+            isInsuranceClaim?: boolean;
+            insuranceProvider?: string;
+            insuranceClaimNumber?: string;
+            insuranceCoverage?: number;
+            /** Format: uuid */
+            patientId: string;
+            /** Format: uuid */
+            clinicId: string;
+            /** Format: uuid */
+            appointmentId?: string;
+            items: components["schemas"]["CreateInvoiceItemDto"][];
         };
         UpdateInvoiceDto: Record<string, never>;
         CreatePaymentDto: {
@@ -9732,6 +9807,50 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["LabOrder"];
                 };
+            };
+        };
+    };
+    BillingController_checkout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckoutDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Invoice"];
+                };
+            };
+        };
+    };
+    BillingController_receipt: {
+        parameters: {
+            query?: {
+                display?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

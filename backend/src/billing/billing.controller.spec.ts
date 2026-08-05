@@ -3,6 +3,8 @@ import { BillingController } from './billing.controller';
 import { BillingService } from './billing.service';
 import { InvoiceStatus } from './entities/billing.entity';
 import { User } from '../users/entities/user.entity';
+import { CheckoutService } from './services/checkout.service';
+import { ReceiptPdfService } from './services/receipt-pdf.service';
 
 const makeReq = (overrides: Record<string, any> = {}) =>
   ({ headers: { 'x-clinic-id': 'clinic-1' }, params: {}, ...overrides }) as any;
@@ -10,6 +12,8 @@ const makeReq = (overrides: Record<string, any> = {}) =>
 describe('BillingController', () => {
   let controller: BillingController;
   let service: jest.Mocked<BillingService>;
+  let checkoutService: jest.Mocked<CheckoutService>;
+  let receiptPdfService: jest.Mocked<ReceiptPdfService>;
   const user = { id: 'user-1' } as User;
 
   beforeEach(() => {
@@ -28,7 +32,14 @@ describe('BillingController', () => {
       generateInvoiceNumber: jest.fn().mockResolvedValue('INV-0001'),
       generatePaymentNumber: jest.fn().mockResolvedValue('PAY-0001'),
     } as unknown as jest.Mocked<BillingService>;
-    controller = new BillingController(service);
+    checkoutService = {
+      checkout: jest.fn().mockResolvedValue({ id: 'inv-1' }),
+      buildReceipt: jest.fn().mockResolvedValue({ buffer: Buffer.from('%PDF'), fileName: 'FAC-000001.pdf' }),
+    } as unknown as jest.Mocked<CheckoutService>;
+    receiptPdfService = {
+      generate: jest.fn().mockResolvedValue(Buffer.from('%PDF')),
+    } as unknown as jest.Mocked<ReceiptPdfService>;
+    controller = new BillingController(service, checkoutService, receiptPdfService);
   });
 
   it('createInvoice resuelve clinicId y delega dto/user', async () => {

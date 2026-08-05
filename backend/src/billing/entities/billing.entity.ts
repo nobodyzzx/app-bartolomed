@@ -167,10 +167,27 @@ export class Invoice {
   calculateAmounts() {
     const isTerminalStatus = [InvoiceStatus.CANCELLED, InvoiceStatus.REFUNDED].includes(this.status);
 
+    // Los `default: 0` de las columnas los aplica Postgres al insertar, pero
+    // este hook corre ANTES: si el importe no se seteó explícitamente llega
+    // como `undefined` y cualquier suma da NaN, que es lo que se persiste.
+    // Además TypeORM devuelve los `decimal` como string, así que un update
+    // sobre una factura releída concatenaría en vez de sumar.
+    const num = (value: unknown): number => {
+      const n = Number(value ?? 0);
+      return isNaN(n) ? 0 : n;
+    };
+
+    this.subtotal = num(this.subtotal);
+    this.discountAmount = num(this.discountAmount);
+    this.discountRate = num(this.discountRate);
+    this.taxAmount = num(this.taxAmount);
+    this.taxRate = num(this.taxRate);
+    this.paidAmount = num(this.paidAmount);
+
     // Calcular subtotal desde los items si no está establecido
     if (!this.subtotal && this.items) {
       this.subtotal = this.items.reduce((sum: number, item: any) => {
-        return sum + item.quantity * item.unitPrice;
+        return sum + num(item.quantity) * num(item.unitPrice);
       }, 0);
     }
 

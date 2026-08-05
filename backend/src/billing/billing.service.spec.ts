@@ -29,9 +29,7 @@ const makeInvoice = (overrides: Record<string, any> = {}) => ({
  * `manager.transaction` ejecuta el callback inmediatamente con un manager interno
  * cuyos getRepository() devuelven los repos proporcionados.
  */
-const createInvoiceRepoMock = (
-  innerRepos: { invoice?: any; item?: any } = {},
-) => {
+const createInvoiceRepoMock = (innerRepos: { invoice?: any; item?: any } = {}) => {
   const base = createMockRepository<Invoice>();
   (base as any).manager = {
     transaction: jest.fn().mockImplementation(async (fn: (m: any) => any) =>
@@ -174,9 +172,7 @@ describe('BillingService', () => {
 
       await service.create(dto as any, makeUser() as any, 'clinic-1');
 
-      expect(managerInvoiceRepo.create).toHaveBeenCalledWith(
-        expect.objectContaining({ subtotal: 350 }),
-      );
+      expect(managerInvoiceRepo.create).toHaveBeenCalledWith(expect.objectContaining({ subtotal: 350 }));
     });
   });
 
@@ -232,9 +228,9 @@ describe('BillingService', () => {
       managerInvoiceRepo.findOne!.mockResolvedValueOnce(invoice);
       appointmentRepo.findOne!.mockResolvedValue({ id: 'appt-1', status: AppointmentStatus.CANCELLED });
 
-      await expect(
-        service.update('inv-1', { appointmentId: 'appt-1' } as any, 'clinic-1'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.update('inv-1', { appointmentId: 'appt-1' } as any, 'clinic-1')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -244,7 +240,7 @@ describe('BillingService', () => {
     const setupInvoice = (status: InvoiceStatus) => {
       const inv = makeInvoice({ status });
       invoiceRepo.findOne!.mockResolvedValue(inv);
-      invoiceRepo.save!.mockImplementation(async (v) => v);
+      invoiceRepo.save!.mockImplementation(async v => v);
       return inv;
     };
 
@@ -288,7 +284,12 @@ describe('BillingService', () => {
     });
 
     it('rechaza pago en factura cancelada', async () => {
-      const inv = makeInvoice({ status: InvoiceStatus.CANCELLED, totalAmount: 100, paidAmount: 0, remainingAmount: 100 });
+      const inv = makeInvoice({
+        status: InvoiceStatus.CANCELLED,
+        totalAmount: 100,
+        paidAmount: 0,
+        remainingAmount: 100,
+      });
       invoiceRepo.findOne!.mockResolvedValue(inv);
 
       await expect(
