@@ -117,6 +117,18 @@ const routes: Routes = [
         },
       },
       {
+        // Recepción entra para consultar precios al cobrar; solo ADMIN puede
+        // modificarlos (el backend exige SettingsManage para escribir).
+        path: 'service-prices',
+        loadChildren: () =>
+          import('./pages/service-prices/service-prices.module').then(m => m.ServicePricesModule),
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: [UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+          requiredPermissions: [Permission.BillingRead],
+        },
+      },
+      {
         path: 'billing',
         loadChildren: () => import('./pages/billing/billing.module').then(m => m.BillingModule),
         canActivate: [permissionsGuard, roleGuard],

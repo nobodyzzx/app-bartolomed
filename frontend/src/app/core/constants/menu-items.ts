@@ -81,6 +81,13 @@ export const MENU_ITEMS: MenuItem[] = [
         allowedRoles: [UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
         requiredPermissions: [Permission.BillingRead],
       },
+      {
+        label: 'Tarifario',
+        icon: 'price_change',
+        route: '/dashboard/service-prices',
+        allowedRoles: [UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+        requiredPermissions: [Permission.BillingRead],
+      },
     ],
   },
   {
