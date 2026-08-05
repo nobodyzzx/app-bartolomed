@@ -107,15 +107,9 @@ export class BillingService {
     )
   }
 
-  createInvoice(payload: InvoiceDto): Observable<InvoiceResponse> {
-    return this.http.post<InvoiceResponse>(`${this.base}/billing/invoices`, payload).pipe(
-      tap(() => this.alert.success('Éxito', 'Factura creada correctamente')),
-      catchError(err => {
-        this.errorService.handleError(err)
-        return throwError(() => err)
-      }),
-    )
-  }
+  // No hay `createInvoice`: el backend ya no expone alta manual de facturas.
+  // Se emiten desde el punto de cobro (`POST /billing/checkout`) a partir de
+  // los cargos del paciente.
 
   updateInvoice(id: string, payload: Partial<InvoiceDto>): Observable<any> {
     return this.http.patch(`${this.base}/billing/invoices/${id}`, payload).pipe(

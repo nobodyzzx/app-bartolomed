@@ -146,9 +146,9 @@ describe('BillingPageComponent', () => {
       component = createComponent()
     })
 
-    it('navigateToNewInvoice navega al formulario de creación', () => {
-      component.navigateToNewInvoice()
-      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/billing/invoices/new'])
+    it('goToCheckout lleva al punto de cobro: las facturas nacen de cargos', () => {
+      component.goToCheckout()
+      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/checkout'])
     })
 
     it('navigateToInvoicesList navega al listado', () => {

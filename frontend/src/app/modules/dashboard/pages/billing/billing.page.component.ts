@@ -132,9 +132,9 @@ export class BillingPageComponent implements OnInit {
       currency: 'BOB',
     }).format(amount)
   }
-
-  navigateToNewInvoice(): void {
-    this.router.navigate(['/dashboard/billing/invoices/new'])
+  /** Las facturas nacen de los cargos del paciente, no de un alta manual. */
+  goToCheckout(): void {
+    this.router.navigate(['/dashboard/checkout'])
   }
 
   navigateToInvoicesList(): void {

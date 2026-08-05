@@ -93,27 +93,6 @@ describe('BillingService', () => {
     req.flush({ id: 'inv-1' })
   })
 
-  describe('createInvoice', () => {
-    it('hace POST con el payload y muestra alerta de éxito', () => {
-      service.createInvoice(invoiceDto).subscribe()
-
-      const req = httpMock.expectOne(`${BASE}/billing/invoices`)
-      expect(req.request.method).toBe('POST')
-      expect(req.request.body).toEqual(invoiceDto)
-      req.flush({ id: 'inv-1' })
-
-      expect(alert.success).toHaveBeenCalledWith('Éxito', 'Factura creada correctamente')
-    })
-
-    it('en error, delega a errorService.handleError y no muestra alerta de éxito', () => {
-      service.createInvoice(invoiceDto).subscribe({ error: () => {} })
-
-      httpMock.expectOne(`${BASE}/billing/invoices`).flush(null, { status: 400, statusText: 'Bad Request' })
-
-      expect(errorService.handleError).toHaveBeenCalled()
-      expect(alert.success).not.toHaveBeenCalled()
-    })
-  })
 
   it('updateInvoice hace PATCH y muestra alerta de éxito', () => {
     service.updateInvoice('inv-1', { notes: 'x' }).subscribe()

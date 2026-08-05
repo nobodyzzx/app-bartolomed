@@ -42,16 +42,16 @@ describe('BillingController', () => {
     controller = new BillingController(service, checkoutService, receiptPdfService);
   });
 
-  it('createInvoice resuelve clinicId y delega dto/user', async () => {
-    const dto = { patientId: 'p-1' } as any;
-    await controller.createInvoice(dto, user, makeReq());
-    expect(service.create).toHaveBeenCalledWith(dto, user, 'clinic-1');
+  it('no expone alta manual de facturas: toda factura nace de cargos vía checkout', () => {
+    // Una factura creada a mano no tendría cargos detrás, así que no
+    // aparecería en el control de ingresos y esquivaría el tarifario.
+    expect((controller as any).createInvoice).toBeUndefined();
   });
 
-  it('createInvoice funciona sin request (clinicId undefined)', async () => {
-    const dto = { patientId: 'p-1' } as any;
-    await controller.createInvoice(dto, user, undefined);
-    expect(service.create).toHaveBeenCalledWith(dto, user, undefined);
+  it('checkout resuelve clinicId y delega dto/user', async () => {
+    const dto = { chargeIds: ['charge-1'] } as any;
+    await controller.checkout(dto, user, makeReq());
+    expect(checkoutService.checkout).toHaveBeenCalledWith(dto, user, 'clinic-1');
   });
 
   describe('findAllInvoices', () => {

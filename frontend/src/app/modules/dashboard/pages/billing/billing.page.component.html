@@ -3,7 +3,7 @@
 
     <app-page-header
       title="Facturación"
-      subtitle="Gestión completa de facturas y pagos"
+      subtitle="Consulta de facturas emitidas y cobro de saldos pendientes"
       (back)="goBack()"
       >
       <button
@@ -14,13 +14,15 @@
         <span class="material-symbols-outlined msz-18 leading-none">list</span>
         Lista de Facturas
       </button>
+      <!-- Las facturas se emiten en el punto de cobro, a partir de los cargos
+           del paciente: no hay alta manual. -->
       <button
         type="button"
-        (click)="navigateToNewInvoice()"
+        (click)="goToCheckout()"
         class="btn btn-primary"
         >
-        <span class="material-symbols-outlined msz-18 leading-none">add</span>
-        Nueva Factura
+        <span class="material-symbols-outlined msz-18 leading-none">point_of_sale</span>
+        Ir a cobrar
       </button>
     </app-page-header>
 
@@ -59,7 +61,7 @@
         <app-empty-state
           icon="receipt_long"
           title="No hay facturas registradas"
-          subtitle="El módulo de facturación está en desarrollo"
+          subtitle="Las facturas se emiten desde el punto de cobro"
           actionLabel="Crear primera factura"
           (action)="navigateToNewInvoice()"
           />

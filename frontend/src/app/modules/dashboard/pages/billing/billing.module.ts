@@ -6,19 +6,16 @@ import { RouterModule, Routes } from '@angular/router'
 import { MaterialModule } from '../../../../material/material.module'
 import { SharedModule } from '../../../../shared/shared.module'
 import { BillingPageComponent } from './billing.page.component'
-import { InvoiceFormComponent } from './invoice-form.component'
 import { PaymentFormComponent } from './payment-form.component'
 
 const routes: Routes = [
   { path: '', component: BillingPageComponent },
-  { path: 'invoices/new', component: InvoiceFormComponent },
-  { path: 'invoices/:id/edit', component: InvoiceFormComponent },
   { path: 'payments/new', component: PaymentFormComponent },
   { path: 'payments/new/:invoiceId', component: PaymentFormComponent },
 ]
 
 @NgModule({
-  declarations: [BillingPageComponent, InvoiceFormComponent, PaymentFormComponent],
+  declarations: [BillingPageComponent, PaymentFormComponent],
   imports: [
     CommonModule,
     RouterModule.forChild(routes),

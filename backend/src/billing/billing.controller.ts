@@ -22,7 +22,7 @@ import { User } from '../users/entities/user.entity';
 import { Response } from 'express';
 import { BillingService } from './billing.service';
 import { CheckoutDto } from './dto/checkout.dto';
-import { CreateInvoiceDto, CreatePaymentDto, UpdateInvoiceDto } from './dto';
+import { CreatePaymentDto, UpdateInvoiceDto } from './dto';
 import { InvoiceStatus } from './entities/billing.entity';
 import { CheckoutService } from './services/checkout.service';
 import { ReceiptPdfService } from './services/receipt-pdf.service';
@@ -64,13 +64,12 @@ export class BillingController {
   }
 
   // Invoice endpoints
-  @Post('invoices')
-  @Auth(ValidRoles.ADMIN, ValidRoles.RECEPTIONIST)
-  @RequirePermissions(Permission.BillingManage)
-  createInvoice(@Body() createDto: CreateInvoiceDto, @GetUser() user: User, @Req() req?: Request) {
-    const scopedClinicId = req ? resolveClinicId(req) : undefined;
-    return this.billingService.create(createDto, user, scopedClinicId);
-  }
+  //
+  // No hay alta manual de facturas a propósito: toda factura nace de cargos,
+  // vía POST /billing/checkout. Una factura creada a mano no tendría cargos
+  // detrás, así que no aparecería en el control de ingresos (que se calcula
+  // sobre `Charge`) y además esquivaría el tarifario — es exactamente lo que
+  // producían las facturas-cascarón que se borraron al empezar este trabajo.
 
   @Get('invoices')
   @RequirePermissions(Permission.BillingRead)

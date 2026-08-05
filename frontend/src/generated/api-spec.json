@@ -3005,6 +3005,21 @@
         ]
       }
     },
+    "/api/reports/export/pdf/revenue-control": {
+      "get": {
+        "operationId": "ReportsController_exportRevenueControlPdf",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Control de ingresos en PDF: origen del dinero, descuentos otorgados y\ncuentas por cobrar, en un solo documento.",
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
     "/api/reports/export/pdf/transfer-efficiency": {
       "get": {
         "operationId": "ReportsController_exportTransferEfficiencyPdf",
@@ -5973,35 +5988,6 @@
       }
     },
     "/api/billing/invoices": {
-      "post": {
-        "operationId": "BillingController_createInvoice",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateInvoiceDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Invoice"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Billing"
-        ]
-      },
       "get": {
         "operationId": "BillingController_findAllInvoices",
         "parameters": [
@@ -12399,118 +12385,6 @@
           "createdBy",
           "createdAt",
           "updatedAt"
-        ]
-      },
-      "CreateInvoiceItemDto": {
-        "type": "object",
-        "properties": {
-          "description": {
-            "type": "string"
-          },
-          "quantity": {
-            "type": "number",
-            "minimum": 1
-          },
-          "unitPrice": {
-            "type": "number",
-            "minimum": 0
-          },
-          "serviceCode": {
-            "type": "string"
-          },
-          "category": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "description",
-          "quantity",
-          "unitPrice"
-        ]
-      },
-      "CreateInvoiceDto": {
-        "type": "object",
-        "properties": {
-          "invoiceNumber": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "draft",
-              "pending",
-              "paid",
-              "partially_paid",
-              "overdue",
-              "cancelled",
-              "refunded"
-            ]
-          },
-          "issueDate": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "dueDate": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "taxRate": {
-            "type": "number",
-            "minimum": 0
-          },
-          "discountRate": {
-            "type": "number",
-            "minimum": 0
-          },
-          "discountAmount": {
-            "type": "number",
-            "minimum": 0
-          },
-          "notes": {
-            "type": "string"
-          },
-          "terms": {
-            "type": "string"
-          },
-          "isInsuranceClaim": {
-            "type": "boolean"
-          },
-          "insuranceProvider": {
-            "type": "string"
-          },
-          "insuranceClaimNumber": {
-            "type": "string"
-          },
-          "insuranceCoverage": {
-            "type": "number",
-            "minimum": 0
-          },
-          "patientId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "clinicId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "appointmentId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CreateInvoiceItemDto"
-            }
-          }
-        },
-        "required": [
-          "invoiceNumber",
-          "issueDate",
-          "dueDate",
-          "patientId",
-          "clinicId",
-          "items"
         ]
       },
       "UpdateInvoiceDto": {

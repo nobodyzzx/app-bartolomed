@@ -1295,6 +1295,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/export/pdf/revenue-control": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Control de ingresos en PDF: origen del dinero, descuentos otorgados y
+         *     cuentas por cobrar, en un solo documento.
+         */
+        get: operations["ReportsController_exportRevenueControlPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/export/pdf/transfer-efficiency": {
         parameters: {
             query?: never;
@@ -2958,7 +2978,7 @@ export interface paths {
         };
         get: operations["BillingController_findAllInvoices"];
         put?: never;
-        post: operations["BillingController_createInvoice"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4984,38 +5004,6 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
-        };
-        CreateInvoiceItemDto: {
-            description: string;
-            quantity: number;
-            unitPrice: number;
-            serviceCode?: string;
-            category?: string;
-        };
-        CreateInvoiceDto: {
-            invoiceNumber: string;
-            /** @enum {string} */
-            status?: "draft" | "pending" | "paid" | "partially_paid" | "overdue" | "cancelled" | "refunded";
-            /** Format: date-time */
-            issueDate: string;
-            /** Format: date-time */
-            dueDate: string;
-            taxRate?: number;
-            discountRate?: number;
-            discountAmount?: number;
-            notes?: string;
-            terms?: string;
-            isInsuranceClaim?: boolean;
-            insuranceProvider?: string;
-            insuranceClaimNumber?: string;
-            insuranceCoverage?: number;
-            /** Format: uuid */
-            patientId: string;
-            /** Format: uuid */
-            clinicId: string;
-            /** Format: uuid */
-            appointmentId?: string;
-            items: components["schemas"]["CreateInvoiceItemDto"][];
         };
         UpdateInvoiceDto: Record<string, never>;
         CreatePaymentDto: {
@@ -7554,6 +7542,23 @@ export interface operations {
             };
         };
     };
+    ReportsController_exportRevenueControlPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     ReportsController_exportTransferEfficiencyPdf: {
         parameters: {
             query?: never;
@@ -9997,29 +10002,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-        };
-    };
-    BillingController_createInvoice: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateInvoiceDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Invoice"];
-                };
             };
         };
     };

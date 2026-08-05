@@ -179,7 +179,6 @@ export class BillingService {
     if (!clinicId) throw new BadRequestException('clinicId is required');
     return await this.invoiceRepository.manager.transaction(async manager => {
       const invoiceRepo = manager.getRepository(Invoice);
-      const itemRepo = manager.getRepository(InvoiceItem);
 
       const invoice = await invoiceRepo.findOne({
         where: { id, clinic: { id: clinicId } } as any,
@@ -233,30 +232,11 @@ export class BillingService {
       if (updateDto.insuranceClaimNumber !== undefined) invoice.insuranceClaimNumber = updateDto.insuranceClaimNumber;
       if (updateDto.insuranceCoverage !== undefined) invoice.insuranceCoverage = updateDto.insuranceCoverage;
 
-      // Actualizar items si se proporcionan
-      if (updateDto.items) {
-        // Eliminar items anteriores
-        await itemRepo.delete({ invoice: { id } });
-
-        // Calcular nuevo subtotal
-        const subtotal = updateDto.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-        invoice.subtotal = subtotal;
-
-        // Crear nuevos items
-        const items = updateDto.items.map(itemDto => {
-          return itemRepo.create({
-            description: itemDto.description,
-            quantity: itemDto.quantity,
-            unitPrice: itemDto.unitPrice,
-            totalPrice: itemDto.quantity * itemDto.unitPrice,
-            serviceCode: itemDto.serviceCode,
-            category: itemDto.category,
-            invoice,
-          });
-        });
-
-        await itemRepo.save(items);
-      }
+      // Los ítems NO se pueden reemplazar desde aquí: la factura nace de
+      // cargos y sus líneas deben seguir coincidiendo con ellos. Reescribirlas
+      // a mano dejaría los cargos apuntando a un documento con otro contenido,
+      // y el control de ingresos (que suma cargos) dejaría de cuadrar con la
+      // factura. Para corregir, se anula y se vuelve a cobrar.
 
       await invoiceRepo.save(invoice);
 
