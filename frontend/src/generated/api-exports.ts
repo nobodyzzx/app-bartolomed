@@ -67,6 +67,11 @@ export type ApiCreateInvoiceItemDto = components['schemas']['CreateInvoiceItemDt
 export type ApiPayment = components['schemas']['Payment']
 export type ApiCreatePaymentDto = components['schemas']['CreatePaymentDto']
 
+// ─── Catálogo de precios ──────────────────────────────────────────────────────
+export type ApiServicePrice = components['schemas']['ServicePrice']
+export type ApiCreateServicePriceDto = components['schemas']['CreateServicePriceDto']
+export type ApiUpdateServicePriceDto = components['schemas']['UpdateServicePriceDto']
+
 // ─── Activos ──────────────────────────────────────────────────────────────────
 export type ApiAsset = components['schemas']['Asset']
 export type ApiCreateAssetDto = components['schemas']['CreateAssetDto']

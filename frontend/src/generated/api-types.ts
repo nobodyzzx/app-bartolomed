@@ -884,6 +884,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MetricsController_getMetrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/dashboard": {
         parameters: {
             query?: never;
@@ -2740,6 +2756,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/service-prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ServicePricesController_findAll"];
+        put?: never;
+        post: operations["ServicePricesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/service-prices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ServicePricesController_findOne"];
+        put?: never;
+        post?: never;
+        delete: operations["ServicePricesController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["ServicePricesController_update"];
+        trace?: never;
+    };
     "/api/billing/invoices": {
         parameters: {
             query?: never;
@@ -3430,22 +3478,6 @@ export interface paths {
          *     PATCH /api/transfers/:id/return
          */
         patch: operations["StockTransfersController_returnTransfer"];
-        trace?: never;
-    };
-    "/api/metrics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["MetricsController_getMetrics"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
 }
@@ -4202,6 +4234,7 @@ export interface components {
             subtotal: number;
             discount: number;
             tax: number;
+            taxRate: number;
             total: number;
             amountPaid: number;
             change: number;
@@ -4545,6 +4578,70 @@ export interface components {
             isAbnormal?: boolean;
             resultNotes?: string;
             resultFileUrl?: string;
+        };
+        CreateServicePriceDto: {
+            /** @description Único por clínica — el servicio devuelve 409 si ya existe. */
+            code: string;
+            name: string;
+            description?: string;
+            /** @enum {string} */
+            category: "consultation" | "laboratory" | "procedure" | "other";
+            /**
+             * @description Solo tiene sentido en `CONSULTATION`: es lo que permite resolver la tarifa
+             *     de una cita automáticamente. Se valida condicionalmente para que no se
+             *     cuele en un examen de laboratorio, donde no significaría nada.
+             * @enum {string}
+             */
+            appointmentType?: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other";
+            price: number;
+            isActive?: boolean;
+        };
+        ServicePrice: {
+            id: string;
+            /** @description Código corto para búsqueda rápida en el punto de cobro. Único por clínica. */
+            code: string;
+            name: string;
+            description: string | null;
+            /** @enum {string} */
+            category: "consultation" | "laboratory" | "procedure" | "other";
+            /**
+             * @description Solo para `CONSULTATION`: liga la tarifa al tipo de cita, de modo que al
+             *     completar una cita se pueda resolver su precio sin intervención manual.
+             * @enum {string|null}
+             */
+            appointmentType: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other" | null;
+            /**
+             * @description `transformer` explícito: sin él TypeORM devuelve los `decimal` como
+             *     string y cualquier aritmética directa produce NaN o concatenación — el
+             *     mismo defecto que ya apareció en la tasa de cobro del reporte financiero.
+             */
+            price: number;
+            isActive: boolean;
+            clinic: components["schemas"]["Clinic"];
+            clinicId: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            deletedAt?: string;
+        };
+        UpdateServicePriceDto: {
+            /** @description Único por clínica — el servicio devuelve 409 si ya existe. */
+            code?: string;
+            name?: string;
+            description?: string;
+            /** @enum {string} */
+            category?: "consultation" | "laboratory" | "procedure" | "other";
+            /**
+             * @description Solo tiene sentido en `CONSULTATION`: es lo que permite resolver la tarifa
+             *     de una cita automáticamente. Se valida condicionalmente para que no se
+             *     cuele en un examen de laboratorio, donde no significaría nada.
+             * @enum {string}
+             */
+            appointmentType?: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other";
+            price?: number;
+            isActive?: boolean;
         };
         CreateInvoiceItemDto: {
             description: string;
@@ -5452,11 +5549,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": Record<string, never>;
+                };
             };
         };
     };
@@ -6601,6 +6700,23 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ConsentForm"][];
                 };
+            };
+        };
+    };
+    MetricsController_getMetrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -9234,6 +9350,123 @@ export interface operations {
             };
         };
     };
+    ServicePricesController_findAll: {
+        parameters: {
+            query?: {
+                category?: "consultation" | "laboratory" | "procedure" | "other";
+                appointmentType?: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other";
+                /** @description Busca en código y nombre. */
+                search?: string;
+                /**
+                 * @description Llega como string por querystring. Sin este `Transform`, `'false'` sería
+                 *     truthy y el filtro devolvería siempre los activos.
+                 */
+                isActive?: string;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ServicePricesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateServicePriceDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServicePrice"];
+                };
+            };
+        };
+    };
+    ServicePricesController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServicePrice"];
+                };
+            };
+        };
+    };
+    ServicePricesController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ServicePricesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateServicePriceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServicePrice"];
+                };
+            };
+        };
+    };
     BillingController_findAllInvoices: {
         parameters: {
             query?: {
@@ -9641,7 +9874,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                field: "type" | "location" | "manufacturer" | "category";
+                field: "type" | "category" | "manufacturer" | "location";
             };
             cookie?: never;
         };
@@ -10371,23 +10604,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["StockTransfer"];
                 };
-            };
-        };
-    };
-    MetricsController_getMetrics: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };

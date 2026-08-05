@@ -10,6 +10,7 @@ import {
 } from '../appointments/entities/appointment.entity';
 import { Clinic } from '../clinics/entities/clinic.entity';
 import { MedicalRecord, RecordStatus, RecordType } from '../medical-records/entities';
+import { ServiceCategory, ServicePrice } from '../service-prices/entities/service-price.entity';
 import { Gender, Patient } from '../patients/entities/patient.entity';
 import {
   MedicationCategory,
@@ -275,21 +276,21 @@ export class SeedService {
       this.logger.warn('createAdditionalAppointments falló: ' + e.message);
     }
 
-    // Facturas de facturación
+    // Catálogo de precios: tarifas de consulta, exámenes y procedimientos.
+    // Es la base de la facturación por cargos — sin él nada se puede cobrar
+    // automáticamente.
     try {
-      await this.createDemoBillingInvoices(clinicChu, [...patsChu.map(p => ({ id: p.id })), ...addPatsChu], staffChu.doctor, addApptsChu, 'CHU');
-      await this.createDemoBillingInvoices(clinicIru, [...patsIru.map(p => ({ id: p.id })), ...addPatsIru], staffIru.doctor, addApptsIru, 'IRU');
+      await this.createServicePrices(clinicChu);
+      await this.createServicePrices(clinicIru);
     } catch (e) {
-      this.logger.warn('createDemoBillingInvoices falló: ' + e.message);
+      this.logger.warn('createServicePrices falló: ' + e.message);
     }
 
-    // Pagos para facturas pagadas
-    try {
-      await this.createDemoPayments(clinicChu, staffChu.receptionist, 'CHU');
-      await this.createDemoPayments(clinicIru, staffIru.receptionist, 'IRU');
-    } catch (e) {
-      this.logger.warn('createDemoPayments falló: ' + e.message);
-    }
+    // NOTA: ya no se generan facturas ni pagos de demostración.
+    // `createDemoBillingInvoices` creaba 60 facturas por clínica **sin un solo
+    // `invoice_item`** — cascarones con un total pero sin desglose, que
+    // ensuciaban los reportes financieros con datos que no representan nada.
+    // Las facturas reales nacerán de cargos (Fase 3 del plan de facturación).
 
     // Activos
     try {
@@ -331,14 +332,23 @@ export class SeedService {
       'stock_transfers',
       'stock_movements',
       'pharmacy_sale_items',
-      'pharmacy_sales',
+      // `pharmacy_invoices` tiene FK a `pharmacy_sales`, así que va primero.
+      // Estaba al revés y `seed/reset` fallaba con un 23503 en cuanto había
+      // una factura de farmacia en la BD (el propio seed las crea).
       'pharmacy_invoices',
+      'pharmacy_sales',
       'purchase_order_items',
       'purchase_orders',
       'suppliers',
       'prescription_items',
       'prescriptions',
+      // El módulo de laboratorio nunca se agregó acá al crearse: bastaba una
+      // orden en la BD para que `seed/reset` fallara con un 23503 al borrar
+      // pacientes.
+      'lab_order_items',
+      'lab_orders',
       'payments',
+      'invoice_items',
       'invoices',
       'appointments',
       'medical_records',
@@ -348,7 +358,16 @@ export class SeedService {
       'user_clinics',
       'medication_stock',
       'medications',
+      // Traslados y mantenimiento de activos: faltaban por completo, y
+      // `asset_transfer_items` referencia `assets`, así que el DELETE de
+      // `assets` fallaba con 23503.
+      'asset_transfer_audit_logs',
+      'asset_transfer_items',
+      'asset_transfers',
+      'asset_maintenance',
+      'asset_reports',
       'assets',
+      'service_prices',
     ];
 
     for (const table of tables) {
@@ -362,6 +381,81 @@ export class SeedService {
     await this.dataSource.query('DELETE FROM clinics');
     await this.dataSource.query('DELETE FROM personal_info WHERE id NOT IN (SELECT "personalInfoId" FROM users WHERE "personalInfoId" IS NOT NULL)');
     await this.dataSource.query('DELETE FROM professional_info WHERE id NOT IN (SELECT "professionalInfoId" FROM users WHERE "professionalInfoId" IS NOT NULL)');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Catálogo de precios
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Tarifario base de la clínica, en bolivianos. Las filas de categoría
+   * `LABORATORY` cumplen además de catálogo de exámenes: hoy
+   * `LabOrderItem.testName` es texto libre y no hay ninguna lista maestra.
+   */
+  private async createServicePrices(clinic: Clinic) {
+    const repo = this.dataSource.getRepository(ServicePrice);
+
+    const consultas: Array<[string, string, AppointmentType, number]> = [
+      ['CONS-GEN', 'Consulta general', AppointmentType.CONSULTATION, 80],
+      ['CONS-SEG', 'Consulta de seguimiento', AppointmentType.FOLLOW_UP, 50],
+      ['CONS-EME', 'Consulta de emergencia', AppointmentType.EMERGENCY, 150],
+      ['CONS-CIR', 'Cirugía menor', AppointmentType.SURGERY, 800],
+      ['CONS-IMG', 'Estudio de imagenología', AppointmentType.IMAGING, 120],
+      ['CONS-VAC', 'Vacunación', AppointmentType.VACCINATION, 60],
+      ['CONS-TER', 'Sesión de terapia', AppointmentType.THERAPY, 100],
+      ['CONS-OTR', 'Otra consulta', AppointmentType.OTHER, 80],
+    ];
+
+    const laboratorio: Array<[string, string, number]> = [
+      ['LAB-HEM', 'Hemograma completo', 45],
+      ['LAB-GLU', 'Glucemia', 25],
+      ['LAB-LIP', 'Perfil lipídico', 80],
+      ['LAB-ORI', 'Examen general de orina', 30],
+      ['LAB-CRE', 'Creatinina', 35],
+      ['LAB-EMB', 'Prueba de embarazo', 40],
+      ['LAB-GRP', 'Grupo sanguíneo y factor Rh', 35],
+      ['LAB-VIH', 'Test rápido de VIH', 50],
+      ['LAB-COP', 'Coproparasitológico', 30],
+      ['LAB-TGO', 'Transaminasas (TGO / TGP)', 60],
+    ];
+
+    const procedimientos: Array<[string, string, number]> = [
+      ['PROC-CUR', 'Curación simple', 40],
+      ['PROC-SUT', 'Sutura', 120],
+      ['PROC-NEB', 'Nebulización', 35],
+      ['PROC-INY', 'Aplicación de inyectable', 20],
+      ['PROC-PRE', 'Control de presión arterial', 15],
+    ];
+
+    const rows: Partial<ServicePrice>[] = [
+      ...consultas.map(([code, name, appointmentType, price]) => ({
+        code,
+        name,
+        category: ServiceCategory.CONSULTATION,
+        appointmentType,
+        price,
+        clinicId: clinic.id,
+      })),
+      ...laboratorio.map(([code, name, price]) => ({
+        code,
+        name,
+        category: ServiceCategory.LABORATORY,
+        appointmentType: null,
+        price,
+        clinicId: clinic.id,
+      })),
+      ...procedimientos.map(([code, name, price]) => ({
+        code,
+        name,
+        category: ServiceCategory.PROCEDURE,
+        appointmentType: null,
+        price,
+        clinicId: clinic.id,
+      })),
+    ];
+
+    await repo.save(rows.map(r => repo.create(r)));
+    this.logger.log(`Tarifario creado para ${clinic.name}: ${rows.length} servicios`);
   }
 
   // ---------------------------------------------------------------------------
@@ -1068,7 +1162,7 @@ export class SeedService {
           "firstName", "lastName", "documentNumber", "documentType", "birthDate", gender,
           email, phone, address, city, state, country,
           "bloodType", "insuranceProvider", "isActive",
-          clinic_id, "createdBy", "createdAt", "updatedAt"
+          "clinicId", created_by, "createdAt", "updatedAt"
         ) VALUES ($1,$2,$3,'CI',$4,$5,$6,$7,'Plaza Principal s/n',$8,'La Paz','Bolivia',
                   $9,$10,true,$11,$12,NOW(),NOW())
         RETURNING id
@@ -1169,134 +1263,6 @@ export class SeedService {
     return created;
   }
 
-  // ---------------------------------------------------------------------------
-  // Facturas de facturación (60 por clínica)
-  // ---------------------------------------------------------------------------
-
-  private async createDemoBillingInvoices(
-    clinic: Clinic,
-    patients: { id: string }[],
-    createdBy: User,
-    appointments: { id: string }[],
-    clinicTag: 'CHU' | 'IRU',
-  ): Promise<void> {
-    if (!patients.length) return;
-
-    const statuses = ['paid', 'paid', 'paid', 'pending', 'pending', 'overdue', 'partially_paid', 'cancelled'];
-    const insurers = ['COSSMIL', 'CNS', 'CAJA PETROLERA', 'PRIVADO'];
-
-    for (let i = 1; i <= 60; i++) {
-      const invoiceNum = `BILL-${clinicTag}-${String(i).padStart(4, '0')}`;
-      const existing = await this.dataSource.query(
-        `SELECT id FROM invoices WHERE "invoiceNumber" = $1 LIMIT 1`, [invoiceNum],
-      );
-      if (existing.length > 0) continue;
-
-      const daysAgo = Math.floor(Math.random() * 180);
-      const issueDate = new Date();
-      issueDate.setDate(issueDate.getDate() - daysAgo);
-      const dueDate = new Date(issueDate);
-      dueDate.setDate(dueDate.getDate() + 30);
-
-      const subtotal = parseFloat((150 + Math.floor(Math.random() * 1851)).toFixed(2));
-      const totalAmount = subtotal;
-      const status = statuses[i % statuses.length];
-      const paidAmount = status === 'paid' ? totalAmount
-        : status === 'partially_paid' ? parseFloat((totalAmount * 0.5).toFixed(2))
-        : 0;
-      const remainingAmount = parseFloat((totalAmount - paidAmount).toFixed(2));
-      const isInsuranceClaim = Math.random() < 0.2;
-      const patient = patients[i % patients.length];
-      const appt = appointments.length > 0 && i % 3 === 0
-        ? appointments[i % appointments.length]
-        : null;
-
-      await this.dataSource.query(`
-        INSERT INTO invoices (
-          id, "invoiceNumber", status, "issueDate", "dueDate",
-          subtotal, "taxAmount", "taxRate", "discountAmount", "discountRate",
-          "totalAmount", "paidAmount", "remainingAmount",
-          "isInsuranceClaim", "insuranceProvider", "isActive",
-          "createdAt", "updatedAt", patient_id, clinic_id, appointment_id, created_by
-        ) VALUES (
-          gen_random_uuid(), $1, $2::invoices_status_enum, $3, $4,
-          $5, 0, 0, 0, 0,
-          $6, $7, $8,
-          $9, $10, true,
-          NOW(), NOW(), $11, $12, $13, $14
-        )
-      `, [
-        invoiceNum,
-        status,
-        issueDate.toISOString().slice(0, 10),
-        dueDate.toISOString().slice(0, 10),
-        subtotal,
-        totalAmount,
-        paidAmount,
-        remainingAmount,
-        isInsuranceClaim,
-        isInsuranceClaim ? insurers[i % insurers.length] : null,
-        patient.id,
-        clinic.id,
-        appt ? appt.id : null,
-        createdBy.id,
-      ]);
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Pagos para facturas pagadas y parcialmente pagadas
-  // ---------------------------------------------------------------------------
-
-  private async createDemoPayments(
-    clinic: Clinic,
-    processedBy: User,
-    clinicTag: 'CHU' | 'IRU',
-  ): Promise<void> {
-    const paidInvoices = await this.dataSource.query(`
-      SELECT id, "totalAmount", "paidAmount", status, "issueDate"
-      FROM invoices
-      WHERE clinic_id = $1
-        AND status IN ('paid', 'partially_paid')
-        AND "isActive" = true
-      ORDER BY "createdAt"
-    `, [clinic.id]);
-
-    const methods = ['cash', 'cash', 'cash', 'credit_card', 'debit_card', 'bank_transfer'];
-    let payCounter = 1;
-
-    for (const inv of paidInvoices) {
-      const payNumber = `PAY-${clinicTag}-${String(payCounter++).padStart(4, '0')}`;
-      const existing = await this.dataSource.query(
-        `SELECT id FROM payments WHERE "paymentNumber" = $1 LIMIT 1`, [payNumber],
-      );
-      if (existing.length > 0) continue;
-
-      const amount = parseFloat(inv.paidAmount);
-      const payDate = new Date(inv.issueDate);
-      payDate.setDate(payDate.getDate() + Math.floor(Math.random() * 5));
-      const method = methods[payCounter % methods.length];
-
-      await this.dataSource.query(`
-        INSERT INTO payments (
-          id, "paymentNumber", amount, method, status,
-          "paymentDate", notes, "isActive",
-          "createdAt", "updatedAt", invoice_id, processed_by
-        ) VALUES (
-          gen_random_uuid(), $1, $2, $3::payments_method_enum, 'completed'::payments_status_enum,
-          $4, 'Pago demo', true,
-          NOW(), NOW(), $5, $6
-        )
-      `, [
-        payNumber,
-        amount,
-        method,
-        payDate.toISOString().slice(0, 10),
-        inv.id,
-        processedBy.id,
-      ]);
-    }
-  }
 
   // ---------------------------------------------------------------------------
   // Activos (20 por clínica)

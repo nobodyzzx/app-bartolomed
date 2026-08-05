@@ -21,6 +21,7 @@ import { Asset } from '../assets/entities/asset.entity';
 import { Invoice, InvoiceItem, Payment } from '../billing/entities/billing.entity';
 import { Clinic } from '../clinics/entities';
 import { LabOrder, LabOrderItem } from '../lab-orders/entities/lab-order.entity';
+import { ServicePrice } from '../service-prices/entities/service-price.entity';
 import { SmtpConfig } from '../mail/entities/smtp-config.entity';
 import { ConsentForm, MedicalRecord, MedicalReport } from '../medical-records/entities';
 import { Patient } from '../patients/entities';
@@ -61,6 +62,7 @@ export const AppDataSource = new DataSource({
     PrescriptionItem,
     LabOrder,
     LabOrderItem,
+    ServicePrice,
     Invoice,
     InvoiceItem,
     Payment,

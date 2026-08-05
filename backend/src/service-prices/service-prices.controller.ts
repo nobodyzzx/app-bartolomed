@@ -1,0 +1,55 @@
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
+import { Request } from 'express';
+import { AuthClinic, GetUser } from '../auth/decorators';
+import { resolveClinicId } from '../auth/decorators/clinic-roles.decorator';
+import { RequirePermissions } from '../auth/permissions/permissions.decorator';
+import { Permission } from '../auth/permissions/permissions.enum';
+import { User } from '../users/entities/user.entity';
+import { CreateServicePriceDto, FilterServicePricesDto, UpdateServicePriceDto } from './dto';
+import { ServicePricesService } from './service-prices.service';
+
+/**
+ * Lectura con `BillingRead` y escritura con `SettingsManage`: recepción
+ * necesita consultar el tarifario para cobrar, pero cambiar los precios de la
+ * clínica es una tarea administrativa (ADMIN / SUPER_ADMIN).
+ */
+@Controller('service-prices')
+@AuthClinic()
+@RequirePermissions(Permission.BillingRead)
+export class ServicePricesController {
+  constructor(private readonly servicePricesService: ServicePricesService) {}
+
+  @Post()
+  @RequirePermissions(Permission.SettingsManage)
+  create(@Body() dto: CreateServicePriceDto, @GetUser() user: User, @Req() req: Request) {
+    return this.servicePricesService.create(dto, user, resolveClinicId(req));
+  }
+
+  @Get()
+  findAll(@Query() filter: FilterServicePricesDto, @Req() req: Request) {
+    return this.servicePricesService.findAll(filter, resolveClinicId(req));
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
+    return this.servicePricesService.findOne(id, resolveClinicId(req));
+  }
+
+  @Patch(':id')
+  @RequirePermissions(Permission.SettingsManage)
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateServicePriceDto,
+    @GetUser() user: User,
+    @Req() req: Request,
+  ) {
+    return this.servicePricesService.update(id, dto, user, resolveClinicId(req));
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @RequirePermissions(Permission.SettingsManage)
+  remove(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
+    return this.servicePricesService.remove(id, resolveClinicId(req));
+  }
+}
