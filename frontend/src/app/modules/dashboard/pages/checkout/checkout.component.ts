@@ -243,17 +243,23 @@ export class CheckoutComponent {
     }
   }
 
+  /** Formato es-BO, igual que el resto de la pantalla (coma decimal). */
+  private bs(value: number): string {
+    return `Bs ${value.toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  }
+
   private confirmationHtml(paying: number, partial: boolean): string {
     const rows = [
-      `<p><strong>Total a cobrar:</strong> Bs ${this.totalToCharge.toFixed(2)}</p>`,
+      `<p><strong>Total a cobrar:</strong> ${this.bs(this.totalToCharge)}</p>`,
       this.discountTotal > 0
-        ? `<p><strong>Descuento:</strong> Bs ${this.discountTotal.toFixed(2)} — se imprimirá
-           ${this.discountDisplay === DiscountDisplay.ITEMIZED ? 'desglosado en el recibo' : '<em>absorbido en el precio</em>, sin aparecer en el recibo'}</p>`
+        ? `<p><strong>Descuento:</strong> ${this.bs(this.discountTotal)} — se imprimirá ${
+            this.discountDisplay === DiscountDisplay.ITEMIZED
+              ? 'desglosado en el recibo'
+              : 'absorbido en el precio, sin aparecer en el recibo'
+          }</p>`
         : '',
-      `<p><strong>Paga ahora:</strong> Bs ${paying.toFixed(2)}</p>`,
-      partial
-        ? `<p class="text-amber-600">Queda un saldo de Bs ${(this.totalToCharge - paying).toFixed(2)}</p>`
-        : '',
+      `<p><strong>Paga ahora:</strong> ${this.bs(paying)}</p>`,
+      partial ? `<p>Queda un saldo de ${this.bs(this.totalToCharge - paying)}</p>` : '',
     ]
     return rows.filter(Boolean).join('')
   }

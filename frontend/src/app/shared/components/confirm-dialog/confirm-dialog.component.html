@@ -10,7 +10,10 @@
     </div>
     <div>
       <h2 class="text-lg font-semibold text-slate-900 m-0 leading-snug">{{ data.title }}</h2>
-      <p class="text-sm text-slate-500 mt-1 mb-0 leading-relaxed">{{ data.message }}</p>
+<!-- `pre-line` respeta los saltos que deja _stripHtml() al aplanar el HTML;
+           sin esto, un mensaje de varios párrafos se muestra como un bloque
+           corrido. -->
+      <p class="text-sm text-slate-500 mt-1 mb-0 leading-relaxed whitespace-pre-line">{{ data.message }}</p>
     </div>
   </div>
 

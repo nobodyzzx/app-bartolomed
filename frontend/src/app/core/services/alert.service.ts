@@ -131,7 +131,23 @@ export class AlertService {
     }))
   }
 
+  /**
+   * El diálogo muestra texto plano, así que el HTML se aplana. Los cierres de
+   * bloque y los `<br>` se convierten en salto de línea **antes** de quitar las
+   * etiquetas: sin eso, `</p><p>` colapsaba a nada y los párrafos salían
+   * pegados ("...Bs 155.00Descuento: Bs 10.00..."), que es como se veía la
+   * confirmación del punto de cobro.
+   */
   private _stripHtml(html: string): string {
-    return html.replace(/<[^>]*>/g, '').trim()
+    return html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(p|div|li|h[1-6]|tr)>/gi, '\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/[ \t]+/g, ' ')
+      .split('\n')
+      .map(line => line.trim())
+      .join('\n')
+      .trim()
   }
 }
