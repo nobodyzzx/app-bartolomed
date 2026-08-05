@@ -178,6 +178,21 @@ export enum ReportFormat {
   JSON = 'JSON',
 }
 
+/**
+ * Extensión del archivo que sirve `GET /assets/reports/:id/download` según el
+ * formato elegido al generar. Antes el backend servía CSV siempre y ambas
+ * pantallas hardcodeaban `.csv`.
+ */
+export function reportFileExtension(format: ReportFormat | undefined): string {
+  const extensions: Record<ReportFormat, string> = {
+    [ReportFormat.PDF]: 'pdf',
+    [ReportFormat.EXCEL]: 'xlsx',
+    [ReportFormat.CSV]: 'csv',
+    [ReportFormat.JSON]: 'json',
+  }
+  return (format && extensions[format]) || 'csv'
+}
+
 // DTOs y Filtros
 export interface AssetFilters {
   status?: AssetStatus

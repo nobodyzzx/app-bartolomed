@@ -9,6 +9,7 @@ import {
   AssetStatus,
   GenerateReportDto,
   ReportFormat,
+  reportFileExtension,
   ReportStatus,
   ReportType,
 } from '../interfaces/assets.interfaces'
@@ -148,7 +149,7 @@ export class AssetReportsComponent implements OnInit {
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `${report.title.replace(/\s+/g, '-')}.${this.extensionFor(report.format)}`
+        a.download = `${report.title.replace(/\s+/g, '-')}.${reportFileExtension(report.format)}`
         document.body.appendChild(a)
         a.click()
         document.body.removeChild(a)
@@ -166,17 +167,6 @@ export class AssetReportsComponent implements OnInit {
         this.loading = false
       },
     })
-  }
-
-  /** Extensión del archivo que sirve el backend según el formato elegido al generar. */
-  private extensionFor(format: ReportFormat | undefined): string {
-    const extensions: Record<ReportFormat, string> = {
-      [ReportFormat.PDF]: 'pdf',
-      [ReportFormat.EXCEL]: 'xlsx',
-      [ReportFormat.CSV]: 'csv',
-      [ReportFormat.JSON]: 'json',
-    }
-    return (format && extensions[format]) || 'csv'
   }
 
   viewReport(report: AssetReport): void {

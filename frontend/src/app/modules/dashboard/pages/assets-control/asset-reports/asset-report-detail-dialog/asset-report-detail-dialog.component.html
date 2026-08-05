@@ -73,7 +73,7 @@
       <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Archivo</label>
       <div class="mt-1 flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
         <span class="material-symbols-outlined msz-20 text-blue-600">description</span>
-        <span class="text-sm text-slate-700 font-medium flex-1">{{ report.fileName || report.title }}.csv</span>
+        <span class="text-sm text-slate-700 font-medium flex-1">{{ report.fileName || report.title }}.{{ reportFileExtension(report.format) }}</span>
       </div>
     </div>
   }
