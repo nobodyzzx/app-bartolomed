@@ -244,6 +244,29 @@ export class ReportsService {
     return this.http.get<any>(`${this.apiUrl}/financial/summary${query ? '?' + query : ''}`)
   }
 
+  // ─── Control de ingresos (sobre cargos, no sobre facturas) ────────────────
+
+  /** Ingresos por origen: consulta, laboratorio, farmacia. */
+  getRevenueByOrigin(params: Record<string, string> = {}): Observable<any> {
+    const query = new URLSearchParams(params).toString()
+    return this.http.get<any>(`${this.apiUrl}/revenue/by-origin${query ? '?' + query : ''}`)
+  }
+
+  /**
+   * Descuentos otorgados, incluidos los "absorbidos" que el recibo del
+   * paciente no muestra.
+   */
+  getDiscountsReport(params: Record<string, string> = {}): Observable<any> {
+    const query = new URLSearchParams(params).toString()
+    return this.http.get<any>(`${this.apiUrl}/revenue/discounts${query ? '?' + query : ''}`)
+  }
+
+  /** Cuentas por cobrar: cargos generados que aún nadie pagó. */
+  getReceivables(params: Record<string, string> = {}): Observable<any> {
+    const query = new URLSearchParams(params).toString()
+    return this.http.get<any>(`${this.apiUrl}/revenue/receivables${query ? '?' + query : ''}`)
+  }
+
   getStockStats(params: Record<string, string> = {}): Observable<any> {
     const query = new URLSearchParams(params).toString()
     return this.http.get<any>(`${this.apiUrl}/inventory/stock${query ? '?' + query : ''}`)

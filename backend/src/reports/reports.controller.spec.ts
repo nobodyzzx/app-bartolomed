@@ -1,5 +1,6 @@
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './services/reports.service';
+import { RevenueReportsService } from './services/revenue-reports.service';
 import { AdvancedReportsService } from './services/advanced-reports.service';
 import { ExportService } from './services/export.service';
 import { ReportsPdfService } from './services/reports-pdf.service';
@@ -29,6 +30,7 @@ const mockAll = (methods: string[]) => {
 describe('ReportsController', () => {
   let controller: ReportsController;
   let reportsService: jest.Mocked<ReportsService>;
+  let revenueReportsService: jest.Mocked<RevenueReportsService>;
   let advancedReportsService: jest.Mocked<AdvancedReportsService>;
   let exportService: jest.Mocked<ExportService>;
   let reportsPdfService: jest.Mocked<ReportsPdfService>;
@@ -113,7 +115,14 @@ describe('ReportsController', () => {
       'generateMedicalRecordsPdf',
       'generateDashboardPdf',
     ]);
-    controller = new ReportsController(reportsService, advancedReportsService, exportService, reportsPdfService);
+    revenueReportsService = mockAll(['getRevenueByOrigin', 'getDiscountsReport', 'getReceivables']);
+    controller = new ReportsController(
+      reportsService,
+      revenueReportsService,
+      advancedReportsService,
+      exportService,
+      reportsPdfService,
+    );
   });
 
   describe('reportes JSON simples (scope() aplica clinicId resuelto del request)', () => {

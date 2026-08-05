@@ -15,6 +15,9 @@ import { AdvancedReportsService } from './services/advanced-reports.service';
 import { ExportService } from './services/export.service';
 import { ReportsPdfService } from './services/reports-pdf.service';
 import { ReportsService } from './services/reports.service';
+import { RevenueReportsService } from './services/revenue-reports.service';
+import { AuditLog } from '../audit/entities/audit-log.entity';
+import { Charge } from '../charges/entities/charge.entity';
 
 @Module({
   imports: [
@@ -28,6 +31,8 @@ import { ReportsService } from './services/reports.service';
       Payment,
       MedicationStock,
       PharmacySale,
+      Charge,
+      AuditLog,
       PharmacySaleItem,
       StockTransfer,
     ]),
@@ -35,7 +40,7 @@ import { ReportsService } from './services/reports.service';
     PdfModule,
   ],
   controllers: [ReportsController],
-  providers: [ReportsService, AdvancedReportsService, ExportService, ReportsPdfService],
+  providers: [RevenueReportsService, ReportsService, AdvancedReportsService, ExportService, ReportsPdfService],
   exports: [ReportsService, AdvancedReportsService],
 })
 export class ReportsModule {}

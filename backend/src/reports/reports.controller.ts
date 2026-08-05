@@ -20,6 +20,7 @@ import { AdvancedReportsService } from './services/advanced-reports.service';
 import { ExportService } from './services/export.service';
 import { ReportsPdfService } from './services/reports-pdf.service';
 import { ReportFilters, ReportsService } from './services/reports.service';
+import { RevenueReportsService } from './services/revenue-reports.service';
 
 @Controller('reports')
 @AuthClinic()
@@ -29,6 +30,7 @@ export class ReportsController {
 
   constructor(
     private readonly reportsService: ReportsService,
+    private readonly revenueReportsService: RevenueReportsService,
     private readonly advancedReportsService: AdvancedReportsService,
     private readonly exportService: ExportService,
     private readonly reportsPdfService: ReportsPdfService,
@@ -70,6 +72,34 @@ export class ReportsController {
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR)
   getMedicalRecordsReport(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.reportsService.getMedicalRecordsReport(this.scope(filters, req));
+  }
+
+  /**
+   * Ingresos por origen: responde "¿cuánto ingresó la clínica y por qué
+   * concepto?", que el reporte financiero clásico no puede porque lee
+   * facturas sin desglose.
+   */
+  @Get('revenue/by-origin')
+  @Auth(ValidRoles.ADMIN)
+  getRevenueByOrigin(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.revenueReportsService.getRevenueByOrigin(this.scope(filters, req));
+  }
+
+  /**
+   * Descuentos otorgados. Con autorización sin tope, es la única defensa que
+   * queda: incluye los "absorbidos", que el recibo del paciente no muestra.
+   */
+  @Get('revenue/discounts')
+  @Auth(ValidRoles.ADMIN)
+  getDiscountsReport(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.revenueReportsService.getDiscountsReport(this.scope(filters, req));
+  }
+
+  /** Cuentas por cobrar: cargos generados que todavía nadie pagó. */
+  @Get('revenue/receivables')
+  @Auth(ValidRoles.ADMIN)
+  getReceivables(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.revenueReportsService.getReceivables(this.scope(filters, req));
   }
 
   @Get('financial/summary')

@@ -212,6 +212,142 @@
     </div>
     }
 
+    <!-- ── SECCIÓN CONTROL DE INGRESOS ── -->
+    @if (canViewFinancial) {
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+      <div class="flex items-center gap-4 px-6 py-4 bg-emerald-50 border-b border-emerald-100">
+        <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">account_balance_wallet</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Control de Ingresos</h3>
+          <p class="text-sm text-slate-500 m-0">De dónde viene el dinero, cuánto se descontó y qué falta cobrar</p>
+        </div>
+      </div>
+
+      <div class="p-6">
+        <!-- Resumen -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <app-stat-card label="Cobrado"
+            [value]="loadingStats ? '...' : formatCurrency(revenueStats?.summary?.collected)"
+            sublabel="Cargos ya facturados" icon="payments" color="green" />
+          <app-stat-card label="Por cobrar"
+            [value]="loadingStats ? '...' : formatCurrency(receivableStats?.summary?.amount)"
+            [sublabel]="(receivableStats?.summary?.patients || 0) + ' paciente(s) con saldo'"
+            icon="pending_actions" color="amber" />
+          <app-stat-card label="Descontado"
+            [value]="loadingStats ? '...' : formatCurrency(revenueStats?.summary?.discount)"
+            [sublabel]="(revenueStats?.summary?.discountRate || 0) + '% del ingreso potencial'"
+            icon="percent" color="purple" />
+          <app-stat-card label="Ingreso potencial"
+            [value]="loadingStats ? '...' : formatCurrency(revenueStats?.summary?.gross)"
+            sublabel="Antes de descuentos" icon="trending_up" color="blue" />
+        </div>
+
+        <!-- Ingresos por origen -->
+        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Ingresos por origen</p>
+        @if (revenueStats?.byOrigin?.length) {
+          <div class="overflow-x-auto mb-6 border border-slate-200 rounded-xl">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
+                  <th class="text-left font-semibold px-4 py-3">Concepto</th>
+                  <th class="text-right font-semibold px-4 py-3">Cargos</th>
+                  <th class="text-right font-semibold px-4 py-3">Bruto</th>
+                  <th class="text-right font-semibold px-4 py-3">Descuento</th>
+                  <th class="text-right font-semibold px-4 py-3">Cobrado</th>
+                  <th class="text-right font-semibold px-4 py-3">Pendiente</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of revenueStats.byOrigin; track row.origin) {
+                  <tr class="border-t border-slate-100">
+                    <td class="px-4 py-3 font-medium text-slate-900">{{ row.label }}</td>
+                    <td class="px-4 py-3 text-right text-slate-500">{{ row.count }}</td>
+                    <td class="px-4 py-3 text-right">{{ formatCurrencyExact(row.gross) }}</td>
+                    <td class="px-4 py-3 text-right text-purple-600">{{ formatCurrencyExact(row.discount) }}</td>
+                    <td class="px-4 py-3 text-right font-semibold">{{ formatCurrencyExact(row.collected) }}</td>
+                    <td class="px-4 py-3 text-right text-amber-600">{{ formatCurrencyExact(row.pending) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="text-sm text-slate-400 mb-6">Sin movimientos en el período seleccionado.</p>
+        }
+
+        <!-- Descuentos -->
+        <div class="flex items-center gap-2 mb-3">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide m-0">Descuentos otorgados</p>
+          @if (discountStats?.summary?.hiddenOperations) {
+            <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
+              {{ discountStats.summary.hiddenOperations }} no aparecen en el recibo
+            </span>
+          }
+        </div>
+        @if (discountStats?.byUser?.length) {
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="border border-slate-200 rounded-xl overflow-hidden">
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide px-4 py-2 bg-slate-50 m-0">
+                Quién descontó
+              </p>
+              @for (u of discountStats.byUser; track u.userId) {
+                <div class="flex items-center justify-between px-4 py-2 border-t border-slate-100 text-sm">
+                  <span class="text-slate-700">{{ u.userEmail }}</span>
+                  <span class="text-slate-900 font-semibold">
+                    {{ formatCurrencyExact(u.total) }}
+                    <span class="text-xs text-slate-400 font-normal">({{ u.count }})</span>
+                  </span>
+                </div>
+              }
+            </div>
+            <div class="border border-slate-200 rounded-xl overflow-hidden">
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide px-4 py-2 bg-slate-50 m-0">
+                Por motivo
+              </p>
+              @for (r of discountStats.byReason; track r.reason) {
+                <div class="flex items-center justify-between px-4 py-2 border-t border-slate-100 text-sm gap-3">
+                  <span class="text-slate-700 truncate">{{ r.reason }}</span>
+                  <span class="text-slate-900 font-semibold whitespace-nowrap">{{ formatCurrencyExact(r.total) }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        } @else {
+          <p class="text-sm text-slate-400">No se otorgaron descuentos en el período.</p>
+        }
+
+        <!-- Cuentas por cobrar -->
+        @if (receivableStats?.items?.length) {
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-6 mb-3">Cuentas por cobrar</p>
+          <div class="overflow-x-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
+                  <th class="text-left font-semibold px-4 py-3">Paciente</th>
+                  <th class="text-right font-semibold px-4 py-3">Cargos</th>
+                  <th class="text-right font-semibold px-4 py-3">Antigüedad</th>
+                  <th class="text-right font-semibold px-4 py-3">Saldo</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of receivableStats.items; track r.patient) {
+                  <tr class="border-t border-slate-100">
+                    <td class="px-4 py-3 text-slate-900">{{ r.patient }}</td>
+                    <td class="px-4 py-3 text-right text-slate-500">{{ r.charges }}</td>
+                    <td class="px-4 py-3 text-right text-slate-500">{{ r.daysOutstanding }} día(s)</td>
+                    <td class="px-4 py-3 text-right font-semibold text-amber-600">{{ formatCurrencyExact(r.amount) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+    }
+
     <!-- ── SECCIÓN FARMACIA ── -->
     @if (canViewStock) {
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">

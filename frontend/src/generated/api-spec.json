@@ -2793,6 +2793,51 @@
         ]
       }
     },
+    "/api/reports/revenue/by-origin": {
+      "get": {
+        "operationId": "ReportsController_getRevenueByOrigin",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Ingresos por origen: responde \"¿cuánto ingresó la clínica y por qué\nconcepto?\", que el reporte financiero clásico no puede porque lee\nfacturas sin desglose.",
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/api/reports/revenue/discounts": {
+      "get": {
+        "operationId": "ReportsController_getDiscountsReport",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Descuentos otorgados. Con autorización sin tope, es la única defensa que\nqueda: incluye los \"absorbidos\", que el recibo del paciente no muestra.",
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/api/reports/revenue/receivables": {
+      "get": {
+        "operationId": "ReportsController_getReceivables",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Cuentas por cobrar: cargos generados que todavía nadie pagó.",
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
     "/api/reports/financial/summary": {
       "get": {
         "operationId": "ReportsController_getFinancialSummaryReport",

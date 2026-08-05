@@ -1077,6 +1077,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/revenue/by-origin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ingresos por origen: responde "¿cuánto ingresó la clínica y por qué
+         *     concepto?", que el reporte financiero clásico no puede porque lee
+         *     facturas sin desglose.
+         */
+        get: operations["ReportsController_getRevenueByOrigin"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/revenue/discounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Descuentos otorgados. Con autorización sin tope, es la única defensa que
+         *     queda: incluye los "absorbidos", que el recibo del paciente no muestra.
+         */
+        get: operations["ReportsController_getDiscountsReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/revenue/receivables": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cuentas por cobrar: cargos generados que todavía nadie pagó. */
+        get: operations["ReportsController_getReceivables"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/financial/summary": {
         parameters: {
             query?: never;
@@ -7268,6 +7326,57 @@ export interface operations {
         };
     };
     ReportsController_getMedicalRecordsReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getRevenueByOrigin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getDiscountsReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getReceivables: {
         parameters: {
             query?: never;
             header?: never;

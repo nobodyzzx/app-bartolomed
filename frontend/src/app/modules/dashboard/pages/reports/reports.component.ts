@@ -45,6 +45,9 @@ export class ReportsComponent implements OnInit {
   patientStats: any = null
   appointmentStats: any = null
   financialStats: any = null
+  revenueStats: any = null
+  discountStats: any = null
+  receivableStats: any = null
   stockStats: any = null
 
   // ── Gráficos clínica ──────────────────────────────────────────────────────
@@ -121,6 +124,12 @@ export class ReportsComponent implements OnInit {
     if (this.canViewFinancial) {
       requests['financial'] = this.reportsService.getFinancialStats(params)
       requests['payments'] = this.reportsService.getPaymentMethodStats(params)
+      // Control de ingresos: se calcula sobre los cargos, así que sabe de qué
+      // módulo salió cada boliviano — algo que el resumen financiero clásico
+      // no puede responder porque lee facturas sin desglose.
+      requests['revenue'] = this.reportsService.getRevenueByOrigin(params)
+      requests['discounts'] = this.reportsService.getDiscountsReport(params)
+      requests['receivables'] = this.reportsService.getReceivables(params)
     }
     if (this.canViewStock) {
       requests['stock'] = this.reportsService.getStockStats(params)
@@ -137,6 +146,9 @@ export class ReportsComponent implements OnInit {
           this.patientStats     = result['patients'] ?? null
           this.appointmentStats = result['appointments'] ?? null
           this.financialStats   = result['financial'] ?? null
+          this.revenueStats     = result['revenue'] ?? null
+          this.discountStats    = result['discounts'] ?? null
+          this.receivableStats  = result['receivables'] ?? null
           this.stockStats       = result['stock'] ?? null
           this.buildCharts(result['patients'], result['appointments'], result['financial'], result['payments'])
         },
@@ -225,6 +237,18 @@ export class ReportsComponent implements OnInit {
     if (value == null) return '—'
     return new Intl.NumberFormat('es-BO', {
       style: 'currency', currency: 'BOB', maximumFractionDigits: 0,
+    }).format(value)
+  }
+
+  /**
+   * Con decimales, para los desgloses donde las columnas tienen que sumar.
+   * Redondeado, el detalle de descuentos mostraba "Bs 10 + Bs 1 + Bs 1" contra
+   * un total de "Bs 13" y se leía como un error de cálculo.
+   */
+  formatCurrencyExact(value: number | null | undefined): string {
+    if (value == null) return '—'
+    return new Intl.NumberFormat('es-BO', {
+      style: 'currency', currency: 'BOB', minimumFractionDigits: 2, maximumFractionDigits: 2,
     }).format(value)
   }
 
