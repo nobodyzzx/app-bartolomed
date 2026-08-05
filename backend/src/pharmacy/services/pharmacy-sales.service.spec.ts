@@ -4,7 +4,8 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AuditService } from 'src/audit/audit.service';
 import { PharmacySalesService } from './pharmacy-sales.service';
 import { PharmacySale, PharmacySaleItem, SaleStatus } from '../entities/pharmacy-sale.entity';
-import { MedicationStock, MovementType, StockMovement } from '../entities/pharmacy.entity';
+import { ChargesService } from '../../charges/charges.service';
+import { Medication, MedicationStock, MovementType, StockMovement } from '../entities/pharmacy.entity';
 import { Prescription } from 'src/prescriptions/entities/prescription.entity';
 import { InventoryService } from './inventory.service';
 import { createMockRepository, MockRepository } from 'src/test/helpers/mock-repository.factory';
@@ -16,6 +17,8 @@ describe('PharmacySalesService', () => {
   let saleItemRepo: MockRepository<PharmacySaleItem>;
   let stockRepo: MockRepository<MedicationStock>;
   let movementRepo: MockRepository<StockMovement>;
+  let medicationRepo: any;
+  let lockedBuilder: any;
   let prescriptionRepo: MockRepository<Prescription>;
 
   const mockInventoryService = { getStockAlerts: jest.fn() };
@@ -44,6 +47,8 @@ describe('PharmacySalesService', () => {
         { provide: getRepositoryToken(Prescription), useValue: createMockRepository() },
         { provide: InventoryService, useValue: mockInventoryService },
         { provide: AuditService, useValue: { log: jest.fn() } },
+        // Fase 4: la venta con receta puede quedar a cuenta del paciente.
+        { provide: ChargesService, useValue: { create: jest.fn() } },
       ],
     }).compile();
 
@@ -53,6 +58,13 @@ describe('PharmacySalesService', () => {
     stockRepo = module.get(getRepositoryToken(MedicationStock));
     movementRepo = module.get(getRepositoryToken(StockMovement));
     prescriptionRepo = module.get(getRepositoryToken(Prescription));
+    medicationRepo = {
+      createQueryBuilder: jest.fn().mockReturnValue({
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue({ id: 'med-1', name: 'Paracetamol 500mg' }),
+      }),
+    } as any;
 
     // create() ahora corre dentro de una transacción; el manager mockeado devuelve
     // los mismos mocks de arriba para que las aserciones existentes sigan funcionando.
@@ -65,11 +77,24 @@ describe('PharmacySalesService', () => {
             if (entity === MedicationStock) return stockRepo;
             if (entity === StockMovement) return movementRepo;
             if (entity === Prescription) return prescriptionRepo;
+            // El nombre del medicamento se lee aparte del stock: el lock va sin
+            // joins porque `medication` es una relación eager.
+            if (entity === Medication) return medicationRepo;
             throw new Error('Unexpected entity in manager.getRepository mock');
           },
         }),
       ),
     };
+
+    // El stock se relee con QueryBuilder + setLock (sin joins, porque
+    // `medication` es eager y Postgres rechaza FOR UPDATE sobre un outer join).
+    // El mock delega en `findOne` para que los tests sigan expresándose con él.
+    lockedBuilder = {
+      setLock: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: () => stockRepo.findOne!(),
+    };
+    stockRepo.createQueryBuilder!.mockImplementation(() => lockedBuilder as any);
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -97,9 +122,7 @@ describe('PharmacySalesService', () => {
     it('lanza NotFoundException si el stock no existe', async () => {
       stockRepo.findOne!.mockResolvedValue(null);
 
-      await expect(
-        service.create(baseSaleDto() as any, 'user-1', 'clinic-1'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.create(baseSaleDto() as any, 'user-1', 'clinic-1')).rejects.toThrow(NotFoundException);
     });
 
     it('lanza BadRequestException si el stock disponible es insuficiente', async () => {
@@ -108,9 +131,7 @@ describe('PharmacySalesService', () => {
 
       const dto = { ...baseSaleDto(), items: [{ medicationStockId: 'stock-1', quantity: 10, unitPrice: 25.5 }] };
 
-      await expect(
-        service.create(dto as any, 'user-1', 'clinic-1'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.create(dto as any, 'user-1', 'clinic-1')).rejects.toThrow(BadRequestException);
     });
 
     it('considera el stock reservado al calcular disponibilidad', async () => {
@@ -120,9 +141,7 @@ describe('PharmacySalesService', () => {
 
       const dto = { ...baseSaleDto(), items: [{ medicationStockId: 'stock-1', quantity: 6, unitPrice: 25.5 }] };
 
-      await expect(
-        service.create(dto as any, 'user-1', 'clinic-1'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.create(dto as any, 'user-1', 'clinic-1')).rejects.toThrow(BadRequestException);
     });
 
     it('relee el stock CON LOCK dentro de la transacción (bug real: antes se validaba con un valor cacheado antes de abrir la transacción, permitiendo stock negativo en ventas concurrentes)', async () => {
@@ -130,9 +149,11 @@ describe('PharmacySalesService', () => {
 
       await service.create(baseSaleDto() as any, 'user-1', 'clinic-1');
 
-      expect(stockRepo.findOne).toHaveBeenCalledWith(
-        expect.objectContaining({ lock: { mode: 'pessimistic_write' } }),
-      );
+      // El lock se toma con QueryBuilder: `findOne` con `lock` no sirve aquí
+      // porque las relaciones eager lo convierten en un outer join y Postgres
+      // rechaza FOR UPDATE sobre ellos (rompía TODA venta con un 500).
+      expect(stockRepo.createQueryBuilder).toHaveBeenCalled();
+      expect(lockedBuilder.setLock).toHaveBeenCalledWith('pessimistic_write');
     });
   });
 
@@ -144,9 +165,7 @@ describe('PharmacySalesService', () => {
 
       await service.create(baseSaleDto() as any, 'user-1', 'clinic-1');
 
-      expect(stockRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ quantity: 95 }),
-      );
+      expect(stockRepo.save).toHaveBeenCalledWith(expect.objectContaining({ quantity: 95 }));
     });
 
     it('registra un movimiento de stock tipo SALE', async () => {
@@ -154,9 +173,7 @@ describe('PharmacySalesService', () => {
 
       await service.create(baseSaleDto() as any, 'user-1', 'clinic-1');
 
-      expect(movementRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'sale' }),
-      );
+      expect(movementRepo.save).toHaveBeenCalledWith(expect.objectContaining({ type: 'sale' }));
     });
 
     it('crea items de venta para cada producto vendido', async () => {
@@ -172,9 +189,7 @@ describe('PharmacySalesService', () => {
       const stock2 = makeMedicationStock({ id: 'stock-2', quantity: 30 });
       const savedSale = { id: 'sale-1', saleNumber: 'VTA-001', subtotal: 0, total: 0, change: 0 };
 
-      stockRepo.findOne!
-        .mockResolvedValueOnce(stock1)
-        .mockResolvedValueOnce(stock2);
+      stockRepo.findOne!.mockResolvedValueOnce(stock1).mockResolvedValueOnce(stock2);
       saleRepo.save!.mockResolvedValue(savedSale);
       saleItemRepo.save!.mockResolvedValue({});
       stockRepo.save!.mockResolvedValue({});
@@ -273,8 +288,8 @@ describe('PharmacySalesService', () => {
         patientName: 'Cliente',
         paymentMethod: 'cash',
         items: [
-          { medicationStockId: 'stock-1', quantity: 2, unitPrice: 10 },  // 20
-          { medicationStockId: 'stock-2', quantity: 3, unitPrice: 15 },  // 45
+          { medicationStockId: 'stock-1', quantity: 2, unitPrice: 10 }, // 20
+          { medicationStockId: 'stock-2', quantity: 3, unitPrice: 15 }, // 45
         ],
       };
 
@@ -311,9 +326,7 @@ describe('PharmacySalesService', () => {
       await service.updateStatus('sale-1', { status: SaleStatus.CANCELLED }, 'clinic-1');
 
       // Stock debe guardarse con 10 + 5 = 15
-      expect(stockRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ quantity: 15 }),
-      );
+      expect(stockRepo.save).toHaveBeenCalledWith(expect.objectContaining({ quantity: 15 }));
     });
 
     it('crea un movimiento tipo ADJUSTMENT al cancelar', async () => {
@@ -330,9 +343,7 @@ describe('PharmacySalesService', () => {
 
       await service.updateStatus('sale-1', { status: SaleStatus.CANCELLED }, 'clinic-1');
 
-      expect(movementRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ type: MovementType.ADJUSTMENT }),
-      );
+      expect(movementRepo.save).toHaveBeenCalledWith(expect.objectContaining({ type: MovementType.ADJUSTMENT }));
     });
 
     it('restaura stock de múltiples ítems al cancelar', async () => {
@@ -395,9 +406,7 @@ describe('PharmacySalesService', () => {
 
       const dto = { ...baseSaleDto(), prescriptionId: 'rx-999' };
 
-      await expect(
-        service.create(dto as any, 'user-1', 'clinic-1'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.create(dto as any, 'user-1', 'clinic-1')).rejects.toThrow(NotFoundException);
     });
 
     it('lanza BadRequestException si la receta no está ACTIVE', async () => {
@@ -406,9 +415,7 @@ describe('PharmacySalesService', () => {
 
       const dto = { ...baseSaleDto(), prescriptionId: 'rx-999' };
 
-      await expect(
-        service.create(dto as any, 'user-1', 'clinic-1'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.create(dto as any, 'user-1', 'clinic-1')).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -438,9 +445,9 @@ describe('PharmacySalesService', () => {
     it('updateStatus propaga el ForbiddenException de findOne si la venta es de otra clínica', async () => {
       saleRepo.findOne!.mockResolvedValue(otherClinicSale);
 
-      await expect(
-        service.updateStatus('sale-1', { status: SaleStatus.CANCELLED } as any, 'clinic-1'),
-      ).rejects.toThrow('Access denied to this sale');
+      await expect(service.updateStatus('sale-1', { status: SaleStatus.CANCELLED } as any, 'clinic-1')).rejects.toThrow(
+        'Access denied to this sale',
+      );
     });
 
     it('remove propaga el ForbiddenException de findOne si la venta es de otra clínica', async () => {

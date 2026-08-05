@@ -1,5 +1,15 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
 import { PaymentMethod, SaleStatus } from '../entities/pharmacy-sale.entity';
 
 export class CreatePharmacySaleItemDto {
@@ -68,6 +78,19 @@ export class CreatePharmacySaleDto {
   @IsOptional()
   @IsString()
   prescriptionNumber?: string;
+
+  /**
+   * Deja el medicamento a cuenta del paciente en vez de cobrarlo en farmacia:
+   * genera un cargo que se cobra después en el punto de cobro, junto con la
+   * consulta y los exámenes.
+   *
+   * Solo aplica a ventas con receta y con paciente registrado — una venta de
+   * mostrador no tiene a quién cargársela. El farmacéutico decide venta por
+   * venta, porque a veces el paciente paga el medicamento ahí mismo.
+   */
+  @IsOptional()
+  @IsBoolean()
+  chargeToAccount?: boolean;
 
   @IsArray()
   @ValidateNested({ each: true })

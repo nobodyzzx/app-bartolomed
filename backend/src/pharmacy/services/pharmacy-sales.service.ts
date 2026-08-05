@@ -1,6 +1,8 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ChargesService } from '../../charges/charges.service';
+import { ChargeOrigin } from '../../charges/entities/charge.entity';
 import { Prescription, PrescriptionStatus } from '../../prescriptions/entities/prescription.entity';
 
 export interface PaginatedResult<T> {
@@ -17,7 +19,7 @@ import {
   UpdatePharmacySaleStatusDto,
 } from '../dto/pharmacy-sale.dto';
 import { PharmacySale, PharmacySaleItem, SaleStatus } from '../entities/pharmacy-sale.entity';
-import { MedicationStock, MovementType, StockMovement } from '../entities/pharmacy.entity';
+import { Medication, MedicationStock, MovementType, StockMovement } from '../entities/pharmacy.entity';
 import { InventoryService } from './inventory.service';
 
 @Injectable()
@@ -35,6 +37,7 @@ export class PharmacySalesService {
     private prescriptionRepository: Repository<Prescription>,
     private inventoryService: InventoryService,
     private auditService: AuditService,
+    private chargesService: ChargesService,
   ) {}
 
   async create(
@@ -99,6 +102,23 @@ export class PharmacySalesService {
     pharmacySale.prescriptionId = createPharmacySaleDto.prescriptionId;
     pharmacySale.status = SaleStatus.COMPLETED;
 
+    // "A cuenta" solo tiene sentido si hay a quién cargárselo y una receta
+    // detrás: una venta de mostrador se cobra en farmacia y punto.
+    const chargeToAccount =
+      !!createPharmacySaleDto.chargeToAccount && !!createPharmacySaleDto.prescriptionId && !!pharmacySale.patientId;
+
+    if (createPharmacySaleDto.chargeToAccount && !chargeToAccount) {
+      throw new BadRequestException('Solo se puede dejar a cuenta una venta con receta y paciente registrado');
+    }
+
+    pharmacySale.chargedToAccount = chargeToAccount;
+    if (chargeToAccount) {
+      // El dinero no entra por la caja de farmacia: lo cobra la caja general
+      // al liquidar la cuenta del paciente.
+      pharmacySale.amountPaid = 0;
+      pharmacySale.change = 0;
+    }
+
     const savedSale = await this.pharmacySaleRepository.manager.transaction(async manager => {
       const saleRepo = manager.getRepository(PharmacySale);
       const saleItemRepo = manager.getRepository(PharmacySaleItem);
@@ -114,15 +134,31 @@ export class PharmacySalesService {
       // concurrentes del mismo lote pasen ambas la validación con datos obsoletos
       // y dejen el stock en negativo.
       for (const itemDto of items) {
-        const stock = await stockRepo.findOne({
-          where: { id: itemDto.medicationStockId },
-          relations: ['medication'],
-          lock: { mode: 'pessimistic_write' },
-        });
+        // El lock se toma con QueryBuilder y SIN joins: Postgres rechaza
+        // `FOR UPDATE` sobre el lado nullable de un outer join, y
+        // `MedicationStock` tiene `medication` y `clinic` como relaciones
+        // EAGER, así que un `findOne` siempre las une con LEFT JOIN. Eso hacía
+        // fallar con 500 **toda** creación de venta desde que se agregó el
+        // lock. El medicamento se carga después, sin lock, porque solo se usa
+        // para el nombre del ítem.
+        const stock = await stockRepo
+          .createQueryBuilder('stock')
+          .setLock('pessimistic_write')
+          .where('stock.id = :id', { id: itemDto.medicationStockId })
+          .getOne();
 
         if (!stock) {
           throw new NotFoundException(`Stock with ID ${itemDto.medicationStockId} not found`);
         }
+
+        stock.medication =
+          stock.medication ??
+          ((await manager
+            .getRepository(Medication)
+            .createQueryBuilder('m')
+            .innerJoin('medication_stock', 'ms', 'ms.medication_id = m.id')
+            .where('ms.id = :stockId', { stockId: itemDto.medicationStockId })
+            .getOne()) as Medication);
 
         const availableQty = (stock.quantity || 0) - (stock.reservedQuantity || 0);
         if (availableQty < itemDto.quantity) {
@@ -166,6 +202,25 @@ export class PharmacySalesService {
         await prescriptionRepo.update(createPharmacySaleDto.prescriptionId, {
           status: PrescriptionStatus.DISPENSED,
         });
+      }
+
+      // El cargo se crea DENTRO de la transacción: si la venta falla después
+      // (por stock, por ejemplo) no puede quedar un cobro pendiente de un
+      // medicamento que nunca se entregó.
+      if (chargeToAccount) {
+        await this.chargesService.create(
+          {
+            clinicId,
+            patientId: sale.patientId,
+            patientName: sale.patientName,
+            origin: ChargeOrigin.PHARMACY,
+            originId: sale.id,
+            description: `Medicamentos — venta ${sale.saleNumber}`,
+            listPrice: Number(sale.total),
+            createdById: soldById,
+          },
+          manager,
+        );
       }
 
       return sale;
@@ -305,7 +360,11 @@ export class PharmacySalesService {
     return await this.findOne(id);
   }
 
-  async updateStatus(id: string, updateStatusDto: UpdatePharmacySaleStatusDto, clinicId: string): Promise<PharmacySale> {
+  async updateStatus(
+    id: string,
+    updateStatusDto: UpdatePharmacySaleStatusDto,
+    clinicId: string,
+  ): Promise<PharmacySale> {
     const pharmacySale = await this.findOne(id, clinicId);
 
     const previousStatus = pharmacySale.status;

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ChargesModule } from '../charges/charges.module';
 import { AuditModule } from '../audit/audit.module';
 
 // Entities
@@ -29,6 +30,7 @@ import { SuppliersService } from './services/suppliers.service';
 
 @Module({
   imports: [
+    ChargesModule,
     AuditModule,
     TypeOrmModule.forFeature([
       Clinic,

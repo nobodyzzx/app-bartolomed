@@ -10605,6 +10605,10 @@
           "prescriptionNumber": {
             "type": "string"
           },
+          "chargeToAccount": {
+            "type": "boolean",
+            "description": "Deja el medicamento a cuenta del paciente en vez de cobrarlo en farmacia:\ngenera un cargo que se cobra después en el punto de cobro, junto con la\nconsulta y los exámenes.\n\nSolo aplica a ventas con receta y con paciente registrado — una venta de\nmostrador no tiene a quién cargársela. El farmacéutico decide venta por\nventa, porque a veces el paciente paga el medicamento ahí mismo."
+          },
           "items": {
             "type": "array",
             "items": {
@@ -10809,6 +10813,10 @@
           "change": {
             "type": "number"
           },
+          "chargedToAccount": {
+            "type": "boolean",
+            "description": "La venta no se cobró en farmacia: quedó como cargo en la cuenta del\npaciente y se cobra en el punto de cobro junto con la consulta y los\nexámenes. Se guarda para que los reportes de caja de farmacia no cuenten\ncomo ingreso propio algo que cobra la caja general."
+          },
           "notes": {
             "type": "string"
           },
@@ -10855,6 +10863,7 @@
           "total",
           "amountPaid",
           "change",
+          "chargedToAccount",
           "notes",
           "soldBy",
           "soldById",

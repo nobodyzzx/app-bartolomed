@@ -112,6 +112,15 @@ export class PharmacySale {
   @Column('decimal', { precision: 10, scale: 2, nullable: true })
   change: number;
 
+  /**
+   * La venta no se cobró en farmacia: quedó como cargo en la cuenta del
+   * paciente y se cobra en el punto de cobro junto con la consulta y los
+   * exámenes. Se guarda para que los reportes de caja de farmacia no cuenten
+   * como ingreso propio algo que cobra la caja general.
+   */
+  @Column('boolean', { name: 'charged_to_account', default: false })
+  chargedToAccount: boolean;
+
   @Column('text', { nullable: true })
   notes: string | undefined;
 

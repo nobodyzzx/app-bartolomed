@@ -4419,6 +4419,16 @@ export interface components {
             /** Format: uuid */
             prescriptionId?: string;
             prescriptionNumber?: string;
+            /**
+             * @description Deja el medicamento a cuenta del paciente en vez de cobrarlo en farmacia:
+             *     genera un cargo que se cobra después en el punto de cobro, junto con la
+             *     consulta y los exámenes.
+             *
+             *     Solo aplica a ventas con receta y con paciente registrado — una venta de
+             *     mostrador no tiene a quién cargársela. El farmacéutico decide venta por
+             *     venta, porque a veces el paciente paga el medicamento ahí mismo.
+             */
+            chargeToAccount?: boolean;
             items: components["schemas"]["CreatePharmacySaleItemDto"][];
         };
         Prescription: {
@@ -4476,6 +4486,13 @@ export interface components {
             total: number;
             amountPaid: number;
             change: number;
+            /**
+             * @description La venta no se cobró en farmacia: quedó como cargo en la cuenta del
+             *     paciente y se cobra en el punto de cobro junto con la consulta y los
+             *     exámenes. Se guarda para que los reportes de caja de farmacia no cuenten
+             *     como ingreso propio algo que cobra la caja general.
+             */
+            chargedToAccount: boolean;
             notes: string;
             soldBy: components["schemas"]["User"];
             soldById: string;
