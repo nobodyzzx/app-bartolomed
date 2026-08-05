@@ -21,6 +21,7 @@ import { AssetMaintenance, MaintenanceStatus } from './entities/asset-maintenanc
 import { AssetReport, ReportStatus, ReportType } from './entities/asset-report.entity';
 import { AssetTransferItem, AssetTransferStatus } from './entities/asset-transfer.entity';
 import { Asset, AssetStatus } from './entities/asset.entity';
+import { AssetReportExportService, ExportedAssetReport } from './services/asset-report-export.service';
 
 @Injectable()
 export class AssetsService {
@@ -35,6 +36,7 @@ export class AssetsService {
     private readonly reportRepository: Repository<AssetReport>,
     @InjectRepository(AssetTransferItem)
     private readonly transferItemRepository: Repository<AssetTransferItem>,
+    private readonly reportExportService: AssetReportExportService,
   ) {}
 
   private requireClinicId(clinicId?: string): string {
@@ -579,25 +581,23 @@ export class AssetsService {
     return await this.reportRepository.save(reportEntity);
   }
 
-  async downloadReport(
-    id: string,
-    clinicId?: string,
-  ): Promise<{ fileName: string; contentType: string; content: string }> {
+  async downloadReport(id: string, clinicId?: string): Promise<ExportedAssetReport> {
     const report = await this.findOneReport(id, clinicId);
     if (!report.canBeDownloaded()) {
       throw new BadRequestException('El reporte todavía no está listo para descargar');
     }
 
-    const rows: Record<string, any>[] = Array.isArray(report.data) ? report.data : [];
-    // El campo `format` se guarda para referencia, pero la descarga siempre
-    // sirve CSV (abre en Excel igual) — generar PDF/XLSX reales requeriría
-    // sumar una dependencia de renderizado que excede el alcance de este fix.
-    const content = this.toCsv(rows);
-    return {
-      fileName: `${report.fileName || 'reporte'}.csv`,
-      contentType: 'text/csv; charset=utf-8',
-      content,
-    };
+    const exported = await this.reportExportService.export(report);
+
+    // `fileSize` se guardaba siempre en 0 porque el archivo no existe hasta
+    // que alguien lo descarga (la generación es on-demand, no hay artefacto en
+    // disco). Se persiste acá el tamaño real del último render para que el
+    // dato deje de ser falso; no afecta la respuesta.
+    if (report.fileSize !== exported.content.length) {
+      await this.reportRepository.update(report.id, { fileSize: exported.content.length });
+    }
+
+    return exported;
   }
 
   private async buildReportData(
@@ -677,14 +677,6 @@ export class AssetsService {
       default:
         return base.select(['asset.assetTag AS "assetTag"', 'asset.name AS "name"']).getRawMany();
     }
-  }
-
-  private toCsv(rows: Record<string, any>[]): string {
-    if (rows.length === 0) return '';
-    const headers = Object.keys(rows[0]);
-    const escape = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const lines = [headers.join(','), ...rows.map(r => headers.map(h => escape(r[h])).join(','))];
-    return lines.join('\n');
   }
 
   async deleteReport(id: string, clinicId?: string): Promise<void> {

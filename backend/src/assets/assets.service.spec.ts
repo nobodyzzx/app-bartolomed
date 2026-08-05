@@ -6,6 +6,7 @@ import { Asset, AssetStatus, AssetType, AssetCondition, DepreciationMethod } fro
 import { AssetMaintenance, MaintenanceStatus, MaintenanceType } from './entities/asset-maintenance.entity';
 import { AssetReport, ReportFormat, ReportStatus, ReportType } from './entities/asset-report.entity';
 import { AssetTransferItem } from './entities/asset-transfer.entity';
+import { AssetReportExportService } from './services/asset-report-export.service';
 import {
   createMockRepository,
   createMockQueryBuilder,
@@ -86,6 +87,7 @@ describe('AssetsService', () => {
   let maintenanceRepo: MockRepository<AssetMaintenance>;
   let reportRepo: MockRepository<AssetReport>;
   let transferItemRepo: MockRepository<AssetTransferItem>;
+  let reportExport: { export: jest.Mock };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -95,6 +97,7 @@ describe('AssetsService', () => {
         { provide: getRepositoryToken(AssetMaintenance), useValue: createMockRepository() },
         { provide: getRepositoryToken(AssetReport), useValue: createMockRepository() },
         { provide: getRepositoryToken(AssetTransferItem), useValue: createMockRepository() },
+        { provide: AssetReportExportService, useValue: { export: jest.fn() } },
       ],
     }).compile();
 
@@ -103,6 +106,7 @@ describe('AssetsService', () => {
     maintenanceRepo = module.get(getRepositoryToken(AssetMaintenance));
     reportRepo = module.get(getRepositoryToken(AssetReport));
     transferItemRepo = module.get(getRepositoryToken(AssetTransferItem));
+    reportExport = module.get(AssetReportExportService);
 
     // remove() consulta traslados activos por defecto sin ninguno encontrado;
     // los tests que sí quieren simular un traslado activo lo sobreescriben.
@@ -692,22 +696,58 @@ describe('AssetsService', () => {
       await expect(service.downloadReport('report-1', CLINIC_ID)).rejects.toThrow(BadRequestException);
     });
 
-    it('devuelve el contenido en CSV a partir de report.data', async () => {
-      reportRepo.findOne!.mockResolvedValue(
-        makeReport({
-          status: ReportStatus.COMPLETED,
-          filePath: 'x',
-          fileName: 'reporte-activos',
-          data: [{ assetTag: 'A-1', name: 'Ecógrafo' }],
-        }),
-      );
+    it('delega la serialización al formato guardado en el reporte', async () => {
+      const report = makeReport({
+        status: ReportStatus.COMPLETED,
+        filePath: 'x',
+        fileName: 'reporte-activos',
+        format: ReportFormat.PDF,
+        data: [{ assetTag: 'A-1', name: 'Ecógrafo' }],
+      });
+      reportRepo.findOne!.mockResolvedValue(report);
+      const exported = {
+        fileName: 'reporte-activos.pdf',
+        contentType: 'application/pdf',
+        content: Buffer.from('%PDF-1.7'),
+      };
+      reportExport.export.mockResolvedValue(exported);
 
       const result = await service.downloadReport('report-1', CLINIC_ID);
 
-      expect(result.contentType).toContain('text/csv');
-      expect(result.fileName).toBe('reporte-activos.csv');
-      expect(result.content).toContain('assetTag,name');
-      expect(result.content).toContain('"A-1","Ecógrafo"');
+      // Antes este método servía CSV siempre, ignorando `format` — pedir un
+      // reporte PDF bajaba un .csv.
+      expect(reportExport.export).toHaveBeenCalledWith(report);
+      expect(result).toBe(exported);
+    });
+
+    it('persiste el fileSize real del contenido servido', async () => {
+      reportRepo.findOne!.mockResolvedValue(
+        makeReport({ status: ReportStatus.COMPLETED, filePath: 'x', fileSize: 0, data: [] }),
+      );
+      reportExport.export.mockResolvedValue({
+        fileName: 'r.pdf',
+        contentType: 'application/pdf',
+        content: Buffer.alloc(2048),
+      });
+
+      await service.downloadReport('report-1', CLINIC_ID);
+
+      expect(reportRepo.update).toHaveBeenCalledWith('report-1', { fileSize: 2048 });
+    });
+
+    it('no reescribe el fileSize si no cambió', async () => {
+      reportRepo.findOne!.mockResolvedValue(
+        makeReport({ status: ReportStatus.COMPLETED, filePath: 'x', fileSize: 2048, data: [] }),
+      );
+      reportExport.export.mockResolvedValue({
+        fileName: 'r.pdf',
+        contentType: 'application/pdf',
+        content: Buffer.alloc(2048),
+      });
+
+      await service.downloadReport('report-1', CLINIC_ID);
+
+      expect(reportRepo.update).not.toHaveBeenCalled();
     });
   });
 
