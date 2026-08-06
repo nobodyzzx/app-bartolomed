@@ -47,10 +47,36 @@ async function bootstrap() {
       : ['https://bartolomed.tecnocondor.dev', 'https://api.bartolomed.tecnocondor.dev']
     : ['http://localhost:4200', 'http://localhost:3000'];
 
+  /**
+   * En desarrollo también se acepta el equipo servido por IP de red local o de
+   * Tailscale (100.64.0.0/10), para poder abrir la app desde otra máquina
+   * —una laptop en la tailnet, el móvil en la LAN— sin tocar configuración.
+   * Solo aplica fuera de producción: allí la lista sigue siendo la de dominios
+   * explícitos.
+   */
+  const isPrivateDevOrigin = (origin: string): boolean => {
+    if (isProduction) return false;
+    const host = (() => {
+      try {
+        return new URL(origin).hostname;
+      } catch {
+        return '';
+      }
+    })();
+    return (
+      /^127\./.test(host) ||
+      host === 'localhost' ||
+      /^10\./.test(host) ||
+      /^192\.168\./.test(host) ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+      /^100\.(6[4-9]|[7-9]\d|1\d\d)\./.test(host) // Tailscale CGNAT
+    );
+  };
+
   app.enableCors({
     origin: (origin, callback) => {
       // Permitir peticiones sin origen (llamadas internas Docker, curl, etc.) en producción
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin) || isPrivateDevOrigin(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
