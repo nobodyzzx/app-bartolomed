@@ -1,16 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { ActivatedRoute } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { of } from 'rxjs'
-import { MaterialModule } from '../../../../material/material.module'
-import { SharedModule } from '../../../../shared/shared.module'
 import { ClinicsService } from '../admin/clinics/services/clinics.service'
 import { PatientsService } from '../patients/services/patients.service'
 import { UsersService } from '../admin/users/users.service'
 import { PrescriptionFormComponent } from './prescription-form.component'
+import { PrescriptionsModule } from './prescriptions.module'
 import { PrescriptionsService } from './prescriptions.service'
 
 // Minimal mocks
@@ -36,15 +34,10 @@ describe('PrescriptionFormComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [PrescriptionFormComponent],
-      imports: [
-        ReactiveFormsModule,
-        FormsModule,
-        MaterialModule,
-        SharedModule,
-        NoopAnimationsModule,
-        HttpClientTestingModule,
-      ],
+      // PrescriptionsModule es quien declara el componente, así que el template
+      // toma de ahí su scope real (Material, SharedModule). Re-declararlo aquí
+      // deja el componente sin directivas conocidas.
+      imports: [PrescriptionsModule, NoopAnimationsModule, HttpClientTestingModule],
       providers: [
         { provide: AlertService, useValue: mockAlert },
         { provide: PatientsService, useValue: mockPatientsService },
@@ -78,8 +71,8 @@ describe('PrescriptionFormComponent', () => {
     component.addItem()
     const it = component.items.at(0)
     it.get('quantity')?.setValue('abc')
-    expect(it.get('quantity')?.valid).toBeFalse()
+    expect(it.get('quantity')?.valid).toBe(false)
     it.get('quantity')?.setValue('10')
-    expect(it.get('quantity')?.valid).toBeTrue()
+    expect(it.get('quantity')?.valid).toBe(true)
   })
 })

@@ -6,13 +6,14 @@ import { of, throwError } from 'rxjs'
 import { BillingPageComponent } from './billing.page.component'
 import { BillingService } from './billing.service'
 import { RecentInvoice } from './interfaces/billing-ui.interfaces'
+import { createSpyObj, SpyObj } from '../../../../../testing/spy'
 
 describe('BillingPageComponent', () => {
   let component: BillingPageComponent
-  let billingService: jasmine.SpyObj<BillingService>
-  let alert: jasmine.SpyObj<AlertService>
-  let router: jasmine.SpyObj<Router>
-  let location: jasmine.SpyObj<Location>
+  let billingService: SpyObj<BillingService>
+  let alert: SpyObj<AlertService>
+  let router: SpyObj<Router>
+  let location: SpyObj<Location>
 
   const makeInvoice = (overrides: Partial<RecentInvoice> = {}): RecentInvoice =>
     ({
@@ -44,18 +45,18 @@ describe('BillingPageComponent', () => {
   }
 
   beforeEach(() => {
-    billingService = jasmine.createSpyObj('BillingService', ['getStatistics', 'listInvoices'])
-    alert = jasmine.createSpyObj('AlertService', ['error', 'fire'])
-    router = jasmine.createSpyObj('Router', ['navigate'])
-    location = jasmine.createSpyObj('Location', ['back'])
+    billingService = createSpyObj('BillingService', ['getStatistics', 'listInvoices'])
+    alert = createSpyObj('AlertService', ['error', 'fire'])
+    router = createSpyObj('Router', ['navigate'])
+    location = createSpyObj('Location', ['back'])
   })
 
   describe('loadData / ngOnInit', () => {
     it('en éxito, guarda estadísticas y las primeras 5 facturas recientes', () => {
-      billingService.getStatistics.and.returnValue(
+      billingService.getStatistics.mockReturnValue(
         of({ totalInvoices: 10, paid: 5, pending: 3, overdue: 2, totalRevenue: 1000, pendingRevenue: 300 }),
       )
-      billingService.listInvoices.and.returnValue(
+      billingService.listInvoices.mockReturnValue(
         of({ items: Array.from({ length: 8 }, (_, i) => makeInvoice({ id: `inv-${i}` })) }),
       )
 
@@ -63,19 +64,19 @@ describe('BillingPageComponent', () => {
       component.ngOnInit()
 
       expect(component.statistics?.totalInvoices).toBe(10)
-      expect(component.isLoading).toBeFalse()
+      expect(component.isLoading).toBe(false)
       expect(component.recentInvoices.length).toBe(5)
     })
 
     it('en error de estadísticas, muestra alerta e inicializa con ceros', () => {
-      billingService.getStatistics.and.returnValue(throwError(() => ({ message: 'caído' })))
-      billingService.listInvoices.and.returnValue(of({ items: [] }))
+      billingService.getStatistics.mockReturnValue(throwError(() => ({ message: 'caído' })))
+      billingService.listInvoices.mockReturnValue(of({ items: [] }))
 
       component = createComponent()
       component.ngOnInit()
 
       expect(alert.error).toHaveBeenCalledWith('Error al cargar estadísticas', 'caído')
-      expect(component.isLoading).toBeFalse()
+      expect(component.isLoading).toBe(false)
       expect(component.statistics).toEqual({
         totalInvoices: 0,
         paid: 0,
@@ -87,8 +88,8 @@ describe('BillingPageComponent', () => {
     })
 
     it('en error de facturas recientes, muestra alerta y deja el arreglo vacío', () => {
-      billingService.getStatistics.and.returnValue(of({} as any))
-      billingService.listInvoices.and.returnValue(throwError(() => ({})))
+      billingService.getStatistics.mockReturnValue(of({} as any))
+      billingService.listInvoices.mockReturnValue(throwError(() => ({})))
 
       component = createComponent()
       component.ngOnInit()
@@ -98,8 +99,8 @@ describe('BillingPageComponent', () => {
     })
 
     it('trata response.items ausente como arreglo vacío', () => {
-      billingService.getStatistics.and.returnValue(of({} as any))
-      billingService.listInvoices.and.returnValue(of({}))
+      billingService.getStatistics.mockReturnValue(of({} as any))
+      billingService.listInvoices.mockReturnValue(of({}))
 
       component = createComponent()
       component.ngOnInit()
@@ -110,8 +111,8 @@ describe('BillingPageComponent', () => {
 
   describe('helpers de presentación', () => {
     beforeEach(() => {
-      billingService.getStatistics.and.returnValue(of({} as any))
-      billingService.listInvoices.and.returnValue(of({ items: [] }))
+      billingService.getStatistics.mockReturnValue(of({} as any))
+      billingService.listInvoices.mockReturnValue(of({ items: [] }))
       component = createComponent()
     })
 
@@ -141,8 +142,8 @@ describe('BillingPageComponent', () => {
 
   describe('navegación', () => {
     beforeEach(() => {
-      billingService.getStatistics.and.returnValue(of({} as any))
-      billingService.listInvoices.and.returnValue(of({ items: [] }))
+      billingService.getStatistics.mockReturnValue(of({} as any))
+      billingService.listInvoices.mockReturnValue(of({ items: [] }))
       component = createComponent()
     })
 
@@ -169,8 +170,8 @@ describe('BillingPageComponent', () => {
 
   describe('performSearch', () => {
     beforeEach(() => {
-      billingService.getStatistics.and.returnValue(of({} as any))
-      billingService.listInvoices.and.returnValue(of({ items: [] }))
+      billingService.getStatistics.mockReturnValue(of({} as any))
+      billingService.listInvoices.mockReturnValue(of({ items: [] }))
       component = createComponent()
     })
 
@@ -193,11 +194,11 @@ describe('BillingPageComponent', () => {
 
   describe('filtro por paciente (llegando desde "Accesos Rápidos" en la ficha del paciente)', () => {
     beforeEach(() => {
-      billingService.getStatistics.and.returnValue(of({} as any))
+      billingService.getStatistics.mockReturnValue(of({} as any))
     })
 
     it('sin patientId en la URL, pide solo las 5 recientes sin filtro', () => {
-      billingService.listInvoices.and.returnValue(of({ items: [] }))
+      billingService.listInvoices.mockReturnValue(of({ items: [] }))
       component = createComponent(null)
 
       component.ngOnInit()
@@ -207,7 +208,7 @@ describe('BillingPageComponent', () => {
     })
 
     it('con patientId en la URL, pide TODAS las facturas de ese paciente (no solo 5)', () => {
-      billingService.listInvoices.and.returnValue(
+      billingService.listInvoices.mockReturnValue(
         of({ items: Array.from({ length: 8 }, (_, i) => makeInvoice({ id: `inv-${i}` })) }),
       )
       component = createComponent('patient-1')
@@ -219,7 +220,7 @@ describe('BillingPageComponent', () => {
     })
 
     it('deriva el nombre del paciente filtrado de la primera factura recibida', () => {
-      billingService.listInvoices.and.returnValue(
+      billingService.listInvoices.mockReturnValue(
         of({ items: [makeInvoice({ patient: { firstName: 'Ana', lastName: 'Gómez' } as any })] }),
       )
       component = createComponent('patient-1')
@@ -230,7 +231,7 @@ describe('BillingPageComponent', () => {
     })
 
     it('clearPatientFilter limpia el filtro y recarga sin patientId', () => {
-      billingService.listInvoices.and.returnValue(of({ items: [] }))
+      billingService.listInvoices.mockReturnValue(of({ items: [] }))
       component = createComponent('patient-1')
       component.ngOnInit()
 

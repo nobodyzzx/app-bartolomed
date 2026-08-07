@@ -1,5 +1,5 @@
 import { Location } from '@angular/common'
-import { fakeAsync, TestBed, tick } from '@angular/core/testing'
+import { TestBed } from '@angular/core/testing'
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router'
 import { UserRoles } from '@core/enums/user-roles.enum'
 import { AlertService } from '@core/services/alert.service'
@@ -8,13 +8,14 @@ import { of, ReplaySubject, throwError } from 'rxjs'
 import { Gender, Patient, PatientStatistics } from '../interfaces'
 import { PatientsService } from '../services'
 import { PatientListComponent } from './patient-list.component'
+import { createSpyObj, SpyObj } from '../../../../../../testing/spy'
 
 describe('PatientListComponent', () => {
   let component: PatientListComponent
-  let patientsService: jasmine.SpyObj<PatientsService>
-  let router: jasmine.SpyObj<Router>
-  let location: jasmine.SpyObj<Location>
-  let alert: jasmine.SpyObj<AlertService>
+  let patientsService: SpyObj<PatientsService>
+  let router: SpyObj<Router>
+  let location: SpyObj<Location>
+  let alert: SpyObj<AlertService>
   let queryParamMap$: ReplaySubject<any>
   let roles: UserRoles[]
 
@@ -64,22 +65,22 @@ describe('PatientListComponent', () => {
   }
 
   beforeEach(() => {
-    patientsService = jasmine.createSpyObj('PatientsService', [
+    patientsService = createSpyObj('PatientsService', [
       'getPatientStatistics',
       'findAll',
       'searchPatients',
       'removePatient',
     ])
-    router = jasmine.createSpyObj('Router', ['navigate'])
-    location = jasmine.createSpyObj('Location', ['back'])
-    alert = jasmine.createSpyObj('AlertService', ['error', 'success', 'fire'])
+    router = createSpyObj('Router', ['navigate'])
+    location = createSpyObj('Location', ['back'])
+    alert = createSpyObj('AlertService', ['error', 'success', 'fire'])
     queryParamMap$ = new ReplaySubject(1)
     queryParamMap$.next(convertToParamMap({}))
     roles = [UserRoles.ADMIN]
 
-    patientsService.getPatientStatistics.and.returnValue(of(makeStats()))
-    patientsService.findAll.and.returnValue(of({ data: [makePatient()], total: 1, page: 1, limit: 25 }))
-    patientsService.searchPatients.and.returnValue(of([makePatient()]))
+    patientsService.getPatientStatistics.mockReturnValue(of(makeStats()))
+    patientsService.findAll.mockReturnValue(of({ data: [makePatient()], total: 1, page: 1, limit: 25 }))
+    patientsService.searchPatients.mockReturnValue(of([makePatient()]))
   })
 
   describe('ngOnInit', () => {
@@ -102,7 +103,7 @@ describe('PatientListComponent', () => {
     })
 
     it('si falla loadStatistics, no rompe (error no crítico)', () => {
-      patientsService.getPatientStatistics.and.returnValue(throwError(() => ({})))
+      patientsService.getPatientStatistics.mockReturnValue(throwError(() => ({})))
 
       component = createComponent()
       expect(() => component.ngOnInit()).not.toThrow()
@@ -110,39 +111,47 @@ describe('PatientListComponent', () => {
   })
 
   describe('applyFilter (debounce de búsqueda)', () => {
+    // `fakeAsync`/`tick` de Angular dependen de que zone.js parchee el `it` del
+    // runner, cosa que no ocurre con Vitest. Los temporizadores falsos de
+    // Vitest cubren igual el `debounceTime` de RxJS.
     beforeEach(() => {
+      vi.useFakeTimers()
       component = createComponent()
       component.ngOnInit()
-      patientsService.findAll.calls.reset()
-      patientsService.searchPatients.calls.reset()
+      patientsService.findAll.mockClear()
+      patientsService.searchPatients.mockClear()
     })
 
-    it('no dispara loadPatients antes de los 350ms de debounce', fakeAsync(() => {
-      component.applyFilter('juan')
-      tick(200)
-      expect(patientsService.searchPatients).not.toHaveBeenCalled()
-      tick(150)
-    }))
+    afterEach(() => {
+      vi.useRealTimers()
+    })
 
-    it('dispara loadPatients y resetea a la primera página tras 350ms', fakeAsync(() => {
+    it('no dispara loadPatients antes de los 350ms de debounce', () => {
+      component.applyFilter('juan')
+      vi.advanceTimersByTime(200)
+      expect(patientsService.searchPatients).not.toHaveBeenCalled()
+      vi.advanceTimersByTime(150)
+    })
+
+    it('dispara loadPatients y resetea a la primera página tras 350ms', () => {
       component.currentPage = 2
       component.applyFilter('juan')
-      tick(350)
+      vi.advanceTimersByTime(350)
 
       expect(component.currentPage).toBe(0)
       expect(patientsService.searchPatients).toHaveBeenCalledWith('juan')
-    }))
+    })
 
-    it('distinctUntilChanged evita relanzar la misma búsqueda dos veces seguidas', fakeAsync(() => {
+    it('distinctUntilChanged evita relanzar la misma búsqueda dos veces seguidas', () => {
       component.applyFilter('juan')
-      tick(350)
-      patientsService.searchPatients.calls.reset()
+      vi.advanceTimersByTime(350)
+      patientsService.searchPatients.mockClear()
 
       component.applyFilter('juan')
-      tick(350)
+      vi.advanceTimersByTime(350)
 
       expect(patientsService.searchPatients).not.toHaveBeenCalled()
-    }))
+    })
   })
 
   describe('loadPatients', () => {
@@ -160,7 +169,7 @@ describe('PatientListComponent', () => {
 
       expect(patientsService.findAll).toHaveBeenCalledWith({ page: 2, limit: 10, gender: Gender.FEMALE })
       expect(component.totalRecords).toBe(1)
-      expect(component.isLoading).toBeFalse()
+      expect(component.isLoading).toBe(false)
     })
 
     it('con searchTerm, usa searchPatients en vez de findAll', () => {
@@ -172,28 +181,28 @@ describe('PatientListComponent', () => {
     })
 
     it('en error de findAll, apaga isLoading (la alerta la muestra el servicio)', () => {
-      patientsService.findAll.and.returnValue(throwError(() => ({ message: 'caído' })))
+      patientsService.findAll.mockReturnValue(throwError(() => ({ message: 'caído' })))
       component.searchTerm = ''
 
       component.loadPatients()
 
-      expect(component.isLoading).toBeFalse()
+      expect(component.isLoading).toBe(false)
     })
 
     it('en error de searchPatients, apaga isLoading (la alerta la muestra el servicio)', () => {
-      patientsService.searchPatients.and.returnValue(throwError(() => ({})))
+      patientsService.searchPatients.mockReturnValue(throwError(() => ({})))
       component.searchTerm = 'juan'
 
       component.loadPatients()
 
-      expect(component.isLoading).toBeFalse()
+      expect(component.isLoading).toBe(false)
     })
   })
 
   describe('paginación y filtros', () => {
     beforeEach(() => {
       component = createComponent()
-      patientsService.findAll.calls.reset()
+      patientsService.findAll.mockClear()
     })
 
     it('onPageChange actualiza página/tamaño y recarga', () => {
@@ -319,7 +328,7 @@ describe('PatientListComponent', () => {
     // deletePatient() es void — internamente encadena alert.fire().then(...), no retorna
     // la promesa. Se dispara sin await y se espera un microtask para que el .then() corra.
     it('si el usuario cancela, no elimina nada', async () => {
-      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: false } as any))
+      alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: false } as any))
 
       component.deletePatient(makePatient({ id: 'p1' }))
       await Promise.resolve()
@@ -328,8 +337,8 @@ describe('PatientListComponent', () => {
     })
 
     it('si el usuario confirma, elimina, actualiza la tabla y recarga estadísticas', async () => {
-      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
-      patientsService.removePatient.and.returnValue(of(undefined))
+      alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: true } as any))
+      patientsService.removePatient.mockReturnValue(of(undefined))
 
       component.deletePatient(makePatient({ id: 'p1' }))
       await Promise.resolve()
@@ -340,8 +349,8 @@ describe('PatientListComponent', () => {
     })
 
     it('si falla la eliminación, no rompe el componente (la alerta la muestra el servicio)', async () => {
-      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
-      patientsService.removePatient.and.returnValue(throwError(() => ({ message: 'no se pudo' })))
+      alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: true } as any))
+      patientsService.removePatient.mockReturnValue(throwError(() => ({ message: 'no se pudo' })))
 
       expect(() => component.deletePatient(makePatient({ id: 'p1' }))).not.toThrow()
       await Promise.resolve()

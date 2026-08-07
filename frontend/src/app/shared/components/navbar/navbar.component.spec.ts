@@ -9,12 +9,14 @@ import { ClinicsService } from '../../../modules/dashboard/pages/admin/clinics/s
 import { DashboardService } from '../../../modules/dashboard/pages/main-dashboard/dashboard.service'
 import { PatientsService } from '../../../modules/dashboard/pages/patients/services/patients.service'
 import { NavbarComponent } from './navbar.component'
+import { createSpyObj, SpyObj } from '../../../../testing/spy'
+import type { Mock } from 'vitest'
 
 describe('NavbarComponent', () => {
-  let dashboardService: jasmine.SpyObj<DashboardService>
-  let clinicsService: jasmine.SpyObj<ClinicsService>
-  let patientsService: jasmine.SpyObj<PatientsService>
-  let router: { navigate: jasmine.Spy; url: string; events: Subject<unknown> }
+  let dashboardService: SpyObj<DashboardService>
+  let clinicsService: SpyObj<ClinicsService>
+  let patientsService: SpyObj<PatientsService>
+  let router: { navigate: Mock; url: string; events: Subject<unknown> }
   let roles: UserRoles[]
 
   const fakeRoleState = {
@@ -33,7 +35,7 @@ describe('NavbarComponent', () => {
         { provide: PatientsService, useValue: patientsService },
         { provide: RoleStateService, useValue: fakeRoleState },
         { provide: AuthService, useValue: { currentUser: () => null } },
-        { provide: ClinicContextService, useValue: { clinicId: 'clinic-1', setClinic: jasmine.createSpy() } },
+        { provide: ClinicContextService, useValue: { clinicId: 'clinic-1', setClinic: vi.fn() } },
         { provide: Router, useValue: router },
       ],
     })
@@ -41,18 +43,18 @@ describe('NavbarComponent', () => {
   }
 
   beforeEach(() => {
-    dashboardService = jasmine.createSpyObj('DashboardService', ['getLowStockAlerts', 'getPendingAppointmentsCount', 'getBillingSummary'])
-    dashboardService.getLowStockAlerts.and.returnValue(of([]))
-    dashboardService.getPendingAppointmentsCount.and.returnValue(of(0))
-    dashboardService.getBillingSummary.and.returnValue(of({ pendingInvoices: 0, overdueInvoices: 0, pendingRevenue: 0 }))
+    dashboardService = createSpyObj('DashboardService', ['getLowStockAlerts', 'getPendingAppointmentsCount', 'getBillingSummary'])
+    dashboardService.getLowStockAlerts.mockReturnValue(of([]))
+    dashboardService.getPendingAppointmentsCount.mockReturnValue(of(0))
+    dashboardService.getBillingSummary.mockReturnValue(of({ pendingInvoices: 0, overdueInvoices: 0, pendingRevenue: 0 }))
 
-    clinicsService = jasmine.createSpyObj('ClinicsService', ['findAll'])
-    clinicsService.findAll.and.returnValue(of([]))
+    clinicsService = createSpyObj('ClinicsService', ['findAll'])
+    clinicsService.findAll.mockReturnValue(of([]))
 
-    patientsService = jasmine.createSpyObj('PatientsService', ['searchPatients'])
-    patientsService.searchPatients.and.returnValue(of([]))
+    patientsService = createSpyObj('PatientsService', ['searchPatients'])
+    patientsService.searchPatients.mockReturnValue(of([]))
 
-    router = { navigate: jasmine.createSpy('navigate'), url: '/dashboard/home', events: new Subject() }
+    router = { navigate: vi.fn(), url: '/dashboard/home', events: new Subject() }
   })
 
   // ─── Visibilidad por rol ────────────────────────────────────────────────

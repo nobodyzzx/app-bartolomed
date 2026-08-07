@@ -186,7 +186,7 @@ jobs:
 
       - name: Unit tests
         working-directory: frontend
-        run: npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox
+        run: npm test -- --watch=false
 
       - name: Build (production)
         working-directory: frontend

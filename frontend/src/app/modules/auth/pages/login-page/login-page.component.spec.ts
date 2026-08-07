@@ -1,30 +1,32 @@
 import { TestBed } from '@angular/core/testing'
-import { ReactiveFormsModule } from '@angular/forms'
 import { MatDialog } from '@angular/material/dialog'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { Router } from '@angular/router'
 import { of, throwError } from 'rxjs'
-import { MaterialModule } from '../../../../material/material.module'
 import { NotificationService } from '../../../../shared/services/notification.service'
+import { AuthModule } from '../../auth.module'
 import { AuthService } from '../../services/auth.service'
 import { LoginPageComponent } from './login-page.component'
+import { createSpyObj, SpyObj } from '../../../../../testing/spy'
 
 describe('LoginPageComponent', () => {
   let component: LoginPageComponent
-  let authService: jasmine.SpyObj<AuthService>
-  let router: jasmine.SpyObj<Router>
-  let notification: jasmine.SpyObj<NotificationService>
-  let dialog: jasmine.SpyObj<MatDialog>
+  let authService: SpyObj<AuthService>
+  let router: SpyObj<Router>
+  let notification: SpyObj<NotificationService>
+  let dialog: SpyObj<MatDialog>
 
   beforeEach(async () => {
-    authService = jasmine.createSpyObj('AuthService', ['login'])
-    router = jasmine.createSpyObj('Router', ['navigateByUrl'])
-    notification = jasmine.createSpyObj('NotificationService', ['success', 'error', 'warning'])
-    dialog = jasmine.createSpyObj('MatDialog', ['open'])
+    authService = createSpyObj('AuthService', ['login'])
+    router = createSpyObj('Router', ['navigateByUrl'])
+    notification = createSpyObj('NotificationService', ['success', 'error', 'warning'])
+    dialog = createSpyObj('MatDialog', ['open'])
 
     await TestBed.configureTestingModule({
-      imports: [ReactiveFormsModule, MaterialModule, NoopAnimationsModule],
-      declarations: [LoginPageComponent],
+      // AuthModule es quien declara LoginPageComponent, así que el template
+      // toma de ahí su scope real (Material, formularios). Re-declararlo aquí
+      // deja el componente sin directivas conocidas.
+      imports: [AuthModule, NoopAnimationsModule],
       providers: [
         { provide: AuthService, useValue: authService },
         { provide: Router, useValue: router },
@@ -47,7 +49,7 @@ describe('LoginPageComponent', () => {
       component.ngOnInit()
 
       expect(component.myForm.value.email).toBe('doc@example.com')
-      expect(component.myForm.value.rememberMe).toBeTrue()
+      expect(component.myForm.value.rememberMe).toBe(true)
     })
 
     it('no toca el form si no hay email recordado', () => {
@@ -60,7 +62,7 @@ describe('LoginPageComponent', () => {
     it('marca todos los campos como touched y avisa sin llamar al servicio', () => {
       component.onSubmit()
 
-      expect(component.myForm.get('email')?.touched).toBeTrue()
+      expect(component.myForm.get('email')?.touched).toBe(true)
       expect(notification.warning).toHaveBeenCalledWith('Por favor, completa todos los campos correctamente')
       expect(authService.login).not.toHaveBeenCalled()
     })
@@ -72,7 +74,7 @@ describe('LoginPageComponent', () => {
     })
 
     it('con rememberMe=true, recuerda el email y navega al dashboard', () => {
-      authService.login.and.returnValue(of(true))
+      authService.login.mockReturnValue(of(true))
 
       component.onSubmit()
 
@@ -85,7 +87,7 @@ describe('LoginPageComponent', () => {
     it('con rememberMe=false, olvida el email recordado', () => {
       localStorage.setItem('rememberedEmail', 'previo@example.com')
       component.myForm.patchValue({ rememberMe: false })
-      authService.login.and.returnValue(of(true))
+      authService.login.mockReturnValue(of(true))
 
       component.onSubmit()
 
@@ -96,9 +98,9 @@ describe('LoginPageComponent', () => {
       // Necesario para que el botón no quede con el spinner trabado si un guard
       // más adelante rechaza la navegación y rebota de vuelta a /auth/login
       // reutilizando esta misma instancia del componente.
-      authService.login.and.returnValue(of(true))
+      authService.login.mockReturnValue(of(true))
       component.onSubmit()
-      expect(component.isLoading).toBeFalse()
+      expect(component.isLoading).toBe(false)
     })
   })
 
@@ -108,16 +110,16 @@ describe('LoginPageComponent', () => {
     })
 
     it('revierte isLoading y muestra error.error.message si está presente', () => {
-      authService.login.and.returnValue(throwError(() => ({ error: { message: 'Backend dice no' } })))
+      authService.login.mockReturnValue(throwError(() => ({ error: { message: 'Backend dice no' } })))
 
       component.onSubmit()
 
-      expect(component.isLoading).toBeFalse()
+      expect(component.isLoading).toBe(false)
       expect(notification.error).toHaveBeenCalledWith('Backend dice no', 5000)
     })
 
     it('cae a error.message si no hay error.error.message', () => {
-      authService.login.and.returnValue(throwError(() => ({ message: 'Fallo de red' })))
+      authService.login.mockReturnValue(throwError(() => ({ message: 'Fallo de red' })))
 
       component.onSubmit()
 
@@ -125,7 +127,7 @@ describe('LoginPageComponent', () => {
     })
 
     it('usa el error tal cual si es un string', () => {
-      authService.login.and.returnValue(throwError(() => 'Error como string'))
+      authService.login.mockReturnValue(throwError(() => 'Error como string'))
 
       component.onSubmit()
 
@@ -133,7 +135,7 @@ describe('LoginPageComponent', () => {
     })
 
     it('usa el mensaje genérico si el error no trae ninguna forma reconocida', () => {
-      authService.login.and.returnValue(throwError(() => ({})))
+      authService.login.mockReturnValue(throwError(() => ({})))
 
       component.onSubmit()
 
@@ -141,7 +143,7 @@ describe('LoginPageComponent', () => {
     })
 
     it('reescribe el mensaje de credenciales inválidas a uno amigable', () => {
-      authService.login.and.returnValue(throwError(() => 'Credenciales no Validas'))
+      authService.login.mockReturnValue(throwError(() => 'Credenciales no Validas'))
 
       component.onSubmit()
 
@@ -149,7 +151,7 @@ describe('LoginPageComponent', () => {
     })
 
     it('reescribe errores de red a un mensaje amigable', () => {
-      authService.login.and.returnValue(throwError(() => 'NetworkError al conectar'))
+      authService.login.mockReturnValue(throwError(() => 'NetworkError al conectar'))
 
       component.onSubmit()
 
@@ -190,6 +192,6 @@ describe('LoginPageComponent', () => {
 
   it('openForgotPassword abre el diálogo con las opciones esperadas', () => {
     component.openForgotPassword()
-    expect(dialog.open).toHaveBeenCalledWith(jasmine.any(Function), { width: '420px', disableClose: false })
+    expect(dialog.open).toHaveBeenCalledWith(expect.any(Function), { width: '420px', disableClose: false })
   })
 })

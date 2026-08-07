@@ -3,6 +3,7 @@ import { Router } from '@angular/router'
 import { UserRoles } from '../enums/user-roles.enum'
 import { Permission } from '../enums/permission.enum'
 import { RoleStateService } from './role-state.service'
+import { createSpyObj } from '../../../testing/spy'
 
 describe('RoleStateService', () => {
   let service: RoleStateService
@@ -10,7 +11,7 @@ describe('RoleStateService', () => {
   beforeEach(() => {
     localStorage.clear()
     TestBed.configureTestingModule({
-      providers: [RoleStateService, { provide: Router, useValue: jasmine.createSpyObj('Router', ['navigate']) }],
+      providers: [RoleStateService, { provide: Router, useValue: createSpyObj('Router', ['navigate']) }],
     })
     service = TestBed.inject(RoleStateService)
   })
@@ -44,10 +45,10 @@ describe('RoleStateService', () => {
     it('un usuario solo-laboratorio queda autenticado y con permisos de laboratorio', () => {
       service.syncRoles(['laboratory'] as any)
 
-      expect(service.isAuthenticated()).toBeTrue()
+      expect(service.isAuthenticated()).toBe(true)
       expect(service.currentUserRoles()).toEqual([UserRoles.LABORATORY])
-      expect(service.hasPermission(Permission.LabRead)).toBeTrue()
-      expect(service.hasPermission(Permission.LabResultEnter)).toBeTrue()
+      expect(service.hasPermission(Permission.LabRead)).toBe(true)
+      expect(service.hasPermission(Permission.LabResultEnter)).toBe(true)
     })
   })
 })

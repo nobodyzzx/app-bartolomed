@@ -96,7 +96,7 @@ describe('PatientsService', () => {
       service.searchPatients('juan').subscribe()
       const req = httpMock.expectOne(r => r.url === `${BASE}/search`)
       expect(req.request.params.get('term')).toBe('juan')
-      expect(req.request.params.has('clinicId')).toBeFalse()
+      expect(req.request.params.has('clinicId')).toBe(false)
       req.flush([])
     })
 
@@ -112,7 +112,7 @@ describe('PatientsService', () => {
     it('sin clinicId, no agrega el param', () => {
       service.getPatientStatistics().subscribe()
       const req = httpMock.expectOne(r => r.url === `${BASE}/statistics`)
-      expect(req.request.params.has('clinicId')).toBeFalse()
+      expect(req.request.params.has('clinicId')).toBe(false)
       req.flush({})
     })
 

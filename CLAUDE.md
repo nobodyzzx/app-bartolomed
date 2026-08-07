@@ -37,7 +37,7 @@ podman compose exec backend npm run seed:all
 
 ### Frontend (`cd frontend`)
 ```bash
-npm test                    # Karma/Jasmine tests
+npm test                    # Vitest (builder `@angular/build:unit-test`, sobre jsdom)
 npm run build               # Production build
 ```
 No hay script `lint` en `frontend/package.json` — el frontend no tiene ESLint configurado. Si necesitas linting, configura `ng lint` con `@angular-eslint` antes de invocarlo.
@@ -50,9 +50,26 @@ cd backend && npx jest src/auth/auth.service.spec.ts
 # Backend e2e
 cd backend && npx jest test/auth.e2e-spec.ts --config ./test/jest-e2e.json
 
-# Frontend spec
-cd frontend && npm test -- --include="src/app/modules/dashboard/pages/patients/patients.component.spec.ts" --watch=false
+# Frontend — un archivo
+cd frontend && npm test -- --watch=false --include="src/app/modules/dashboard/pages/patients/patient-list/patient-list.component.spec.ts"
+
+# Frontend — por nombre de suite o test
+cd frontend && npm test -- --watch=false --filter="PatientListComponent"
 ```
+
+**Tests del frontend (Vitest, no Karma).** Karma está deprecado y fue retirado; el target `test` usa
+`@angular/build:unit-test` con Vitest sobre jsdom, así que **no hace falta ningún navegador instalado**.
+Dos cosas a tener presentes al escribir specs:
+
+- **`fakeAsync`/`tick` no funcionan**: dependen de que zone.js parchee el `it` del runner, y zone.js
+  solo parchea Jasmine/Mocha. Usa `vi.useFakeTimers()` + `vi.advanceTimersByTime(ms)`.
+- **Componentes con `standalone: false`: importa su NgModule, no los redeclares.** El compilador
+  resuelve el scope del template desde el módulo que declara el componente, así que un
+  `declarations: [MiComponente]` en el TestBed lo deja sin directivas y todo elemento de Material
+  falla con NG0304 en tiempo de ejecución. Usa `imports: [MiFeatureModule]`.
+
+Helpers en `src/testing/`: `createSpyObj`/`SpyObj` (equivalentes a los de Jasmine) e `itDone` (para
+los tests escritos con el callback `done`, que Vitest ya no admite).
 
 ### Type generation (backend DTOs → frontend types)
 Frontend types in `frontend/src/generated/api-types.ts` are generated from the Swagger spec — do not edit by hand. Friendly re-exports live in `api-exports.ts` (`ApiPatient`, `ApiCreatePatientDto`, …).

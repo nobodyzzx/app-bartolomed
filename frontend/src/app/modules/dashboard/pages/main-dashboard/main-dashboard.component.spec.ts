@@ -7,9 +7,10 @@ import { AuthService } from '../../../auth/services/auth.service'
 import { ClinicContextService } from '../../../clinics/services/clinic-context.service'
 import { DashboardService } from './dashboard.service'
 import { MainDashboardComponent } from './main-dashboard.component'
+import { createSpyObj, SpyObj } from '../../../../../testing/spy'
 
 describe('MainDashboardComponent', () => {
-  let dashboardService: jasmine.SpyObj<DashboardService>
+  let dashboardService: SpyObj<DashboardService>
   let roles: UserRoles[]
 
   const fakeRoleState = {
@@ -25,7 +26,7 @@ describe('MainDashboardComponent', () => {
         { provide: RoleStateService, useValue: fakeRoleState },
         { provide: AuthService, useValue: { currentUser: () => ({ id: 'doctor-1' }) } },
         { provide: ClinicContextService, useValue: { clinicId: 'clinic-1' } },
-        { provide: Router, useValue: jasmine.createSpyObj('Router', ['navigate']) },
+        { provide: Router, useValue: createSpyObj('Router', ['navigate']) },
         { provide: ActivatedRoute, useValue: { queryParams: new ReplaySubject() } },
       ],
     })
@@ -33,22 +34,22 @@ describe('MainDashboardComponent', () => {
   }
 
   beforeEach(() => {
-    dashboardService = jasmine.createSpyObj('DashboardService', [
+    dashboardService = createSpyObj('DashboardService', [
       'getPatientStats', 'getTodayAppointments', 'getPendingAppointmentsCount',
       'getLowStockAlerts', 'getRecentPatients', 'getStaffStatistics', 'getBillingSummary',
       'getWeeklySales', 'getMonthlySales',
     ])
-    dashboardService.getPatientStats.and.returnValue(of({ total: 0 }))
-    dashboardService.getTodayAppointments.and.returnValue(of([]))
-    dashboardService.getPendingAppointmentsCount.and.returnValue(of(0))
-    dashboardService.getLowStockAlerts.and.returnValue(of([]))
-    dashboardService.getRecentPatients.and.returnValue(of([]))
-    dashboardService.getStaffStatistics.and.returnValue(
+    dashboardService.getPatientStats.mockReturnValue(of({ total: 0 }))
+    dashboardService.getTodayAppointments.mockReturnValue(of([]))
+    dashboardService.getPendingAppointmentsCount.mockReturnValue(of(0))
+    dashboardService.getLowStockAlerts.mockReturnValue(of([]))
+    dashboardService.getRecentPatients.mockReturnValue(of([]))
+    dashboardService.getStaffStatistics.mockReturnValue(
       of({ totalDoctors: 3, totalNurses: 2, totalReceptionists: 1, totalPharmacists: 1, totalLaboratory: 0 }),
     )
-    dashboardService.getBillingSummary.and.returnValue(of({ pendingInvoices: 5, overdueInvoices: 2, pendingRevenue: 1200 }))
-    dashboardService.getWeeklySales.and.returnValue(of({ labels: [], values: [] }))
-    dashboardService.getMonthlySales.and.returnValue(of({ labels: [], values: [] }))
+    dashboardService.getBillingSummary.mockReturnValue(of({ pendingInvoices: 5, overdueInvoices: 2, pendingRevenue: 1200 }))
+    dashboardService.getWeeklySales.mockReturnValue(of({ labels: [], values: [] }))
+    dashboardService.getMonthlySales.mockReturnValue(of({ labels: [], values: [] }))
   })
 
   // ─── visibleStatCards — granularidad por rol ───────────────────────────────

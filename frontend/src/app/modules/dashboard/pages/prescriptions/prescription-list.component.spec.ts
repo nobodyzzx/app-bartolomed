@@ -5,12 +5,13 @@ import { of } from 'rxjs'
 import { Prescription } from './interfaces/prescription-ui.interface'
 import { PrescriptionListComponent } from './prescription-list.component'
 import { PrescriptionsService } from './prescriptions.service'
+import { createSpyObj, SpyObj } from '../../../../../testing/spy'
 
 describe('PrescriptionListComponent', () => {
   let component: PrescriptionListComponent
-  let prescriptionsService: jasmine.SpyObj<PrescriptionsService>
-  let router: jasmine.SpyObj<Router>
-  let alert: jasmine.SpyObj<AlertService>
+  let prescriptionsService: SpyObj<PrescriptionsService>
+  let router: SpyObj<Router>
+  let alert: SpyObj<AlertService>
 
   const daysFromNow = (days: number): string => {
     const d = new Date()
@@ -52,15 +53,15 @@ describe('PrescriptionListComponent', () => {
   }
 
   beforeEach(() => {
-    prescriptionsService = jasmine.createSpyObj('PrescriptionsService', ['list', 'setStatus', 'refill', 'getPdf'])
-    router = jasmine.createSpyObj('Router', ['navigate'])
-    alert = jasmine.createSpyObj('AlertService', ['fire', 'success'])
-    alert.fire.and.returnValue(Promise.resolve({ isConfirmed: false } as any))
+    prescriptionsService = createSpyObj('PrescriptionsService', ['list', 'setStatus', 'refill', 'getPdf'])
+    router = createSpyObj('Router', ['navigate'])
+    alert = createSpyObj('AlertService', ['fire', 'success'])
+    alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: false } as any))
   })
 
   describe('bug real: badge de estado ignoraba el vencimiento', () => {
     it('getEffectiveStatus devuelve "expired" para una receta "active" con expiryDate en el pasado', () => {
-      prescriptionsService.list.and.returnValue(of({ items: [] }))
+      prescriptionsService.list.mockReturnValue(of({ items: [] }))
       component = createComponent()
 
       const vencida = makePrescription({ status: 'active', expiryDate: daysFromNow(-1) })
@@ -70,7 +71,7 @@ describe('PrescriptionListComponent', () => {
     })
 
     it('getEffectiveStatus respeta el status real cuando la receta sigue vigente', () => {
-      prescriptionsService.list.and.returnValue(of({ items: [] }))
+      prescriptionsService.list.mockReturnValue(of({ items: [] }))
       component = createComponent()
 
       const vigente = makePrescription({ status: 'active', expiryDate: daysFromNow(5) })
@@ -79,7 +80,7 @@ describe('PrescriptionListComponent', () => {
     })
 
     it('getEffectiveStatus no reclasifica estados terminales (dispensada) aunque la fecha ya haya pasado', () => {
-      prescriptionsService.list.and.returnValue(of({ items: [] }))
+      prescriptionsService.list.mockReturnValue(of({ items: [] }))
       component = createComponent()
 
       const dispensada = makePrescription({ status: 'dispensed', expiryDate: daysFromNow(-30) })
@@ -88,7 +89,7 @@ describe('PrescriptionListComponent', () => {
     })
 
     it('getActiveCount excluye las "active" ya vencidas (antes se contaban como Activas)', () => {
-      prescriptionsService.list.and.returnValue(
+      prescriptionsService.list.mockReturnValue(
         of({
           items: [
             makePrescription({ id: 'a', status: 'active', expiryDate: daysFromNow(5) }),
@@ -106,7 +107,7 @@ describe('PrescriptionListComponent', () => {
 
   describe('bug real: filtro "Vencidas" no traía resultados', () => {
     it('setStatusFilter("expired") no envía status=expired al backend (no existe ese valor en BD)', () => {
-      prescriptionsService.list.and.returnValue(of({ items: [] }))
+      prescriptionsService.list.mockReturnValue(of({ items: [] }))
       component = createComponent()
 
       component.setStatusFilter('expired')
@@ -117,7 +118,7 @@ describe('PrescriptionListComponent', () => {
     it('setStatusFilter("expired") filtra client-side las recetas "active" vencidas', () => {
       const vigente = makePrescription({ id: 'a', status: 'active', expiryDate: daysFromNow(5) })
       const vencida = makePrescription({ id: 'b', status: 'active', expiryDate: daysFromNow(-2) })
-      prescriptionsService.list.and.returnValue(of({ items: [vigente, vencida] }))
+      prescriptionsService.list.mockReturnValue(of({ items: [vigente, vencida] }))
       component = createComponent()
 
       component.setStatusFilter('expired')
@@ -126,7 +127,7 @@ describe('PrescriptionListComponent', () => {
     })
 
     it('otros filtros de status sí se envían al backend normalmente', () => {
-      prescriptionsService.list.and.returnValue(of({ items: [] }))
+      prescriptionsService.list.mockReturnValue(of({ items: [] }))
       component = createComponent()
 
       component.setStatusFilter('dispensed')
@@ -137,7 +138,7 @@ describe('PrescriptionListComponent', () => {
 
   describe('filtro por paciente (llegando desde "Accesos Rápidos" en la ficha del paciente)', () => {
     it('sin patientId en la URL, no filtra por paciente', () => {
-      prescriptionsService.list.and.returnValue(of({ items: [] }))
+      prescriptionsService.list.mockReturnValue(of({ items: [] }))
       component = createComponent(null)
 
       component.ngOnInit()
@@ -147,7 +148,7 @@ describe('PrescriptionListComponent', () => {
     })
 
     it('con patientId en la URL, lo agrega al filtro server-side', () => {
-      prescriptionsService.list.and.returnValue(of({ items: [] }))
+      prescriptionsService.list.mockReturnValue(of({ items: [] }))
       component = createComponent('patient-1')
 
       component.ngOnInit()
@@ -157,7 +158,7 @@ describe('PrescriptionListComponent', () => {
     })
 
     it('deriva el nombre del paciente filtrado de la primera receta recibida', () => {
-      prescriptionsService.list.and.returnValue(
+      prescriptionsService.list.mockReturnValue(
         of({ items: [makePrescription({ patient: { id: 'p1', firstName: 'Ana', lastName: 'Gómez', documentNumber: '1' } })] }),
       )
       component = createComponent('patient-1')
@@ -168,7 +169,7 @@ describe('PrescriptionListComponent', () => {
     })
 
     it('clearPatientFilter limpia el filtro y recarga sin patientId', () => {
-      prescriptionsService.list.and.returnValue(of({ items: [] }))
+      prescriptionsService.list.mockReturnValue(of({ items: [] }))
       component = createComponent('patient-1')
       component.ngOnInit()
 

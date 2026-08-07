@@ -4,12 +4,13 @@ import { AlertService } from '@core/services/alert.service'
 import { of } from 'rxjs'
 import { AppointmentsPageComponent } from './appointments.page.component'
 import { Appointment, AppointmentsService, AppointmentStatus } from './services/appointments.service'
+import { createSpyObj, SpyObj } from '../../../../../testing/spy'
 
 describe('AppointmentsPageComponent', () => {
   let component: AppointmentsPageComponent
-  let appointmentsService: jasmine.SpyObj<AppointmentsService>
-  let router: jasmine.SpyObj<Router>
-  let alert: jasmine.SpyObj<AlertService>
+  let appointmentsService: SpyObj<AppointmentsService>
+  let router: SpyObj<Router>
+  let alert: SpyObj<AlertService>
 
   const makeAppointment = (overrides: Partial<Appointment> = {}): Appointment =>
     ({
@@ -40,30 +41,30 @@ describe('AppointmentsPageComponent', () => {
   }
 
   beforeEach(() => {
-    appointmentsService = jasmine.createSpyObj('AppointmentsService', [
+    appointmentsService = createSpyObj('AppointmentsService', [
       'getAppointments',
       'confirmAppointment',
       'cancelAppointment',
     ])
-    router = jasmine.createSpyObj('Router', ['navigate'])
-    alert = jasmine.createSpyObj('AlertService', ['fire'])
+    router = createSpyObj('Router', ['navigate'])
+    alert = createSpyObj('AlertService', ['fire'])
   })
 
   describe('filtro por paciente (llegando desde "Accesos Rápidos" en la ficha del paciente)', () => {
     it('sin patientId, filtra desde hoy en vez de por paciente', () => {
-      appointmentsService.getAppointments.and.returnValue(of([]))
+      appointmentsService.getAppointments.mockReturnValue(of([]))
       component = createComponent(null)
 
       component.ngOnInit()
 
-      const filtersUsed = appointmentsService.getAppointments.calls.mostRecent().args[0]!
+      const filtersUsed = appointmentsService.getAppointments.mock.lastCall![0]!
       expect(filtersUsed.patientId).toBeUndefined()
       expect(filtersUsed.startDate).toBeDefined()
       expect(component.patientIdFilter).toBeNull()
     })
 
     it('con patientId, pide TODO el historial del paciente (sin límite de fecha)', () => {
-      appointmentsService.getAppointments.and.returnValue(of([]))
+      appointmentsService.getAppointments.mockReturnValue(of([]))
       component = createComponent('patient-1')
 
       component.ngOnInit()
@@ -72,7 +73,7 @@ describe('AppointmentsPageComponent', () => {
     })
 
     it('deriva el nombre del paciente filtrado de la primera cita recibida', () => {
-      appointmentsService.getAppointments.and.returnValue(
+      appointmentsService.getAppointments.mockReturnValue(
         of([makeAppointment({ patient: { id: 'p1', firstName: 'Ana', lastName: 'Gómez' } as any })]),
       )
       component = createComponent('patient-1')
@@ -83,7 +84,7 @@ describe('AppointmentsPageComponent', () => {
     })
 
     it('sin resultados, no arma un nombre de paciente filtrado', () => {
-      appointmentsService.getAppointments.and.returnValue(of([]))
+      appointmentsService.getAppointments.mockReturnValue(of([]))
       component = createComponent('patient-1')
 
       component.ngOnInit()
@@ -92,7 +93,7 @@ describe('AppointmentsPageComponent', () => {
     })
 
     it('clearPatientFilter limpia el filtro, navega sin queryParams y recarga', () => {
-      appointmentsService.getAppointments.and.returnValue(of([]))
+      appointmentsService.getAppointments.mockReturnValue(of([]))
       component = createComponent('patient-1')
       component.ngOnInit()
 
@@ -107,7 +108,7 @@ describe('AppointmentsPageComponent', () => {
 
   describe('applyFilters', () => {
     beforeEach(() => {
-      appointmentsService.getAppointments.and.returnValue(
+      appointmentsService.getAppointments.mockReturnValue(
         of([
           makeAppointment({
             id: 'a',
@@ -145,25 +146,25 @@ describe('AppointmentsPageComponent', () => {
 
   describe('canConfirm / canCancel', () => {
     beforeEach(() => {
-      appointmentsService.getAppointments.and.returnValue(of([]))
+      appointmentsService.getAppointments.mockReturnValue(of([]))
       component = createComponent()
     })
 
     it('canConfirm solo es true para citas SCHEDULED', () => {
-      expect(component.canConfirm(makeAppointment({ status: AppointmentStatus.SCHEDULED }))).toBeTrue()
-      expect(component.canConfirm(makeAppointment({ status: AppointmentStatus.COMPLETED }))).toBeFalse()
+      expect(component.canConfirm(makeAppointment({ status: AppointmentStatus.SCHEDULED }))).toBe(true)
+      expect(component.canConfirm(makeAppointment({ status: AppointmentStatus.COMPLETED }))).toBe(false)
     })
 
     it('canCancel es true para SCHEDULED y CONFIRMED, no para estados terminales', () => {
-      expect(component.canCancel(makeAppointment({ status: AppointmentStatus.SCHEDULED }))).toBeTrue()
-      expect(component.canCancel(makeAppointment({ status: AppointmentStatus.CONFIRMED }))).toBeTrue()
-      expect(component.canCancel(makeAppointment({ status: AppointmentStatus.CANCELLED }))).toBeFalse()
+      expect(component.canCancel(makeAppointment({ status: AppointmentStatus.SCHEDULED }))).toBe(true)
+      expect(component.canCancel(makeAppointment({ status: AppointmentStatus.CONFIRMED }))).toBe(true)
+      expect(component.canCancel(makeAppointment({ status: AppointmentStatus.CANCELLED }))).toBe(false)
     })
   })
 
   describe('navegación', () => {
     beforeEach(() => {
-      appointmentsService.getAppointments.and.returnValue(of([]))
+      appointmentsService.getAppointments.mockReturnValue(of([]))
       component = createComponent()
     })
 

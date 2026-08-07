@@ -16,20 +16,21 @@ import { PrescriptionsService } from '../../prescriptions/prescriptions.service'
 import { Gender, Patient } from '../interfaces'
 import { PatientsService } from '../services'
 import { PatientFormComponent } from './patient-form.component'
+import { createSpyObj, SpyObj } from '../../../../../../testing/spy'
 
 describe('PatientFormComponent', () => {
   let component: PatientFormComponent
-  let patientsService: jasmine.SpyObj<PatientsService>
-  let clinicsService: jasmine.SpyObj<ClinicsService>
+  let patientsService: SpyObj<PatientsService>
+  let clinicsService: SpyObj<ClinicsService>
   let clinicCtx: { clinicId: string | null }
-  let alert: jasmine.SpyObj<AlertService>
-  let router: jasmine.SpyObj<Router>
+  let alert: SpyObj<AlertService>
+  let router: SpyObj<Router>
   let route: { paramMap: any; snapshot: { data: Record<string, any> } }
   let permissions: Permission[]
-  let appointmentsService: jasmine.SpyObj<AppointmentsService>
-  let medicalRecordsService: jasmine.SpyObj<MedicalRecordsService>
-  let prescriptionsService: jasmine.SpyObj<PrescriptionsService>
-  let billingService: jasmine.SpyObj<BillingService>
+  let appointmentsService: SpyObj<AppointmentsService>
+  let medicalRecordsService: SpyObj<MedicalRecordsService>
+  let prescriptionsService: SpyObj<PrescriptionsService>
+  let billingService: SpyObj<BillingService>
 
   const fakeRoleState = { hasPermission: (p: Permission) => permissions.includes(p) }
 
@@ -78,18 +79,18 @@ describe('PatientFormComponent', () => {
   }
 
   beforeEach(() => {
-    patientsService = jasmine.createSpyObj('PatientsService', [
+    patientsService = createSpyObj('PatientsService', [
       'createPatient',
       'updatePatient',
       'findOne',
       'findByDocument',
     ])
-    clinicsService = jasmine.createSpyObj('ClinicsService', ['findAll', 'findOne'])
-    clinicsService.findAll.and.returnValue(of([makeClinic()]))
+    clinicsService = createSpyObj('ClinicsService', ['findAll', 'findOne'])
+    clinicsService.findAll.mockReturnValue(of([makeClinic()]))
     clinicCtx = { clinicId: null }
-    alert = jasmine.createSpyObj('AlertService', ['fire'])
-    alert.fire.and.returnValue(Promise.resolve({ isConfirmed: false } as any))
-    router = jasmine.createSpyObj('Router', ['navigate'])
+    alert = createSpyObj('AlertService', ['fire'])
+    alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: false } as any))
+    router = createSpyObj('Router', ['navigate'])
 
     permissions = [
       Permission.AppointmentsRead,
@@ -97,14 +98,14 @@ describe('PatientFormComponent', () => {
       Permission.PrescriptionsRead,
       Permission.BillingRead,
     ]
-    appointmentsService = jasmine.createSpyObj('AppointmentsService', ['getAppointments'])
-    appointmentsService.getAppointments.and.returnValue(of([]))
-    medicalRecordsService = jasmine.createSpyObj('MedicalRecordsService', ['getMedicalRecordsByPatient'])
-    medicalRecordsService.getMedicalRecordsByPatient.and.returnValue(of([]))
-    prescriptionsService = jasmine.createSpyObj('PrescriptionsService', ['list'])
-    prescriptionsService.list.and.returnValue(of({ total: 0 }))
-    billingService = jasmine.createSpyObj('BillingService', ['listInvoices'])
-    billingService.listInvoices.and.returnValue(of({ total: 0 }))
+    appointmentsService = createSpyObj('AppointmentsService', ['getAppointments'])
+    appointmentsService.getAppointments.mockReturnValue(of([]))
+    medicalRecordsService = createSpyObj('MedicalRecordsService', ['getMedicalRecordsByPatient'])
+    medicalRecordsService.getMedicalRecordsByPatient.mockReturnValue(of([]))
+    prescriptionsService = createSpyObj('PrescriptionsService', ['list'])
+    prescriptionsService.list.mockReturnValue(of({ total: 0 }))
+    billingService = createSpyObj('BillingService', ['listInvoices'])
+    billingService.listInvoices.mockReturnValue(of({ total: 0 }))
   })
 
   describe('constructor / initializeForms', () => {
@@ -119,10 +120,10 @@ describe('PatientFormComponent', () => {
 
     it('los 4 sub-formularios existen e inician inválidos sin datos', () => {
       component = createComponent()
-      expect(component.personalInfoForm.valid).toBeFalse()
-      expect(component.contactInfoForm.valid).toBeTrue() // todos opcionales
-      expect(component.emergencyContactForm.valid).toBeTrue()
-      expect(component.insuranceForm.valid).toBeFalse() // clinicId requerido
+      expect(component.personalInfoForm.valid).toBe(false)
+      expect(component.contactInfoForm.valid).toBe(true) // todos opcionales
+      expect(component.emergencyContactForm.valid).toBe(true)
+      expect(component.insuranceForm.valid).toBe(false) // clinicId requerido
     })
   })
 
@@ -131,14 +132,14 @@ describe('PatientFormComponent', () => {
       component = createComponent()
       component.ngOnInit()
       expect(component.clinics.length).toBe(1)
-      expect(component.isClinicsLoading).toBeFalse()
+      expect(component.isClinicsLoading).toBe(false)
     })
 
     it('avisa si no hay clínicas activas y no está en modo edición', () => {
-      clinicsService.findAll.and.returnValue(of([]))
+      clinicsService.findAll.mockReturnValue(of([]))
       component = createComponent()
       component.ngOnInit()
-      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Sin Clínicas Activas' }))
+      expect(alert.fire).toHaveBeenCalledWith(expect.objectContaining({ title: 'Sin Clínicas Activas' }))
     })
 
     it('prefija clinicId si el contexto coincide con una clínica cargada', () => {
@@ -150,19 +151,18 @@ describe('PatientFormComponent', () => {
 
     it('si el contexto no está en la lista cargada, busca y agrega esa clínica', () => {
       clinicCtx.clinicId = 'clinic-9'
-      clinicsService.findOne.and.returnValue(of(makeClinic({ id: 'clinic-9', name: 'Sur' })))
+      clinicsService.findOne.mockReturnValue(of(makeClinic({ id: 'clinic-9', name: 'Sur' })))
       component = createComponent()
       component.ngOnInit()
       expect(clinicsService.findOne).toHaveBeenCalledWith('clinic-9')
-      expect(component.clinics.some(c => c.id === 'clinic-9')).toBeTrue()
+      expect(component.clinics.some(c => c.id === 'clinic-9')).toBe(true)
     })
 
     it('en error, ofrece reintentar y reintenta si el usuario confirma', async () => {
-      clinicsService.findAll.and.returnValues(
-        throwError(() => ({ status: 500 })),
-        of([makeClinic()]),
-      )
-      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
+      clinicsService.findAll
+        .mockReturnValueOnce(throwError(() => ({ status: 500 })))
+        .mockReturnValueOnce(of([makeClinic()]))
+      alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: true } as any))
 
       component = createComponent()
       component.ngOnInit()
@@ -176,61 +176,61 @@ describe('PatientFormComponent', () => {
     it('sin id en la ruta, no entra en modo edición ni llama a findOne', () => {
       component = createComponent({ id: null })
       component.ngOnInit()
-      expect(component.isEditMode).toBeFalse()
+      expect(component.isEditMode).toBe(false)
       expect(patientsService.findOne).not.toHaveBeenCalled()
     })
 
     it('con id y sin viewMode, entra en modo edición y puebla el formulario', () => {
-      patientsService.findOne.and.returnValue(of(makePatient()))
+      patientsService.findOne.mockReturnValue(of(makePatient()))
       component = createComponent({ id: 'patient-1' })
 
       component.ngOnInit()
 
-      expect(component.isEditMode).toBeTrue()
-      expect(component.isViewMode).toBeFalse()
+      expect(component.isEditMode).toBe(true)
+      expect(component.isViewMode).toBe(false)
       expect(component.personalInfoForm.value.firstName).toBe('Juan')
-      expect(component.isLoading).toBeFalse()
+      expect(component.isLoading).toBe(false)
     })
 
     it('con id y viewMode=true, entra en modo vista y deshabilita los formularios', () => {
-      patientsService.findOne.and.returnValue(of(makePatient()))
+      patientsService.findOne.mockReturnValue(of(makePatient()))
       component = createComponent({ id: 'patient-1' }, { viewMode: true })
 
       component.ngOnInit()
 
-      expect(component.isViewMode).toBeTrue()
-      expect(component.isEditMode).toBeFalse()
-      expect(component.personalInfoForm.disabled).toBeTrue()
+      expect(component.isViewMode).toBe(true)
+      expect(component.isEditMode).toBe(false)
+      expect(component.personalInfoForm.disabled).toBe(true)
     })
 
     it('si el paciente no existe (404), avisa y navega a la lista', async () => {
-      patientsService.findOne.and.returnValue(throwError(() => ({ status: 404 })))
-      alert.fire.and.returnValue(Promise.resolve({} as any))
+      patientsService.findOne.mockReturnValue(throwError(() => ({ status: 404 })))
+      alert.fire.mockReturnValue(Promise.resolve({} as any))
       component = createComponent({ id: 'patient-1' })
 
       component.ngOnInit()
       await Promise.resolve()
 
-      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Paciente No Encontrado' }))
+      expect(alert.fire).toHaveBeenCalledWith(expect.objectContaining({ title: 'Paciente No Encontrado' }))
       expect(router.navigate).toHaveBeenCalledWith(['/dashboard/patients'])
     })
 
     it('en cualquier otro error, avisa genéricamente y navega a la lista', async () => {
-      patientsService.findOne.and.returnValue(throwError(() => ({ status: 500 })))
-      alert.fire.and.returnValue(Promise.resolve({} as any))
+      patientsService.findOne.mockReturnValue(throwError(() => ({ status: 500 })))
+      alert.fire.mockReturnValue(Promise.resolve({} as any))
       component = createComponent({ id: 'patient-1' })
 
       component.ngOnInit()
       await Promise.resolve()
 
-      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Error al Cargar Paciente' }))
+      expect(alert.fire).toHaveBeenCalledWith(expect.objectContaining({ title: 'Error al Cargar Paciente' }))
       expect(router.navigate).toHaveBeenCalledWith(['/dashboard/patients'])
     })
   })
 
   describe('Accesos rápidos (modo vista)', () => {
     beforeEach(() => {
-      patientsService.findOne.and.returnValue(of(makePatient({ id: 'patient-1' })))
+      patientsService.findOne.mockReturnValue(of(makePatient({ id: 'patient-1' })))
     })
 
     it('pide conteos solo de los módulos que el rol tiene permiso de ver', () => {
@@ -246,10 +246,10 @@ describe('PatientFormComponent', () => {
     })
 
     it('muestra los conteos reales una vez cargados', () => {
-      appointmentsService.getAppointments.and.returnValue(of([{}, {}] as any))
-      medicalRecordsService.getMedicalRecordsByPatient.and.returnValue(of([{}] as any))
-      prescriptionsService.list.and.returnValue(of({ total: 3 }))
-      billingService.listInvoices.and.returnValue(of({ total: 5 }))
+      appointmentsService.getAppointments.mockReturnValue(of([{}, {}] as any))
+      medicalRecordsService.getMedicalRecordsByPatient.mockReturnValue(of([{}] as any))
+      prescriptionsService.list.mockReturnValue(of({ total: 3 }))
+      billingService.listInvoices.mockReturnValue(of({ total: 5 }))
       component = createComponent({ id: 'patient-1' }, { viewMode: true })
 
       component.ngOnInit()
@@ -275,13 +275,13 @@ describe('PatientFormComponent', () => {
       permissions = []
       component = createComponent({ id: 'patient-1' }, { viewMode: true })
 
-      expect(component.hasAnyQuickAccess).toBeFalse()
+      expect(component.hasAnyQuickAccess).toBe(false)
     })
   })
 
   describe('navegación de accesos rápidos', () => {
     beforeEach(() => {
-      patientsService.findOne.and.returnValue(of(makePatient({ id: 'patient-1' })))
+      patientsService.findOne.mockReturnValue(of(makePatient({ id: 'patient-1' })))
       component = createComponent({ id: 'patient-1' }, { viewMode: true })
       component.ngOnInit()
     })
@@ -345,14 +345,14 @@ describe('PatientFormComponent', () => {
     it('avisa si el documento tiene menos de 5 caracteres, sin llamar al servicio', () => {
       component.personalInfoForm.patchValue({ documentNumber: '123' })
       component.searchByDocument()
-      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Documento insuficiente' }))
+      expect(alert.fire).toHaveBeenCalledWith(expect.objectContaining({ title: 'Documento insuficiente' }))
       expect(patientsService.findByDocument).not.toHaveBeenCalled()
     })
 
     it('si encuentra un paciente y el usuario confirma, navega a editarlo', async () => {
       component.personalInfoForm.patchValue({ documentNumber: '1234567' })
-      patientsService.findByDocument.and.returnValue(of(makePatient()))
-      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
+      patientsService.findByDocument.mockReturnValue(of(makePatient()))
+      alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: true } as any))
 
       component.searchByDocument()
       await Promise.resolve()
@@ -362,11 +362,11 @@ describe('PatientFormComponent', () => {
 
     it('si no encuentra ningún paciente, avisa que puede continuar', () => {
       component.personalInfoForm.patchValue({ documentNumber: '1234567' })
-      patientsService.findByDocument.and.returnValue(of(null as unknown as Patient))
+      patientsService.findByDocument.mockReturnValue(of(null as unknown as Patient))
 
       component.searchByDocument()
 
-      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'No encontrado' }))
+      expect(alert.fire).toHaveBeenCalledWith(expect.objectContaining({ title: 'No encontrado' }))
     })
   })
 
@@ -387,7 +387,7 @@ describe('PatientFormComponent', () => {
     })
 
     it('isAllFormsValid es false si falta algún campo requerido', () => {
-      expect(component.isAllFormsValid()).toBeFalse()
+      expect(component.isAllFormsValid()).toBe(false)
     })
 
     it('isAllFormsValid es true con los 4 formularios completos', () => {
@@ -398,7 +398,7 @@ describe('PatientFormComponent', () => {
         birthDate: new Date('1990-01-01'),
         gender: Gender.MALE,
       })
-      expect(component.isAllFormsValid()).toBeTrue()
+      expect(component.isAllFormsValid()).toBe(true)
     })
   })
 
@@ -412,8 +412,8 @@ describe('PatientFormComponent', () => {
     it('si el formulario es inválido, marca todo como touched y muestra los campos faltantes', () => {
       component.onSubmit()
 
-      expect(component.personalInfoForm.get('firstName')?.touched).toBeTrue()
-      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Campos requeridos' }))
+      expect(component.personalInfoForm.get('firstName')?.touched).toBe(true)
+      expect(alert.fire).toHaveBeenCalledWith(expect.objectContaining({ title: 'Campos requeridos' }))
       expect(patientsService.createPatient).not.toHaveBeenCalled()
     })
 
@@ -425,7 +425,7 @@ describe('PatientFormComponent', () => {
         birthDate: new Date('1990-01-01'),
         gender: Gender.MALE,
       })
-      patientsService.createPatient.and.returnValue(of(makePatient()))
+      patientsService.createPatient.mockReturnValue(of(makePatient()))
 
       component.onSubmit()
 
@@ -436,14 +436,14 @@ describe('PatientFormComponent', () => {
 
   describe('onSubmit — modo edición', () => {
     it('con formulario válido, llama a updatePatient', () => {
-      patientsService.findOne.and.returnValue(of(makePatient()))
+      patientsService.findOne.mockReturnValue(of(makePatient()))
       component = createComponent({ id: 'patient-1' })
       component.ngOnInit()
-      patientsService.updatePatient.and.returnValue(of(makePatient()))
+      patientsService.updatePatient.mockReturnValue(of(makePatient()))
 
       component.onSubmit()
 
-      expect(patientsService.updatePatient).toHaveBeenCalledWith('patient-1', jasmine.any(Object))
+      expect(patientsService.updatePatient).toHaveBeenCalledWith('patient-1', expect.any(Object))
     })
   })
 
@@ -462,8 +462,8 @@ describe('PatientFormComponent', () => {
     })
 
     it('navega a crear expediente médico si el usuario confirma', async () => {
-      patientsService.createPatient.and.returnValue(of(makePatient()))
-      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
+      patientsService.createPatient.mockReturnValue(of(makePatient()))
+      alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: true } as any))
 
       component.onSubmit()
       await Promise.resolve()
@@ -471,12 +471,12 @@ describe('PatientFormComponent', () => {
       expect(router.navigate).toHaveBeenCalledWith(['/dashboard/medical-records/new'], {
         queryParams: { patientId: 'patient-1' },
       })
-      expect(component.isSaving).toBeFalse()
+      expect(component.isSaving).toBe(false)
     })
 
     it('navega a la lista si el usuario elige "Ir a Lista" (isDenied)', async () => {
-      patientsService.createPatient.and.returnValue(of(makePatient()))
-      alert.fire.and.returnValue(Promise.resolve({ isDenied: true } as any))
+      patientsService.createPatient.mockReturnValue(of(makePatient()))
+      alert.fire.mockReturnValue(Promise.resolve({ isDenied: true } as any))
 
       component.onSubmit()
       await Promise.resolve()
@@ -485,9 +485,9 @@ describe('PatientFormComponent', () => {
     })
 
     it('reinicia los formularios si el usuario elige "Crear Otro"', async () => {
-      patientsService.createPatient.and.returnValue(of(makePatient()))
-      alert.fire.and.returnValue(Promise.resolve({} as any))
-      const initSpy = spyOn<any>(component, 'initializeForms').and.callThrough()
+      patientsService.createPatient.mockReturnValue(of(makePatient()))
+      alert.fire.mockReturnValue(Promise.resolve({} as any))
+      const initSpy = vi.spyOn(component as any, 'initializeForms')
 
       component.onSubmit()
       await Promise.resolve()
@@ -496,12 +496,12 @@ describe('PatientFormComponent', () => {
     })
 
     it('en error, delega a handlePatientError', () => {
-      patientsService.createPatient.and.returnValue(throwError(() => ({ status: 400, error: {} })))
+      patientsService.createPatient.mockReturnValue(throwError(() => ({ status: 400, error: {} })))
 
       component.onSubmit()
 
-      expect(component.isSaving).toBeFalse()
-      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Datos Inválidos' }))
+      expect(component.isSaving).toBe(false)
+      expect(alert.fire).toHaveBeenCalledWith(expect.objectContaining({ title: 'Datos Inválidos' }))
     })
   })
 
@@ -520,27 +520,27 @@ describe('PatientFormComponent', () => {
     })
 
     const submitWithError = (error: any) => {
-      patientsService.createPatient.and.returnValue(throwError(() => error))
+      patientsService.createPatient.mockReturnValue(throwError(() => error))
       component.onSubmit()
     }
 
     it('409 (paciente duplicado): confirma → navega a la lista con q=documentNumber', async () => {
-      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
+      alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: true } as any))
       submitWithError({ status: 409 })
       await Promise.resolve()
 
-      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: '⚠️ Paciente Ya Registrado' }))
+      expect(alert.fire).toHaveBeenCalledWith(expect.objectContaining({ title: '⚠️ Paciente Ya Registrado' }))
       expect(router.navigate).toHaveBeenCalledWith(['/dashboard/patients'], { queryParams: { q: '1234567' } })
     })
 
     it('404 con "Clinic not found": muestra alerta específica de clínica', () => {
       submitWithError({ status: 404, error: { message: 'Clinic not found' } })
-      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Clínica No Encontrada' }))
+      expect(alert.fire).toHaveBeenCalledWith(expect.objectContaining({ title: 'Clínica No Encontrada' }))
     })
 
     it('400: extrae errores de validación (array) y los muestra', () => {
       submitWithError({ status: 400, error: { message: ['Campo A inválido', 'Campo B inválido'] } })
-      const call = alert.fire.calls.mostRecent().args[0] as any
+      const call = alert.fire.mock.lastCall![0] as any
       expect(call.title).toBe('Datos Inválidos')
       expect(call.html).toContain('Campo A inválido')
       expect(call.html).toContain('Campo B inválido')
@@ -548,18 +548,20 @@ describe('PatientFormComponent', () => {
 
     it('400 sin mensaje del backend: usa el mensaje por defecto', () => {
       submitWithError({ status: 400, error: {} })
-      const call = alert.fire.calls.mostRecent().args[0] as any
+      const call = alert.fire.mock.lastCall![0] as any
       expect(call.html).toContain('Datos inválidos. Por favor, revise el formulario.')
     })
 
     it('401/403: muestra alerta de falta de autorización', () => {
       submitWithError({ status: 401 })
-      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Sin Autorización' }))
+      expect(alert.fire).toHaveBeenCalledWith(expect.objectContaining({ title: 'Sin Autorización' }))
     })
 
     it('>=500: ofrece reintentar y reintenta createPatient si confirma', async () => {
-      patientsService.createPatient.and.returnValues(throwError(() => ({ status: 500 })), of(makePatient()))
-      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
+      patientsService.createPatient
+        .mockReturnValueOnce(throwError(() => ({ status: 500 })))
+        .mockReturnValueOnce(of(makePatient()))
+      alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: true } as any))
 
       component.onSubmit()
       await Promise.resolve()
@@ -570,7 +572,7 @@ describe('PatientFormComponent', () => {
 
     it('error genérico: usa error.error.message si viene, si no el mensaje por defecto', () => {
       submitWithError({ status: 418, error: { message: 'Soy una tetera' } })
-      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Error al Guardar', text: 'Soy una tetera' }))
+      expect(alert.fire).toHaveBeenCalledWith(expect.objectContaining({ title: 'Error al Guardar', text: 'Soy una tetera' }))
     })
   })
 
@@ -583,7 +585,7 @@ describe('PatientFormComponent', () => {
 
     it('con personalInfoForm inválido, avisa qué falta sin llamar al servicio', () => {
       component.saveDraft()
-      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Información Incompleta' }))
+      expect(alert.fire).toHaveBeenCalledWith(expect.objectContaining({ title: 'Información Incompleta' }))
       expect(patientsService.createPatient).not.toHaveBeenCalled()
     })
 
@@ -595,8 +597,8 @@ describe('PatientFormComponent', () => {
         birthDate: new Date('1990-01-01'),
         gender: Gender.MALE,
       })
-      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
-      patientsService.createPatient.and.returnValue(of(makePatient()))
+      alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: true } as any))
+      patientsService.createPatient.mockReturnValue(of(makePatient()))
 
       component.saveDraft()
       await Promise.resolve()
@@ -609,14 +611,14 @@ describe('PatientFormComponent', () => {
     beforeEach(() => (component = createComponent()))
 
     it('si el usuario confirma, marca allowNavigationOnce y navega a la lista', async () => {
-      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
+      alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: true } as any))
       component.cancel()
       await Promise.resolve()
       expect(router.navigate).toHaveBeenCalledWith(['/dashboard/patients'])
     })
 
     it('si el usuario cancela, no navega', async () => {
-      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: false } as any))
+      alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: false } as any))
       component.cancel()
       await Promise.resolve()
       expect(router.navigate).not.toHaveBeenCalled()
@@ -628,33 +630,33 @@ describe('PatientFormComponent', () => {
 
     it('en modo vista, siempre permite salir', async () => {
       ;(component as any).isViewMode = true
-      expect(await component.canDeactivate()).toBeTrue()
+      expect(await component.canDeactivate()).toBe(true)
     })
 
     it('si allowNavigationOnce está seteado, permite salir una vez y resetea el flag', async () => {
       ;(component as any).allowNavigationOnce = true
-      expect(await component.canDeactivate()).toBeTrue()
-      expect((component as any).allowNavigationOnce).toBeFalse()
+      expect(await component.canDeactivate()).toBe(true)
+      expect((component as any).allowNavigationOnce).toBe(false)
     })
 
     it('si los 4 formularios están pristine, permite salir sin preguntar', async () => {
-      expect(await component.canDeactivate()).toBeTrue()
+      expect(await component.canDeactivate()).toBe(true)
       expect(alert.fire).not.toHaveBeenCalled()
     })
 
     it('si algún formulario está dirty, pregunta y respeta la decisión del usuario', async () => {
       component.personalInfoForm.markAsDirty()
-      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: true } as any))
+      alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: true } as any))
 
-      expect(await component.canDeactivate()).toBeTrue()
-      expect(alert.fire).toHaveBeenCalledWith(jasmine.objectContaining({ title: '¿Salir sin guardar?' }))
+      expect(await component.canDeactivate()).toBe(true)
+      expect(alert.fire).toHaveBeenCalledWith(expect.objectContaining({ title: '¿Salir sin guardar?' }))
     })
 
     it('si el usuario no confirma el diálogo de descarte, bloquea la salida', async () => {
       component.personalInfoForm.markAsDirty()
-      alert.fire.and.returnValue(Promise.resolve({ isConfirmed: false } as any))
+      alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: false } as any))
 
-      expect(await component.canDeactivate()).toBeFalse()
+      expect(await component.canDeactivate()).toBe(false)
     })
   })
 })

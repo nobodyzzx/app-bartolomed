@@ -4,14 +4,16 @@ import { AlertService } from '@core/services/alert.service'
 import { ErrorService } from '../../../../shared/components/services/error.service'
 import { environment } from '../../../../environments/environments'
 import { BillingService, InvoiceDto, PaymentDto } from './billing.service'
+import { createSpyObj, SpyObj } from '../../../../../testing/spy'
+import { itDone } from '../../../../../testing/it-done'
 
 const BASE = environment.baseUrl
 
 describe('BillingService', () => {
   let service: BillingService
   let httpMock: HttpTestingController
-  let errorService: jasmine.SpyObj<ErrorService>
-  let alert: jasmine.SpyObj<AlertService>
+  let errorService: SpyObj<ErrorService>
+  let alert: SpyObj<AlertService>
 
   const invoiceDto: InvoiceDto = {
     invoiceNumber: 'INV-0001',
@@ -31,8 +33,8 @@ describe('BillingService', () => {
   }
 
   beforeEach(() => {
-    errorService = jasmine.createSpyObj('ErrorService', ['handleError'])
-    alert = jasmine.createSpyObj('AlertService', ['success'])
+    errorService = createSpyObj('ErrorService', ['handleError'])
+    alert = createSpyObj('AlertService', ['success'])
 
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
@@ -68,12 +70,12 @@ describe('BillingService', () => {
       expect(req.request.params.get('page')).toBe('2')
       expect(req.request.params.get('pageSize')).toBe('10')
       expect(req.request.params.get('status')).toBe('paid')
-      expect(req.request.params.has('clinicId')).toBeFalse()
-      expect(req.request.params.has('patientId')).toBeFalse()
+      expect(req.request.params.has('clinicId')).toBe(false)
+      expect(req.request.params.has('patientId')).toBe(false)
       req.flush({ data: [], total: 0 })
     })
 
-    it('en error, delega a errorService.handleError y repropaga', done => {
+    itDone('en error, delega a errorService.handleError y repropaga', done => {
       service.listInvoices().subscribe({
         error: err => {
           expect(errorService.handleError).toHaveBeenCalled()
@@ -157,7 +159,7 @@ describe('BillingService', () => {
     it('sin clinicId, no agrega el param', () => {
       service.getStatistics().subscribe()
       const req = httpMock.expectOne(r => r.url === `${BASE}/billing/statistics`)
-      expect(req.request.params.has('clinicId')).toBeFalse()
+      expect(req.request.params.has('clinicId')).toBe(false)
       req.flush({})
     })
 
