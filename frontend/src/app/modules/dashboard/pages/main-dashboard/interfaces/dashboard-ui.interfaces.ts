@@ -12,6 +12,8 @@ export interface DashboardStats {
   pendingInvoices: number
   overdueInvoices: number
   pendingRevenue: number
+  /** Órdenes de laboratorio abiertas (pedidas, con muestra o en proceso). */
+  openLabOrders: number
 }
 
 export interface RecentAppointment {

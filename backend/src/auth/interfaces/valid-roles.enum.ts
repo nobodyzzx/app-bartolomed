@@ -6,5 +6,4 @@ export enum ValidRoles {
   RECEPTIONIST = 'receptionist',
   PHARMACIST = 'pharmacist',
   LABORATORY = 'laboratory',
-  USER = 'user',
 }

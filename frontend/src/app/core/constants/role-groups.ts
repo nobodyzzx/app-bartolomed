@@ -5,6 +5,11 @@ export const CLINICAL_ROLES: UserRoles[] = [
   UserRoles.DOCTOR, UserRoles.NURSE, UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN,
 ]
 
+/** Quien trabaja con órdenes de laboratorio: las pide, o las procesa. */
+export const LAB_ROLES: UserRoles[] = [
+  UserRoles.DOCTOR, UserRoles.NURSE, UserRoles.LABORATORY, UserRoles.ADMIN, UserRoles.SUPER_ADMIN,
+]
+
 export const ADMIN_ONLY_ROLES: UserRoles[] = [UserRoles.ADMIN, UserRoles.SUPER_ADMIN]
 
 export const PHARMACY_ROLES: UserRoles[] = [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN]

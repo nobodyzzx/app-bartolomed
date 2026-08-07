@@ -43,9 +43,10 @@ describe('MainDashboardComponent', () => {
     dashboardService = createSpyObj('DashboardService', [
       'getPatientStats', 'getTodayAppointments', 'getPendingAppointmentsCount',
       'getLowStockAlerts', 'getRecentPatients', 'getStaffStatistics', 'getBillingSummary',
-      'getWeeklySales', 'getMonthlySales',
+      'getWeeklySales', 'getMonthlySales', 'getOpenLabOrdersCount',
     ])
     dashboardService.getPatientStats.mockReturnValue(of({ total: 0 }))
+    dashboardService.getOpenLabOrdersCount.mockReturnValue(of(0))
     dashboardService.getTodayAppointments.mockReturnValue(of([]))
     dashboardService.getPendingAppointmentsCount.mockReturnValue(of(0))
     dashboardService.getLowStockAlerts.mockReturnValue(of([]))
@@ -95,6 +96,23 @@ describe('MainDashboardComponent', () => {
       expect(labels).not.toContain('Facturas Pendientes')
       expect(labels).not.toContain('Citas Hoy')
       expect(labels).not.toContain('Mis Citas Hoy')
+    })
+
+    /**
+     * Un usuario solo-laboratorio no estaba entre los allowedRoles del home, y
+     * el roleGuard —al no tener a dónde mandarlo— le cerraba la sesión: podía
+     * autenticarse pero no entrar. Ahora entra al mismo dashboard que el resto
+     * y ve lo suyo.
+     */
+    it('LABORATORY ve su tarjeta de órdenes y ninguna ajena', () => {
+      roles = [UserRoles.LABORATORY]
+      const component = createComponent()
+      const labels = component.visibleStatCards.map(c => c.label)
+
+      expect(labels).toContain('Órdenes de Laboratorio')
+      expect(labels).not.toContain('Total Pacientes')
+      expect(labels).not.toContain('Stock Bajo')
+      expect(labels).not.toContain('Facturas Pendientes')
     })
 
     it('ADMIN ve todo: personal, farmacia y facturación', () => {
@@ -179,6 +197,18 @@ describe('MainDashboardComponent', () => {
 
       expect(dashboardService.getTodayAppointments).not.toHaveBeenCalled()
       expect(dashboardService.getPendingAppointmentsCount).not.toHaveBeenCalled()
+    })
+
+    it('no pide las órdenes de laboratorio a quien no tiene LabRead', () => {
+      roles = [UserRoles.RECEPTIONIST]
+      createComponent().loadDashboardData()
+      expect(dashboardService.getOpenLabOrdersCount).not.toHaveBeenCalled()
+    })
+
+    it('pide las órdenes de laboratorio a quien sí lo tiene', () => {
+      roles = [UserRoles.LABORATORY]
+      createComponent().loadDashboardData()
+      expect(dashboardService.getOpenLabOrdersCount).toHaveBeenCalled()
     })
 
     it('no acota por doctorId para un ADMIN', () => {

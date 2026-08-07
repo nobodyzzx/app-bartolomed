@@ -37,7 +37,6 @@ export class User {
 
   @Column('text', {
     array: true,
-    default: ['user'],
   })
   roles: string[];
 

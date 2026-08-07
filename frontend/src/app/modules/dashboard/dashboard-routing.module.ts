@@ -21,11 +21,16 @@ const routes: Routes = [
         component: MainDashboardComponent,
         canActivate: [permissionsGuard, roleGuard],
         data: {
+          // Todos los roles entran al mismo dashboard; lo que cambia es qué
+          // secciones ve cada uno. Dejar fuera a LABORATORY hacía que el
+          // roleGuard lo rechazara aquí y, al no haber a dónde mandarlo,
+          // cerrara su sesión: podía autenticarse pero no usar el sistema.
           allowedRoles: [
             UserRoles.RECEPTIONIST,
             UserRoles.PHARMACIST,
             UserRoles.NURSE,
             UserRoles.DOCTOR,
+            UserRoles.LABORATORY,
             UserRoles.ADMIN,
             UserRoles.SUPER_ADMIN,
           ],

@@ -83,9 +83,6 @@ export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
     Permission.LabRead,
     Permission.LabResultEnter,
   ],
-  [ValidRoles.USER]: [
-    // Acceso mínimo, configurable
-  ],
 };
 
 export function permissionsForRoles(roles: string[] | undefined | null): Permission[] {

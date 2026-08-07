@@ -1,7 +1,7 @@
 import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
-import { ADMIN_ONLY_ROLES, BILLING_ROLES, CLINICAL_ROLES, PHARMACY_ROLES } from '@core/constants/role-groups'
+import { ADMIN_ONLY_ROLES, BILLING_ROLES, CLINICAL_ROLES, LAB_ROLES, PHARMACY_ROLES } from '@core/constants/role-groups'
 import { Permission } from '@core/enums/permission.enum'
 import { UserRoles } from '@core/enums/user-roles.enum'
 import { RoleStateService } from '@core/services/role-state.service'
@@ -60,6 +60,7 @@ export class MainDashboardComponent implements OnInit {
     pendingInvoices: 0,
     overdueInvoices: 0,
     pendingRevenue: 0,
+    openLabOrders: 0,
   }
 
   recentAppointments: RecentAppointment[] = []
@@ -182,6 +183,12 @@ export class MainDashboardComponent implements OnInit {
         roles: PHARMACY_ROLES,
       },
       {
+        label: 'Órdenes de Laboratorio', sublabel: 'Pendientes de resultado',
+        icon: 'biotech', color: 'purple', route: '/dashboard/laboratory',
+        value: this.stats.openLabOrders,
+        roles: LAB_ROLES,
+      },
+      {
         label: 'Facturas Pendientes', sublabel: this.stats.overdueInvoices > 0 ? `${this.stats.overdueInvoices} vencida(s)` : 'Por cobrar',
         icon: 'receipt_long', color: 'amber', route: '/dashboard/billing',
         value: this.stats.pendingInvoices,
@@ -289,6 +296,11 @@ export class MainDashboardComponent implements OnInit {
     return this.roleState.hasAnyRole(CLINICAL_ROLES) && this.roleState.hasPermission(Permission.AppointmentsRead)
   }
 
+  /** Laboratorio: lo ve quien pide órdenes y quien las procesa. */
+  get showLabSection(): boolean {
+    return this.roleState.hasAnyRole(LAB_ROLES) && this.roleState.hasPermission(Permission.LabRead)
+  }
+
   get showStockSection(): boolean {
     return this.roleState.hasAnyRole(PHARMACY_ROLES)
   }
@@ -365,6 +377,7 @@ export class MainDashboardComponent implements OnInit {
     const needsStock    = this.showStockSection
     const needsStaff    = this.showStaffSection
     const needsBilling  = this.showBillingSection
+    const needsLab      = this.showLabSection
     const doctorId      = this.currentDoctorId
 
     forkJoin({
@@ -374,10 +387,11 @@ export class MainDashboardComponent implements OnInit {
       stock:        needsStock    ? this.dashboardService.getLowStockAlerts()                    : of([] as StockAlert[]),
       patients:     needsClinical ? this.dashboardService.getRecentPatients()                    : of([] as RecentPatient[]),
       staff:        needsStaff    ? this.dashboardService.getStaffStatistics()                   : of({ totalDoctors: 0, totalNurses: 0, totalReceptionists: 0, totalPharmacists: 0, totalLaboratory: 0 }),
+      labOrders:    needsLab      ? this.dashboardService.getOpenLabOrdersCount()                  : of(0),
       billing:      needsBilling  ? this.dashboardService.getBillingSummary()                    : of({ pendingInvoices: 0, overdueInvoices: 0, pendingRevenue: 0 }),
     }).pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ patientStats, appointments, pending, stock, patients, staff, billing }) => {
+        next: ({ patientStats, appointments, pending, stock, patients, staff, billing, labOrders }) => {
           this.stats = {
             totalPatients:       patientStats.total,
             totalAppointments:   appointments.length,
@@ -392,6 +406,7 @@ export class MainDashboardComponent implements OnInit {
             pendingInvoices:     billing.pendingInvoices,
             overdueInvoices:     billing.overdueInvoices,
             pendingRevenue:      billing.pendingRevenue,
+            openLabOrders:       labOrders,
           }
           this.recentAppointments  = appointments
           this.todayAppointments   = appointments

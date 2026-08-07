@@ -3749,7 +3749,7 @@ export interface components {
             password: string;
             personalInfo: components["schemas"]["PersonalInfoDto"];
             professionalInfo?: components["schemas"]["ProfessionalInfoDto"];
-            roles: ("super-admin" | "admin" | "doctor" | "nurse" | "receptionist" | "pharmacist" | "laboratory" | "user")[];
+            roles: ("super-admin" | "admin" | "doctor" | "nurse" | "receptionist" | "pharmacist" | "laboratory")[];
             /** Format: uuid */
             clinicId?: string;
         };

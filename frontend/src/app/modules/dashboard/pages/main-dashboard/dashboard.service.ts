@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core'
-import { Observable, of } from 'rxjs'
+import { forkJoin, Observable, of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { environment } from '../../../../environments/environments'
 import { RecentAppointment, RecentPatient, StockAlert } from './interfaces/dashboard-ui.interfaces'
@@ -151,6 +151,30 @@ export class DashboardService {
         const items: any[] = Array.isArray(r) ? r : (r.data ?? r.items ?? [])
         return items.length
       }),
+      catchError(() => of(0)),
+    )
+  }
+
+  /**
+   * Órdenes de laboratorio abiertas: pedidas, con muestra tomada o en proceso.
+   * Es lo que le importa a quien trabaja en el laboratorio nada más entrar, y
+   * lo único que hasta ahora el dashboard no le mostraba a ese rol.
+   */
+  getOpenLabOrdersCount(): Observable<number> {
+    const abiertas = ['requested', 'sample_collected', 'in_progress']
+    return forkJoin(
+      abiertas.map(status =>
+        this.http
+          .get<any>(`${this.base}/lab-orders`, {
+            params: new HttpParams().set('status', status).set('pageSize', '1'),
+          })
+          .pipe(
+            map(r => Number(r?.total ?? 0)),
+            catchError(() => of(0)),
+          ),
+      ),
+    ).pipe(
+      map(totales => totales.reduce((a, b) => a + b, 0)),
       catchError(() => of(0)),
     )
   }

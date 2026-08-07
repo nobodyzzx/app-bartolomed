@@ -7,11 +7,13 @@ export const MENU_ITEMS: MenuItem[] = [
     label: 'Dashboard Principal',
     icon: 'dashboard',
     route: '/dashboard/home',
+    // Todos los roles: el dashboard decide por dentro qué mostrarle a cada uno.
     allowedRoles: [
       UserRoles.RECEPTIONIST,
       UserRoles.PHARMACIST,
       UserRoles.NURSE,
       UserRoles.DOCTOR,
+      UserRoles.LABORATORY,
       UserRoles.ADMIN,
       UserRoles.SUPER_ADMIN,
     ],
