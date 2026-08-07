@@ -364,6 +364,13 @@ export interface CreateSaleDto {
   prescriptionNumber?: string
   /** Id de la receta a dispensar; el backend la valida y la marca DISPENSED al completar la venta. */
   prescriptionId?: string
+  /**
+   * Deja el medicamento a cuenta del paciente en vez de cobrarlo en farmacia:
+   * el importe pasa a la caja general como un cargo pendiente. El backend solo
+   * lo acepta con receta y paciente registrado — una venta de mostrador se
+   * cobra en farmacia y punto.
+   */
+  chargeToAccount?: boolean
   items: CreateSaleItemDto[]
   clinicId: string
 }

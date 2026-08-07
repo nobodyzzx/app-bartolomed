@@ -84,6 +84,39 @@ export class NewSaleComponent implements OnInit {
     return change > 0 ? change : 0
   })
 
+  /**
+   * "A cuenta" deja el importe como cargo pendiente del paciente, para que lo
+   * cobre la caja general en vez de farmacia. El backend solo lo acepta con
+   * receta y paciente registrado: una venta de mostrador se cobra aquí y punto.
+   * Si el farmacéutico quita la receta o el paciente, la casilla se apaga sola
+   * en vez de dejar el formulario en un estado que el servidor rechazará.
+   */
+  get canChargeToAccount(): boolean {
+    return !!this.form?.get('patientId')?.value && !!this.selectedPrescriptionId()
+  }
+
+  get chargeToAccount(): boolean {
+    return this.canChargeToAccount && !!this.form?.get('chargeToAccount')?.value
+  }
+
+  /**
+   * Reactive forms gobierna el estado deshabilitado de sus controles, así que un
+   * `[disabled]` en la plantilla se ignora: hay que moverlo desde aquí. Al
+   * quedarse sin paciente o sin receta la casilla se apaga y se bloquea, en vez
+   * de dejar marcado algo que el backend rechazaría.
+   */
+  private syncChargeToAccountControl(): void {
+    const control = this.form?.get('chargeToAccount')
+    if (!control) return
+
+    if (this.canChargeToAccount) {
+      if (control.disabled) control.enable({ emitEvent: false })
+      return
+    }
+    if (control.value) control.setValue(false, { emitEvent: false })
+    if (control.enabled) control.disable({ emitEvent: false })
+  }
+
   selectedStockId = signal<string | null>(null)
   selectedStock = computed(() => {
     const id = this.selectedStockId()
@@ -103,6 +136,7 @@ export class NewSaleComponent implements OnInit {
   ) {
     this.form = this.fb.group({
       patientId: [''],
+      chargeToAccount: [false],
       paymentMethod: [PaymentMethod.CASH, Validators.required],
       taxRate: [0.13, [Validators.required, Validators.min(0), Validators.max(1)]],
       discountAmount: [0, [Validators.min(0)]],
@@ -141,6 +175,13 @@ export class NewSaleComponent implements OnInit {
     this.form.get('amountPaid')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(value => {
       this.amountPaid.set(value || 0)
     })
+
+    this.form
+      .get('patientId')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.syncChargeToAccountControl())
+
+    this.syncChargeToAccountControl()
   }
 
   onPatientInput(value: string): void {
@@ -203,6 +244,7 @@ export class NewSaleComponent implements OnInit {
     this.selectedPatientName.set('')
     this.prescriptions.set([])
     this.selectedPrescriptionId.set(null)
+    this.syncChargeToAccountControl()
     setTimeout(() => this.patientInput?.nativeElement.focus(), 0)
   }
 
@@ -236,12 +278,14 @@ export class NewSaleComponent implements OnInit {
     if (!prescriptionId) {
       this.form.patchValue({ prescriptionNumber: '' })
       this.selectedPrescriptionId.set(null)
+      this.syncChargeToAccountControl()
       return
     }
     const pr = this.prescriptions().find(p => p.id === prescriptionId)
     if (!pr) return
     this.form.patchValue({ prescriptionNumber: pr.prescriptionNumber || '' })
     this.selectedPrescriptionId.set(pr.id)
+    this.syncChargeToAccountControl()
     this.applyPrescription(pr)
   }
 
@@ -452,7 +496,7 @@ export class NewSaleComponent implements OnInit {
       if (!result.isConfirmed) return
     }
 
-    if (paid < total) {
+    if (paid < total && !this.chargeToAccount) {
       await this.alert.fire({
         icon: 'error',
         title: 'Pago insuficiente',
@@ -485,9 +529,13 @@ export class NewSaleComponent implements OnInit {
             <p class="mb-1"><strong>Impuestos:</strong> Bs ${this.taxAmount().toFixed(2)}</p>
             <p class="text-lg"><strong>Total:</strong> Bs ${total.toFixed(2)}</p>
           </div>
-          <p class="mb-1"><strong>Método de pago:</strong> ${this.getPaymentMethodLabel(this.form.value.paymentMethod)}</p>
+          ${
+            this.chargeToAccount
+              ? `<p class="mb-1 text-amber-700"><strong>No se cobra en farmacia:</strong> queda como cargo pendiente en la cuenta del paciente.</p>`
+              : `<p class="mb-1"><strong>Método de pago:</strong> ${this.getPaymentMethodLabel(this.form.value.paymentMethod)}</p>
           <p class="mb-1"><strong>Monto pagado:</strong> Bs ${paid.toFixed(2)}</p>
-          ${paid > total ? `<p class="text-green-600"><strong>Cambio:</strong> Bs ${this.changeAmount().toFixed(2)}</p>` : ''}
+          ${paid > total ? `<p class="text-green-600"><strong>Cambio:</strong> Bs ${this.changeAmount().toFixed(2)}</p>` : ''}`
+          }
         </div>
       `,
       showCancelButton: true,
@@ -508,6 +556,7 @@ export class NewSaleComponent implements OnInit {
       notes: this.form.value.notes,
       prescriptionNumber: this.form.value.prescriptionNumber,
       prescriptionId: this.selectedPrescriptionId() || undefined,
+      chargeToAccount: this.chargeToAccount,
       items: this.cart.items().map((item: CartItem) => ({
         medicationStockId: item.medicationStock.id,
         quantity: Number(item.quantity),

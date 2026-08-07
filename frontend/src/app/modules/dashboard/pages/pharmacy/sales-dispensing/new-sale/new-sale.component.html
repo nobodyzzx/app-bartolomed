@@ -304,6 +304,30 @@
                   </div>
                 </div>
                 <div class="p-6 space-y-4">
+                  <!--
+                    Dejar el medicamento a cuenta: el importe no entra por la caja
+                    de farmacia, queda como cargo pendiente y lo cobra la caja
+                    general al liquidar la cuenta del paciente. El backend solo lo
+                    acepta con receta y paciente registrado, así que la casilla se
+                    deshabilita hasta que ambos estén elegidos.
+                  -->
+                  <div
+                    class="p-3 rounded-xl border"
+                    [class]="chargeToAccount ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200'"
+                  >
+                    <mat-checkbox formControlName="chargeToAccount" [attr.aria-disabled]="!canChargeToAccount">
+                      Dejar a cuenta del paciente
+                    </mat-checkbox>
+                    <p class="text-xs text-slate-500 m-0 mt-1 ml-9">
+                      @if (canChargeToAccount) {
+                        No se cobra aquí: queda pendiente y lo cobra la caja general.
+                      } @else {
+                        Requiere elegir paciente y receta.
+                      }
+                    </p>
+                  </div>
+
+                  @if (!chargeToAccount) {
                   <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Método de pago</mat-label>
                     <mat-icon matPrefix class="text-green-400">payment</mat-icon>
@@ -352,6 +376,7 @@
                         <strong>Cambio:</strong> Bs {{ changeAmount() | number: '1.2-2' }}
                       </span>
                     </div>
+                  }
                   }
                 </div>
               </div>

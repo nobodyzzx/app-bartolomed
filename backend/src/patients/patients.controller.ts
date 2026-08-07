@@ -52,7 +52,14 @@ export class PatientsController {
     return this.patientsService.findAll(clinicId, page, limit, gender);
   }
 
+  // Farmacia también busca pacientes: al dispensar una receta necesita saber a
+  // quién se le entrega, y para dejar la venta a cuenta hace falta el paciente
+  // registrado. Un PHARMACIST no tiene `PatientsRead` —no entra al módulo de
+  // pacientes— y esta búsqueda le devolvía 403, que la pantalla mostraba como
+  // "Sin resultados". `PermissionsGuard` exige *alguno* de los permisos
+  // listados, así que basta con añadir el de dispensación.
   @Get('search')
+  @RequirePermissions(Permission.PatientsRead, Permission.PatientsWrite, Permission.PharmacyDispense)
   search(
     @Query('term') searchTerm: string,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
