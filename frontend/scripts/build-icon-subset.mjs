@@ -75,16 +75,36 @@ async function collectIcons() {
       if (!['.html', '.ts'].includes(extname(entry.name))) continue;
 
       const text = readFileSync(path, 'utf8');
-      for (const re of [
-        /material-symbols-outlined[^>]*>\s*([^<>{}\n]+?)\s*</g,
-        /<mat-icon[^>]*>\s*([^<>{}\n]+?)\s*<\/mat-icon>/g,
-        /\bicon:\s*'([a-z0-9_]+)'/g,
+      for (const { re, isAlertCall, allLiterals } of [
+        { re: /material-symbols-outlined[^>]*>\s*([^<>{}\n]+?)\s*</g },
+        { re: /<mat-icon[^>]*>\s*([^<>{}\n]+?)\s*<\/mat-icon>/g },
+        // Solo aquí aplica la lista de AlertService: es su forma de llamada.
+        { re: /\bicon:\s*'([a-z0-9_]+)'/g, isAlertCall: true },
+        // Iconos pasados como input a un componente: `<app-stat-card icon="trending_up">`.
+        // Faltaba este patrón y por eso 8 iconos quedaron fuera del recorte y se
+        // veían como texto literal en producción — entre ellos `man`/`woman` en el
+        // listado de pacientes. El `(?<!let-)` descarta el `let-icon="icon"` de los
+        // `ng-template`, que no nombra ningún icono.
+        { re: /(?<!let-)\bicon="([a-z0-9_]+)"/g },
+        // Icono elegido por interpolación:
+        //   <span class="material-symbols-outlined">{{ x ? 'hourglass_top' : 'table_chart' }}</span>
+        // Las dos primeras expresiones excluyen `{}` a propósito, así que se
+        // saltaban estos por completo. Aquí se capta la expresión entera y se
+        // sacan todos los literales entrecomillados que haya dentro.
+        { re: /material-symbols-outlined[^>]*>\s*\{\{([^}]+)\}\}\s*</g, allLiterals: true },
+        { re: /<mat-icon[^>]*>\s*\{\{([^}]+)\}\}\s*<\/mat-icon>/g, allLiterals: true },
       ]) {
         for (const m of text.matchAll(re)) {
-          const value = m[1].trim();
-          // `icon: 'success'|'error'|...` son de AlertService, no de la fuente.
-          if (ALERT_ICONS.has(value)) continue;
-          if (/^[a-z0-9_]+$/.test(value)) icons.add(value);
+          const values = allLiterals
+            ? [...m[1].matchAll(/'([a-z0-9_]+)'/g)].map(l => l[1])
+            : [m[1].trim()];
+
+          for (const value of values) {
+            // `warning` y `error` son a la vez iconos de AlertService y de Material
+            // Symbols: descartarlos siempre dejaba fuera del recorte los usos reales.
+            if (isAlertCall && ALERT_ICONS.has(value)) continue;
+            if (/^[a-z0-9_]+$/.test(value)) icons.add(value);
+          }
         }
       }
     }
@@ -115,7 +135,20 @@ print(json.dumps(missing))
   return JSON.parse(execFileSync('python3', ['-c', script, fontPath, f], { encoding: 'utf8' }));
 }
 
-const icons = await collectIcons();
+/**
+ * Los nombres se recogen de expresiones de plantilla, así que entre ellos caen
+ * literales que no son iconos: `{{ tipo === 'financial' ? 'x' : 'y' }}` aporta
+ * `financial` además del icono. Se descartan validándolos contra la fuente
+ * ÍNTEGRA, que es la única autoridad sobre qué nombre es un icono real; si no,
+ * acabarían en la lista y dejarían el guardarraíl en rojo para siempre.
+ */
+function keepRealIcons(names) {
+  if (!existsSync(FULL)) return names; // primera ejecución: aún no hay copia íntegra
+  const notIcons = new Set(missingFromFont(FULL, names));
+  return names.filter(name => !notIcons.has(name));
+}
+
+const icons = keepRealIcons(await collectIcons());
 writeFileSync(LIST, icons.join('\n') + '\n');
 
 if (CHECK_ONLY) {
@@ -194,7 +227,11 @@ execFileSync(
 
 const after = statSync(FONT).size;
 const kb = n => (n / 1024).toFixed(0);
+// Los dos números difieren a propósito: Material Symbols tiene alias, así que
+// varios nombres pueden resolver al mismo glifo. Decirlo evita que el siguiente
+// crea que `icons:check` y esto se contradicen.
 console.log(
-  `Iconos: ${resolved.gids.length} | fuente ${kb(before)} KB → ${kb(after)} KB ` +
+  `Iconos: ${icons.length} nombres → ${resolved.gids.length} glifos | ` +
+    `fuente ${kb(before)} KB → ${kb(after)} KB ` +
     `(${(100 - (after / before) * 100).toFixed(1)}% menos)`,
 );
