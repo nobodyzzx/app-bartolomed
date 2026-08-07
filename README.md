@@ -167,6 +167,31 @@ podman compose logs -f frontend
 
 ---
 
+## Type generation (backend → frontend)
+
+Los tipos del frontend se generan desde los DTOs del backend vía Swagger + `openapi-typescript`. Esto evita drift entre ambos lados.
+
+**Flujo rápido** (con backend corriendo):
+```bash
+cd frontend && npm run generate-types:fetch
+```
+
+**Flujo CI** (con DB accesible, sin HTTP):
+```bash
+# Dentro del container backend (DB ya conectada):
+podman compose exec backend npm run openapi:generate
+
+# Luego regenerar los tipos TS:
+cd frontend && npm run generate-types
+```
+
+Los tipos quedan en `frontend/src/generated/api-types.ts`. Re-exports amigables en `api-exports.ts`:
+```typescript
+import { ApiPatient, ApiCreatePatientDto } from 'src/generated/api-exports'
+```
+
+---
+
 ## Comandos frecuentes
 
 ```bash

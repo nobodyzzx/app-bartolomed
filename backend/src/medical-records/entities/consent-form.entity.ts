@@ -3,10 +3,12 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Index,
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+import { Clinic } from '../../clinics/entities/clinic.entity';
 import { Patient } from '../../patients/entities/patient.entity';
 import { User } from '../../users/entities/user.entity';
 import { MedicalRecord } from './medical-record.entity';
@@ -95,11 +97,19 @@ export class ConsentForm {
   @Column('text', { nullable: true })
   notes: string;
 
-  @ManyToOne(() => Patient, { eager: true })
+  @Index()
+  @ManyToOne(() => Clinic, { nullable: true, eager: false })
+  @JoinColumn({ name: 'clinic_id' })
+  clinic: Clinic;
+
+  @Column({ name: 'clinic_id', nullable: true })
+  clinicId: string;
+
+  @ManyToOne(() => Patient)
   @JoinColumn({ name: 'patient_id' })
   patient: Patient;
 
-  @ManyToOne(() => User, { eager: true })
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'doctor_id' })
   doctor: User;
 

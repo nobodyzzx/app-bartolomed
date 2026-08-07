@@ -1,25 +1,23 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { PatientDashboardComponent } from './patient-dashboard/patient-dashboard.component';
+import { canDeactivateGuard } from '../../../../core/guards/can-deactivate.guard';
 import { PatientFormComponent } from './patient-form/patient-form.component';
 import { PatientListComponent } from './patient-list/patient-list.component';
 
 const routes: Routes = [
   {
     path: '',
-    component: PatientDashboardComponent
-  },
-  {
-    path: 'list',
     component: PatientListComponent
   },
   {
     path: 'new',
-    component: PatientFormComponent
+    component: PatientFormComponent,
+    canDeactivate: [canDeactivateGuard]
   },
   {
     path: 'edit/:id',
-    component: PatientFormComponent
+    component: PatientFormComponent,
+    canDeactivate: [canDeactivateGuard]
   },
   {
     path: 'view/:id',

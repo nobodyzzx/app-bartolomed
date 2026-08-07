@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -9,6 +9,13 @@ import {
 import { InvoiceStatus, PharmacyInvoice } from '../entities/pharmacy-invoice.entity';
 import { PharmacySale } from '../entities/pharmacy-sale.entity';
 
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 @Injectable()
 export class PharmacyInvoicesService {
   constructor(
@@ -18,14 +25,22 @@ export class PharmacyInvoicesService {
     private pharmacySaleRepository: Repository<PharmacySale>,
   ) {}
 
-  async create(createPharmacyInvoiceDto: CreatePharmacyInvoiceDto, createdById: string): Promise<PharmacyInvoice> {
-    // Verify sale exists
+  async create(
+    createPharmacyInvoiceDto: CreatePharmacyInvoiceDto,
+    createdById: string,
+    clinicId: string,
+  ): Promise<PharmacyInvoice> {
+    // Verify sale exists and belongs to the current clinic
     const sale = await this.pharmacySaleRepository.findOne({
       where: { id: createPharmacyInvoiceDto.saleId },
     });
 
     if (!sale) {
       throw new NotFoundException(`Sale with ID ${createPharmacyInvoiceDto.saleId} not found`);
+    }
+
+    if (sale.clinicId !== clinicId) {
+      throw new ForbiddenException('Access denied to this sale');
     }
 
     // Check if invoice already exists for this sale
@@ -62,18 +77,51 @@ export class PharmacyInvoicesService {
     return await this.pharmacyInvoiceRepository.save(pharmacyInvoice);
   }
 
-  async findAll(): Promise<PharmacyInvoice[]> {
-    return await this.pharmacyInvoiceRepository.find({
-      relations: ['sale', 'createdBy'],
-      order: { createdAt: 'DESC' },
-    });
+  async findAll(
+    clinicId?: string,
+    status?: InvoiceStatus,
+    page = 1,
+    limit = 20,
+  ): Promise<PaginatedResult<PharmacyInvoice>> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+
+    const qb = this.pharmacyInvoiceRepository
+      .createQueryBuilder('invoice')
+      .leftJoinAndSelect('invoice.sale', 'sale')
+      .leftJoinAndSelect('invoice.createdBy', 'createdBy')
+      .orderBy('invoice.createdAt', 'DESC')
+      .take(limit)
+      .skip((page - 1) * limit);
+
+    qb.andWhere('sale.clinicId = :clinicId', { clinicId });
+
+    if (status) {
+      qb.andWhere('invoice.status = :status', { status });
+    }
+
+    const [data, total] = await qb.getManyAndCount();
+    return { data, total, page, limit };
   }
 
-  async findOne(id: string): Promise<PharmacyInvoice> {
-    const pharmacyInvoice = await this.pharmacyInvoiceRepository.findOne({
-      where: { id },
-      relations: ['sale', 'sale.items', 'createdBy'],
-    });
+  async findOne(id: string, clinicId?: string): Promise<PharmacyInvoice> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+
+    // PharmacySale mapea `clinic` (relación) y `clinicId` (columna escalar) a la
+    // misma columna física `clinic_id`; leer `sale.clinicId` desde un objeto ya
+    // hidratado por una relación anidada es ambiguo y puede llegar `undefined`.
+    // Filtramos la clínica directamente en el SQL en vez de comparar post-fetch.
+    const pharmacyInvoice = await this.pharmacyInvoiceRepository
+      .createQueryBuilder('invoice')
+      .leftJoinAndSelect('invoice.sale', 'sale')
+      .leftJoinAndSelect('sale.items', 'items')
+      .leftJoinAndSelect('invoice.createdBy', 'createdBy')
+      .where('invoice.id = :id', { id })
+      .andWhere('sale.clinicId = :clinicId', { clinicId })
+      .getOne();
 
     if (!pharmacyInvoice) {
       throw new NotFoundException(`Pharmacy invoice with ID ${id} not found`);
@@ -82,8 +130,25 @@ export class PharmacyInvoicesService {
     return pharmacyInvoice;
   }
 
-  async update(id: string, updatePharmacyInvoiceDto: UpdatePharmacyInvoiceDto): Promise<PharmacyInvoice> {
-    const pharmacyInvoice = await this.findOne(id);
+  async findBySale(saleId: string, clinicId: string): Promise<PharmacyInvoice> {
+    const pharmacyInvoice = await this.pharmacyInvoiceRepository
+      .createQueryBuilder('invoice')
+      .leftJoinAndSelect('invoice.sale', 'sale')
+      .leftJoinAndSelect('sale.items', 'items')
+      .leftJoinAndSelect('invoice.createdBy', 'createdBy')
+      .where('invoice.saleId = :saleId', { saleId })
+      .andWhere('sale.clinicId = :clinicId', { clinicId })
+      .getOne();
+
+    if (!pharmacyInvoice) {
+      throw new NotFoundException(`No existe una factura para la venta ${saleId}`);
+    }
+
+    return pharmacyInvoice;
+  }
+
+  async update(id: string, updatePharmacyInvoiceDto: UpdatePharmacyInvoiceDto, clinicId?: string): Promise<PharmacyInvoice> {
+    const pharmacyInvoice = await this.findOne(id, clinicId);
 
     if (pharmacyInvoice.status === InvoiceStatus.PAID) {
       throw new BadRequestException('Cannot update paid invoice');
@@ -92,11 +157,11 @@ export class PharmacyInvoicesService {
     Object.assign(pharmacyInvoice, updatePharmacyInvoiceDto);
 
     await this.pharmacyInvoiceRepository.save(pharmacyInvoice);
-    return await this.findOne(id);
+    return await this.findOne(id, clinicId);
   }
 
-  async updateStatus(id: string, updateStatusDto: UpdatePharmacyInvoiceStatusDto): Promise<PharmacyInvoice> {
-    const pharmacyInvoice = await this.findOne(id);
+  async updateStatus(id: string, updateStatusDto: UpdatePharmacyInvoiceStatusDto, clinicId?: string): Promise<PharmacyInvoice> {
+    const pharmacyInvoice = await this.findOne(id, clinicId);
 
     pharmacyInvoice.status = updateStatusDto.status;
 
@@ -126,11 +191,11 @@ export class PharmacyInvoicesService {
     }
 
     await this.pharmacyInvoiceRepository.save(pharmacyInvoice);
-    return await this.findOne(id);
+    return await this.findOne(id, clinicId);
   }
 
-  async remove(id: string): Promise<void> {
-    const pharmacyInvoice = await this.findOne(id);
+  async remove(id: string, clinicId?: string): Promise<void> {
+    const pharmacyInvoice = await this.findOne(id, clinicId);
 
     if (pharmacyInvoice.status === InvoiceStatus.PAID) {
       throw new BadRequestException('Cannot delete paid invoice');
@@ -139,33 +204,39 @@ export class PharmacyInvoicesService {
     await this.pharmacyInvoiceRepository.remove(pharmacyInvoice);
   }
 
-  async getInvoicesByStatus(status: InvoiceStatus): Promise<PharmacyInvoice[]> {
-    return await this.pharmacyInvoiceRepository.find({
-      where: { status },
-      relations: ['sale', 'createdBy'],
-      order: { createdAt: 'DESC' },
-    });
-  }
+  async getOverdueInvoices(clinicId?: string): Promise<PharmacyInvoice[]> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
 
-  async getOverdueInvoices(): Promise<PharmacyInvoice[]> {
     const today = new Date();
 
-    return await this.pharmacyInvoiceRepository
+    const qb = this.pharmacyInvoiceRepository
       .createQueryBuilder('invoice')
       .leftJoinAndSelect('invoice.sale', 'sale')
       .leftJoinAndSelect('invoice.createdBy', 'createdBy')
       .where('invoice.dueDate < :today', { today })
       .andWhere('invoice.status != :paidStatus', { paidStatus: InvoiceStatus.PAID })
       .andWhere('invoice.status != :cancelledStatus', { cancelledStatus: InvoiceStatus.CANCELLED })
-      .orderBy('invoice.dueDate', 'ASC')
-      .getMany();
+      .orderBy('invoice.dueDate', 'ASC');
+
+    qb.andWhere('sale.clinicId = :clinicId', { clinicId });
+
+    return await qb.getMany();
   }
 
-  async getTotalRevenue(startDate?: Date, endDate?: Date): Promise<number> {
+  async getTotalRevenue(startDate?: Date, endDate?: Date, clinicId?: string): Promise<number> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+
     let query = this.pharmacyInvoiceRepository
       .createQueryBuilder('invoice')
+      .leftJoin('invoice.sale', 'sale')
       .select('SUM(invoice.amountPaid)', 'total')
       .where('invoice.status = :status', { status: InvoiceStatus.PAID });
+
+    query = query.andWhere('sale.clinicId = :clinicId', { clinicId });
 
     if (startDate && endDate) {
       query = query
@@ -177,27 +248,52 @@ export class PharmacyInvoicesService {
     return parseFloat(result.total) || 0;
   }
 
-  async getPendingAmount(): Promise<number> {
-    const result = await this.pharmacyInvoiceRepository
+  async getPendingAmount(clinicId?: string): Promise<number> {
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+
+    const query = this.pharmacyInvoiceRepository
       .createQueryBuilder('invoice')
+      .leftJoin('invoice.sale', 'sale')
       .select('SUM(invoice.balance)', 'total')
       .where('invoice.status IN (:...statuses)', {
         statuses: [InvoiceStatus.PENDING, InvoiceStatus.OVERDUE],
-      })
-      .getRawOne();
+      });
+
+    query.andWhere('sale.clinicId = :clinicId', { clinicId });
+
+    const result = await query.getRawOne();
 
     return parseFloat(result.total) || 0;
   }
 
-  async markOverdueInvoices(): Promise<void> {
+  async markOverdueInvoices(clinicId?: string): Promise<void> {
     const today = new Date();
+
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required');
+    }
+
+    const invoices = await this.pharmacyInvoiceRepository
+      .createQueryBuilder('invoice')
+      .leftJoin('invoice.sale', 'sale')
+      .select('invoice.id', 'id')
+      .where('invoice.dueDate < :today', { today })
+      .andWhere('invoice.status = :pendingStatus', { pendingStatus: InvoiceStatus.PENDING })
+      .andWhere('sale.clinicId = :clinicId', { clinicId })
+      .getRawMany();
+
+    const ids = invoices.map(row => row.id);
+    if (ids.length === 0) {
+      return;
+    }
 
     await this.pharmacyInvoiceRepository
       .createQueryBuilder()
       .update(PharmacyInvoice)
       .set({ status: InvoiceStatus.OVERDUE })
-      .where('dueDate < :today', { today })
-      .andWhere('status = :pendingStatus', { pendingStatus: InvoiceStatus.PENDING })
+      .where('id IN (:...ids)', { ids })
       .execute();
   }
 

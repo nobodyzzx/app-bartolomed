@@ -1,237 +1,319 @@
-import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
-import {
-    FinancialReport,
-    GenerateReportParams,
-    MedicalReport,
-    ReportFilters,
-    StockReport
-} from '../interfaces/reports.interfaces';
+import { HttpClient } from '@angular/common/http'
+import { Injectable } from '@angular/core'
+import { Observable } from 'rxjs'
+import { tap } from 'rxjs/operators'
+import { environment } from '../../../../../environments/environments'
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ReportsService {
-  private apiUrl = '/api/reports';
+  private apiUrl = `${environment.baseUrl}/reports`
 
   constructor(private http: HttpClient) {}
 
-  // Medical Reports
-  getMedicalReports(filters?: ReportFilters): Observable<MedicalReport[]> {
-    // Mock data - reemplazar con llamada HTTP real
-    const mockReports: MedicalReport[] = [
-      {
-        id: '1',
-        title: 'Reporte de Consultas Mensuales',
-        date: '2024-01-01',
-        type: 'Consultas',
-        description: 'Análisis de consultas médicas del mes',
-        patientCount: 150,
-        status: 'published',
-        consultationData: [
-          { specialty: 'Medicina General', count: 80, averageDuration: 30 },
-          { specialty: 'Pediatría', count: 45, averageDuration: 25 },
-          { specialty: 'Cardiología', count: 25, averageDuration: 45 }
-        ],
-        period: {
-          startDate: '2024-01-01',
-          endDate: '2024-01-31'
-        },
-        createdBy: 'Dr. García',
-        createdAt: new Date('2024-01-31')
-      },
-      {
-        id: '2',
-        title: 'Reporte de Diagnósticos Frecuentes',
-        date: '2024-01-15',
-        type: 'Diagnósticos',
-        description: 'Diagnósticos más comunes del trimestre',
-        patientCount: 300,
-        status: 'published',
-        diagnosisData: [
-          { diagnosis: 'Hipertensión', count: 45, percentage: 15 },
-          { diagnosis: 'Diabetes', count: 36, percentage: 12 },
-          { diagnosis: 'Gripe', count: 60, percentage: 20 },
-          { diagnosis: 'Gastritis', count: 27, percentage: 9 }
-        ],
-        period: {
-          startDate: '2023-10-01',
-          endDate: '2023-12-31'
-        },
-        createdBy: 'Dra. Martínez',
-        createdAt: new Date('2024-01-15')
-      }
-    ];
+  // ─── Descarga de reportes en PDF ──────────────────────────────────────────
 
-    return of(mockReports).pipe(delay(1000));
+  /**
+   * Descarga un reporte en PDF y dispara la descarga en el navegador.
+   *
+   * (El nombre anterior era `downloadReportPdf`: los PDF se generan con
+   * Typst desde la migración, Puppeteer ya no está en el proyecto.)
+   * @param endpoint Sufijo después de /api/reports/export/pdf/
+   * @param filename Nombre del archivo descargado
+   * @param params Parámetros de query opcionales (startDate, endDate, etc.)
+   */
+  downloadReportPdf(
+    endpoint: string,
+    filename: string,
+    params: Record<string, string> = {},
+  ): Observable<Blob> {
+    const query = new URLSearchParams(params).toString()
+    const url = `${this.apiUrl}/export/pdf/${endpoint}${query ? '?' + query : ''}`
+    return this.http.get(url, { responseType: 'blob' }).pipe(
+      tap(blob => {
+        const objUrl = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = objUrl
+        a.download = filename
+        a.click()
+        URL.revokeObjectURL(objUrl)
+      }),
+    )
   }
 
-  generateMedicalReport(params: GenerateReportParams): Observable<MedicalReport> {
-    const newReport: MedicalReport = {
-      id: Math.random().toString(36).substr(2, 9),
-      title: params.title,
-      date: new Date().toISOString().split('T')[0],
-      type: params.type as any,
-      description: params.description,
-      status: 'generated',
-      createdBy: 'Usuario Actual',
-      createdAt: new Date(),
-      period: {
-        startDate: params.filters.startDate || '',
-        endDate: params.filters.endDate || ''
-      }
-    };
-
-    return of(newReport).pipe(delay(2000));
+  downloadFinancialPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('financial', `reporte-financiero-${date}.pdf`, params)
   }
 
-  // Financial Reports
-  getFinancialReports(filters?: ReportFilters): Observable<FinancialReport[]> {
-    const mockReports: FinancialReport[] = [
-      {
-        id: '1',
-        title: 'Reporte Financiero Mensual',
-        date: '2024-01-31',
-        type: 'Balance',
-        description: 'Balance financiero del mes de enero',
-        totalAmount: 45000,
-        currency: 'USD',
-        revenue: 52000,
-        expenses: 38000,
-        profit: 14000,
-        status: 'published',
-        period: {
-          startDate: '2024-01-01',
-          endDate: '2024-01-31'
-        },
-        categories: [
-          { category: 'Consultas', amount: 30000, percentage: 58 },
-          { category: 'Medicamentos', amount: 15000, percentage: 29 },
-          { category: 'Procedimientos', amount: 7000, percentage: 13 }
-        ],
-        createdBy: 'Contador',
-        createdAt: new Date('2024-01-31')
-      },
-      {
-        id: '2',
-        title: 'Análisis de Ventas',
-        date: '2024-01-15',
-        type: 'Ventas',
-        description: 'Análisis detallado de ventas por categoría',
-        totalAmount: 28000,
-        currency: 'USD',
-        revenue: 28000,
-        status: 'published',
-        period: {
-          startDate: '2024-01-01',
-          endDate: '2024-01-15'
-        },
-        categories: [
-          { category: 'Farmacia', amount: 18000, percentage: 64 },
-          { category: 'Consultorios', amount: 10000, percentage: 36 }
-        ],
-        createdBy: 'Gerente de Ventas',
-        createdAt: new Date('2024-01-15')
-      }
-    ];
-
-    return of(mockReports).pipe(delay(1000));
+  /** Control de ingresos: origen, descuentos y cuentas por cobrar. */
+  downloadRevenueControlPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('revenue-control', `control-ingresos-${date}.pdf`, params)
   }
 
-  generateFinancialReport(params: GenerateReportParams): Observable<FinancialReport> {
-    const newReport: FinancialReport = {
-      id: Math.random().toString(36).substr(2, 9),
-      title: params.title,
-      date: new Date().toISOString().split('T')[0],
-      type: params.type as any,
-      description: params.description,
-      status: 'generated',
-      currency: 'USD',
-      createdBy: 'Usuario Actual',
-      createdAt: new Date(),
-      period: {
-        startDate: params.filters.startDate || '',
-        endDate: params.filters.endDate || ''
-      }
-    };
-
-    return of(newReport).pipe(delay(2000));
+  downloadDemographicsPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('demographics', `demografia-pacientes-${date}.pdf`, params)
   }
 
-  // Stock Reports
-  getStockReports(filters?: ReportFilters): Observable<StockReport[]> {
-    const mockReports: StockReport[] = [
-      {
-        id: '1',
-        title: 'Reporte de Inventario General',
-        date: '2024-01-31',
-        type: 'Inventario',
-        description: 'Estado general del inventario',
-        totalProducts: 450,
-        lowStockItems: 15,
-        expiringItems: 8,
-        outOfStockItems: 3,
-        stockValue: 125000,
-        status: 'published',
-        movements: [
-          { productName: 'Paracetamol 500mg', movementType: 'entrada', quantity: 100, date: '2024-01-30' },
-          { productName: 'Ibuprofeno 400mg', movementType: 'salida', quantity: 50, date: '2024-01-29' },
-          { productName: 'Amoxicilina 500mg', movementType: 'ajuste', quantity: -5, date: '2024-01-28', reason: 'Vencimiento' }
-        ],
-        createdBy: 'Farmaceuta',
-        createdAt: new Date('2024-01-31')
-      },
-      {
-        id: '2',
-        title: 'Productos por Vencer',
-        date: '2024-01-25',
-        type: 'Vencimientos',
-        description: 'Productos que vencen en los próximos 30 días',
-        totalProducts: 25,
-        expiringItems: 25,
-        stockValue: 8500,
-        status: 'published',
-        movements: [
-          { productName: 'Jarabe para la tos', movementType: 'salida', quantity: 12, date: '2024-01-24', reason: 'Próximo a vencer' },
-          { productName: 'Vitamina C', movementType: 'ajuste', quantity: -3, date: '2024-01-23', reason: 'Vencido' }
-        ],
-        createdBy: 'Supervisor de Farmacia',
-        createdAt: new Date('2024-01-25')
-      }
-    ];
-
-    return of(mockReports).pipe(delay(1000));
+  downloadDoctorPerformancePdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('doctor-performance', `rendimiento-medicos-${date}.pdf`, params)
   }
 
-  generateStockReport(params: GenerateReportParams): Observable<StockReport> {
-    const newReport: StockReport = {
-      id: Math.random().toString(36).substr(2, 9),
-      title: params.title,
-      date: new Date().toISOString().split('T')[0],
-      type: params.type as any,
-      description: params.description,
-      status: 'generated',
-      createdBy: 'Usuario Actual',
-      createdAt: new Date()
-    };
-
-    return of(newReport).pipe(delay(2000));
+  downloadAppointmentsPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('appointments', `estadisticas-citas-${date}.pdf`, params)
   }
 
-  // Métodos generales
-  deleteReport(id: string): Observable<boolean> {
-    return of(true).pipe(delay(500));
+  downloadMedicalRecordsPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('medical-records', `registros-medicos-${date}.pdf`, params)
   }
 
-  downloadReport(id: string, format: 'pdf' | 'excel' | 'csv'): Observable<Blob> {
-    // Mock download - en producción retornaría el archivo real
-    const mockBlob = new Blob(['Mock report content'], { type: 'application/pdf' });
-    return of(mockBlob).pipe(delay(1500));
+  downloadDashboardPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('dashboard', `dashboard-${date}.pdf`, params)
   }
 
-  exportReport(reportId: string, format: 'pdf' | 'excel' | 'csv'): Observable<boolean> {
-    return of(true).pipe(delay(2000));
+  downloadCriticalStockPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('critical-stock', `stock-critico-${date}.pdf`, params)
+  }
+
+  downloadTransferEfficiencyPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('transfer-efficiency', `eficiencia-traslados-${date}.pdf`, params)
+  }
+
+  private downloadBlob(path: string, filename: string, params: Record<string, string> = {}): Observable<Blob> {
+    const query = new URLSearchParams(params).toString()
+    const url = `${this.apiUrl}/${path}${query ? '?' + query : ''}`
+    return this.http.get(url, { responseType: 'blob' }).pipe(
+      tap(blob => {
+        const objUrl = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = objUrl
+        a.download = filename
+        a.click()
+        URL.revokeObjectURL(objUrl)
+      }),
+    )
+  }
+
+  downloadCriticalStockExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/critical-stock', `stock-critico-${date}.xlsx`, params)
+  }
+
+  downloadPharmacyConsumptionExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-consumption', `consumo-farmacia-${date}.xlsx`, params)
+  }
+
+  // ─── Farmacia: nuevos PDFs (F1-R1..F3-R13) ───────────────────────────────
+
+  downloadRotationPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('pharmacy-rotation', `rotacion-stock-${date}.pdf`, params)
+  }
+
+  downloadMarginsPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('pharmacy-margins', `margenes-producto-${date}.pdf`, params)
+  }
+
+  downloadDailySalesPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('pharmacy-daily-sales', `ventas-diarias-${date}.pdf`, params)
+  }
+
+  downloadExpiryBucketsPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('pharmacy-expiry-buckets', `vencimientos-${date}.pdf`, params)
+  }
+
+  downloadProfitabilityPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('pharmacy-profitability', `rentabilidad-mensual-${date}.pdf`, params)
+  }
+
+  // ─── Farmacia: nuevos Excels ──────────────────────────────────────────────
+
+  downloadRotationExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-rotation', `rotacion-stock-${date}.xlsx`, params)
+  }
+
+  downloadMarginsExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-margins', `margenes-producto-${date}.xlsx`, params)
+  }
+
+  downloadTopSellingExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-top-selling', `top-vendidos-${date}.xlsx`, params)
+  }
+
+  downloadStockMovementsExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-stock-movements', `kardex-${date}.xlsx`, params)
+  }
+
+  // ─── A1: Ventas por farmacéutico ─────────────────────────────────────────
+
+  downloadSalesByPharmacistPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('pharmacy-by-pharmacist', `ventas-farmaceutico-${date}.pdf`, params)
+  }
+
+  downloadSalesByPharmacistExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-by-pharmacist', `ventas-farmaceutico-${date}.xlsx`, params)
+  }
+
+  // ─── A2: Encargado × Día × Medicamento ───────────────────────────────────
+
+  downloadPharmacistDayMedicationPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('pharmacy-pharmacist-day', `encargado-dia-medicamento-${date}.pdf`, params)
+  }
+
+  downloadPharmacistDayMedicationExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-pharmacist-day', `encargado-dia-medicamento-${date}.xlsx`, params)
+  }
+
+  // ─── B1: Inventario valorizado ────────────────────────────────────────────
+
+  downloadValorizedInventoryPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('pharmacy-inventory-valorized', `inventario-valorizado-${date}.pdf`, params)
+  }
+
+  downloadValorizedInventoryExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-inventory-valorized', `inventario-valorizado-${date}.xlsx`, params)
+  }
+
+  // ─── B2: Inventario por categoría ────────────────────────────────────────
+
+  downloadInventoryByCategoryPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('pharmacy-inventory-by-category', `inventario-categorias-${date}.pdf`, params)
+  }
+
+  // ─── B3: Sin movimiento ───────────────────────────────────────────────────
+
+  downloadNoMovementPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('pharmacy-no-movement', `sin-movimiento-${date}.pdf`, params)
+  }
+
+  downloadNoMovementExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-no-movement', `sin-movimiento-${date}.xlsx`, params)
+  }
+
+  // ─── C1: Ventas por medicamento detalle ──────────────────────────────────
+
+  downloadMedicationDetailPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('pharmacy-medication-detail', `ventas-medicamento-${date}.pdf`, params)
+  }
+
+  downloadMedicationDetailExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-medication-detail', `ventas-medicamento-${date}.xlsx`, params)
+  }
+
+  // ─── C2: Receta vs Venta libre ────────────────────────────────────────────
+
+  downloadPrescriptionVsFreePdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('pharmacy-prescription-vs-free', `receta-vs-libre-${date}.pdf`, params)
+  }
+
+  // ─── Datos reales para el hub de reportes ─────────────────────────────────
+
+  getPatientStats(params: Record<string, string> = {}): Observable<any> {
+    const query = new URLSearchParams(params).toString()
+    return this.http.get<any>(`${this.apiUrl}/patients/demographics${query ? '?' + query : ''}`)
+  }
+
+  getAppointmentStats(params: Record<string, string> = {}): Observable<any> {
+    const query = new URLSearchParams(params).toString()
+    return this.http.get<any>(`${this.apiUrl}/appointments/statistics${query ? '?' + query : ''}`)
+  }
+
+  getFinancialStats(params: Record<string, string> = {}): Observable<any> {
+    const query = new URLSearchParams(params).toString()
+    return this.http.get<any>(`${this.apiUrl}/financial/summary${query ? '?' + query : ''}`)
+  }
+
+  // ─── Control de ingresos (sobre cargos, no sobre facturas) ────────────────
+
+  /** Ingresos por origen: consulta, laboratorio, farmacia. */
+  getRevenueByOrigin(params: Record<string, string> = {}): Observable<any> {
+    const query = new URLSearchParams(params).toString()
+    return this.http.get<any>(`${this.apiUrl}/revenue/by-origin${query ? '?' + query : ''}`)
+  }
+
+  /**
+   * Descuentos otorgados, incluidos los "absorbidos" que el recibo del
+   * paciente no muestra.
+   */
+  getDiscountsReport(params: Record<string, string> = {}): Observable<any> {
+    const query = new URLSearchParams(params).toString()
+    return this.http.get<any>(`${this.apiUrl}/revenue/discounts${query ? '?' + query : ''}`)
+  }
+
+  /** Cuentas por cobrar: cargos generados que aún nadie pagó. */
+  getReceivables(params: Record<string, string> = {}): Observable<any> {
+    const query = new URLSearchParams(params).toString()
+    return this.http.get<any>(`${this.apiUrl}/revenue/receivables${query ? '?' + query : ''}`)
+  }
+
+  getStockStats(params: Record<string, string> = {}): Observable<any> {
+    const query = new URLSearchParams(params).toString()
+    return this.http.get<any>(`${this.apiUrl}/inventory/stock${query ? '?' + query : ''}`)
+  }
+
+  getPaymentMethodStats(params: Record<string, string> = {}): Observable<any> {
+    const query = new URLSearchParams(params).toString()
+    return this.http.get<any>(`${this.apiUrl}/financial/payment-methods${query ? '?' + query : ''}`)
+  }
+
+  // ─── C3: Ventas por método de pago ───────────────────────────────────────
+
+  // Bug real: pasaban '/reports/export/pdf/...' a downloadReportPdf(), que ya
+  // antepone this.apiUrl (…/reports) — el prefijo quedaba duplicado
+  // (…/reports/export/pdf//reports/export/pdf/...) y los 2 botones PDF de esta
+  // sección daban 404 siempre. downloadSalesByPaymentExcel/
+  // downloadMonthlySalesComparisonExcel tenían el mismo problema, además de
+  // pasar una URL ya armada como si fuera un "path" relativo a downloadBlob()
+  // (que también antepone apiUrl), duplicándolo una segunda vez.
+  downloadSalesByPaymentPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('pharmacy-sales-by-payment', `ventas-metodo-pago-${date}.pdf`, params)
+  }
+
+  downloadSalesByPaymentExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-sales-by-payment', `ventas-metodo-pago-${date}.xlsx`, params)
+  }
+
+  // ─── C6: Comparativo mensual ─────────────────────────────────────────────
+
+  downloadMonthlySalesComparisonPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadReportPdf('pharmacy-monthly-comparison', `comparativo-mensual-${date}.pdf`, params)
+  }
+
+  downloadMonthlySalesComparisonExcel(params: Record<string, string> = {}): Observable<Blob> {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.downloadBlob('export/excel/pharmacy-monthly-comparison', `comparativo-mensual-${date}.xlsx`, params)
   }
 }

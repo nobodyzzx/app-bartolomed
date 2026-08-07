@@ -1,76 +1,326 @@
-<mat-toolbar class="bg-blue-100 shadow-md px-4 py-2">
-    <div class="flex items-center w-full">
-      <!-- Left Section: Navigation Menu -->
-      <div class="flex items-center flex-shrink-0">
+<mat-toolbar class="!bg-white border-b border-slate-200 !shadow-sm !px-4">
+  <div class="flex items-center w-full gap-3 h-16">
+
+    <!-- Izquierda: hamburguesa + logo + breadcrumb -->
+    <div class="flex items-center gap-2 flex-shrink-0 min-w-0">
+      <button
+        mat-icon-button
+        (click)="toggleSidenav()"
+        [attr.aria-label]="(isExpanded() || isMobileOpen()) ? 'Cerrar menú lateral' : 'Abrir menú lateral'"
+        [attr.aria-expanded]="isExpanded() || isMobileOpen()"
+        class="!text-slate-600 hover:!bg-slate-100 flex-shrink-0"
+        >
+        <mat-icon>{{ (isExpanded() || isMobileOpen()) ? 'close' : 'menu' }}</mat-icon>
+      </button>
+
+      <img
+        class="max-h-9 object-contain flex-shrink-0"
+        src="assets/images/logo-horizontal-bartolomed.webp"
+        width="160"
+        height="36"
+        alt="Bartolomed"
+        />
+
+      <!-- Breadcrumb: Grupo > Página, oculto en /dashboard/home y en pantallas chicas -->
+      @if (breadcrumb().length > 0) {
+        <nav aria-label="Ruta actual" class="hidden lg:flex items-center gap-1.5 min-w-0 ml-3 pl-3 border-l border-slate-200">
+          @for (crumb of breadcrumb(); track crumb.label; let last = $last) {
+            @if (crumb.route) {
+              <a [routerLink]="crumb.route" class="text-sm font-medium text-slate-500 hover:text-blue-600 transition-colors truncate no-underline">
+                {{ crumb.label }}
+              </a>
+            } @else {
+              <span class="text-sm font-medium truncate" [class.text-slate-900]="last" [class.text-slate-500]="!last">
+                {{ crumb.label }}
+              </span>
+            }
+            @if (!last) {
+              <span class="material-symbols-outlined text-slate-300" style="font-size:16px">chevron_right</span>
+            }
+          }
+        </nav>
+      }
+    </div>
+
+    <div class="flex-grow"></div>
+
+    <!-- Derecha: búsqueda + alertas + selector de clínica + usuario -->
+    <div class="flex items-center gap-1">
+
+      <!-- Búsqueda global de pacientes -->
+      @if (showPatientSearch()) {
         <button
           mat-icon-button
-          (click)="toggleSidenav()"
-          aria-label="Toggle side navigation"
-          class="text-blue-900 hover:bg-blue-200 transition-colors"
-        >
-          <mat-icon>menu</mat-icon>
-        </button>
-      </div>
-
-      <!-- Center Section: Logo -->
-      <div class="flex-grow flex justify-center mx-4">
-        <img class="max-h-12 object-contain" src="assets/images/logo-horizontal-bartolomed.webp" width="200" height="48" alt="Bartolomed Logo"
-        />
-      </div>
-
-      <!-- Right Section: User Info and Actions -->
-      <div class="flex items-center space-x-4">
-        <!-- User Information -->
-        <div class="flex items-center space-x-2 text-blue-800">
-          <div class="flex flex-col text-right">
-            <span class="text-sm font-medium">
-              {{ user()?.personalInfo?.firstName || 'Nombre' }} {{ user()?.personalInfo?.lastName || 'Apellido' }}
-            </span>
-            <span class="uppercase text-xs font-medium text-blue-600">
-              {{ user()?.roles?.join(' | ') || 'Sin rol asignado' }}
-            </span>
-          </div>
-
-          <!-- User Menu -->
-          <button
-            mat-icon-button
-            [matMenuTriggerFor]="userMenu"
-            aria-label="User menu"
-            class="text-blue-900 hover:bg-blue-200 transition-colors"
+          [matMenuTriggerFor]="searchMenu"
+          aria-label="Buscar paciente"
+          class="!text-slate-600 hover:!bg-slate-100"
           >
-            <mat-icon>more_vert</mat-icon>
-          </button>
+          <span class="material-symbols-outlined">search</span>
+        </button>
 
-          <mat-menu #userMenu="matMenu" class="user-menu bg-slate-50">
-            <div mat-menu-content class="min-w-[250px]">
-              <!-- Opción de Perfil -->
-              <button mat-menu-item class="flex items-center p-3 hover:bg-blue-50 transition-colors duration-200 group">
-                <mat-icon class="mr-3 text-blue-800 group-hover:text-blue-800">account_circle</mat-icon>
-                <span class="text-blue-800 group-hover:text-blue-900">Mi Perfil</span>
-              </button>
-
-              <!-- Opción de Configuración -->
-              <button mat-menu-item class="flex items-center p-3 hover:bg-blue-50 transition-colors duration-200 group">
-                <mat-icon class="mr-3 text-blue-600 group-hover:text-gray-800">settings</mat-icon>
-                <span class="text-blue-900 group-hover:text-gray-900">Configuración</span>
-              </button>
-
-              <!-- Separador -->
-              <mat-divider class="my-2"></mat-divider>
-
-              <!-- Opción de Cerrar Sesión -->
-              <button
-                mat-menu-item
-                (click)="onLogout()"
-                class="flex items-center p-3 hover:bg-red-50 transition-colors duration-200 group"
-              >
-                <mat-icon class="mr-3 text-red-600 group-hover:text-red-800">logout</mat-icon>
-                <span class="text-red-600 group-hover:text-red-800">Cerrar Sesión</span>
-              </button>
+        <mat-menu #searchMenu="matMenu" xPosition="before" class="patient-search-menu" (closed)="resetPatientSearch()">
+          <div class="w-[320px]" (click)="$event.stopPropagation()">
+            <div class="px-4 py-3 border-b border-slate-200 bg-slate-50">
+              <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-slate-200">
+                <span class="material-symbols-outlined msz-16 text-slate-400">search</span>
+                <input
+                  type="text"
+                  placeholder="Buscar paciente por nombre o CI..."
+                  aria-label="Buscar paciente"
+                  class="flex-1 text-sm outline-none border-none bg-transparent text-slate-700"
+                  [value]="patientSearchTerm()"
+                  (input)="onPatientSearchInput($any($event.target).value)"
+                  />
+              </div>
             </div>
-            
-          </mat-menu>
+
+            <div class="max-h-[320px] overflow-y-auto">
+              @if (patientSearchLoading()) {
+                <div class="px-4 py-3 text-center text-slate-400 text-sm">Buscando...</div>
+              }
+              @if (!patientSearchLoading() && patientSearchTerm().length > 0 && patientSearchTerm().length < 2) {
+                <div class="px-4 py-3 text-center text-slate-400 text-sm">Escribe al menos 2 caracteres</div>
+              }
+              @if (!patientSearchLoading() && patientSearchTerm().length >= 2 && patientSearchResults().length === 0) {
+                <div class="px-4 py-3 text-center text-slate-400 text-sm italic">Sin resultados</div>
+              }
+              @for (patient of patientSearchResults(); track patient.id) {
+                <button
+                  mat-menu-item
+                  (click)="goToPatient(patient.id)"
+                  class="!min-h-[52px]"
+                  >
+                  <div class="flex items-center gap-3 py-0.5">
+                    <span class="material-symbols-outlined msz-18 text-blue-400">person</span>
+                    <div class="flex flex-col flex-1 min-w-0 text-left">
+                      <span class="text-sm font-medium text-slate-800 truncate">{{ patient.firstName }} {{ patient.lastName }}</span>
+                      <span class="text-xs text-slate-400 truncate">CI {{ patient.documentNumber }}</span>
+                    </div>
+                  </div>
+                </button>
+              }
+            </div>
+          </div>
+        </mat-menu>
+      }
+
+      <!-- Campana de alertas -->
+      @if (showAlertsBell()) {
+        <button
+          mat-icon-button
+          [matMenuTriggerFor]="alertsMenu"
+          aria-label="Alertas"
+          class="!text-slate-600 hover:!bg-slate-100 relative"
+          >
+          <span class="material-symbols-outlined">notifications</span>
+          @if (totalAlerts() > 0) {
+            <span class="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center animate-badge-pop">
+              {{ totalAlerts() > 99 ? '99+' : totalAlerts() }}
+            </span>
+          }
+        </button>
+
+        <mat-menu #alertsMenu="matMenu" xPosition="before">
+          <div mat-menu-content class="min-w-[280px]">
+            <div class="px-4 py-3 border-b border-slate-100">
+              <p class="text-sm font-semibold text-slate-900 m-0">Atención requerida</p>
+            </div>
+
+            @if (totalAlerts() === 0) {
+              <div class="px-4 py-6 text-center text-slate-400 text-sm">Todo al día, sin pendientes</div>
+            } @else {
+              @if (showStockAlertRow() && alertCounts().lowStock > 0) {
+                <button mat-menu-item routerLink="/dashboard/pharmacy/inventory" class="!min-h-[48px]">
+                  <span class="flex items-center gap-2.5">
+                    <span class="material-symbols-outlined msz-18 text-red-500">inventory_2</span>
+                    <span class="text-sm text-slate-700">{{ alertCounts().lowStock }} medicamento(s) con stock bajo</span>
+                  </span>
+                </button>
+              }
+              @if (showAppointmentsAlertRow() && alertCounts().pendingAppointments > 0) {
+                <button mat-menu-item routerLink="/dashboard/appointments" class="!min-h-[48px]">
+                  <span class="flex items-center gap-2.5">
+                    <span class="material-symbols-outlined msz-18 text-amber-500">schedule</span>
+                    <span class="text-sm text-slate-700">{{ alertCounts().pendingAppointments }} cita(s) por confirmar</span>
+                  </span>
+                </button>
+              }
+              @if (showBillingAlertRow() && alertCounts().overdueInvoices > 0) {
+                <button mat-menu-item routerLink="/dashboard/billing" class="!min-h-[48px]">
+                  <span class="flex items-center gap-2.5">
+                    <span class="material-symbols-outlined msz-18 text-rose-500">receipt_long</span>
+                    <span class="text-sm text-slate-700">{{ alertCounts().overdueInvoices }} factura(s) vencida(s)</span>
+                  </span>
+                </button>
+              }
+            }
+          </div>
+        </mat-menu>
+      }
+
+      <!-- Divider vertical -->
+      <div class="w-px h-6 bg-slate-200 mx-1 hidden sm:block"></div>
+
+      <!-- Clinic Selector -->
+      <button
+        mat-button
+        [matMenuTriggerFor]="clinicMenu"
+        [attr.aria-label]="'Clínica: ' + getSelectedClinicName()"
+        class="clinic-selector-button !text-slate-700 !normal-case !rounded-lg !px-3"
+        [disabled]="isClinicsLoading || hasNoClinics()"
+        >
+        <span class="flex items-center gap-1.5">
+          <span class="material-symbols-outlined msz-18 text-blue-500">apartment</span>
+          <span class="hidden sm:inline text-sm font-medium max-w-[200px] truncate">{{ getSelectedClinicName() }}</span>
+          <span class="material-symbols-outlined msz-16 text-slate-400">expand_more</span>
+        </span>
+      </button>
+
+      <mat-menu #clinicMenu="matMenu" class="clinic-menu" xPosition="before" (closed)="resetClinicSearch()">
+        <!-- Búsqueda (solo si hay más de 5 clínicas) -->
+        @if (showClinicSearch) {
+          <div
+            class="px-4 py-3 border-b border-slate-200 bg-slate-50"
+            (click)="$event.stopPropagation()"
+            >
+            <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-slate-200">
+              <span class="material-symbols-outlined msz-16 text-slate-400">search</span>
+              <input
+                type="text"
+                placeholder="Buscar clínica..."
+                aria-label="Buscar clínica"
+                class="flex-1 text-sm outline-none border-none bg-transparent text-slate-700"
+                [(ngModel)]="clinicSearchTerm"
+                (ngModelChange)="onClinicSearchChange($event)"
+                />
+            </div>
+          </div>
+        }
+
+        <!-- Super Admin: Ver todas las clínicas -->
+        @if (isSuperAdmin()) {
+          <button
+            mat-menu-item
+            (click)="onClinicChange(null)"
+            class="!min-h-[44px]"
+            [class.!bg-blue-50]="!selectedClinicId"
+            >
+            <span class="flex items-center gap-2">
+              <span class="material-symbols-outlined msz-18"
+                [class.text-blue-600]="!selectedClinicId"
+                [class.text-slate-400]="selectedClinicId"
+              >domain</span>
+              <span class="text-sm" [class.font-medium]="!selectedClinicId" [class.text-blue-700]="!selectedClinicId">
+                Todas las clínicas
+              </span>
+              @if (!selectedClinicId) {
+                <span class="material-symbols-outlined msz-16 text-blue-500 ml-auto">check</span>
+              }
+            </span>
+          </button>
+        }
+
+        @if (isSuperAdmin()) {
+          <mat-divider class="!my-1"></mat-divider>
+        }
+
+        <!-- Lista de clínicas -->
+        @for (clinic of filteredClinics; track trackClinicById($index, clinic)) {
+          <button
+            mat-menu-item
+            (click)="onClinicChange(clinic.id)"
+            class="!min-h-[52px]"
+            [class.!bg-blue-50]="clinic.id === selectedClinicId"
+            >
+            <div class="flex items-center gap-3 py-0.5">
+              <span class="material-symbols-outlined msz-18"
+                [class.text-blue-600]="clinic.id === selectedClinicId"
+                [class.text-slate-400]="clinic.id !== selectedClinicId"
+              >apartment</span>
+              <div class="flex flex-col flex-1 min-w-0">
+                <span class="text-sm truncate"
+                  [class.font-semibold]="clinic.id === selectedClinicId"
+                  [class.text-blue-800]="clinic.id === selectedClinicId"
+                  [class.text-slate-800]="clinic.id !== selectedClinicId"
+                >{{ clinic.name }}</span>
+                @if (clinic.address) {
+                  <span class="text-xs text-slate-400 truncate">{{ clinic.address }}</span>
+                }
+              </div>
+              @if (clinic.id === selectedClinicId) {
+                <span class="material-symbols-outlined msz-16 text-blue-500">check</span>
+              }
+            </div>
+          </button>
+        }
+
+        @if (filteredClinics.length === 0 && clinicSearchTerm) {
+          <div class="px-4 py-3 text-center text-slate-400 text-sm italic">
+            Sin resultados para "{{ clinicSearchTerm }}"
+          </div>
+        }
+        @if (hasNoClinics()) {
+          <div class="px-4 py-3 text-center text-amber-600 text-sm">
+            No hay clínicas disponibles
+          </div>
+        }
+      </mat-menu>
+
+      <!-- Divider vertical -->
+      <div class="w-px h-6 bg-slate-200 mx-1 hidden sm:block"></div>
+
+      <!-- User: nombre + avatar -->
+      <div class="flex items-center gap-2.5">
+        <!-- Nombre y rol (oculto en pantallas pequeñas) -->
+        <div class="hidden md:flex flex-col items-end">
+          <span class="text-sm font-semibold text-slate-800 leading-tight">{{ displayName() }}</span>
+          <span class="text-xs text-slate-500 leading-tight">{{ userRoleLabel() }}</span>
         </div>
+
+        <!-- Avatar -->
+        <button
+          [matMenuTriggerFor]="userMenu"
+          aria-label="Menú de usuario"
+          class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white text-sm font-bold flex items-center justify-center hover:opacity-90 transition-opacity flex-shrink-0 border-0 shadow-sm ring-2 ring-white ring-offset-1 ring-offset-white"
+          >
+          {{ userInitials() }}
+        </button>
+
+        <!-- User Menu -->
+        <mat-menu #userMenu="matMenu" xPosition="before">
+          <div mat-menu-content class="min-w-[240px]">
+
+            <!-- Header del menú -->
+            <div class="px-4 py-3 border-b border-slate-100 bg-slate-50" (click)="$event.stopPropagation()">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white text-sm font-bold flex items-center justify-center flex-shrink-0 shadow-sm">
+                  {{ userInitials() }}
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-semibold text-slate-900 leading-tight truncate">{{ displayName() }}</p>
+                  <p class="text-xs text-slate-500 leading-tight mt-0.5">{{ allRoleLabels() }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mi Perfil -->
+            <button mat-menu-item routerLink="/dashboard/profile">
+              <mat-icon class="text-blue-500">manage_accounts</mat-icon>
+              <span class="text-sm text-slate-700">Mi Perfil</span>
+            </button>
+
+            <mat-divider></mat-divider>
+
+            <!-- Logout -->
+            <button mat-menu-item (click)="onLogout()">
+              <mat-icon class="text-red-500">logout</mat-icon>
+              <span class="text-sm text-red-600">Cerrar Sesión</span>
+            </button>
+
+          </div>
+        </mat-menu>
       </div>
+
     </div>
-  </mat-toolbar>
+  </div>
+</mat-toolbar>

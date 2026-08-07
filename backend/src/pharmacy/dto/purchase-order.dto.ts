@@ -1,15 +1,5 @@
 import { Type } from 'class-transformer';
-import {
-  IsArray,
-  IsDate,
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsUUID,
-  ValidateNested,
-} from 'class-validator';
+import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
 import { PurchaseOrderStatus } from '../entities/purchase-order.entity';
 
 export class CreatePurchaseOrderItemDto {
@@ -56,14 +46,12 @@ export class CreatePurchaseOrderDto {
   clinicId?: string;
 
   @IsNotEmpty()
-  @Type(() => Date)
-  @IsDate()
-  orderDate: Date;
+  @IsString()
+  orderDate: string;
 
   @IsOptional()
-  @Type(() => Date)
-  @IsDate()
-  expectedDeliveryDate?: Date;
+  @IsString()
+  expectedDeliveryDate?: string;
 
   @IsOptional()
   @IsNumber()
@@ -93,9 +81,8 @@ export class UpdatePurchaseOrderStatusDto {
   status: PurchaseOrderStatus;
 
   @IsOptional()
-  @Type(() => Date)
-  @IsDate()
-  actualDeliveryDate?: Date;
+  @IsString()
+  actualDeliveryDate?: string;
 
   @IsOptional()
   @IsString()
@@ -108,19 +95,16 @@ export class UpdatePurchaseOrderDto {
   supplierId?: string;
 
   @IsOptional()
-  @Type(() => Date)
-  @IsDate()
-  orderDate?: Date;
+  @IsString()
+  orderDate?: string;
 
   @IsOptional()
-  @Type(() => Date)
-  @IsDate()
-  expectedDeliveryDate?: Date;
+  @IsString()
+  expectedDeliveryDate?: string;
 
   @IsOptional()
-  @Type(() => Date)
-  @IsDate()
-  actualDeliveryDate?: Date;
+  @IsString()
+  actualDeliveryDate?: string;
 
   @IsOptional()
   @IsEnum(PurchaseOrderStatus)
@@ -135,4 +119,37 @@ export class UpdatePurchaseOrderDto {
   @ValidateNested({ each: true })
   @Type(() => CreatePurchaseOrderItemDto)
   items?: CreatePurchaseOrderItemDto[];
+}
+
+export class ReceivePurchaseOrderItemDto {
+  @IsNotEmpty()
+  @IsUUID()
+  itemId: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  receivingQuantity: number;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @IsOptional()
+  @IsString()
+  batchNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  expiryDate?: string; // ISO string, opcional por ahora
+}
+
+export class ReceivePurchaseOrderDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ReceivePurchaseOrderItemDto)
+  items: ReceivePurchaseOrderItemDto[];
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }

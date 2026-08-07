@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
+import { Supplier } from './supplier.entity';
 
 export enum PurchaseOrderStatus {
   DRAFT = 'draft',
@@ -21,59 +22,7 @@ export enum PurchaseOrderStatus {
   CANCELLED = 'cancelled',
 }
 
-@Entity('suppliers')
-export class Supplier {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column('text', { unique: true })
-  code: string;
-
-  @Column('text')
-  name: string;
-
-  @Column('text')
-  contactPerson: string;
-
-  @Column('text')
-  email: string;
-
-  @Column('text', { nullable: true })
-  phone: string;
-
-  @Column('text', { nullable: true })
-  address: string;
-
-  @Column('text', { nullable: true })
-  city: string;
-
-  @Column('text', { nullable: true })
-  state: string;
-
-  @Column('text', { nullable: true })
-  country: string;
-
-  @Column('text', { nullable: true })
-  postalCode: string;
-
-  @Column('text', { nullable: true })
-  taxId: string;
-
-  @Column('boolean', { default: true })
-  isActive: boolean;
-
-  @Column('text', { nullable: true })
-  notes: string;
-
-  @OneToMany(() => PurchaseOrder, order => order.supplier)
-  orders: PurchaseOrder[];
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
-}
+// NOTE: Supplier entity is defined in 'supplier.entity.ts'.
 
 @Entity('purchase_orders')
 export class PurchaseOrder {
@@ -83,7 +32,7 @@ export class PurchaseOrder {
   @Column('text', { unique: true })
   orderNumber: string;
 
-  @ManyToOne(() => Supplier, supplier => supplier.orders)
+  @ManyToOne(() => Supplier, supplier => supplier.purchaseOrders)
   @JoinColumn({ name: 'supplier_id' })
   supplier: Supplier;
 
@@ -172,9 +121,6 @@ export class PurchaseOrderItem {
   @ManyToOne(() => PurchaseOrder, order => order.items, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })
   purchaseOrder: PurchaseOrder;
-
-  @Column('uuid')
-  orderId: string;
 
   @Column('text')
   productName: string;

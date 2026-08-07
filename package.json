@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "plane:sync": "node scripts/plane-sync-roadmap.cjs --apply",
+    "plane:sync:dry": "node scripts/plane-sync-roadmap.cjs"
+  },
+  "devDependencies": {
+    "daisyui": "^5.3.10"
+  }
+}

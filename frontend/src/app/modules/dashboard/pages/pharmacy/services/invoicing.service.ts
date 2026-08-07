@@ -1,161 +1,157 @@
-import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { Invoice } from '../interfaces/pharmacy.interfaces';
+import { HttpClient, HttpParams } from '@angular/common/http'
+import { Injectable } from '@angular/core'
+import { Observable, throwError } from 'rxjs'
+import { catchError, map, tap } from 'rxjs/operators'
+import { AlertService } from '@core/services/alert.service'
+import { environment } from '../../../../../environments/environments'
+import { ErrorService } from '../../../../../shared/components/services/error.service'
+import { Invoice, InvoiceStatus, PaginatedResult } from '../interfaces/pharmacy.interfaces'
+
+const mapToInvoice = (raw: any): Invoice => ({
+  id: raw.id,
+  invoiceNumber: raw.invoiceNumber,
+  saleId: raw.saleId,
+  sale: raw.sale,
+  issueDate: raw.invoiceDate,
+  date: raw.invoiceDate,
+  dueDate: raw.dueDate,
+  paymentDate: raw.paymentDate,
+  status: raw.status,
+  subtotal: Number(raw.subtotal) || 0,
+  taxAmount: Number(raw.tax) || 0,
+  totalAmount: Number(raw.total) || 0,
+  total: Number(raw.total) || 0,
+  amountPaid: Number(raw.amountPaid) || 0,
+  balanceDue: Number(raw.balance) || 0,
+  patientName: raw.patientName,
+  notes: raw.notes,
+  clinicId: raw.sale?.clinicId ?? '',
+  createdAt: raw.createdAt,
+  updatedAt: raw.updatedAt,
+})
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class InvoicingService {
+  private readonly baseUrl = `${environment.baseUrl}/pharmacy-invoices`
 
-  private invoices: Invoice[] = [
-    { 
-      id: 'FACT-001', 
-      saleId: 'VNT-001', 
-      date: '2025-09-02', 
-      total: 15.65, 
-      status: 'paid',
-      patientName: 'Juan Pérez',
-      dueDate: '2025-09-17',
-      paymentDate: '2025-09-02'
-    },
-    { 
-      id: 'FACT-002', 
-      saleId: 'VNT-002', 
-      date: '2025-09-03', 
-      total: 5.75, 
-      status: 'paid',
-      patientName: 'María García',
-      dueDate: '2025-09-18',
-      paymentDate: '2025-09-03'
-    },
-    { 
-      id: 'FACT-003', 
-      saleId: 'VNT-003', 
-      date: '2025-09-03', 
-      total: 12.40, 
-      status: 'pending',
-      patientName: 'Carlos Rodriguez',
-      dueDate: '2025-09-18'
-    },
-    { 
-      id: 'FACT-004', 
-      saleId: 'VNT-004', 
-      date: '2025-09-01', 
-      total: 18.90, 
-      status: 'paid',
-      patientName: 'Ana López',
-      dueDate: '2025-09-16',
-      paymentDate: '2025-09-01'
-    },
-    { 
-      id: 'FACT-005', 
-      saleId: 'VNT-005', 
-      date: '2025-08-28', 
-      total: 25.30, 
-      status: 'overdue',
-      patientName: 'Pedro Martinez',
-      dueDate: '2025-09-12'
-    }
-  ];
+  constructor(
+    private http: HttpClient,
+    private errorService: ErrorService,
+    private alert: AlertService,
+  ) {}
 
-  getInvoices(): Observable<Invoice[]> {
-    return of(this.invoices);
+  getInvoices(filters?: { status?: InvoiceStatus; page?: number; limit?: number }): Observable<PaginatedResult<Invoice>> {
+    let params = new HttpParams()
+    if (filters?.status) params = params.set('status', filters.status)
+    params = params.set('page', String(filters?.page ?? 1))
+    params = params.set('limit', String(filters?.limit ?? 100))
+    return this.http.get<PaginatedResult<any>>(this.baseUrl, { params }).pipe(
+      map(result => ({ ...result, data: result.data.map(mapToInvoice) })),
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
   }
 
-  getInvoice(id: string): Observable<Invoice | undefined> {
-    const invoice = this.invoices.find(i => i.id === id);
-    return of(invoice);
+  getInvoice(id: string): Observable<Invoice> {
+    return this.http.get<any>(`${this.baseUrl}/${id}`).pipe(
+      map(mapToInvoice),
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
   }
 
-  createInvoice(invoice: Omit<Invoice, 'id'>): Observable<Invoice> {
-    const newInvoice: Invoice = {
-      ...invoice,
-      id: this.generateInvoiceId(),
-      status: 'pending'
-    };
-    
-    // Calcular fecha de vencimiento (15 días después de la fecha de factura)
-    if (!newInvoice.dueDate) {
-      const dueDate = new Date(newInvoice.date);
-      dueDate.setDate(dueDate.getDate() + 15);
-      newInvoice.dueDate = dueDate.toISOString().split('T')[0];
-    }
-    
-    this.invoices.push(newInvoice);
-    return of(newInvoice);
+  /** Busca la factura ya generada para una venta (relación 1:1 sale→invoice). */
+  getInvoiceBySale(saleId: string): Observable<Invoice> {
+    return this.http.get<any>(`${this.baseUrl}/by-sale/${saleId}`).pipe(map(mapToInvoice))
   }
 
-  updateInvoiceStatus(id: string, status: Invoice['status'], paymentDate?: string): Observable<Invoice | null> {
-    const invoice = this.invoices.find(i => i.id === id);
-    if (invoice) {
-      invoice.status = status;
-      if (status === 'paid' && paymentDate) {
-        invoice.paymentDate = paymentDate;
-      }
-      return of(invoice);
-    }
-    return of(null);
+  createInvoice(dto: {
+    saleId: string
+    patientName?: string
+    patientAddress?: string
+    patientPhone?: string
+    patientEmail?: string
+    taxId?: string
+    invoiceDate: string
+    dueDate: string
+    notes?: string
+  }): Observable<Invoice> {
+    return this.http.post<any>(this.baseUrl, dto).pipe(
+      map(mapToInvoice),
+      tap(() => this.alert.success('Éxito', 'Factura generada')),
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
   }
 
-  getInvoicesByStatus(status: Invoice['status']): Observable<Invoice[]> {
-    const invoices = this.invoices.filter(i => i.status === status);
-    return of(invoices);
+  updateInvoice(id: string, dto: Partial<Invoice>): Observable<Invoice> {
+    return this.http.patch<any>(`${this.baseUrl}/${id}`, dto).pipe(
+      map(mapToInvoice),
+      tap(() => this.alert.success('Éxito', 'Factura actualizada')),
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
+  }
+
+  updateInvoiceStatus(id: string, status: InvoiceStatus, paymentDate?: string): Observable<Invoice> {
+    return this.http.patch<any>(`${this.baseUrl}/${id}/status`, { status, paymentDate }).pipe(
+      map(mapToInvoice),
+      tap(() => this.alert.success('Éxito', 'Estado de la factura actualizado')),
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
   }
 
   getOverdueInvoices(): Observable<Invoice[]> {
-    const today = new Date();
-    const overdueInvoices = this.invoices.filter(invoice => {
-      if (invoice.status === 'paid') return false;
-      const dueDate = new Date(invoice.dueDate || invoice.date);
-      return dueDate < today;
-    });
-    
-    // Actualizar status a overdue automáticamente
-    overdueInvoices.forEach(invoice => {
-      if (invoice.status !== 'overdue') {
-        invoice.status = 'overdue';
-      }
-    });
-    
-    return of(overdueInvoices);
-  }
-
-  getInvoicesByDateRange(startDate: string, endDate: string): Observable<Invoice[]> {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    
-    const invoicesInRange = this.invoices.filter(invoice => {
-      const invoiceDate = new Date(invoice.date);
-      return invoiceDate >= start && invoiceDate <= end;
-    });
-    
-    return of(invoicesInRange);
+    return this.http.get<any[]>(`${this.baseUrl}/overdue`).pipe(
+      map(list => list.map(mapToInvoice)),
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
   }
 
   getTotalRevenue(startDate?: string, endDate?: string): Observable<number> {
-    let invoicesToCalculate = this.invoices.filter(i => i.status === 'paid');
-    
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      invoicesToCalculate = invoicesToCalculate.filter(invoice => {
-        const invoiceDate = new Date(invoice.date);
-        return invoiceDate >= start && invoiceDate <= end;
-      });
-    }
-    
-    const total = invoicesToCalculate.reduce((sum, invoice) => sum + invoice.total, 0);
-    return of(total);
+    let params = new HttpParams()
+    if (startDate) params = params.set('startDate', startDate)
+    if (endDate) params = params.set('endDate', endDate)
+    return this.http.get<number>(`${this.baseUrl}/revenue`, { params }).pipe(
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
   }
 
   getPendingAmount(): Observable<number> {
-    const pendingInvoices = this.invoices.filter(i => i.status === 'pending' || i.status === 'overdue');
-    const total = pendingInvoices.reduce((sum, invoice) => sum + invoice.total, 0);
-    return of(total);
+    return this.http.get<number>(`${this.baseUrl}/pending-amount`).pipe(
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
   }
 
-  private generateInvoiceId(): string {
-    const invoiceNumber = this.invoices.length + 1;
-    return `FACT-${invoiceNumber.toString().padStart(3, '0')}`;
+  removeInvoice(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`).pipe(
+      tap(() => this.alert.success('Éxito', 'Factura eliminada')),
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
   }
 }

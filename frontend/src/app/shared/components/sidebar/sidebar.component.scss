@@ -1,0 +1,12 @@
+/* Flyout panel del menú colapsado */
+.sidebar-flyout-panel {
+  min-width: 220px !important;
+  border-radius: 0.75rem !important; /* rounded-xl, Material lo deja en 4px por defecto */
+  overflow: hidden;
+
+  .mat-mdc-menu-item {
+    &:hover {
+      background-color: #eff6ff; /* blue-50 */
+    }
+  }
+}

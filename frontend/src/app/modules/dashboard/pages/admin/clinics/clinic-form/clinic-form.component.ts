@@ -1,0 +1,400 @@
+import { Component, DestroyRef, ElementRef, inject, OnInit } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
+import { FormBuilder, FormGroup, Validators } from '@angular/forms'
+import { ActivatedRoute, Router } from '@angular/router'
+import { ErrorService } from '../../../../../../shared/components/services/error.service'
+import { scrollToFirstInvalidField } from '../../../../../../shared/utils/form-errors.util'
+import { VALIDATION_PATTERNS } from '../../../../../../shared/validators/validation-patterns'
+import { CreateClinicDto, UpdateClinicDto } from '../interfaces'
+import { ClinicsService } from '../services'
+
+@Component({
+    selector: 'app-clinic-form',
+    templateUrl: './clinic-form.component.html',
+    styleUrl: './clinic-form.component.css',
+    standalone: false
+})
+export class ClinicFormComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef)
+
+  clinicForm: FormGroup
+  isEditMode = false
+  // Bug real: /dashboard/clinics/view/:id usaba este mismo componente que
+  // /edit/:id sin distinguir modo — "Ver detalles" era en realidad un
+  // formulario totalmente editable.
+  isViewMode = false
+  isLoading = false
+  currentClinicId: string | null = null
+
+  // Catálogos Bolivia
+  departamentos = [
+    'La Paz',
+    'Cochabamba',
+    'Santa Cruz',
+    'Oruro',
+    'Potosí',
+    'Chuquisaca',
+    'Tarija',
+    'Beni',
+    'Pando',
+  ]
+
+  provinciasPorDepartamento: { [key: string]: string[] } = {
+    'La Paz': [
+      'Murillo',
+      'Omasuyos',
+      'Pacajes',
+      'Camacho',
+      'Muñecas',
+      'Larecaja',
+      'Franz Tamayo',
+      'Ingavi',
+      'Loayza',
+      'Inquisivi',
+      'Sud Yungas',
+      'Los Andes',
+      'Aroma',
+      'Nor Yungas',
+      'Abel Iturralde',
+      'Bautista Saavedra',
+      'Manco Kapac',
+      'Gualberto Villarroel',
+      'José Manuel Pando',
+      'Caranavi',
+    ],
+    Cochabamba: [
+      'Cercado',
+      'Arani',
+      'Arque',
+      'Ayopaya',
+      'Campero',
+      'Capinota',
+      'Carrasco',
+      'Chapare',
+      'Esteban Arce',
+      'Germán Jordán',
+      'Mizque',
+      'Punata',
+      'Quillacollo',
+      'Tapacarí',
+      'Tiraque',
+      'Bolívar',
+    ],
+    'Santa Cruz': [
+      'Andrés Ibáñez',
+      'Warnes',
+      'Velasco',
+      'Ichilo',
+      'Chiquitos',
+      'Sara',
+      'Cordillera',
+      'Vallegrande',
+      'Florida',
+      'Obispo Santistevan',
+      'Ñuflo de Chávez',
+      'Ángel Sandoval',
+      'Caballero',
+      'Germán Busch',
+      'Guarayos',
+    ],
+    Oruro: [
+      'Cercado',
+      'Abaroa',
+      'Carangas',
+      'Eduardo Avaroa',
+      'Ladislao Cabrera',
+      'Litoral',
+      'Nor Carangas',
+      'Pantaleón Dalence',
+      'Poopó',
+      'Sajama',
+      'San Pedro de Totora',
+      'Saucarí',
+      'Sebastián Pagador',
+      'Sud Carangas',
+      'Tomás Barrón',
+    ],
+    Potosí: [
+      'Tomás Frías',
+      'Rafael Bustillo',
+      'Cornelio Saavedra',
+      'Chayanta',
+      'Charcas',
+      'Nor Chichas',
+      'Alonso de Ibáñez',
+      'Sur Chichas',
+      'Nor Lípez',
+      'Sur Lípez',
+      'José María Linares',
+      'Antonio Quijarro',
+      'Bernardino Bilbao',
+      'Daniel Campos',
+      'Modesto Omiste',
+      'Enrique Baldivieso',
+    ],
+    Chuquisaca: [
+      'Oropeza',
+      'Azurduy',
+      'Zudáñez',
+      'Tomina',
+      'Hernando Siles',
+      'Yamparáez',
+      'Nor Cinti',
+      'Sud Cinti',
+      'Belisario Boeto',
+      'Luis Calvo',
+    ],
+    Tarija: [
+      'Cercado',
+      'Aniceto Arce',
+      'Gran Chaco',
+      'José María Avilés',
+      'Eustaquio Méndez',
+      "Burnet O'Connor",
+    ],
+    Beni: [
+      'Cercado',
+      'Vaca Díez',
+      'José Ballivián',
+      'Yacuma',
+      'Moxos',
+      'Marbán',
+      'Mamoré',
+      'Iténez',
+    ],
+    Pando: ['Nicolás Suárez', 'Manuripi', 'Madre de Dios', 'Abuná', 'Federico Román'],
+  }
+
+  provinciasDisponibles: string[] = []
+
+  constructor(
+    private fb: FormBuilder,
+    private clinicsService: ClinicsService,
+    public router: Router,
+    private route: ActivatedRoute,
+    private errorService: ErrorService,
+    private elRef: ElementRef,
+  ) {
+    this.clinicForm = this.createForm()
+  }
+
+  ngOnInit(): void {
+    this.isViewMode = !!this.route.snapshot.data['readonly']
+    if (this.isViewMode) this.clinicForm.disable()
+
+    this.route.params.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      if (params['id']) {
+        this.isEditMode = true
+        this.currentClinicId = params['id']
+        this.loadClinic(params['id'])
+      } else {
+        // Modo crear: poblar provincias del departamento por defecto (La Paz).
+        this.onDepartamentoChange(this.clinicForm.get('departamento')!.value)
+      }
+    })
+
+    // Reactividad: cuando cambia el departamento, filtrar provincias
+    this.clinicForm
+      .get('departamento')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(dep => this.onDepartamentoChange(dep))
+  }
+
+  createForm(): FormGroup {
+    return this.fb.group({
+      name: ['', [Validators.required, Validators.minLength(2)]],
+      address: ['', [Validators.required]],
+      phone: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(VALIDATION_PATTERNS.phoneBolivia),
+          Validators.minLength(8),
+          Validators.maxLength(8),
+        ],
+      ],
+      email: ['', [Validators.email]],
+      description: [''],
+      // Checklist de formularios: precargar Bolivia/La Paz por defecto (mismo
+      // patrón que patient-form.component.ts) — provincia/localidad quedan
+      // libres para que el usuario elija.
+      departamento: ['La Paz'],
+      provincia: [''],
+      localidad: [''],
+      isActive: [true],
+    })
+  }
+
+  onDepartamentoChange(departamento: string) {
+    if (departamento && this.provinciasPorDepartamento[departamento]) {
+      this.provinciasDisponibles = this.provinciasPorDepartamento[departamento]
+      const provinciaActual = this.clinicForm.get('provincia')?.value
+      if (provinciaActual && !this.provinciasDisponibles.includes(provinciaActual)) {
+        this.clinicForm.patchValue({ provincia: '' })
+      }
+    } else {
+      this.provinciasDisponibles = []
+      this.clinicForm.patchValue({ provincia: '' })
+    }
+  }
+
+  loadClinic(id: string) {
+    this.isLoading = true
+    this.clinicsService.findOne(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: clinic => {
+        this.clinicForm.patchValue({
+          name: clinic.name,
+          address: clinic.address,
+          phone: clinic.phone,
+          email: clinic.email || '',
+          description: clinic.description || '',
+          departamento: clinic.departamento || '',
+          provincia: clinic.provincia || '',
+          localidad: clinic.localidad || '',
+          isActive: clinic.isActive,
+        })
+        if (clinic.departamento) this.onDepartamentoChange(clinic.departamento)
+        this.isLoading = false
+      },
+      error: error => {
+        this.errorService.handleError(error)
+        this.isLoading = false
+        this.router.navigate(['/dashboard/clinics'])
+      },
+    })
+  }
+
+  onSubmit() {
+    if (this.clinicForm.invalid) {
+      this.clinicForm.markAllAsTouched()
+      this.scrollToFirstError()
+      return
+    }
+    if (this.clinicForm.valid) {
+      this.isLoading = true
+      const formData = this.clinicForm.value
+
+      if (this.isEditMode && this.currentClinicId) {
+        const updateDto: UpdateClinicDto = {
+          ...formData,
+          email: formData.email || undefined,
+          description: formData.description || undefined,
+          departamento: formData.departamento || undefined,
+          provincia: formData.provincia || undefined,
+          localidad: formData.localidad || undefined,
+        }
+
+        this.clinicsService.updateClinic(this.currentClinicId, updateDto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+          next: () => {
+            this.isLoading = false
+            this.router.navigate(['/dashboard/clinics'])
+          },
+          error: () => {
+            this.isLoading = false
+          },
+        })
+      } else {
+        const createDto: CreateClinicDto = {
+          ...formData,
+          email: formData.email || undefined,
+          description: formData.description || undefined,
+          departamento: formData.departamento || undefined,
+          provincia: formData.provincia || undefined,
+          localidad: formData.localidad || undefined,
+        }
+
+        this.clinicsService.createClinic(createDto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+          next: () => {
+            this.isLoading = false
+            this.router.navigate(['/dashboard/clinics'])
+          },
+          error: () => {
+            this.isLoading = false
+          },
+        })
+      }
+    } else {
+      this.markFormGroupTouched()
+    }
+  }
+
+  markFormGroupTouched() {
+    Object.keys(this.clinicForm.controls).forEach(key => {
+      const control = this.clinicForm.get(key)
+      control?.markAsTouched()
+    })
+  }
+
+  private scrollToFirstError(): void {
+    scrollToFirstInvalidField(this.elRef.nativeElement as HTMLElement)
+  }
+
+  // Badges de error por sección — cuentan controles inválidos+touched de los campos
+  // de cada tarjeta visual (un único FormGroup, sin subgrupos por sección).
+  basicInfoErrorCount(): number {
+    return this.countSectionErrors(['name', 'description'])
+  }
+
+  contactErrorCount(): number {
+    return this.countSectionErrors(['phone', 'email'])
+  }
+
+  addressErrorCount(): number {
+    return this.countSectionErrors(['address', 'departamento', 'provincia', 'localidad'])
+  }
+
+  statusErrorCount(): number {
+    return this.countSectionErrors(['isActive'])
+  }
+
+  private countSectionErrors(fieldNames: string[]): number {
+    return fieldNames.filter(name => {
+      const c = this.clinicForm.get(name)
+      return !!c && c.invalid && c.touched
+    }).length
+  }
+
+  onCancel() {
+    this.router.navigate(['/dashboard/clinics'])
+  }
+
+  getErrorMessage(fieldName: string): string {
+    const control = this.clinicForm.get(fieldName)
+
+    if (control?.hasError('required')) {
+      return `${this.getFieldLabel(fieldName)} es requerido`
+    }
+
+    if (control?.hasError('minlength')) {
+      const minLength = control.errors?.['minlength']?.requiredLength
+      return `${this.getFieldLabel(fieldName)} debe tener al menos ${minLength} caracteres`
+    }
+
+    if (control?.hasError('email')) {
+      return 'Ingrese un email válido'
+    }
+
+    if (control?.hasError('pattern')) {
+      if (fieldName === 'phone') {
+        return 'Ingrese un número válido de 8 dígitos que comience con 6 o 7'
+      }
+    }
+
+    return ''
+  }
+
+  private getFieldLabel(fieldName: string): string {
+    const labels: { [key: string]: string } = {
+      name: 'Nombre',
+      address: 'Dirección',
+      phone: 'Teléfono',
+      email: 'Email',
+      description: 'Descripción',
+      departamento: 'Departamento',
+      provincia: 'Provincia',
+      localidad: 'Localidad',
+    }
+
+    return labels[fieldName] || fieldName
+  }
+}

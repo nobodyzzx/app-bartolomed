@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
   ManyToOne,
   OneToMany,
   JoinColumn,
@@ -12,6 +13,7 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Clinic } from '../../clinics/entities/clinic.entity';
+import { AssetMaintenance } from './asset-maintenance.entity';
 
 export enum AssetType {
   MEDICAL_EQUIPMENT = 'medical_equipment',
@@ -48,6 +50,7 @@ export enum DepreciationMethod {
 }
 
 @Entity('assets')
+@Index(['clinic', 'createdAt'])
 export class Asset {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -181,7 +184,8 @@ export class Asset {
   isActive: boolean;
 
   // Relaciones
-  @ManyToOne(() => Clinic, { eager: true })
+  @Index()
+  @ManyToOne(() => Clinic)
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic;
 
@@ -189,8 +193,8 @@ export class Asset {
   @JoinColumn({ name: 'assigned_to' })
   assignedTo: User;
 
-  @OneToMany('MaintenanceRecord', 'asset')
-  maintenanceRecords: any[];
+  @OneToMany(() => AssetMaintenance, m => m.asset)
+  maintenanceRecords: AssetMaintenance[];
 
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'created_by' })
@@ -253,69 +257,5 @@ export class Asset {
     const purchaseDate = new Date(this.purchaseDate);
     const diffTime = today.getTime() - purchaseDate.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.44)); // Promedio de días por mes
-  }
-}
-
-@Entity('maintenance_records')
-export class MaintenanceRecord {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column('text')
-  type: string; // preventive, corrective, emergency
-
-  @Column('text')
-  description: string;
-
-  @Column('date')
-  scheduledDate: Date;
-
-  @Column('date', { nullable: true })
-  completedDate: Date;
-
-  @Column('decimal', { precision: 10, scale: 2 })
-  cost: number;
-
-  @Column('text', { nullable: true })
-  vendor: string;
-
-  @Column('text', { nullable: true })
-  technician: string;
-
-  @Column('text', { nullable: true })
-  workPerformed: string;
-
-  @Column('text', { nullable: true })
-  partsReplaced: string;
-
-  @Column('text', { nullable: true })
-  notes: string;
-
-  @Column('text', { default: 'scheduled' })
-  status: string; // scheduled, in_progress, completed, cancelled
-
-  @Column('boolean', { default: true })
-  isActive: boolean;
-
-  @ManyToOne('Asset', 'maintenanceRecords')
-  @JoinColumn({ name: 'asset_id' })
-  asset: Asset;
-
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'scheduled_by' })
-  scheduledBy: User;
-
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'completed_by' })
-  completedBy: User;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
-
-  isOverdue(): boolean {
-    return new Date() > new Date(this.scheduledDate) && this.status !== 'completed';
   }
 }

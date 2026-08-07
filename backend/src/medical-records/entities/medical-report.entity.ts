@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Clinic } from '../../clinics/entities/clinic.entity';
 
 export enum ReportStatus {
   DRAFT = 'draft',
@@ -59,6 +60,14 @@ export class MedicalReport {
 
   @Column({ length: 100, nullable: true })
   createdBy: string;
+
+  @Index()
+  @ManyToOne(() => Clinic, { nullable: true, eager: false })
+  @JoinColumn({ name: 'clinic_id' })
+  clinic: Clinic;
+
+  @Column({ name: 'clinic_id', nullable: true })
+  clinicId: string;
 
   @Column({ type: 'text', nullable: true })
   filePath: string;

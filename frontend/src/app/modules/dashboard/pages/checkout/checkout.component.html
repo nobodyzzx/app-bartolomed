@@ -1,0 +1,258 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      title="Punto de cobro"
+      subtitle="Cobra la cuenta del paciente: consultas, exámenes y procedimientos"
+      (back)="goBack()">
+    </app-page-header>
+
+    <!-- Selección de paciente -->
+    @if (!patient) {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+        <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">person_search</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Paciente</h3>
+            <p class="text-sm text-slate-500 m-0">Busca a quién vas a cobrar</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Buscar paciente</mat-label>
+            <mat-icon matPrefix class="text-blue-400">search</mat-icon>
+            <input matInput [(ngModel)]="search" (ngModelChange)="onSearchChange($event)"
+                   placeholder="Nombre, apellido o documento" />
+            @if (searching) { <mat-spinner matSuffix diameter="20"></mat-spinner> }
+          </mat-form-field>
+
+          @if (results.length > 0) {
+            <div class="border border-slate-200 rounded-xl overflow-hidden mt-2">
+              @for (p of results; track p.id) {
+                <button type="button" (click)="selectPatient(p)"
+                        class="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0">
+                  <p class="font-medium text-slate-900 m-0">{{ patientLabel(p) }}</p>
+                  <p class="text-xs text-slate-500 m-0">{{ p.documentNumber }}</p>
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (patient) {
+      <!-- Paciente elegido -->
+      <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-blue-500">person</span>
+          <div>
+            <p class="text-sm text-blue-900 m-0 font-semibold">{{ patientLabel(patient) }}</p>
+            <p class="text-xs text-blue-700 m-0">{{ patient.documentNumber }}</p>
+          </div>
+        </div>
+        <button type="button" (click)="clearPatient()" class="btn btn-ghost">
+          <span class="material-symbols-outlined msz-16">close</span>
+          Cambiar
+        </button>
+      </div>
+
+      @if (loadingAccount) {
+        <div class="flex justify-center py-16"><mat-spinner diameter="40"></mat-spinner></div>
+      } @else if (lines.length === 0) {
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center">
+          <span class="material-symbols-outlined text-slate-300" style="font-size: 56px">receipt_long</span>
+          <h3 class="text-lg font-semibold text-slate-900 mt-4 mb-1">Sin cargos pendientes</h3>
+          <p class="text-slate-500 m-0">Este paciente no tiene nada por cobrar.</p>
+        </div>
+      } @else {
+
+        <!-- Cargos -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+          <div class="flex items-center justify-between gap-4 px-6 py-4 bg-emerald-50 border-b border-emerald-100">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined msz-20">receipt_long</span>
+              </div>
+              <div>
+                <h3 class="font-semibold text-slate-900 m-0 leading-tight">Cuenta del paciente</h3>
+                <p class="text-sm text-slate-500 m-0">
+                  Desmarca lo que no se cobra ahora; queda pendiente
+                </p>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" (click)="toggleAll(true)" class="btn btn-ghost">Todos</button>
+              <button type="button" (click)="toggleAll(false)" class="btn btn-ghost">Ninguno</button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
+                  <th class="px-4 py-3 w-12"></th>
+                  <th class="text-left font-semibold px-4 py-3">Concepto</th>
+                  <th class="text-left font-semibold px-4 py-3">Origen</th>
+                  <th class="text-right font-semibold px-4 py-3">Importe</th>
+                  <th class="text-right font-semibold px-4 py-3 w-32">Descuento</th>
+                  <th class="text-left font-semibold px-4 py-3 w-56">Motivo</th>
+                  <th class="text-right font-semibold px-4 py-3">Neto</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (line of lines; track line.charge.id) {
+                  <tr class="border-t border-slate-100" [class.opacity-40]="!line.selected">
+                    <td class="px-4 py-3">
+                      <mat-checkbox [(ngModel)]="line.selected" (change)="onAmountsChanged()" color="primary"></mat-checkbox>
+                    </td>
+                    <td class="px-4 py-3 font-medium text-slate-900">{{ line.charge.description }}</td>
+                    <td class="px-4 py-3 text-slate-500">{{ originLabels[line.charge.origin] }}</td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                      Bs {{ line.charge.quantity * line.charge.listPrice | number: '1.2-2' }}
+                    </td>
+                    <td class="px-4 py-3">
+                      <input type="number" min="0" step="0.01" [(ngModel)]="line.discount"
+                             (ngModelChange)="onAmountsChanged()" [disabled]="!line.selected"
+                             class="w-full text-right border border-slate-200 rounded-lg px-2 py-1 disabled:bg-slate-50" />
+                    </td>
+                    <td class="px-4 py-3">
+                      <input type="text" [(ngModel)]="line.reason" [disabled]="!line.selected || !line.discount"
+                             placeholder="Motivo del descuento"
+                             class="w-full border rounded-lg px-2 py-1 disabled:bg-slate-50"
+                             [class.border-red-300]="line.selected && line.discount > 0 && !line.reason.trim()"
+                             [class.border-slate-200]="!(line.selected && line.discount > 0 && !line.reason.trim())" />
+                    </td>
+                    <td class="px-4 py-3 text-right font-semibold whitespace-nowrap">
+                      Bs {{ (line.charge.quantity * line.charge.listPrice) - (line.discount || 0) | number: '1.2-2' }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          <!-- Descuento global y presentación -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
+              <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined msz-20">percent</span>
+              </div>
+              <div>
+                <h3 class="font-semibold text-slate-900 m-0 leading-tight">Descuento sobre el total</h3>
+                <p class="text-sm text-slate-500 m-0">Se reparte entre las líneas seleccionadas</p>
+              </div>
+            </div>
+            <div class="p-6">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Monto (Bs)</mat-label>
+                <mat-icon matPrefix class="text-purple-400">payments</mat-icon>
+                <input matInput type="number" min="0" step="0.01" [(ngModel)]="globalDiscount"
+                       (ngModelChange)="onAmountsChanged()" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Motivo</mat-label>
+                <mat-icon matPrefix class="text-purple-400">edit_note</mat-icon>
+                <input matInput [(ngModel)]="globalDiscountReason" placeholder="Por qué se hace el descuento" />
+                @if (missingGlobalReason) {
+                  <mat-error>Indica el motivo del descuento</mat-error>
+                }
+              </mat-form-field>
+
+              <div class="mt-2">
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                  Cómo aparece en el recibo
+                </p>
+                <mat-radio-group [(ngModel)]="discountDisplay" class="flex flex-col gap-2">
+                  <mat-radio-button [value]="DiscountDisplay.ITEMIZED" color="primary">
+                    <span class="text-sm">Desglosado — se ve la línea "Descuento"</span>
+                  </mat-radio-button>
+                  <mat-radio-button [value]="DiscountDisplay.ABSORBED" color="primary">
+                    <span class="text-sm">Absorbido — el precio ya viene rebajado, sin mencionar el descuento</span>
+                  </mat-radio-button>
+                </mat-radio-group>
+                <p class="text-xs text-slate-500 mt-2 mb-0">
+                  Solo cambia la impresión. El descuento se registra igual en ambos casos.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pago y totales -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+              <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined msz-20">point_of_sale</span>
+              </div>
+              <div>
+                <h3 class="font-semibold text-slate-900 m-0 leading-tight">Cobro</h3>
+                <p class="text-sm text-slate-500 m-0">Puede pagarse una parte y dejar saldo</p>
+              </div>
+            </div>
+            <div class="p-6">
+              <div class="space-y-2 mb-5 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Subtotal</span>
+                  <span>Bs {{ subtotal | number: '1.2-2' }}</span>
+                </div>
+                @if (discountTotal > 0) {
+                  <div class="flex justify-between text-purple-600">
+                    <span>Descuento</span>
+                    <span>- Bs {{ discountTotal | number: '1.2-2' }}</span>
+                  </div>
+                }
+                <div class="flex justify-between text-lg font-bold text-slate-900 pt-2 border-t border-slate-200">
+                  <span>Total a cobrar</span>
+                  <span>Bs {{ totalToCharge | number: '1.2-2' }}</span>
+                </div>
+              </div>
+
+              @if (discountExceedsTotal) {
+                <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                  El descuento supera el importe de los cargos seleccionados.
+                </div>
+              }
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Forma de pago</mat-label>
+                <mat-icon matPrefix class="text-green-400">credit_card</mat-icon>
+                <mat-select [(ngModel)]="paymentMethod">
+                  @for (m of paymentMethods; track m.value) {
+                    <mat-option [value]="m.value">{{ m.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Monto recibido (Bs)</mat-label>
+                <mat-icon matPrefix class="text-green-400">payments</mat-icon>
+                <input matInput type="number" min="0" step="0.01" [(ngModel)]="paymentAmount" />
+                <mat-hint>Déjalo en 0 para dejar la factura pendiente de pago</mat-hint>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Referencia</mat-label>
+                <mat-icon matPrefix class="text-green-400">tag</mat-icon>
+                <input matInput [(ngModel)]="paymentReference" placeholder="Opcional" />
+              </mat-form-field>
+
+              <button type="button" (click)="submit()" [disabled]="!canSubmit"
+                      class="btn btn-primary w-full justify-center disabled:opacity-50">
+                <span class="material-symbols-outlined msz-18">point_of_sale</span>
+                Cobrar Bs {{ totalToCharge | number: '1.2-2' }}
+              </button>
+            </div>
+          </div>
+
+        </div>
+      }
+    }
+
+  </div>
+</div>

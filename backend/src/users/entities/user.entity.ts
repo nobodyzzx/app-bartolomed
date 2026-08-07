@@ -3,6 +3,7 @@ import {
   BeforeUpdate,
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToOne,
@@ -27,6 +28,13 @@ export class User {
   @Column('text', { nullable: true, select: false })
   refreshTokenHash?: string | null;
 
+  // Recuperación de contraseña
+  @Column('text', { nullable: true, select: false })
+  passwordResetToken?: string | null;
+
+  @Column('timestamptz', { nullable: true })
+  passwordResetExpiresAt?: Date | null;
+
   @Column('text', {
     array: true,
     default: ['user'],
@@ -38,15 +46,15 @@ export class User {
 
   @OneToOne(() => PersonalInfo, personalInfo => personalInfo.user, {
     cascade: true,
-    eager: true,
   })
   @JoinColumn()
   personalInfo: PersonalInfo;
 
-  @OneToOne(() => ProfessionalInfo, professionalInfo => professionalInfo.user, { cascade: true, eager: true })
+  @OneToOne(() => ProfessionalInfo, professionalInfo => professionalInfo.user, { cascade: true })
   @JoinColumn()
   professionalInfo: ProfessionalInfo;
 
+  @Index()
   @ManyToOne(() => Clinic, clinic => clinic.users)
   clinic: Clinic;
 

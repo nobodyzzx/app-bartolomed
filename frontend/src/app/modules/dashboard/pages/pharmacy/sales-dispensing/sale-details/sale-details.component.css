@@ -1,0 +1,8 @@
+table { width: 100%; border-collapse: collapse; }
+th, td { font-size: 0.85rem; }
+th { background: #f8fafc; }
+tbody tr:hover { background: #f1f5f9; }
+.btn { @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all; }
+.btn-success { @apply bg-green-50 text-green-700 hover:bg-green-100; }
+.btn-danger { @apply bg-red-50 text-red-700 hover:bg-red-100; }
+.btn-outline { @apply bg-white text-slate-700 border border-slate-300 hover:bg-slate-50; }

@@ -16,6 +16,11 @@ export interface User {
     certifications?: string[]
     areas?: string[]
     description?: string
+    startDate?: Date
   }
-  startDate?: Date
+  clinic?: {
+    id: string
+    name: string
+    address?: string
+  }
 }

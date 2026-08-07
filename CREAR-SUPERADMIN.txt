@@ -1,0 +1,61 @@
+══════════════════════════════════════════════════════════════
+  BARTOLOMED — Instrucciones para crear el SUPER_ADMIN
+══════════════════════════════════════════════════════════════
+
+REQUISITOS
+----------
+  - Windows 10 / 11 (PowerShell ya viene instalado)
+  - Conexión a internet
+  - El archivo: create-superadmin.ps1 (en este mismo USB)
+  - El GOD_MODE_TOKEN (proporcionado por el administrador)
+
+CONTRASEÑA REQUERIDA
+--------------------
+  La contraseña del SUPER_ADMIN debe cumplir:
+    ✓ Al menos 6 caracteres
+    ✓ Una letra mayúscula
+    ✓ Una letra minúscula
+    ✓ Al menos un número o símbolo
+  Ejemplo válido: Admin2024!
+
+PASOS
+-----
+  1. Copia el archivo create-superadmin.ps1 al escritorio
+     (o ejecútalo directamente desde el USB)
+
+  2. Clic derecho sobre create-superadmin.ps1
+     → selecciona "Ejecutar con PowerShell"
+
+  3. Si aparece un aviso de seguridad, escribe en PowerShell:
+       Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+     Presiona Enter, confirma con "S" y vuelve al paso 2.
+
+  4. El script pedirá:
+       • Email          → correo del administrador
+       • Nombre         → nombre del administrador
+       • Apellido       → apellido del administrador
+       • Contraseña     → no se verá mientras se escribe
+       • Confirmar      → repetir la contraseña
+       • GOD_MODE_TOKEN → el token secreto (no se verá)
+
+  5. Si todo es correcto verás:
+       ✓ SUPER_ADMIN creado: correo@ejemplo.com
+
+  6. Ingresa a la aplicación en:
+       https://bartolomed.tecnocondor.dev
+
+SOLUCIÓN DE PROBLEMAS
+---------------------
+  • "Error HTTP 401" → El GOD_MODE_TOKEN es incorrecto.
+  • "Error HTTP 400" → La contraseña no cumple los requisitos
+                       o el email ya está registrado.
+  • "No se puede conectar" → Verifica tu conexión a internet.
+
+IMPORTANTE
+----------
+  • Este script solo funciona UNA VEZ por email.
+    Si el usuario ya existe, usa mode "promote" manualmente.
+  • Guarda el GOD_MODE_TOKEN en un lugar seguro.
+    No lo compartas por correo ni mensajería.
+
+══════════════════════════════════════════════════════════════

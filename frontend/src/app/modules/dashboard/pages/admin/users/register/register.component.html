@@ -1,0 +1,304 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      [title]="isEditMode ? 'Editar Usuario' : 'Nuevo Usuario'"
+      subtitle="Complete toda la información del usuario"
+      (back)="router.navigate(['/dashboard/users'])"
+      >
+      <button
+        type="button"
+        (click)="router.navigate(['/dashboard/users'])"
+        class="btn btn-danger-outline"
+        >
+        <span class="material-symbols-outlined msz-18">cancel</span>
+        Cancelar
+      </button>
+    </app-page-header>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-6">
+
+      <!-- Información de Cuenta -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">account_circle</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información de Cuenta</h3>
+            <p class="text-sm text-slate-500 m-0">Credenciales de acceso al sistema</p>
+          </div>
+        </div>
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Email</mat-label>
+            <mat-icon matPrefix class="text-blue-400">email</mat-icon>
+            <input matInput formControlName="email" type="email" placeholder="usuario@ejemplo.com" />
+            @if (registerForm.get('email')?.hasError('required')) {
+              <mat-error>El email es obligatorio</mat-error>
+            }
+            @if (registerForm.get('email')?.hasError('email')) {
+              <mat-error>Formato de email inválido</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>{{ isEditMode ? 'Contraseña (opcional)' : 'Contraseña' }}</mat-label>
+            <mat-icon matPrefix class="text-blue-400">lock</mat-icon>
+            <input matInput formControlName="password"
+              [type]="hidePassword ? 'password' : 'text'"
+              [placeholder]="isEditMode ? 'Dejar vacío para no cambiar' : 'Mín. 6 caracteres, mayúscula y número'" />
+            <button type="button" mat-icon-button matSuffix (click)="hidePassword = !hidePassword"
+              [attr.aria-label]="hidePassword ? 'Mostrar contraseña' : 'Ocultar contraseña'">
+              <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (isEditMode) {
+              <mat-hint>Deje en blanco para mantener la contraseña actual</mat-hint>
+            }
+            @if (!isEditMode) {
+              <mat-hint>Debe tener mayúscula, minúscula y al menos un número o símbolo</mat-hint>
+            }
+            @if (registerForm.get('password')?.hasError('required')) {
+              <mat-error>La contraseña es obligatoria</mat-error>
+            }
+            @if (registerForm.get('password')?.hasError('minlength')) {
+              <mat-error>Mínimo 6 caracteres</mat-error>
+            }
+            @if (registerForm.get('password')?.hasError('pattern')) {
+              <mat-error>Debe incluir mayúscula, minúscula y un número o símbolo</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Roles</mat-label>
+            <mat-icon matPrefix class="text-blue-400">admin_panel_settings</mat-icon>
+            <mat-select formControlName="roles" multiple>
+              <mat-select-trigger>
+                {{ registerForm.get('roles')?.value?.length || 0 }} roles seleccionados
+              </mat-select-trigger>
+              @for (role of availableRoles; track role.value) {
+                <mat-option [value]="role.value">{{ role.label }}</mat-option>
+              }
+            </mat-select>
+            @if (registerForm.get('roles')?.hasError('required')) {
+              <mat-error>Seleccione al menos un rol</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Clínica</mat-label>
+            <mat-icon matPrefix class="text-blue-400">business</mat-icon>
+            <mat-select formControlName="clinicId">
+              <mat-option value=""><em>Sin asignar</em></mat-option>
+              @for (clinic of clinics; track clinic) {
+                <mat-option [value]="clinic.id">{{ clinic.name }}</mat-option>
+              }
+            </mat-select>
+            <mat-hint>Opcional: asigne el usuario a una clínica específica</mat-hint>
+          </mat-form-field>
+
+          <!-- Estado — solo visible en edición -->
+          @if (isEditMode) {
+            <div class="md:col-span-2 flex items-center justify-between p-4 rounded-xl border"
+              [ngClass]="isActive ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'">
+              <div>
+                <div class="font-medium text-slate-800 text-sm">Estado de la cuenta</div>
+                <div class="text-xs mt-0.5" [ngClass]="isActive ? 'text-green-600' : 'text-red-500'">
+                  {{ isActive ? 'El usuario tiene acceso al sistema' : 'El usuario no puede iniciar sesión' }}
+                </div>
+              </div>
+              <mat-slide-toggle
+                [(ngModel)]="isActive"
+                [ngModelOptions]="{standalone: true}"
+                color="primary"
+                >
+                <span class="text-sm font-medium ml-1" [ngClass]="isActive ? 'text-green-700' : 'text-slate-400'">
+                  {{ isActive ? 'Activo' : 'Inactivo' }}
+                </span>
+              </mat-slide-toggle>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Información Personal -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden" formGroupName="personalInfo">
+        <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">person</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información Personal</h3>
+            <p class="text-sm text-slate-500 m-0">Datos personales del usuario</p>
+          </div>
+        </div>
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Nombres</mat-label>
+            <mat-icon matPrefix class="text-green-400">badge</mat-icon>
+            <input matInput formControlName="firstName" placeholder="Ingrese nombres" />
+            @if (registerForm.get('personalInfo.firstName')?.hasError('required')) {
+              <mat-error>El nombre es obligatorio</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Apellidos</mat-label>
+            <mat-icon matPrefix class="text-green-400">badge</mat-icon>
+            <input matInput formControlName="lastName" placeholder="Ingrese apellidos" />
+            @if (registerForm.get('personalInfo.lastName')?.hasError('required')) {
+              <mat-error>El apellido es obligatorio</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Teléfono</mat-label>
+            <mat-icon matPrefix class="text-green-400">phone</mat-icon>
+            <input matInput formControlName="phone" placeholder="Ej: 70123456" maxlength="8" />
+            @if (registerForm.get('personalInfo.phone')?.hasError('pattern')) {
+              <mat-error>Debe ser un número boliviano válido (8 dígitos, empieza con 6 o 7)</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Fecha de Nacimiento</mat-label>
+            <mat-icon matPrefix class="text-green-400">cake</mat-icon>
+            <input matInput [matDatepicker]="birthPicker" formControlName="birthDate" />
+            <mat-datepicker-toggle matIconSuffix [for]="birthPicker"></mat-datepicker-toggle>
+            <mat-datepicker #birthPicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full md:col-span-2">
+            <mat-label>Dirección</mat-label>
+            <mat-icon matPrefix class="text-green-400">home</mat-icon>
+            <input matInput formControlName="address" placeholder="Ingrese dirección completa" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>País</mat-label>
+            <mat-icon matPrefix class="text-green-400">public</mat-icon>
+            <input matInput formControlName="country" placeholder="País" [matAutocomplete]="autoCountry" />
+            <mat-autocomplete #autoCountry="matAutocomplete">
+              @for (c of filteredCountries(); track c) {
+                <mat-option [value]="c">{{ c }}</mat-option>
+              }
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Estado / Departamento</mat-label>
+            <mat-icon matPrefix class="text-green-400">map</mat-icon>
+            @if (isBoliviaSelected()) {
+              <mat-select formControlName="state">
+                @for (d of departmentOptions; track d) {
+                  <mat-option [value]="d">{{ d }}</mat-option>
+                }
+              </mat-select>
+            } @else {
+              <input matInput formControlName="state" placeholder="Estado / Provincia" />
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Ciudad</mat-label>
+            <mat-icon matPrefix class="text-green-400">location_city</mat-icon>
+            @if (isBoliviaSelected() && isLaPazSelected()) {
+              <input matInput formControlName="city" placeholder="Ciudad" [matAutocomplete]="autoCity" />
+              <mat-autocomplete #autoCity="matAutocomplete">
+                @for (c of filteredCities(); track c) {
+                  <mat-option [value]="c">{{ c }}</mat-option>
+                }
+              </mat-autocomplete>
+            } @else {
+              <input matInput formControlName="city" placeholder="Ciudad" />
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Información Profesional -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden" formGroupName="professionalInfo">
+        <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
+          <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">work</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Información Profesional</h3>
+            <p class="text-sm text-slate-500 m-0">Datos profesionales y especialización</p>
+          </div>
+        </div>
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Título</mat-label>
+            <mat-icon matPrefix class="text-purple-400">school</mat-icon>
+            <input matInput formControlName="title" placeholder="Dr., Dra., Lic., Enfermero/a" />
+            @if (registerForm.get('professionalInfo.title')?.hasError('required')) {
+              <mat-error>El título es obligatorio</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Especialización</mat-label>
+            <mat-icon matPrefix class="text-purple-400">local_hospital</mat-icon>
+            <mat-select formControlName="specialization">
+              @for (spec of specializations; track spec) {
+                <mat-option [value]="spec">{{ spec }}</mat-option>
+              }
+            </mat-select>
+            @if (registerForm.get('professionalInfo.specialization')?.hasError('required')) {
+              <mat-error>La especialización es obligatoria</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Número de Licencia</mat-label>
+            <mat-icon matPrefix class="text-purple-400">card_membership</mat-icon>
+            <input matInput formControlName="license" placeholder="Ej: MED-12345" />
+            @if (registerForm.get('professionalInfo.license')?.hasError('required')) {
+              <mat-error>La licencia es obligatoria</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Fecha de Inicio</mat-label>
+            <mat-icon matPrefix class="text-purple-400">event</mat-icon>
+            <input matInput [matDatepicker]="startPicker" formControlName="startDate" />
+            <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+            <mat-datepicker #startPicker></mat-datepicker>
+            @if (registerForm.get('professionalInfo.startDate')?.hasError('required')) {
+              <mat-error>La fecha de inicio es obligatoria</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full md:col-span-2">
+            <mat-label>Descripción / Biografía</mat-label>
+            <mat-icon matPrefix class="text-purple-400">notes</mat-icon>
+            <textarea matInput formControlName="description" rows="3" placeholder="Breve descripción profesional..."></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Botones sticky -->
+      <div class="form-action-bar">
+        <button
+          type="button"
+          (click)="router.navigate(['/dashboard/users'])"
+          class="btn btn-danger-outline"
+          >
+          <span class="material-symbols-outlined msz-18">close</span>
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          [disabled]="registerForm.invalid"
+          class="btn btn-primary"
+          >
+          <span class="material-symbols-outlined msz-20">{{ isEditMode ? 'save' : 'person_add' }}</span>
+          {{ isEditMode ? 'Actualizar Usuario' : 'Registrar Usuario' }}
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+</div>

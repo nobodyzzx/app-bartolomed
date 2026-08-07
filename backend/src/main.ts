@@ -1,66 +1,26 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import * as bcrypt from 'bcrypt';
-import { DataSource } from 'typeorm';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { PersonalInfo } from './users/entities/personal-info.entity';
-import { User } from './users/entities/user.entity';
-
-async function seedDefaultUser(dataSource: DataSource): Promise<void> {
-  const logger = new Logger('Seeder');
-
-  try {
-    const userRepository = dataSource.getRepository(User);
-    const personalInfoRepository = dataSource.getRepository(PersonalInfo);
-
-    // Check if default user already exists
-    const existingUser = await userRepository.findOne({
-      where: { email: 'doctor@example.com' },
-    });
-
-    if (existingUser) {
-      logger.log('✅ Default user already exists: doctor@example.com');
-      return;
-    }
-
-    logger.log('🌱 Creating default user...');
-
-    // Create personal info first
-    const personalInfo = personalInfoRepository.create({
-      firstName: 'Doctor',
-      lastName: 'Default',
-      phone: '+591 70000000',
-      address: 'Sistema Médico Bartolomé',
-      birthDate: new Date('1980-01-01'),
-    });
-
-    await personalInfoRepository.save(personalInfo);
-
-    // Create the default user
-    const defaultUser = userRepository.create({
-      email: 'doctor@example.com',
-      password: bcrypt.hashSync('Abc123', 10),
-      roles: ['super_user', 'admin', 'user'],
-      isActive: true,
-      personalInfo: personalInfo,
-    });
-
-    await userRepository.save(defaultUser);
-
-    logger.log('✅ Default user created successfully:');
-    logger.log(`   Name: Doctor Default`);
-    logger.log(`   Email: doctor@example.com`);
-    logger.log(`   Password: Abc123`);
-    logger.log(`   Role: super_user`);
-  } catch (error) {
-    logger.error('❌ Error creating default user:', error.message);
-  }
-}
+import { requestIdMiddleware } from './common/middleware/request-id.middleware';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const logger = new Logger('Bootstrap');
+
+  // Confía en el único hop de proxy reverso (Traefik) para que req.ip refleje
+  // la IP real del cliente vía X-Forwarded-For. Sin esto, ThrottlerGuard
+  // (que usa req.ip) agrupa a todo el tráfico bajo la IP interna de Traefik,
+  // compartiendo el límite de rate-limit entre todos los usuarios.
+  if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+  }
+
+  // Asigna X-Request-Id a cada request (acepta el upstream o genera uno).
+  // Va antes del filtro de excepciones para que cualquier 500 ya tenga id.
+  app.use(requestIdMiddleware);
 
   app.useGlobalFilters(new HttpExceptionFilter());
 
@@ -87,10 +47,36 @@ async function bootstrap() {
       : ['https://bartolomed.tecnocondor.dev', 'https://api.bartolomed.tecnocondor.dev']
     : ['http://localhost:4200', 'http://localhost:3000'];
 
+  /**
+   * En desarrollo también se acepta el equipo servido por IP de red local o de
+   * Tailscale (100.64.0.0/10), para poder abrir la app desde otra máquina
+   * —una laptop en la tailnet, el móvil en la LAN— sin tocar configuración.
+   * Solo aplica fuera de producción: allí la lista sigue siendo la de dominios
+   * explícitos.
+   */
+  const isPrivateDevOrigin = (origin: string): boolean => {
+    if (isProduction) return false;
+    const host = (() => {
+      try {
+        return new URL(origin).hostname;
+      } catch {
+        return '';
+      }
+    })();
+    return (
+      /^127\./.test(host) ||
+      host === 'localhost' ||
+      /^10\./.test(host) ||
+      /^192\.168\./.test(host) ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+      /^100\.(6[4-9]|[7-9]\d|1\d\d)\./.test(host) // Tailscale CGNAT
+    );
+  };
+
   app.enableCors({
     origin: (origin, callback) => {
       // Permitir peticiones sin origen (llamadas internas Docker, curl, etc.) en producción
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin) || isPrivateDevOrigin(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
@@ -105,13 +91,30 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      forbidNonWhitelisted: true,
+      forbidNonWhitelisted: false,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+      skipMissingProperties: false,
+      skipNullProperties: false,
+      skipUndefinedProperties: false,
     }),
   );
 
-  // Get the DataSource and run seeder
-  const dataSource = app.get(DataSource);
-  await seedDefaultUser(dataSource);
+  // Swagger — sólo en desarrollo
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Bartolomed API')
+      .setDescription('API clínica Bartolomed')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addApiKey({ type: 'apiKey', name: 'x-clinic-id', in: 'header' }, 'clinic-id')
+      .build()
+    const document = SwaggerModule.createDocument(app, config)
+    SwaggerModule.setup('api/docs', app, document)
+    logger.log(`Swagger docs available at http://localhost:3000/api/docs`)
+  }
 
   await app.listen(3000);
   logger.log(`Application listening on port 3000`);

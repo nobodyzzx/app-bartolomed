@@ -1,10 +1,20 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ChargesModule } from '../charges/charges.module';
+import { AuditModule } from '../audit/audit.module';
 
 // Entities
+import { Clinic } from '../clinics/entities/clinic.entity';
+import { Prescription } from '../prescriptions/entities/prescription.entity';
 import { PharmacyInvoice } from './entities/pharmacy-invoice.entity';
 import { PharmacySale, PharmacySaleItem } from './entities/pharmacy-sale.entity';
-import { PurchaseOrder, PurchaseOrderItem, Supplier } from './entities/purchase-order.entity';
+import { Medication, MedicationStock, StockMovement } from './entities/pharmacy.entity';
+import { PurchaseOrder, PurchaseOrderItem } from './entities/purchase-order.entity';
+import { Supplier } from './entities/supplier.entity';
+
+// Inventory controller/service (ya existen en /controllers y /services)
+import { InventoryController } from './controllers/inventory.controller';
+import { InventoryService } from './services/inventory.service';
 
 // Controllers
 import { PharmacyInvoicesController } from './controllers/pharmacy-invoices.controller';
@@ -20,17 +30,37 @@ import { SuppliersService } from './services/suppliers.service';
 
 @Module({
   imports: [
+    ChargesModule,
+    AuditModule,
     TypeOrmModule.forFeature([
+      Clinic,
+      Prescription,
       Supplier,
       PurchaseOrder,
       PurchaseOrderItem,
       PharmacySale,
       PharmacySaleItem,
       PharmacyInvoice,
+      Medication,
+      MedicationStock,
+      StockMovement,
     ]),
   ],
-  controllers: [SuppliersController, PurchaseOrdersController, PharmacySalesController, PharmacyInvoicesController],
-  providers: [SuppliersService, PurchaseOrdersService, PharmacySalesService, PharmacyInvoicesService],
-  exports: [TypeOrmModule, SuppliersService, PurchaseOrdersService, PharmacySalesService, PharmacyInvoicesService],
+  controllers: [
+    SuppliersController,
+    PurchaseOrdersController,
+    PharmacySalesController,
+    PharmacyInvoicesController,
+    InventoryController,
+  ],
+  providers: [SuppliersService, PurchaseOrdersService, PharmacySalesService, PharmacyInvoicesService, InventoryService],
+  exports: [
+    TypeOrmModule,
+    SuppliersService,
+    PurchaseOrdersService,
+    PharmacySalesService,
+    PharmacyInvoicesService,
+    InventoryService,
+  ],
 })
 export class PharmacyModule {}

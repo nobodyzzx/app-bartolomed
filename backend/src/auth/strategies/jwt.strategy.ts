@@ -16,18 +16,23 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     configService: ConfigService,
   ) {
     super({
-      secretOrKey: configService.get('JWT_SECRET'),
+      secretOrKey: configService.get<string>('JWT_SECRET', ''),
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      algorithms: ['HS256'],
     });
   }
-  async validate(payload: JwtPayload): Promise<User> {
+  async validate(payload: JwtPayload): Promise<User & { clinicIds: string[] }> {
     const { id } = payload;
 
-    const user = await this.userRepository.findOneBy({ id });
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: ['personalInfo', 'professionalInfo'],
+    });
 
     if (!user) throw new UnauthorizedException('Token is not valid');
     if (!user.isActive) throw new UnauthorizedException('User is not active');
 
-    return user;
+    // Adjuntar clinicIds del payload para que ClinicScopeGuard no necesite consultar la DB
+    return Object.assign(user, { clinicIds: payload.clinicIds ?? [] });
   }
 }

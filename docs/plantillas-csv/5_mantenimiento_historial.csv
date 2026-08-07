@@ -1,0 +1,4 @@
+Etiqueta_Activo,Fecha_Mantenimiento,Tipo_Mantenimiento,Descripcion,Costo,Realizado_Por,Proximo_Mantenimiento,Notas
+ACT-001,2024-06-15,Preventivo,Calibración y limpieza general,50.00,Servicio Técnico XYZ,2025-06-15,Funcionamiento óptimo
+ACT-003,2024-07-20,Calibración,Calibración de 12 derivaciones,180.00,Philips Service,2025-01-20,Certificado de calibración incluido
+ACT-003,2024-01-15,Preventivo,Limpieza y revisión general,120.00,Philips Service,2024-07-15,Cambio de papel térmico

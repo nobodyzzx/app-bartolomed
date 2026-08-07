@@ -1,21 +1,26 @@
-import { inject } from '@angular/core';
-import { AuthService } from '../services/auth.service';
-import { CanActivateFn, Router } from '@angular/router';
-import { AuthStatus } from '../interfaces';
+import { inject } from '@angular/core'
+import { toObservable } from '@angular/core/rxjs-interop'
+import { CanActivateFn, Router } from '@angular/router'
+import { filter, map, take } from 'rxjs'
+import { AuthStatus } from '../interfaces'
+import { AuthService } from '../services/auth.service'
 
-export const authGuard: CanActivateFn = (route, state) => {
-  const authService = inject(AuthService);
-  const router = inject(Router);
+export const authGuard: CanActivateFn = () => {
+  const authService = inject(AuthService)
+  const router = inject(Router)
 
-  if (authService.authStatus() === AuthStatus.authenticated) {
-    return true;
+  // Si ya está resuelto, responder inmediatamente sin crear un Observable
+  if (authService.authStatus() !== AuthStatus.checking) {
+    if (authService.authStatus() === AuthStatus.authenticated) return true
+    return router.createUrlTree(['/auth/login'])
   }
 
-  // if (authService.authStatus() === AuthStatus.checking) {
-  //   return false;
-  // }
-
-  router.navigateByUrl('/auth/login');
-
-  return false;
-};
+  // Si está en checking, esperar a que se resuelva
+  return toObservable(authService.authStatus).pipe(
+    filter(status => status !== AuthStatus.checking),
+    take(1),
+    map(status =>
+      status === AuthStatus.authenticated ? true : router.createUrlTree(['/auth/login']),
+    ),
+  )
+}

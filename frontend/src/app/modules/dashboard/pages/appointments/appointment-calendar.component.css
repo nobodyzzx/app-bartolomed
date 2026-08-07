@@ -1,0 +1,45 @@
+/* Calendar Day Styling */
+.min-h-\[120px\] {
+  min-height: 120px;
+}
+
+.max-h-\[80px\] {
+  max-height: 80px;
+}
+
+/* Smooth transitions for calendar interactions */
+.calendar-day {
+  transition: all 0.2s ease-in-out;
+}
+
+/* No data state icon styling */
+.no-data .material-symbols-outlined {
+  font-size: 4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+/* Appointment card hover effects */
+.appointment-card:hover {
+  transform: translateY(-1px);
+}
+
+/* Custom scrollbar for appointment lists */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 4px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

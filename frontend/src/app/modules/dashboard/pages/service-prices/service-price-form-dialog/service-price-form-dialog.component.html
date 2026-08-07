@@ -1,0 +1,97 @@
+<h2 mat-dialog-title class="flex items-center gap-3 !mb-0">
+  <span class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+    <span class="material-symbols-outlined msz-20">{{ isEdit ? 'edit' : 'add' }}</span>
+  </span>
+  <span class="text-lg font-semibold text-slate-900">
+    {{ isEdit ? 'Editar servicio' : 'Nuevo servicio' }}
+  </span>
+</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="pt-4 grid grid-cols-1 md:grid-cols-2 gap-x-4">
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Código</mat-label>
+      <mat-icon matPrefix class="text-emerald-400">tag</mat-icon>
+      <input matInput formControlName="code" placeholder="CONS-GEN" maxlength="30" />
+      <mat-hint>Único dentro de la clínica</mat-hint>
+      @if (form.get('code')?.hasError('required') && form.get('code')?.touched) {
+        <mat-error>El código es obligatorio</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Nombre</mat-label>
+      <mat-icon matPrefix class="text-emerald-400">label</mat-icon>
+      <input matInput formControlName="name" placeholder="Consulta general" maxlength="120" />
+      @if (form.get('name')?.hasError('required') && form.get('name')?.touched) {
+        <mat-error>El nombre es obligatorio</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Categoría</mat-label>
+      <mat-icon matPrefix class="text-emerald-400">category</mat-icon>
+      <mat-select formControlName="category" (selectionChange)="onCategoryChange()">
+        @for (c of categories; track c) {
+          <mat-option [value]="c">{{ categoryLabels[c] }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Precio (Bs)</mat-label>
+      <mat-icon matPrefix class="text-emerald-400">payments</mat-icon>
+      <input matInput type="number" formControlName="price" min="0" step="0.01" placeholder="0.00" />
+      @if (form.get('price')?.hasError('required') && form.get('price')?.touched) {
+        <mat-error>El precio es obligatorio</mat-error>
+      }
+      @if (form.get('price')?.hasError('min')) {
+        <mat-error>El precio no puede ser negativo</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Solo tiene sentido en consultas: es lo que permite resolver la tarifa
+         de una cita automáticamente al completarla. -->
+    @if (isConsultation) {
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Tipo de cita</mat-label>
+        <mat-icon matPrefix class="text-emerald-400">event</mat-icon>
+        <mat-select formControlName="appointmentType">
+          <mat-option [value]="null">Sin asociar</mat-option>
+          @for (t of appointmentTypes; track t) {
+            <mat-option [value]="t">{{ appointmentTypeLabels[t] }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>La cita de este tipo tomará esta tarifa</mat-hint>
+      </mat-form-field>
+    }
+
+    <mat-form-field appearance="outline" class="w-full md:col-span-2">
+      <mat-label>Descripción</mat-label>
+      <mat-icon matPrefix class="text-emerald-400">notes</mat-icon>
+      <textarea matInput formControlName="description" rows="2" placeholder="Opcional"></textarea>
+    </mat-form-field>
+
+    <div class="md:col-span-2 mb-2">
+      <mat-slide-toggle formControlName="isActive" color="primary">
+        Servicio activo
+      </mat-slide-toggle>
+      <p class="text-sm text-slate-500 mt-1 mb-0">
+        Los servicios inactivos no se ofrecen al cobrar
+      </p>
+    </div>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions class="flex justify-end gap-3 px-6 pb-4">
+  <button type="button" (click)="cancel()" class="btn btn-danger-outline">
+    <span class="material-symbols-outlined msz-18">cancel</span>
+    Cancelar
+  </button>
+  <button type="button" (click)="submit()" class="btn btn-primary">
+    <span class="material-symbols-outlined msz-18">check</span>
+    {{ isEdit ? 'Guardar cambios' : 'Agregar servicio' }}
+  </button>
+</mat-dialog-actions>

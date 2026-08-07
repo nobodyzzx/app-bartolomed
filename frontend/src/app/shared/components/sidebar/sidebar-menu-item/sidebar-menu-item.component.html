@@ -1,0 +1,185 @@
+<!-- Contenido interno compartido: ícono + etiqueta, con los colores según estado -->
+<ng-template #rowContent let-icon="icon" let-label="label" let-active="active" let-demo="demo" let-compact="compact">
+  <span
+    class="material-symbols-outlined flex-shrink-0"
+    [class.text-lg]="compact"
+    [class.text-xl]="!compact"
+    [class.text-white]="active"
+    [class.text-blue-300]="demo"
+    [class.text-blue-500]="!active && !demo"
+    >{{ icon }}</span>
+  <span
+    class="text-sm leading-tight truncate"
+    [class.font-medium]="active"
+    [class.text-white]="active"
+    [class.text-blue-300]="demo"
+    [class.text-blue-900]="!active && !demo"
+    >{{ label }}</span>
+</ng-template>
+
+<!-- ============================================================ -->
+<!-- MODO EXPANDIDO                                                -->
+<!-- ============================================================ -->
+@if (isExpanded) {
+  <!-- Ítem sin hijos: mt-3 lo separa visualmente del grupo anterior (si no, se lee como
+       si fuera un hijo más de ese grupo, al no tener encabezado propio) -->
+  @if (!hasChildren) {
+    @if (!isDemo) {
+      <a
+        [routerLink]="item.route"
+        [attr.aria-current]="isLeafActive ? 'page' : null"
+        class="flex items-center gap-3 w-full px-3 py-2.5 mt-3 rounded-xl transition-colors no-underline"
+        [class.bg-blue-600]="isLeafActive"
+        [class.hover:bg-blue-100]="!isLeafActive"
+        >
+        <ng-container [ngTemplateOutlet]="rowContent" [ngTemplateOutletContext]="{ icon: item.icon, label: item.label, active: isLeafActive }"></ng-container>
+      </a>
+    } @else {
+      <button
+        type="button"
+        (click)="demoClick.emit()"
+        matTooltip="Inicia sesión para acceder"
+        class="flex items-center gap-3 w-full px-3 py-2.5 mt-3 rounded-xl bg-transparent border-0 outline-none hover:bg-blue-100/60 transition-colors"
+        >
+        <ng-container [ngTemplateOutlet]="rowContent" [ngTemplateOutletContext]="{ icon: item.icon, label: item.label, demo: true }"></ng-container>
+      </button>
+    }
+  }
+
+  <!-- Grupo con hijos: encabezado clickeable (colapsa/expande) + chevron -->
+  @if (hasChildren) {
+    <button
+      type="button"
+      (click)="toggleGroup()"
+      [attr.aria-expanded]="isOpen"
+      class="flex items-center gap-3 w-full px-3 py-2.5 mt-3 rounded-xl bg-transparent border-0 outline-none transition-colors hover:bg-blue-100/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+      >
+      <span
+        class="material-symbols-outlined text-xl flex-shrink-0"
+        [class.text-blue-700]="isParentActive"
+        [class.text-blue-400]="!isParentActive"
+        >{{ item.icon }}</span>
+      <span
+        class="flex-1 text-[11px] font-semibold uppercase tracking-wider text-left truncate"
+        [class.text-blue-700]="isParentActive"
+        [class.text-blue-400]="!isParentActive"
+        >{{ item.label }}</span>
+      <span
+        class="material-symbols-outlined text-lg flex-shrink-0 text-blue-400 transition-transform duration-200"
+        [class.rotate-90]="isOpen"
+        >chevron_right</span>
+    </button>
+    @if (isOpen) {
+      <div class="space-y-0.5 mt-1 mb-1">
+        @for (child of item.children; track trackByLabel($index, child)) {
+          @if (!isDemo) {
+            <a
+              [routerLink]="child.route"
+              [attr.aria-current]="isChildActive(child) ? 'page' : null"
+              class="flex items-center gap-3 w-full px-3 py-2 rounded-xl transition-colors no-underline"
+              [class.bg-blue-600]="isChildActive(child)"
+              [class.hover:bg-blue-100]="!isChildActive(child)"
+              >
+              <ng-container [ngTemplateOutlet]="rowContent" [ngTemplateOutletContext]="{ icon: child.icon, label: child.label, active: isChildActive(child), compact: true }"></ng-container>
+            </a>
+          } @else {
+            <button
+              type="button"
+              (click)="demoClick.emit()"
+              matTooltip="Inicia sesión para acceder"
+              class="flex items-center gap-3 w-full px-3 py-2 rounded-xl bg-transparent border-0 outline-none hover:bg-blue-100/60 transition-colors"
+              >
+              <ng-container [ngTemplateOutlet]="rowContent" [ngTemplateOutletContext]="{ icon: child.icon, label: child.label, demo: true, compact: true }"></ng-container>
+            </button>
+          }
+        }
+      </div>
+    }
+  }
+}
+
+
+<!-- ============================================================ -->
+<!-- MODO COLAPSADO                                                -->
+<!-- ============================================================ -->
+@if (!isExpanded) {
+  <!-- Ítem sin hijos -->
+  @if (!hasChildren) {
+    @if (!isDemo) {
+      <a
+        [routerLink]="item.route"
+        [attr.aria-current]="isLeafActive ? 'page' : null"
+        [matTooltip]="item.label"
+        matTooltipPosition="right"
+        class="sidebar-collapsed-btn flex items-center justify-center w-12 h-11 rounded-lg transition-colors no-underline mx-auto"
+        [class.sidebar-collapsed-btn-active]="isLeafActive"
+        [class.text-white]="isLeafActive"
+        [class.text-blue-500]="!isLeafActive"
+        >
+        <span class="material-symbols-outlined text-xl">{{ item.icon }}</span>
+      </a>
+    } @else {
+      <button
+        type="button"
+        (click)="demoClick.emit()"
+        [matTooltip]="item.label + ' (requiere sesión)'"
+        matTooltipPosition="right"
+        class="sidebar-collapsed-btn flex items-center justify-center w-12 h-11 rounded-lg text-blue-300 transition-colors mx-auto"
+        >
+        <span class="material-symbols-outlined text-xl">{{ item.icon }}</span>
+      </button>
+    }
+  }
+  <!-- Grupo con hijos: trigger + flyout -->
+  @if (hasChildren) {
+    <button
+      #trigger="matMenuTrigger"
+      #tooltip="matTooltip"
+      type="button"
+      [matMenuTriggerFor]="flyout"
+      (click)="tooltip.hide()"
+      [matTooltip]="item.label"
+      matTooltipPosition="right"
+      [class.sidebar-collapsed-btn-active]="isParentActive"
+      [class.text-white]="isParentActive"
+      [class.text-blue-500]="!isParentActive"
+      [attr.aria-expanded]="trigger.menuOpen"
+      class="sidebar-collapsed-btn flex items-center justify-center w-12 h-11 rounded-lg transition-colors mx-auto"
+      >
+      <span class="material-symbols-outlined text-xl">{{ item.icon }}</span>
+    </button>
+    <mat-menu
+      #flyout="matMenu"
+      xPosition="after"
+      [overlapTrigger]="false"
+      panelClass="sidebar-flyout-panel"
+      >
+      <!-- Encabezado de sección -->
+      <div class="px-4 py-2 border-b border-slate-100" (click)="$event.stopPropagation()">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">{{ item.label }}</span>
+      </div>
+      @for (child of item.children; track trackByLabel($index, child)) {
+        @if (!isDemo) {
+          <a
+            mat-menu-item
+            [routerLink]="child.route"
+            [attr.aria-current]="isChildActive(child) ? 'page' : null"
+            [class.bg-blue-50]="isChildActive(child)"
+            class="no-underline"
+            >
+            <span class="material-symbols-outlined text-xl mr-2 flex-shrink-0"
+              [class.text-blue-700]="isChildActive(child)"
+              [class.text-blue-500]="!isChildActive(child)"
+            >{{ child.icon }}</span>
+            <span [class.font-medium]="isChildActive(child)" [class.text-blue-900]="isChildActive(child)" class="text-sm">{{ child.label }}</span>
+          </a>
+        } @else {
+          <button mat-menu-item type="button" (click)="demoClick.emit()" class="opacity-60">
+            <span class="material-symbols-outlined text-xl text-blue-400 mr-2 flex-shrink-0">{{ child.icon }}</span>
+            <span class="text-sm text-blue-400">{{ child.label }}</span>
+          </button>
+        }
+      }
+    </mat-menu>
+  }
+}

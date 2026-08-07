@@ -1,0 +1,205 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    @if (loading) {
+      <div class="flex justify-center items-center py-20">
+        <mat-spinner diameter="50"></mat-spinner>
+      </div>
+    }
+
+    @if (!loading && order; as o) {
+      <app-page-header
+        [title]="'Orden ' + o.orderNumber"
+        subtitle="Detalle de la orden de laboratorio"
+        (back)="goBack()"
+        >
+        <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold mr-2"
+          [ngClass]="getStatusBadgeClass(o.status)">
+          {{ getStatusLabel(o.status) }}
+        </span>
+      </app-page-header>
+
+      <div class="space-y-6">
+        <!-- ══════════════════════════════════════════
+        SECCIÓN 1 — Datos de la Orden (azul)
+        ══════════════════════════════════════════ -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined msz-20">biotech</span>
+            </div>
+            <div class="flex-1">
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Datos de la Orden</h3>
+              <p class="text-sm text-slate-500 m-0">Paciente, médico solicitante y fecha</p>
+            </div>
+            @if (o.isUrgent) {
+              <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                Urgente
+              </span>
+            }
+          </div>
+          <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined msz-18">person</span>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500 mb-0.5">Paciente</div>
+                  <div class="font-semibold text-slate-900">{{ o.patient?.firstName }} {{ o.patient?.lastName }}</div>
+                  <div class="text-xs text-slate-500">CI: {{ o.patient?.documentNumber || '—' }}</div>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined msz-18">stethoscope</span>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500 mb-0.5">Médico Solicitante</div>
+                  <div class="font-semibold text-slate-900">{{ o.doctor?.personalInfo?.firstName || o.doctor?.email }}</div>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined msz-18">calendar_today</span>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500 mb-0.5">Fecha de Orden</div>
+                  <div class="font-semibold text-slate-900">{{ o.orderDate | date: 'dd/MM/yyyy' }}</div>
+                </div>
+              </div>
+              @if (o.clinicalNotes) {
+                <div class="flex items-start gap-3 md:col-span-2">
+                  <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined msz-18">notes</span>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500 mb-0.5">Notas Clínicas</div>
+                    <div class="text-sm text-slate-700">{{ o.clinicalNotes }}</div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+        SECCIÓN 2 — Estudios y Resultados (verde)
+        ══════════════════════════════════════════ -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+            <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined msz-20">science</span>
+            </div>
+            <div>
+              <h3 class="font-semibold text-slate-900 m-0 leading-tight">Estudios y Resultados</h3>
+              <p class="text-sm text-slate-500 m-0">{{ o.items?.length || 0 }} estudio(s) solicitado(s)</p>
+            </div>
+          </div>
+          <div class="divide-y divide-slate-100">
+            @for (item of o.items; track item; let i = $index) {
+              <div class="px-6 py-4">
+                <div class="flex items-start gap-4">
+                  <div class="w-9 h-9 rounded-full bg-green-100 text-green-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span class="material-symbols-outlined msz-18">{{ categoryIcon(item.category) }}</span>
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="font-semibold text-slate-900">{{ item.testName }}</span>
+                      <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{{ categoryLabel(item.category) }}</span>
+                      @if (item.specimenType) {
+                        <span class="text-xs text-slate-400">· {{ item.specimenType }}</span>
+                      }
+                      @if (item.resultedAt) {
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Con resultado</span>
+                      }
+                      @if (!item.resultedAt) {
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Pendiente</span>
+                      }
+                      @if (item.isAbnormal) {
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">Anormal</span>
+                      }
+                    </div>
+
+                    @if (item.resultedAt && editingItemId !== item.id) {
+                      <div class="mt-2 p-3 bg-slate-50 rounded-lg text-sm">
+                        @if (item.resultValue) {
+                          <div>
+                            <span class="font-semibold text-slate-900">{{ item.resultValue }}</span>
+                            @if (item.resultUnit) { <span class="text-slate-500"> {{ item.resultUnit }}</span> }
+                            @if (item.referenceRange) { <span class="text-slate-400 text-xs ml-2">(Ref: {{ item.referenceRange }})</span> }
+                          </div>
+                        }
+                        @if (item.resultNotes) {
+                          <div class="text-slate-600 mt-1">{{ item.resultNotes }}</div>
+                        }
+                        <div class="text-xs text-slate-400 mt-1">
+                          Cargado por {{ item.enteredBy?.personalInfo?.firstName || item.enteredBy?.email }} el {{ item.resultedAt | date: 'dd/MM/yyyy HH:mm' }}
+                        </div>
+                      </div>
+                    }
+
+                    @if (canEnterResult() && editingItemId !== item.id) {
+                      <button type="button" (click)="startEnterResult(item)" class="btn btn-outline-primary mt-2">
+                        <span class="material-symbols-outlined msz-16 leading-none">{{ item.resultedAt ? 'edit' : 'add' }}</span>
+                        {{ item.resultedAt ? 'Editar resultado' : 'Cargar resultado' }}
+                      </button>
+                    }
+
+                    @if (editingItemId === item.id) {
+                      <div [formGroup]="resultForms[item.id]" class="mt-3 p-4 bg-slate-50 rounded-lg space-y-3">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <mat-form-field appearance="outline" class="mb-0">
+                            <mat-label>Valor</mat-label>
+                            <input matInput formControlName="resultValue" placeholder="Ej: 14" />
+                          </mat-form-field>
+                          <mat-form-field appearance="outline" class="mb-0">
+                            <mat-label>Unidad</mat-label>
+                            <input matInput formControlName="resultUnit" placeholder="Ej: g/dL" />
+                          </mat-form-field>
+                          <mat-form-field appearance="outline" class="mb-0">
+                            <mat-label>Rango de Referencia</mat-label>
+                            <input matInput formControlName="referenceRange" placeholder="Ej: 12-16" />
+                          </mat-form-field>
+                        </div>
+                        <mat-form-field appearance="outline" class="w-full mb-0">
+                          <mat-label>Notas del Resultado</mat-label>
+                          <textarea matInput formControlName="resultNotes" rows="2"></textarea>
+                        </mat-form-field>
+                        <mat-checkbox formControlName="isAbnormal" color="warn">Resultado fuera de rango normal</mat-checkbox>
+                        <div class="flex gap-2 justify-end">
+                          <button type="button" (click)="cancelEnterResult()" class="btn btn-danger-outline">Cancelar</button>
+                          <button type="button" (click)="saveResult(item.id)" class="btn btn-primary">
+                            <span class="material-symbols-outlined msz-16 leading-none">save</span>
+                            Guardar Resultado
+                          </button>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+            @if (!o.items?.length) {
+              <div class="px-6 py-8 text-center text-slate-400 text-sm">Sin estudios registrados</div>
+            }
+          </div>
+        </div>
+
+        <!-- Acciones de estado -->
+        @if (canManageStatus() && getNextStatusOptions().length > 0) {
+          <div class="flex flex-wrap gap-3 justify-end">
+            @for (opt of getNextStatusOptions(); track opt.status) {
+              <button type="button" (click)="changeStatus(opt.status)"
+                [class]="opt.status === 'cancelled' ? 'btn btn-danger-outline' : 'btn btn-primary'">
+                <span class="material-symbols-outlined msz-18 leading-none">{{ opt.icon }}</span>
+                {{ opt.label }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+</div>

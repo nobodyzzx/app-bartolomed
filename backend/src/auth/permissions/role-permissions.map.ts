@@ -1,0 +1,100 @@
+import { ValidRoles } from '../interfaces';
+import { Permission } from './permissions.enum';
+
+// Mapeo base de roles -> permisos
+export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
+  [ValidRoles.SUPER_ADMIN]: [
+    // Todo
+    ...Object.values(Permission),
+  ],
+  [ValidRoles.ADMIN]: [
+    Permission.PatientsRead,
+    Permission.PatientsWrite,
+    Permission.RecordsRead,
+    Permission.RecordsWrite,
+    Permission.AppointmentsRead,
+    Permission.AppointmentsWrite,
+    Permission.PrescriptionsRead,
+
+    Permission.PharmacyInventoryManage,
+    Permission.PharmacyDispense,
+    Permission.PharmacyBilling,
+
+    Permission.BillingRead,
+    Permission.BillingManage,
+
+    Permission.ReportsMedical,
+    Permission.ReportsFinancial,
+    Permission.ReportsStock,
+
+    Permission.AssetsManage,
+
+    Permission.LabRead,
+    Permission.LabOrder,
+    Permission.LabResultEnter,
+
+    Permission.UsersManage,
+    Permission.RolesManage,
+    Permission.SettingsManage,
+    Permission.AuditRead,
+    Permission.BackupManage,
+  ],
+  [ValidRoles.DOCTOR]: [
+    Permission.PatientsRead,
+    Permission.RecordsRead,
+    Permission.RecordsWrite,
+    Permission.PrescriptionsRead,
+    Permission.PrescriptionsSign,
+    Permission.ReportsMedical,
+    Permission.LabRead,
+    Permission.LabOrder,
+  ],
+  [ValidRoles.NURSE]: [
+    Permission.PatientsRead,
+    Permission.RecordsRead,
+    Permission.AppointmentsRead,
+    Permission.AppointmentsWrite,
+    // Habilita GET /reports/patients/:id/timeline (R-10) — el endpoint ya
+    // tenía @Auth(ADMIN, DOCTOR, NURSE), pero sin este permiso PermissionsGuard
+    // (chequeo a nivel de clase en ReportsController) bloqueaba a NURSE con
+    // 403 antes de llegar al chequeo de rol. Coherente con RecordsRead: ver
+    // el timeline clínico de un paciente es parte de la atención de enfermería.
+    Permission.ReportsMedical,
+    // Igual criterio que RecordsRead: ver resultados de laboratorio es parte
+    // de la atención de enfermería, sin poder solicitar ni cargar resultados.
+    Permission.LabRead,
+  ],
+  [ValidRoles.RECEPTIONIST]: [
+    Permission.PatientsRead,
+    Permission.PatientsWrite,
+    Permission.AppointmentsRead,
+    Permission.AppointmentsWrite,
+    Permission.BillingRead,
+    Permission.BillingManage,
+  ],
+  [ValidRoles.PHARMACIST]: [
+    Permission.PrescriptionsRead,
+    Permission.PharmacyInventoryManage,
+    Permission.PharmacyDispense,
+    Permission.PharmacyBilling,
+    Permission.ReportsStock,
+  ],
+  [ValidRoles.LABORATORY]: [
+    Permission.LabRead,
+    Permission.LabResultEnter,
+  ],
+  [ValidRoles.USER]: [
+    // Acceso mínimo, configurable
+  ],
+};
+
+export function permissionsForRoles(roles: string[] | undefined | null): Permission[] {
+  const result = new Set<Permission>();
+  if (!roles || roles.length === 0) return [];
+  for (const r of roles) {
+    const role = String(r).toLowerCase() as ValidRoles;
+    const perms = ROLE_PERMISSIONS[role];
+    if (perms) perms.forEach(p => result.add(p));
+  }
+  return Array.from(result);
+}

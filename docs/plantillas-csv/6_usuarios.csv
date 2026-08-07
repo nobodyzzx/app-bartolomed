@@ -1,0 +1,7 @@
+Nombre_Completo,Email,Rol,Area,Especialidad,Telefono,Notas
+Dr. Juan García,jgarcia@clinica.com,Doctor,Medicina General,Medicina Familiar,099-111-2222,Director Médico
+Dra. María Martínez,mmartinez@clinica.com,Doctor,Cardiología,Cardiología,099-333-4444,
+Enf. Pedro López,plopez@clinica.com,Enfermera,Enfermería,,099-555-6666,Turno Matutino
+Farm. Ana Rodríguez,arodriguez@clinica.com,Farmacéutico,Farmacia,,099-777-8888,Responsable de Farmacia
+Recep. Laura Sánchez,lsanchez@clinica.com,Recepcionista,Recepción,,099-999-0000,
+Admin. Carlos Pérez,cperez@clinica.com,Admin,Administración,,099-111-3333,Administrador del Sistema

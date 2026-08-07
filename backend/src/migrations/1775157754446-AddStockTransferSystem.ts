@@ -1,0 +1,133 @@
+import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class AddStockTransferSystem1775157754446 implements MigrationInterface {
+    name = 'AddStockTransferSystem1775157754446'
+
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`CREATE TYPE "public"."medical_reports_type_enum" AS ENUM('Consultas', 'Diagnósticos', 'Tratamientos', 'Epidemiológico')`);
+        await queryRunner.query(`CREATE TYPE "public"."medical_reports_status_enum" AS ENUM('draft', 'generated', 'published', 'archived')`);
+        await queryRunner.query(`CREATE TABLE "medical_reports" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "title" character varying(255) NOT NULL, "type" "public"."medical_reports_type_enum" NOT NULL DEFAULT 'Consultas', "description" text, "reportDate" date NOT NULL, "status" "public"."medical_reports_status_enum" NOT NULL DEFAULT 'draft', "patientCount" integer, "diagnosisData" json, "consultationData" json, "periodStartDate" date, "periodEndDate" date, "createdBy" character varying(100), "clinic_id" uuid, "filePath" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_d5f4b80d583ee85380b5d4ac826" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_f22a275f75271bb9b99bc35f1a" ON "medical_reports" ("clinic_id") `);
+        await queryRunner.query(`CREATE TYPE "public"."stock_transfers_status_enum" AS ENUM('requested', 'in_transit', 'completed', 'rejected', 'returned')`);
+        await queryRunner.query(`CREATE TABLE "stock_transfers" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "transferNumber" text NOT NULL, "source_clinic_id" uuid NOT NULL, "target_clinic_id" uuid NOT NULL, "status" "public"."stock_transfers_status_enum" NOT NULL DEFAULT 'requested', "notes" text, "requested_by_id" uuid NOT NULL, "dispatched_by_id" uuid, "dispatchedAt" TIMESTAMP, "received_by_id" uuid, "receivedAt" TIMESTAMP, "rejectionReason" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_c938815cac9b7f50011ca5905b8" UNIQUE ("transferNumber"), CONSTRAINT "PK_ef738a3a4a578c7f1802c1bb50a" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_a926af2cc7373c965517d95137" ON "stock_transfers" ("target_clinic_id", "createdAt") `);
+        await queryRunner.query(`CREATE INDEX "IDX_aa79a10eaf41587eacc3dcf27a" ON "stock_transfers" ("source_clinic_id", "createdAt") `);
+        await queryRunner.query(`CREATE INDEX "IDX_49bf603698a2b2b899af4dd163" ON "stock_transfers" ("target_clinic_id", "status") `);
+        await queryRunner.query(`CREATE INDEX "IDX_ca8bd36c6faa7ab8ad65151599" ON "stock_transfers" ("source_clinic_id", "status") `);
+        await queryRunner.query(`CREATE TABLE "stock_transfer_items" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "transfer_id" uuid NOT NULL, "source_stock_id" uuid NOT NULL, "target_stock_id" uuid, "requestedQuantity" integer NOT NULL, "dispatchedQuantity" integer, "receivedQuantity" integer, CONSTRAINT "PK_8acee6121ab8a5135dc84495588" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "public"."transfer_audit_logs_action_enum" AS ENUM('requested', 'dispatched', 'completed', 'rejected', 'returned')`);
+        await queryRunner.query(`CREATE TABLE "transfer_audit_logs" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "transfer_id" uuid NOT NULL, "action" "public"."transfer_audit_logs_action_enum" NOT NULL, "actor_id" uuid NOT NULL, "actor_clinic_id" uuid NOT NULL, "snapshot" jsonb NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_b7e74c193d5690b82e4c3ccaccf" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_4fcb71d6376f0ef2ce887860c3" ON "transfer_audit_logs" ("transfer_id", "createdAt") `);
+        await queryRunner.query(`ALTER TABLE "pharmacy_sales" DROP COLUMN "patientId"`);
+        await queryRunner.query(`ALTER TABLE "medical_records" ADD "clinic_id" uuid`);
+        await queryRunner.query(`ALTER TABLE "medical_records" ADD "deletedAt" TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE "consent_forms" ADD "clinic_id" uuid`);
+        await queryRunner.query(`ALTER TABLE "prescriptions" ADD "deletedAt" TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE "pharmacy_sales" ADD "clinic_id" uuid`);
+        await queryRunner.query(`ALTER TABLE "pharmacy_sales" ADD "patient_id" uuid`);
+        await queryRunner.query(`ALTER TABLE "pharmacy_sales" ADD "prescription_id" uuid`);
+        await queryRunner.query(`CREATE INDEX "IDX_edb259d369bd38b553cf10e04b" ON "users" ("clinicId") `);
+        await queryRunner.query(`CREATE INDEX "IDX_89b992130aacacc72429610bbd" ON "patients" ("clinicId") `);
+        await queryRunner.query(`CREATE INDEX "IDX_43a363f8c3f115bfefe32d4e66" ON "patients" ("clinicId", "createdAt") `);
+        await queryRunner.query(`CREATE INDEX "IDX_5de9b36b534afa4cdfc183b9e4" ON "appointments" ("clinic_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_d2a575dd2fa7b368297c3ddd2f" ON "appointments" ("clinic_id", "appointmentDate") `);
+        await queryRunner.query(`CREATE INDEX "IDX_e3736373fd740167e93380092d" ON "assets" ("clinic_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_645f8ccd046678363b60a8f962" ON "assets" ("clinic_id", "createdAt") `);
+        await queryRunner.query(`CREATE INDEX "IDX_54db93dd64727defaf77568c4a" ON "asset_inventory" ("clinic_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_0f784770b2b611d1b4a72d852e" ON "asset_reports" ("clinic_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_f6b210f8d794d44f23ef0fbe72" ON "invoices" ("clinic_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_4b2561afdeff9c8e9493361d21" ON "invoices" ("clinic_id", "createdAt") `);
+        await queryRunner.query(`CREATE INDEX "IDX_4066999a23bdee4066b73859cc" ON "medical_records" ("clinic_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_2a95ba5b27fe51ff8093da2438" ON "medical_records" ("clinic_id", "createdAt") `);
+        await queryRunner.query(`CREATE INDEX "IDX_e8d4caf1777c5583f444856261" ON "consent_forms" ("clinic_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_87e862499e28684d97aac49eea" ON "prescriptions" ("clinic_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_663eeb9beb066fee8560f3debf" ON "prescriptions" ("clinic_id", "createdAt") `);
+        await queryRunner.query(`CREATE INDEX "IDX_91d7f0af8a110cb264999f8acd" ON "medication_stock" ("clinic_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_04f24b1301db1db9f0368c6744" ON "medication_stock" ("clinic_id", "createdAt") `);
+        // Índice crítico para reportes de stock vencido / por vencer
+        await queryRunner.query(`CREATE INDEX "IDX_medication_stock_clinic_expiry" ON "medication_stock" ("clinic_id", "expiryDate") WHERE "isActive" = true`);
+        await queryRunner.query(`CREATE INDEX "IDX_4fa7661d6fbc479903e762fbfe" ON "pharmacy_sales" ("clinic_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_3ced39d3c3c2a7e75c4b5d7ecb" ON "pharmacy_sales" ("clinic_id", "createdAt") `);
+        await queryRunner.query(`ALTER TABLE "medical_records" ADD CONSTRAINT "FK_4066999a23bdee4066b73859cc0" FOREIGN KEY ("clinic_id") REFERENCES "clinics"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "consent_forms" ADD CONSTRAINT "FK_e8d4caf1777c5583f444856261e" FOREIGN KEY ("clinic_id") REFERENCES "clinics"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "medical_reports" ADD CONSTRAINT "FK_f22a275f75271bb9b99bc35f1aa" FOREIGN KEY ("clinic_id") REFERENCES "clinics"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "pharmacy_sales" ADD CONSTRAINT "FK_4fa7661d6fbc479903e762fbfe4" FOREIGN KEY ("clinic_id") REFERENCES "clinics"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "pharmacy_sales" ADD CONSTRAINT "FK_6112f5e4e1430579916d555d0c1" FOREIGN KEY ("patient_id") REFERENCES "patients"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "pharmacy_sales" ADD CONSTRAINT "FK_bee5174492d1118152b0322d0ca" FOREIGN KEY ("prescription_id") REFERENCES "prescriptions"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "stock_transfers" ADD CONSTRAINT "FK_03d4d4b4b0a2394e71b8d7af18d" FOREIGN KEY ("source_clinic_id") REFERENCES "clinics"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "stock_transfers" ADD CONSTRAINT "FK_0608fd98731003274a3c5c21e03" FOREIGN KEY ("target_clinic_id") REFERENCES "clinics"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "stock_transfers" ADD CONSTRAINT "FK_ac2177e7ac513e920b7335a23d8" FOREIGN KEY ("requested_by_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "stock_transfers" ADD CONSTRAINT "FK_b56d2f00ca4c68410e9402c90f1" FOREIGN KEY ("dispatched_by_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "stock_transfers" ADD CONSTRAINT "FK_a6051c0d73bff61007ab67b9e0b" FOREIGN KEY ("received_by_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "stock_transfer_items" ADD CONSTRAINT "FK_6a0f024e84c92b964c516aa7b79" FOREIGN KEY ("transfer_id") REFERENCES "stock_transfers"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "stock_transfer_items" ADD CONSTRAINT "FK_0e3591efcd9b2d663a8eb950c4e" FOREIGN KEY ("source_stock_id") REFERENCES "medication_stock"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "stock_transfer_items" ADD CONSTRAINT "FK_dd086aefe2f7a2c9822d9b96c48" FOREIGN KEY ("target_stock_id") REFERENCES "medication_stock"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "transfer_audit_logs" ADD CONSTRAINT "FK_8de651ecb65cc4012c180662422" FOREIGN KEY ("transfer_id") REFERENCES "stock_transfers"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "transfer_audit_logs" ADD CONSTRAINT "FK_67c9288677481470f609ad8c514" FOREIGN KEY ("actor_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "transfer_audit_logs" ADD CONSTRAINT "FK_b3384871df898fa7e0a7094b050" FOREIGN KEY ("actor_clinic_id") REFERENCES "clinics"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "transfer_audit_logs" DROP CONSTRAINT "FK_b3384871df898fa7e0a7094b050"`);
+        await queryRunner.query(`ALTER TABLE "transfer_audit_logs" DROP CONSTRAINT "FK_67c9288677481470f609ad8c514"`);
+        await queryRunner.query(`ALTER TABLE "transfer_audit_logs" DROP CONSTRAINT "FK_8de651ecb65cc4012c180662422"`);
+        await queryRunner.query(`ALTER TABLE "stock_transfer_items" DROP CONSTRAINT "FK_dd086aefe2f7a2c9822d9b96c48"`);
+        await queryRunner.query(`ALTER TABLE "stock_transfer_items" DROP CONSTRAINT "FK_0e3591efcd9b2d663a8eb950c4e"`);
+        await queryRunner.query(`ALTER TABLE "stock_transfer_items" DROP CONSTRAINT "FK_6a0f024e84c92b964c516aa7b79"`);
+        await queryRunner.query(`ALTER TABLE "stock_transfers" DROP CONSTRAINT "FK_a6051c0d73bff61007ab67b9e0b"`);
+        await queryRunner.query(`ALTER TABLE "stock_transfers" DROP CONSTRAINT "FK_b56d2f00ca4c68410e9402c90f1"`);
+        await queryRunner.query(`ALTER TABLE "stock_transfers" DROP CONSTRAINT "FK_ac2177e7ac513e920b7335a23d8"`);
+        await queryRunner.query(`ALTER TABLE "stock_transfers" DROP CONSTRAINT "FK_0608fd98731003274a3c5c21e03"`);
+        await queryRunner.query(`ALTER TABLE "stock_transfers" DROP CONSTRAINT "FK_03d4d4b4b0a2394e71b8d7af18d"`);
+        await queryRunner.query(`ALTER TABLE "pharmacy_sales" DROP CONSTRAINT "FK_bee5174492d1118152b0322d0ca"`);
+        await queryRunner.query(`ALTER TABLE "pharmacy_sales" DROP CONSTRAINT "FK_6112f5e4e1430579916d555d0c1"`);
+        await queryRunner.query(`ALTER TABLE "pharmacy_sales" DROP CONSTRAINT "FK_4fa7661d6fbc479903e762fbfe4"`);
+        await queryRunner.query(`ALTER TABLE "medical_reports" DROP CONSTRAINT "FK_f22a275f75271bb9b99bc35f1aa"`);
+        await queryRunner.query(`ALTER TABLE "consent_forms" DROP CONSTRAINT "FK_e8d4caf1777c5583f444856261e"`);
+        await queryRunner.query(`ALTER TABLE "medical_records" DROP CONSTRAINT "FK_4066999a23bdee4066b73859cc0"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_3ced39d3c3c2a7e75c4b5d7ecb"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_4fa7661d6fbc479903e762fbfe"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_04f24b1301db1db9f0368c6744"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_medication_stock_clinic_expiry"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_91d7f0af8a110cb264999f8acd"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_663eeb9beb066fee8560f3debf"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_87e862499e28684d97aac49eea"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_e8d4caf1777c5583f444856261"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_2a95ba5b27fe51ff8093da2438"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_4066999a23bdee4066b73859cc"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_4b2561afdeff9c8e9493361d21"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_f6b210f8d794d44f23ef0fbe72"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_0f784770b2b611d1b4a72d852e"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_54db93dd64727defaf77568c4a"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_645f8ccd046678363b60a8f962"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_e3736373fd740167e93380092d"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_d2a575dd2fa7b368297c3ddd2f"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_5de9b36b534afa4cdfc183b9e4"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_43a363f8c3f115bfefe32d4e66"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_89b992130aacacc72429610bbd"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_edb259d369bd38b553cf10e04b"`);
+        await queryRunner.query(`ALTER TABLE "pharmacy_sales" DROP COLUMN "prescription_id"`);
+        await queryRunner.query(`ALTER TABLE "pharmacy_sales" DROP COLUMN "patient_id"`);
+        await queryRunner.query(`ALTER TABLE "pharmacy_sales" DROP COLUMN "clinic_id"`);
+        await queryRunner.query(`ALTER TABLE "prescriptions" DROP COLUMN "deletedAt"`);
+        await queryRunner.query(`ALTER TABLE "consent_forms" DROP COLUMN "clinic_id"`);
+        await queryRunner.query(`ALTER TABLE "medical_records" DROP COLUMN "deletedAt"`);
+        await queryRunner.query(`ALTER TABLE "medical_records" DROP COLUMN "clinic_id"`);
+        await queryRunner.query(`ALTER TABLE "pharmacy_sales" ADD "patientId" text`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_4fcb71d6376f0ef2ce887860c3"`);
+        await queryRunner.query(`DROP TABLE "transfer_audit_logs"`);
+        await queryRunner.query(`DROP TYPE "public"."transfer_audit_logs_action_enum"`);
+        await queryRunner.query(`DROP TABLE "stock_transfer_items"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_ca8bd36c6faa7ab8ad65151599"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_49bf603698a2b2b899af4dd163"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_aa79a10eaf41587eacc3dcf27a"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_a926af2cc7373c965517d95137"`);
+        await queryRunner.query(`DROP TABLE "stock_transfers"`);
+        await queryRunner.query(`DROP TYPE "public"."stock_transfers_status_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_f22a275f75271bb9b99bc35f1a"`);
+        await queryRunner.query(`DROP TABLE "medical_reports"`);
+        await queryRunner.query(`DROP TYPE "public"."medical_reports_status_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."medical_reports_type_enum"`);
+    }
+
+}

@@ -1,4 +1,13 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { User } from '../../users/entities';
 
 @Entity('clinics')
@@ -22,16 +31,13 @@ export class Clinic {
   description?: string;
 
   @Column('text', { nullable: true })
-  city?: string;
+  departamento?: string;
 
   @Column('text', { nullable: true })
-  state?: string;
+  provincia?: string;
 
   @Column('text', { nullable: true })
-  zipCode?: string;
-
-  @Column('text', { nullable: true })
-  country?: string;
+  localidad?: string;
 
   @Column('bool', { default: true })
   isActive: boolean;

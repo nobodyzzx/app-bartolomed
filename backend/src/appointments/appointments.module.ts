@@ -10,6 +10,7 @@ import { AuthModule } from '../auth/auth.module';
 import { PatientsModule } from '../patients/patients.module';
 import { UsersModule } from '../users/users.module';
 import { ClinicsModule } from '../clinics/clinics.module';
+import { ChargesModule } from '../charges/charges.module';
 
 @Module({
   controllers: [AppointmentsController],
@@ -20,6 +21,7 @@ import { ClinicsModule } from '../clinics/clinics.module';
     PatientsModule,
     UsersModule,
     ClinicsModule,
+    ChargesModule,
   ],
   exports: [TypeOrmModule, AppointmentsService],
 })

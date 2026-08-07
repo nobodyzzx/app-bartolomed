@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
   ManyToOne,
   OneToMany,
   JoinColumn,
@@ -44,6 +45,7 @@ export enum PaymentStatus {
 }
 
 @Entity('invoices')
+@Index(['clinic', 'createdAt'])
 export class Invoice {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -110,11 +112,12 @@ export class Invoice {
   isActive: boolean;
 
   // Relaciones
-  @ManyToOne(() => Patient, { eager: true })
+  @ManyToOne(() => Patient)
   @JoinColumn({ name: 'patient_id' })
   patient: Patient;
 
-  @ManyToOne(() => Clinic, { eager: true })
+  @Index()
+  @ManyToOne(() => Clinic)
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic;
 
@@ -162,10 +165,29 @@ export class Invoice {
   @BeforeInsert()
   @BeforeUpdate()
   calculateAmounts() {
+    const isTerminalStatus = [InvoiceStatus.CANCELLED, InvoiceStatus.REFUNDED].includes(this.status);
+
+    // Los `default: 0` de las columnas los aplica Postgres al insertar, pero
+    // este hook corre ANTES: si el importe no se seteó explícitamente llega
+    // como `undefined` y cualquier suma da NaN, que es lo que se persiste.
+    // Además TypeORM devuelve los `decimal` como string, así que un update
+    // sobre una factura releída concatenaría en vez de sumar.
+    const num = (value: unknown): number => {
+      const n = Number(value ?? 0);
+      return isNaN(n) ? 0 : n;
+    };
+
+    this.subtotal = num(this.subtotal);
+    this.discountAmount = num(this.discountAmount);
+    this.discountRate = num(this.discountRate);
+    this.taxAmount = num(this.taxAmount);
+    this.taxRate = num(this.taxRate);
+    this.paidAmount = num(this.paidAmount);
+
     // Calcular subtotal desde los items si no está establecido
     if (!this.subtotal && this.items) {
       this.subtotal = this.items.reduce((sum: number, item: any) => {
-        return sum + item.quantity * item.unitPrice;
+        return sum + num(item.quantity) * num(item.unitPrice);
       }, 0);
     }
 
@@ -188,21 +210,23 @@ export class Invoice {
     // Calcular monto restante
     this.remainingAmount = this.totalAmount - this.paidAmount;
 
-    // Actualizar estado basado en pagos
-    if (this.paidAmount === 0) {
-      if (this.status === InvoiceStatus.PAID || this.status === InvoiceStatus.PARTIALLY_PAID) {
-        this.status = InvoiceStatus.PENDING;
+    if (!isTerminalStatus) {
+      // Actualizar estado basado en pagos
+      if (this.paidAmount === 0) {
+        if (this.status === InvoiceStatus.PAID || this.status === InvoiceStatus.PARTIALLY_PAID) {
+          this.status = InvoiceStatus.PENDING;
+        }
+      } else if (this.paidAmount >= this.totalAmount) {
+        this.status = InvoiceStatus.PAID;
+        this.remainingAmount = 0;
+      } else {
+        this.status = InvoiceStatus.PARTIALLY_PAID;
       }
-    } else if (this.paidAmount >= this.totalAmount) {
-      this.status = InvoiceStatus.PAID;
-      this.remainingAmount = 0;
-    } else {
-      this.status = InvoiceStatus.PARTIALLY_PAID;
-    }
 
-    // Verificar si está vencida
-    if (this.remainingAmount > 0 && new Date() > new Date(this.dueDate)) {
-      this.status = InvoiceStatus.OVERDUE;
+      // Verificar si está vencida
+      if (this.remainingAmount > 0 && new Date() > new Date(this.dueDate)) {
+        this.status = InvoiceStatus.OVERDUE;
+      }
     }
   }
 }

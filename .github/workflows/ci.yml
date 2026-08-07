@@ -1,0 +1,193 @@
+name: CI
+
+on:
+  push:
+    branches: [main, preproduction]
+  pull_request:
+    branches: [main, preproduction]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (lint + test + build + e2e)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: bartolomed_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test1234
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test -d bartolomed_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      NODE_ENV: test
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: bartolomed_test
+      DB_USER: test
+      DB_PASS: test1234
+      JWT_SECRET: ci-test-jwt-secret-at-least-32-characters-long
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-at-least-32-chars-long
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Lint
+        working-directory: backend
+        run: npm run lint
+
+      - name: Build
+        working-directory: backend
+        run: npm run build
+
+      - name: Unit tests
+        working-directory: backend
+        run: npm run test -- --ci --runInBand --reporters=default
+
+      - name: Coverage
+        working-directory: backend
+        run: npm run test:cov -- --ci --runInBand
+
+      - name: Run migrations (e2e DB)
+        working-directory: backend
+        run: npm run migration:run
+
+      - name: E2E tests
+        working-directory: backend
+        run: npm run test:e2e -- --ci --runInBand
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage
+          if-no-files-found: ignore
+
+  type-sync:
+    name: Type sync (backend DTOs → frontend types)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: bartolomed_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test1234
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test -d bartolomed_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      NODE_ENV: test
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: bartolomed_test
+      DB_USER: test
+      DB_PASS: test1234
+      JWT_SECRET: ci-test-jwt-secret-at-least-32-characters-long
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-at-least-32-chars-long
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run migrations
+        working-directory: backend
+        run: npm run migration:run
+
+      - name: Generate OpenAPI spec from backend DTOs
+        working-directory: backend
+        run: npm run openapi:generate
+
+      - name: Generate frontend types from spec
+        working-directory: frontend
+        run: npm run generate-types
+
+      - name: Fail if generated types are out of sync
+        run: |
+          if ! git diff --quiet -- frontend/src/generated/api-spec.json frontend/src/generated/api-types.ts; then
+            echo "::error::Los tipos generados en frontend/src/generated/ están desactualizados respecto a los DTOs del backend."
+            echo "Regeneralos localmente y commiteá el resultado:"
+            echo "  podman compose exec backend npm run openapi:generate && cd frontend && npm run generate-types"
+            git diff --stat -- frontend/src/generated/api-spec.json frontend/src/generated/api-types.ts
+            exit 1
+          fi
+
+  frontend:
+    name: Frontend (test + build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # No hay script "lint" en frontend/package.json (sin ESLint/@angular-eslint configurado
+      # todavía — ver CLAUDE.md). Añadir este step cuando exista `ng lint`.
+
+      - name: Unit tests
+        working-directory: frontend
+        run: npm test -- --watch=false
+
+      - name: Build (production)
+        working-directory: frontend
+        run: npm run build

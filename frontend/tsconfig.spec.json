@@ -5,11 +5,14 @@
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
     "types": [
-      "jasmine"
+      "vitest/globals"
     ]
   },
+  // Los componentes con `standalone: false` toman el scope de su template del
+  // NgModule que los declara. Si la compilación de tests solo incluyera los
+  // specs, esos módulos quedarían fuera del programa y cada elemento de
+  // Material daría NG8001/NG8002.
   "include": [
-    "src/**/*.spec.ts",
-    "src/**/*.d.ts"
+    "src/**/*.ts"
   ]
 }

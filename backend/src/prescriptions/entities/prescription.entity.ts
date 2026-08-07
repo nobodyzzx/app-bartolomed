@@ -3,7 +3,9 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   UpdateDateColumn,
+  Index,
   ManyToOne,
   OneToMany,
   JoinColumn,
@@ -22,6 +24,7 @@ export enum PrescriptionStatus {
 }
 
 @Entity('prescriptions')
+@Index(['clinic', 'createdAt'])
 export class Prescription {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -69,15 +72,16 @@ export class Prescription {
   @Column('boolean', { default: true })
   isActive: boolean;
 
-  @ManyToOne(() => Patient, { eager: true })
+  @ManyToOne(() => Patient)
   @JoinColumn({ name: 'patient_id' })
   patient: Patient;
 
-  @ManyToOne(() => User, { eager: true })
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'doctor_id' })
   doctor: User;
 
-  @ManyToOne(() => Clinic, { eager: true })
+  @Index()
+  @ManyToOne(() => Clinic)
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic;
 
@@ -93,6 +97,9 @@ export class Prescription {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
 
   // Helper methods
   isExpired(): boolean {

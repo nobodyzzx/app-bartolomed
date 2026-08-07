@@ -1,0 +1,240 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      [title]="isEditMode ? 'Editar Proveedor' : 'Nuevo Proveedor'"
+      [subtitle]="isEditMode ? 'Modifica los datos del proveedor' : 'Registra un nuevo proveedor'"
+      (back)="goBack()"
+      >
+      <button
+        type="button"
+        (click)="cancel()"
+        class="btn btn-danger-outline"
+        >
+        <span class="material-symbols-outlined msz-18">cancel</span>
+        Cancelar
+      </button>
+    </app-page-header>
+
+    <form [formGroup]="supplierForm" (ngSubmit)="onSubmit()" class="space-y-6">
+
+      <!-- ══════════════════════════════════════════
+      SECCIÓN 1 — Información Fiscal (azul)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">receipt_long</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Información Fiscal
+              <app-section-error-badge [count]="fiscalInfoErrorCount()" />
+            </h3>
+            <p class="text-sm text-slate-500 m-0">Razón social, ID tributario y tipo de proveedor</p>
+          </div>
+        </div>
+        <div class="p-6 space-y-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Nombre comercial *</mat-label>
+            <mat-icon matPrefix class="text-blue-400">storefront</mat-icon>
+            <input matInput formControlName="nombreComercial" />
+            @if (supplierForm.get('nombreComercial')?.hasError('required')) {
+              <mat-error>Requerido</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Razón social *</mat-label>
+            <mat-icon matPrefix class="text-blue-400">business</mat-icon>
+            <input matInput formControlName="razonSocial" />
+            @if (supplierForm.get('razonSocial')?.hasError('required')) {
+              <mat-error>Requerido</mat-error>
+            }
+          </mat-form-field>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>ID Tributario *</mat-label>
+              <mat-icon matPrefix class="text-blue-400">badge</mat-icon>
+              <input matInput formControlName="idTributario" />
+              @if (supplierForm.get('idTributario')?.hasError('required')) {
+                <mat-error>Requerido</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Tipo de proveedor *</mat-label>
+              <mat-icon matPrefix class="text-blue-400">category</mat-icon>
+              <mat-select formControlName="tipoProveedor">
+                <mat-option value="medicamentos">Medicamentos</mat-option>
+                <mat-option value="insumos">Insumos</mat-option>
+                <mat-option value="servicios">Servicios</mat-option>
+              </mat-select>
+              @if (supplierForm.get('tipoProveedor')?.hasError('required')) {
+                <mat-error>Requerido</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+      SECCIÓN 2 — Contacto (verde)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">contact_phone</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Contacto
+              <app-section-error-badge [count]="contactErrorCount()" />
+            </h3>
+            <p class="text-sm text-slate-500 m-0">Persona de contacto, email y teléfono</p>
+          </div>
+        </div>
+        <div class="p-6 space-y-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Persona de contacto *</mat-label>
+            <mat-icon matPrefix class="text-green-400">person</mat-icon>
+            <input matInput formControlName="contactPerson" />
+            @if (supplierForm.get('contactPerson')?.hasError('required')) {
+              <mat-error>Requerido</mat-error>
+            }
+          </mat-form-field>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Email *</mat-label>
+              <mat-icon matPrefix class="text-green-400">email</mat-icon>
+              <input matInput type="email" formControlName="email" />
+              @if (supplierForm.get('email')?.hasError('required')) {
+                <mat-error>Requerido</mat-error>
+              }
+              @if (supplierForm.get('email')?.hasError('email')) {
+                <mat-error>Email inválido</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Teléfono</mat-label>
+              <mat-icon matPrefix class="text-green-400">phone</mat-icon>
+              <input matInput formControlName="phone" placeholder="Ej: 70123456" maxlength="8" />
+              @if (supplierForm.get('phone')?.hasError('pattern')) {
+                <mat-error>Debe empezar con 6 o 7 y tener 8 dígitos. Ej: 70123456</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+      SECCIÓN 3 — Ubicación (morado)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
+          <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">location_on</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Ubicación
+              <app-section-error-badge [count]="locationErrorCount()" />
+            </h3>
+            <p class="text-sm text-slate-500 m-0">País, estado, ciudad y dirección</p>
+          </div>
+        </div>
+        <div class="p-6 space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>País *</mat-label>
+              <mat-icon matPrefix class="text-purple-400">public</mat-icon>
+              <input matInput formControlName="country" placeholder="País" [matAutocomplete]="autoCountry" />
+              <mat-autocomplete #autoCountry="matAutocomplete">
+                @for (c of filteredCountries(); track c) {
+                  <mat-option [value]="c">{{ c }}</mat-option>
+                }
+              </mat-autocomplete>
+              @if (supplierForm.get('country')?.hasError('required')) {
+                <mat-error>Requerido</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Estado / Departamento</mat-label>
+              <mat-icon matPrefix class="text-purple-400">map</mat-icon>
+              @if (isBoliviaSelected()) {
+                <mat-select formControlName="state">
+                  @for (d of departmentOptions; track d) {
+                    <mat-option [value]="d">{{ d }}</mat-option>
+                  }
+                </mat-select>
+              } @else {
+                <input matInput formControlName="state" placeholder="Estado / Provincia" />
+              }
+            </mat-form-field>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Ciudad</mat-label>
+              <mat-icon matPrefix class="text-purple-400">location_city</mat-icon>
+              <input matInput formControlName="city" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Dirección</mat-label>
+              <mat-icon matPrefix class="text-purple-400">home</mat-icon>
+              <input matInput formControlName="address" />
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+      SECCIÓN 4 — Notas (slate)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200">
+          <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">notes</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Notas
+              <app-section-error-badge [count]="notesErrorCount()" />
+            </h3>
+            <p class="text-sm text-slate-500 m-0">Observaciones adicionales</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Notas</mat-label>
+            <mat-icon matPrefix class="text-slate-400">edit_note</mat-icon>
+            <textarea matInput formControlName="notes" rows="3"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- ══════ Sticky action bar ══════ -->
+      <div class="form-action-bar">
+        <button
+          type="button"
+          (click)="cancel()"
+          class="btn btn-danger-outline"
+          >
+          <span class="material-symbols-outlined msz-18 leading-none">close</span>
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          [disabled]="loading() || supplierForm.invalid"
+          class="btn btn-primary"
+          >
+          @if (!loading()) {
+            <span class="material-symbols-outlined msz-18 leading-none">save</span>
+          }
+          @if (loading()) {
+            <span class="material-symbols-outlined msz-18 leading-none animate-spin">refresh</span>
+          }
+          {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>

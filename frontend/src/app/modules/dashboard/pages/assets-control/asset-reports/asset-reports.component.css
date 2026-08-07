@@ -187,29 +187,30 @@ mat-chip-list mat-chip {
   .asset-reports-container {
     padding: 15px;
   }
-  
+
   .page-title {
     font-size: 1.6rem;
   }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .form-actions {
     flex-direction: column;
   }
-  
+
   .form-actions button {
     width: 100%;
   }
-  
+
   .reports-table {
     min-width: 600px;
   }
-  
+
   .report-modal {
     width: 95%;
     margin: 20px;
   }
 }
+/* comment */

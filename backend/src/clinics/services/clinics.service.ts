@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { UserClinic } from '../../users/entities/user-clinic.entity';
 import { User } from '../../users/entities/user.entity';
 import { CreateClinicDto, UpdateClinicDto } from '../dto';
@@ -17,20 +17,58 @@ export class ClinicsService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(UserClinic)
     private readonly userClinicRepo: Repository<UserClinic>,
+    private readonly dataSource: DataSource,
   ) {}
 
+  // Bug real: sin transacción, si linkSuperAdminsToClinic() fallaba después
+  // de guardar la clínica, esta quedaba persistida sin rollback (clínica
+  // huérfana, sin ningún SUPER_ADMIN vinculado).
   async create(createClinicDto: CreateClinicDto, user: User): Promise<Clinic> {
     try {
-      const clinic = this.clinicRepository.create({
-        ...createClinicDto,
-        createdBy: user,
+      return await this.dataSource.transaction(async (em: EntityManager) => {
+        const clinic = em.create(Clinic, {
+          ...createClinicDto,
+          createdBy: user,
+        });
+        const saved = await em.save(Clinic, clinic);
+        await this.linkSuperAdminsToClinic(em, saved);
+        return saved;
       });
-      return await this.clinicRepository.save(clinic);
     } catch (error) {
       this.handleDBErrors(error);
     }
   }
 
+  /**
+   * Vincula todos los SUPER_ADMIN existentes a la clínica recién creada.
+   * Garantiza que cualquier super admin tenga acceso a todas las clínicas.
+   */
+  private async linkSuperAdminsToClinic(em: EntityManager, clinic: Clinic): Promise<void> {
+    const superAdmins = await em
+      .createQueryBuilder(User, 'u')
+      .where(':role = ANY(u.roles)', { role: 'super-admin' })
+      .getMany();
+
+    if (superAdmins.length === 0) return;
+
+    const memberships = superAdmins.map(sa =>
+      em.create(UserClinic, {
+        user: sa,
+        clinic,
+        roles: ['admin', 'super-admin'],
+      }),
+    );
+    await em.save(UserClinic, memberships);
+  }
+
+  // Bug real (fuga de datos): findAll/findOne/searchClinics cargaban
+  // relations: ['users', 'createdBy'] — cualquier usuario autenticado
+  // (GET /clinics no tiene guard de rol, es de uso general: selector de
+  // clínica en el navbar, traslados de activos, formularios) recibía el
+  // roster completo de staff (email, roles) de TODAS las clínicas del
+  // sistema, no solo la propia. Ningún consumidor real del frontend lee
+  // esas relaciones — se quitan; quien necesite el roster de una clínica
+  // usa GET /clinics/:clinicId/members (ya scoped por clínica).
   async findAll(isActive?: boolean): Promise<Clinic[]> {
     const whereConditions: any = {};
 
@@ -40,7 +78,6 @@ export class ClinicsService {
 
     return await this.clinicRepository.find({
       where: whereConditions,
-      relations: ['users', 'createdBy'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -48,18 +85,29 @@ export class ClinicsService {
   async findOne(id: string): Promise<Clinic> {
     const clinic = await this.clinicRepository.findOne({
       where: { id, isActive: true },
-      relations: ['users', 'createdBy'],
     });
 
     if (!clinic) {
-      throw new NotFoundException(`Clinic with id ${id} not found`);
+      throw new NotFoundException(`Clínica con id ${id} no encontrada`);
     }
 
     return clinic;
   }
 
+  /** A diferencia de findOne(), no filtra por isActive — para editar/reactivar una clínica desactivada. */
+  private async findAnyStatus(id: string): Promise<Clinic> {
+    const clinic = await this.clinicRepository.findOne({ where: { id } });
+    if (!clinic) {
+      throw new NotFoundException(`Clínica con id ${id} no encontrada`);
+    }
+    return clinic;
+  }
+
+  // Bug real: usaba findOne() (filtra isActive:true) — una vez desactivada
+  // una clínica, PATCH /clinics/:id daba 404 y no había forma de corregir
+  // sus datos antes de reactivarla "a ciegas".
   async update(id: string, updateClinicDto: UpdateClinicDto): Promise<Clinic> {
-    const clinic = await this.findOne(id);
+    const clinic = await this.findAnyStatus(id);
 
     try {
       Object.assign(clinic, updateClinicDto);
@@ -76,11 +124,7 @@ export class ClinicsService {
   }
 
   async activate(id: string): Promise<Clinic> {
-    const clinic = await this.clinicRepository.findOne({ where: { id } });
-    if (!clinic) {
-      throw new NotFoundException(`Clinic with id ${id} not found`);
-    }
-
+    const clinic = await this.findAnyStatus(id);
     clinic.isActive = true;
     return await this.clinicRepository.save(clinic);
   }
@@ -94,11 +138,9 @@ export class ClinicsService {
   async searchClinics(searchTerm: string): Promise<Clinic[]> {
     return await this.clinicRepository
       .createQueryBuilder('clinic')
-      .leftJoinAndSelect('clinic.createdBy', 'createdBy')
-      .leftJoinAndSelect('clinic.users', 'users')
       .where('clinic.isActive = :isActive', { isActive: true })
       .andWhere(
-        '(clinic.name ILIKE :searchTerm OR clinic.address ILIKE :searchTerm OR clinic.city ILIKE :searchTerm)',
+        '(clinic.name ILIKE :searchTerm OR clinic.address ILIKE :searchTerm OR clinic.departamento ILIKE :searchTerm OR clinic.provincia ILIKE :searchTerm OR clinic.localidad ILIKE :searchTerm)',
         { searchTerm: `%${searchTerm}%` },
       )
       .getMany();
@@ -146,11 +188,6 @@ export class ClinicsService {
     };
   }
 
-  async addUserToClinic(userId: string, clinicId: string): Promise<Clinic> {
-    // Mantener compatibilidad: delegar a nuevo método con roles vacíos
-    return this.addMemberWithRoles(clinicId, { userId, roles: [] });
-  }
-
   async removeUserFromClinic(userId: string, clinicId: string): Promise<Clinic> {
     const clinic = await this.findOne(clinicId);
     const membership = await this.userClinicRepo.findOne({
@@ -166,9 +203,9 @@ export class ClinicsService {
   async addMemberWithRoles(clinicId: string, dto: AddClinicMemberDto): Promise<Clinic> {
     const clinic = await this.findOne(clinicId);
     const user = await this.userRepository.findOne({ where: { id: dto.userId } });
-    if (!user) throw new NotFoundException(`User with id ${dto.userId} not found`);
+    if (!user) throw new NotFoundException(`Usuario con id ${dto.userId} no encontrado`);
     const existing = await this.userClinicRepo.findOne({ where: { user: { id: user.id }, clinic: { id: clinic.id } } });
-    if (existing) throw new BadRequestException('User is already assigned to this clinic');
+    if (existing) throw new BadRequestException('El usuario ya está asignado a esta clínica');
     const uc = this.userClinicRepo.create({ user, clinic, roles: dto.roles ?? [] });
     await this.userClinicRepo.save(uc);
     return clinic;
@@ -177,7 +214,7 @@ export class ClinicsService {
   async updateMemberRoles(clinicId: string, userId: string, dto: UpdateClinicMemberDto): Promise<Clinic> {
     const clinic = await this.findOne(clinicId);
     const membership = await this.userClinicRepo.findOne({ where: { user: { id: userId }, clinic: { id: clinicId } } });
-    if (!membership) throw new NotFoundException('Membership not found');
+    if (!membership) throw new NotFoundException('Membresía no encontrada');
     membership.roles = dto.roles ?? [];
     await this.userClinicRepo.save(membership);
     return clinic;
@@ -213,12 +250,13 @@ export class ClinicsService {
     }));
   }
 
+  private readonly logger = new Logger(ClinicsService.name);
+
   private handleDBErrors(error: any): never {
     if (error.code === '23505') {
       throw new BadRequestException(error.detail.replace('Key ', ''));
     }
-
-    console.error(error);
-    throw new BadRequestException('Please check server logs');
+    this.logger.error(error.message, error.stack);
+    throw new BadRequestException('Ocurrió un error inesperado, revise los logs del servidor');
   }
 }

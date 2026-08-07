@@ -1,0 +1,189 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      [title]="isViewMode ? 'Ver Clínica' : (isEditMode ? 'Editar Clínica' : 'Nueva Clínica')"
+      [subtitle]="isViewMode ? 'Datos de la clínica (solo lectura)' : (isEditMode ? 'Actualice la información de la clínica' : 'Complete el formulario para registrar una nueva clínica')"
+      (back)="router.navigate(['/dashboard/clinics'])"
+      >
+      <button
+        type="button"
+        (click)="router.navigate(['/dashboard/clinics'])"
+        class="btn btn-danger-outline"
+        >
+        <span class="material-symbols-outlined msz-18">cancel</span>
+        {{ isViewMode ? 'Volver' : 'Cancelar' }}
+      </button>
+    </app-page-header>
+
+    <form [formGroup]="clinicForm" (ngSubmit)="onSubmit()" class="space-y-6">
+
+      <!-- Información Básica -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">business</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Información Básica
+              <app-section-error-badge [count]="basicInfoErrorCount()" />
+            </h3>
+            <p class="text-sm text-slate-500 m-0">Datos principales de la clínica</p>
+          </div>
+        </div>
+        <div class="p-6 grid grid-cols-1 gap-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Nombre de la Clínica</mat-label>
+            <mat-icon matPrefix class="text-blue-400">local_hospital</mat-icon>
+            <input matInput formControlName="name" placeholder="Ej: Clínica San Juan" required />
+            <mat-error>{{ getErrorMessage('name') }}</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Descripción</mat-label>
+            <mat-icon matPrefix class="text-blue-400">notes</mat-icon>
+            <textarea matInput formControlName="description" rows="3" placeholder="Descripción opcional de la clínica"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Información de Contacto -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">contact_phone</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Información de Contacto
+              <app-section-error-badge [count]="contactErrorCount()" />
+            </h3>
+            <p class="text-sm text-slate-500 m-0">Datos de contacto de la clínica</p>
+          </div>
+        </div>
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Teléfono</mat-label>
+            <mat-icon matPrefix class="text-green-400">phone</mat-icon>
+            <input matInput formControlName="phone" placeholder="Ej: 75213804" required />
+            <mat-error>{{ getErrorMessage('phone') }}</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Email</mat-label>
+            <mat-icon matPrefix class="text-green-400">email</mat-icon>
+            <input matInput type="email" formControlName="email" placeholder="Ej: contacto@clinica.com" />
+            <mat-error>{{ getErrorMessage('email') }}</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Dirección -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
+          <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">location_on</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Dirección
+              <app-section-error-badge [count]="addressErrorCount()" />
+            </h3>
+            <p class="text-sm text-slate-500 m-0">Ubicación de la clínica</p>
+          </div>
+        </div>
+        <div class="p-6 grid grid-cols-1 gap-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Dirección</mat-label>
+            <mat-icon matPrefix class="text-purple-400">home</mat-icon>
+            <input matInput formControlName="address" placeholder="Ej: Calle Principal 123" required />
+            <mat-error>{{ getErrorMessage('address') }}</mat-error>
+          </mat-form-field>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Departamento</mat-label>
+              <mat-icon matPrefix class="text-purple-400">map</mat-icon>
+              <mat-select formControlName="departamento">
+                <mat-option value=""></mat-option>
+                @for (dep of departamentos; track dep) {
+                  <mat-option [value]="dep">{{ dep }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Provincia</mat-label>
+              <mat-icon matPrefix class="text-purple-400">map</mat-icon>
+              <mat-select formControlName="provincia">
+                <mat-option value=""></mat-option>
+                @for (prov of provinciasDisponibles; track prov) {
+                  <mat-option [value]="prov">{{ prov }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="w-full md:w-1/2">
+            <mat-label>Localidad</mat-label>
+            <mat-icon matPrefix class="text-purple-400">location_city</mat-icon>
+            <input matInput formControlName="localidad" placeholder="Ej: Villa Fátima" />
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Estado -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-amber-50 border-b border-amber-100">
+          <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">toggle_on</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Estado de la Clínica
+              <app-section-error-badge [count]="statusErrorCount()" />
+            </h3>
+            <p class="text-sm text-slate-500 m-0">Activar o desactivar la clínica</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <mat-slide-toggle formControlName="isActive" color="primary">
+            <span class="ml-2 text-slate-700 font-medium">
+              {{ clinicForm.get('isActive')?.value ? 'Clínica Activa' : 'Clínica Inactiva' }}
+            </span>
+          </mat-slide-toggle>
+        </div>
+      </div>
+
+      <!-- Botones sticky -->
+      <div class="form-action-bar">
+        <button
+          type="button"
+          (click)="router.navigate(['/dashboard/clinics'])"
+          class="btn btn-danger-outline"
+          >
+          <span class="material-symbols-outlined msz-18">close</span>
+          {{ isViewMode ? 'Volver' : 'Cancelar' }}
+        </button>
+        @if (!isViewMode) {
+          <button
+            type="submit"
+            [disabled]="clinicForm.invalid || isLoading"
+            class="btn btn-primary"
+            >
+            @if (isLoading) {
+              <mat-spinner diameter="18"></mat-spinner>
+            }
+            @if (!isLoading) {
+              <span class="material-symbols-outlined msz-18">save</span>
+            }
+            {{ isEditMode ? 'Actualizar Clínica' : 'Registrar Clínica' }}
+          </button>
+        }
+      </div>
+
+    </form>
+
+  </div>
+</div>
