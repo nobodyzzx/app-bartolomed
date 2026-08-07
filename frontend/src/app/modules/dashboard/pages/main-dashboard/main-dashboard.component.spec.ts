@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing'
 import { ActivatedRoute, Router } from '@angular/router'
+import { Permission } from '@core/enums/permission.enum'
+import { permissionsForRoles } from '@core/constants/role-permissions.map'
 import { UserRoles } from '@core/enums/user-roles.enum'
 import { RoleStateService } from '@core/services/role-state.service'
 import { of, ReplaySubject } from 'rxjs'
@@ -13,9 +15,13 @@ describe('MainDashboardComponent', () => {
   let dashboardService: SpyObj<DashboardService>
   let roles: UserRoles[]
 
+  // `hasPermission` deriva de los roles con el mismo mapa que usa la app, en vez
+  // de devolver `true` a secas: así el doble respeta que DOCTOR no tiene
+  // `AppointmentsRead`, que es justo lo que decide si se piden las citas.
   const fakeRoleState = {
     hasRole: (role: UserRoles) => roles.includes(role),
     hasAnyRole: (allowed: UserRoles[]) => (allowed.length === 0 ? true : allowed.some(r => roles.includes(r))),
+      hasPermission: (p: Permission) => permissionsForRoles(roles).includes(p),
   }
 
   const createComponent = () => {
@@ -164,12 +170,15 @@ describe('MainDashboardComponent', () => {
   // ─── loadDashboardData — scoping real de las llamadas HTTP ─────────────────
 
   describe('loadDashboardData', () => {
-    it('pasa el id del usuario como doctorId cuando es DOCTOR sin otros roles', () => {
+    it('no pide citas para un DOCTOR, que no tiene AppointmentsRead', () => {
+      // El permiso se le quitó a DOCTOR a propósito. Pedirlas igual —decidiéndolo
+      // por rol -- se llevaba un 403 en cada carga del dashboard, en silencio, y
+      // dejaba las tarjetas de citas en cero para siempre.
       roles = [UserRoles.DOCTOR]
       createComponent().loadDashboardData()
 
-      expect(dashboardService.getTodayAppointments).toHaveBeenCalledWith('doctor-1')
-      expect(dashboardService.getPendingAppointmentsCount).toHaveBeenCalledWith('doctor-1')
+      expect(dashboardService.getTodayAppointments).not.toHaveBeenCalled()
+      expect(dashboardService.getPendingAppointmentsCount).not.toHaveBeenCalled()
     })
 
     it('no acota por doctorId para un ADMIN', () => {

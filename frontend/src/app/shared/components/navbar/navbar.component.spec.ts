@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing'
 import { NavigationEnd, Router } from '@angular/router'
+import { Permission } from '@core/enums/permission.enum'
+import { permissionsForRoles } from '@core/constants/role-permissions.map'
 import { UserRoles } from '@core/enums/user-roles.enum'
 import { RoleStateService } from '@core/services/role-state.service'
 import { of, Subject } from 'rxjs'
@@ -19,10 +21,14 @@ describe('NavbarComponent', () => {
   let router: { navigate: Mock; url: string; events: Subject<unknown> }
   let roles: UserRoles[]
 
+  // `hasPermission` deriva de los roles con el mismo mapa que usa la app, en vez
+  // de devolver `true` a secas: así el doble respeta que DOCTOR no tiene
+  // `AppointmentsRead`, que es justo lo que decide si se piden las citas.
   const fakeRoleState = {
     hasRole: (role: UserRoles) => roles.includes(role),
     hasAnyRole: (allowed: UserRoles[]) => (allowed.length === 0 ? true : allowed.some(r => roles.includes(r))),
     currentUserRoles: () => roles,
+      hasPermission: (p: Permission) => permissionsForRoles(roles).includes(p),
   }
 
   const createComponent = () => {

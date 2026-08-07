@@ -179,6 +179,7 @@ export class LabOrdersService {
       .createQueryBuilder('o')
       .leftJoinAndSelect('o.patient', 'patient')
       .leftJoinAndSelect('o.doctor', 'doctor')
+      .leftJoinAndSelect('doctor.personalInfo', 'doctorPersonalInfo')
       .leftJoinAndSelect('o.clinic', 'clinic')
       .leftJoinAndSelect('o.items', 'items')
       .where('clinic.id = :clinicId', { clinicId })
@@ -205,7 +206,17 @@ export class LabOrdersService {
     if (!clinicId) throw new BadRequestException('clinicId is required');
     const order = await this.labOrderRepository.findOne({
       where: { id, clinic: { id: clinicId } },
-      relations: ['patient', 'doctor', 'clinic', 'items', 'items.enteredBy', 'items.validatedBy'],
+      // Sin `doctor.personalInfo` el detalle no tenía nombre que mostrar y caía
+      // al email del médico.
+      relations: [
+        'patient',
+        'doctor',
+        'doctor.personalInfo',
+        'clinic',
+        'items',
+        'items.enteredBy',
+        'items.validatedBy',
+      ],
     });
     if (!order) throw new NotFoundException('Lab order not found');
     return order;

@@ -194,9 +194,11 @@ export class LabOrderFormComponent implements CanComponentDeactivate {
       next: (res: any) => {
         this.loading = false
         this.allowNavigationOnce = true
-        this.alert.success('Orden creada', 'La orden de laboratorio fue registrada').then(() => {
-          this.router.navigate(['/dashboard/laboratory', res.id])
-        })
+        // El aviso de éxito lo emite el servicio, como en el resto del proyecto.
+        // Duplicarlo aquí sacaba dos toasts por la misma acción, y el `.then()`
+        // no aportaba nada: `AlertService.success()` devuelve una promesa ya
+        // resuelta, así que la navegación ocurría igual de inmediata.
+        this.router.navigate(['/dashboard/laboratory', res.id])
       },
       error: () => (this.loading = false),
     })

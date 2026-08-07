@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChargesService } from '../../charges/charges.service';
 import { ChargeOrigin } from '../../charges/entities/charge.entity';
+import { Patient } from '../../patients/entities/patient.entity';
 import { Prescription, PrescriptionStatus } from '../../prescriptions/entities/prescription.entity';
 
 export interface PaginatedResult<T> {
@@ -39,6 +40,24 @@ export class PharmacySalesService {
     private auditService: AuditService,
     private chargesService: ChargesService,
   ) {}
+
+  /**
+   * `'Cliente'` es el nombre de una venta de mostrador, sin paciente detrás.
+   * Aplicarlo también cuando viene `patientId` guardaba ese literal para un
+   * paciente registrado —y el cargo derivado lo heredaba—, así que se resuelve
+   * contra la ficha. La UI manda el nombre y no llegaba a verse; por API sí.
+   */
+  private async resolvePatientName(dto: CreatePharmacySaleDto): Promise<string> {
+    if (dto.patientName) return dto.patientName;
+    if (!dto.patientId) return 'Cliente';
+
+    const patient = await this.pharmacySaleRepository.manager
+      .getRepository(Patient)
+      .findOne({ where: { id: dto.patientId }, select: { id: true, firstName: true, lastName: true } });
+
+    const name = `${patient?.firstName ?? ''} ${patient?.lastName ?? ''}`.trim();
+    return name || 'Cliente';
+  }
 
   async create(
     createPharmacySaleDto: CreatePharmacySaleDto,
@@ -85,7 +104,7 @@ export class PharmacySalesService {
     const pharmacySale = new PharmacySale();
     pharmacySale.saleNumber = saleNumber;
     pharmacySale.patientId = createPharmacySaleDto.patientId ?? undefined;
-    pharmacySale.patientName = createPharmacySaleDto.patientName || 'Cliente';
+    pharmacySale.patientName = await this.resolvePatientName(createPharmacySaleDto);
     pharmacySale.prescriptionNumber = createPharmacySaleDto.prescriptionNumber ?? undefined;
     pharmacySale.saleDate = new Date();
     pharmacySale.paymentMethod = createPharmacySaleDto.paymentMethod;

@@ -5,6 +5,7 @@ import { forkJoin, interval, of } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { BILLING_ROLES, CLINICAL_ROLES, PHARMACY_ROLES } from '@core/constants/role-groups'
+import { Permission } from '@core/enums/permission.enum'
 import { UserRoles } from '@core/enums/user-roles.enum'
 import { RoleStateService } from '@core/services/role-state.service'
 import { AuthService } from '../../../modules/auth/services/auth.service'
@@ -272,7 +273,11 @@ export class NavbarComponent implements OnInit {
 
   private loadAlerts(): void {
     const needsStock = this.roleState.hasAnyRole(PHARMACY_ROLES)
-    const needsAppointments = this.roleState.hasAnyRole(CLINICAL_ROLES)
+    // Por permiso y no solo por rol: `/appointments` exige `AppointmentsRead`,
+    // que DOCTOR no tiene a propósito, así que la campana pedía las citas igual
+    // y se llevaba un 403 en cada página, en silencio.
+    const needsAppointments =
+      this.roleState.hasAnyRole(CLINICAL_ROLES) && this.roleState.hasPermission(Permission.AppointmentsRead)
     const needsBilling = this.roleState.hasAnyRole(BILLING_ROLES)
     if (!needsStock && !needsAppointments && !needsBilling) return
 

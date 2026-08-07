@@ -2,6 +2,7 @@ import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
 import { ADMIN_ONLY_ROLES, BILLING_ROLES, CLINICAL_ROLES, PHARMACY_ROLES } from '@core/constants/role-groups'
+import { Permission } from '@core/enums/permission.enum'
 import { UserRoles } from '@core/enums/user-roles.enum'
 import { RoleStateService } from '@core/services/role-state.service'
 import { StatCardColor } from '@shared/components/stat-card/stat-card.component'
@@ -279,8 +280,13 @@ export class MainDashboardComponent implements OnInit {
 
   // ── Visibilidad de secciones por rol ─────────────────────────────────────
 
+  /**
+   * Por permiso y no por rol: el backend gatea `/appointments` con
+   * `AppointmentsRead`, que DOCTOR no tiene a propósito. Decidirlo por rol
+   * pedía las citas igual y se llevaba un 403 en cada carga, en silencio.
+   */
   get showAppointmentsSection(): boolean {
-    return this.roleState.hasAnyRole(CLINICAL_ROLES)
+    return this.roleState.hasAnyRole(CLINICAL_ROLES) && this.roleState.hasPermission(Permission.AppointmentsRead)
   }
 
   get showStockSection(): boolean {
@@ -355,6 +361,7 @@ export class MainDashboardComponent implements OnInit {
     this.loadingCharts = true
 
     const needsClinical = this.showAppointmentsSection || this.showPatientsSection
+    const needsAppointments = this.showAppointmentsSection
     const needsStock    = this.showStockSection
     const needsStaff    = this.showStaffSection
     const needsBilling  = this.showBillingSection
@@ -362,8 +369,8 @@ export class MainDashboardComponent implements OnInit {
 
     forkJoin({
       patientStats: needsClinical ? this.dashboardService.getPatientStats()                     : of({ total: 0 }),
-      appointments: needsClinical ? this.dashboardService.getTodayAppointments(doctorId)         : of([] as RecentAppointment[]),
-      pending:      needsClinical ? this.dashboardService.getPendingAppointmentsCount(doctorId)  : of(0),
+      appointments: needsAppointments ? this.dashboardService.getTodayAppointments(doctorId)        : of([] as RecentAppointment[]),
+      pending:      needsAppointments ? this.dashboardService.getPendingAppointmentsCount(doctorId) : of(0),
       stock:        needsStock    ? this.dashboardService.getLowStockAlerts()                    : of([] as StockAlert[]),
       patients:     needsClinical ? this.dashboardService.getRecentPatients()                    : of([] as RecentPatient[]),
       staff:        needsStaff    ? this.dashboardService.getStaffStatistics()                   : of({ totalDoctors: 0, totalNurses: 0, totalReceptionists: 0, totalPharmacists: 0, totalLaboratory: 0 }),

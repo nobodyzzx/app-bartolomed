@@ -71,6 +71,13 @@ export class LabOrderDetailComponent implements OnInit {
     })
   }
 
+  /** Nombre completo del médico; el email solo si no hay ficha personal. */
+  doctorName(order: any): string {
+    const info = order?.doctor?.personalInfo
+    const name = `${info?.firstName ?? ''} ${info?.lastName ?? ''}`.trim()
+    return name || order?.doctor?.email || '—'
+  }
+
   goBack() {
     this.router.navigate(['/dashboard/laboratory'])
   }

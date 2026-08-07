@@ -352,14 +352,14 @@ export class PrescriptionFormComponent implements CanComponentDeactivate {
         this.loading = false
         this.allowNavigationOnce = true
         const savedId = res?.id ?? id
-        const msg = id ? 'Receta actualizada' : status === 'draft' ? 'Borrador guardado' : 'Receta creada'
-        this.alert.success(msg, 'Operación exitosa').then(() => {
-          if (savedId) {
-            this.router.navigate(['/dashboard/prescriptions', savedId])
-          } else {
-            this.router.navigate(['/dashboard/prescriptions'])
-          }
-        })
+        // El aviso de éxito lo emite el servicio; duplicarlo aquí sacaba dos
+        // toasts por la misma acción. El `.then()` tampoco esperaba a nada:
+        // `AlertService.success()` devuelve una promesa ya resuelta.
+        if (savedId) {
+          this.router.navigate(['/dashboard/prescriptions', savedId])
+        } else {
+          this.router.navigate(['/dashboard/prescriptions'])
+        }
       },
       error: () => (this.loading = false),
     })
