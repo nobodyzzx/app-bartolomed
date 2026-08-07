@@ -8,7 +8,9 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "generate-types": "npx openapi-typescript src/generated/api-spec.json -o src/generated/api-types.ts && echo 'Tipos generados OK'",
-    "generate-types:fetch": "curl -sf http://localhost:3000/api/docs-json -o src/generated/api-spec.json && npm run generate-types"
+    "generate-types:fetch": "curl -sf http://localhost:3000/api/docs-json -o src/generated/api-spec.json && npm run generate-types",
+    "icons:subset": "node scripts/build-icon-subset.mjs",
+    "icons:check": "node scripts/build-icon-subset.mjs --check"
   },
   "private": true,
   "dependencies": {
