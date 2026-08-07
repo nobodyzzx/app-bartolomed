@@ -62,8 +62,6 @@ export type ApiCreatePharmacyInvoiceDto = components['schemas']['CreatePharmacyI
 
 // ─── Facturación ──────────────────────────────────────────────────────────────
 export type ApiInvoice = components['schemas']['Invoice']
-export type ApiCreateInvoiceDto = components['schemas']['CreateInvoiceDto']
-export type ApiCreateInvoiceItemDto = components['schemas']['CreateInvoiceItemDto']
 export type ApiPayment = components['schemas']['Payment']
 export type ApiCreatePaymentDto = components['schemas']['CreatePaymentDto']
 
@@ -81,6 +79,3 @@ export type ApiAsset = components['schemas']['Asset']
 export type ApiCreateAssetDto = components['schemas']['CreateAssetDto']
 export type ApiAssetMaintenance = components['schemas']['AssetMaintenance']
 export type ApiAssetReport = components['schemas']['AssetReport']
-
-// ─── Roles ────────────────────────────────────────────────────────────────────
-export type ApiRole = components['schemas']['Role']

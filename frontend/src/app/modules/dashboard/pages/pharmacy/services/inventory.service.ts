@@ -10,15 +10,9 @@ import {
   CreateMedicationStockDto,
   Medication,
   MedicationStock,
+  PaginatedResult,
   UpdateMedicationStockDto,
 } from '../interfaces/pharmacy.interfaces'
-
-export interface PaginatedResult<T> {
-  data: T[]
-  total: number
-  page: number
-  limit: number
-}
 
 @Injectable({
   providedIn: 'root',
