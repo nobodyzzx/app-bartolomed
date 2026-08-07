@@ -60,6 +60,11 @@ WORKDIR /app
 # Copia la aplicación compilada desde la etapa de construcción
 COPY --from=builder --chown=angular:nodejs /app/dist/frontend ./
 
+# Reglas de cache para `serve`. Sin ellas solo se envía un etag, así que el
+# navegador revalida los ~25 recursos en cada carga: 25 idas y vueltas antes de
+# pintar, que en conexiones con latencia alta cuestan más que el peso.
+COPY --from=builder --chown=angular:nodejs /app/serve.json ./serve.json
+
 # Verifica la estructura y mueve archivos si es necesario
 RUN if [ -d browser ]; then \
             mv browser/* . && rmdir browser; \
