@@ -107,11 +107,28 @@ describe('AuthService', () => {
       httpMock.expectOne(`${BASE}/auth/login`).flush({ user, token: 'jwt-token' })
     })
 
-    itDone('no toca el contexto de clínica si el usuario no tiene clinic', done => {
+    itDone('limpia el contexto de clínica si el usuario que entra no tiene clinic', done => {
       const user = makeUser({ clinic: undefined })
 
       service.login('doc@example.com', 'secret').subscribe(() => {
-        expect(clinicCtx.setClinic).not.toHaveBeenCalled()
+        // Dejarlo como estaba heredaría la clínica del usuario anterior.
+        expect(clinicCtx.setClinic).toHaveBeenCalledWith(null)
+        done()
+      })
+
+      httpMock.expectOne(`${BASE}/auth/login`).flush({ user, token: 'jwt-token' })
+    })
+
+    itDone('pisa la clínica que dejó el usuario anterior en localStorage', done => {
+      // Bug real: el contexto de clínica sobrevivía al login de otro usuario si
+      // el anterior no cerró sesión (token vencido, navegador cerrado). Quien
+      // entraba quedaba en una clínica de la que no es miembro, con el
+      // dashboard vacío y todas sus peticiones en 403.
+      clinicCtx.clinicId = 'clinica-del-usuario-anterior'
+      const user = makeUser({ clinic: { id: 'clinic-1', name: 'Norte' } })
+
+      service.login('doc@example.com', 'secret').subscribe(() => {
+        expect(clinicCtx.setClinic).toHaveBeenCalledWith('clinic-1')
         done()
       })
 

@@ -52,6 +52,23 @@ export class UsersController {
     return this.usersService.getClinicStatistics(resolveClinicId(req)!);
   }
 
+  // El "médico solicitante" de una orden de laboratorio, una receta o una ficha
+  // médica sale de aquí. Los tres formularios llamaban a `GET /users`, que exige
+  // ADMIN + UsersManage: para un médico era 403, la lista quedaba vacía y el
+  // campo —obligatorio— se deshabilitaba, así que no podía emitir ninguno de los
+  // tres documentos. Esto devuelve solo id y nombre del personal clínico de la
+  // clínica activa, sin datos de cuenta, y lo lee cualquier miembro de la
+  // clínica: `@AuthClinic()` sin roles y `@RequirePermissions()` vacío
+  // sobrescriben los de la clase (ambos guards leen el metadata del handler
+  // antes que el de la clase), pero ClinicScopeGuard sigue montado, así que la
+  // pertenencia a la clínica se valida igual.
+  @Get('clinical-staff')
+  @AuthClinic()
+  @RequirePermissions()
+  getClinicalStaff(@Req() req: Request) {
+    return this.usersService.findClinicalStaff(resolveClinicId(req)!);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string, @GetUser() actor: User, @Req() req: Request) {
     return this.usersService.findOne(id, actor, resolveClinicId(req)!);

@@ -40,6 +40,15 @@ export interface ServicePrice {
   updatedAt: string
 }
 
+/** Lo justo para elegir un servicio del tarifario y referenciarlo. */
+export interface ServicePriceCatalogItem {
+  id: string
+  code: string
+  name: string
+  category: ServiceCategory
+  price: number
+}
+
 export interface ServicePricePayload {
   code: string
   name: string
@@ -108,6 +117,25 @@ export class ServicePricesService {
         return throwError(() => err)
       }),
     )
+  }
+
+  /**
+   * Catálogo para elegir un servicio al pedirlo (el estudio de una orden de
+   * laboratorio, por ejemplo). Va aparte de `list()` porque aquel exige
+   * `billing.read`, que un médico no tiene: este acepta además `lab.order`.
+   */
+  catalog(category?: ServicePriceCatalogItem['category']): Observable<ServicePriceCatalogItem[]> {
+    let params = new HttpParams()
+    if (category) params = params.set('category', category)
+
+    return this.http
+      .get<ServicePriceCatalogItem[]>(`${this.base}/catalog`, { params })
+      .pipe(
+        catchError(err => {
+          this.errorService.handleError(err)
+          return throwError(() => err)
+        }),
+      )
   }
 
   create(payload: ServicePricePayload): Observable<ServicePrice> {

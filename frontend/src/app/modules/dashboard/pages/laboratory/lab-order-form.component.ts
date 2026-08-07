@@ -1,5 +1,5 @@
 import { Component, ElementRef, inject, signal } from '@angular/core'
-import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms'
+import { AbstractControl, FormArray, FormControl, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { countInvalidFields, scrollToFirstInvalidField } from '../../../../shared/utils/form-errors.util'
@@ -9,6 +9,11 @@ import { UsersService } from '../admin/users/users.service'
 import { ClinicContextService } from '../../../clinics/services/clinic-context.service'
 import { CanComponentDeactivate, confirmDiscardChanges } from '../../../../core/guards/can-deactivate.guard'
 import { LaboratoryService } from './laboratory.service'
+import {
+  ServiceCategory,
+  ServicePriceCatalogItem,
+  ServicePricesService,
+} from '../service-prices/service-prices.service'
 
 @Component({
     selector: 'app-lab-order-form',
@@ -25,6 +30,7 @@ export class LabOrderFormComponent implements CanComponentDeactivate {
   private usersService = inject(UsersService)
   private clinicsService = inject(ClinicsService)
   private clinicCtx = inject(ClinicContextService)
+  private servicePricesService = inject(ServicePricesService)
   private elRef = inject(ElementRef)
 
   form = new FormGroup({
@@ -44,6 +50,7 @@ export class LabOrderFormComponent implements CanComponentDeactivate {
   patients: any[] = []
   doctors: any[] = []
   clinics: any[] = []
+  labCatalog: ServicePriceCatalogItem[] = []
 
   goBack(): void {
     this.router.navigate(['/dashboard/laboratory'])
@@ -80,11 +87,21 @@ export class LabOrderFormComponent implements CanComponentDeactivate {
 
   addItem() {
     const group = new FormGroup({
-      testName: new FormControl('', Validators.required),
+      // El estudio se elige del tarifario en vez de escribirse: con texto libre,
+      // cualquier nombre que no calzara exactamente con el catálogo dejaba la
+      // orden sin precio y, por tanto, sin cargo — en silencio.
+      servicePriceId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+      testName: new FormControl('', { nonNullable: true }),
       category: new FormControl('blood', { nonNullable: true, validators: [Validators.required] }),
       specimenType: new FormControl(''),
     })
     this.items.push(group)
+  }
+
+  /** Copia el nombre del catálogo al ítem: la orden guarda con qué se pidió. */
+  onTestSelected(group: AbstractControl, servicePriceId: string) {
+    const chosen = this.labCatalog.find(item => item.id === servicePriceId)
+    group.get('testName')?.setValue(chosen?.name ?? '')
   }
 
   removeItem(i: number) {
@@ -102,15 +119,19 @@ export class LabOrderFormComponent implements CanComponentDeactivate {
         this.updateSelectControlDisabled('patientId', 0)
       },
     })
-    this.usersService.getUsers().subscribe({
-      next: result => {
-        this.doctors = (result.data || []).filter((u: any) => (u.roles || []).includes('doctor'))
+    this.usersService.getClinicalStaff().subscribe({
+      next: staff => {
+        this.doctors = (staff || []).filter(u => (u.roles || []).includes('doctor'))
         this.updateSelectControlDisabled('doctorId', this.doctors.length)
       },
       error: () => {
         this.doctors = []
         this.updateSelectControlDisabled('doctorId', 0)
       },
+    })
+    this.servicePricesService.catalog(ServiceCategory.LABORATORY).subscribe({
+      next: catalog => (this.labCatalog = catalog || []),
+      error: () => (this.labCatalog = []),
     })
     this.clinicsService.findAll(true).subscribe({
       next: cs => (this.clinics = cs || []),
@@ -161,6 +182,7 @@ export class LabOrderFormComponent implements CanComponentDeactivate {
       isUrgent: v.isUrgent,
       clinicalNotes: v.clinicalNotes || undefined,
       items: (v.items || []).map((it: any) => ({
+        servicePriceId: it.servicePriceId,
         testName: it.testName,
         category: it.category,
         specimenType: it.specimenType || undefined,

@@ -19,7 +19,7 @@ import { countInvalidFields, scrollToFirstInvalidField } from '../../../../../sh
 import { User } from '../../../../auth/interfaces/user.interface'
 import { Patient } from '../../patients/interfaces'
 import { PatientsService } from '../../patients/services/patients.service'
-import { UsersService } from '../../admin/users/users.service'
+import { ClinicalStaffMember, UsersService } from '../../admin/users/users.service'
 import {
   ConsentType,
   CreateConsentDto,
@@ -61,10 +61,10 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
 
   // Data for dropdowns
   patients$: Observable<Patient[]> = of([])
-  doctors$: Observable<User[]> = of([])
+  doctors$: Observable<ClinicalStaffMember[]> = of([])
   // Listas filtradas para selects con búsqueda
   filteredPatients$: Observable<Patient[]> = of([])
-  filteredDoctors$: Observable<User[]> = of([])
+  filteredDoctors$: Observable<ClinicalStaffMember[]> = of([])
   // Controles de búsqueda para autocompletes
   patientSearchCtrl = new FormControl<string>('')
   doctorSearchCtrl = new FormControl<string>('')
@@ -84,7 +84,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
 
   // Copias locales para búsquedas síncronas
   private patientsList: Patient[] = []
-  private doctorsList: User[] = []
+  private doctorsList: ClinicalStaffMember[] = []
 
   // Enums for templates
   recordTypes = Object.values(RecordType)
@@ -341,7 +341,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
     )
 
     // Cargar doctores (usuarios con rol médico)
-    this.doctors$ = this.usersService.getUsers().pipe(map(r => r.data))
+    this.doctors$ = this.usersService.getClinicalStaff()
     this.doctors$.pipe(takeUntil(this.destroy$)).subscribe(doctors => {
       // Filtrar solo los usuarios con rol de doctor (defensivo por si roles viene undefined)
       const filteredDoctors = doctors.filter(user => {
@@ -391,7 +391,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
   }
 
   onDoctorSelected(event: MatAutocompleteSelectedEvent) {
-    const doctor: User | null = event.option.value || null
+    const doctor: ClinicalStaffMember | null = event.option.value || null
     this.patientInfoForm.patchValue({ doctorId: doctor?.id || '' })
     this.doctorSearchCtrl.setValue(this.doctorDisplay(doctor), { emitEvent: false })
     this.cdr.markForCheck()
@@ -891,7 +891,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
   }
 
   // Obtener el doctor seleccionado (para impresión del consentimiento)
-  getSelectedDoctor(): User | undefined {
+  getSelectedDoctor(): ClinicalStaffMember | undefined {
     const doctorId = this.patientInfoForm.get('doctorId')?.value
     if (!doctorId) return undefined
     return this.doctorsList.find(d => d.id === doctorId)
@@ -904,7 +904,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
     return `${names}${id}`
   }
 
-  doctorDisplay(d?: User | null): string {
+  doctorDisplay(d?: ClinicalStaffMember | null): string {
     if (!d) return ''
     const names = `${d.personalInfo?.firstName ?? ''} ${d.personalInfo?.lastName ?? ''}`.trim()
     const role = d.professionalInfo?.role ? ` - ${d.professionalInfo.role}` : ''

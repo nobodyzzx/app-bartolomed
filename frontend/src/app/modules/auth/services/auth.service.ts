@@ -36,18 +36,24 @@ export class AuthService {
     return this.checkAuthStatus()
   }
 
-  private setAuthentication(user: User, token: string, rememberMe = true): boolean {
+  private setAuthentication(user: User, token: string, rememberMe = true, isFreshLogin = false): boolean {
     this._currentUser.set(user)
     this._authStatus.set(AuthStatus.authenticated)
     // Sincronizar roles con RoleStateService (fuente de verdad de UI)
     this.roleState.syncRoles(this.roleState.normalizeRoles(user.roles))
-    // Hidratar contexto de clínica con la clínica principal del usuario — solo si
-    // todavía no hay una clínica activa seleccionada. setAuthentication() se llama en
-    // login(), checkAuthStatus() (recarga de página) Y refreshAccessToken() (renovación
-    // silenciosa de token) — sin este guard, cada recarga o refresh pisaba la selección
-    // manual del usuario en el header y la devolvía a su clínica "principal", rompiendo
-    // en silencio cualquier trabajo en curso en otra clínica.
-    if (user.clinic?.id && !this.clinicCtx.clinicId) {
+    // El contexto de clínica se comporta distinto según por dónde se entre:
+    //
+    // - En un login nuevo se toma SIEMPRE la clínica del usuario que entra. El
+    //   contexto vive en localStorage, así que si el anterior no cerró sesión
+    //   (token vencido, navegador cerrado) su clínica sobrevivía al login del
+    //   siguiente: quien entraba se quedaba en una clínica de la que no es
+    //   miembro, con el dashboard vacío y cada petición en 403.
+    // - En recarga de página o renovación silenciosa de token hay que respetar
+    //   la clínica que el usuario eligió a mano en el header, o cada refresh le
+    //   desharía el cambio y rompería en silencio el trabajo en curso.
+    if (isFreshLogin) {
+      this.clinicCtx.setClinic(user.clinic?.id ?? null)
+    } else if (user.clinic?.id && !this.clinicCtx.clinicId) {
       this.clinicCtx.setClinic(user.clinic.id)
     }
     if (rememberMe) {
@@ -66,7 +72,7 @@ export class AuthService {
     const body = { email, password, rememberMe }
     return this.http.post<LoginResponse>(url, body, { withCredentials: true }).pipe(
       map(({ user, token, rememberMe: remember }) =>
-        this.setAuthentication(user, token, remember ?? rememberMe),
+        this.setAuthentication(user, token, remember ?? rememberMe, true),
       ),
       catchError(err => {
         const errorMessage = err?.error?.message || err?.message || 'Error al iniciar sesión'

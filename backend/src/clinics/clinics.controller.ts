@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { Auth, AuthClinic, GetUser } from '../auth/decorators';
 import { RequirePermissions } from '../auth/permissions/permissions.decorator';
 import { Permission } from '../auth/permissions/permissions.enum';
@@ -23,15 +34,27 @@ export class ClinicsController {
     return this.clinicsService.create(createClinicDto, user);
   }
 
+  // Los tres endpoints de lectura se acotan a las clínicas de las que el usuario
+  // es miembro. El selector de clínica del header se alimenta de `findAll`, y
+  // devolver todas le ofrecía clínicas ajenas —que el ClinicScopeGuard luego
+  // rechaza con 403— además de exponer su dirección, teléfono y email a
+  // cualquier usuario autenticado de otro tenant. SUPER_ADMIN sí las ve todas:
+  // administra el sistema entero.
   @Get()
-  findAll(@Query('isActive') isActive?: string) {
+  findAll(@GetUser() user: User, @Query('isActive') isActive?: string) {
     const isActiveFilter = isActive !== undefined ? isActive === 'true' : undefined;
-    return this.clinicsService.findAll(isActiveFilter);
+    return this.clinicsService.findAll(isActiveFilter, this.visibleClinicIds(user));
   }
 
   @Get('search')
-  search(@Query('term') searchTerm: string) {
-    return this.clinicsService.searchClinics(searchTerm);
+  search(@GetUser() user: User, @Query('term') searchTerm: string) {
+    return this.clinicsService.searchClinics(searchTerm, this.visibleClinicIds(user));
+  }
+
+  /** `undefined` = sin restricción (SUPER_ADMIN); si no, los ids del JWT. */
+  private visibleClinicIds(user: User & { clinicIds?: string[] }): string[] | undefined {
+    if (user.roles?.includes(ValidRoles.SUPER_ADMIN)) return undefined;
+    return user.clinicIds ?? [];
   }
 
   @Get('statistics')
@@ -44,7 +67,11 @@ export class ClinicsController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  findOne(@GetUser() user: User, @Param('id', ParseUUIDPipe) id: string) {
+    const visible = this.visibleClinicIds(user);
+    if (visible !== undefined && !visible.includes(id)) {
+      throw new ForbiddenException('User is not member of this clinic');
+    }
     return this.clinicsService.findOne(id);
   }
 

@@ -254,9 +254,9 @@ export class PrescriptionFormComponent implements CanComponentDeactivate {
       },
     })
     // Médicos (filtrar usuarios con rol doctor)
-    this.usersService.getUsers().subscribe({
-      next: result => {
-        this.doctors = (result.data || []).filter((u: any) => (u.roles || []).includes('doctor'))
+    this.usersService.getClinicalStaff().subscribe({
+      next: staff => {
+        this.doctors = (staff || []).filter(u => (u.roles || []).includes('doctor'))
         this.updateSelectControlDisabled('doctorId', this.doctors.length)
       },
       error: () => {

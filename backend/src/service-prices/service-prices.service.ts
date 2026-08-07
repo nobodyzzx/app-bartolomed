@@ -67,6 +67,28 @@ export class ServicePricesService {
     return { items, total, page, pageSize };
   }
 
+  /**
+   * Catálogo para elegir un servicio al pedirlo (p. ej. el estudio de una orden
+   * de laboratorio): solo precios activos y solo los campos necesarios para
+   * mostrarlos y referenciarlos. Sin paginar — un tarifario de clínica son
+   * decenas de filas, y quien elige necesita verlas todas.
+   */
+  async findCatalog(filter: FilterServicePricesDto = {}, clinicId?: string) {
+    const scopedClinicId = this.requireClinicId(clinicId);
+
+    const qb = this.repository
+      .createQueryBuilder('sp')
+      .select(['sp.id', 'sp.code', 'sp.name', 'sp.category', 'sp.price'])
+      .where('sp.clinic_id = :clinicId', { clinicId: scopedClinicId })
+      .andWhere('sp.is_active = true')
+      .orderBy('sp.category', 'ASC')
+      .addOrderBy('sp.name', 'ASC');
+
+    if (filter.category) qb.andWhere('sp.category = :category', { category: filter.category });
+
+    return qb.getMany();
+  }
+
   async findOne(id: string, clinicId?: string): Promise<ServicePrice> {
     const scopedClinicId = this.requireClinicId(clinicId);
     const found = await this.repository.findOne({ where: { id, clinicId: scopedClinicId } });

@@ -152,11 +152,23 @@
                   <div [formGroup]="$any(it)" class="p-5">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <mat-form-field appearance="outline" class="md:col-span-2">
-                        <mat-label>Nombre del Estudio</mat-label>
+                        <mat-label>Estudio</mat-label>
                         <mat-icon matPrefix class="text-green-400">biotech</mat-icon>
-                        <input matInput formControlName="testName" placeholder="Ej: Hemograma completo, Ecografía abdominal" />
-                        @if (it.get('testName')?.hasError('required')) {
+                        <mat-select
+                          formControlName="servicePriceId"
+                          (selectionChange)="onTestSelected(it, $event.value)"
+                        >
+                          @for (price of labCatalog; track price.id) {
+                            <mat-option [value]="price.id">
+                              {{ price.name }} — {{ price.price | currency: 'BOB' : 'symbol-narrow' }}
+                            </mat-option>
+                          }
+                        </mat-select>
+                        @if (it.get('servicePriceId')?.hasError('required')) {
                           <mat-error>Requerido</mat-error>
+                        }
+                        @if (labCatalog.length === 0) {
+                          <mat-hint>No hay estudios en el tarifario de esta clínica</mat-hint>
                         }
                       </mat-form-field>
                       <mat-form-field appearance="outline">

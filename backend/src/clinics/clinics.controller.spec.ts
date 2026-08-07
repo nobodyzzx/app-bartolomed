@@ -32,37 +32,79 @@ describe('ClinicsController', () => {
     expect(service.create).toHaveBeenCalledWith(dto, user);
   });
 
+  // Miembro de una sola clínica: solo debe ver esa.
+  const memberUser = { id: 'user-1', roles: ['doctor'], clinicIds: ['clinic-1'] } as unknown as User;
+  const superAdminUser = { id: 'user-2', roles: ['super-admin'] } as unknown as User;
+
   describe('findAll', () => {
     it('convierte isActive="true" a boolean true', async () => {
-      await controller.findAll('true');
-      expect(service.findAll).toHaveBeenCalledWith(true);
+      await controller.findAll(memberUser, 'true');
+      expect(service.findAll).toHaveBeenCalledWith(true, ['clinic-1']);
     });
 
     it('convierte cualquier otro string a boolean false', async () => {
-      await controller.findAll('no');
-      expect(service.findAll).toHaveBeenCalledWith(false);
+      await controller.findAll(memberUser, 'no');
+      expect(service.findAll).toHaveBeenCalledWith(false, ['clinic-1']);
     });
 
     it('pasa undefined si no viene el query param', async () => {
-      await controller.findAll();
-      expect(service.findAll).toHaveBeenCalledWith(undefined);
+      await controller.findAll(memberUser);
+      expect(service.findAll).toHaveBeenCalledWith(undefined, ['clinic-1']);
+    });
+
+    it('acota el listado a las clínicas del usuario', async () => {
+      await controller.findAll(memberUser);
+      expect(service.findAll).toHaveBeenCalledWith(undefined, ['clinic-1']);
+    });
+
+    it('sin clinicIds en el token, no devuelve ninguna clínica', async () => {
+      await controller.findAll({ id: 'u', roles: ['doctor'] } as unknown as User);
+      expect(service.findAll).toHaveBeenCalledWith(undefined, []);
+    });
+
+    it('SUPER_ADMIN las ve todas (sin restricción)', async () => {
+      await controller.findAll(superAdminUser);
+      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined);
     });
   });
 
-  it('search delega el término', async () => {
-    await controller.search('norte');
-    expect(service.searchClinics).toHaveBeenCalledWith('norte');
+  describe('search', () => {
+    it('delega el término acotado a las clínicas del usuario', async () => {
+      await controller.search(memberUser, 'norte');
+      expect(service.searchClinics).toHaveBeenCalledWith('norte', ['clinic-1']);
+    });
+
+    it('SUPER_ADMIN busca sin restricción', async () => {
+      await controller.search(superAdminUser, 'norte');
+      expect(service.searchClinics).toHaveBeenCalledWith('norte', undefined);
+    });
+  });
+
+  describe('findOne', () => {
+    it('deja pasar una clínica de la que el usuario es miembro', async () => {
+      await expect(controller.findOne(memberUser, 'clinic-1')).resolves.toEqual({ id: 'clinic-1' });
+    });
+
+    // `findOne` no es async y lanza antes de devolver la promesa del service,
+    // así que hay que capturarlo de forma síncrona, no con `.rejects`.
+    it('rechaza una clínica ajena sin llegar al service', () => {
+      expect(() => controller.findOne(memberUser, 'clinic-9')).toThrow(
+        'User is not member of this clinic',
+      );
+      expect(service.findOne).not.toHaveBeenCalled();
+    });
+
+    it('SUPER_ADMIN accede a cualquier clínica', async () => {
+      await expect(controller.findOne(superAdminUser, 'clinic-9')).resolves.toEqual({
+        id: 'clinic-1',
+      });
+    });
   });
 
   it('getStatistics delega sin argumentos', async () => {
     const result = await controller.getStatistics();
     expect(service.getClinicStatistics).toHaveBeenCalled();
     expect(result).toEqual({ total: 1 });
-  });
-
-  it('findOne delega el id', async () => {
-    await controller.findOne('clinic-1');
-    expect(service.findOne).toHaveBeenCalledWith('clinic-1');
   });
 
   it('update delega id y dto', async () => {

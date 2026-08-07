@@ -30,6 +30,18 @@ export class ServicePricesController {
     return this.servicePricesService.findAll(filter, resolveClinicId(req));
   }
 
+  // Quien pide un estudio de laboratorio necesita elegirlo del tarifario, o la
+  // orden se guarda con un nombre libre que no casa con ningún precio y nunca
+  // llega a generar cargo. Un médico no tiene `BillingRead` —no cobra— así que
+  // este endpoint acepta también `LabOrder`: PermissionsGuard exige *alguno* de
+  // los permisos listados, no todos. Devuelve solo lo necesario para elegir
+  // (id, nombre, categoría y precio) y únicamente precios activos.
+  @Get('catalog')
+  @RequirePermissions(Permission.BillingRead, Permission.LabOrder)
+  findCatalog(@Query() filter: FilterServicePricesDto, @Req() req: Request) {
+    return this.servicePricesService.findCatalog(filter, resolveClinicId(req));
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     return this.servicePricesService.findOne(id, resolveClinicId(req));

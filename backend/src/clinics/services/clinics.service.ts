@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { UserClinic } from '../../users/entities/user-clinic.entity';
 import { User } from '../../users/entities/user.entity';
 import { CreateClinicDto, UpdateClinicDto } from '../dto';
@@ -69,11 +69,20 @@ export class ClinicsService {
   // sistema, no solo la propia. Ningún consumidor real del frontend lee
   // esas relaciones — se quitan; quien necesite el roster de una clínica
   // usa GET /clinics/:clinicId/members (ya scoped por clínica).
-  async findAll(isActive?: boolean): Promise<Clinic[]> {
+  /**
+   * @param visibleClinicIds `undefined` no restringe (SUPER_ADMIN); una lista
+   * acota el resultado a esas clínicas, y vacía no devuelve ninguna.
+   */
+  async findAll(isActive?: boolean, visibleClinicIds?: string[]): Promise<Clinic[]> {
     const whereConditions: any = {};
 
     if (isActive !== undefined) {
       whereConditions.isActive = isActive;
+    }
+
+    if (visibleClinicIds !== undefined) {
+      if (visibleClinicIds.length === 0) return [];
+      whereConditions.id = In(visibleClinicIds);
     }
 
     return await this.clinicRepository.find({
@@ -135,15 +144,23 @@ export class ClinicsService {
     return await this.clinicRepository.save(clinic);
   }
 
-  async searchClinics(searchTerm: string): Promise<Clinic[]> {
-    return await this.clinicRepository
+  /** @param visibleClinicIds igual que en {@link findAll}. */
+  async searchClinics(searchTerm: string, visibleClinicIds?: string[]): Promise<Clinic[]> {
+    if (visibleClinicIds !== undefined && visibleClinicIds.length === 0) return [];
+
+    const qb = this.clinicRepository
       .createQueryBuilder('clinic')
       .where('clinic.isActive = :isActive', { isActive: true })
       .andWhere(
         '(clinic.name ILIKE :searchTerm OR clinic.address ILIKE :searchTerm OR clinic.departamento ILIKE :searchTerm OR clinic.provincia ILIKE :searchTerm OR clinic.localidad ILIKE :searchTerm)',
         { searchTerm: `%${searchTerm}%` },
-      )
-      .getMany();
+      );
+
+    if (visibleClinicIds !== undefined) {
+      qb.andWhere('clinic.id IN (:...visibleClinicIds)', { visibleClinicIds });
+    }
+
+    return await qb.getMany();
   }
 
   async getClinicStatistics(): Promise<any> {

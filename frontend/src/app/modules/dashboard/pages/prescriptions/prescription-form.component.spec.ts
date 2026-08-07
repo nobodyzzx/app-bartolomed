@@ -16,7 +16,9 @@ const mockPatientsService: Partial<PatientsService> = {
   findAll: () => of({ data: [], total: 0, page: 1, limit: 25 }),
 }
 const mockUsersService: Partial<UsersService> = {
-  getUsers: () => of({ data: [], total: 0, limit: 25, offset: 0 }),
+  // El formulario usa `getClinicalStaff`, no `getUsers`: aquel exige ADMIN y le
+  // devolvía 403 al médico, dejando el desplegable vacío y deshabilitado.
+  getClinicalStaff: () => of([]),
 }
 const mockClinicsService: Partial<ClinicsService> = { findAll: (_?: boolean) => of([]) }
 const mockPrescriptionsService: Partial<PrescriptionsService> = {

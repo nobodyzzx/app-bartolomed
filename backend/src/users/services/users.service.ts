@@ -129,6 +129,45 @@ export class UsersService {
     return { data, total, limit, offset };
   }
 
+  /**
+   * Personal clínico de una clínica, con lo justo para poblar un desplegable y
+   * para firmar un documento: nombre, roles, especialidad y rol profesional —
+   * los mismos datos que ya salen impresos en una receta o un consentimiento.
+   * Deliberadamente **sin** email, estado de cuenta ni datos de contacto: a
+   * diferencia de `findAll`, esto lo lee cualquier miembro de la clínica y no
+   * solo un administrador.
+   */
+  async findClinicalStaff(activeClinicId: string) {
+    const clinicalRoles: string[] = [ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.LABORATORY];
+
+    const users = await this.userRepository.find({
+      where: { clinic: { id: activeClinicId }, isActive: true },
+      relations: ['personalInfo', 'professionalInfo'],
+    });
+
+    return users
+      .filter(user => user.roles?.some(role => clinicalRoles.includes(role)))
+      .map(user => ({
+        id: user.id,
+        roles: user.roles,
+        personalInfo: {
+          firstName: user.personalInfo?.firstName ?? '',
+          lastName: user.personalInfo?.lastName ?? '',
+        },
+        professionalInfo: {
+          title: user.professionalInfo?.title ?? '',
+          role: user.professionalInfo?.role ?? null,
+          specialization: user.professionalInfo?.specialization ?? '',
+        },
+      }))
+      .sort((a, b) =>
+        `${a.personalInfo.lastName} ${a.personalInfo.firstName}`.localeCompare(
+          `${b.personalInfo.lastName} ${b.personalInfo.firstName}`,
+          'es',
+        ),
+      );
+  }
+
   async findOne(id: string, actor: User, activeClinicId: string) {
     const user = await this.userRepository.findOne({
       where: { id },

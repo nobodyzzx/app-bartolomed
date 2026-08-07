@@ -13,6 +13,14 @@ export interface PaginatedResult<T> {
   offset: number
 }
 
+/** Lo mínimo para un desplegable y para firmar: sin email ni datos de cuenta. */
+export interface ClinicalStaffMember {
+  id: string
+  roles: string[]
+  personalInfo: { firstName: string; lastName: string }
+  professionalInfo: { title: string; role: string | null; specialization: string }
+}
+
 export interface UpdateUserStatusResponse {
   pendingWork?: {
     appointments: number
@@ -31,6 +39,21 @@ export class UsersService {
 
   private users = signal<User[]>([])
   public currentUsers = computed(() => this.users())
+
+  /**
+   * Personal clínico de la clínica activa, para poblar desplegables de "médico
+   * solicitante" en laboratorio, recetas y fichas médicas. Va aparte de
+   * `getUsers()` porque aquel exige ADMIN: pedirlo desde esos formularios les
+   * devolvía 403 a los médicos, que son justo quienes los usan.
+   */
+  getClinicalStaff(): Observable<ClinicalStaffMember[]> {
+    return this.http.get<ClinicalStaffMember[]>(`${this.baseUrl}/users/clinical-staff`).pipe(
+      catchError(error => {
+        this.errorService.handleError(error)
+        return throwError(() => error)
+      }),
+    )
+  }
 
   getUsers(limit = 25, offset = 0): Observable<PaginatedResult<User>> {
     const params = new HttpParams().set('limit', limit.toString()).set('offset', offset.toString())
