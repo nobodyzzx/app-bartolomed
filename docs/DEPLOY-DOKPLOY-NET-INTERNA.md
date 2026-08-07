@@ -9,6 +9,15 @@ Este documento resume los cambios aplicados y el flujo final que quedó funciona
 - Ajustes de Traefik en `docker-compose.dokploy.yml` con labels en formato mapa (`key: "value"`).
 - Conexión explícita de servicios a la red de Traefik (externa) para evitar 504 (upstream unreachable).
 - `frontend` usa `serve` (Node) y `baseUrl = '/api'`.
+
+### Caché de assets (`frontend/serve.json`)
+
+Angular pone hash en el nombre de todo lo que empaqueta (`main-XXXX.js`), pero **no** en los assets que copia tal cual — entre ellos las dos fuentes. Con la caché de una semana de `assets/**`, un arreglo de iconos tardaba hasta 7 días en llegar a quien ya tenía la app abierta; pasó de verdad el 2026-08-07. Por eso `assets/fonts/**` lleva `max-age=0, must-revalidate`: el cuerpo (~160 KB) solo viaja cuando el archivo cambió, el resto de veces es un 304. Si algún día ese viaje molesta, la alternativa es ponerles hash al nombre y volver a `immutable`.
+
+Dos trampas al editar ese archivo:
+
+- **La última regla que coincide es la que manda** (`serve-handler` recorre todas y asigna por clave), así que las reglas específicas van **después** de las generales.
+- **No admite comentarios ni claves extra**: el esquema de `serve` tiene `additionalProperties: false` en cada entrada, y una clave sobrante hace que el servidor **no arranque**.
 - `backend` con CORS dinámico permitiendo mismo origen y credenciales.
 - Healthcheck corregido a `/api/health`.
 - `database/init.sql` corregido (sin `${...}` ni `CREATE DATABASE`; se ejecuta dentro de la BD ya creada por el entrypoint).
