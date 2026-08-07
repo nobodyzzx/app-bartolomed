@@ -127,7 +127,7 @@ Dashboard features are lazy-loaded from `modules/dashboard/pages/{feature}/`:
 }
 ```
 
-Active routing module: `app-routing.module.ts` (not `app.routes.ts` which is a skeleton for future migration).
+Active routing module: `app-routing.module.ts` → `modules/dashboard/dashboard-routing.module.ts`.
 
 ### HTTP Service Pattern
 ```typescript
