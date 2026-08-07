@@ -74,19 +74,31 @@ export const MENU_ITEMS: MenuItem[] = [
         ],
         requiredPermissions: [Permission.PrescriptionsRead],
       },
-      {
-        label: 'Facturación y Pagos',
-        icon: 'payment',
-        route: '/dashboard/billing',
-        allowedRoles: [UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-        requiredPermissions: [Permission.BillingRead],
-      },
+    ],
+  },
+  {
+    // El dinero va aparte de lo clínico: el tarifario y la caja no son
+    // "consultorio médico", y mezclarlos dejaba ese grupo con siete entradas
+    // de dos mundos distintos.
+    label: 'Caja y Facturación',
+    icon: 'point_of_sale',
+    route: '/billing',
+    allowedRoles: [UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+    children: [
       {
         label: 'Punto de Cobro',
         icon: 'point_of_sale',
         route: '/dashboard/checkout',
         allowedRoles: [UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
         requiredPermissions: [Permission.BillingManage],
+      },
+      {
+        // Libro de facturas emitidas: consulta, cobro de saldos y anulación.
+        label: 'Facturas Emitidas',
+        icon: 'receipt_long',
+        route: '/dashboard/billing',
+        allowedRoles: [UserRoles.RECEPTIONIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+        requiredPermissions: [Permission.BillingRead],
       },
       {
         label: 'Tarifario',
@@ -137,13 +149,6 @@ export const MENU_ITEMS: MenuItem[] = [
         route: '/dashboard/pharmacy/sales-dispensing',
         allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
         requiredPermissions: [Permission.PharmacyDispense],
-      },
-      {
-        label: 'Facturación',
-        icon: 'receipt_long',
-        route: '/dashboard/pharmacy/invoicing',
-        allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-        requiredPermissions: [Permission.PharmacyBilling],
       },
     ],
   },
@@ -212,6 +217,17 @@ export const MENU_ITEMS: MenuItem[] = [
         route: '/dashboard/clinics',
         allowedRoles: [UserRoles.SUPER_ADMIN], // Solo SUPER_ADMIN
         requiredPermissions: [Permission.ClinicsManage],
+      },
+      {
+        // Una sola entrada, no seis: `/dashboard/config` es la página madre y
+        // desde ahí se llega a respaldos, parámetros, plantillas, notificaciones
+        // e integraciones. Antes esas seis pantallas existían pero no tenían
+        // ninguna entrada en el menú — solo se llegaba escribiendo la URL.
+        label: 'Configuración',
+        icon: 'settings',
+        route: '/dashboard/config',
+        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+        requiredPermissions: [Permission.SettingsManage],
       },
     ],
   },

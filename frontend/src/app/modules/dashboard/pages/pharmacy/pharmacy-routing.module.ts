@@ -8,8 +8,6 @@ import { InventoryComponent } from './inventory/inventory.component'
 import { MedicationFormComponent } from './inventory/medication-form/medication-form.component'
 import { StockFormComponent } from './inventory/stock-form/stock-form.component'
 import { TransferStockComponent } from './inventory/transfer-stock/transfer-stock.component'
-import { InvoiceDetailComponent } from './invoicing/invoice-detail/invoice-detail.component'
-import { InvoicingComponent } from './invoicing/invoicing.component'
 import { MedicationsComponent } from './medications/medications.component'
 import { PurchaseOrderDetailComponent } from './purchase-orders/purchase-order-detail/purchase-order-detail.component'
 import { PurchaseOrderFormComponent } from './purchase-orders/purchase-order-form/purchase-order-form.component'
@@ -218,24 +216,6 @@ const routes: Routes = [
       // así que igual quedaría bloqueado por permissionsGuard — no listarlo aquí.
       allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
       requiredPermissions: [Permission.PharmacyDispense],
-    },
-  },
-  {
-    path: 'invoicing',
-    component: InvoicingComponent,
-    canActivate: [permissionsGuard, roleGuard],
-    data: {
-      allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-      requiredPermissions: [Permission.PharmacyBilling],
-    },
-  },
-  {
-    path: 'invoicing/:id',
-    component: InvoiceDetailComponent,
-    canActivate: [permissionsGuard, roleGuard],
-    data: {
-      allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-      requiredPermissions: [Permission.PharmacyBilling],
     },
   },
 ]

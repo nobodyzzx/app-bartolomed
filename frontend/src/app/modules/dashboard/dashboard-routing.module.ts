@@ -179,7 +179,7 @@ const routes: Routes = [
       },
       {
         path: 'pharmacy-billing',
-        redirectTo: 'pharmacy/invoicing',
+        redirectTo: 'pharmacy/sales-dispensing',
         pathMatch: 'full',
       },
       // Rutas de reportes
