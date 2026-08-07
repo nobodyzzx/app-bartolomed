@@ -11,6 +11,7 @@ import { PrescriptionsService } from '../../../prescriptions/prescriptions.servi
 import { CreateSaleDto, MedicationStock, PaymentMethod, PrescriptionListItem } from '../../interfaces/pharmacy.interfaces'
 import { InventoryService } from '../../services/inventory.service'
 import { SalesDispensingService } from '../../services/sales-dispensing.service'
+import { PAYMENT_METHODS } from '../../../checkout/checkout.service'
 import { CartItem, SaleCartService } from './sale-cart.service'
 
 @Component({
@@ -57,13 +58,20 @@ export class NewSaleComponent implements OnInit {
     return this.selectedPatientName() || ''
   }
 
-  // Payment method options
-  paymentMethods = [
-    { value: PaymentMethod.CASH, label: 'Efectivo', icon: 'payments' },
-    { value: PaymentMethod.CARD, label: 'Tarjeta', icon: 'credit_card' },
-    { value: PaymentMethod.TRANSFER, label: 'Transferencia', icon: 'account_balance' },
-    { value: PaymentMethod.QR, label: 'QR', icon: 'qr_code' },
-  ]
+  /**
+   * Efectivo y QR son las únicas formas de pago que la clínica maneja. Se
+   * derivan de `PAYMENT_METHODS`, la lista compartida con el punto de cobro:
+   * tenerla por duplicado fue lo que dejó a farmacia ofreciendo tarjeta y
+   * transferencia mientras la caja general ni siquiera ofrecía QR.
+   *
+   * El enum de farmacia usa sus propios valores (`cash`/`qr` coinciden con los
+   * de la caja general, que son justo los dos que quedan).
+   */
+  paymentMethods = PAYMENT_METHODS.map(m => ({
+    value: m.value as PaymentMethod,
+    label: m.label,
+    icon: m.icon,
+  }))
 
   // Computed totals (dependen de form + cart)
   taxRate = computed(() => this.form?.get('taxRate')?.value || 0.13)

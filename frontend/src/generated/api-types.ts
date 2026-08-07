@@ -276,6 +276,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/clinical-staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["UsersController_getClinicalStaff"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/{id}": {
         parameters: {
             query?: never;
@@ -783,6 +799,22 @@ export interface paths {
         get: operations["ServicePricesController_findAll"];
         put?: never;
         post: operations["ServicePricesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/service-prices/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ServicePricesController_findCatalog"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4946,7 +4978,7 @@ export interface components {
         };
         CheckoutPaymentDto: {
             /** @enum {string} */
-            method: "cash" | "credit_card" | "debit_card" | "bank_transfer" | "check" | "insurance" | "other";
+            method: "cash" | "qr" | "credit_card" | "debit_card" | "bank_transfer" | "check" | "insurance" | "other";
             amount: number;
             reference?: string;
         };
@@ -5010,7 +5042,7 @@ export interface components {
             paymentNumber: string;
             amount: number;
             /** @enum {string} */
-            method: "cash" | "credit_card" | "debit_card" | "bank_transfer" | "check" | "insurance" | "other";
+            method: "cash" | "qr" | "credit_card" | "debit_card" | "bank_transfer" | "check" | "insurance" | "other";
             /** @enum {string} */
             status?: "pending" | "completed" | "failed" | "cancelled" | "refunded";
             /** Format: date-time */
@@ -5026,7 +5058,7 @@ export interface components {
             paymentNumber: string;
             amount: number;
             /** @enum {string} */
-            method: "cash" | "credit_card" | "debit_card" | "bank_transfer" | "check" | "insurance" | "other";
+            method: "cash" | "qr" | "credit_card" | "debit_card" | "bank_transfer" | "check" | "insurance" | "other";
             /** @enum {string} */
             status: "pending" | "completed" | "failed" | "cancelled" | "refunded";
             /** Format: date-time */
@@ -5752,6 +5784,23 @@ export interface operations {
         };
     };
     UsersController_getStatistics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersController_getClinicalStaff: {
         parameters: {
             query?: never;
             header?: never;
@@ -6789,6 +6838,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ServicePrice"];
+                };
+            };
+        };
+    };
+    ServicePricesController_findCatalog: {
+        parameters: {
+            query?: {
+                category?: "consultation" | "laboratory" | "procedure" | "other";
+                appointmentType?: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other";
+                /** @description Busca en código y nombre. */
+                search?: string;
+                /**
+                 * @description Llega como string por querystring. Sin este `Transform`, `'false'` sería
+                 *     truthy y el filtro devolvería siempre los activos.
+                 */
+                isActive?: string;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServicePrice"][];
                 };
             };
         };

@@ -450,6 +450,20 @@
         ]
       }
     },
+    "/api/users/clinical-staff": {
+      "get": {
+        "operationId": "UsersController_getClinicalStaff",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      }
+    },
     "/api/users/{id}": {
       "get": {
         "operationId": "UsersController_findOne",
@@ -2035,6 +2049,98 @@
         "responses": {
           "200": {
             "description": ""
+          }
+        },
+        "tags": [
+          "ServicePrices"
+        ]
+      }
+    },
+    "/api/service-prices/catalog": {
+      "get": {
+        "operationId": "ServicePricesController_findCatalog",
+        "parameters": [
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "consultation",
+                "laboratory",
+                "procedure",
+                "other"
+              ]
+            }
+          },
+          {
+            "name": "appointmentType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "consultation",
+                "follow_up",
+                "emergency",
+                "surgery",
+                "laboratory",
+                "imaging",
+                "vaccination",
+                "therapy",
+                "other"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Busca en código y nombre.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "isActive",
+            "required": false,
+            "in": "query",
+            "description": "Llega como string por querystring. Sin este `Transform`, `'false'` sería\ntruthy y el filtro devolvería siempre los activos.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServicePrice"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -12177,6 +12283,7 @@
             "type": "string",
             "enum": [
               "cash",
+              "qr",
               "credit_card",
               "debit_card",
               "bank_transfer",
@@ -12405,6 +12512,7 @@
             "type": "string",
             "enum": [
               "cash",
+              "qr",
               "credit_card",
               "debit_card",
               "bank_transfer",
@@ -12464,6 +12572,7 @@
           "method": {
             "enum": [
               "cash",
+              "qr",
               "credit_card",
               "debit_card",
               "bank_transfer",

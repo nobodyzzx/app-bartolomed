@@ -7,12 +7,18 @@ import { Patient } from '../patients/interfaces/patient.interface'
 import { PatientsService } from '../patients/services/patients.service'
 import {
   Charge,
+  ChargeOrigin,
   CheckoutPayload,
   CheckoutService,
   DiscountDisplay,
   ORIGIN_LABELS,
   PAYMENT_METHODS,
 } from './checkout.service'
+import {
+  ServiceCategory,
+  ServicePriceCatalogItem,
+  ServicePricesService,
+} from '../service-prices/service-prices.service'
 
 /** Fila de la tabla de cobro: el cargo más lo que el cajero decida sobre él. */
 interface CheckoutLine {
@@ -53,11 +59,18 @@ export class CheckoutComponent {
 
   processing = false
 
+  // --- Cargo suelto: lo que no viene de una consulta ni de una orden ---
+  catalog: ServicePriceCatalogItem[] = []
+  newChargeId = ''
+  newChargeQty = 1
+  addingCharge = false
+
   constructor(
     private checkoutService: CheckoutService,
     private patientsService: PatientsService,
     private alert: AlertService,
     private router: Router,
+    private servicePrices: ServicePricesService,
   ) {
     this.searchTerm$
       .pipe(
@@ -78,6 +91,15 @@ export class CheckoutComponent {
           this.searching = false
         },
       })
+
+    // El tarifario completo: son decenas de filas, se carga una vez al abrir.
+    this.servicePrices
+      .catalog()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: catalog => (this.catalog = catalog),
+        error: () => (this.catalog = []),
+      })
   }
 
   onSearchChange(term: string): void {
@@ -86,6 +108,48 @@ export class CheckoutComponent {
       return
     }
     this.searchTerm$.next(term.trim())
+  }
+
+  /** Categoría del tarifario → origen del cargo, para que la cuenta lo etiquete igual. */
+  private originForCategory(category: ServiceCategory): ChargeOrigin {
+    if (category === ServiceCategory.CONSULTATION) return ChargeOrigin.CONSULTATION
+    if (category === ServiceCategory.LABORATORY) return ChargeOrigin.LABORATORY
+    return ChargeOrigin.OTHER
+  }
+
+  get newChargeSelected(): ServicePriceCatalogItem | undefined {
+    return this.catalog.find(item => item.id === this.newChargeId)
+  }
+
+  get canAddCharge(): boolean {
+    return !!this.patient && !!this.newChargeSelected && this.newChargeQty > 0 && !this.addingCharge
+  }
+
+  addCharge(): void {
+    const chosen = this.newChargeSelected
+    if (!this.patient || !chosen || !this.canAddCharge) return
+
+    this.addingCharge = true
+    this.checkoutService
+      .addCharge({
+        patientId: this.patient.id!,
+        patientName: `${this.patient.firstName ?? ''} ${this.patient.lastName ?? ''}`.trim(),
+        origin: this.originForCategory(chosen.category),
+        servicePriceId: chosen.id,
+        description: chosen.name,
+        quantity: this.newChargeQty,
+        listPrice: chosen.price,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.addingCharge = false
+          this.newChargeId = ''
+          this.newChargeQty = 1
+          this.loadAccount()
+        },
+        error: () => (this.addingCharge = false),
+      })
   }
 
   selectPatient(patient: Patient): void {

@@ -59,6 +59,66 @@
         </button>
       </div>
 
+      <!--
+        Va fuera del @if de la tabla a propósito: el caso más común de un cargo
+        suelto es un paciente que NO tiene nada pendiente (llega solo a que le
+        tomen la presión). Dentro de la rama "hay cargos" el botón no existiría
+        justo cuando más se necesita.
+      -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+        <div class="flex items-center gap-4 px-6 py-4 bg-sky-50 border-b border-sky-100">
+          <div class="w-10 h-10 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">add_shopping_cart</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Agregar un cobro</h3>
+            <p class="text-sm text-slate-500 m-0">
+              Para lo que no viene de una consulta ni de una orden de laboratorio
+            </p>
+          </div>
+        </div>
+          <!--
+          Cargo suelto: lo que no nace de una consulta ni de una orden de
+          laboratorio — una curación, tomar la presión, una inyección. Sale
+          siempre del tarifario, así que sigue el mismo camino que el resto:
+          descuento con motivo, cobro, factura y control de ingresos.
+        -->
+        <div class="px-6 py-4">
+          <div class="flex flex-col md:flex-row md:items-center gap-3">
+            <mat-form-field appearance="outline" class="flex-1" subscriptSizing="dynamic">
+              <mat-label>Agregar del tarifario</mat-label>
+              <mat-icon matPrefix class="text-emerald-400">price_change</mat-icon>
+              <mat-select [(ngModel)]="newChargeId">
+                @for (item of catalog; track item.id) {
+                  <mat-option [value]="item.id">
+                    {{ item.name }} — {{ item.price | currency: 'BOB' : 'symbol-narrow' }}
+                  </mat-option>
+                }
+              </mat-select>
+              @if (catalog.length === 0) {
+                <mat-hint>El tarifario de esta clínica está vacío</mat-hint>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full md:w-28" subscriptSizing="dynamic">
+              <mat-label>Cantidad</mat-label>
+              <input matInput type="number" min="1" step="1" [(ngModel)]="newChargeQty" />
+            </mat-form-field>
+
+            <button
+              type="button"
+              (click)="addCharge()"
+              [disabled]="!canAddCharge"
+              class="btn btn-secondary disabled:opacity-50 whitespace-nowrap"
+            >
+              <span class="material-symbols-outlined msz-18">add_circle</span>
+              Agregar
+            </button>
+          </div>
+        </div>
+
+      </div>
+
       @if (loadingAccount) {
         <div class="flex justify-center py-16"><mat-spinner diameter="40"></mat-spinner></div>
       } @else if (lines.length === 0) {

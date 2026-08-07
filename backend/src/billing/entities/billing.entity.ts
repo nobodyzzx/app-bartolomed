@@ -26,8 +26,15 @@ export enum InvoiceStatus {
   REFUNDED = 'refunded',
 }
 
+/**
+ * La clínica solo cobra en efectivo y por QR; el resto de valores se conserva
+ * porque hay pagos históricos registrados con ellos y los reportes agrupan por
+ * método. La interfaz solo ofrece los dos primeros (ver `PAYMENT_METHODS` en el
+ * frontend), así que ninguno nuevo puede nacer con un método en desuso.
+ */
 export enum PaymentMethod {
   CASH = 'cash',
+  QR = 'qr',
   CREDIT_CARD = 'credit_card',
   DEBIT_CARD = 'debit_card',
   BANK_TRANSFER = 'bank_transfer',
