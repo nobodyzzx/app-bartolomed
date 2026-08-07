@@ -146,6 +146,29 @@ export class BillingPageComponent implements OnInit {
     this.router.navigate(['/dashboard/billing/invoices', invoice.id, 'edit'])
   }
 
+  /**
+   * Anular es la vía para corregir un descuento mal aplicado que se detecta
+   * después de emitir el recibo: los cargos vuelven a la cuenta del paciente,
+   * el pago se cancela y se vuelve a cobrar con el descuento correcto.
+   */
+  async voidInvoice(invoice: RecentInvoice): Promise<void> {
+    const result = await this.alert.prompt({
+      title: `¿Anular la factura ${invoice.invoiceNumber ?? ''}?`.trim(),
+      inputLabel: 'Motivo de la anulación',
+      inputPlaceholder: 'Por ejemplo: descuento aplicado por error',
+      confirmButtonText: 'Anular factura',
+      cancelButtonText: 'Cancelar',
+      inputValidator: value =>
+        (value ?? '').trim().length < 5 ? 'Explique por qué se anula (mínimo 5 caracteres)' : null,
+    })
+    if (!result.isConfirmed || !result.value) return
+
+    this.billingService
+      .voidInvoice(invoice.id, result.value)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: () => this.loadData() })
+  }
+
   goBack(): void {
     this.location.back()
   }

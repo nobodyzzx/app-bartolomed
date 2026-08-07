@@ -6061,6 +6061,47 @@
         ]
       }
     },
+    "/api/billing/invoices/{id}/void": {
+      "patch": {
+        "operationId": "BillingController_voidInvoice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoidInvoiceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Anula una factura emitida y devuelve sus cargos a la cuenta del paciente.\n\nEs la vía para corregir un descuento mal aplicado que se detecta después de\nemitir el recibo. Recepción también puede hacerlo —quien se equivocó lo\ncorrige al momento, sin esperar a un administrador— y por eso el motivo es\nobligatorio y todo queda en el registro de auditoría: con descuentos sin\ntope, ese rastro es el único control que queda.",
+        "tags": [
+          "Billing"
+        ]
+      }
+    },
     "/api/billing/invoices/{id}/receipt": {
       "get": {
         "operationId": "BillingController_receipt",
@@ -12430,6 +12471,25 @@
           "isActive": {
             "type": "boolean"
           },
+          "voidReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Rastro de la anulación. La factura conserva su número y su importe: pasa a\n`cancelled` pero no desaparece, porque un hueco en la numeración es\nindistinguible de un cobro que alguien borró. Con descuentos sin tope, esto\nes la única defensa contra un descuento indebido que se anula para taparlo."
+          },
+          "voidedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "voidedBy": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              }
+            ]
+          },
           "patient": {
             "$ref": "#/components/schemas/Patient"
           },
@@ -12484,6 +12544,9 @@
           "insuranceClaimNumber",
           "insuranceCoverage",
           "isActive",
+          "voidReason",
+          "voidedAt",
+          "voidedBy",
           "patient",
           "clinic",
           "appointment",
@@ -12492,6 +12555,19 @@
           "createdBy",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "VoidInvoiceDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Obligatorio y con un mínimo razonable: anular borra el rastro de un\ndescuento, y como los descuentos no llevan tope, el motivo es lo único que\nqueda para revisarlo después. Un campo que admita \"x\" no defiende nada.",
+            "minLength": 5
+          }
+        },
+        "required": [
+          "reason"
         ]
       },
       "UpdateInvoiceDto": {

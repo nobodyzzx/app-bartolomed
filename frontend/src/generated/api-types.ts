@@ -2984,6 +2984,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/billing/invoices/{id}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Anula una factura emitida y devuelve sus cargos a la cuenta del paciente.
+         *
+         *     Es la vía para corregir un descuento mal aplicado que se detecta después de
+         *     emitir el recibo. Recepción también puede hacerlo —quien se equivocó lo
+         *     corrige al momento, sin esperar a un administrador— y por eso el motivo es
+         *     obligatorio y todo queda en el registro de auditoría: con descuentos sin
+         *     tope, ese rastro es el único control que queda.
+         */
+        patch: operations["BillingController_voidInvoice"];
+        trace?: never;
+    };
     "/api/billing/invoices/{id}/receipt": {
         parameters: {
             query?: never;
@@ -5026,6 +5051,16 @@ export interface components {
             insuranceClaimNumber: string;
             insuranceCoverage: number;
             isActive: boolean;
+            /**
+             * @description Rastro de la anulación. La factura conserva su número y su importe: pasa a
+             *     `cancelled` pero no desaparece, porque un hueco en la numeración es
+             *     indistinguible de un cobro que alguien borró. Con descuentos sin tope, esto
+             *     es la única defensa contra un descuento indebido que se anula para taparlo.
+             */
+            voidReason: string | null;
+            /** Format: date-time */
+            voidedAt: string | null;
+            voidedBy: components["schemas"]["User"] | null;
             patient: components["schemas"]["Patient"];
             clinic: components["schemas"]["Clinic"];
             appointment: components["schemas"]["Appointment"];
@@ -5036,6 +5071,14 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+        };
+        VoidInvoiceDto: {
+            /**
+             * @description Obligatorio y con un mínimo razonable: anular borra el rastro de un
+             *     descuento, y como los descuentos no llevan tope, el motivo es lo único que
+             *     queda para revisarlo después. Un campo que admita "x" no defiende nada.
+             */
+            reason: string;
         };
         UpdateInvoiceDto: Record<string, never>;
         CreatePaymentDto: {
@@ -10035,6 +10078,31 @@ export interface operations {
         };
         responses: {
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Invoice"];
+                };
+            };
+        };
+    };
+    BillingController_voidInvoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoidInvoiceDto"];
+            };
+        };
+        responses: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

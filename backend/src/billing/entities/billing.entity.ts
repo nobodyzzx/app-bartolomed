@@ -118,7 +118,23 @@ export class Invoice {
   @Column('boolean', { default: true })
   isActive: boolean;
 
+  /**
+   * Rastro de la anulación. La factura conserva su número y su importe: pasa a
+   * `cancelled` pero no desaparece, porque un hueco en la numeración es
+   * indistinguible de un cobro que alguien borró. Con descuentos sin tope, esto
+   * es la única defensa contra un descuento indebido que se anula para taparlo.
+   */
+  @Column('text', { nullable: true })
+  voidReason: string | null;
+
+  @Column('timestamp', { nullable: true })
+  voidedAt: Date | null;
+
   // Relaciones
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'voided_by' })
+  voidedBy: User | null;
+
   @ManyToOne(() => Patient)
   @JoinColumn({ name: 'patient_id' })
   patient: Patient;

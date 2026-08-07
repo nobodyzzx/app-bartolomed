@@ -131,6 +131,23 @@ export class BillingService {
     )
   }
 
+  /**
+   * Anula una factura y devuelve sus cargos a la cuenta del paciente, para
+   * volver a cobrarla con el descuento correcto. El motivo es obligatorio: es
+   * lo único que queda para revisar después una anulación indebida.
+   */
+  voidInvoice(id: string, reason: string): Observable<any> {
+    return this.http.patch(`${this.base}/billing/invoices/${id}/void`, { reason }).pipe(
+      tap(() =>
+        this.alert.success('Factura anulada', 'Los cargos volvieron a la cuenta del paciente'),
+      ),
+      catchError(err => {
+        this.errorService.handleError(err)
+        return throwError(() => err)
+      }),
+    )
+  }
+
   deleteInvoice(id: string): Observable<any> {
     return this.http.delete(`${this.base}/billing/invoices/${id}`).pipe(
       tap(() => this.alert.success('Éxito', 'Factura eliminada correctamente')),

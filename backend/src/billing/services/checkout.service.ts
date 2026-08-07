@@ -270,6 +270,95 @@ export class CheckoutService {
     });
   }
 
+
+  /**
+   * Anula una factura emitida y devuelve sus cargos a la cuenta del paciente.
+   *
+   * Es la vía elegida para corregir un descuento mal aplicado que se detecta
+   * después de emitir el recibo. Tres cosas que la hacen segura:
+   *
+   * - **La factura no se borra**: conserva su número y su importe, pasa a
+   *   `cancelled` y guarda quién, cuándo y por qué. Un hueco en la numeración
+   *   sería indistinguible de un cobro que alguien hizo desaparecer, y con
+   *   descuentos sin tope este rastro es la única defensa.
+   * - **Los cargos vuelven a `pending`, no a `cancelled`**: el servicio se
+   *   prestó, lo que estuvo mal fue el descuento. Anularlos obligaría a
+   *   recrearlos a mano y ahí sí se inventarían precios fuera del tarifario.
+   *   Se les limpia el descuento para que se vuelva a aplicar el correcto.
+   * - **El pago se cancela**: dejarlo vivo haría cuadrar la caja con dinero que
+   *   ya no corresponde a ninguna factura. Se cobra de nuevo al reemitir.
+   */
+  async voidInvoice(invoiceId: string, reason: string, user: User, clinicId?: string) {
+    if (!clinicId) throw new BadRequestException('clinicId is required');
+    const motivo = reason?.trim();
+    if (!motivo) throw new BadRequestException('La anulación requiere un motivo');
+
+    return this.invoiceRepository.manager.transaction(async manager => {
+      const invoiceRepo = manager.getRepository(Invoice);
+      const chargeRepo = manager.getRepository(Charge);
+      const paymentRepo = manager.getRepository(Payment);
+
+      const invoice = await invoiceRepo.findOne({
+        where: { id: invoiceId, clinic: { id: clinicId } },
+        relations: ['clinic'],
+      });
+      if (!invoice) throw new NotFoundException('Factura no encontrada');
+      if (invoice.status === InvoiceStatus.CANCELLED) {
+        throw new BadRequestException('La factura ya está anulada');
+      }
+
+      const charges = await chargeRepo.find({ where: { invoiceId: invoice.id } });
+
+      for (const charge of charges) {
+        charge.status = ChargeStatus.PENDING;
+        charge.invoiceId = null;
+        charge.discountAmount = 0;
+        charge.discountReason = null;
+        charge.discountAuthorizedById = null;
+        // `calculateTotal()` recalcula el total al guardar, así que basta con
+        // dejar el descuento en cero para que vuelva al precio de tarifario.
+        await chargeRepo.save(charge);
+      }
+
+      const payments = await paymentRepo.find({ where: { invoice: { id: invoice.id } } });
+      for (const payment of payments) {
+        if (payment.status === PaymentStatus.CANCELLED) continue;
+        payment.status = PaymentStatus.CANCELLED;
+        await paymentRepo.save(payment);
+      }
+
+      invoice.status = InvoiceStatus.CANCELLED;
+      invoice.voidReason = motivo;
+      invoice.voidedAt = new Date();
+      invoice.voidedBy = user;
+      invoice.paidAmount = 0;
+      invoice.remainingAmount = 0;
+      const savedInvoice = await invoiceRepo.save(invoice);
+
+      await this.auditService.log({
+        action: 'INVOICE_VOIDED',
+        resource: 'Facturación',
+        resourceId: invoice.id,
+        userId: user?.id,
+        userEmail: user?.email,
+        clinicId,
+        method: 'PATCH',
+        path: `/api/billing/invoices/${invoice.id}/void`,
+        statusCode: 200,
+        status: 'success',
+        details: {
+          invoiceNumber: invoice.invoiceNumber,
+          totalAmount: invoice.totalAmount,
+          reason: motivo,
+          chargesReturned: charges.length,
+          paymentsCancelled: payments.length,
+        },
+      });
+
+      return savedInvoice;
+    });
+  }
+
   // ─── numeración ───────────────────────────────────────────────────────────
 
   private resolveStatus(totalAmount: number, paidAmount: number): InvoiceStatus {

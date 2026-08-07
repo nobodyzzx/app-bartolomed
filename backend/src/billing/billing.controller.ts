@@ -22,6 +22,7 @@ import { User } from '../users/entities/user.entity';
 import { Response } from 'express';
 import { BillingService } from './billing.service';
 import { CheckoutDto } from './dto/checkout.dto';
+import { VoidInvoiceDto } from './dto/void-invoice.dto';
 import { CreatePaymentDto, UpdateInvoiceDto } from './dto';
 import { InvoiceStatus } from './entities/billing.entity';
 import { CheckoutService } from './services/checkout.service';
@@ -47,6 +48,27 @@ export class BillingController {
   @RequirePermissions(Permission.BillingManage)
   checkout(@Body() dto: CheckoutDto, @GetUser() user: User, @Req() req: Request) {
     return this.checkoutService.checkout(dto, user, resolveClinicId(req));
+  }
+
+  /**
+   * Anula una factura emitida y devuelve sus cargos a la cuenta del paciente.
+   *
+   * Es la vía para corregir un descuento mal aplicado que se detecta después de
+   * emitir el recibo. Recepción también puede hacerlo —quien se equivocó lo
+   * corrige al momento, sin esperar a un administrador— y por eso el motivo es
+   * obligatorio y todo queda en el registro de auditoría: con descuentos sin
+   * tope, ese rastro es el único control que queda.
+   */
+  @Patch('invoices/:id/void')
+  @Auth(ValidRoles.ADMIN, ValidRoles.RECEPTIONIST, ValidRoles.SUPER_ADMIN)
+  @RequirePermissions(Permission.BillingManage)
+  voidInvoice(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: VoidInvoiceDto,
+    @GetUser() user: User,
+    @Req() req: Request,
+  ) {
+    return this.checkoutService.voidInvoice(id, dto.reason, user, resolveClinicId(req));
   }
 
   /** Recibo en PDF. `display` decide solo cómo se imprime el descuento. */
