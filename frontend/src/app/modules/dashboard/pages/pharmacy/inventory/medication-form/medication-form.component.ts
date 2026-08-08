@@ -84,6 +84,7 @@ export class MedicationFormComponent implements OnInit {
       formaFarmaceutica: [this.dosageForms[0], Validators.required],
       viaAdministracion: [this.administrationRoutes[0], Validators.required],
       laboratorio: [''],
+      esMuestraMedica: [false],
     })
   }
 
@@ -116,6 +117,7 @@ export class MedicationFormComponent implements OnInit {
           formaFarmaceutica: medication.dosageForm || this.dosageForms[0],
           viaAdministracion: medication.dosageInstructions || this.administrationRoutes[0],
           laboratorio: medication.manufacturer || '',
+          esMuestraMedica: medication.isMedicalSample ?? false,
         })
         this.loading = false
       },
@@ -147,6 +149,7 @@ export class MedicationFormComponent implements OnInit {
       storageCondition: StorageCondition.ROOM_TEMPERATURE,
       manufacturer: formValue.laboratorio || undefined,
       dosageInstructions: formValue.viaAdministracion || undefined,
+      isMedicalSample: !!formValue.esMuestraMedica,
     }
 
     this.loading = true

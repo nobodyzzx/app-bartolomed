@@ -133,7 +133,7 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Fecha de vencimiento *</mat-label>
+              <mat-label>Fecha de vencimiento</mat-label>
               <mat-icon matPrefix class="text-green-400">event_busy</mat-icon>
               <input
                 matInput
@@ -144,11 +144,9 @@
                 />
               <mat-datepicker-toggle matIconSuffix [for]="pickerExp"></mat-datepicker-toggle>
               <mat-datepicker #pickerExp></mat-datepicker>
-              @if (stockForm.get('expiryDate')?.hasError('required')) {
-                <mat-error>
-                  La fecha de vencimiento es requerida
-                </mat-error>
-              }
+              <!-- Opcional: obligarla solo conseguía que se inventara una fecha
+                   cuando el envase no la trae a la vista. -->
+              <mat-hint>Si no la tienes a mano, déjala vacía</mat-hint>
               @if (stockForm.get('expiryDate')?.hasError('matDatepickerMin')) {
                 <mat-error>
                   La fecha de vencimiento debe ser futura
@@ -162,6 +160,16 @@
               <input matInput formControlName="location" placeholder="Ej: Estante A-3" />
               <mat-hint>Opcional</mat-hint>
             </mat-form-field>
+          </div>
+
+          <div class="px-6 pb-6">
+            <mat-slide-toggle formControlName="isMedicalSample" color="primary">
+              Este lote entró como muestra médica
+            </mat-slide-toggle>
+            <p class="text-sm text-slate-500 mt-1 mb-0">
+              Marca de dónde vino el stock: muestra del laboratorio en vez de compra.
+              No cambia nada al venderlo.
+            </p>
           </div>
         </div>
       </div>

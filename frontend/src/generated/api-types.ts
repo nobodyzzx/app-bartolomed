@@ -4781,6 +4781,8 @@ export interface components {
             quantity: number;
             unitPrice: number;
             discountPercent?: number;
+            /** @description Obligatorio si `discountPercent` > 0; lo valida el servicio. */
+            discountReason?: string;
             batchNumber?: string;
             expiryDate?: string;
         };
@@ -4792,6 +4794,8 @@ export interface components {
             paymentMethod: "cash" | "card" | "transfer" | "insurance" | "mixed" | "qr";
             taxRate?: number;
             discountAmount?: number;
+            /** @description Obligatorio si `discountAmount` > 0; lo valida el servicio. */
+            discountReason?: string;
             amountPaid: number;
             notes?: string;
             /** Format: uuid */
@@ -4859,6 +4863,15 @@ export interface components {
             paymentMethod: "cash" | "card" | "transfer" | "insurance" | "mixed" | "qr";
             subtotal: number;
             discount: number;
+            /**
+             * @description Por qué se rebajó el precio y quién lo autorizó. Existen en `charges` desde
+             *     el punto de cobro, pero la venta de farmacia solo guardaba el número: se
+             *     podía descontar cualquier importe sin dejar rastro de la razón, que es
+             *     justo lo que se necesita para revisar un descuento indebido después.
+             */
+            discountReason: string | null;
+            discountAuthorizedBy: components["schemas"]["User"] | null;
+            discountAuthorizedById: string | null;
             tax: number;
             taxRate: number;
             total: number;
@@ -4903,6 +4916,21 @@ export interface components {
             requiresPrescription: boolean;
             isControlledSubstance: boolean;
             controlledSubstanceSchedule: string;
+            /**
+             * @description El producto llega a la clínica como muestra médica del laboratorio, no
+             *     comprado a un proveedor.
+             *
+             *     Es una etiqueta informativa, no un candado: en esta clínica las muestras
+             *     se venden igual (el inventario de muestras lleva su propia columna de
+             *     "vendidos"), así que marcarla no bloquea nada. Sirve para saber de dónde
+             *     salió el stock y no confundir su margen con el de lo comprado.
+             *
+             *     Va aquí para los productos que **solo** llegan por esa vía. Cuando el
+             *     mismo producto entra por las dos, la marca que manda es la del lote
+             *     (`MedicationStock.isMedicalSample`), porque es cada entrada la que viene de
+             *     una u otra parte.
+             */
+            isMedicalSample: boolean;
             isActive: boolean;
             stock: Record<string, never>[];
             /** Format: date-time */
@@ -4918,13 +4946,31 @@ export interface components {
             availableQuantity: number;
             unitCost: number;
             sellingPrice: number;
-            /** Format: date-time */
-            expiryDate: string;
+            /**
+             * Format: date-time
+             * @description Nulo = vencimiento sin registrar, que no es lo mismo que "no vence".
+             *
+             *     Era obligatorio, y eso obligaba a inventarse una fecha para todo stock que
+             *     llegara sin ella —el inventario en papel de la clínica no la trae—. Una
+             *     fecha inventada es peor que ninguna: si es lejana, el control de
+             *     vencimientos da por bueno cualquier producto para siempre; si es cercana,
+             *     llena la pantalla de alertas falsas. Con `null` las comprobaciones
+             *     simplemente no opinan, y la pantalla lo dice.
+             */
+            expiryDate: string | null;
             /** Format: date-time */
             receivedDate: string;
             supplierBatch: string;
             location: string;
             minimumStock: number;
+            /**
+             * @description Este lote concreto entró como muestra médica del laboratorio.
+             *
+             *     Se marca aquí y no solo en el medicamento porque del mismo producto puede
+             *     haber 100 unidades compradas y 20 que llegaron de muestra: es la entrada
+             *     la que viene de una vía o de otra, no el producto.
+             */
+            isMedicalSample: boolean;
             isActive: boolean;
             medication: components["schemas"]["Medication"];
             clinic: components["schemas"]["Clinic"];
@@ -4948,6 +4994,8 @@ export interface components {
             quantity: number;
             unitPrice: number;
             discount: number;
+            /** @description Motivo del descuento de esta línea; obligatorio si el descuento es > 0. */
+            discountReason: string | null;
             subtotal: number;
             /** Format: date-time */
             expiryDate: string;
@@ -5082,6 +5130,8 @@ export interface components {
             requiresPrescription?: boolean;
             isControlledSubstance?: boolean;
             controlledSubstanceSchedule?: string;
+            /** @description El producto solo llega como muestra médica del laboratorio. Informativo. */
+            isMedicalSample?: boolean;
         };
         UpdateMedicationDto: {
             isActive?: boolean;
@@ -5092,11 +5142,19 @@ export interface components {
             quantity: number;
             unitCost: number;
             sellingPrice: number;
-            expiryDate: string;
+            /**
+             * @description Opcional: hay stock que llega sin fecha de vencimiento a la vista (el
+             *     inventario en papel de la clínica no la trae). Omitirla registra "sin
+             *     fecha", que es la verdad; inventarse una haría que el control de
+             *     vencimientos mintiera en un sentido o en el otro.
+             */
+            expiryDate?: string;
             receivedDate: string;
             supplierBatch?: string;
             location?: string;
             minimumStock?: number;
+            /** @description Este lote entró como muestra médica, no comprado. Informativo. */
+            isMedicalSample?: boolean;
             clinicId: string;
         };
         UpdateMedicationStockDto: {
@@ -9277,6 +9335,7 @@ export interface operations {
                 limit: number;
                 status?: string;
                 paymentMethod?: string;
+                search?: string;
                 startDate?: string;
                 endDate?: string;
             };

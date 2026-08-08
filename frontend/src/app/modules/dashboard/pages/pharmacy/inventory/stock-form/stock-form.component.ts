@@ -102,9 +102,12 @@ export class StockFormComponent implements OnInit {
         quantity: [null, [Validators.required, Validators.min(1)]],
         unitCost: [null, [Validators.required, Validators.min(0.01)]],
         sellingPrice: [null, [Validators.required, Validators.min(0.01)]],
-        expiryDate: [null, Validators.required],
+        // Sin `required`: hay stock que llega sin vencimiento a la vista y
+        // obligar a una fecha solo consigue que se invente una.
+        expiryDate: [null],
         location: [''],
         minimumStock: [null, Validators.min(0)],
+        isMedicalSample: [false],
       },
       { validators: [sellingPriceValidator] },
     )
@@ -135,9 +138,11 @@ export class StockFormComponent implements OnInit {
           quantity: stock.quantity,
           unitCost: stock.unitCost,
           sellingPrice: stock.sellingPrice,
-          expiryDate: new Date(stock.expiryDate),
+          // Sin fecha el campo queda vacío, no en 1970.
+          expiryDate: stock.expiryDate ? new Date(stock.expiryDate) : null,
           location: stock.location || '',
           minimumStock: stock.minimumStock || null,
+          isMedicalSample: stock.isMedicalSample ?? false,
         })
         this.loading.set(false)
       },
@@ -166,10 +171,11 @@ export class StockFormComponent implements OnInit {
     }
 
     const formValue = this.stockForm.value
-    const expDate = new Date(formValue.expiryDate)
-    const today = new Date()
+    // Solo se valida si la pusieron: ausente significa "sin registrar", y
+    // `new Date(null)` daría 1970, que siempre es pasado y bloquearía el alta.
+    const expDate = formValue.expiryDate ? new Date(formValue.expiryDate) : null
 
-    if (expDate <= today) {
+    if (expDate && expDate <= new Date()) {
       this.alertService.error('Validación', 'La fecha de vencimiento debe ser futura')
       return
     }
@@ -189,13 +195,14 @@ export class StockFormComponent implements OnInit {
       quantity: Number(formValue.quantity) || 0,
       unitCost: Number(formValue.unitCost) || 0,
       sellingPrice: Number(formValue.sellingPrice) || 0,
-      expiryDate: expDate.toISOString().split('T')[0], // Solo fecha YYYY-MM-DD
+      expiryDate: expDate ? expDate.toISOString().split('T')[0] : undefined,
       receivedDate: new Date().toISOString().split('T')[0], // Solo fecha YYYY-MM-DD
       location: formValue.location || undefined,
       minimumStock:
         formValue.minimumStock != null && formValue.minimumStock !== ''
           ? Number(formValue.minimumStock)
           : undefined,
+      isMedicalSample: !!formValue.isMedicalSample,
     }
 
     this.loading.set(true)

@@ -109,6 +109,23 @@ export class Medication {
   @Column('text', { nullable: true })
   controlledSubstanceSchedule: string;
 
+  /**
+   * El producto llega a la clínica como muestra médica del laboratorio, no
+   * comprado a un proveedor.
+   *
+   * Es una etiqueta informativa, no un candado: en esta clínica las muestras
+   * se venden igual (el inventario de muestras lleva su propia columna de
+   * "vendidos"), así que marcarla no bloquea nada. Sirve para saber de dónde
+   * salió el stock y no confundir su margen con el de lo comprado.
+   *
+   * Va aquí para los productos que **solo** llegan por esa vía. Cuando el
+   * mismo producto entra por las dos, la marca que manda es la del lote
+   * (`MedicationStock.isMedicalSample`), porque es cada entrada la que viene de
+   * una u otra parte.
+   */
+  @Column('boolean', { default: false, name: 'is_medical_sample' })
+  isMedicalSample: boolean;
+
   @Column('boolean', { default: true })
   isActive: boolean;
 
@@ -146,8 +163,18 @@ export class MedicationStock {
   @Column('decimal', { precision: 10, scale: 2 })
   sellingPrice: number;
 
-  @Column('date')
-  expiryDate: Date;
+  /**
+   * Nulo = vencimiento sin registrar, que no es lo mismo que "no vence".
+   *
+   * Era obligatorio, y eso obligaba a inventarse una fecha para todo stock que
+   * llegara sin ella —el inventario en papel de la clínica no la trae—. Una
+   * fecha inventada es peor que ninguna: si es lejana, el control de
+   * vencimientos da por bueno cualquier producto para siempre; si es cercana,
+   * llena la pantalla de alertas falsas. Con `null` las comprobaciones
+   * simplemente no opinan, y la pantalla lo dice.
+   */
+  @Column('date', { nullable: true })
+  expiryDate: Date | null;
 
   @Column('date')
   receivedDate: Date;
@@ -160,6 +187,16 @@ export class MedicationStock {
 
   @Column('integer', { default: 10 })
   minimumStock: number;
+
+  /**
+   * Este lote concreto entró como muestra médica del laboratorio.
+   *
+   * Se marca aquí y no solo en el medicamento porque del mismo producto puede
+   * haber 100 unidades compradas y 20 que llegaron de muestra: es la entrada
+   * la que viene de una vía o de otra, no el producto.
+   */
+  @Column('boolean', { default: false, name: 'is_medical_sample' })
+  isMedicalSample: boolean;
 
   @Column('boolean', { default: true })
   isActive: boolean;
@@ -193,11 +230,19 @@ export class MedicationStock {
   }
 
   // Helper methods
+  //
+  // Los tres devuelven "no opino" cuando no hay fecha registrada. Sin esta
+  // guarda, `new Date(null)` da la época Unix (1970) y todo lote sin fecha
+  // saldría vencido; `new Date(undefined)` da `Invalid Date`, cuyas
+  // comparaciones son siempre falsas y cuya resta es NaN. Ninguna de las dos
+  // cosas es "no se sabe".
   isExpired(): boolean {
+    if (!this.expiryDate) return false;
     return new Date() > new Date(this.expiryDate);
   }
 
   isExpiringSoon(days: number = 30): boolean {
+    if (!this.expiryDate) return false;
     const today = new Date();
     const expiryDate = new Date(this.expiryDate);
     const diffTime = expiryDate.getTime() - today.getTime();
@@ -209,7 +254,9 @@ export class MedicationStock {
     return this.availableQuantity <= this.minimumStock;
   }
 
-  getDaysUntilExpiry(): number {
+  /** `null` cuando no hay fecha registrada — distinto de "vence hoy" (0). */
+  getDaysUntilExpiry(): number | null {
+    if (!this.expiryDate) return null;
     const today = new Date();
     const expiryDate = new Date(this.expiryDate);
     const diffTime = expiryDate.getTime() - today.getTime();

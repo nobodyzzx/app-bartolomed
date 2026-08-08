@@ -72,6 +72,11 @@ export class CreateMedicationDto {
   @IsOptional()
   @IsString()
   controlledSubstanceSchedule?: string;
+
+  /** El producto solo llega como muestra médica del laboratorio. Informativo. */
+  @IsOptional()
+  @IsBoolean()
+  isMedicalSample?: boolean;
 }
 
 export class UpdateMedicationDto extends PartialType(CreateMedicationDto) {
@@ -99,8 +104,15 @@ export class CreateMedicationStockDto {
   @Min(0)
   sellingPrice: number;
 
+  /**
+   * Opcional: hay stock que llega sin fecha de vencimiento a la vista (el
+   * inventario en papel de la clínica no la trae). Omitirla registra "sin
+   * fecha", que es la verdad; inventarse una haría que el control de
+   * vencimientos mintiera en un sentido o en el otro.
+   */
+  @IsOptional()
   @IsString()
-  expiryDate: string;
+  expiryDate?: string;
 
   @IsString()
   receivedDate: string;
@@ -117,6 +129,11 @@ export class CreateMedicationStockDto {
   @IsNumber()
   @Min(1)
   minimumStock?: number;
+
+  /** Este lote entró como muestra médica, no comprado. Informativo. */
+  @IsOptional()
+  @IsBoolean()
+  isMedicalSample?: boolean;
 
   @IsString()
   clinicId: string;

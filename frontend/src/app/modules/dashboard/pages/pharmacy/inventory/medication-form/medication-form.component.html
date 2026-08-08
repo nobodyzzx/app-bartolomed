@@ -77,6 +77,20 @@
             <input matInput formControlName="laboratorio" placeholder="Ej: ACME Labs" />
             <mat-hint>Opcional</mat-hint>
           </mat-form-field>
+
+          <!-- Para los productos que SOLO llegan como muestra. Cuando el mismo
+               producto entra comprado y de muestra, lo que se marca es el lote,
+               desde la pantalla de stock. -->
+          <div class="mt-4">
+            <mat-slide-toggle formControlName="esMuestraMedica" color="primary">
+              Es muestra médica
+            </mat-slide-toggle>
+            <p class="text-sm text-slate-500 mt-1 mb-0">
+              Actívalo si este producto solo llega como muestra del laboratorio.
+              Si además lo compras, deja esto apagado y marca el lote concreto al
+              registrar su stock.
+            </p>
+          </div>
         </div>
       </div>
 

@@ -128,11 +128,14 @@ export class InventoryService {
       quantity: Number(createStockDto.quantity),
       unitCost: Number(createStockDto.unitCost),
       sellingPrice: Number(createStockDto.sellingPrice),
-      expiryDate: new Date(createStockDto.expiryDate),
+      // Sin fecha se guarda `null` ("sin registrar"), no `new Date(undefined)`,
+      // que sería `Invalid Date` y revienta al persistir.
+      expiryDate: createStockDto.expiryDate ? new Date(createStockDto.expiryDate) : null,
       receivedDate: new Date(createStockDto.receivedDate),
       location: createStockDto.location || undefined,
       minimumStock: createStockDto.minimumStock !== undefined ? Number(createStockDto.minimumStock) : 10,
       supplierBatch: createStockDto.supplierBatch || undefined,
+      isMedicalSample: createStockDto.isMedicalSample ?? false,
       medication,
       clinic,
       availableQuantity: Number(createStockDto.quantity),
@@ -314,13 +317,17 @@ export class InventoryService {
         availableQuantity: dto.quantity,
         unitCost: Number(source.unitCost),
         sellingPrice: Number(source.sellingPrice),
-        expiryDate: new Date(source.expiryDate),
+        // El lote trasladado hereda el vencimiento del origen, incluido el
+        // "sin registrar": es el mismo producto físico cambiando de estante.
+        expiryDate: source.expiryDate ? new Date(source.expiryDate) : null,
         receivedDate: new Date(),
         supplierBatch: source.supplierBatch,
         location: dto.location ?? undefined,
         minimumStock: source.minimumStock,
         medication: source.medication,
         clinic: toClinic,
+        // También se hereda: trasladar una muestra no la convierte en comprada.
+        isMedicalSample: source.isMedicalSample,
         isActive: true,
       });
       const savedDest = await stockRepo.save(destStock);

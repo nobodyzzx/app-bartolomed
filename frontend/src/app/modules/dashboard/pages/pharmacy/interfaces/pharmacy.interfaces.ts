@@ -87,6 +87,8 @@ export interface Medication {
   requiresPrescription?: boolean
   isControlledSubstance?: boolean
   controlledSubstanceSchedule?: string
+  /** El producto solo llega como muestra médica del laboratorio. Informativo. */
+  isMedicalSample?: boolean
   isActive?: boolean
   createdAt?: string
   updatedAt?: string
@@ -112,6 +114,7 @@ export interface CreateMedicationDto {
   requiresPrescription?: boolean
   isControlledSubstance?: boolean
   controlledSubstanceSchedule?: string
+  isMedicalSample?: boolean
 }
 
 export interface UpdateMedicationDto extends Partial<CreateMedicationDto> {
@@ -133,11 +136,14 @@ export interface MedicationStock {
   availableQuantity?: number
   unitCost: number
   sellingPrice: number
-  expiryDate: string
+  /** Nulo/ausente = vencimiento sin registrar. NO significa que no venza. */
+  expiryDate?: string | null
   receivedDate: string
   supplierBatch?: string
   location?: string
   minimumStock?: number
+  /** Este lote entró como muestra médica, no comprado. Informativo. */
+  isMedicalSample?: boolean
   clinicId?: string
   clinic?: { id: string; name: string }
   isExpired?: boolean
@@ -152,11 +158,12 @@ export interface CreateMedicationStockDto {
   quantity: number
   unitCost: number
   sellingPrice: number
-  expiryDate: string
+  expiryDate?: string | null
   receivedDate: string
   supplierBatch?: string
   location?: string
   minimumStock?: number
+  isMedicalSample?: boolean
   clinicId: string
 }
 

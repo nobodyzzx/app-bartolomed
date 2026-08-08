@@ -143,6 +143,43 @@ describe('InventoryService', () => {
 
       expect(movementRepo.save).toHaveBeenCalled();
     });
+
+    it('sin fecha de vencimiento guarda null, no una fecha inválida', async () => {
+      const stock = makeMedicationStock();
+      clinicRepo.findOne!.mockResolvedValue(makeClinic());
+      medRepo.findOne!.mockResolvedValue(makeMedication());
+      stockRepo.create!.mockReturnValue(stock);
+      stockRepo.save!.mockResolvedValue(stock);
+      movementRepo.create!.mockReturnValue({});
+      movementRepo.save!.mockResolvedValue({});
+
+      await service.addStock(
+        { clinicId: 'clinic-1', medicationId: 'med-1', quantity: 10, unitCost: 5, sellingPrice: 15, batchNumber: 'B02', receivedDate: '2026-04-01' } as any,
+        'clinic-1',
+      );
+
+      // `new Date(undefined)` sería `Invalid Date` y reventaría al persistir.
+      expect(stockRepo.create).toHaveBeenCalledWith(expect.objectContaining({ expiryDate: null }));
+    });
+
+    it('propaga la marca de muestra médica al lote', async () => {
+      const stock = makeMedicationStock();
+      clinicRepo.findOne!.mockResolvedValue(makeClinic());
+      medRepo.findOne!.mockResolvedValue(makeMedication());
+      stockRepo.create!.mockReturnValue(stock);
+      stockRepo.save!.mockResolvedValue(stock);
+      movementRepo.create!.mockReturnValue({});
+      movementRepo.save!.mockResolvedValue({});
+
+      await service.addStock(
+        { clinicId: 'clinic-1', medicationId: 'med-1', quantity: 10, unitCost: 0, sellingPrice: 0, batchNumber: 'B03', receivedDate: '2026-04-01', isMedicalSample: true } as any,
+        'clinic-1',
+      );
+
+      expect(stockRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ isMedicalSample: true }),
+      );
+    });
   });
 
   // ─── findAllMedications ───────────────────────────────────────────────────

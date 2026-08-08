@@ -4527,6 +4527,14 @@
             }
           },
           {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "startDate",
             "required": false,
             "in": "query",
@@ -11123,6 +11131,10 @@
           "discountPercent": {
             "type": "number"
           },
+          "discountReason": {
+            "type": "string",
+            "description": "Obligatorio si `discountPercent` > 0; lo valida el servicio."
+          },
           "batchNumber": {
             "type": "string"
           },
@@ -11164,6 +11176,10 @@
           },
           "discountAmount": {
             "type": "number"
+          },
+          "discountReason": {
+            "type": "string",
+            "description": "Obligatorio si `discountAmount` > 0; lo valida el servicio."
           },
           "amountPaid": {
             "type": "number"
@@ -11371,6 +11387,24 @@
           "discount": {
             "type": "number"
           },
+          "discountReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Por qué se rebajó el precio y quién lo autorizó. Existen en `charges` desde\nel punto de cobro, pero la venta de farmacia solo guardaba el número: se\npodía descontar cualquier importe sin dejar rastro de la razón, que es\njusto lo que se necesita para revisar un descuento indebido después."
+          },
+          "discountAuthorizedBy": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              }
+            ]
+          },
+          "discountAuthorizedById": {
+            "type": "string",
+            "nullable": true
+          },
           "tax": {
             "type": "number"
           },
@@ -11431,6 +11465,9 @@
           "paymentMethod",
           "subtotal",
           "discount",
+          "discountReason",
+          "discountAuthorizedBy",
+          "discountAuthorizedById",
           "tax",
           "taxRate",
           "total",
@@ -11532,6 +11569,10 @@
           "controlledSubstanceSchedule": {
             "type": "string"
           },
+          "isMedicalSample": {
+            "type": "boolean",
+            "description": "El producto llega a la clínica como muestra médica del laboratorio, no\ncomprado a un proveedor.\n\nEs una etiqueta informativa, no un candado: en esta clínica las muestras\nse venden igual (el inventario de muestras lleva su propia columna de\n\"vendidos\"), así que marcarla no bloquea nada. Sirve para saber de dónde\nsalió el stock y no confundir su margen con el de lo comprado.\n\nVa aquí para los productos que **solo** llegan por esa vía. Cuando el\nmismo producto entra por las dos, la marca que manda es la del lote\n(`MedicationStock.isMedicalSample`), porque es cada entrada la que viene de\nuna u otra parte."
+          },
           "isActive": {
             "type": "boolean"
           },
@@ -11571,6 +11612,7 @@
           "requiresPrescription",
           "isControlledSubstance",
           "controlledSubstanceSchedule",
+          "isMedicalSample",
           "isActive",
           "stock",
           "createdAt",
@@ -11603,7 +11645,9 @@
           },
           "expiryDate": {
             "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "nullable": true,
+            "description": "Nulo = vencimiento sin registrar, que no es lo mismo que \"no vence\".\n\nEra obligatorio, y eso obligaba a inventarse una fecha para todo stock que\nllegara sin ella —el inventario en papel de la clínica no la trae—. Una\nfecha inventada es peor que ninguna: si es lejana, el control de\nvencimientos da por bueno cualquier producto para siempre; si es cercana,\nllena la pantalla de alertas falsas. Con `null` las comprobaciones\nsimplemente no opinan, y la pantalla lo dice."
           },
           "receivedDate": {
             "format": "date-time",
@@ -11617,6 +11661,10 @@
           },
           "minimumStock": {
             "type": "number"
+          },
+          "isMedicalSample": {
+            "type": "boolean",
+            "description": "Este lote concreto entró como muestra médica del laboratorio.\n\nSe marca aquí y no solo en el medicamento porque del mismo producto puede\nhaber 100 unidades compradas y 20 que llegaron de muestra: es la entrada\nla que viene de una vía o de otra, no el producto."
           },
           "isActive": {
             "type": "boolean"
@@ -11658,6 +11706,7 @@
           "supplierBatch",
           "location",
           "minimumStock",
+          "isMedicalSample",
           "isActive",
           "medication",
           "clinic",
@@ -11706,6 +11755,11 @@
           "discount": {
             "type": "number"
           },
+          "discountReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Motivo del descuento de esta línea; obligatorio si el descuento es > 0."
+          },
           "subtotal": {
             "type": "number"
           },
@@ -11738,6 +11792,7 @@
           "quantity",
           "unitPrice",
           "discount",
+          "discountReason",
           "subtotal",
           "expiryDate",
           "instructions",
@@ -12177,6 +12232,10 @@
           },
           "controlledSubstanceSchedule": {
             "type": "string"
+          },
+          "isMedicalSample": {
+            "type": "boolean",
+            "description": "El producto solo llega como muestra médica del laboratorio. Informativo."
           }
         },
         "required": [
@@ -12218,7 +12277,8 @@
             "minimum": 0
           },
           "expiryDate": {
-            "type": "string"
+            "type": "string",
+            "description": "Opcional: hay stock que llega sin fecha de vencimiento a la vista (el\ninventario en papel de la clínica no la trae). Omitirla registra \"sin\nfecha\", que es la verdad; inventarse una haría que el control de\nvencimientos mintiera en un sentido o en el otro."
           },
           "receivedDate": {
             "type": "string"
@@ -12233,6 +12293,10 @@
             "type": "number",
             "minimum": 1
           },
+          "isMedicalSample": {
+            "type": "boolean",
+            "description": "Este lote entró como muestra médica, no comprado. Informativo."
+          },
           "clinicId": {
             "type": "string"
           }
@@ -12243,7 +12307,6 @@
           "quantity",
           "unitCost",
           "sellingPrice",
-          "expiryDate",
           "receivedDate",
           "clinicId"
         ]

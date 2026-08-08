@@ -135,11 +135,31 @@ export class InventoryComponent implements OnInit, OnDestroy {
     return product.quantity <= (product.minimumStock || 0)
   }
 
+  /**
+   * Sin fecha registrada no se opina. `new Date(null)` daría 1970 y todo lote
+   * sin vencimiento saldría en rojo como si estuviera por caducar.
+   */
   isExpiring(product: MedicationStock): boolean {
+    if (!product.expiryDate) return false
     const today = new Date()
     const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
     const expirationDate = new Date(product.expiryDate)
     return expirationDate <= thirtyDaysFromNow
+  }
+
+  /** El vencimiento no está registrado: se muestra como tal, no como vacío. */
+  hasNoExpiry(product: MedicationStock): boolean {
+    return !product.expiryDate
+  }
+
+  /**
+   * Muestra médica. La marca del lote manda sobre la del producto: hay
+   * medicamentos que entran comprados y de muestra a la vez, y cada fila del
+   * inventario es un lote concreto. La del producto cubre a los que solo
+   * llegan por esa vía y por tanto no marcan lote a lote.
+   */
+  isSample(product: MedicationStock): boolean {
+    return !!(product.isMedicalSample || product.medication?.isMedicalSample)
   }
 
   createMedication(): void {

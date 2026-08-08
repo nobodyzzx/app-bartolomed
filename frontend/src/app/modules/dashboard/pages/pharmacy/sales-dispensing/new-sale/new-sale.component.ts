@@ -518,7 +518,9 @@ export class NewSaleComponent implements OnInit {
         discountPercent: Number(item.discountPercent) || 0,
         discountReason: item.discountReason?.trim() || undefined,
         batchNumber: item.medicationStock.batchNumber,
-        expiryDate: item.medicationStock.expiryDate,
+        // El lote puede no tener vencimiento registrado; se omite en vez de
+        // mandar null, que el DTO del backend no acepta.
+        expiryDate: item.medicationStock.expiryDate ?? undefined,
       })),
     }
 
