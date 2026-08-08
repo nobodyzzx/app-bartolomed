@@ -18,33 +18,36 @@
       }
     </app-page-header>
 
-    <!-- Stat cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <app-stat-card
-        label="Total Expedientes" [value]="stats.total" sublabel="Registros en el sistema"
-        icon="folder_shared" color="blue"
-        [active]="!filters.status && !filters.isEmergency" [clickable]="true"
-        (cardClick)="showAllRecords()"
-        />
-      <app-stat-card
-        label="Borradores" [value]="stats.drafts" sublabel="Pendientes de completar"
-        icon="edit_note" color="amber"
-        [active]="filters.status === RecordStatus.DRAFT" [clickable]="true"
-        (cardClick)="showDrafts()"
-        />
-      <app-stat-card
-        label="Completados" [value]="stats.completed" sublabel="Expedientes finalizados"
-        icon="check_circle" color="green"
-        [active]="filters.status === RecordStatus.COMPLETED" [clickable]="true"
-        (cardClick)="showCompleted()"
-        />
-      <app-stat-card
-        label="Emergencias" [value]="stats.emergencies" sublabel="Atención prioritaria"
-        icon="emergency" color="red"
-        [active]="!!filters.isEmergency" [clickable]="true"
-        (cardClick)="showEmergencies()"
-        />
-    </div>
+    <!-- Stat cards — solo para médico/admin: el endpoint de estadísticas está
+         reservado a ellos, y enfermería ve la lista sin este resumen. -->
+    @if (canWriteRecords) {
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <app-stat-card
+          label="Total Expedientes" [value]="stats.total" sublabel="Registros en el sistema"
+          icon="folder_shared" color="blue"
+          [active]="!filters.status && !filters.isEmergency" [clickable]="true"
+          (cardClick)="showAllRecords()"
+          />
+        <app-stat-card
+          label="Borradores" [value]="stats.drafts" sublabel="Pendientes de completar"
+          icon="edit_note" color="amber"
+          [active]="filters.status === RecordStatus.DRAFT" [clickable]="true"
+          (cardClick)="showDrafts()"
+          />
+        <app-stat-card
+          label="Completados" [value]="stats.completed" sublabel="Expedientes finalizados"
+          icon="check_circle" color="green"
+          [active]="filters.status === RecordStatus.COMPLETED" [clickable]="true"
+          (cardClick)="showCompleted()"
+          />
+        <app-stat-card
+          label="Emergencias" [value]="stats.emergencies" sublabel="Atención prioritaria"
+          icon="emergency" color="red"
+          [active]="!!filters.isEmergency" [clickable]="true"
+          (cardClick)="showEmergencies()"
+          />
+      </div>
+    }
 
     <!-- Tabla -->
     <div class="table-container">

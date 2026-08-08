@@ -18,13 +18,13 @@ export class PermissionsGuard implements CanActivate {
 
     if (!required || required.length === 0) return true;
     if (!user || !user.roles || user.roles.length === 0)
-      throw new ForbiddenException('Missing user or roles for permission check');
+      throw new ForbiddenException('Falta información de usuario o roles para verificar los permisos.');
 
     const userPerms = new Set(permissionsForRoles(user.roles));
     const ok = required.some((p: Permission) => userPerms.has(p));
 
     if (!ok) {
-      throw new ForbiddenException(`Missing required permission(s): ${required.join(', ')}`);
+      throw new ForbiddenException('No cuentas con los permisos necesarios para realizar esta acción.');
     }
     return true;
   }

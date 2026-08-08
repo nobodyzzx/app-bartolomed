@@ -58,7 +58,11 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.loadMedicalRecords()
-    this.loadStats()
+    // Las estadísticas están reservadas a médico/admin (el endpoint es
+    // @Auth(DOCTOR, ADMIN)). Enfermería ve la lista de expedientes pero no las
+    // tarjetas de resumen: no se piden, para no provocar un 403 que la pantalla
+    // mostraba como error. Ver `canWriteRecords`.
+    if (this.canWriteRecords) this.loadStats()
   }
 
   ngAfterViewInit(): void {

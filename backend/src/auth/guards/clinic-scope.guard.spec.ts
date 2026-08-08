@@ -65,13 +65,13 @@ describe('ClinicScopeGuard', () => {
   it('rechaza si no se puede resolver clinicId', async () => {
     const user: MockUser = { id: USER_ID, roles: [ValidRoles.DOCTOR], clinicIds: [CLINIC_A] };
     const ctx = buildContext(buildRequest(user));
-    await expect(guard.canActivate(ctx)).rejects.toThrow(/clinicId is required/);
+    await expect(guard.canActivate(ctx)).rejects.toThrow(/Falta la clínica/);
   });
 
   it('rechaza cross-tenant: clinicIds del JWT no incluye el clinic solicitado', async () => {
     const user: MockUser = { id: USER_ID, roles: [ValidRoles.DOCTOR], clinicIds: [CLINIC_A] };
     const ctx = buildContext(buildRequest(user, CLINIC_B));
-    await expect(guard.canActivate(ctx)).rejects.toThrow(/not member of this clinic/);
+    await expect(guard.canActivate(ctx)).rejects.toThrow(/no pertenece a esta clínica/);
     expect(userClinicRepo.findOne).not.toHaveBeenCalled();
   });
 
@@ -96,7 +96,7 @@ describe('ClinicScopeGuard', () => {
     userClinicRepo.findOne.mockResolvedValue(null);
     const user: MockUser = { id: USER_ID, roles: [ValidRoles.DOCTOR], clinicIds: [] };
     const ctx = buildContext(buildRequest(user, CLINIC_A));
-    await expect(guard.canActivate(ctx)).rejects.toThrow(/not member of this clinic/);
+    await expect(guard.canActivate(ctx)).rejects.toThrow(/no pertenece a esta clínica/);
   });
 
   it('exige roles de clínica si el handler los marca', async () => {
@@ -142,6 +142,6 @@ describe('ClinicScopeGuard', () => {
   it('NO acepta clinicId vía query string (vector cross-tenant)', async () => {
     const user: MockUser = { id: USER_ID, roles: [ValidRoles.DOCTOR], clinicIds: [CLINIC_A] };
     const ctx = buildContext({ user, params: {}, headers: {}, query: { clinicId: CLINIC_A } });
-    await expect(guard.canActivate(ctx)).rejects.toThrow(/clinicId is required/);
+    await expect(guard.canActivate(ctx)).rejects.toThrow(/Falta la clínica/);
   });
 });

@@ -42,7 +42,7 @@ describe('PermissionsGuard', () => {
   it('rechaza si user no tiene roles', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([Permission.PatientsRead]);
     const ctx = buildContext({ roles: [] });
-    expect(() => guard.canActivate(ctx)).toThrow(/Missing user or roles/);
+    expect(() => guard.canActivate(ctx)).toThrow(/Falta información de usuario o roles/);
   });
 
   it('SUPER_ADMIN tiene todos los permisos', () => {
@@ -60,7 +60,7 @@ describe('PermissionsGuard', () => {
   it('DOCTOR no puede gestionar usuarios', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([Permission.UsersManage]);
     const ctx = buildContext({ roles: [ValidRoles.DOCTOR] });
-    expect(() => guard.canActivate(ctx)).toThrow(/Missing required permission/);
+    expect(() => guard.canActivate(ctx)).toThrow(/permisos necesarios/);
   });
 
   it('match parcial: basta uno de los permisos requeridos', () => {
@@ -80,6 +80,6 @@ describe('PermissionsGuard', () => {
   it('rol desconocido no concede permisos', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([Permission.PatientsRead]);
     const ctx = buildContext({ roles: ['UNKNOWN_ROLE'] });
-    expect(() => guard.canActivate(ctx)).toThrow(/Missing required permission/);
+    expect(() => guard.canActivate(ctx)).toThrow(/permisos necesarios/);
   });
 });

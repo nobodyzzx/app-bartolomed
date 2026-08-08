@@ -17,13 +17,13 @@ export class ClinicScopeGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
     const user = req.user as User & { clinicIds?: string[] };
-    if (!user) throw new ForbiddenException('No user in request');
+    if (!user) throw new ForbiddenException('No hay usuario en la petición.');
 
     // SUPER_ADMIN siempre puede pasar
     if (user.roles?.includes(ValidRoles.SUPER_ADMIN)) return true;
 
     const clinicId = resolveClinicId(req);
-    if (!clinicId) throw new ForbiddenException('clinicId is required (param or header x-clinic-id)');
+    if (!clinicId) throw new ForbiddenException('Falta la clínica (parámetro o cabecera x-clinic-id).');
 
     // Bug real: desactivar una clínica no revocaba las sesiones ya
     // autenticadas de sus miembros — un JWT vigente (hasta 2h) seguía
@@ -48,7 +48,7 @@ export class ClinicScopeGuard implements CanActivate {
           where: { clinic: { id: clinicId }, user: { id: user.id } },
           relations: ['clinic', 'user'],
         });
-        if (!membership) throw new ForbiddenException('User is not member of this clinic');
+        if (!membership) throw new ForbiddenException('El usuario no pertenece a esta clínica.');
 
         const requiredClinicRoles =
           this.reflector.getAllAndOverride<string[]>(META_CLINIC_ROLES, [context.getHandler(), context.getClass()]) ||
@@ -59,7 +59,7 @@ export class ClinicScopeGuard implements CanActivate {
           throw new ForbiddenException(`User lacks required clinic roles: ${requiredClinicRoles.join(', ')}`);
         return true;
       }
-      throw new ForbiddenException('User is not member of this clinic');
+      throw new ForbiddenException('El usuario no pertenece a esta clínica.');
     }
 
     // Con clinicIds en el token: verificar roles de clínica sólo si se requieren
@@ -72,7 +72,7 @@ export class ClinicScopeGuard implements CanActivate {
     const membership = await this.dataSource.getRepository(UserClinic).findOne({
       where: { clinic: { id: clinicId }, user: { id: user.id } },
     });
-    if (!membership) throw new ForbiddenException('User is not member of this clinic');
+    if (!membership) throw new ForbiddenException('El usuario no pertenece a esta clínica.');
     const hasRole = membership.roles.some(r => requiredClinicRoles.includes(r));
     if (!hasRole) throw new ForbiddenException(`User lacks required clinic roles: ${requiredClinicRoles.join(', ')}`);
 

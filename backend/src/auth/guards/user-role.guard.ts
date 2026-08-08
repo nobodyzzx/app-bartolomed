@@ -18,7 +18,7 @@ export class UserRoleGuard implements CanActivate {
     const req = context.switchToHttp().getRequest();
     const user = req.user as User;
 
-    if (!user) throw new BadRequestException('User not found (request)');
+    if (!user) throw new BadRequestException('No se encontró el usuario en la petición.');
 
     // SUPER_ADMIN siempre pasa, sin importar los roles requeridos
     if (user.roles?.includes(ValidRoles.SUPER_ADMIN)) return true;
@@ -27,6 +27,6 @@ export class UserRoleGuard implements CanActivate {
       if (validRoles.includes(role as ValidRoles)) return true;
     }
 
-    throw new ForbiddenException(`You do not have the required role. Required: ${validRoles.join(', ')}`);
+    throw new ForbiddenException('No cuentas con el rol necesario para realizar esta acción.');
   }
 }

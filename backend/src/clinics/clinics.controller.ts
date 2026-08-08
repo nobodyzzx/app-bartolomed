@@ -70,7 +70,7 @@ export class ClinicsController {
   findOne(@GetUser() user: User, @Param('id', ParseUUIDPipe) id: string) {
     const visible = this.visibleClinicIds(user);
     if (visible !== undefined && !visible.includes(id)) {
-      throw new ForbiddenException('User is not member of this clinic');
+      throw new ForbiddenException('El usuario no pertenece a esta clínica.');
     }
     return this.clinicsService.findOne(id);
   }

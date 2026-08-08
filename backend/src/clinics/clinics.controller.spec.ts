@@ -89,7 +89,7 @@ describe('ClinicsController', () => {
     // así que hay que capturarlo de forma síncrona, no con `.rejects`.
     it('rechaza una clínica ajena sin llegar al service', () => {
       expect(() => controller.findOne(memberUser, 'clinic-9')).toThrow(
-        'User is not member of this clinic',
+        'El usuario no pertenece a esta clínica.',
       );
       expect(service.findOne).not.toHaveBeenCalled();
     });
