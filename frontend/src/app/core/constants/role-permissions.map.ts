@@ -42,6 +42,10 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
   ],
   [UserRoles.DOCTOR]: [
     Permission.PatientsRead,
+    // Espejo del backend: el médico registra y edita pacientes (decisión del
+    // 2026-08-08). Antes el mapa lo negaba mientras el backend sí lo permitía
+    // por rol.
+    Permission.PatientsWrite,
     Permission.RecordsRead,
     Permission.RecordsWrite,
     Permission.PrescriptionsRead,

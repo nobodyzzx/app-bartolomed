@@ -46,6 +46,11 @@ export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
   ],
   [ValidRoles.DOCTOR]: [
     Permission.PatientsRead,
+    // El médico registra y edita pacientes en la práctica —y el backend ya se lo
+    // permite por rol en POST/PATCH/DELETE de `patients`—, pero el permiso no
+    // estaba en el mapa: decía que no podía y sí podía. Explícito desde el
+    // 2026-08-08, misma decisión que se tomó con enfermería.
+    Permission.PatientsWrite,
     Permission.RecordsRead,
     Permission.RecordsWrite,
     Permission.PrescriptionsRead,
