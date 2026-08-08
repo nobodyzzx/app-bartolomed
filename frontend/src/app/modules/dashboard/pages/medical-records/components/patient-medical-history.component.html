@@ -148,7 +148,7 @@
               </div>
               <div>
                 <h2 class="text-xl font-bold text-slate-900 m-0 leading-tight">Filtros</h2>
-                <p class="text-sm text-slate-500 m-0">Refiná el historial por tipo, fecha o texto</p>
+                <p class="text-sm text-slate-500 m-0">Filtra el historial por tipo, fecha o texto</p>
               </div>
             </div>
 
@@ -451,7 +451,7 @@
                                   <span class="text-xs text-slate-500">
                                     Atendido por:
                                     <span class="font-medium text-slate-700"
-                                      >Dr(a). {{ record.doctor.firstName }} {{ record.doctor.lastName }}</span
+                                      >{{ doctorName(record) }}</span
                                       >
                                     </span>
                                   </div>

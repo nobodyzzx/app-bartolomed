@@ -65,9 +65,11 @@
         </div>
       }
       <!-- Encabezado de página -->
+      <!-- Sin permiso de escritura la pantalla es una consulta, no una edición:
+           anunciarla como "Editar" y no dejar guardar nada es engañoso. -->
       <app-page-header
-        [title]="isFollowUpMode ? 'Seguimiento Expediente Médico' : isEditMode ? 'Editar Expediente Médico' : 'Nuevo Expediente Médico'"
-        [subtitle]="isFollowUpMode ? 'Seguimiento de consulta anterior · Datos históricos protegidos' : isEditMode ? 'Modificar expediente clínico' : 'Crear expediente clínico'"
+        [title]="!canWrite ? 'Expediente Médico' : isFollowUpMode ? 'Seguimiento Expediente Médico' : isEditMode ? 'Editar Expediente Médico' : 'Nuevo Expediente Médico'"
+        [subtitle]="!canWrite ? 'Consulta del expediente clínico' : isFollowUpMode ? 'Seguimiento de consulta anterior · Datos históricos protegidos' : isEditMode ? 'Modificar expediente clínico' : 'Crear expediente clínico'"
         (back)="goBack()"
         >
         <button
@@ -144,7 +146,7 @@
                 [matAutocomplete]="autoPatient"
                 required aria-autocomplete="list"
                 />
-              @if (patientSearchCtrl.value && !isFollowUpMode) {
+              @if (patientSearchCtrl.value && !isFollowUpMode && canWrite) {
                 <button mat-icon-button matSuffix type="button" class="!mr-1"
                   (click)="clearPatientSelection()" aria-label="Limpiar selección de paciente">
                   <mat-icon>close</mat-icon>
@@ -187,7 +189,7 @@
                 [matAutocomplete]="autoDoctor"
                 required aria-autocomplete="list"
                 />
-              @if (doctorSearchCtrl.value) {
+              @if (doctorSearchCtrl.value && canWrite) {
                 <button mat-icon-button matSuffix type="button" class="!mr-1"
                   (click)="clearDoctorSelection()" aria-label="Limpiar selección de doctor">
                   <mat-icon>close</mat-icon>
@@ -877,16 +879,22 @@
       Barra de acciones
       ══════════════════════════════════════════════════ -->
       <div class="form-action-bar">
-        <button
-          type="button"
-          (click)="saveDraft()"
-          [disabled]="isSaving"
-          class="btn btn-ghost"
-          >
-          <span class="material-symbols-outlined msz-18 leading-none">save</span>
-          Guardar Borrador
-        </button>
-        <div class="flex items-center gap-3">
+        <!-- Guardar borrador y crear/actualizar solo para quien puede escribir:
+             a enfermería, que entra a ver el expediente, le acababan en 403. -->
+        @if (canWrite) {
+          <button
+            type="button"
+            (click)="saveDraft()"
+            [disabled]="isSaving"
+            class="btn btn-ghost"
+            >
+            <span class="material-symbols-outlined msz-18 leading-none">save</span>
+            Guardar Borrador
+          </button>
+        }
+        <!-- `ml-auto` cuando no hay botón a la izquierda: la barra es
+             `justify-between`, y con un solo hijo se iría al borde izquierdo. -->
+        <div class="flex items-center gap-3" [class.ml-auto]="!canWrite">
           <button
             type="button"
             (click)="printMedicalRecordSummary()"
@@ -903,20 +911,22 @@
             <span class="material-symbols-outlined msz-18 leading-none">print</span>
             Imprimir consentimiento
           </button>
-          <button
-            type="button"
-            (click)="onSubmit()"
-            [disabled]="isSaving"
-            class="btn btn-primary"
-            >
-            @if (isSaving) {
-              <span class="material-symbols-outlined msz-18 leading-none animate-spin">progress_activity</span>
-            }
-            @if (!isSaving) {
-              <span class="material-symbols-outlined msz-18 leading-none">{{ isEditMode ? 'update' : 'check_circle' }}</span>
-            }
-            {{ isSaving ? 'Guardando...' : isEditMode ? 'Actualizar Expediente' : 'Crear Expediente' }}
-          </button>
+          @if (canWrite) {
+            <button
+              type="button"
+              (click)="onSubmit()"
+              [disabled]="isSaving"
+              class="btn btn-primary"
+              >
+              @if (isSaving) {
+                <span class="material-symbols-outlined msz-18 leading-none animate-spin">progress_activity</span>
+              }
+              @if (!isSaving) {
+                <span class="material-symbols-outlined msz-18 leading-none">{{ isEditMode ? 'update' : 'check_circle' }}</span>
+              }
+              {{ isSaving ? 'Guardando...' : isEditMode ? 'Actualizar Expediente' : 'Crear Expediente' }}
+            </button>
+          }
         </div>
       </div>
     }

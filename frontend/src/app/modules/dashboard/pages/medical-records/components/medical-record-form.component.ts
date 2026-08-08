@@ -4,6 +4,7 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  inject,
   OnDestroy,
   OnInit,
 } from '@angular/core'
@@ -11,7 +12,9 @@ import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms'
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete'
 import { ErrorStateMatcher } from '@angular/material/core'
 import { ActivatedRoute, Router } from '@angular/router'
+import { Permission } from '@core/enums/permission.enum'
 import { AlertService } from '@core/services/alert.service'
+import { RoleStateService } from '@core/services/role-state.service'
 import { combineLatest, Observable, of, Subject } from 'rxjs'
 import { auditTime, catchError, map, startWith, takeUntil } from 'rxjs/operators'
 import { CanComponentDeactivate, confirmDiscardChanges } from '../../../../../core/guards/can-deactivate.guard'
@@ -87,6 +90,11 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
   private patientsList: Patient[] = []
   private doctorsList: ClinicalStaffMember[] = []
 
+  // Paciente y médico tal como vienen dentro del expediente cargado: son la
+  // fuente de verdad, por encima de las listas paginadas de los desplegables.
+  private recordPatient: Patient | null = null
+  private recordDoctor: ClinicalStaffMember | null = null
+
   // Enums for templates
   recordTypes = Object.values(RecordType)
   consentTypes = Object.values(ConsentType)
@@ -104,6 +112,19 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
   // Edit mode
   isEditMode = false
   recordId: string | null = null
+
+  private readonly roleState = inject(RoleStateService)
+
+  /**
+   * Quién puede *guardar*. La ruta de ver un expediente (`:id`) no lleva guard de
+   * escritura a propósito —enfermería tiene `RecordsRead` y debe poder abrirlo—,
+   * pero eso dejaba a la vista los botones de "Guardar Borrador" y "Actualizar
+   * Expediente", que para ella solo terminan en 403. Imprimir resumen y
+   * consentimiento sí son suyos, y siguen visibles.
+   */
+  get canWrite(): boolean {
+    return this.roleState.hasPermission(Permission.RecordsWrite)
+  }
 
   // Follow-up mode (to prevent editing historical data)
   isFollowUpMode = false
@@ -150,6 +171,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
   ngOnInit(): void {
     this.loadData()
     this.checkEditMode()
+    this.applyReadOnlyMode()
 
     // Capturar parámetros y decidir comportamiento del borrador en el mismo bloque
     this.route.queryParams.subscribe(params => {
@@ -382,6 +404,17 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
     return value
   }
 
+  /**
+   * El nombre de un médico vive en `personalInfo` y su tratamiento en
+   * `professionalInfo.title`: leer `doctor.firstName` daba "undefined undefined".
+   */
+  private formatDoctorName(doctor: any): string {
+    const fullName = `${doctor?.personalInfo?.firstName ?? ''} ${doctor?.personalInfo?.lastName ?? ''}`.trim()
+    if (!fullName) return 'Médico no registrado'
+    const title = doctor?.professionalInfo?.title?.trim()
+    return title ? `${title} ${fullName}` : fullName
+  }
+
   // Autocomplete: selección de paciente/doctor
   onPatientSelected(event: MatAutocompleteSelectedEvent) {
     const patient: Patient | null = event.option.value || null
@@ -414,6 +447,24 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
   scrollTo(elementId: string) {
     const el = document.getElementById(elementId)
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  /**
+   * Sin `RecordsWrite` la pantalla es de consulta: se bloquea todo el expediente
+   * clínico para que nadie escriba en campos que no tienen dónde guardarse.
+   *
+   * El consentimiento queda **fuera** a propósito: "Imprimir consentimiento" es una
+   * de las dos acciones que sí le corresponden a este rol, y para imprimirlo hay
+   * que poder llenar sus campos (procedimiento, fecha, quién firma). No se
+   * persiste nada, solo alimenta el PDF.
+   */
+  private applyReadOnlyMode(): void {
+    if (this.canWrite) return
+    this.patientInfoForm.disable({ emitEvent: false })
+    this.clinicalDataForm.disable({ emitEvent: false })
+    this.evaluationForm.disable({ emitEvent: false })
+    this.patientSearchCtrl.disable({ emitEvent: false })
+    this.doctorSearchCtrl.disable({ emitEvent: false })
   }
 
   private checkEditMode(): void {
@@ -516,7 +567,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
                 <div class="bg-blue-50 p-3 rounded-lg text-sm border border-blue-200">
                   <p class="font-semibold text-blue-900 mb-2">📋 Consulta Original</p>
                   <p><strong>Paciente:</strong> ${originalRecord.patient?.firstName} ${originalRecord.patient?.lastName}</p>
-                  <p><strong>Doctor anterior:</strong> Dr(a). ${originalRecord.doctor?.firstName} ${originalRecord.doctor?.lastName}</p>
+                  <p><strong>Doctor anterior:</strong> ${this.formatDoctorName((originalRecord as any).doctor)}</p>
                   <p><strong>Motivo:</strong> ${originalRecord.chiefComplaint}</p>
                   <p><strong>Diagnóstico previo:</strong> ${originalRecord.diagnosis || 'No especificado'}</p>
                 </div>
@@ -561,6 +612,15 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
     const patientId = record.patient?.id || record.patientId
     const doctorId = record.doctor?.id || record.doctorId
 
+    // El paciente y el médico del expediente se guardan desde el propio registro,
+    // que ya los trae completos. Resolverlos buscándolos en las listas de los
+    // desplegables no sirve: `patients.findAll()` devuelve solo la primera página
+    // (25 de 38), así que un expediente de un paciente de la página 2 dejaba el
+    // campo "Paciente" en blanco — y `printConsent()`, que usa el mismo lookup,
+    // generaba el consentimiento sin datos del paciente.
+    this.recordPatient = (record.patient as Patient) ?? null
+    this.recordDoctor = this.toClinicalStaffMember((record as any).doctor)
+
     // Poblar formularios con datos existentes
     this.patientInfoForm.patchValue({
       patientId: patientId,
@@ -569,6 +629,11 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
       isEmergency: record.isEmergency,
       chiefComplaint: record.chiefComplaint,
     })
+
+    // Ya se puede pintar el texto de los dos autocompletes: no hace falta esperar
+    // a que carguen las listas de los desplegables.
+    this.syncPatientSearchText()
+    this.syncDoctorSearchText()
 
     // Poblar datos clínicos (historia médica + signos vitales)
     this.clinicalDataForm.patchValue({
@@ -774,8 +839,9 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
 
     const consent: CreateConsentDto = {
       medicalRecordId,
-      patientId: this.patientInfoForm.value.patientId,
-      doctorId:  this.patientInfoForm.value.doctorId,
+      // getRawValue por el mismo motivo que en printMedicalRecordSummary().
+      patientId: this.patientInfoForm.getRawValue().patientId,
+      doctorId:  this.patientInfoForm.getRawValue().doctorId,
       type:        consentType,
       title:       titleMap[consentType] ?? 'Consentimiento informado',
       description: consentData.description || titleMap[consentType] || 'Consentimiento informado',
@@ -884,10 +950,13 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
     return getVitalSignIcon(this.clinicalDataForm.get(controlName))
   }
 
-  // Obtener el paciente seleccionado para mostrar información médica
+  // Obtener el paciente seleccionado para mostrar información médica.
+  // Primero el que trae el expediente cargado (siempre está), y solo si no
+  // coincide se busca en la lista del desplegable, que va paginada.
   getSelectedPatient(): Patient | undefined {
     const patientId = this.patientInfoForm.get('patientId')?.value
     if (!patientId) return undefined
+    if (this.recordPatient && this.recordPatient.id === patientId) return this.recordPatient
     return this.patientsList.find(p => p.id === patientId)
   }
 
@@ -895,7 +964,36 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
   getSelectedDoctor(): ClinicalStaffMember | undefined {
     const doctorId = this.patientInfoForm.get('doctorId')?.value
     if (!doctorId) return undefined
+    if (this.recordDoctor && this.recordDoctor.id === doctorId) return this.recordDoctor
     return this.doctorsList.find(d => d.id === doctorId)
+  }
+
+  /**
+   * El `doctor` de un expediente es un `User` completo; el desplegable trabaja con
+   * `ClinicalStaffMember`. Se queda con los campos que ambos comparten.
+   *
+   * Devuelve `null` si el médico llega sin nombre —endpoint que no cargó la
+   * relación `personalInfo`— para que `getSelectedDoctor()` caiga en la lista del
+   * desplegable en vez de quedarse con un registro vacío que pinta el campo en
+   * blanco.
+   */
+  private toClinicalStaffMember(doctor: any): ClinicalStaffMember | null {
+    if (!doctor?.id) return null
+    const hasName = !!(doctor.personalInfo?.firstName || doctor.personalInfo?.lastName)
+    if (!hasName) return null
+    return {
+      id: doctor.id,
+      roles: Array.isArray(doctor.roles) ? doctor.roles : [],
+      personalInfo: {
+        firstName: doctor.personalInfo?.firstName ?? '',
+        lastName: doctor.personalInfo?.lastName ?? '',
+      },
+      professionalInfo: {
+        title: doctor.professionalInfo?.title ?? '',
+        role: doctor.professionalInfo?.role ?? null,
+        specialization: doctor.professionalInfo?.specialization ?? '',
+      },
+    }
   }
 
   patientDisplay(p?: Patient | null): string {
@@ -959,8 +1057,13 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
   printMedicalRecordSummary(): void {
     const patient  = this.getSelectedPatient()
     const doctor   = this.getSelectedDoctor()
-    const clinical = this.clinicalDataForm.value
-    const evalData = this.evaluationForm.value
+    // getRawValue y no `.value`: en modo consulta los grupos van deshabilitados, y
+    // `.value` omite los controles deshabilitados cuando el grupo padre sigue
+    // habilitado. Hoy se deshabilita el grupo entero (y entonces `.value` sí los
+    // incluye), pero basta con que alguien deshabilite un campo suelto para que el
+    // resumen empiece a salir con huecos, en silencio.
+    const clinical = this.clinicalDataForm.getRawValue()
+    const evalData = this.evaluationForm.getRawValue()
 
     const dto = {
       patient: {

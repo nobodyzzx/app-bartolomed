@@ -180,6 +180,11 @@ export class MedicalRecordsService {
       .createQueryBuilder('mr')
       .leftJoinAndSelect('mr.patient', 'patient')
       .leftJoinAndSelect('mr.doctor', 'doctor')
+      // El nombre del médico vive en personalInfo: sin estos joins el expediente
+      // llegaba con el médico anónimo (solo id y email), como ya pasaba en findAll
+      // antes de añadirlos ahí.
+      .leftJoinAndSelect('doctor.personalInfo', 'doctorPersonalInfo')
+      .leftJoinAndSelect('doctor.professionalInfo', 'doctorProfessionalInfo')
       .leftJoinAndSelect('mr.createdBy', 'createdBy')
       .leftJoinAndSelect('mr.updatedBy', 'updatedBy')
       .where('mr.id = :id AND mr.isActive = true', { id })
@@ -199,6 +204,8 @@ export class MedicalRecordsService {
       .createQueryBuilder('medicalRecord')
       .leftJoinAndSelect('medicalRecord.patient', 'patient')
       .leftJoinAndSelect('medicalRecord.doctor', 'doctor')
+      .leftJoinAndSelect('doctor.personalInfo', 'doctorPersonalInfo')
+      .leftJoinAndSelect('doctor.professionalInfo', 'doctorProfessionalInfo')
       .leftJoinAndSelect('medicalRecord.createdBy', 'createdBy')
       .leftJoinAndSelect('medicalRecord.updatedBy', 'updatedBy')
       .where('medicalRecord.isActive = :isActive', { isActive: true })
@@ -215,6 +222,8 @@ export class MedicalRecordsService {
       .createQueryBuilder('medicalRecord')
       .leftJoinAndSelect('medicalRecord.patient', 'patient')
       .leftJoinAndSelect('medicalRecord.doctor', 'doctor')
+      .leftJoinAndSelect('doctor.personalInfo', 'doctorPersonalInfo')
+      .leftJoinAndSelect('doctor.professionalInfo', 'doctorProfessionalInfo')
       .leftJoinAndSelect('medicalRecord.createdBy', 'createdBy')
       .leftJoinAndSelect('medicalRecord.updatedBy', 'updatedBy')
       .where('medicalRecord.isActive = :isActive', { isActive: true })

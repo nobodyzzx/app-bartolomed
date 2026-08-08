@@ -306,6 +306,19 @@ export class PatientMedicalHistoryComponent implements OnInit, OnDestroy {
     })
   }
 
+  /**
+   * "Atendido por": el nombre del médico vive en `doctor.personalInfo` y su
+   * tratamiento en `professionalInfo.title`. La plantilla leía `doctor.firstName`,
+   * que no existe en la entidad User, así que salía un "Dr(a)." sin nombre.
+   */
+  doctorName(record: MedicalRecord): string {
+    const doctor = (record as any).doctor
+    const fullName = `${doctor?.personalInfo?.firstName ?? ''} ${doctor?.personalInfo?.lastName ?? ''}`.trim()
+    if (!fullName) return 'Médico no registrado'
+    const title = doctor?.professionalInfo?.title?.trim()
+    return title ? `${title} ${fullName}` : fullName
+  }
+
   clearFilters() {
     this.filterType = 'ALL'
     this.filterDateFromControl.setValue(null)
