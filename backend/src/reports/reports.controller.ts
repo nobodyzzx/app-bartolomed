@@ -57,14 +57,20 @@ export class ReportsController {
     return this.reportsService.getDashboardReport(this.scope(filters, req));
   }
 
+  // Enfermería entra acá: tiene `ReportsMedical` en el mapa de permisos y la ruta
+  // `/dashboard/reports` la lista en `allowedRoles`, pero el rol faltaba en estos dos
+  // handlers, que son los únicos que pueblan la sección "Clínica". Resultado: la
+  // pantalla cargaba, pedía los dos endpoints, recibía 403 en ambos y se quedaba con
+  // los contadores en "—" y los gráficos en esqueleto para siempre. Son agregados
+  // clínicos sin datos financieros ni de paciente identificable.
   @Get('patients/demographics')
-  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
   getPatientDemographicsReport(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.reportsService.getPatientDemographicsReport(this.scope(filters, req));
   }
 
   @Get('appointments/statistics')
-  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
   getAppointmentStatisticsReport(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.reportsService.getAppointmentStatisticsReport(this.scope(filters, req));
   }
@@ -76,7 +82,7 @@ export class ReportsController {
   }
 
   @Get('medical-records')
-  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
   getMedicalRecordsReport(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.reportsService.getMedicalRecordsReport(this.scope(filters, req));
   }
@@ -804,7 +810,7 @@ export class ReportsController {
    * GET /api/reports/export/pdf/demographics
    */
   @Get('export/pdf/demographics')
-  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
   async exportDemographicsPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.reportsService.getPatientDemographicsReport(this.scope(filters, req));
     const buf = await this.reportsPdfService.generateDemographicsPdf(data);
@@ -834,7 +840,7 @@ export class ReportsController {
    * GET /api/reports/export/pdf/appointments
    */
   @Get('export/pdf/appointments')
-  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
   async exportAppointmentsPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.reportsService.getAppointmentStatisticsReport(this.scope(filters, req));
     const buf = await this.reportsPdfService.generateAppointmentsPdf(data);
@@ -849,7 +855,7 @@ export class ReportsController {
    * GET /api/reports/export/pdf/medical-records
    */
   @Get('export/pdf/medical-records')
-  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
   async exportMedicalRecordsPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.reportsService.getMedicalRecordsReport(this.scope(filters, req));
     const buf = await this.reportsPdfService.generateMedicalRecordsPdf(data);
