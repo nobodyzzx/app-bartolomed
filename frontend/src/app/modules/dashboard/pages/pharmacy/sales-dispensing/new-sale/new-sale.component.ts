@@ -6,39 +6,30 @@ import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { ClinicContextService } from '../../../../../clinics/services/clinic-context.service'
 import { Patient } from '../../../patients/interfaces/patient.interface'
-import { PatientsService } from '../../../patients/services/patients.service'
-import { PrescriptionsService } from '../../../prescriptions/prescriptions.service'
 import { CreateSaleDto, MedicationStock, PaymentMethod, PrescriptionListItem } from '../../interfaces/pharmacy.interfaces'
 import { InventoryService } from '../../services/inventory.service'
 import { SalesDispensingService } from '../../services/sales-dispensing.service'
 import { PAYMENT_METHODS } from '../../../checkout/checkout.service'
 import { CartItem, SaleCartService } from './sale-cart.service'
+import { SalePatientService } from './sale-patient.service'
 
 @Component({
     selector: 'app-new-sale',
     templateUrl: './new-sale.component.html',
-    providers: [SaleCartService],
+    providers: [SaleCartService, SalePatientService],
     standalone: false
 })
 export class NewSaleComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
   readonly cart = inject(SaleCartService)
+  readonly patient = inject(SalePatientService)
 
   @ViewChild('patientInput') patientInput?: ElementRef<HTMLInputElement>
   form: FormGroup
   loading = signal(false)
   loadingStocks = signal(false)
-  loadingPatients = signal(false)
 
-  selectedPatientName = signal<string>('')
-  patientSearchTerm = signal<string>('')
-  patientOptions = signal<Patient[]>([])
-  patientSearchLoading = signal<boolean>(false)
-  private patientSearchTimer?: ReturnType<typeof setTimeout>
 
-  prescriptions = signal<PrescriptionListItem[]>([])
-  loadingPrescriptions = signal<boolean>(false)
-  selectedPrescriptionId = signal<string | null>(null)
 
   // Mostrar nombre del medicamento en el input del autocomplete en lugar del UUID
   stockDisplayWithFn = (stockId: string | null): string => {
@@ -53,9 +44,9 @@ export class NewSaleComponent implements OnInit {
     if (typeof value !== 'string') {
       return `${value.firstName || ''} ${value.lastName || ''}`.trim()
     }
-    const p = this.patientOptions().find(x => x.id === value)
+    const p = this.patient.options().find(x => x.id === value)
     if (p) return `${p.firstName || ''} ${p.lastName || ''}`.trim()
-    return this.selectedPatientName() || ''
+    return this.patient.selectedName() || ''
   }
 
   /**
@@ -74,9 +65,11 @@ export class NewSaleComponent implements OnInit {
   }))
 
   // Computed totals (dependen de form + cart)
-  taxRate = computed(() => this.form?.get('taxRate')?.value || 0.13)
+  // Sin IVA: el precio del tarifario es el precio final (decisión del 2026-08-08).
+  // Antes la pantalla calculaba el total así —sin impuesto— pero mandaba
+  // `taxRate: 0.13` al backend, que sí lo aplicaba: se cobraba 20,00 y la venta
+  // quedaba registrada en 22,60.
   discountAmount = computed(() => this.form?.get('discountAmount')?.value || 0)
-  taxAmount = computed(() => 0) // desactivado temporalmente
   totalAmount = computed(() => this.cart.subtotal() - this.discountAmount())
   amountPaid = signal(0)
   changeAmount = computed(() => {
@@ -92,7 +85,7 @@ export class NewSaleComponent implements OnInit {
    * en vez de dejar el formulario en un estado que el servidor rechazará.
    */
   get canChargeToAccount(): boolean {
-    return !!this.form?.get('patientId')?.value && !!this.selectedPrescriptionId()
+    return !!this.form?.get('patientId')?.value && !!this.patient.selectedPrescriptionId()
   }
 
   get chargeToAccount(): boolean {
@@ -131,14 +124,11 @@ export class NewSaleComponent implements OnInit {
     private alert: AlertService,
     private router: Router,
     private location: Location,
-    private patientsService: PatientsService,
-    private prescriptionsService: PrescriptionsService,
   ) {
     this.form = this.fb.group({
       patientId: [''],
       chargeToAccount: [false],
       paymentMethod: [PaymentMethod.CASH, Validators.required],
-      taxRate: [0.13, [Validators.required, Validators.min(0), Validators.max(1)]],
       discountAmount: [0, [Validators.min(0)]],
       amountPaid: [0, [Validators.required, Validators.min(0)]],
       notes: [''],
@@ -184,107 +174,41 @@ export class NewSaleComponent implements OnInit {
     this.syncChargeToAccountControl()
   }
 
+  // Paciente y recetas viven en `SalePatientService`; aquí solo queda enlazar la
+  // selección con el formulario y con el carrito.
   onPatientInput(value: string): void {
-    this.patientSearchTerm.set(value)
-    if (this.patientSearchTimer) clearTimeout(this.patientSearchTimer)
-    const term = (value || '').trim()
-    if (!term || term.length < 2) {
-      this.patientOptions.set([])
-      return
-    }
-    this.patientSearchTimer = setTimeout(() => {
-      const clinicId = this.clinicContext.clinicId || undefined
-      this.patientSearchLoading.set(true)
-      this.patientsService.searchPatients(term, clinicId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: patients => {
-          this.patientOptions.set(patients || [])
-          this.patientSearchLoading.set(false)
-        },
-        error: () => {
-          this.patientOptions.set([])
-          this.patientSearchLoading.set(false)
-        },
-      })
-    }, 250)
+    this.patient.search(value)
   }
 
   onPatientSelected(id: string): void {
+    this.patient.select(id)
+    this.form.get('patientId')?.setValue(id || '')
     if (!id) {
-      this.form.get('patientId')?.setValue('')
-      this.selectedPatientName.set('')
-      this.prescriptions.set([])
-      this.selectedPrescriptionId.set(null)
+      this.syncChargeToAccountControl()
       setTimeout(() => this.patientInput?.nativeElement.focus(), 0)
-      return
     }
-    this.form.get('patientId')?.setValue(id)
-    const found = this.patientOptions().find(p => p.id === id)
-    if (found) {
-      this.selectedPatientName.set(`${found.firstName || ''} ${found.lastName || ''}`.trim())
-      this.loadPatientPrescriptions(id)
-      return
-    }
-    this.loadingPatients.set(true)
-    this.patientsService.getPatientById(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: patient => {
-        this.selectedPatientName.set(`${patient.firstName || ''} ${patient.lastName || ''}`.trim())
-        this.loadingPatients.set(false)
-        this.loadPatientPrescriptions(id)
-      },
-      error: () => {
-        this.selectedPatientName.set('')
-        this.loadingPatients.set(false)
-        this.prescriptions.set([])
-      },
-    })
   }
 
   clearPatient(): void {
+    this.patient.clear()
     this.form.get('patientId')?.setValue('')
-    this.selectedPatientName.set('')
-    this.prescriptions.set([])
-    this.selectedPrescriptionId.set(null)
     this.syncChargeToAccountControl()
     setTimeout(() => this.patientInput?.nativeElement.focus(), 0)
-  }
-
-  loadPatientPrescriptions(patientId: string): void {
-    if (!patientId) {
-      this.prescriptions.set([])
-      return
-    }
-    const clinicId = this.clinicContext.clinicId || undefined
-    this.loadingPrescriptions.set(true)
-    this.prescriptionsService.list(1, 50, { patientId, clinicId, status: 'active' }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (response: any) => {
-        const items = response?.items || []
-        const now = new Date()
-        this.prescriptions.set(
-          items.filter((p: PrescriptionListItem) => {
-            if (!p.expiryDate) return true
-            return new Date(p.expiryDate) >= now
-          }),
-        )
-        this.loadingPrescriptions.set(false)
-      },
-      error: () => {
-        this.prescriptions.set([])
-        this.loadingPrescriptions.set(false)
-      },
-    })
   }
 
   onPrescriptionSelected(prescriptionId: string): void {
     if (!prescriptionId) {
       this.form.patchValue({ prescriptionNumber: '' })
-      this.selectedPrescriptionId.set(null)
+      this.patient.selectPrescription(null)
       this.syncChargeToAccountControl()
       return
     }
-    const pr = this.prescriptions().find(p => p.id === prescriptionId)
+
+    const pr = this.patient.findPrescription(prescriptionId)
     if (!pr) return
+
     this.form.patchValue({ prescriptionNumber: pr.prescriptionNumber || '' })
-    this.selectedPrescriptionId.set(pr.id)
+    this.patient.selectPrescription(pr.id)
     this.syncChargeToAccountControl()
     this.applyPrescription(pr)
   }
@@ -526,7 +450,6 @@ export class NewSaleComponent implements OnInit {
             <p class="mb-1"><strong>Productos:</strong> ${this.cart.items().length} (${this.cart.totalUnits()} unidades)</p>
             <p class="mb-1"><strong>Subtotal:</strong> Bs ${this.cart.subtotal().toFixed(2)}</p>
             ${this.discountAmount() > 0 ? `<p class="mb-1"><strong>Descuento:</strong> -Bs ${this.discountAmount().toFixed(2)}</p>` : ''}
-            <p class="mb-1"><strong>Impuestos:</strong> Bs ${this.taxAmount().toFixed(2)}</p>
             <p class="text-lg"><strong>Total:</strong> Bs ${total.toFixed(2)}</p>
           </div>
           ${
@@ -547,15 +470,14 @@ export class NewSaleComponent implements OnInit {
 
     const createDto: CreateSaleDto = {
       patientId: this.form.value.patientId || undefined,
-      patientName: this.selectedPatientName() || undefined,
+      patientName: this.patient.selectedName() || undefined,
       clinicId: this.clinicContext.clinicId!,
       paymentMethod: this.form.value.paymentMethod,
-      taxRate: Number(this.form.value.taxRate),
       discountAmount: Number(this.form.value.discountAmount),
       amountPaid: Number(this.form.value.amountPaid),
       notes: this.form.value.notes,
       prescriptionNumber: this.form.value.prescriptionNumber,
-      prescriptionId: this.selectedPrescriptionId() || undefined,
+      prescriptionId: this.patient.selectedPrescriptionId() || undefined,
       chargeToAccount: this.chargeToAccount,
       items: this.cart.items().map((item: CartItem) => ({
         medicationStockId: item.medicationStock.id,

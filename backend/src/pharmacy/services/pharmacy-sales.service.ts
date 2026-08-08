@@ -105,9 +105,16 @@ export class PharmacySalesService {
     });
 
     const discountAmount = createPharmacySaleDto.discountAmount || 0;
-    const taxRate = createPharmacySaleDto.taxRate || 0.13; // Default 13% tax
-    const taxAmount = (subtotal - discountAmount) * taxRate;
-    const totalAmount = subtotal - discountAmount + taxAmount;
+    // Sin IVA: el precio del tarifario ya es el precio final (decisión del
+    // 2026-08-08). Se aplicaba un 13% por defecto que la pantalla NO mostraba
+    // —su total era `subtotal - descuento`—, así que el farmacéutico cobraba una
+    // cifra y la venta se registraba con otra un 13% mayor: la caja no cuadraba y
+    // el cargo "a cuenta" salía con un impuesto que nadie cobró.
+    // `taxRate` sigue viniendo en el DTO y en la columna por las ventas
+    // históricas, pero ya no se aplica.
+    const taxRate = 0;
+    const taxAmount = 0;
+    const totalAmount = subtotal - discountAmount;
 
     const changeAmount = createPharmacySaleDto.amountPaid
       ? Math.max(0, createPharmacySaleDto.amountPaid - totalAmount)
@@ -394,7 +401,9 @@ export class PharmacySalesService {
       // 0.13 hardcodeado en vez de la tasa con la que se creó la venta
       // (ej. una venta exenta con taxRate: 0 quedaba recalculada al 13% al
       // editar sus ítems). taxRate ahora se persiste en create().
-      const tax = (subtotal - discount) * Number(pharmacySale.taxRate ?? 0.13);
+      // Respeta la tasa guardada en la venta: las históricas llevan 13% y hay que
+      // recalcularlas con la suya, no con la política actual (0%).
+      const tax = (subtotal - discount) * Number(pharmacySale.taxRate ?? 0);
       const total = subtotal - discount + tax;
       const change = pharmacySale.amountPaid ? Math.max(0, pharmacySale.amountPaid - total) : 0;
 

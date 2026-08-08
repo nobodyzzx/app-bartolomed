@@ -215,15 +215,15 @@
                     (optionSelected)="onPatientSelected($event.option.value)"
                     >
                     <mat-option [value]="''">Venta genérica (sin paciente)</mat-option>
-                    @for (p of patientOptions(); track p) {
+                    @for (p of patient.options(); track p) {
                       <mat-option [value]="p.id">
                         {{ p.firstName }} {{ p.lastName }} — {{ p.documentNumber }}
                       </mat-option>
                     }
-                    @if (patientSearchLoading()) {
+                    @if (patient.searching()) {
                       <mat-option disabled>Buscando...</mat-option>
                     }
-                    @if (!patientSearchLoading() && patientOptions().length === 0 && patientSearchTerm().length >= 2) {
+                    @if (!patient.searching() && patient.options().length === 0 && patient.searchTerm().length >= 2) {
                       <mat-option
                         disabled
                       >Sin resultados</mat-option>
@@ -232,16 +232,16 @@
                   <mat-hint>Dejar vacío para venta genérica</mat-hint>
                 </mat-form-field>
 
-                @if (loadingPatients()) {
+                @if (patient.loadingPatient()) {
                   <div class="text-sm text-slate-600 flex items-center gap-2">
                     <span class="material-symbols-outlined">hourglass_top</span>
                     Cargando paciente...
                   </div>
-                } @else if (selectedPatientName()) {
+                } @else if (patient.selectedName()) {
                   <div class="flex items-center">
                     <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                       <span class="material-symbols-outlined text-base">person</span>
-                      <span class="text-sm font-medium">{{ selectedPatientName() }}</span>
+                      <span class="text-sm font-medium">{{ patient.selectedName() }}</span>
                       <button
                         type="button"
                         (click)="clearPatient()"
@@ -259,11 +259,11 @@
                   <mat-label>Receta (opcional)</mat-label>
                   <mat-icon matPrefix class="text-blue-400">receipt_long</mat-icon>
                   <mat-select
-                    [disabled]="!form.get('patientId')?.value || prescriptions().length === 0"
+                    [disabled]="!form.get('patientId')?.value || patient.prescriptions().length === 0"
                     (selectionChange)="onPrescriptionSelected($event.value)"
                     >
                     <mat-option value="">Sin receta</mat-option>
-                    @for (pr of prescriptions(); track pr.id) {
+                    @for (pr of patient.prescriptions(); track pr.id) {
                       <mat-option [value]="pr.id">
                         Receta #{{ pr.prescriptionNumber || pr.id.slice(0, 8) }} — {{ pr.prescriptionDate | date: 'dd/MM/yyyy' : 'UTC' }}
                       </mat-option>
@@ -271,8 +271,8 @@
                   </mat-select>
                   <mat-hint>
                     @if (!form.get('patientId')?.value) { Seleccione un paciente primero }
-                      @else if (loadingPrescriptions()) { Cargando recetas... }
-                      @else if (prescriptions().length === 0) { Sin recetas activas }
+                      @else if (patient.loadingPrescriptions()) { Cargando recetas... }
+                      @else if (patient.prescriptions().length === 0) { Sin recetas activas }
                     </mat-hint>
                   </mat-form-field>
 

@@ -268,13 +268,31 @@ describe('PharmacySalesService', () => {
 
     it('el cambio es 0 cuando el pago es exacto', async () => {
       setupHappyPath();
-      // subtotal = 5 × 25.5 = 127.5; tax 13% = 16.575; total = 144.075
-      const dto = { ...baseSaleDto(), amountPaid: 144.075 };
+      // Sin IVA: subtotal = 5 × 25.5 = 127.5 y el total es ese mismo.
+      const dto = { ...baseSaleDto(), amountPaid: 127.5 };
 
       await service.create(dto as any, 'user-1', 'clinic-1');
 
       const savedSaleCall = saleRepo.save!.mock.calls[0][0];
       expect(savedSaleCall.change).toBeCloseTo(0);
+    });
+
+    /**
+     * La pantalla mostraba `subtotal - descuento` como total mientras el backend
+     * añadía un 13% por defecto: el farmacéutico cobraba 20,00 y la venta quedaba
+     * registrada en 22,60. El precio del tarifario es el precio final.
+     */
+    it('no aplica IVA: el total es subtotal menos descuento', async () => {
+      setupHappyPath();
+      const dto = { ...baseSaleDto(), taxRate: 0.13, discountAmount: 7.5 };
+
+      await service.create(dto as any, 'user-1', 'clinic-1');
+
+      const saved = saleRepo.save!.mock.calls[0][0];
+      expect(saved.subtotal).toBeCloseTo(127.5);
+      expect(saved.tax).toBe(0);
+      expect(saved.taxRate).toBe(0);
+      expect(saved.total).toBeCloseTo(120);
     });
 
     it('subtotal de múltiples ítems se suma correctamente', async () => {
