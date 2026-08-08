@@ -7,6 +7,22 @@ import { ClinicContextService } from '../../../../clinics/services/clinic-contex
 import { MedicationStock } from '../interfaces/pharmacy.interfaces'
 import { InventoryService } from '../services/inventory.service'
 
+/**
+ * El inventario se trae entero: el buscador filtra en cliente y las tarjetas de
+ * resumen se calculan sobre lo cargado, así que paginar aquí no escondería una
+ * página, escondería productos del buscador y falsearía el valor total. San
+ * Bartolomé ronda los 475 lotes.
+ */
+const INVENTORY_PAGE_SIZE = 2000
+
+/**
+ * Filas pintadas a la vez. Se carga el inventario entero —el buscador filtra en
+ * cliente y el resumen se calcula sobre todo— pero se dibuja de a poco: 475
+ * filas, cada una con sus tooltips y sus cinco llamadas de plantilla, bastan
+ * para colgar el navegador.
+ */
+const PAGE_SIZE = 50
+
 @Component({
     selector: 'app-inventory',
     templateUrl: './inventory.component.html',
@@ -36,6 +52,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
 
   setStatFilter(filter: 'all' | 'low' | 'expiring'): void {
     this.statFilter.set(filter)
+    this.refreshView()
   }
 
   importOpen = signal(false)
@@ -66,6 +83,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
       .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(value => {
         this.searchTerm = (value || '').trim()
+        this.refreshView()
       })
   }
 
@@ -91,10 +109,16 @@ export class InventoryComponent implements OnInit, OnDestroy {
 
   loadProducts(): void {
     if (!this.clinicId) return
-    this.inventoryService.getProducts(this.clinicId).subscribe({
+    // Sin límite explícito el servicio pide 100, y con el inventario real
+    // (475 lotes) eso dejaba fuera a 375: no salían en la tabla, el buscador
+    // —que filtra en cliente— no los encontraba, y las tarjetas de resumen
+    // contaban solo los cargados, así que el valor del inventario aparecía por
+    // la sexta parte de lo que es.
+    this.inventoryService.getProducts(this.clinicId, 1, INVENTORY_PAGE_SIZE).subscribe({
       next: result => {
         this.products = result.data
         this.calculateStats()
+        this.refreshView()
         this.loading.set(false)
       },
       error: () => this.loading.set(false),
@@ -106,6 +130,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
     this.inventoryService.getLowStockProducts(this.clinicId).subscribe(products => {
       this.lowStockProducts = products
       this.calculateStats()
+      this.refreshView()
     })
   }
 
@@ -114,6 +139,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
     this.inventoryService.getExpiringProducts(this.clinicId, 30).subscribe(products => {
       this.expiringProducts = products
       this.calculateStats()
+      this.refreshView()
     })
   }
 
@@ -145,6 +171,11 @@ export class InventoryComponent implements OnInit, OnDestroy {
     const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
     const expirationDate = new Date(product.expiryDate)
     return expirationDate <= thirtyDaysFromNow
+  }
+
+  /** Sin tarifa asignada. El punto de venta lo rechaza hasta que se le ponga. */
+  needsPrice(product: MedicationStock): boolean {
+    return Number(product.sellingPrice) <= 0
   }
 
   /** El vencimiento no está registrado: se muestra como tal, no como vacío. */
@@ -183,6 +214,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
             next: success => {
               if (success) {
                 this.products = this.products.filter(p => p.id !== product.id)
+                this.refreshView()
                 this.lowStockProducts = this.lowStockProducts.filter(p => p.id !== product.id)
                 this.expiringProducts = this.expiringProducts.filter(p => p.id !== product.id)
                 this.calculateStats()
@@ -262,7 +294,45 @@ export class InventoryComponent implements OnInit, OnDestroy {
     this.importOpen.set(false)
   }
 
-  get filteredProducts(): MedicationStock[] {
+  /**
+   * Lista filtrada y ordenada, recalculada **solo** cuando cambia lo que la
+   * determina.
+   *
+   * Era un getter llamado desde la plantilla, y eso significaba copiar y
+   * ordenar el arreglo entero en cada ciclo de detección de cambios. Con los 28
+   * productos de demostración no se notaba; con los 475 del inventario real
+   * congelaba la pestaña hasta dejarla sin responder.
+   */
+  filteredProducts: MedicationStock[] = []
+
+  /** Solo lo que se pinta. Ver `PAGE_SIZE`. */
+  pagedProducts: MedicationStock[] = []
+  page = signal(1)
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredProducts.length / PAGE_SIZE))
+  }
+
+  get rangeFrom(): number {
+    return this.filteredProducts.length === 0 ? 0 : (this.page() - 1) * PAGE_SIZE + 1
+  }
+
+  get rangeTo(): number {
+    return Math.min(this.page() * PAGE_SIZE, this.filteredProducts.length)
+  }
+
+  goToPage(p: number): void {
+    this.page.set(Math.min(Math.max(1, p), this.totalPages))
+    this.applyPage()
+  }
+
+  private applyPage(): void {
+    const start = (this.page() - 1) * PAGE_SIZE
+    this.pagedProducts = this.filteredProducts.slice(start, start + PAGE_SIZE)
+  }
+
+  /** Rehace la vista. Llamar cada vez que cambien datos, búsqueda o filtro. */
+  private refreshView(): void {
     const term = (this.searchTerm || '').toLowerCase()
     let base = this.products
     if (this.statFilter() === 'low') base = this.lowStockProducts
@@ -274,7 +344,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
             .filter(Boolean)
             .some(v => String(v).toLowerCase().includes(term)),
         )
-    return [...rows].sort((a, b) => {
+    this.filteredProducts = [...rows].sort((a, b) => {
       const lowA = this.isLowStock(a) ? 1 : 0
       const lowB = this.isLowStock(b) ? 1 : 0
       if (lowA !== lowB) return lowB - lowA
@@ -282,6 +352,10 @@ export class InventoryComponent implements OnInit, OnDestroy {
       const nameB = b.medication?.name || ''
       return nameA.localeCompare(nameB)
     })
+    // Al filtrar, volver a la primera página: quedarse en la 7 de una lista que
+    // ahora tiene 2 mostraría una tabla vacía con resultados detrás.
+    this.page.set(1)
+    this.applyPage()
   }
 
   trackById(_: number, item: MedicationStock) {

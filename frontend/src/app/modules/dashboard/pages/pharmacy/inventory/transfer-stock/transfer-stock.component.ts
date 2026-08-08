@@ -89,7 +89,9 @@ export class TransferStockComponent implements OnInit {
 
   loadStocks(clinicId: string): void {
     this.loadingStocks.set(true)
-    this.inventory.getProducts(clinicId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    // Entero: con el límite por defecto de 100 solo se podrían trasladar los
+    // primeros 100 lotes de los 475 y el resto ni aparecería en el selector.
+    this.inventory.getProducts(clinicId, 1, 2000).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: result => {
         this.stocks.set(result.data.filter(s => (s.availableQuantity || 0) > 0))
         this.loadingStocks.set(false)

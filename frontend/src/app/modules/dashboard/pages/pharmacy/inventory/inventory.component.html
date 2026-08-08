@@ -102,7 +102,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
-              @for (product of filteredProducts; track trackById($index, product)) {
+              @for (product of pagedProducts; track trackById($index, product)) {
                 <tr class="hover:bg-blue-50/40 transition-colors">
                   <td class="px-6 py-4 text-blue-700 font-medium text-xs">{{ product.batchNumber }}</td>
                   <td class="px-6 py-4">
@@ -130,7 +130,17 @@
                       {{ product.quantity }} unidades
                     </span>
                   </td>
-                  <td class="px-6 py-4 text-green-700 font-semibold">Bs {{ product.sellingPrice | number: '1.2-2' }}</td>
+                  <!-- Bs 0 no es un precio: es un producto que aún no se
+                       tarificó. El punto de venta lo rechaza, así que aquí hay
+                       que verlo para poder arreglarlo. -->
+                  <td class="px-6 py-4 font-semibold"
+                    [ngClass]="needsPrice(product) ? 'text-amber-600' : 'text-green-700'">
+                    @if (needsPrice(product)) {
+                      <span matTooltip="Sin tarifa asignada: no se puede vender">Sin precio</span>
+                    } @else {
+                      Bs {{ product.sellingPrice | number: '1.2-2' }}
+                    }
+                  </td>
                   <td class="px-6 py-4">
                     <!-- Sin fecha se dice "Sin registrar", no se deja la celda
                          en blanco: un hueco parece un fallo de carga, y aquí
@@ -169,10 +179,31 @@
               }
             </tbody>
           </table>
-          <div class="table-footer">
+          <!-- Se carga el inventario entero (el buscador filtra sobre todo)
+               pero se pinta de a 50: 475 filas de golpe cuelgan el navegador. -->
+          <div class="table-footer flex items-center justify-between gap-4 flex-wrap">
             <span class="text-sm text-slate-500">
-              Mostrando <span class="font-semibold text-slate-700">{{ filteredProducts.length }}</span> productos
+              Mostrando
+              <span class="font-semibold text-slate-700">{{ rangeFrom }}–{{ rangeTo }}</span>
+              de <span class="font-semibold text-slate-700">{{ filteredProducts.length }}</span> productos
             </span>
+            @if (totalPages > 1) {
+              <div class="flex items-center gap-2">
+                <button type="button" (click)="goToPage(page() - 1)" [disabled]="page() === 1"
+                  class="w-9 h-9 rounded-full hover:bg-slate-100 text-slate-600 flex items-center justify-center disabled:opacity-30 disabled:hover:bg-transparent"
+                  matTooltip="Página anterior">
+                  <span class="material-symbols-outlined msz-20">chevron_left</span>
+                </button>
+                <span class="text-sm text-slate-600">
+                  Página <span class="font-semibold text-slate-800">{{ page() }}</span> de {{ totalPages }}
+                </span>
+                <button type="button" (click)="goToPage(page() + 1)" [disabled]="page() === totalPages"
+                  class="w-9 h-9 rounded-full hover:bg-slate-100 text-slate-600 flex items-center justify-center disabled:opacity-30 disabled:hover:bg-transparent"
+                  matTooltip="Página siguiente">
+                  <span class="material-symbols-outlined msz-20">chevron_right</span>
+                </button>
+              </div>
+            }
           </div>
         </div>
       }

@@ -317,7 +317,11 @@ export class NewSaleComponent implements OnInit {
 
   loadStocks(clinicId: string): void {
     this.loadingStocks.set(true)
-    this.inventoryService.getAllStock(clinicId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    // Entero, no la primera página. El buscador del punto de venta filtra sobre
+    // lo que hay en memoria, así que con el límite por defecto de 100 el
+    // farmacéutico solo podría vender los primeros 100 lotes de los 475 y el
+    // resto sería invisible: no "no encontrado", sino inexistente.
+    this.inventoryService.getAllStock(clinicId, 1, 2000).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: result => {
         this.cart.setStocks(
           result.data.filter(s => (s.clinicId || s.clinic?.id) === clinicId && (s.availableQuantity || 0) > 0),
@@ -357,6 +361,21 @@ export class NewSaleComponent implements OnInit {
       this.alert.error(
         'Stock insuficiente',
         `Solo hay ${availableQty} unidades disponibles (${alreadyInCart > 0 ? `ya tiene ${alreadyInCart} en la venta` : 'disponibles'})`,
+      )
+      return
+    }
+
+    // Un producto sin precio no se vende: se regalaría sin querer.
+    //
+    // Es lo que sostiene la carga inicial del inventario, donde ~80 productos
+    // entraron a Bs 0 porque el inventario en papel no traía su tarifa. La
+    // alternativa —darlos de baja hasta ponerles precio— los habría escondido
+    // también del listado de inventario, que usa el mismo endpoint filtrado por
+    // `isActive`, y entonces nadie habría podido ponerles precio nunca.
+    if (Number(unitPrice) <= 0) {
+      this.alert.error(
+        'Producto sin precio',
+        `"${stock.medication?.name ?? 'Este producto'}" no tiene precio asignado. Ponle tarifa desde Inventario antes de venderlo.`,
       )
       return
     }
