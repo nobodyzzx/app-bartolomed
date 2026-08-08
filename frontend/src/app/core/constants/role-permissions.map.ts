@@ -55,6 +55,9 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
   ],
   [UserRoles.NURSE]: [
     Permission.PatientsRead,
+    // Espejo del backend: enfermería registra y edita pacientes (decisión del
+    // 2026-08-08). El borrado sigue reservado a admin/médico en el backend.
+    Permission.PatientsWrite,
     Permission.RecordsRead,
     Permission.AppointmentsRead,
     Permission.AppointmentsWrite,

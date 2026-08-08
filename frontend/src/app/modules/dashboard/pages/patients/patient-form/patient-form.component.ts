@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { forkJoin, of } from 'rxjs'
-import { catchError, switchMap } from 'rxjs/operators'
+import { catchError, debounceTime, distinctUntilChanged, filter, map, switchMap, tap } from 'rxjs/operators'
 import { Permission } from '@core/enums/permission.enum'
 import { RoleStateService } from '@core/services/role-state.service'
 import { AlertService } from '../../../../../core/services/alert.service'
@@ -168,10 +168,51 @@ export class PatientFormComponent implements OnInit, CanComponentDeactivate {
     this.initializeForms()
   }
 
+  /**
+   * Paciente ya existente con el mismo documento, detectado automáticamente al
+   * escribir el CI. Se muestra como aviso en línea bajo el campo — sin diálogos
+   * modales, que eran ruido innecesario. Null mientras no haya coincidencia.
+   */
+  existingPatient: Patient | null = null
+
   ngOnInit(): void {
     this.loadClinics()
     this.checkEditMode()
     this.watchLocationChanges()
+    this.watchDocumentNumber()
+  }
+
+  /**
+   * Verificación automática del documento: mientras se escribe el CI (con una
+   * pausa), busca si ya existe un paciente con ese número y lo avisa en línea.
+   * Antes había que pulsar una lupa y salían tres diálogos ("insuficiente",
+   * "ya existe", "no encontrado") — el último, puro ruido. En modo edición se
+   * ignora la coincidencia con el propio paciente.
+   */
+  private watchDocumentNumber(): void {
+    this.personalInfoForm.get('documentNumber')!.valueChanges
+      .pipe(
+        map((v: string) => (v ?? '').trim()),
+        distinctUntilChanged(),
+        tap(() => (this.existingPatient = null)),
+        debounceTime(400),
+        filter(doc => doc.length >= 5),
+        switchMap(doc =>
+          this.patientsService.findByDocument(doc).pipe(catchError(() => of(null as Patient | null))),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(p => {
+        // No es coincidencia si es el propio paciente que se está editando.
+        this.existingPatient = p && p.id && p.id !== this.patientId ? p : null
+      })
+  }
+
+  /** Abre para editar el paciente ya existente que detectó la verificación. */
+  openExistingPatient(): void {
+    if (!this.existingPatient?.id) return
+    this.allowNavigationOnce = true
+    this.router.navigate(['/dashboard/patients/edit', this.existingPatient.id])
   }
 
   /**
@@ -597,49 +638,6 @@ export class PatientFormComponent implements OnInit, CanComponentDeactivate {
     return age
   }
 
-  searchByDocument(): void {
-    const doc = this.personalInfoForm.get('documentNumber')?.value
-    if (!doc || String(doc).length < 5) {
-      this.alert.fire({
-        title: 'Documento insuficiente',
-        text: 'Ingrese al menos 5 caracteres para buscar.',
-        icon: 'warning',
-        confirmButtonText: 'Entendido',
-      })
-      return
-    }
-
-    this.patientsService
-      .findByDocument(doc)
-      .pipe(takeUntilDestroyed(this.destroyRef), catchError(() => of(null as Patient | null)))
-      .subscribe(p => {
-        if (p && p.id) {
-          this.alert
-            .fire({
-              title: 'Paciente ya existe',
-              html: `<div style="text-align:left">Se encontró un paciente con ese documento:<br><strong>${p.firstName} ${p.lastName}</strong></div>`,
-              icon: 'info',
-              confirmButtonText: 'Abrir para editar',
-              showCancelButton: true,
-              cancelButtonText: 'Seguir creando',
-            })
-            .then((res: any) => {
-              if (res.isConfirmed) {
-                this.allowNavigationOnce = true
-                this.router.navigate(['/dashboard/patients/edit', p.id])
-              }
-            })
-        } else {
-          this.alert.fire({
-            title: 'No encontrado',
-            text: 'No existe un paciente con ese documento. Puede continuar con el registro.',
-            icon: 'success',
-            confirmButtonText: 'Continuar',
-          })
-        }
-      })
-  }
-
   getSelectedClinicName(): string | null {
     const id = this.insuranceForm.get('clinicId')?.value
     if (!id) return null
@@ -682,25 +680,28 @@ export class PatientFormComponent implements OnInit, CanComponentDeactivate {
     this.patientsService.createPatient(patientData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: patient => {
         this.isSaving = false
+        // Ya guardado: se autoriza salir sin que salte el aviso de "descartar".
         this.allowNavigationOnce = true
+
+        // Quien puede crear expedientes (médico/admin) recibe un diálogo simple
+        // de dos botones —el ConfirmDialog solo admite dos, así que el antiguo de
+        // tres nunca mostró "Ir a Lista"—. Quien no puede (enfermería) solo ve un
+        // aviso y va a la lista: ofrecerle crear un expediente que no puede hacer
+        // era el ruido que confundía el flujo.
+        if (!this.roleState.hasPermission(Permission.RecordsWrite)) {
+          this.alert.success('Paciente registrado', `${patient.firstName} ${patient.lastName}`)
+          this.router.navigate(['/dashboard/patients'])
+          return
+        }
+
         this.alert
           .fire({
-            title: '¡Paciente Creado!',
-            html: `
-            <div style="text-align: left; padding: 10px;">
-              <p><strong>Nombre:</strong> ${patient.firstName} ${patient.lastName}</p>
-              <p><strong>Documento:</strong> ${patient.documentNumber}</p>
-              <div style="background:#eff6ff; color:#1d4ed8; padding:12px; border-radius:10px; margin-top:12px; border:1px solid #bfdbfe;">
-                <span style="font-weight:600;">Siguiente paso:</span> Completa el <strong>Expediente Médico</strong> del paciente.
-              </div>
-            </div>
-          `,
+            title: 'Paciente registrado',
+            text: `${patient.firstName} ${patient.lastName} se registró correctamente. ¿Deseas crear su expediente médico ahora?`,
             icon: 'success',
-            confirmButtonText: 'Crear Expediente Médico',
-            showDenyButton: true,
-            denyButtonText: 'Ir a Lista',
             showCancelButton: true,
-            cancelButtonText: 'Crear Otro',
+            confirmButtonText: 'Crear expediente',
+            cancelButtonText: 'Más tarde',
             reverseButtons: true,
           })
           .then((result: any) => {
@@ -708,11 +709,8 @@ export class PatientFormComponent implements OnInit, CanComponentDeactivate {
               this.router.navigate(['/dashboard/medical-records/new'], {
                 queryParams: { patientId: patient.id },
               })
-            } else if (result.isDenied) {
-              this.router.navigate(['/dashboard/patients'])
             } else {
-              // Resetear formulario para crear otro paciente
-              this.initializeForms()
+              this.router.navigate(['/dashboard/patients'])
             }
           })
       },

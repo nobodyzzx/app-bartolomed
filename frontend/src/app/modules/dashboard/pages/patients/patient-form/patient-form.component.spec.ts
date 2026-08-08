@@ -88,8 +88,9 @@ describe('PatientFormComponent', () => {
     clinicsService = createSpyObj('ClinicsService', ['findAll', 'findOne'])
     clinicsService.findAll.mockReturnValue(of([makeClinic()]))
     clinicCtx = { clinicId: null }
-    alert = createSpyObj('AlertService', ['fire'])
+    alert = createSpyObj('AlertService', ['fire', 'success'])
     alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: false } as any))
+    patientsService.findByDocument.mockReturnValue(of(null as unknown as Patient))
     router = createSpyObj('Router', ['navigate'])
 
     permissions = [
@@ -339,34 +340,50 @@ describe('PatientFormComponent', () => {
     })
   })
 
-  describe('searchByDocument', () => {
-    beforeEach(() => (component = createComponent()))
-
-    it('avisa si el documento tiene menos de 5 caracteres, sin llamar al servicio', () => {
-      component.personalInfoForm.patchValue({ documentNumber: '123' })
-      component.searchByDocument()
-      expect(alert.fire).toHaveBeenCalledWith(expect.objectContaining({ title: 'Documento insuficiente' }))
-      expect(patientsService.findByDocument).not.toHaveBeenCalled()
+  describe('verificación automática del documento', () => {
+    beforeEach(() => {
+      component = createComponent()
+      component.ngOnInit()
     })
 
-    it('si encuentra un paciente y el usuario confirma, navega a editarlo', async () => {
-      component.personalInfoForm.patchValue({ documentNumber: '1234567' })
+    it('avisa en línea (sin diálogo) cuando ya existe un paciente con ese CI', () => {
+      vi.useFakeTimers()
       patientsService.findByDocument.mockReturnValue(of(makePatient()))
-      alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: true } as any))
 
-      component.searchByDocument()
-      await Promise.resolve()
+      component.personalInfoForm.patchValue({ documentNumber: '1234567' })
+      vi.advanceTimersByTime(400)
 
-      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/patients/edit', 'patient-1'])
+      expect(patientsService.findByDocument).toHaveBeenCalledWith('1234567')
+      expect(component.existingPatient).toBeTruthy()
+      expect(alert.fire).not.toHaveBeenCalled()
+      vi.useRealTimers()
     })
 
-    it('si no encuentra ningún paciente, avisa que puede continuar', () => {
-      component.personalInfoForm.patchValue({ documentNumber: '1234567' })
+    it('no marca coincidencia (ni avisa) si el documento no existe', () => {
+      vi.useFakeTimers()
       patientsService.findByDocument.mockReturnValue(of(null as unknown as Patient))
 
-      component.searchByDocument()
+      component.personalInfoForm.patchValue({ documentNumber: '7654321' })
+      vi.advanceTimersByTime(400)
 
-      expect(alert.fire).toHaveBeenCalledWith(expect.objectContaining({ title: 'No encontrado' }))
+      expect(component.existingPatient).toBeNull()
+      expect(alert.fire).not.toHaveBeenCalled()
+      vi.useRealTimers()
+    })
+
+    it('no busca con menos de 5 caracteres', () => {
+      vi.useFakeTimers()
+      component.personalInfoForm.patchValue({ documentNumber: '123' })
+      vi.advanceTimersByTime(400)
+
+      expect(patientsService.findByDocument).not.toHaveBeenCalled()
+      vi.useRealTimers()
+    })
+
+    it('openExistingPatient navega a editar el paciente detectado', () => {
+      component.existingPatient = makePatient()
+      component.openExistingPatient()
+      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/patients/edit', 'patient-1'])
     })
   })
 
@@ -448,10 +465,7 @@ describe('PatientFormComponent', () => {
   })
 
   describe('createPatient (flujo de éxito, vía onSubmit)', () => {
-    beforeEach(() => {
-      clinicCtx.clinicId = 'clinic-1'
-      component = createComponent()
-      component.ngOnInit()
+    const fillValid = () =>
       component.personalInfoForm.patchValue({
         firstName: 'Juan',
         lastName: 'Perez',
@@ -459,9 +473,17 @@ describe('PatientFormComponent', () => {
         birthDate: new Date('1990-01-01'),
         gender: Gender.MALE,
       })
-    })
 
-    it('navega a crear expediente médico si el usuario confirma', async () => {
+    const setup = (perms: Permission[]) => {
+      permissions = perms
+      clinicCtx.clinicId = 'clinic-1'
+      component = createComponent()
+      component.ngOnInit()
+      fillValid()
+    }
+
+    it('con permiso de expedientes: ofrece crear expediente y navega si confirma', async () => {
+      setup([Permission.PatientsWrite, Permission.RecordsWrite])
       patientsService.createPatient.mockReturnValue(of(makePatient()))
       alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: true } as any))
 
@@ -474,9 +496,10 @@ describe('PatientFormComponent', () => {
       expect(component.isSaving).toBe(false)
     })
 
-    it('navega a la lista si el usuario elige "Ir a Lista" (isDenied)', async () => {
+    it('con permiso de expedientes: navega a la lista si elige "Más tarde"', async () => {
+      setup([Permission.PatientsWrite, Permission.RecordsWrite])
       patientsService.createPatient.mockReturnValue(of(makePatient()))
-      alert.fire.mockReturnValue(Promise.resolve({ isDenied: true } as any))
+      alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: false } as any))
 
       component.onSubmit()
       await Promise.resolve()
@@ -484,18 +507,20 @@ describe('PatientFormComponent', () => {
       expect(router.navigate).toHaveBeenCalledWith(['/dashboard/patients'])
     })
 
-    it('reinicia los formularios si el usuario elige "Crear Otro"', async () => {
+    it('sin permiso de expedientes (enfermería): avisa con toast y va a la lista, sin diálogo', async () => {
+      setup([Permission.PatientsWrite])
       patientsService.createPatient.mockReturnValue(of(makePatient()))
-      alert.fire.mockReturnValue(Promise.resolve({} as any))
-      const initSpy = vi.spyOn(component as any, 'initializeForms')
 
       component.onSubmit()
       await Promise.resolve()
 
-      expect(initSpy).toHaveBeenCalled()
+      expect(alert.success).toHaveBeenCalled()
+      expect(alert.fire).not.toHaveBeenCalled()
+      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/patients'])
     })
 
     it('en error, delega a handlePatientError', () => {
+      setup([Permission.PatientsWrite, Permission.RecordsWrite])
       patientsService.createPatient.mockReturnValue(throwError(() => ({ status: 400, error: {} })))
 
       component.onSubmit()

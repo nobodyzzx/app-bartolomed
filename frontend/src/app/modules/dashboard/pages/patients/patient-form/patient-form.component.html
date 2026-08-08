@@ -160,13 +160,6 @@
               <mat-label>Número de Documento</mat-label>
               <mat-icon matPrefix class="text-blue-400">pin</mat-icon>
               <input matInput formControlName="documentNumber" placeholder="Ingrese número de documento" />
-              <button mat-icon-button matSuffix type="button"
-                (click)="searchByDocument()"
-                [disabled]="!personalInfoForm.get('documentNumber')?.valid"
-                matTooltip="Buscar paciente por documento"
-                aria-label="Buscar paciente por número de documento">
-                <mat-icon>search</mat-icon>
-              </button>
               @if (personalInfoForm.get('documentNumber')?.hasError('required')) {
                 <mat-error>El número de documento es requerido</mat-error>
               }
@@ -178,6 +171,21 @@
               }
               <mat-hint>Ej: 12345678, ABC123-9</mat-hint>
             </mat-form-field>
+
+            <!-- Aviso automático (sin diálogo): ya existe un paciente con este CI. -->
+            @if (existingPatient) {
+              <div class="md:col-span-2 -mt-2 mb-2 flex items-center justify-between gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200">
+                <div class="flex items-center gap-2 text-sm text-amber-800">
+                  <span class="material-symbols-outlined msz-18 text-amber-500">person_alert</span>
+                  <span>Ya existe un paciente con este documento:
+                    <strong>{{ existingPatient.firstName }} {{ existingPatient.lastName }}</strong></span>
+                </div>
+                <button type="button" (click)="openExistingPatient()" class="btn btn-outline-primary shrink-0">
+                  <span class="material-symbols-outlined msz-16 leading-none">open_in_new</span>
+                  Abrir
+                </button>
+              </div>
+            }
 
             <mat-form-field appearance="outline">
               <mat-label>Fecha de Nacimiento</mat-label>

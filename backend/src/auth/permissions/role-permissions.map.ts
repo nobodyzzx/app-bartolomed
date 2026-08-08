@@ -60,6 +60,11 @@ export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
   ],
   [ValidRoles.NURSE]: [
     Permission.PatientsRead,
+    // Enfermería registra y edita pacientes (atiende el mostrador cuando no hay
+    // recepción) — decisión del 2026-08-08. Antes funcionaba de casualidad por
+    // el OR del guard sobre (PatientsRead, PatientsWrite); ahora es explícito.
+    // El borrado sigue reservado a admin/médico por `@Auth`, no por permiso.
+    Permission.PatientsWrite,
     Permission.RecordsRead,
     Permission.AppointmentsRead,
     Permission.AppointmentsWrite,
