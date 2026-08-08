@@ -195,7 +195,7 @@ export class MainDashboardComponent implements OnInit {
         // por permiso dentro de la página. El comodín mandaba a `/auth`, y de ahí
         // el guestGuard devolvía al dashboard: la tarjeta no hacía nada.
         label: 'Ventas Farmacia', sublabel: 'Este mes',
-        icon: 'attach_money', color: 'orange', route: '/dashboard/reports',
+        icon: 'payments', color: 'orange', route: '/dashboard/reports',
         value: this.formatCurrency(this.stats.monthlyRevenue),
         roles: PHARMACY_ROLES,
       },

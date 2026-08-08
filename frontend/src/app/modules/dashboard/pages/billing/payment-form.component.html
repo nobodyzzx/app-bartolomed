@@ -172,6 +172,9 @@
                 <mat-label>Método</mat-label>
                 <mat-icon matPrefix class="text-green-400">credit_card</mat-icon>
                 <mat-select formControlName="method">
+                  <!-- Sin trigger, el valor cerrado se compone con el textContent de
+                       la opción e incluye el nombre de la ligadura del icono. -->
+                  <mat-select-trigger>{{ methodLabel(form.get('method')?.value) }}</mat-select-trigger>
                   @for (m of paymentMethods; track m) {
                     <mat-option [value]="m.value">
                       <span class="material-symbols-outlined text-base align-middle mr-2">{{ m.icon }}</span>

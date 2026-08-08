@@ -33,6 +33,12 @@ export class AssetsFormComponent implements OnInit {
     { value: 'other', label: 'Otro', icon: 'inventory_2' },
   ]
 
+  /** Etiqueta del tipo, para el `mat-select-trigger`: sin él, el valor cerrado
+   *  arrastra el nombre de la ligadura del icono como texto. */
+  typeLabel(value: string): string {
+    return this.assetTypes.find(t => t.value === value)?.label ?? ''
+  }
+
   assetStatuses = [
     { value: 'active', label: 'Activo' },
     { value: 'inactive', label: 'Inactivo' },

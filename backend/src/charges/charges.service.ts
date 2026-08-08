@@ -171,6 +171,18 @@ export class ChargesService {
     return this.chargeRepository.save(charge);
   }
 
+  /**
+   * El cargo que generó un hecho concreto: la venta de farmacia dejada a cuenta,
+   * la orden de laboratorio, la cita. Hace falta para deshacerlo cuando ese hecho
+   * se anula — al cancelar una venta hay que anular su cargo, o el paciente
+   * arrastra el cobro de algo que devolvió.
+   */
+  async findByOrigin(origin: ChargeOrigin, originId: string, clinicId?: string): Promise<Charge | null> {
+    return this.chargeRepository.findOne({
+      where: { origin, originId, ...(clinicId ? { clinicId } : {}) },
+    });
+  }
+
   /** Evita cobrar dos veces el mismo hecho clínico. */
   private async existsForOrigin(origin: ChargeOrigin, originId: string, manager?: EntityManager): Promise<boolean> {
     const repo = manager ? manager.getRepository(Charge) : this.chargeRepository;

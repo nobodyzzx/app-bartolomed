@@ -167,4 +167,8 @@ export class PaymentFormComponent implements OnInit {
   methodIcon(method: string) {
     return this.paymentMethods.find(m => m.value === method)?.icon || 'payments'
   }
+
+  methodLabel(method: string) {
+    return this.paymentMethods.find(m => m.value === method)?.label ?? ''
+  }
 }

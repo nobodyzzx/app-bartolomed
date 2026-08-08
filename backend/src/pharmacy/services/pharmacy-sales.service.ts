@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChargesService } from '../../charges/charges.service';
-import { ChargeOrigin } from '../../charges/entities/charge.entity';
+import { ChargeOrigin, ChargeStatus } from '../../charges/entities/charge.entity';
 import { Patient } from '../../patients/entities/patient.entity';
 import { Prescription, PrescriptionStatus } from '../../prescriptions/entities/prescription.entity';
 
@@ -388,9 +388,23 @@ export class PharmacySalesService {
 
     const previousStatus = pharmacySale.status;
     const newStatus = updateStatusDto.status;
+    const cancelling = newStatus === SaleStatus.CANCELLED && previousStatus !== SaleStatus.CANCELLED;
+
+    // El cargo se comprueba ANTES de tocar el stock: si ya está facturado hay que
+    // rechazar la cancelación entera, y no dejar el inventario devuelto con una
+    // venta que sigue en pie.
+    const charge = cancelling && pharmacySale.chargedToAccount
+      ? await this.chargesService.findByOrigin(ChargeOrigin.PHARMACY, pharmacySale.id, clinicId)
+      : null;
+
+    if (charge?.status === ChargeStatus.INVOICED) {
+      throw new BadRequestException(
+        `La venta ${pharmacySale.saleNumber} ya se facturó al paciente. Anula primero la factura que la incluye y vuelve a intentarlo.`,
+      );
+    }
 
     // If cancelling a sale, restore stock
-    if (newStatus === SaleStatus.CANCELLED && previousStatus !== SaleStatus.CANCELLED) {
+    if (cancelling) {
       const saleWithItems = await this.pharmacySaleRepository.findOne({
         where: { id },
         relations: ['items'],
@@ -421,15 +435,38 @@ export class PharmacySalesService {
         movement.movementDate = new Date();
         await this.stockMovementRepository.save(movement);
       }
+
+      // El cargo a cuenta se anula con la venta: si no, el paciente arrastra el
+      // cobro de un medicamento que devolvió. Antes solo se creaba el cargo y
+      // nunca se deshacía.
+      if (charge && charge.status !== ChargeStatus.CANCELLED) {
+        await this.chargesService.cancel(
+          charge.id,
+          `Venta ${pharmacySale.saleNumber} cancelada`,
+          clinicId,
+        );
+      }
+
+      // Y la receta vuelve a estar disponible: la venta la había marcado
+      // DISPENSED, así que sin esto quedaba consumida por una venta anulada y no
+      // se podía volver a dispensar.
+      if (pharmacySale.prescriptionId) {
+        await this.prescriptionRepository.update(pharmacySale.prescriptionId, {
+          status: PrescriptionStatus.ACTIVE,
+        });
+      }
     }
 
     // Update sale status
     pharmacySale.status = newStatus;
 
     if (updateStatusDto.amountPaid !== undefined) {
+      // `total` y `change`, no `totalAmount`/`changeAmount`: esos dos no existen
+      // en la entidad. Iban por `as any`, así que el compilador callaba y el
+      // total leído era siempre 0 — el vuelto salía igual a lo recibido y se
+      // escribía en una propiedad fantasma que ni se persistía.
       pharmacySale.amountPaid = updateStatusDto.amountPaid;
-      const total = (pharmacySale as any).totalAmount || 0;
-      (pharmacySale as any).changeAmount = Math.max(0, updateStatusDto.amountPaid - total);
+      pharmacySale.change = Math.max(0, updateStatusDto.amountPaid - Number(pharmacySale.total ?? 0));
     }
 
     if (updateStatusDto.notes) {

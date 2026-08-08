@@ -83,7 +83,7 @@
               <div class="md:col-span-2">
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Precio Unit.</mat-label>
-                  <mat-icon matPrefix class="text-blue-400">attach_money</mat-icon>
+                  <mat-icon matPrefix class="text-blue-400">payments</mat-icon>
                   <input
                     matInput
                     type="number"
@@ -332,6 +332,13 @@
                     <mat-label>Método de pago</mat-label>
                     <mat-icon matPrefix class="text-green-400">payment</mat-icon>
                     <mat-select formControlName="paymentMethod" required>
+                      <!-- `mat-select` compone el valor cerrado con el `textContent`
+                           de la opción, y el de un icono de Material Symbols es el
+                           nombre de su ligadura: sin este trigger el campo mostraba
+                           "payments Efectivo". El icono solo va dentro del panel. -->
+                      <mat-select-trigger>
+                        {{ getPaymentMethodLabel(form.get('paymentMethod')?.value) }}
+                      </mat-select-trigger>
                       @for (method of paymentMethods; track method.value) {
                         <mat-option [value]="method.value">
                           <span class="flex items-center gap-2">
@@ -346,7 +353,7 @@
 
                   <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Monto pagado</mat-label>
-                    <mat-icon matPrefix class="text-green-400">attach_money</mat-icon>
+                    <mat-icon matPrefix class="text-green-400">payments</mat-icon>
                     <input
                       matInput
                       type="number"

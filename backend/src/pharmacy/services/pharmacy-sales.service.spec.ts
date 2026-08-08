@@ -6,7 +6,7 @@ import { PharmacySalesService } from './pharmacy-sales.service';
 import { PharmacySale, PharmacySaleItem, SaleStatus } from '../entities/pharmacy-sale.entity';
 import { ChargesService } from '../../charges/charges.service';
 import { Medication, MedicationStock, MovementType, StockMovement } from '../entities/pharmacy.entity';
-import { Prescription } from 'src/prescriptions/entities/prescription.entity';
+import { Prescription, PrescriptionStatus } from 'src/prescriptions/entities/prescription.entity';
 import { InventoryService } from './inventory.service';
 import { createMockRepository, MockRepository } from 'src/test/helpers/mock-repository.factory';
 import { makeMedicationStock } from 'src/test/helpers/test-data.factory';
@@ -20,6 +20,7 @@ describe('PharmacySalesService', () => {
   let medicationRepo: any;
   let lockedBuilder: any;
   let prescriptionRepo: MockRepository<Prescription>;
+  let chargesService: { create: jest.Mock; findByOrigin: jest.Mock; cancel: jest.Mock };
 
   const mockInventoryService = { getStockAlerts: jest.fn() };
 
@@ -48,7 +49,10 @@ describe('PharmacySalesService', () => {
         { provide: InventoryService, useValue: mockInventoryService },
         { provide: AuditService, useValue: { log: jest.fn() } },
         // Fase 4: la venta con receta puede quedar a cuenta del paciente.
-        { provide: ChargesService, useValue: { create: jest.fn() } },
+        {
+          provide: ChargesService,
+          useValue: { create: jest.fn(), findByOrigin: jest.fn(), cancel: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -58,6 +62,7 @@ describe('PharmacySalesService', () => {
     stockRepo = module.get(getRepositoryToken(MedicationStock));
     movementRepo = module.get(getRepositoryToken(StockMovement));
     prescriptionRepo = module.get(getRepositoryToken(Prescription));
+    chargesService = module.get(ChargesService);
     medicationRepo = {
       createQueryBuilder: jest.fn().mockReturnValue({
         innerJoin: jest.fn().mockReturnThis(),
@@ -309,6 +314,90 @@ describe('PharmacySalesService', () => {
       status: SaleStatus.COMPLETED,
       notes: '',
       items,
+    });
+
+    /**
+     * Al cancelar, la venta a cuenta tiene que deshacer TODO lo que hizo: el
+     * stock (ya cubierto abajo), el cargo pendiente y la receta. Antes solo
+     * devolvía el stock, así que el paciente conservaba el cobro de un
+     * medicamento devuelto y la receta quedaba consumida para siempre.
+     */
+    const setupCancel = (saleOverrides: Record<string, any> = {}) => {
+      const stock = makeMedicationStock({ id: 'stock-1', quantity: 10 });
+      const saleItems = [{ medicationStockId: 'stock-1', quantity: 5, unitPrice: 25, subtotal: 125 }];
+      const sale = { ...makeSaleWithItems(), ...saleOverrides };
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(sale as any);
+      saleRepo.findOne!.mockResolvedValue(makeSaleWithItems(saleItems));
+      stockRepo.findOne!.mockResolvedValue(stock);
+      stockRepo.save!.mockResolvedValue({ ...stock, quantity: 15 });
+      movementRepo.save!.mockResolvedValue({});
+      saleRepo.save!.mockResolvedValue({ ...sale, status: SaleStatus.CANCELLED });
+      prescriptionRepo.update!.mockResolvedValue({} as any);
+      return sale;
+    };
+
+    it('anula el cargo a cuenta al cancelar la venta', async () => {
+      setupCancel({ chargedToAccount: true });
+      chargesService.findByOrigin.mockResolvedValue({ id: 'charge-1', status: 'pending' });
+
+      await service.updateStatus('sale-1', { status: SaleStatus.CANCELLED }, 'clinic-1');
+
+      expect(chargesService.cancel).toHaveBeenCalledWith(
+        'charge-1',
+        expect.stringContaining('VTA-001'),
+        'clinic-1',
+      );
+    });
+
+    it('rechaza cancelar si el cargo ya se facturó, y no toca el stock', async () => {
+      setupCancel({ chargedToAccount: true });
+      chargesService.findByOrigin.mockResolvedValue({ id: 'charge-1', status: 'invoiced' });
+
+      await expect(
+        service.updateStatus('sale-1', { status: SaleStatus.CANCELLED }, 'clinic-1'),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(stockRepo.save).not.toHaveBeenCalled();
+      expect(chargesService.cancel).not.toHaveBeenCalled();
+    });
+
+    it('devuelve la receta a ACTIVE al cancelar', async () => {
+      setupCancel({ prescriptionId: 'presc-1' });
+
+      await service.updateStatus('sale-1', { status: SaleStatus.CANCELLED }, 'clinic-1');
+
+      expect(prescriptionRepo.update).toHaveBeenCalledWith('presc-1', {
+        status: PrescriptionStatus.ACTIVE,
+      });
+    });
+
+    it('no busca cargo cuando la venta no quedó a cuenta', async () => {
+      setupCancel({ chargedToAccount: false });
+
+      await service.updateStatus('sale-1', { status: SaleStatus.CANCELLED }, 'clinic-1');
+
+      expect(chargesService.findByOrigin).not.toHaveBeenCalled();
+      expect(chargesService.cancel).not.toHaveBeenCalled();
+    });
+
+    // El bloque de ajuste leía `(sale as any).totalAmount` —inexistente— así que
+    // el total era siempre 0 y el vuelto salía igual a lo recibido; además lo
+    // escribía en `changeAmount`, una propiedad fantasma que no se persiste.
+    it('calcula el vuelto contra el total real de la venta', async () => {
+      const sale = { ...makeSaleWithItems(), total: 80, change: 0, amountPaid: 0 };
+      jest.spyOn(service, 'findOne').mockResolvedValue(sale as any);
+      saleRepo.save!.mockImplementation(async (v: any) => v);
+
+      await service.updateStatus(
+        'sale-1',
+        { status: SaleStatus.COMPLETED, amountPaid: 100 },
+        'clinic-1',
+      );
+
+      expect(saleRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ amountPaid: 100, change: 20 }),
+      );
     });
 
     it('restaura la cantidad del stock al cancelar', async () => {
