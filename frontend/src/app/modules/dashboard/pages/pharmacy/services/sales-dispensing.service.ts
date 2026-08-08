@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http'
+import { HttpClient, HttpParams } from '@angular/common/http'
 import { Injectable } from '@angular/core'
 import { AlertService } from '@core/services/alert.service'
 import { Observable } from 'rxjs'
@@ -28,12 +28,30 @@ export class SalesDispensingService {
     private alertService: AlertService,
   ) {}
 
-  getSales(options: { page?: number; limit?: number; status?: SaleStatus } = {}): Observable<PaginatedResult<Sale>> {
-    const params: string[] = []
-    if (options.page) params.push(`page=${options.page}`)
-    if (options.limit) params.push(`limit=${options.limit}`)
-    if (options.status) params.push(`status=${options.status}`)
-    const url = params.length ? `${this.apiUrl}?${params.join('&')}` : this.apiUrl
+  /**
+   * `search`, `paymentMethod` y el rango de fechas van al backend: filtrar en el
+   * cliente solo alcanzaba las filas de la página cargada, así que buscar algo de
+   * la página 3 no encontraba nada.
+   */
+  getSales(
+    options: {
+      page?: number
+      limit?: number
+      status?: SaleStatus
+      search?: string
+      paymentMethod?: string
+      startDate?: string
+      endDate?: string
+    } = {},
+  ): Observable<PaginatedResult<Sale>> {
+    const params = new HttpParams({
+      fromObject: Object.entries(options).reduce<Record<string, string>>((acc, [k, v]) => {
+        if (v !== undefined && v !== null && `${v}`.trim() !== '') acc[k] = `${v}`
+        return acc
+      }, {}),
+    })
+    const query = params.toString()
+    const url = query ? `${this.apiUrl}?${query}` : this.apiUrl
     return this.http.get<PaginatedResult<Sale>>(url).pipe(
       catchError(error => {
         this.errorService.handleError(error)

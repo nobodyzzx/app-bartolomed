@@ -1,234 +1,203 @@
 <div class="page-wrapper">
   <div class="page-inner">
-    <!-- Header -->
+
     <app-page-header
       title="Ventas y Dispensación"
       subtitle="Control de ventas y entrega de medicamentos"
+      (back)="goBack()"
       >
-      <button
-        type="button"
-        (click)="createNewSale()"
-        class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
-        aria-label="Crear nueva venta"
-        >
-        <span class="material-symbols-outlined msz-20 leading-none">add</span>
+      <button type="button" (click)="createNewSale()" class="btn btn-primary">
+        <span class="material-symbols-outlined msz-18 leading-none">add</span>
         Nueva Venta
       </button>
     </app-page-header>
 
-    <!-- Estadísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Estadísticas. Cada tarjeta filtra por su estado; "Canceladas" faltaba y
+         era el único estado que no se podía aislar. -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
       <app-stat-card
-        label="Total Ventas"
-        [value]="summary?.totalSales ?? 0"
-        sublabel="Ventas registradas"
-        icon="receipt"
-        color="blue"
-        [clickable]="true"
-        [active]="statFilter === 'all'"
+        label="Total Ventas" [value]="summary?.totalSales ?? 0" sublabel="Ventas registradas"
+        icon="receipt" color="blue"
+        [clickable]="true" [active]="statFilter === 'all'"
         (cardClick)="setStatFilter('all')"
         />
       <app-stat-card
-        label="Completadas"
-        [value]="summary?.completedSales ?? 0"
-        sublabel="Transacciones finalizadas"
-        icon="check_circle"
-        color="green"
-        [clickable]="true"
-        [active]="statFilter === 'completed'"
-        (cardClick)="setStatFilter('completed')"
+        label="Completadas" [value]="summary?.completedSales ?? 0" sublabel="Transacciones finalizadas"
+        icon="check_circle" color="green"
+        [clickable]="true" [active]="statFilter === SaleStatus.COMPLETED"
+        (cardClick)="setStatFilter(SaleStatus.COMPLETED)"
         />
       <app-stat-card
-        label="Pendientes"
-        [value]="summary?.pendingSales ?? 0"
-        sublabel="Esperando procesamiento"
-        icon="pending"
-        color="orange"
-        [clickable]="true"
-        [active]="statFilter === 'pending'"
-        (cardClick)="setStatFilter('pending')"
+        label="Pendientes" [value]="summary?.pendingSales ?? 0" sublabel="Esperando procesamiento"
+        icon="pending" color="orange"
+        [clickable]="true" [active]="statFilter === SaleStatus.PENDING"
+        (cardClick)="setStatFilter(SaleStatus.PENDING)"
         />
       <app-stat-card
-        label="Ingresos"
-        [value]="'Bs ' + ((summary?.totalRevenue ?? 0) | number: '1.2-2')"
+        label="Canceladas" [value]="summary?.cancelledSales ?? 0" sublabel="Anuladas"
+        icon="cancel" color="red"
+        [clickable]="true" [active]="statFilter === SaleStatus.CANCELLED"
+        (cardClick)="setStatFilter(SaleStatus.CANCELLED)"
+        />
+      <app-stat-card
+        label="Ingresos" [value]="'Bs ' + ((summary?.totalRevenue ?? 0) | number: '1.2-2')"
         sublabel="Ingresos totales"
-        icon="trending_up"
-        color="purple"
+        icon="trending_up" color="purple"
         />
     </div>
 
-    <!-- Tabla de Ventas -->
     <div class="table-container">
 
-      <!-- Buscador -->
       <div class="table-toolbar">
         <app-search-bar
-          placeholder="ID, paciente, método de pago..."
-          (valueChange)="applyFilter($event)"
+          placeholder="Nº de venta o paciente..."
+          [value]="searchTerm"
+          [showClear]="hasActiveFilters"
+          (valueChange)="onSearch($event)"
+          (cleared)="clearFilters()"
           />
+
+        <!-- Método de pago y rango de fechas: el backend ya los aceptaba y la
+             pantalla no los ofrecía. Para una caja, "lo de hoy en efectivo" es
+             la consulta natural. -->
+        <div class="flex flex-wrap items-start gap-4 mt-4">
+          <mat-form-field appearance="outline" class="min-w-[180px]">
+            <mat-label>Método de pago</mat-label>
+            <mat-icon matPrefix class="text-green-400">credit_card</mat-icon>
+            <mat-select [value]="paymentFilter" (valueChange)="onPaymentFilterChange($event)">
+              <mat-select-trigger>
+                {{ paymentFilter ? getPaymentMethodLabel(paymentFilter) : 'Todos' }}
+              </mat-select-trigger>
+              <mat-option value="">Todos</mat-option>
+              @for (m of paymentMethods; track m.value) {
+                <mat-option [value]="m.value">
+                  <span class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-lg">{{ m.icon }}</span>
+                    {{ m.label }}
+                  </span>
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="min-w-[160px]">
+            <mat-label>Desde</mat-label>
+            <mat-icon matPrefix class="text-blue-400">calendar_today</mat-icon>
+            <input matInput [matDatepicker]="pickerFrom" [formControl]="dateFromControl" />
+            <mat-datepicker-toggle matSuffix [for]="pickerFrom" />
+            <mat-datepicker #pickerFrom />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="min-w-[160px]">
+            <mat-label>Hasta</mat-label>
+            <mat-icon matPrefix class="text-blue-400">event</mat-icon>
+            <input matInput [matDatepicker]="pickerTo" [formControl]="dateToControl" />
+            <mat-datepicker-toggle matSuffix [for]="pickerTo" />
+            <mat-datepicker #pickerTo />
+          </mat-form-field>
+
+          @if (hasActiveFilters) {
+            <button type="button" (click)="clearFilters()" class="btn btn-ghost h-14">
+              <span class="material-symbols-outlined msz-18">close</span>
+              Limpiar filtros
+            </button>
+          }
+        </div>
       </div>
 
-      <!-- Loading -->
       @if (loading) {
         <app-skeleton-table [rows]="6" [columns]="7" />
       }
 
-      <!-- Estado vacío -->
-      @if (!loading && dataSource.data.length === 0) {
+      @if (!loading && sales.length === 0) {
         <app-empty-state
           icon="receipt"
-          title="Sin registros"
-          subtitle="No se encontraron ventas registradas"
-          actionLabel="Nueva Venta"
+          title="Sin ventas"
+          [subtitle]="hasActiveFilters ? 'Ninguna venta coincide con los filtros' : 'Todavía no hay ventas registradas'"
+          [actionLabel]="hasActiveFilters ? '' : 'Nueva Venta'"
           (action)="createNewSale()"
           />
       }
 
-      <!-- Tabla -->
-      @if (!loading && dataSource.data.length > 0) {
+      @if (!loading && sales.length > 0) {
         <div class="overflow-x-auto">
-          <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent">
-            <!-- Columna ID -->
-            <ng-container matColumnDef="id">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">ID Venta</span>
-              </th>
-              <td mat-cell *matCellDef="let sale" class="px-6 py-4 text-blue-700 font-medium">
-                {{ sale.id }}
-              </td>
-            </ng-container>
-            <!-- Columna Paciente -->
-            <ng-container matColumnDef="patient">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</span>
-              </th>
-              <td mat-cell *matCellDef="let sale" class="px-6 py-4">
-                <div class="flex items-center gap-2">
-                  <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0 font-semibold text-sm">{{ sale.patientName?.charAt(0) || '?' }}</div>
-                  <span class="font-medium text-slate-900">{{ sale.patientName }}</span>
-                </div>
-              </td>
-            </ng-container>
-            <!-- Columna Fecha -->
-            <ng-container matColumnDef="date">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</span>
-              </th>
-              <td mat-cell *matCellDef="let sale" class="px-6 py-4 text-slate-700">
-                {{ sale.saleDate | date: 'dd/MM/yyyy HH:mm' }}
-              </td>
-            </ng-container>
-            <!-- Columna Total -->
-            <ng-container matColumnDef="total">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-slate-100 px-6 py-4">
-                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Total</span>
-              </th>
-              <td mat-cell *matCellDef="let sale" class="px-6 py-4 text-green-700 font-semibold">
-                Bs {{ sale.total | number: '1.2-2' }}
-              </td>
-            </ng-container>
-            <!-- Columna Estado -->
-            <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
-                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
-              </th>
-              <td mat-cell *matCellDef="let sale" class="px-6 py-4">
-                <span
-                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border"
-                [ngClass]="{
-                  'bg-orange-50 text-orange-700 border-orange-200': sale.status === 'pending',
-                  'bg-green-50 text-green-700 border-green-200': sale.status === 'completed',
-                  'bg-red-50 text-red-700 border-red-200': sale.status === 'cancelled',
-                }"
-                  >
-                  <span
-                    class="w-1.5 h-1.5 rounded-full"
-                  [ngClass]="{
-                    'bg-orange-600': sale.status === 'pending',
-                    'bg-green-600': sale.status === 'completed',
-                    'bg-red-600': sale.status === 'cancelled',
-                  }"
-                    >
-                  </span>
-                  {{ getStatusLabel(sale.status || 'pending') }}
-                </span>
-              </td>
-            </ng-container>
-            <!-- Columna Método de Pago -->
-            <ng-container matColumnDef="paymentMethod">
-              <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
-                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Método de Pago</span>
-              </th>
-              <td mat-cell *matCellDef="let sale" class="px-6 py-4">
-                <div class="flex items-center gap-2 text-slate-700">
-                  <span class="material-symbols-outlined msz-18 text-slate-500">{{
-                    getPaymentMethodIcon(sale.paymentMethod || '')
-                  }}</span>
-                  <span>{{ sale.paymentMethod }}</span>
-                </div>
-              </td>
-            </ng-container>
-            <!-- Columna Acciones -->
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
-                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span>
-              </th>
-              <td mat-cell *matCellDef="let sale" class="px-6 py-4">
-                <div class="flex items-center gap-1">
-                  <button
-                    type="button"
-                    class="inline-flex items-center justify-center w-9 h-9 text-slate-500 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors border-0"
-                    (click)="viewSaleDetails(sale); $event.stopPropagation()"
-                    matTooltip="Ver detalle de la venta"
-                    aria-label="Ver detalle de la venta"
-                    >
-                    <span class="material-symbols-outlined msz-20 leading-none">visibility</span>
-                  </button>
-                  <button
-                    type="button"
-                    class="inline-flex items-center justify-center w-9 h-9 text-slate-500 hover:bg-slate-100 hover:text-slate-800 rounded-lg transition-colors border-0"
-                    (click)="printReceipt(sale); $event.stopPropagation()"
-                    matTooltip="Imprimir recibo"
-                    aria-label="Imprimir recibo"
-                    >
-                    <span class="material-symbols-outlined msz-20 leading-none">print</span>
-                  </button>
-                  <button
-                    type="button"
-                    class="inline-flex items-center justify-center w-9 h-9 text-slate-500 hover:bg-green-50 hover:text-green-600 rounded-lg transition-colors border-0"
-                    (click)="completeSale(sale); $event.stopPropagation()"
-                    [disabled]="sale.status !== 'pending'"
-                    matTooltip="Completar venta"
-                    aria-label="Completar venta"
-                    >
-                    <span class="material-symbols-outlined msz-20 leading-none">check_circle</span>
-                  </button>
-                  <button
-                    type="button"
-                    class="inline-flex items-center justify-center w-9 h-9 text-slate-500 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors border-0"
-                    (click)="cancelSale(sale); $event.stopPropagation()"
-                    [disabled]="sale.status === 'completed' || sale.status === 'cancelled'"
-                    matTooltip="Cancelar venta"
-                    aria-label="Cancelar venta"
-                    >
-                    <span class="material-symbols-outlined msz-20 leading-none">cancel</span>
-                  </button>
-                </div>
-              </td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-200"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns"
-              (click)="viewSaleDetails(row)"
-            class="table-row-hover"></tr>
+          <table class="w-full">
+            <thead class="bg-slate-100">
+              <tr>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Nº Venta</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</th>
+                <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Total</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Método de Pago</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
+                <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              @for (sale of sales; track sale.id) {
+                <tr (click)="viewSaleDetails(sale)" class="table-row-hover">
+                  <!-- El número de venta, no el UUID: es lo que se dicta por
+                       teléfono y lo que sale impreso en el recibo. -->
+                  <td class="px-6 py-4">
+                    <span class="font-mono text-sm font-semibold text-slate-700">{{ sale.saleNumber }}</span>
+                    @if (sale.chargedToAccount) {
+                      <div class="text-xs text-purple-600 mt-0.5">A cuenta</div>
+                    }
+                  </td>
+                  <td class="px-6 py-4">
+                    <span class="font-medium text-slate-900">{{ sale.patientName || 'Cliente' }}</span>
+                  </td>
+                  <td class="px-6 py-4 text-sm text-slate-700">
+                    {{ sale.saleDate | date: 'dd/MM/yyyy HH:mm' }}
+                  </td>
+                  <td class="px-6 py-4 text-right text-green-700 font-semibold whitespace-nowrap">
+                    Bs {{ sale.total | number: '1.2-2' }}
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-2 text-slate-700">
+                      <span class="material-symbols-outlined msz-18 text-slate-500">{{ getPaymentMethodIcon(sale.paymentMethod) }}</span>
+                      <span class="text-sm">{{ getPaymentMethodLabel(sale.paymentMethod) }}</span>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                      [ngClass]="getStatusBadgeClass(sale.status)">
+                      {{ getStatusLabel(sale.status) }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center justify-end gap-1">
+                      <button type="button" (click)="viewSaleDetails(sale); $event.stopPropagation()"
+                        matTooltip="Ver detalle"
+                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0">
+                        <span class="material-symbols-outlined msz-18">visibility</span>
+                      </button>
+                      @if (canComplete(sale)) {
+                        <button type="button" (click)="completeSale(sale); $event.stopPropagation()"
+                          matTooltip="Completar venta"
+                          class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors border-0">
+                          <span class="material-symbols-outlined msz-18">check_circle</span>
+                        </button>
+                      }
+                      @if (canCancel(sale)) {
+                        <button type="button" (click)="cancelSale(sale); $event.stopPropagation()"
+                          matTooltip="Cancelar venta"
+                          class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0">
+                          <span class="material-symbols-outlined msz-18">cancel</span>
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
           </table>
         </div>
-      }
 
-      <!-- Footer -->
-      @if (!loading && dataSource.data.length > 0) {
         <div class="table-footer">
           <span class="text-sm text-slate-500">
-            <span class="font-semibold text-slate-700">{{ totalRecords }}</span> ventas en total
+            Mostrando <span class="font-semibold text-slate-700">{{ sales.length }}</span>
+            de <span class="font-semibold text-slate-700">{{ totalRecords }}</span> ventas
           </span>
           <mat-paginator
             [length]="totalRecords"

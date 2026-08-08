@@ -18,7 +18,6 @@ assignment
 assignment_add
 assignment_ind
 assignment_late
-attach_money
 autorenew
 backup
 badge

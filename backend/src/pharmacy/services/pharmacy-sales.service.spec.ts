@@ -594,4 +594,56 @@ describe('PharmacySalesService', () => {
       expect(saved.total).toBeCloseTo(113);
     });
   });
+
+  // ─── listWithFilters — búsqueda ───────────────────────────────────────────
+
+  describe('listWithFilters: búsqueda', () => {
+    const makeQb = () => ({
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+    });
+
+    /**
+     * La pantalla filtraba con `MatTableDataSource.filter`, que solo mira las filas
+     * de la página cargada: buscar algo de la página 3 devolvía "sin resultados".
+     * La búsqueda tiene que ir a la consulta.
+     */
+    it('filtra por número de venta o nombre del paciente, en minúsculas', async () => {
+      const qb = makeQb();
+      saleRepo.createQueryBuilder!.mockReturnValue(qb as any);
+
+      await service.listWithFilters({ clinicId: 'clinic-1', search: '  Ana  ' });
+
+      const [sql, params] = qb.andWhere.mock.calls.find(c => String(c[0]).includes('saleNumber'))!;
+      expect(String(sql)).toContain('translate');
+      expect(params).toEqual({ term: '%ana%' });
+    });
+
+    // En Bolivia los nombres llevan tilde y nadie la escribe al buscar: "Noemi"
+    // tiene que encontrar a "Noemí". Se resuelve con `translate` en los dos lados
+    // —consulta y término— para no depender de la extensión `unaccent`.
+    it('ignora los acentos del término de búsqueda', async () => {
+      const qb = makeQb();
+      saleRepo.createQueryBuilder!.mockReturnValue(qb as any);
+
+      await service.listWithFilters({ clinicId: 'clinic-1', search: 'Noemí' });
+
+      const [, params] = qb.andWhere.mock.calls.find(c => String(c[0]).includes('saleNumber'))!;
+      expect(params).toEqual({ term: '%noemi%' });
+    });
+
+    it('no añade la condición si la búsqueda viene vacía o en blanco', async () => {
+      const qb = makeQb();
+      saleRepo.createQueryBuilder!.mockReturnValue(qb as any);
+
+      await service.listWithFilters({ clinicId: 'clinic-1', search: '   ' });
+
+      const condiciones = qb.andWhere.mock.calls.map(c => String(c[0]));
+      expect(condiciones.some(c => c.includes('saleNumber'))).toBe(false);
+    });
+  });
 });
