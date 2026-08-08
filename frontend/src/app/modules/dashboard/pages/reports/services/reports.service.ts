@@ -4,6 +4,7 @@ import { Observable } from 'rxjs'
 import { tap } from 'rxjs/operators'
 import { environment } from '../../../../../environments/environments'
 import { todayLocalISO } from '../../../../../shared/utils/date-format.util'
+import { openPdfInNewTab } from '../../../../../shared/utils/pdf-viewer.util'
 
 @Injectable({
   providedIn: 'root',
@@ -16,12 +17,14 @@ export class ReportsService {
   // ─── Descarga de reportes en PDF ──────────────────────────────────────────
 
   /**
-   * Descarga un reporte en PDF y dispara la descarga en el navegador.
+   * Pide un reporte en PDF y lo abre en el visor del navegador, para verlo antes
+   * de imprimirlo o guardarlo. Antes lo descargaba a ciegas, a diferencia del
+   * resto de PDF de la app (recetas, resultados, consentimiento).
    *
    * (El nombre anterior era `downloadReportPdf`: los PDF se generan con
    * Typst desde la migración, Puppeteer ya no está en el proyecto.)
    * @param endpoint Sufijo después de /api/reports/export/pdf/
-   * @param filename Nombre del archivo descargado
+   * @param filename Nombre con el que se guardaría desde el visor
    * @param params Parámetros de query opcionales (startDate, endDate, etc.)
    */
   downloadReportPdf(
@@ -31,16 +34,9 @@ export class ReportsService {
   ): Observable<Blob> {
     const query = new URLSearchParams(params).toString()
     const url = `${this.apiUrl}/export/pdf/${endpoint}${query ? '?' + query : ''}`
-    return this.http.get(url, { responseType: 'blob' }).pipe(
-      tap(blob => {
-        const objUrl = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = objUrl
-        a.download = filename
-        a.click()
-        URL.revokeObjectURL(objUrl)
-      }),
-    )
+    return this.http
+      .get(url, { responseType: 'blob' })
+      .pipe(tap(blob => openPdfInNewTab(blob, filename)))
   }
 
   downloadFinancialPdf(params: Record<string, string> = {}): Observable<Blob> {
@@ -89,6 +85,10 @@ export class ReportsService {
     return this.downloadReportPdf('transfer-efficiency', `eficiencia-traslados-${date}.pdf`, params)
   }
 
+  /**
+   * Descarga directa, sin visor: esto sirve los Excel, que el navegador no sabe
+   * mostrar. Solo los PDF se abren en pestaña (ver `downloadReportPdf`).
+   */
   private downloadBlob(path: string, filename: string, params: Record<string, string> = {}): Observable<Blob> {
     const query = new URLSearchParams(params).toString()
     const url = `${this.apiUrl}/${path}${query ? '?' + query : ''}`

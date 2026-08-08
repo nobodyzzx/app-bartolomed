@@ -5,6 +5,7 @@ import { AlertService } from '@core/services/alert.service'
 import { debounceTime, distinctUntilChanged, Subject, switchMap } from 'rxjs'
 import { Patient } from '../patients/interfaces/patient.interface'
 import { PatientsService } from '../patients/services/patients.service'
+import { openPdfInNewTab } from '../../../../shared/utils/pdf-viewer.util'
 import {
   Charge,
   ChargeOrigin,
@@ -345,16 +346,7 @@ export class CheckoutComponent {
       .downloadReceipt(invoiceId, this.discountDisplay)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: blob => {
-          const url = window.URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = url
-          a.download = `${invoiceNumber}.pdf`
-          document.body.appendChild(a)
-          a.click()
-          document.body.removeChild(a)
-          window.URL.revokeObjectURL(url)
-        },
+        next: blob => openPdfInNewTab(blob, `${invoiceNumber}.pdf`),
       })
   }
 

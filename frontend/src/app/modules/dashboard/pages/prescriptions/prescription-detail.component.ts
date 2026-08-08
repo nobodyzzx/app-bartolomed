@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { PrescriptionsService } from './prescriptions.service'
+import { openPdfInNewTab } from '../../../../shared/utils/pdf-viewer.util'
 
 @Component({
     selector: 'app-prescription-detail',
@@ -128,9 +129,7 @@ export class PrescriptionDetailComponent implements OnInit {
     this.svc.getPdf(this.prescription.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: blob => {
         this.printLoading = false
-        const url = URL.createObjectURL(blob)
-        window.open(url, '_blank')
-        setTimeout(() => URL.revokeObjectURL(url), 60000)
+        openPdfInNewTab(blob, 'receta.pdf')
       },
       error: () => (this.printLoading = false),
     })

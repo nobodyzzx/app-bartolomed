@@ -20,6 +20,7 @@ import { VALIDATION_PATTERNS } from '../../../../shared/validators/validation-pa
 import { PrescriptionsService } from './prescriptions.service'
 import { DrugSearchService } from './drug-search.service'
 import { toLocalISODate } from '../../../../shared/utils/date-format.util'
+import { openPdfInNewTab } from '../../../../shared/utils/pdf-viewer.util'
 
 // Validators
 function dateFormatValidator(control: AbstractControl): ValidationErrors | null {
@@ -138,9 +139,7 @@ export class PrescriptionFormComponent implements CanComponentDeactivate {
     this.svc.getPdf(id).subscribe({
       next: blob => {
         this.printLoading = false
-        const url = URL.createObjectURL(blob)
-        window.open(url, '_blank')
-        setTimeout(() => URL.revokeObjectURL(url), 60000)
+        openPdfInNewTab(blob, 'receta.pdf')
       },
       error: () => (this.printLoading = false),
     })

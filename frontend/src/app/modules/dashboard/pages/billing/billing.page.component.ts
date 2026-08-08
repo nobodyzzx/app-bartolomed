@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { formatPlainDate } from '../../../../shared/utils/date-format.util'
+import { openPdfInNewTab } from '../../../../shared/utils/pdf-viewer.util'
 import { BillingService } from './billing.service'
 import { BillingStatistics, RecentInvoice } from './interfaces/billing-ui.interfaces'
 
@@ -158,16 +159,7 @@ export class BillingPageComponent implements OnInit {
       .downloadReceipt(invoice.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: blob => {
-          const url = window.URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = url
-          a.download = `${invoice.invoiceNumber ?? 'recibo'}.pdf`
-          document.body.appendChild(a)
-          a.click()
-          document.body.removeChild(a)
-          window.URL.revokeObjectURL(url)
-        },
+        next: blob => openPdfInNewTab(blob, `${invoice.invoiceNumber ?? 'recibo'}.pdf`),
       })
   }
 

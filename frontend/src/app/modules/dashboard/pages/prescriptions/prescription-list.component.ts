@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { Prescription } from './interfaces/prescription-ui.interface'
 import { PrescriptionsService } from './prescriptions.service'
+import { openPdfInNewTab } from '../../../../shared/utils/pdf-viewer.util'
 
 const STATUS_MAP: Record<string, { label: string; classes: string }> = {
   draft:     { label: 'Borrador',    classes: 'bg-slate-100 text-slate-700' },
@@ -229,11 +230,7 @@ export class PrescriptionListComponent implements OnInit {
 
   printPdf(p: Prescription) {
     this.prescriptionsService.getPdf(p.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: blob => {
-        const url = URL.createObjectURL(blob)
-        window.open(url, '_blank')
-        setTimeout(() => URL.revokeObjectURL(url), 60000)
-      },
+      next: blob => openPdfInNewTab(blob, 'receta.pdf'),
     })
   }
 }

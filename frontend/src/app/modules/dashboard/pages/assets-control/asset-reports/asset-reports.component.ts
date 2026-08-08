@@ -15,6 +15,7 @@ import {
 } from '../interfaces/assets.interfaces'
 import { AssetReportsService } from '../services/asset-reports.service'
 import { AssetReportDetailDialogComponent } from './asset-report-detail-dialog/asset-report-detail-dialog.component'
+import { openPdfInNewTab } from '../../../../../shared/utils/pdf-viewer.util'
 
 @Component({
     selector: 'app-asset-reports',
@@ -146,19 +147,30 @@ export class AssetReportsComponent implements OnInit {
     this.loading = true
     this.assetReportsService.downloadReport(report.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: async (blob: Blob) => {
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${report.title.replace(/\s+/g, '-')}.${reportFileExtension(report.format)}`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        window.URL.revokeObjectURL(url)
+        const extension = reportFileExtension(report.format)
+        const filename = `${report.title.replace(/\s+/g, '-')}.${extension}`
+        // Este reporte puede salir en PDF, Excel, CSV o JSON. Solo el PDF se abre
+        // en el visor; el resto el navegador no sabe mostrarlos y hay que bajarlos.
+        const isPdf = extension === 'pdf'
+
+        if (isPdf) {
+          openPdfInNewTab(blob, filename)
+        } else {
+          const url = window.URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = filename
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          window.URL.revokeObjectURL(url)
+        }
+
         this.loading = false
         await this.alert.fire({
           icon: 'success',
-          title: 'Descarga Iniciada',
-          text: 'El reporte se está descargando',
+          title: isPdf ? 'Reporte listo' : 'Descarga iniciada',
+          text: isPdf ? 'Se abrió en una pestaña nueva' : 'El reporte se está descargando',
           timer: 1500,
           showConfirmButton: false,
         })

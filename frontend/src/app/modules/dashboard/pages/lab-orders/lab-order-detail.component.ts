@@ -8,6 +8,7 @@ import { LAB_MODULE_CONFIG } from './lab-module.config'
 import { LabOrder, LabOrderItem } from './interfaces/lab-order-ui.interface'
 import { LabOrdersService } from './lab-orders.service'
 import { labCategoryLabel } from '../service-prices/service-prices.service'
+import { openPdfInNewTab } from '../../../../shared/utils/pdf-viewer.util'
 
 const STATUS_LABELS: Record<string, string> = {
   requested: 'Solicitada',
@@ -244,9 +245,7 @@ export class LabOrderDetailComponent implements OnInit {
       .subscribe({
         next: blob => {
           this.printing = false
-          const url = URL.createObjectURL(blob)
-          window.open(url, '_blank')
-          setTimeout(() => URL.revokeObjectURL(url), 60000)
+          openPdfInNewTab(blob, 'resultados.pdf')
         },
         error: () => (this.printing = false),
       })

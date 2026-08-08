@@ -36,6 +36,7 @@ import { formatPlainDate } from '../../../../../shared/utils/date-format.util'
 import { MedicalRecordDraftService } from '../services/medical-record-draft.service'
 import { MedicalRecordDtoBuilderService } from '../services/medical-record-dto-builder.service'
 import { MedicalRecordsService } from '../services/medical-records.service'
+import { openPdfInNewTab } from '../../../../../shared/utils/pdf-viewer.util'
 import {
   getVitalSignClasses,
   getVitalSignIcon,
@@ -1048,7 +1049,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
     }
 
     this.medicalRecordsService.downloadConsentPdf(dto).subscribe({
-      next: blob => this.openPdfBlob(blob, 'consentimiento.pdf'),
+      next: blob => openPdfInNewTab(blob, 'consentimiento.pdf'),
       error: () => {},
     })
   }
@@ -1124,21 +1125,9 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
     }
 
     this.medicalRecordsService.downloadSummaryPdf(dto).subscribe({
-      next: blob => this.openPdfBlob(blob, 'expediente-medico.pdf'),
+      next: blob => openPdfInNewTab(blob, 'expediente-medico.pdf'),
       error: () => {},
     })
-  }
-
-  private openPdfBlob(blob: Blob, filename: string): void {
-    const url = URL.createObjectURL(blob)
-    const a   = document.createElement('a')
-    a.href    = url
-    a.target  = '_blank'
-    a.rel     = 'noopener'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    setTimeout(() => URL.revokeObjectURL(url), 30_000)
   }
 
   private showSuccess(message: string): void {

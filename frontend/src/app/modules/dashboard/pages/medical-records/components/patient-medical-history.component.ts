@@ -23,6 +23,7 @@ import { Patient } from '../../patients/interfaces'
 import { PatientsService } from '../../patients/services/patients.service'
 import { MedicalRecord, RecordType } from '../interfaces'
 import { MedicalRecordsService } from '../services/medical-records.service'
+import { openPdfInNewTab } from '../../../../../shared/utils/pdf-viewer.util'
 
 @Component({
     selector: 'app-patient-medical-history',
@@ -137,9 +138,7 @@ export class PatientMedicalHistoryComponent implements OnInit, OnDestroy {
       .subscribe({
         next: blob => {
           this.printingLabOrderId = null
-          const url = URL.createObjectURL(blob)
-          window.open(url, '_blank')
-          setTimeout(() => URL.revokeObjectURL(url), 60000)
+          openPdfInNewTab(blob, 'resultados.pdf')
           this.cdr.markForCheck()
         },
         error: () => {
