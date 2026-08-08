@@ -169,6 +169,19 @@ export class LabOrderDetailComponent implements OnInit {
     return (conProveedor as any)?.providerName ?? ''
   }
 
+  /** ¿Algún estudio de la orden exige consentimiento informado? */
+  requiresConsent(): boolean {
+    return (this.order?.items ?? []).some((i: any) => !!i.requiresConsent)
+  }
+
+  /** Estudios de la orden que exigen consentimiento, por nombre. */
+  consentStudies(): string {
+    return (this.order?.items ?? [])
+      .filter((i: any) => i.requiresConsent)
+      .map((i: any) => i.testName)
+      .join(', ')
+  }
+
   /** Días de retraso sobre la fecha estimada; 0 o menos si aún está en plazo. */
   daysOverdue(): number {
     const esperada = (this.order as any)?.expectedResultDate

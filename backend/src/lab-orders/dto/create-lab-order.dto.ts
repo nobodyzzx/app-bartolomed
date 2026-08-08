@@ -50,6 +50,14 @@ export class CreateLabOrderDto {
   @IsBoolean()
   isUrgent?: boolean;
 
+  /**
+   * Constancia de que el consentimiento informado ya está firmado y archivado.
+   * Solo aplica cuando algún estudio lo exige; no bloquea la emisión.
+   */
+  @IsOptional()
+  @IsBoolean()
+  consentAcknowledged?: boolean;
+
   @IsArray()
   @ArrayMinSize(1, { message: 'La orden debe tener al menos un estudio' })
   @ValidateNested({ each: true })

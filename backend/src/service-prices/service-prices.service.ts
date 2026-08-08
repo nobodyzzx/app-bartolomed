@@ -97,6 +97,7 @@ export class ServicePricesService {
         'sp.turnaroundMinDays',
         'sp.turnaroundMaxDays',
         'sp.turnaroundNote',
+        'sp.requiresConsent',
       ])
       .where('sp.clinic_id = :clinicId', { clinicId: scopedClinicId })
       .andWhere('sp.is_active = true')

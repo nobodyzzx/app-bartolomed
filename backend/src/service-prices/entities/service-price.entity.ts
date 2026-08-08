@@ -149,6 +149,15 @@ export class ServicePrice {
   @Column('text', { name: 'turnaround_note', nullable: true })
   turnaroundNote: string | null;
 
+  /**
+   * ¿Este estudio exige consentimiento informado firmado antes de realizarse?
+   * Marca del catálogo: colonoscopía sí, ecografía y ECG normalmente no. Al
+   * pedir el estudio el sistema avisa y ofrece la plantilla, pero **no bloquea**
+   * la orden (ver `LabOrder.consentAcknowledged`).
+   */
+  @Column('boolean', { name: 'requires_consent', default: false })
+  requiresConsent: boolean;
+
   @Column('boolean', { default: true, name: 'is_active' })
   isActive: boolean;
 

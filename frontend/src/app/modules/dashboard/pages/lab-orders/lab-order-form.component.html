@@ -291,6 +291,35 @@
           @if (items.length === 0) {
             <p class="text-sm text-slate-400 text-center py-6">Agrega al menos un estudio</p>
           }
+
+          <!-- Consentimiento informado: avisa y ofrece la plantilla, sin
+               bloquear la orden. Solo aparece si algún estudio lo exige. -->
+          @if (needsConsent) {
+            <div class="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200">
+              <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined text-amber-500 mt-0.5">assignment_late</span>
+                <div class="flex-1">
+                  <p class="font-semibold text-amber-900 m-0">Requiere consentimiento informado</p>
+                  <p class="text-sm text-amber-800 m-0 mt-0.5">
+                    {{ consentStudies.join(', ') }} necesita(n) el consentimiento firmado.
+                    Imprime la plantilla, hazla firmar y archívala en el expediente del paciente.
+                  </p>
+                  <div class="flex flex-wrap items-center gap-4 mt-3">
+                    <button type="button" (click)="printConsentTemplate()" class="btn btn-outline-primary">
+                      <span class="material-symbols-outlined msz-16 leading-none">print</span>
+                      Imprimir plantilla de consentimiento
+                    </button>
+                    <mat-checkbox formControlName="consentAcknowledged" color="primary">
+                      El consentimiento ya está firmado y archivado
+                    </mat-checkbox>
+                  </div>
+                  <p class="text-xs text-amber-700 m-0 mt-2">
+                    No es obligatorio marcarlo ahora: la orden se puede emitir y dejar constancia después.
+                  </p>
+                </div>
+              </div>
+            </div>
+          }
         </div>
       </div>
 

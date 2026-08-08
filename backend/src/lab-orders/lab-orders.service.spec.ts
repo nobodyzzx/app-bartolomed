@@ -33,6 +33,7 @@ describe('LabOrdersService', () => {
   let userRepo: MockRepository<User>;
   let clinicRepo: MockRepository<Clinic>;
   let medicalRecordRepo: MockRepository<MedicalRecord>;
+  let servicePrices: { findOne: jest.Mock; findLaboratoryPriceByName: jest.Mock };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -61,6 +62,7 @@ describe('LabOrdersService', () => {
     userRepo = module.get(getRepositoryToken(User));
     clinicRepo = module.get(getRepositoryToken(Clinic));
     medicalRecordRepo = module.get(getRepositoryToken(MedicalRecord));
+    servicePrices = module.get(ServicePricesService);
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -157,6 +159,44 @@ describe('LabOrdersService', () => {
         }),
       );
       expect(result.medicalRecord).toEqual({ id: 'record-1' });
+    });
+
+    it('copia requiresConsent del tarifario al ítem y guarda consentAcknowledged', async () => {
+      // Fase 5: la colonoscopía exige consentimiento. La marca del catálogo se
+      // copia al ítem (como labCategory/providerName) y la constancia de que el
+      // papel firmado ya está archivado viaja en la orden.
+      patientRepo.findOne!.mockResolvedValue(makePatient());
+      userRepo.findOne!.mockResolvedValue(makeUser());
+      clinicRepo.findOne!.mockResolvedValue(makeClinic());
+      servicePrices.findOne.mockResolvedValue({
+        id: 'price-col', price: 250, providerName: null, labCategory: null, requiresConsent: true,
+      });
+      orderRepo.create!.mockImplementation((v: any) => v);
+      orderRepo.save!.mockImplementation(async (v: any) => v);
+
+      const dto = {
+        ...baseDto(),
+        consentAcknowledged: true,
+        items: [{ testName: 'Colonoscopía', category: LabTestCategory.OTHER, servicePriceId: 'price-col' }],
+      };
+      const result = await service.create(dto as any, undefined, 'clinic-1');
+
+      expect(result.consentAcknowledged).toBe(true);
+      expect(result.items[0].requiresConsent).toBe(true);
+    });
+
+    it('un estudio sin marca queda con requiresConsent=false y consentAcknowledged=false por defecto', async () => {
+      patientRepo.findOne!.mockResolvedValue(makePatient());
+      userRepo.findOne!.mockResolvedValue(makeUser());
+      clinicRepo.findOne!.mockResolvedValue(makeClinic());
+      servicePrices.findLaboratoryPriceByName.mockResolvedValue(null);
+      orderRepo.create!.mockImplementation((v: any) => v);
+      orderRepo.save!.mockImplementation(async (v: any) => v);
+
+      const result = await service.create(baseDto() as any, undefined, 'clinic-1');
+
+      expect(result.consentAcknowledged).toBe(false);
+      expect(result.items[0].requiresConsent).toBe(false);
     });
   });
 

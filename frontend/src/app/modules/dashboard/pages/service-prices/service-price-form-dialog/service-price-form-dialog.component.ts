@@ -43,6 +43,7 @@ export class ServicePriceFormDialogComponent {
       // No viaja al backend: es solo otra forma de escribir el precio.
       marginPct: [null as number | null, [Validators.min(-100)]],
       isActive: [data?.price?.isActive ?? true],
+      requiresConsent: [data?.price?.requiresConsent ?? false],
     })
 
     this.recalcMargin()
@@ -129,6 +130,7 @@ export class ServicePriceFormDialogComponent {
       // par costo/precio, no un dato aparte que pueda contradecirlos.
       costPrice: raw.costPrice === null || raw.costPrice === '' ? undefined : Number(raw.costPrice),
       isActive: raw.isActive,
+      requiresConsent: raw.requiresConsent,
     }
 
     this.dialogRef.close(payload)

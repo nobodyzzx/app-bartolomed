@@ -114,6 +114,26 @@
                   </div>
                 </div>
               }
+              <!-- Constancia del consentimiento informado. Solo aparece si algún
+                   estudio lo exige; nunca bloquea nada, solo informa el estado. -->
+              @if (requiresConsent()) {
+                <div class="flex items-start gap-3 md:col-span-2">
+                  <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                       [class]="o.consentAcknowledged ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'">
+                    <span class="material-symbols-outlined msz-18">{{ o.consentAcknowledged ? 'verified' : 'assignment_late' }}</span>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500 mb-0.5">Consentimiento informado</div>
+                    @if (o.consentAcknowledged) {
+                      <div class="font-semibold text-emerald-700">Registrado</div>
+                      <div class="text-xs text-slate-500">Firmado y archivado para {{ consentStudies() }}</div>
+                    } @else {
+                      <div class="font-semibold text-amber-700">Pendiente de registrar</div>
+                      <div class="text-xs text-slate-500">{{ consentStudies() }} lo requiere(n); hazlo firmar y archívalo</div>
+                    }
+                  </div>
+                </div>
+              }
               @if (o.clinicalNotes) {
                 <div class="flex items-start gap-3 md:col-span-2">
                   <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">

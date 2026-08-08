@@ -47,6 +47,7 @@ export interface ServicePrice {
   turnaroundMaxDays: number | null
   turnaroundNote: string | null
   isActive: boolean
+  requiresConsent: boolean
   clinicId: string
   createdAt: string
   updatedAt: string
@@ -65,6 +66,8 @@ export interface ServicePriceCatalogItem {
   turnaroundMaxDays?: number | null
   /** Entregas que no se expresan en días; manda sobre los días si viene. */
   turnaroundNote?: string | null
+  /** ¿El estudio exige consentimiento informado firmado? (colonoscopía sí). */
+  requiresConsent?: boolean
 }
 
 /** Nombre legible de cada categoría clínica, en el orden del tarifario. */
@@ -113,6 +116,8 @@ export interface ServicePricePayload {
   /** Costo de convenio. Si no se envía, el backend deja el que ya estaba. */
   costPrice?: number
   isActive?: boolean
+  /** ¿El estudio exige consentimiento informado firmado? */
+  requiresConsent?: boolean
 }
 
 /** Un precio que cambiaría (o cambió) al aplicar un margen en bloque. */

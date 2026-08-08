@@ -90,6 +90,15 @@ export class LabOrder {
   @Column('boolean', { default: false })
   isUrgent: boolean;
 
+  /**
+   * ¿El consentimiento informado ya está firmado y archivado? Es una constancia,
+   * **no un bloqueo**: la orden se puede emitir sin marcarlo (a veces el papel
+   * firmado llega después). Solo tiene sentido cuando algún estudio de la orden
+   * lo exige (`LabOrderItem.requiresConsent`).
+   */
+  @Column('boolean', { name: 'consent_acknowledged', default: false })
+  consentAcknowledged: boolean;
+
   /** Cuándo salió la muestra hacia el laboratorio externo. */
   @Column('timestamptz', { name: 'sent_to_provider_at', nullable: true })
   sentToProviderAt: Date | null;
@@ -244,6 +253,15 @@ export class LabOrderItem {
    */
   @Column('text', { name: 'lab_category', nullable: true })
   labCategory: string | null;
+
+  /**
+   * ¿Este estudio exige consentimiento informado? Copiado del tarifario al
+   * pedir la orden, igual que `labCategory`/`providerName`: así el detalle sabe
+   * qué avisar sin volver a consultar el catálogo, y la constancia refleja lo
+   * que era cierto cuando se pidió. Colonoscopía sí; ecografía y ECG no.
+   */
+  @Column('boolean', { name: 'requires_consent', default: false })
+  requiresConsent: boolean;
 
   @Column('text', { nullable: true })
   resultValue: string;

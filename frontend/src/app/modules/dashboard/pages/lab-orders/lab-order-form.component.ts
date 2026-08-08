@@ -23,6 +23,7 @@ import { CanComponentDeactivate, confirmDiscardChanges } from '../../../../core/
 import { LAB_MODULE_CONFIG } from './lab-module.config'
 import { inferSpecimen } from './lab-specimen.util'
 import { LabOrdersService } from './lab-orders.service'
+import { ConsentTemplatesService } from '../medical-records/services/consent-templates.service'
 import {
   labCategoryLabel,
   labCategoryRank,
@@ -46,6 +47,7 @@ export class LabOrderFormComponent implements CanComponentDeactivate {
   private usersService = inject(UsersService)
   private clinicCtx = inject(ClinicContextService)
   private servicePricesService = inject(ServicePricesService)
+  private consentTemplates = inject(ConsentTemplatesService)
   private elRef = inject(ElementRef)
   private destroyRef = inject(DestroyRef)
   readonly config = inject(LAB_MODULE_CONFIG)
@@ -60,6 +62,9 @@ export class LabOrderFormComponent implements CanComponentDeactivate {
     clinicId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     orderDate: new FormControl(new Date(), { nonNullable: true, validators: [Validators.required] }),
     isUrgent: new FormControl(false, { nonNullable: true }),
+    // Constancia de que el consentimiento firmado ya está archivado. No es
+    // requerido: la orden se puede emitir sin marcarlo (el papel llega después).
+    consentAcknowledged: new FormControl(false, { nonNullable: true }),
     clinicalNotes: new FormControl(''),
     // Solo se usan en la solicitud externa (ver `applyExternalMode`), pero se
     // declaran aquí porque el FormGroup está tipado y `addControl` no admite
@@ -120,6 +125,39 @@ export class LabOrderFormComponent implements CanComponentDeactivate {
 
   turnaround(price: ServicePriceCatalogItem): string {
     return turnaroundLabel(price)
+  }
+
+  // ── Consentimiento informado ────────────────────────────────────────────
+  // Getters, no `computed()`: leen del FormArray, que no es señal — un computed
+  // sobre él nunca se recalcularía (gotcha conocido de este proyecto).
+
+  /** Nombres de los estudios elegidos que exigen consentimiento informado. */
+  get consentStudies(): string[] {
+    const nombres: string[] = []
+    for (const it of this.items.controls) {
+      const elegido = this.labCatalog.find(p => p.id === it.get('servicePriceId')?.value)
+      if (elegido?.requiresConsent && elegido.name) nombres.push(elegido.name)
+    }
+    return nombres
+  }
+
+  /** ¿Algún estudio de la orden requiere consentimiento? */
+  get needsConsent(): boolean {
+    return this.consentStudies.length > 0
+  }
+
+  /**
+   * Abre la plantilla de consentimiento lista para imprimir y firmar. Reutiliza
+   * el generador de `consent-forms`; en la solicitud externa el paciente puede
+   * no tener ficha ni médico de la casa, y la plantilla sale con esos campos en
+   * blanco para llenarlos a mano, que es justo lo que se necesita.
+   */
+  printConsentTemplate(): void {
+    const doctor = this.doctors.find(d => d.id === this.form.get('doctorId')?.value)
+    this.consentTemplates.printConsent(this.selectedPatient() ?? undefined, doctor, {
+      printTemplate: 'diagnostic',
+      procedureName: this.consentStudies.join(', '),
+    })
   }
 
   /** Categoría clínica del estudio elegido, tal como la nombra el tarifario. */
@@ -376,6 +414,8 @@ export class LabOrderFormComponent implements CanComponentDeactivate {
       patientId: v.patientId || undefined,
       clinicId: v.clinicId,
       isUrgent: v.isUrgent,
+      // Solo tiene sentido si algún estudio lo exige; si no, se manda false.
+      consentAcknowledged: this.needsConsent ? v.consentAcknowledged : false,
       clinicalNotes: v.clinicalNotes || undefined,
       items: (v.items || []).map((it: any) => ({
         servicePriceId: it.servicePriceId,

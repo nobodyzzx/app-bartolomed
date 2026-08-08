@@ -46,4 +46,9 @@ export class CreateServicePriceDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  /** ¿El estudio exige consentimiento informado firmado? (colonoscopía sí). */
+  @IsBoolean()
+  @IsOptional()
+  requiresConsent?: boolean;
 }

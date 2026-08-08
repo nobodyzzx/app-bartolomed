@@ -925,6 +925,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/medical-records/consent-forms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MedicalRecordsController_findAllConsentForms"];
+        put?: never;
+        post: operations["MedicalRecordsController_createConsentForm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/medical-records/{id}": {
         parameters: {
             query?: never;
@@ -967,22 +983,6 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["MedicalRecordsController_generateSummaryPdf"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/medical-records/consent-forms": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["MedicalRecordsController_findAllConsentForms"];
-        put?: never;
-        post: operations["MedicalRecordsController_createConsentForm"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3030,6 +3030,103 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/special-studies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SpecialStudiesController_findAll"];
+        put?: never;
+        post: operations["SpecialStudiesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/special-studies/external": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mismo criterio que en laboratorio: el paciente llega derivado o particular. */
+        post: operations["SpecialStudiesController_createExternal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/special-studies/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SpecialStudiesController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/special-studies/{id}/results/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SpecialStudiesController_getResultsPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/special-studies/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["SpecialStudiesController_setStatus"];
+        trace?: never;
+    };
+    "/api/special-studies/{id}/items/{itemId}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SpecialStudiesController_enterResult"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/billing/checkout": {
         parameters: {
             query?: never;
@@ -3816,7 +3913,7 @@ export interface components {
             password: string;
             personalInfo: components["schemas"]["PersonalInfoDto"];
             professionalInfo?: components["schemas"]["ProfessionalInfoDto"];
-            roles: ("super-admin" | "admin" | "doctor" | "nurse" | "receptionist" | "pharmacist" | "laboratory")[];
+            roles: ("super-admin" | "admin" | "doctor" | "nurse" | "receptionist" | "pharmacist" | "laboratory" | "special-studies")[];
             /** Format: uuid */
             clinicId?: string;
         };
@@ -4202,7 +4299,7 @@ export interface components {
             name: string;
             description?: string;
             /** @enum {string} */
-            category: "consultation" | "laboratory" | "procedure" | "other";
+            category: "consultation" | "laboratory" | "special_study" | "procedure" | "other";
             /**
              * @description Solo tiene sentido en `CONSULTATION`: es lo que permite resolver la tarifa
              *     de una cita automáticamente. Se valida condicionalmente para que no se
@@ -4218,6 +4315,8 @@ export interface components {
              */
             costPrice?: number;
             isActive?: boolean;
+            /** @description ¿El estudio exige consentimiento informado firmado? (colonoscopía sí). */
+            requiresConsent?: boolean;
         };
         ServicePrice: {
             id: string;
@@ -4226,7 +4325,7 @@ export interface components {
             name: string;
             description: string | null;
             /** @enum {string} */
-            category: "consultation" | "laboratory" | "procedure" | "other";
+            category: "consultation" | "laboratory" | "special_study" | "procedure" | "other";
             /**
              * @description Solo para `CONSULTATION`: liga la tarifa al tipo de cita, de modo que al
              *     completar una cita se pueda resolver su precio sin intervención manual.
@@ -4275,6 +4374,13 @@ export interface components {
              *     muestra"). Si está, manda sobre los días.
              */
             turnaroundNote: string | null;
+            /**
+             * @description ¿Este estudio exige consentimiento informado firmado antes de realizarse?
+             *     Marca del catálogo: colonoscopía sí, ecografía y ECG normalmente no. Al
+             *     pedir el estudio el sistema avisa y ofrece la plantilla, pero **no bloquea**
+             *     la orden (ver `LabOrder.consentAcknowledged`).
+             */
+            requiresConsent: boolean;
             isActive: boolean;
             clinic: components["schemas"]["Clinic"];
             clinicId: string;
@@ -4311,7 +4417,7 @@ export interface components {
             name?: string;
             description?: string;
             /** @enum {string} */
-            category?: "consultation" | "laboratory" | "procedure" | "other";
+            category?: "consultation" | "laboratory" | "special_study" | "procedure" | "other";
             /**
              * @description Solo tiene sentido en `CONSULTATION`: es lo que permite resolver la tarifa
              *     de una cita automáticamente. Se valida condicionalmente para que no se
@@ -4327,6 +4433,8 @@ export interface components {
              */
             costPrice?: number;
             isActive?: boolean;
+            /** @description ¿El estudio exige consentimiento informado firmado? (colonoscopía sí). */
+            requiresConsent?: boolean;
         };
         CreateMedicalRecordDto: {
             /** @enum {string} */
@@ -4433,29 +4541,6 @@ export interface components {
             /** Format: date-time */
             deletedAt?: string;
         };
-        UpdateMedicalRecordDto: {
-            /** @enum {string} */
-            status?: "draft" | "completed" | "reviewed" | "archived";
-        };
-        CreateConsentFormDto: {
-            /** @enum {string} */
-            type: "treatment" | "surgery" | "anesthesia" | "blood_transfusion" | "imaging" | "laboratory" | "discharge" | "general" | "other";
-            title: string;
-            description: string;
-            content?: string;
-            risksBenefits?: string;
-            alternatives?: string;
-            expiresAt?: string;
-            witnessName?: string;
-            witnessRelationship?: string;
-            notes?: string;
-            /** Format: uuid */
-            patientId: string;
-            /** Format: uuid */
-            doctorId: string;
-            /** Format: uuid */
-            medicalRecordId?: string;
-        };
         ConsentForm: {
             id: string;
             /** @enum {string} */
@@ -4489,6 +4574,29 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+        };
+        UpdateMedicalRecordDto: {
+            /** @enum {string} */
+            status?: "draft" | "completed" | "reviewed" | "archived";
+        };
+        CreateConsentFormDto: {
+            /** @enum {string} */
+            type: "treatment" | "surgery" | "anesthesia" | "blood_transfusion" | "imaging" | "laboratory" | "discharge" | "general" | "other";
+            title: string;
+            description: string;
+            content?: string;
+            risksBenefits?: string;
+            alternatives?: string;
+            expiresAt?: string;
+            witnessName?: string;
+            witnessRelationship?: string;
+            notes?: string;
+            /** Format: uuid */
+            patientId: string;
+            /** Format: uuid */
+            doctorId: string;
+            /** Format: uuid */
+            medicalRecordId?: string;
         };
         UpdateConsentFormDto: {
             /** @enum {string} */
@@ -5067,6 +5175,11 @@ export interface components {
             orderDate: string;
             clinicalNotes?: string;
             isUrgent?: boolean;
+            /**
+             * @description Constancia de que el consentimiento informado ya está firmado y archivado.
+             *     Solo aplica cuando algún estudio lo exige; no bloquea la emisión.
+             */
+            consentAcknowledged?: boolean;
             items: components["schemas"]["CreateLabOrderItemDto"][];
             /**
              * Format: uuid
@@ -5092,6 +5205,13 @@ export interface components {
             orderDate: string;
             clinicalNotes: string;
             isUrgent: boolean;
+            /**
+             * @description ¿El consentimiento informado ya está firmado y archivado? Es una constancia,
+             *     **no un bloqueo**: la orden se puede emitir sin marcarlo (a veces el papel
+             *     firmado llega después). Solo tiene sentido cuando algún estudio de la orden
+             *     lo exige (`LabOrderItem.requiresConsent`).
+             */
+            consentAcknowledged: boolean;
             /**
              * Format: date-time
              * @description Cuándo salió la muestra hacia el laboratorio externo.
@@ -5124,6 +5244,8 @@ export interface components {
             doctor: components["schemas"]["User"] | null;
             /** @enum {string} */
             origin: "internal" | "external";
+            /** @enum {string} */
+            orderType: "lab" | "special";
             /**
              * @description Quién indicó el examen cuando no es un médico de la casa: "Dr. Pérez —
              *     Consultorio San Luis", o "Particular, sin orden médica". Solo se usa en
@@ -7002,7 +7124,7 @@ export interface operations {
     ServicePricesController_findAll: {
         parameters: {
             query?: {
-                category?: "consultation" | "laboratory" | "procedure" | "other";
+                category?: "consultation" | "laboratory" | "special_study" | "procedure" | "other";
                 appointmentType?: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other";
                 /** @description Busca en código y nombre. */
                 search?: string;
@@ -7075,7 +7197,7 @@ export interface operations {
     ServicePricesController_findCatalog: {
         parameters: {
             query?: {
-                category?: "consultation" | "laboratory" | "procedure" | "other";
+                category?: "consultation" | "laboratory" | "special_study" | "procedure" | "other";
                 appointmentType?: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other";
                 /** @description Busca en código y nombre. */
                 search?: string;
@@ -7280,6 +7402,52 @@ export interface operations {
             };
         };
     };
+    MedicalRecordsController_findAllConsentForms: {
+        parameters: {
+            query?: {
+                patientId?: string;
+                medicalRecordId?: string;
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentForm"][];
+                };
+            };
+        };
+    };
+    MedicalRecordsController_createConsentForm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateConsentFormDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentForm"];
+                };
+            };
+        };
+    };
     MedicalRecordsController_findOne: {
         parameters: {
             query?: never;
@@ -7376,52 +7544,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-        };
-    };
-    MedicalRecordsController_findAllConsentForms: {
-        parameters: {
-            query?: {
-                patientId?: string;
-                medicalRecordId?: string;
-                status?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ConsentForm"][];
-                };
-            };
-        };
-    };
-    MedicalRecordsController_createConsentForm: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateConsentFormDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ConsentForm"];
-                };
             };
         };
     };
@@ -10293,6 +10415,159 @@ export interface operations {
             };
         };
     };
+    SpecialStudiesController_findAll: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SpecialStudiesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateLabOrderDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabOrder"];
+                };
+            };
+        };
+    };
+    SpecialStudiesController_createExternal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateExternalLabOrderDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabOrder"];
+                };
+            };
+        };
+    };
+    SpecialStudiesController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabOrder"];
+                };
+            };
+        };
+    };
+    SpecialStudiesController_getResultsPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SpecialStudiesController_setStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabOrder"];
+                };
+            };
+        };
+    };
+    SpecialStudiesController_enterResult: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnterLabResultDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabOrder"];
+                };
+            };
+        };
+    };
     BillingController_checkout: {
         parameters: {
             query?: never;
@@ -10746,7 +11021,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                field: "type" | "location" | "manufacturer" | "category";
+                field: "type" | "category" | "manufacturer" | "location";
             };
             cookie?: never;
         };

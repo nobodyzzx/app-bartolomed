@@ -12,6 +12,8 @@ export interface LabOrderItem {
   resultedAt?: string
   /** Laboratorio externo al que se deriva; vacío si lo procesa la clínica. */
   providerName?: string | null
+  /** ¿Este estudio exige consentimiento informado? Copiado del catálogo. */
+  requiresConsent?: boolean
   enteredBy?: {
     id: string
     email: string
@@ -26,6 +28,8 @@ export interface LabOrder {
   orderDate: string
   clinicalNotes?: string
   isUrgent: boolean
+  /** Constancia de que el consentimiento firmado ya está archivado. */
+  consentAcknowledged?: boolean
   /** `internal` la indica un médico de la casa; `external` llega de fuera. */
   origin?: string
   referringDoctorName?: string | null

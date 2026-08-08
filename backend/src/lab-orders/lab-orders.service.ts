@@ -147,6 +147,9 @@ export class LabOrdersService {
       orderDate: new Date(createDto.orderDate),
       clinicalNotes: createDto.clinicalNotes,
       isUrgent: !!createDto.isUrgent,
+      // Constancia, no bloqueo: quien registra la orden marca si el papel
+      // firmado ya está archivado. Puede llegar después.
+      consentAcknowledged: !!createDto.consentAcknowledged,
       patient,
       patientName: patient ? null : (createDto.patientName ?? null),
       doctor: requester.doctor,
@@ -190,6 +193,7 @@ export class LabOrdersService {
         servicePriceId: string | null;
         providerName: string | null;
         labCategory: string | null;
+        requiresConsent: boolean;
       }
     >
   > {
@@ -211,6 +215,9 @@ export class LabOrdersService {
           // Igual con la categoría clínica: es la del tarifario en el momento
           // de pedir el estudio, no la que tenga el catálogo dentro de un año.
           labCategory: tariff?.labCategory ?? null,
+          // Y si exigía consentimiento: así el detalle lo sabe sin reconsultar
+          // el catálogo, aunque el estudio cambie de política más adelante.
+          requiresConsent: tariff?.requiresConsent ?? false,
         };
       }),
     );
