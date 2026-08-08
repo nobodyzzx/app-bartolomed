@@ -183,21 +183,32 @@
                         <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Pendiente</span>
                       }
                       @if (item.isAbnormal) {
-                        <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">Anormal</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                          {{ config.quantitativeResults ? 'Anormal' : 'Con hallazgos' }}
+                        </span>
                       }
                     </div>
 
                     @if (item.resultedAt && editingItemId !== item.id) {
                       <div class="mt-2 p-3 bg-slate-50 rounded-lg text-sm">
-                        @if (item.resultValue) {
-                          <div>
-                            <span class="font-semibold text-slate-900">{{ item.resultValue }}</span>
-                            @if (item.resultUnit) { <span class="text-slate-500"> {{ item.resultUnit }}</span> }
-                            @if (item.referenceRange) { <span class="text-slate-400 text-xs ml-2">(Ref: {{ item.referenceRange }})</span> }
-                          </div>
-                        }
-                        @if (item.resultNotes) {
-                          <div class="text-slate-600 mt-1">{{ item.resultNotes }}</div>
+                        @if (config.quantitativeResults) {
+                          @if (item.resultValue) {
+                            <div>
+                              <span class="font-semibold text-slate-900">{{ item.resultValue }}</span>
+                              @if (item.resultUnit) { <span class="text-slate-500"> {{ item.resultUnit }}</span> }
+                              @if (item.referenceRange) { <span class="text-slate-400 text-xs ml-2">(Ref: {{ item.referenceRange }})</span> }
+                            </div>
+                          }
+                          @if (item.resultNotes) {
+                            <div class="text-slate-600 mt-1">{{ item.resultNotes }}</div>
+                          }
+                        } @else {
+                          <!-- Gabinete: el informe es el resultado; se respeta el salto de línea. -->
+                          @if (item.resultNotes) {
+                            <div class="text-slate-700 whitespace-pre-line">{{ item.resultNotes }}</div>
+                          } @else {
+                            <div class="text-slate-400 italic">Estudio realizado; informe sin texto</div>
+                          }
                         }
                         <div class="text-xs text-slate-400 mt-1">
                           Cargado por {{ item.enteredBy?.personalInfo?.firstName || item.enteredBy?.email }} el {{ item.resultedAt | date: 'dd/MM/yyyy HH:mm' }}
@@ -214,25 +225,38 @@
 
                     @if (editingItemId === item.id) {
                       <div [formGroup]="resultForms[item.id]" class="mt-3 p-4 bg-slate-50 rounded-lg space-y-3">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          <mat-form-field appearance="outline" class="mb-0">
-                            <mat-label>Valor</mat-label>
-                            <input matInput formControlName="resultValue" placeholder="Ej: 14" />
+                        @if (config.quantitativeResults) {
+                          <!-- Análisis de laboratorio: valor medido, su unidad y el rango normal. -->
+                          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <mat-form-field appearance="outline" class="mb-0">
+                              <mat-label>Valor</mat-label>
+                              <input matInput formControlName="resultValue" placeholder="Ej: 14" />
+                            </mat-form-field>
+                            <mat-form-field appearance="outline" class="mb-0">
+                              <mat-label>Unidad</mat-label>
+                              <input matInput formControlName="resultUnit" placeholder="Ej: g/dL" />
+                            </mat-form-field>
+                            <mat-form-field appearance="outline" class="mb-0">
+                              <mat-label>Rango de Referencia</mat-label>
+                              <input matInput formControlName="referenceRange" placeholder="Ej: 12-16" />
+                            </mat-form-field>
+                          </div>
+                          <mat-form-field appearance="outline" class="w-full mb-0">
+                            <mat-label>Notas del Resultado</mat-label>
+                            <textarea matInput formControlName="resultNotes" rows="2"></textarea>
                           </mat-form-field>
-                          <mat-form-field appearance="outline" class="mb-0">
-                            <mat-label>Unidad</mat-label>
-                            <input matInput formControlName="resultUnit" placeholder="Ej: g/dL" />
+                        } @else {
+                          <!-- Estudio de gabinete: un informe redactado de los hallazgos,
+                               no un valor con unidad. Aquí no aplican rango ni unidad. -->
+                          <mat-form-field appearance="outline" class="w-full mb-0">
+                            <mat-label>Informe / Hallazgos</mat-label>
+                            <textarea matInput formControlName="resultNotes" rows="7"
+                              placeholder="Técnica, hallazgos, medidas y conclusión del estudio…"></textarea>
                           </mat-form-field>
-                          <mat-form-field appearance="outline" class="mb-0">
-                            <mat-label>Rango de Referencia</mat-label>
-                            <input matInput formControlName="referenceRange" placeholder="Ej: 12-16" />
-                          </mat-form-field>
-                        </div>
-                        <mat-form-field appearance="outline" class="w-full mb-0">
-                          <mat-label>Notas del Resultado</mat-label>
-                          <textarea matInput formControlName="resultNotes" rows="2"></textarea>
-                        </mat-form-field>
-                        <mat-checkbox formControlName="isAbnormal" color="warn">Resultado fuera de rango normal</mat-checkbox>
+                        }
+                        <mat-checkbox formControlName="isAbnormal" color="warn">
+                          {{ config.quantitativeResults ? 'Resultado fuera de rango normal' : 'Hallazgos relevantes o anormales' }}
+                        </mat-checkbox>
                         <div class="flex gap-2 justify-end">
                           <button type="button" (click)="cancelEnterResult()" class="btn btn-danger-outline">Cancelar</button>
                           <button type="button" (click)="saveResult(item.id)" class="btn btn-primary">

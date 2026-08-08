@@ -218,15 +218,18 @@
                           (openedChange)="onCatalogOpened($event)"
                         >
                           <div class="sticky top-0 z-10 bg-white px-3 py-2 border-b border-slate-100">
-                            <input
-                              #catalogFilter
-                              type="text"
-                              class="w-full text-sm outline-none"
-                              placeholder="Buscar estudio…"
-                              [value]="catalogQuery()"
-                              (input)="catalogQuery.set($any($event.target).value)"
-                              (keydown)="$event.stopPropagation()"
-                              />
+                            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100">
+                              <span class="material-symbols-outlined msz-18 text-slate-400 leading-none">search</span>
+                              <input
+                                #catalogFilter
+                                type="text"
+                                class="w-full text-sm bg-transparent border-0 outline-none text-slate-700 placeholder:text-slate-400"
+                                placeholder="Buscar estudio…"
+                                [value]="catalogQuery()"
+                                (input)="catalogQuery.set($any($event.target).value)"
+                                (keydown)="$event.stopPropagation()"
+                                />
+                            </div>
                           </div>
                           @for (grupo of filteredCatalog(); track grupo.key) {
                             <mat-optgroup [label]="grupo.label">

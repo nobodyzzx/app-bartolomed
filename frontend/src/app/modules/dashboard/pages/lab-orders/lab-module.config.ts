@@ -30,6 +30,14 @@ export interface LabModuleConfig {
    * la orden pasa de *solicitada* directamente a *en proceso*.
    */
   hasSpecimen: boolean
+  /**
+   * ¿El resultado es un valor cuantitativo (número + unidad + rango de
+   * referencia) o un informe descriptivo? Un hemograma da "14 g/dL (12-16)";
+   * una ecografía o una colonoscopía dan un informe de hallazgos redactado.
+   * Cuando es falso, el formulario y la vista del resultado usan un solo campo
+   * de informe en vez de valor/unidad/rango.
+   */
+  quantitativeResults: boolean
   /** Roles que pueden emitir una orden — espejo del backend. */
   orderRoles: UserRoles[]
   /** Roles que pueden mover el estado — espejo del backend. */
@@ -75,6 +83,7 @@ export const LABORATORY_MODULE_CONFIG: LabModuleConfig = {
   orderPrefix: 'LAB',
   icon: 'biotech',
   hasSpecimen: true,
+  quantitativeResults: true,
   orderRoles: [UserRoles.DOCTOR, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
   statusRoles: [UserRoles.DOCTOR, UserRoles.ADMIN, UserRoles.SUPER_ADMIN, UserRoles.LABORATORY],
   resultRoles: [UserRoles.LABORATORY, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
@@ -107,6 +116,8 @@ export const SPECIAL_STUDIES_MODULE_CONFIG: LabModuleConfig = {
   icon: 'monitor_heart',
   // Aquí no hay muestra: el estudio se le hace al paciente en el momento.
   hasSpecimen: false,
+  // El resultado es un informe de hallazgos, no un valor con unidad y rango.
+  quantitativeResults: false,
   orderRoles: [UserRoles.DOCTOR, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
   statusRoles: [
     UserRoles.DOCTOR,

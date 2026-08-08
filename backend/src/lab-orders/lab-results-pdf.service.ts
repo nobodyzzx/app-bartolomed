@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { formatDateTime, formatPlainDate, nowInClinicTz } from '../common/utils/date-format.util';
 import { TypstCompilerService } from '../pdf/typst-compiler.service';
 import { typstString } from '../pdf/utils/typst-escape.util';
-import { LabOrder, LabOrderItem, LabOrderOrigin, LabOrderStatus } from './entities/lab-order.entity';
+import { LabOrder, LabOrderItem, LabOrderOrigin, LabOrderStatus, LabOrderType } from './entities/lab-order.entity';
 import { LAB_CATEGORY_LABELS } from '../service-prices/lab-categories';
 
 /**
@@ -105,10 +105,58 @@ export class LabResultsPdfService {
   // `[...]` de markup: ahí un `*`, `#` o `[` escrito por el usuario se
   // reinterpretaría como sintaxis Typst.
 
+  /**
+   * Bloque de informe de un estudio de gabinete (ecografía, colonoscopía, ECG).
+   * A diferencia del análisis de laboratorio, aquí el resultado no es un valor
+   * con unidad y rango sino un **informe redactado**, así que se muestra como un
+   * bloque de texto y no como fila de tabla. Los saltos de línea del informe se
+   * respetan apilando cada línea en un `stack` vertical: cada una viaja por
+   * `typstString` como argumento, nunca embebida en markup.
+   */
+  private itemReportBlock(it: LabOrderItem): string {
+    const hasResult = !!it.resultedAt;
+
+    const badge = !hasResult
+      ? `badge(${typstString('Pendiente')}, color: "gray")`
+      : it.isAbnormal
+        ? `badge(${typstString('Con hallazgos')}, color: "red")`
+        : `badge(${typstString('Normal')}, color: "green")`;
+
+    let informe: string;
+    if (!hasResult) {
+      informe = `text(size: 9pt, fill: gris-claro, ${typstString('Pendiente de realización')})`;
+    } else if (it.resultNotes && it.resultNotes.trim()) {
+      const lineas = it.resultNotes
+        .split('\n')
+        .map(l => `text(size: 9pt, fill: gris-texto, ${typstString(l)})`)
+        .join(', ');
+      informe = `stack(dir: ttb, spacing: 3pt, ${lineas})`;
+    } else {
+      informe = `text(size: 9pt, fill: gris-claro, style: "italic", ${typstString('Estudio realizado; informe sin texto')})`;
+    }
+
+    const procesado = hasResult
+      ? `\n  #v(5pt)\n  #text(size: 7.5pt, fill: gris-muted, ${typstString('Procesado: ' + this.fmtDateTime(it.resultedAt))})`
+      : '';
+
+    return `#block(width: 100%, breakable: false, stroke: 0.5pt + borde-claro, radius: 3pt, inset: (x: 10pt, y: 8pt))[
+  #grid(columns: (1fr, auto), column-gutter: 8pt, align: (left + horizon, right + horizon),
+    stack(dir: ttb, spacing: 2pt,
+      strong(${typstString(it.testName)}),
+      text(size: 7.5pt, fill: gris-muted, ${typstString(this.itemSubtitle(it))}),
+    ),
+    ${badge},
+  )
+  #v(6pt)
+  #${informe}${procesado}
+]`;
+  }
+
   private resultsTypst(order: LabOrder): string {
     const clinic = order.clinic;
     const items: LabOrderItem[] = (order.items ?? []) as LabOrderItem[];
     const patient = order.patient;
+    const isSpecial = order.orderType === LabOrderType.SPECIAL;
 
     const itemRows = items.map((it, i) => {
       const hasResult = !!it.resultedAt;
@@ -140,8 +188,13 @@ export class LabResultsPdfService {
       align(center, text(size: 8pt, ${typstString(this.fmtDateTime(it.resultedAt))}))`;
     });
 
-    const itemsTable = itemRows.length > 0
-      ? `#table(
+    // Laboratorio: tabla de valores (valor · unidad · rango de referencia).
+    // Gabinete: cada estudio es un informe redactado, no una fila de tabla.
+    const itemsTable = items.length === 0
+      ? `#align(center, text(size: 9pt, fill: gris-claro, "Sin estudios"))`
+      : isSpecial
+        ? items.map(it => this.itemReportBlock(it)).join('\n  #v(8pt)\n  ')
+        : `#table(
     columns: (24pt, 1fr, 105pt, 72pt, 85pt),
     stroke: 0.5pt + borde-claro,
     fill: (_, y) => if y == 0 { rgb("#f3f4f6") } else if calc.rem(y, 2) == 0 { fondo-raya } else { white },
@@ -153,8 +206,7 @@ export class LabResultsPdfService {
       align(center, text(size: 7.5pt, weight: "bold", upper("Procesado"))),
     ),
     ${itemRows.join(',\n    ')},
-  )`
-      : `#align(center, text(size: 9pt, fill: gris-claro, "Sin estudios"))`;
+  )`;
 
     const notesSection = order.clinicalNotes
       ? `#section(${typstString('Notas Clínicas de la Orden')})[
@@ -168,7 +220,9 @@ export class LabResultsPdfService {
     const conResultado = items.length - pending;
     const avisoTexto =
       conResultado === 0
-        ? 'Solicitud de estudios: todavía sin resultados. Este documento acompaña la muestra.'
+        ? isSpecial
+          ? 'Solicitud de estudio: todavía sin informe.'
+          : 'Solicitud de estudios: todavía sin resultados. Este documento acompaña la muestra.'
         : `Informe parcial: ${pending} estudio(s) aún sin resultado.`;
     const partialWarning = pending > 0 && order.status !== LabOrderStatus.CANCELLED
       ? `#block(width: 100%, fill: rgb("#fef3c7"), stroke: 1pt + ambar, radius: 2pt, inset: (x: 8pt, y: 6pt), text(size: 9pt, fill: rgb("#92400e"), ${typstString(avisoTexto)}))
@@ -191,7 +245,9 @@ export class LabResultsPdfService {
     // acompaña la muestra al laboratorio externo. Titularla "Resultado" sería
     // entregar un documento que dice lo contrario de lo que contiene.
     const algunResultado = items.some(i => !!i.resultedAt);
-    const docLabel = algunResultado ? 'Resultado de Laboratorio' : 'Solicitud de Laboratorio';
+    const docLabel = algunResultado
+      ? isSpecial ? 'Informe de Estudio' : 'Resultado de Laboratorio'
+      : isSpecial ? 'Solicitud de Estudio' : 'Solicitud de Laboratorio';
     const docTitle = algunResultado
       ? `Resultados ${order.orderNumber}`
       : `Solicitud ${order.orderNumber}`;
@@ -232,7 +288,7 @@ export class LabResultsPdfService {
 
   #v(10pt)
   #sigRow((
-    (name: ${typstString(this.enteredByLabel(items))}, role: ${typstString('Responsable de laboratorio')}),
+    (name: ${typstString(this.enteredByLabel(items))}, role: ${typstString(isSpecial ? 'Responsable del estudio' : 'Responsable de laboratorio')}),
     (name: ${typstString('Firma y sello')}, role: ${typstString('Validación del informe')}),
   ))
 ]
