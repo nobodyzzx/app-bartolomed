@@ -69,6 +69,14 @@ const EXTRA_ICONS = [
   'radio_button_unchecked', // acción sin icono propio en la auditoría
   'inbox',                  // icono por defecto de <app-empty-state>
   'monitor_heart',          // módulo Estudios Especiales — sale de lab-module.config.ts, no de una plantilla
+  // Tipos de consulta: salen de `medical-records/utils/record-type.util.ts`, un
+  // mapa en .ts que este escáner no mira. `camera_alt` ya está arriba.
+  'assignment',
+  'emergency',
+  'healing',
+  'update',
+  'biotech',
+  'description',
 ];
 
 /** Iconos de `AlertService.fire({ icon })`, ajenos a Material Symbols. */

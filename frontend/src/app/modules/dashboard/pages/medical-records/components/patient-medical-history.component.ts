@@ -23,6 +23,7 @@ import { Patient } from '../../patients/interfaces'
 import { PatientsService } from '../../patients/services/patients.service'
 import { MedicalRecord, RecordType } from '../interfaces'
 import { MedicalRecordsService } from '../services/medical-records.service'
+import { recordTypeIcon, recordTypeLabel } from '../utils/record-type.util'
 import { openPdfInNewTab } from '../../../../../shared/utils/pdf-viewer.util'
 
 @Component({
@@ -231,17 +232,13 @@ export class PatientMedicalHistoryComponent implements OnInit, OnDestroy {
     return filtered
   }
 
+  /** Etiqueta e icono salen del mapa compartido, para que no diverjan por pantalla. */
   getTypeText(type: RecordType): string {
-    const types = {
-      [RecordType.CONSULTATION]: 'Consulta',
-      [RecordType.EMERGENCY]: 'Emergencia',
-      [RecordType.SURGERY]: 'Cirugía',
-      [RecordType.FOLLOW_UP]: 'Seguimiento',
-      [RecordType.LABORATORY]: 'Laboratorio',
-      [RecordType.IMAGING]: 'Imagenología',
-      [RecordType.OTHER]: 'Otro',
-    }
-    return types[type] || type
+    return recordTypeLabel(type)
+  }
+
+  getTypeIcon(type: RecordType): string {
+    return recordTypeIcon(type)
   }
 
   getTypeColor(type: RecordType): string {

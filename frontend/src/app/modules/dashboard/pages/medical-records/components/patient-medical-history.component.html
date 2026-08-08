@@ -307,21 +307,7 @@
                                 class="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium"
                                 [ngClass]="getTypeColor(record.type)"
                                 >
-                                <span class="material-symbols-outlined text-base">
-                                  {{
-                                  record.type === RecordType.EMERGENCY
-                                  ? 'emergency'
-                                  : record.type === RecordType.SURGERY
-                                  ? 'healing'
-                                  : record.type === RecordType.FOLLOW_UP
-                                  ? 'refresh'
-                                  : record.type === RecordType.LABORATORY
-                                  ? 'science'
-                                  : record.type === RecordType.IMAGING
-                                  ? 'radiology'
-                                  : 'medical_services'
-                                  }}
-                                </span>
+                                <span class="material-symbols-outlined text-base">{{ getTypeIcon(record.type) }}</span>
                                 {{ getTypeText(record.type) }}
                               </span>
                               <!-- Fecha -->
@@ -339,31 +325,35 @@
                                 </span>
                               }
                             </div>
-                            <!-- Acciones -->
-                            <div class="flex items-center gap-1">
+                            <!-- Acciones. Patrón estándar de acciones en listado: base
+                                 `text-slate-500`, el color semántico solo en hover, y
+                                 `border-0` — sin él salía el borde por defecto del botón
+                                 y los tres se veían como cajas de colores fijos. -->
+                            <div class="flex items-center justify-end gap-1">
                               <button
+                                type="button"
                                 (click)="viewRecord(record.id!)"
-                                class="w-9 h-9 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors flex items-center justify-center"
-                                title="Ver detalles completos"
+                                matTooltip="Ver detalles completos"
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0"
                                 >
-                                <span class="material-symbols-outlined text-xl">visibility</span>
+                                <span class="material-symbols-outlined msz-18">visibility</span>
                               </button>
                               @if (canWriteRecords) {
                                 <button
+                                  type="button"
                                   (click)="editRecord(record.id!)"
-                                  class="w-9 h-9 rounded-lg hover:bg-amber-50 text-amber-600 transition-colors flex items-center justify-center"
-                                  title="Editar expediente"
+                                  matTooltip="Editar expediente"
+                                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0"
                                   >
-                                  <span class="material-symbols-outlined text-xl">edit</span>
+                                  <span class="material-symbols-outlined msz-18">edit</span>
                                 </button>
-                              }
-                              @if (canWriteRecords) {
                                 <button
+                                  type="button"
                                   (click)="createFollowUp(record.id!)"
-                                  class="w-9 h-9 rounded-lg hover:bg-green-50 text-green-600 transition-colors flex items-center justify-center"
-                                  title="Crear seguimiento"
+                                  matTooltip="Crear seguimiento"
+                                  class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors border-0"
                                   >
-                                  <span class="material-symbols-outlined text-xl">add_circle</span>
+                                  <span class="material-symbols-outlined msz-18">add_circle</span>
                                 </button>
                               }
                             </div>

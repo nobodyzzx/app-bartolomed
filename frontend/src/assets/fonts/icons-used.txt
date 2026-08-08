@@ -165,6 +165,7 @@ people_alt
 percent
 person
 person_add
+person_alert
 person_search
 phone
 picture_as_pdf
@@ -180,11 +181,9 @@ progress_activity
 public
 qr_code
 radio_button_unchecked
-radiology
 receipt
 receipt_long
 refresh
-request_quote
 restart_alt
 restore
 route

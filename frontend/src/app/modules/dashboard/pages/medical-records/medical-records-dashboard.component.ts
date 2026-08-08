@@ -10,6 +10,7 @@ import { AlertService } from '@core/services/alert.service'
 import { RoleStateService } from '@core/services/role-state.service'
 import { MedicalRecord, MedicalRecordFilters, RecordStatus, RecordType } from './interfaces'
 import { MedicalRecordsService } from './services/medical-records.service'
+import { recordTypeIcon, recordTypeLabel } from './utils/record-type.util'
 
 @Component({
     selector: 'app-medical-records-dashboard',
@@ -190,17 +191,9 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
     return labels[status] ?? status
   }
 
+  /** Etiqueta e icono salen del mapa compartido, para que no diverjan por pantalla. */
   getTypeText(type: RecordType): string {
-    const labels: Record<string, string> = {
-      [RecordType.CONSULTATION]: 'Consulta',
-      [RecordType.EMERGENCY]:    'Emergencia',
-      [RecordType.SURGERY]:      'Cirugía',
-      [RecordType.FOLLOW_UP]:    'Seguimiento',
-      [RecordType.LABORATORY]:   'Laboratorio',
-      [RecordType.IMAGING]:      'Imagenología',
-      [RecordType.OTHER]:        'Otro',
-    }
-    return labels[type] ?? type
+    return recordTypeLabel(type)
   }
 
   getPatientInitials(record: MedicalRecord): string {
@@ -210,16 +203,7 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
   }
 
   getRecordIcon(type: RecordType): string {
-    const icons: Record<string, string> = {
-      [RecordType.CONSULTATION]: 'assignment',
-      [RecordType.EMERGENCY]:    'emergency',
-      [RecordType.SURGERY]:      'healing',
-      [RecordType.FOLLOW_UP]:    'update',
-      [RecordType.LABORATORY]:   'biotech',
-      [RecordType.IMAGING]:      'camera_alt',
-      [RecordType.OTHER]:        'description',
-    }
-    return icons[type] ?? 'description'
+    return recordTypeIcon(type)
   }
 
 }
