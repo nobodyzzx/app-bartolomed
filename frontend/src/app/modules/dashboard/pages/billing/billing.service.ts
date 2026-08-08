@@ -148,6 +148,22 @@ export class BillingService {
     )
   }
 
+  /**
+   * Recibo en PDF de una factura ya emitida. Es lo que se entrega en ventanilla
+   * cuando alguien vuelve a pedir su comprobante, y funciona igual sobre una
+   * factura anulada (sale con su estado, para poder justificar la anulación).
+   */
+  downloadReceipt(id: string): Observable<Blob> {
+    return this.http
+      .get(`${this.base}/billing/invoices/${id}/receipt`, { responseType: 'blob' })
+      .pipe(
+        catchError(err => {
+          this.errorService.handleError(err)
+          return throwError(() => err)
+        }),
+      )
+  }
+
   deleteInvoice(id: string): Observable<any> {
     return this.http.delete(`${this.base}/billing/invoices/${id}`).pipe(
       tap(() => this.alert.success('Éxito', 'Factura eliminada correctamente')),

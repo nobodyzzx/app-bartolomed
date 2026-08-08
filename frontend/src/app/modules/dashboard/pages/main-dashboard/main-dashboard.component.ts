@@ -178,8 +178,12 @@ export class MainDashboardComponent implements OnInit {
         roles: PHARMACY_ROLES,
       },
       {
+        // `/dashboard/reports/financial-reports` no existe: el módulo de reportes
+        // define una sola ruta (`/dashboard/reports`) y las secciones se gatean
+        // por permiso dentro de la página. El comodín mandaba a `/auth`, y de ahí
+        // el guestGuard devolvía al dashboard: la tarjeta no hacía nada.
         label: 'Ventas Farmacia', sublabel: 'Este mes',
-        icon: 'attach_money', color: 'orange', route: '/dashboard/reports/financial-reports',
+        icon: 'attach_money', color: 'orange', route: '/dashboard/reports',
         value: this.formatCurrency(this.stats.monthlyRevenue),
         roles: PHARMACY_ROLES,
       },

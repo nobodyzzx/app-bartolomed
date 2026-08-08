@@ -143,8 +143,32 @@ export class BillingPageComponent implements OnInit {
     this.router.navigate(['/dashboard/billing'])
   }
 
+  /**
+   * Abre el recibo en PDF de la factura.
+   *
+   * Antes navegaba a `/dashboard/billing/invoices/:id/edit`, una ruta que no
+   * existe en `billing.module.ts` —solo hay la lista y el alta de pagos—, así que
+   * el comodín del router devolvía al usuario al dashboard sin decir nada: hacer
+   * clic en cualquier factura parecía cerrar la pantalla. Tampoco tendría sentido
+   * "editar" una factura emitida: se corrigen anulándolas y volviendo a cobrar.
+   * Lo que hace falta en ventanilla es el comprobante, y el recibo ya existe.
+   */
   viewInvoice(invoice: RecentInvoice): void {
-    this.router.navigate(['/dashboard/billing/invoices', invoice.id, 'edit'])
+    this.billingService
+      .downloadReceipt(invoice.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: blob => {
+          const url = window.URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `${invoice.invoiceNumber ?? 'recibo'}.pdf`
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          window.URL.revokeObjectURL(url)
+        },
+      })
   }
 
   /**

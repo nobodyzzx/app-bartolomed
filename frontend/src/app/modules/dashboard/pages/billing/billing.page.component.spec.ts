@@ -45,7 +45,11 @@ describe('BillingPageComponent', () => {
   }
 
   beforeEach(() => {
-    billingService = createSpyObj('BillingService', ['getStatistics', 'listInvoices'])
+    billingService = createSpyObj('BillingService', [
+      'getStatistics',
+      'listInvoices',
+      'downloadReceipt',
+    ])
     alert = createSpyObj('AlertService', ['error', 'fire'])
     router = createSpyObj('Router', ['navigate'])
     location = createSpyObj('Location', ['back'])
@@ -157,9 +161,16 @@ describe('BillingPageComponent', () => {
       expect(router.navigate).toHaveBeenCalledWith(['/dashboard/billing'])
     })
 
-    it('viewInvoice navega al detalle de la factura', () => {
+    // Este test fijaba la ruta rota: afirmaba la navegación a
+    // `/dashboard/billing/invoices/:id/edit`, que no existe en ningún módulo, así
+    // que el comodín del router devolvía al usuario al dashboard y hacer clic en
+    // una factura parecía cerrar la pantalla. Ahora se descarga el recibo, que es
+    // lo que hace falta en ventanilla, y no se navega a ninguna parte.
+    it('viewInvoice descarga el recibo y no navega', () => {
+      billingService.downloadReceipt.mockReturnValue(of(new Blob(['pdf'])))
       component.viewInvoice(makeInvoice({ id: 'inv-9' }))
-      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/billing/invoices', 'inv-9', 'edit'])
+      expect(billingService.downloadReceipt).toHaveBeenCalledWith('inv-9')
+      expect(router.navigate).not.toHaveBeenCalled()
     })
 
     it('goBack delega en Location.back()', () => {
