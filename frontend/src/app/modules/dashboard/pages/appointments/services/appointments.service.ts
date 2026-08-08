@@ -43,12 +43,17 @@ export interface Patient {
   phone?: string
 }
 
+/**
+ * El médico de una cita es un `User`, y el nombre de un usuario vive en
+ * `personalInfo`, no en columnas propias. La interfaz declaraba `firstName`/
+ * `lastName` planos, que nunca llegan: la lista de citas imprimía "Dr." sin
+ * nombre. `professionalInfo.title` es el tratamiento real ("Dr.", "Dra.").
+ */
 export interface Doctor {
   id: string
-  firstName: string
-  lastName: string
   email?: string
-  specialization?: string
+  personalInfo?: { firstName?: string; lastName?: string }
+  professionalInfo?: { title?: string; specialization?: string }
 }
 
 export interface Clinic {

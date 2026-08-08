@@ -111,14 +111,17 @@ export class AppointmentsPageComponent implements OnInit {
   }
 
   applyFilters() {
+    const term = this.searchTerm?.toLowerCase() ?? ''
     this.filteredAppointments = this.appointments.filter(apt => {
+      // Todo va por `?? ''`: el buscador leía `apt.doctor.firstName`, que no existe
+      // (el nombre del médico está en `personalInfo`), así que el primer carácter
+      // tecleado reventaba con "Cannot read properties of undefined".
       const matchesSearch =
-        !this.searchTerm ||
-        apt.patient.firstName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        apt.patient.lastName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        apt.doctor.firstName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        apt.doctor.lastName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        apt.reason.toLowerCase().includes(this.searchTerm.toLowerCase())
+        !term ||
+        (apt.patient?.firstName ?? '').toLowerCase().includes(term) ||
+        (apt.patient?.lastName ?? '').toLowerCase().includes(term) ||
+        this.getDoctorFullName(apt).toLowerCase().includes(term) ||
+        (apt.reason ?? '').toLowerCase().includes(term)
 
       const matchesStatus = this.selectedStatus === 'all' || apt.status === this.selectedStatus
 
@@ -243,6 +246,20 @@ export class AppointmentsPageComponent implements OnInit {
     return (
       (apt.patient.firstName?.charAt(0) ?? '') + (apt.patient.lastName?.charAt(0) ?? '')
     ).toUpperCase() || '?'
+  }
+
+  /**
+   * El nombre del médico sale de `doctor.personalInfo` (un User no tiene columnas
+   * propias de nombre) y el tratamiento de `professionalInfo.title`, para no
+   * imprimir "Dr." a una doctora. Si por lo que sea no viene el nombre, mejor un
+   * guion que un "Dr." suelto, que es justo lo que se veía antes.
+   */
+  getDoctorFullName(apt: Appointment): string {
+    const { firstName = '', lastName = '' } = apt.doctor?.personalInfo ?? {}
+    const fullName = `${firstName} ${lastName}`.trim()
+    if (!fullName) return '—'
+    const title = apt.doctor?.professionalInfo?.title?.trim()
+    return title ? `${title} ${fullName}` : fullName
   }
 
   setStatus(status: string): void {

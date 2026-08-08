@@ -4,12 +4,11 @@ import { FormControl, FormGroup, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { countInvalidFields, scrollToFirstInvalidField } from '../../../../shared/utils/form-errors.util'
-import { User } from '../../../auth/interfaces/user.interface'
 import { Clinic } from '../admin/clinics/interfaces'
 import { ClinicsService } from '../admin/clinics/services/clinics.service'
 import { Patient } from '../patients/interfaces'
 import { PatientsService } from '../patients/services/patients.service'
-import { UsersService } from '../admin/users/users.service'
+import { ClinicalStaffMember, UsersService } from '../admin/users/users.service'
 import {
   AppointmentPriority,
   AppointmentsService,
@@ -31,7 +30,7 @@ export class AppointmentFormComponent implements OnInit {
 
   // Listas de datos
   patients: Patient[] = []
-  doctors: User[] = []
+  doctors: ClinicalStaffMember[] = []
   clinics: Clinic[] = []
 
   protected readonly appointmentTypes = [
@@ -145,10 +144,13 @@ export class AppointmentFormComponent implements OnInit {
       error: () => {},
     })
 
-    // Cargar doctores (usuarios con rol doctor)
-    this.usersService.getUsers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: result => {
-        this.doctors = result.data.filter(u => u.isActive && u.roles.includes('doctor'))
+    // Cargar doctores (personal clínico con rol doctor). Va por `clinical-staff` y no por
+    // `GET /users`: aquel exige ADMIN + UsersManage, así que a enfermería y recepción —que
+    // son quienes agendan— les devolvía 403, la lista quedaba vacía y el select de doctor
+    // se quedaba deshabilitado, dejando el formulario permanentemente inválido.
+    this.usersService.getClinicalStaff().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: staff => {
+        this.doctors = staff.filter(u => u.roles.includes('doctor'))
         this.updateSelectControlDisabled('doctorId', this.doctors.length)
       },
       error: () => {},
@@ -359,11 +361,11 @@ export class AppointmentFormComponent implements OnInit {
     return `${patient.firstName} ${patient.lastName}`
   }
 
-  getDoctorFullName(doctor: User): string {
+  getDoctorFullName(doctor: ClinicalStaffMember): string {
     return `${doctor.personalInfo?.firstName || ''} ${doctor.personalInfo?.lastName || ''}`.trim()
   }
 
-  getDoctorSpecialization(doctor: User): string {
+  getDoctorSpecialization(doctor: ClinicalStaffMember): string {
     return doctor.professionalInfo?.specialization || 'Sin especialización'
   }
 }

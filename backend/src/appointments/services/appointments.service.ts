@@ -86,9 +86,14 @@ export class AppointmentsService {
 
     const queryBuilder = this.appointmentRepository.createQueryBuilder('appointment');
 
+    // `doctor.personalInfo` es donde vive el nombre del médico: la entidad User no
+    // tiene firstName/lastName propios. Sin este join la lista de citas imprimía
+    // solo "Dr." con el nombre en blanco, porque el front leía campos inexistentes.
     queryBuilder
       .leftJoinAndSelect('appointment.patient', 'patient')
       .leftJoinAndSelect('appointment.doctor', 'doctor')
+      .leftJoinAndSelect('doctor.personalInfo', 'doctorPersonalInfo')
+      .leftJoinAndSelect('doctor.professionalInfo', 'doctorProfessionalInfo')
       .leftJoinAndSelect('appointment.clinic', 'clinic')
       .where('appointment.isActive = :isActive', { isActive: true });
 
@@ -127,7 +132,15 @@ export class AppointmentsService {
 
     const appointment = await this.appointmentRepository.findOne({
       where: { id, isActive: true, clinic: { id: clinicId } },
-      relations: ['patient', 'doctor', 'clinic', 'createdBy', 'updatedBy'],
+      relations: [
+        'patient',
+        'doctor',
+        'doctor.personalInfo',
+        'doctor.professionalInfo',
+        'clinic',
+        'createdBy',
+        'updatedBy',
+      ],
     });
 
     if (!appointment) {
