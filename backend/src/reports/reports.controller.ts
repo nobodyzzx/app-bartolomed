@@ -19,7 +19,7 @@ import { ValidRoles } from '../auth/interfaces';
 import { AdvancedReportsService } from './services/advanced-reports.service';
 import { ExportService } from './services/export.service';
 import { ReportsPdfService } from './services/reports-pdf.service';
-import { ReportFilters, ReportsService } from './services/reports.service';
+import { buildDateRange, ReportFilters, ReportsService } from './services/reports.service';
 import { RevenueReportsService } from './services/revenue-reports.service';
 
 @Controller('reports')
@@ -39,7 +39,14 @@ export class ReportsController {
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   private scope(filters: ReportFilters, req: Request): ReportFilters {
-    return { ...filters, clinicId: resolveClinicId(req)! };
+    // El rango de fechas se arma aquí desde los `startDate`/`endDate` planos de
+    // la query: el frontend los manda sueltos, no como objeto anidado, así que
+    // `filters.dateRange` llegaba siempre vacío y los reportes no filtraban.
+    return {
+      ...filters,
+      clinicId: resolveClinicId(req)!,
+      dateRange: buildDateRange(req.query as Record<string, unknown>),
+    };
   }
 
   // ─── Reportes existentes (R-01..R-08) ────────────────────────────────────

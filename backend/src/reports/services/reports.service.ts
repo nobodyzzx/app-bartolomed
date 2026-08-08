@@ -20,6 +20,44 @@ export interface ReportFilters {
   dateRange?: DateRange;
 }
 
+// Fecha ISO: `YYYY-MM-DD`, opcionalmente con hora ISO. El anclaje estricto es lo
+// que hace segura la interpolación en las consultas crudas de reportes: un valor
+// que casa este patrón no puede contener comillas ni SQL.
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\.\d{1,3})?Z?)?$/;
+
+/**
+ * Valida una fecha de filtro que viene del cliente. Devuelve la cadena tal cual
+ * si es una fecha ISO válida, o lanza 400. Nunca deja pasar texto arbitrario:
+ * es la única barrera entre el query string y la interpolación en SQL de los
+ * reportes de farmacia.
+ */
+export function sanitizeReportDate(value: unknown, field: string): string | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  if (typeof value !== 'string' || !ISO_DATE_RE.test(value) || Number.isNaN(Date.parse(value))) {
+    throw new BadRequestException(`${field} debe ser una fecha ISO (YYYY-MM-DD)`);
+  }
+  return value;
+}
+
+/**
+ * Arma el `dateRange` de un reporte a partir de los `startDate`/`endDate` planos
+ * de la query. El frontend los manda sueltos (`?startDate=&endDate=`), no como
+ * objeto anidado, así que sin esto `dateRange` quedaba siempre vacío y **ningún
+ * reporte filtraba por fecha** pese a recibir el rango.
+ */
+export function buildDateRange(query: Record<string, unknown>): DateRange | undefined {
+  const startDate = sanitizeReportDate(query?.['startDate'], 'startDate');
+  const endDate = sanitizeReportDate(query?.['endDate'], 'endDate');
+  if (!startDate && !endDate) return undefined;
+  // Se rellena el extremo ausente con uno inocuo para que el BETWEEN de los
+  // reportes que exigen ambos no falle; los que comprueban cada extremo por
+  // separado ignoran el que no vino.
+  return {
+    startDate: startDate ?? '1900-01-01',
+    endDate: endDate ?? '9999-12-31',
+  };
+}
+
 @Injectable()
 export class ReportsService {
   constructor(

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException } from '@nestjs/common';
-import { ReportsService } from './reports.service';
+import { ReportsService, buildDateRange, sanitizeReportDate } from './reports.service';
 import { Patient } from '../../patients/entities/patient.entity';
 import { Appointment, AppointmentStatus } from '../../appointments/entities/appointment.entity';
 import { MedicalRecord } from '../../medical-records/entities/medical-record.entity';
@@ -287,5 +287,44 @@ describe('ReportsService', () => {
         financial: { totalBilled: 5000, totalPaid: 4000, collectionRate: 80 },
       });
     });
+  });
+});
+
+describe('buildDateRange / sanitizeReportDate', () => {
+  it('arma el rango desde startDate/endDate planos de la query', () => {
+    expect(buildDateRange({ startDate: '2026-07-01', endDate: '2026-08-31' })).toEqual({
+      startDate: '2026-07-01',
+      endDate: '2026-08-31',
+    });
+  });
+
+  it('rellena el extremo ausente con un tope inocuo', () => {
+    expect(buildDateRange({ startDate: '2026-07-01' })).toEqual({
+      startDate: '2026-07-01',
+      endDate: '9999-12-31',
+    });
+    expect(buildDateRange({ endDate: '2026-08-31' })).toEqual({
+      startDate: '1900-01-01',
+      endDate: '2026-08-31',
+    });
+  });
+
+  it('sin fechas devuelve undefined (no filtra)', () => {
+    expect(buildDateRange({})).toBeUndefined();
+    expect(buildDateRange({ startDate: '' })).toBeUndefined();
+  });
+
+  it('acepta fecha ISO con hora', () => {
+    expect(sanitizeReportDate('2026-07-01T10:30:00Z', 'startDate')).toBe('2026-07-01T10:30:00Z');
+  });
+
+  it('rechaza cualquier cosa que no sea una fecha ISO (barrera anti-inyección)', () => {
+    for (const bad of ["2026-08-01' OR '1'='1", '2026-08-01; DROP TABLE x', 'ayer', '08/2026', '2026-13-99']) {
+      expect(() => sanitizeReportDate(bad, 'startDate')).toThrow(BadRequestException);
+    }
+  });
+
+  it('una fecha maliciosa hace fallar todo buildDateRange, no se cuela', () => {
+    expect(() => buildDateRange({ startDate: "x' OR 1=1 --" })).toThrow(BadRequestException);
   });
 });
