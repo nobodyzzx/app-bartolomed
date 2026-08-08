@@ -176,14 +176,13 @@
                     <td class="px-4 py-3">
                       <input type="number" min="0" step="0.01" [(ngModel)]="line.discount"
                              (ngModelChange)="onAmountsChanged()" [disabled]="!line.selected"
-                             class="w-full text-right border border-slate-200 rounded-lg px-2 py-1 disabled:bg-slate-50" />
+                             class="form-input-sm text-right" />
                     </td>
                     <td class="px-4 py-3">
                       <input type="text" [(ngModel)]="line.reason" [disabled]="!line.selected || !line.discount"
                              placeholder="Motivo del descuento"
-                             class="w-full border rounded-lg px-2 py-1 disabled:bg-slate-50"
-                             [class.border-red-300]="line.selected && line.discount > 0 && !line.reason.trim()"
-                             [class.border-slate-200]="!(line.selected && line.discount > 0 && !line.reason.trim())" />
+                             class="form-input-sm"
+                             [class.is-invalid]="line.selected && line.discount > 0 && !line.reason.trim()" />
                     </td>
                     <td class="px-4 py-3 text-right font-semibold whitespace-nowrap">
                       Bs {{ (line.charge.quantity * line.charge.listPrice) - (line.discount || 0) | number: '1.2-2' }}
@@ -220,8 +219,11 @@
                 <mat-label>Motivo</mat-label>
                 <mat-icon matPrefix class="text-purple-400">edit_note</mat-icon>
                 <input matInput [(ngModel)]="globalDiscountReason" placeholder="Por qué se hace el descuento" />
+                <!-- mat-hint y no mat-error: `mat-error` solo se pinta cuando el
+                     campo está en estado de error, y con `ngModel` sin validadores
+                     eso no pasa nunca, así que el aviso era invisible. -->
                 @if (missingGlobalReason) {
-                  <mat-error>Indica el motivo del descuento</mat-error>
+                  <mat-hint class="!text-red-600">Indica el motivo del descuento</mat-hint>
                 }
               </mat-form-field>
 
@@ -273,9 +275,12 @@
                 </div>
               </div>
 
-              @if (discountExceedsTotal) {
-                <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
-                  El descuento supera el importe de los cargos seleccionados.
+              <!-- Un solo aviso que explica por qué "Cobrar" está deshabilitado:
+                   antes el botón se ponía gris sin decir nada. -->
+              @if (blockingReason) {
+                <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800 flex items-start gap-2">
+                  <span class="material-symbols-outlined msz-18 flex-shrink-0">info</span>
+                  <span>{{ blockingReason }}</span>
                 </div>
               }
 

@@ -236,6 +236,31 @@ export class CheckoutComponent {
     )
   }
 
+  /**
+   * Por qué no se puede cobrar todavía, en texto; `null` si se puede.
+   *
+   * El botón se deshabilitaba en silencio: al poner un descuento sin motivo
+   * quedaba gris y no había nada que lo explicara. El `<mat-error>` del motivo
+   * global tampoco servía —`mat-error` solo se pinta cuando el campo está en
+   * estado de error, y con `ngModel` sin validadores eso no ocurre nunca—, y el
+   * descuento por línea solo teñía el borde de rojo, en una tabla que puede
+   * quedar lejos del botón.
+   */
+  get blockingReason(): string | null {
+    if (this.processing) return null
+    if (this.selectedLines.length === 0) return 'Marca al menos un cargo para cobrar.'
+    if (this.discountExceedsTotal) {
+      return 'El descuento supera el importe de los cargos seleccionados.'
+    }
+    if (this.missingLineReason) {
+      return 'Falta el motivo de un descuento de la tabla. Un descuento sin motivo no se puede registrar.'
+    }
+    if (this.missingGlobalReason) {
+      return 'Falta el motivo del descuento sobre el total.'
+    }
+    return null
+  }
+
   toggleAll(selected: boolean): void {
     this.lines.forEach(l => (l.selected = selected))
     this.paymentAmount = this.totalToCharge
