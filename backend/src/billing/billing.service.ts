@@ -251,6 +251,18 @@ export class BillingService {
 
   async setStatus(id: string, status: InvoiceStatus, clinicId?: string): Promise<Invoice> {
     const invoice = await this.findOne(id, clinicId);
+    // Anular es más que cambiar un estado: hay que devolver los cargos a
+    // `pending` para poder volver a facturarlos, cancelar los pagos, poner los
+    // importes a cero y dejar el motivo registrado. Todo eso vive en
+    // `CheckoutService.voidInvoice` (PATCH /billing/invoices/:id/void). Llegar a
+    // `cancelled` por acá dejaba una factura muerta con saldo pendiente y los
+    // cargos atrapados en ella, imposibles de cobrar y sin rastro de quién la
+    // anuló ni por qué.
+    if (status === InvoiceStatus.CANCELLED) {
+      throw new BadRequestException(
+        'Para anular una factura usa PATCH /billing/invoices/:id/void, que exige motivo y libera los cargos',
+      );
+    }
     this.assertInvoiceStatusTransition(invoice.status, status);
     invoice.status = status;
     await this.invoiceRepository.save(invoice);
@@ -395,8 +407,19 @@ export class BillingService {
     ).length;
     const overdue = allInvoices.filter(i => i.status === InvoiceStatus.OVERDUE).length;
 
+    // "Por cobrar" solo cuenta facturas vivas. Sumando también las anuladas y
+    // devueltas, el dashboard mostraba "0 facturas pendientes" junto a un monto
+    // pendiente que salía entero de facturas canceladas — dos cifras contiguas
+    // contradiciéndose, y la de dinero equivocada.
+    const collectible = allInvoices.filter(
+      i => i.status !== InvoiceStatus.CANCELLED && i.status !== InvoiceStatus.REFUNDED,
+    );
+
     const totalRevenue = allInvoices.reduce((sum, invoice) => sum + Number(invoice.paidAmount), 0);
-    const pendingRevenue = allInvoices.reduce((sum, invoice) => sum + Number(invoice.remainingAmount), 0);
+    const pendingRevenue = collectible.reduce(
+      (sum, invoice) => sum + Number(invoice.remainingAmount),
+      0,
+    );
 
     return {
       totalInvoices,

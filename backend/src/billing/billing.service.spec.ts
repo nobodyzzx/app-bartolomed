@@ -268,6 +268,44 @@ describe('BillingService', () => {
       setupInvoice(InvoiceStatus.PAID);
       await expect(service.setStatus('inv-1', InvoiceStatus.REFUNDED, 'clinic-1')).resolves.toBeDefined();
     });
+
+    // Anular por acá dejaba la factura en `cancelled` con su saldo intacto y los
+    // cargos atrapados en ella: nunca volvían a `pending`, así que no había forma
+    // de volver a cobrarlos, y no quedaba ni motivo ni registro de auditoría.
+    it('rechaza pasar a CANCELLED: anular es sólo por el endpoint /void', async () => {
+      const inv = setupInvoice(InvoiceStatus.PENDING);
+      await expect(service.setStatus('inv-1', InvoiceStatus.CANCELLED, 'clinic-1')).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(invoiceRepo.save).not.toHaveBeenCalled();
+      expect(inv.status).toBe(InvoiceStatus.PENDING);
+    });
+  });
+
+  // ─── getStatistics ────────────────────────────────────────────────────────
+
+  describe('getStatistics', () => {
+    // El dashboard de recepción mostraba "0 facturas pendientes" junto a
+    // "Por cobrar Bs 177,12", y ese monto salía entero de dos facturas anuladas:
+    // `pendingRevenue` sumaba `remainingAmount` de TODAS, canceladas incluidas.
+    it('excluye anuladas y devueltas del monto por cobrar', async () => {
+      const invoices = [
+        makeInvoice({ status: InvoiceStatus.PAID, paidAmount: 35, remainingAmount: 0 }),
+        makeInvoice({ status: InvoiceStatus.PENDING, paidAmount: 0, remainingAmount: 40 }),
+        makeInvoice({ status: InvoiceStatus.CANCELLED, paidAmount: 0, remainingAmount: 150 }),
+        makeInvoice({ status: InvoiceStatus.REFUNDED, paidAmount: 0, remainingAmount: 27.12 }),
+      ];
+      invoiceRepo.createQueryBuilder!.mockReturnValue({
+        where: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([invoices, invoices.length]),
+      } as any);
+
+      const stats = await service.getStatistics('clinic-1');
+
+      expect(stats.pendingRevenue).toBe(40);
+      expect(stats.pending).toBe(1);
+      expect(stats.totalInvoices).toBe(4);
+    });
   });
 
   // ─── addPayment ───────────────────────────────────────────────────────────
