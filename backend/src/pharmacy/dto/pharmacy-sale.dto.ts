@@ -29,6 +29,11 @@ export class CreatePharmacySaleItemDto {
   @IsNumber()
   discountPercent?: number;
 
+  /** Obligatorio si `discountPercent` > 0; lo valida el servicio. */
+  @IsOptional()
+  @IsString()
+  discountReason?: string;
+
   @IsOptional()
   @IsString()
   batchNumber?: string;
@@ -62,6 +67,11 @@ export class CreatePharmacySaleDto {
   @IsOptional()
   @IsNumber()
   discountAmount?: number;
+
+  /** Obligatorio si `discountAmount` > 0; lo valida el servicio. */
+  @IsOptional()
+  @IsString()
+  discountReason?: string;
 
   @IsNotEmpty()
   @IsNumber()

@@ -7,6 +7,8 @@ export interface CartItem {
   quantity: number
   unitPrice: number
   discountPercent: number
+  /** Obligatorio si hay descuento: el backend rechaza una rebaja sin motivo. */
+  discountReason: string
   subtotal: number
 }
 
@@ -79,7 +81,7 @@ export class SaleCartService {
     const subtotal = take * unitPrice - discountAmount
     this._items.update(items => [
       ...items,
-      { medicationStock: stock, quantity: take, unitPrice, discountPercent, subtotal },
+      { medicationStock: stock, quantity: take, unitPrice, discountPercent, discountReason: '', subtotal },
     ])
     return null
   }
@@ -104,6 +106,17 @@ export class SaleCartService {
   }
 
   /** Retorna mensaje de error o null en caso de éxito */
+  updateReason(index: number, discountReason: string): void {
+    this._items.update(items =>
+      items.map((it, i) => (i === index ? { ...it, discountReason } : it)),
+    )
+  }
+
+  /** Cuántas líneas tienen descuento sin justificar; bloquea el registro. */
+  readonly linesMissingReason = computed(
+    () => this._items().filter(it => it.discountPercent > 0 && !it.discountReason.trim()).length,
+  )
+
   updateDiscount(index: number, discountPercent: number): string | null {
     const item = this._items()[index]
     if (!item) return 'Ítem no encontrado'

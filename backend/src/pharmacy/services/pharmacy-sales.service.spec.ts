@@ -278,13 +278,58 @@ describe('PharmacySalesService', () => {
     });
 
     /**
+     * Un descuento sin motivo no se registra: es la regla que ya tenía el punto de
+     * cobro, donde `charges` guarda `discount_reason` y quién lo autorizó. Aquí se
+     * podía rebajar cualquier importe sin dejar constancia de por qué.
+     */
+    it('rechaza un descuento sobre el total sin motivo', async () => {
+      setupHappyPath();
+      const dto = { ...baseSaleDto(), discountAmount: 10 };
+
+      await expect(service.create(dto as any, 'user-1', 'clinic-1')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('rechaza un descuento por línea sin motivo', async () => {
+      setupHappyPath();
+      const dto = { ...baseSaleDto() };
+      dto.items[0] = { ...dto.items[0], discountPercent: 10 } as any;
+
+      await expect(service.create(dto as any, 'user-1', 'clinic-1')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('guarda el motivo y quién autorizó el descuento', async () => {
+      setupHappyPath();
+      const dto = { ...baseSaleDto(), discountAmount: 10, discountReason: '  Programa municipal  ' };
+
+      await service.create(dto as any, 'user-1', 'clinic-1');
+
+      const saved = saleRepo.save!.mock.calls[0][0];
+      expect(saved.discountReason).toBe('Programa municipal');
+      expect(saved.discountAuthorizedById).toBe('user-1');
+    });
+
+    it('no marca autorizante si no hubo descuento', async () => {
+      setupHappyPath();
+
+      await service.create(baseSaleDto() as any, 'user-1', 'clinic-1');
+
+      const saved = saleRepo.save!.mock.calls[0][0];
+      expect(saved.discountAuthorizedById).toBeNull();
+      expect(saved.discountReason).toBeNull();
+    });
+
+    /**
      * La pantalla mostraba `subtotal - descuento` como total mientras el backend
      * añadía un 13% por defecto: el farmacéutico cobraba 20,00 y la venta quedaba
      * registrada en 22,60. El precio del tarifario es el precio final.
      */
     it('no aplica IVA: el total es subtotal menos descuento', async () => {
       setupHappyPath();
-      const dto = { ...baseSaleDto(), taxRate: 0.13, discountAmount: 7.5 };
+      const dto = { ...baseSaleDto(), taxRate: 0.13, discountAmount: 7.5, discountReason: 'Promoción' };
 
       await service.create(dto as any, 'user-1', 'clinic-1');
 

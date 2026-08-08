@@ -368,6 +368,8 @@ export interface Sale {
 export interface CreateSaleDto {
   patientId?: string
   patientName?: string
+  /** Obligatorio si hay descuento: el backend rechaza una rebaja sin motivo. */
+  discountReason?: string
   paymentMethod: PaymentMethod
   taxRate?: number
   discountAmount?: number
@@ -392,6 +394,7 @@ export interface CreateSaleItemDto {
   quantity: number
   unitPrice: number
   discountPercent?: number
+  discountReason?: string
   discountAmount?: number
   totalPrice?: number
   batchNumber?: string

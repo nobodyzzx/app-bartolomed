@@ -91,6 +91,20 @@ export class PharmacySalesService {
       }
     }
 
+    // Un descuento sin motivo no se registra: es la misma regla del punto de
+    // cobro, donde `charges` guarda `discount_reason` y quién lo autorizó. Aquí
+    // se podía rebajar cualquier importe sin dejar constancia de por qué.
+    if ((createPharmacySaleDto.discountAmount ?? 0) > 0 && !createPharmacySaleDto.discountReason?.trim()) {
+      throw new BadRequestException('El descuento sobre el total requiere un motivo');
+    }
+
+    const lineaSinMotivo = createPharmacySaleDto.items.find(
+      i => (i.discountPercent ?? 0) > 0 && !i.discountReason?.trim(),
+    );
+    if (lineaSinMotivo) {
+      throw new BadRequestException('Cada descuento por línea requiere un motivo');
+    }
+
     // Calculate totals
     let subtotal = 0;
     const items = createPharmacySaleDto.items.map(item => {
@@ -131,6 +145,8 @@ export class PharmacySalesService {
     pharmacySale.tax = taxAmount;
     pharmacySale.taxRate = taxRate;
     pharmacySale.discount = discountAmount;
+    pharmacySale.discountReason = createPharmacySaleDto.discountReason?.trim() || null;
+    pharmacySale.discountAuthorizedById = discountAmount > 0 ? soldById : null;
     pharmacySale.total = totalAmount;
     pharmacySale.amountPaid = createPharmacySaleDto.amountPaid;
     pharmacySale.change = changeAmount;
@@ -214,6 +230,7 @@ export class PharmacySalesService {
         item.quantity = itemDto.quantity;
         item.unitPrice = itemDto.unitPrice;
         item.discount = itemDto.discountAmount || 0;
+        item.discountReason = itemDto.discountReason?.trim() || null;
         item.subtotal = itemDto.totalPrice;
         item.expiryDate = itemDto.expiryDate ? new Date(itemDto.expiryDate) : (stock.expiryDate ?? undefined);
         await saleItemRepo.save(item);

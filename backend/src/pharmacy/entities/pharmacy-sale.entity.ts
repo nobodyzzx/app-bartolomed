@@ -92,6 +92,22 @@ export class PharmacySale {
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   discount: number;
 
+  /**
+   * Por qué se rebajó el precio y quién lo autorizó. Existen en `charges` desde
+   * el punto de cobro, pero la venta de farmacia solo guardaba el número: se
+   * podía descontar cualquier importe sin dejar rastro de la razón, que es
+   * justo lo que se necesita para revisar un descuento indebido después.
+   */
+  @Column('text', { name: 'discount_reason', nullable: true })
+  discountReason: string | null;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'discount_authorized_by' })
+  discountAuthorizedBy: User | null;
+
+  @Column('uuid', { name: 'discount_authorized_by', nullable: true })
+  discountAuthorizedById: string | null;
+
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   tax: number;
 
@@ -180,6 +196,10 @@ export class PharmacySaleItem {
 
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   discount: number;
+
+  /** Motivo del descuento de esta línea; obligatorio si el descuento es > 0. */
+  @Column('text', { name: 'discount_reason', nullable: true })
+  discountReason: string | null;
 
   @Column('decimal', { precision: 10, scale: 2 })
   subtotal: number;

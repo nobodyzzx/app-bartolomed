@@ -69,7 +69,11 @@ export class NewSaleComponent implements OnInit {
   // Antes la pantalla calculaba el total así —sin impuesto— pero mandaba
   // `taxRate: 0.13` al backend, que sí lo aplicaba: se cobraba 20,00 y la venta
   // quedaba registrada en 22,60.
-  discountAmount = computed(() => this.form?.get('discountAmount')?.value || 0)
+  // `computed` solo reacciona a señales: leer `form.get(...).value` directamente
+  // nunca recalcularía. Los valores del formulario se espejan en señales.
+  private readonly formValue = signal<any>({})
+  discountAmount = computed(() => Number(this.formValue().discountAmount) || 0)
+  discountReasonValue = computed(() => String(this.formValue().discountReason ?? ''))
   totalAmount = computed(() => this.cart.subtotal() - this.discountAmount())
   amountPaid = signal(0)
   changeAmount = computed(() => {
@@ -84,6 +88,27 @@ export class NewSaleComponent implements OnInit {
    * Si el farmacéutico quita la receta o el paciente, la casilla se apaga sola
    * en vez de dejar el formulario en un estado que el servidor rechazará.
    */
+  /**
+   * Por qué no se puede registrar la venta todavía; `null` si se puede.
+   *
+   * Mismo criterio que el punto de cobro: un descuento sin motivo no se registra,
+   * porque el motivo es lo único que queda para revisar después una rebaja
+   * indebida. Y se dice cuál falta, en vez de dejar el botón gris sin explicación.
+   */
+  blockingReason = computed<string | null>(() => {
+    if (this.cart.items().length === 0) return 'Agrega al menos un producto a la venta.'
+    if (this.cart.linesMissingReason() > 0) {
+      return 'Falta el motivo de un descuento de la tabla. Un descuento sin motivo no se registra.'
+    }
+    if (this.discountAmount() > 0 && !this.discountReasonValue().trim()) {
+      return 'Falta el motivo del descuento sobre el total.'
+    }
+    if (this.discountAmount() > this.cart.subtotal()) {
+      return 'El descuento supera el importe de los productos.'
+    }
+    return null
+  })
+
   get canChargeToAccount(): boolean {
     return !!this.form?.get('patientId')?.value && !!this.patient.selectedPrescriptionId()
   }
@@ -130,6 +155,7 @@ export class NewSaleComponent implements OnInit {
       chargeToAccount: [false],
       paymentMethod: [PaymentMethod.CASH, Validators.required],
       discountAmount: [0, [Validators.min(0)]],
+      discountReason: [''],
       amountPaid: [0, [Validators.required, Validators.min(0)]],
       notes: [''],
       prescriptionNumber: [''],
@@ -170,6 +196,11 @@ export class NewSaleComponent implements OnInit {
       .get('patientId')
       ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.syncChargeToAccountControl())
+
+    this.form.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(v => this.formValue.set(v))
+    this.formValue.set(this.form.value)
 
     this.syncChargeToAccountControl()
   }
@@ -474,6 +505,7 @@ export class NewSaleComponent implements OnInit {
       clinicId: this.clinicContext.clinicId!,
       paymentMethod: this.form.value.paymentMethod,
       discountAmount: Number(this.form.value.discountAmount),
+      discountReason: this.form.value.discountReason?.trim() || undefined,
       amountPaid: Number(this.form.value.amountPaid),
       notes: this.form.value.notes,
       prescriptionNumber: this.form.value.prescriptionNumber,
@@ -484,6 +516,7 @@ export class NewSaleComponent implements OnInit {
         quantity: Number(item.quantity),
         unitPrice: Number(item.unitPrice),
         discountPercent: Number(item.discountPercent) || 0,
+        discountReason: item.discountReason?.trim() || undefined,
         batchNumber: item.medicationStock.batchNumber,
         expiryDate: item.medicationStock.expiryDate,
       })),
