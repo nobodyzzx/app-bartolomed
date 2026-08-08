@@ -33,7 +33,14 @@ export class ServicePricesComponent implements OnInit {
 
   categoryFilter: ServiceCategory | '' = ''
   search = ''
-  showInactive = false
+  /**
+   * Encendido por defecto: esta es la pantalla desde la que se administra el
+   * tarifario, y un servicio que no se ve es un servicio que no se puede
+   * activar ni poner en precio. Con el filtro apagado, los estudios especiales
+   * —dados de alta inactivos y a Bs 0 a la espera de tarifa— no aparecían por
+   * ningún lado y la tarjeta de resumen decía "0", así que parecían no existir.
+   */
+  showInactive = true
 
   constructor(
     private servicePricesService: ServicePricesService,
@@ -63,7 +70,10 @@ export class ServicePricesComponent implements OnInit {
         category: this.categoryFilter || undefined,
         search: this.search.trim() || undefined,
         isActive: this.showInactive ? undefined : 'true',
-        pageSize: 200,
+        // Sin paginar en la práctica: el tarifario ronda las 165 filas entre
+        // los 120 exámenes de laboratorio y el resto. Partirlo en páginas
+        // escondería servicios en una pantalla cuyo trabajo es enseñarlos.
+        pageSize: 500,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -92,6 +102,19 @@ export class ServicePricesComponent implements OnInit {
    */
   hasCost(category: ServiceCategory): boolean {
     return this.pricesOf(category).some(p => p.costPrice !== null && p.costPrice !== undefined)
+  }
+
+  /**
+   * Servicios dados de alta sin tarifa acordada. Se cargan a Bs 0 e inactivos
+   * a propósito —es la salvaguarda para no cobrarlos gratis—, pero eso solo
+   * funciona si quien administra el tarifario ve cuáles le faltan por poner.
+   */
+  get sinPrecio(): number {
+    return this.prices.filter(p => Number(p.price) === 0).length
+  }
+
+  needsPrice(price: ServicePrice): boolean {
+    return Number(price.price) === 0
   }
 
   /** Margen sobre el costo, en porcentaje. Null cuando no hay costo con el que comparar. */
@@ -148,6 +171,18 @@ export class ServicePricesComponent implements OnInit {
           next: () => this.load(),
         })
       })
+  }
+
+  /**
+   * Vuelve a poner en servicio algo dado de baja. Existe porque la baja es
+   * reversible y llegar hasta ella abriendo el formulario completo, para tocar
+   * un único interruptor, no es razonable.
+   */
+  reactivate(price: ServicePrice): void {
+    this.servicePricesService
+      .update(price.id, { isActive: true })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: () => this.load() })
   }
 
   async remove(price: ServicePrice): Promise<void> {

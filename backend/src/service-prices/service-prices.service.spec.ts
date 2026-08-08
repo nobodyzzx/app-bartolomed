@@ -227,13 +227,26 @@ describe('ServicePricesService', () => {
 
   // ─── baja lógica ──────────────────────────────────────────────────────────
 
-  it('da de baja sin borrar físicamente: el histórico del tarifario debe seguir consultable', async () => {
+  it('da de baja desactivando, no con softRemove: una fila borrada no la devuelve ningún listado', async () => {
     const existing = makePrice();
     repo.findOne.mockResolvedValue(existing);
 
     await service.remove('price-1', CLINIC_ID);
 
-    expect(repo.softRemove).toHaveBeenCalledWith(existing);
+    // `findAll` y `findCatalog` usan QueryBuilder, que descarta las filas con
+    // `deletedAt`. Si la baja las marcase, el servicio desaparecería de la
+    // única pantalla desde la que se puede reactivar, y su código quedaría
+    // ocupado para siempre.
+    expect(repo.softRemove).not.toHaveBeenCalled();
+    expect(repo.save).toHaveBeenCalledWith(expect.objectContaining({ id: 'price-1', isActive: false }));
+  });
+
+  it('dar de baja algo ya inactivo no vuelve a escribir', async () => {
+    repo.findOne.mockResolvedValue(makePrice({ isActive: false }));
+
+    await service.remove('price-1', CLINIC_ID);
+
+    expect(repo.save).not.toHaveBeenCalled();
   });
 
   // ─── filtros ──────────────────────────────────────────────────────────────

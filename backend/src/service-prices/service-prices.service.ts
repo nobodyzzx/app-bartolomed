@@ -280,13 +280,25 @@ export class ServicePricesService {
   }
 
   /**
-   * Baja lógica. Nunca borrado físico: los cargos ya generados guardan su
-   * propio precio, pero el histórico del tarifario debe seguir consultable.
+   * Baja lógica: desactiva el servicio. Nunca borrado físico ni `softRemove`.
+   *
+   * Antes hacía `softRemove`, y eso era un agujero: `findAll` y `findCatalog`
+   * usan QueryBuilder, que **excluye** las filas con `deletedAt`, así que dar
+   * de baja un servicio lo hacía desaparecer de la única pantalla desde la que
+   * podría recuperarse. Y como `assertCodeIsFree` mira también las borradas,
+   * su código quedaba ocupado y ni siquiera se podía volver a crear: una
+   * acción de un clic, irreversible desde la interfaz.
+   *
+   * Con `isActive = false` el servicio deja de poder cobrarse igual (el
+   * catálogo solo sirve activos) pero sigue a la vista en el tarifario, con su
+   * marca de "Inactivo", y se reactiva desde ahí. `deletedAt` se conserva en
+   * la entidad por si alguna vez hace falta un borrado de verdad.
    */
   async remove(id: string, clinicId?: string): Promise<void> {
     const scopedClinicId = this.requireClinicId(clinicId);
     const existing = await this.findOne(id, scopedClinicId);
-    await this.repository.softRemove(existing);
+    if (!existing.isActive) return; // Ya estaba de baja: no hay nada que hacer.
+    await this.repository.save({ ...existing, isActive: false });
   }
 
   private async assertCodeIsFree(code: string, clinicId: string, exceptId?: string): Promise<void> {
