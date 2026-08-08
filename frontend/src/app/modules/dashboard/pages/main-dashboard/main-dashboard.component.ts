@@ -253,8 +253,13 @@ export class MainDashboardComponent implements OnInit {
         roles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN, UserRoles.DOCTOR, UserRoles.PHARMACIST],
       },
       {
-        label: 'Nueva Factura', icon: 'request_quote',
-        route: '/dashboard/billing/invoices/new',
+        // Apuntaba a `/dashboard/billing/invoices/new`, una ruta que no existe en
+        // ningún módulo: el comodín del router devolvía al usuario al dashboard sin
+        // decir nada, así que el acceso rápido más visible de recepción no hacía
+        // nada. Desde la facturación unificada por cargos no se crea una factura
+        // suelta: se cobra en el Punto de Cobro, que es lo que se enlaza ahora.
+        label: 'Punto de Cobro', icon: 'point_of_sale',
+        route: '/dashboard/checkout',
         color: 'bg-amber-50 text-amber-600 hover:bg-amber-100 border-amber-100',
         roles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN, UserRoles.RECEPTIONIST],
       },

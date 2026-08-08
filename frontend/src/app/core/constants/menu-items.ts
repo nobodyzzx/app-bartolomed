@@ -158,7 +158,17 @@ export const MENU_ITEMS: MenuItem[] = [
     label: 'Laboratorio',
     icon: 'biotech',
     route: '/dashboard/laboratory',
-    allowedRoles: [UserRoles.DOCTOR, UserRoles.NURSE, UserRoles.LABORATORY, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+    // RECEPTIONIST incluido: registra la solicitud externa del particular que se
+    // paga el examen en ventanilla (`LabOrderExternal`). Espejo de la ruta en
+    // dashboard-routing.module.ts.
+    allowedRoles: [
+      UserRoles.DOCTOR,
+      UserRoles.NURSE,
+      UserRoles.LABORATORY,
+      UserRoles.RECEPTIONIST,
+      UserRoles.ADMIN,
+      UserRoles.SUPER_ADMIN,
+    ],
     requiredPermissions: [Permission.LabRead],
   },
   {

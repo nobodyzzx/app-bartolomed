@@ -112,10 +112,18 @@ const routes: Routes = [
           import('./pages/laboratory/laboratory.module').then(m => m.LaboratoryModule),
         canActivate: [permissionsGuard, roleGuard],
         data: {
+          // RECEPTIONIST entra por `LabOrderExternal`: el particular que se paga un
+          // examen sin consulta previa se registra y se cobra en ventanilla, y el
+          // backend nombra al rol explícitamente en `POST /lab-orders/external`.
+          // Faltaba acá y en el menú, así que el permiso no habilitaba nada: el
+          // roleGuard lo rechazaba antes de llegar al permissionsGuard. La pantalla
+          // ya distingue qué puede hacer cada rol (`canOrderExternal()`), de modo
+          // que recepción ve las órdenes y solo puede registrar la externa.
           allowedRoles: [
             UserRoles.DOCTOR,
             UserRoles.NURSE,
             UserRoles.LABORATORY,
+            UserRoles.RECEPTIONIST,
             UserRoles.ADMIN,
             UserRoles.SUPER_ADMIN,
           ],

@@ -11,10 +11,14 @@ export interface Appointment {
     firstName: string
     lastName: string
   }
+  // El médico es un `User`: su nombre vive en `personalInfo` y su tratamiento en
+  // `professionalInfo.title`, nunca en columnas propias. Declararlo plano —como
+  // estaba— compila igual pero devuelve `undefined` en tiempo de ejecución; es lo
+  // que ya rompió la columna "Doctor" y el buscador de la lista de citas.
   doctor: {
     id: string
-    firstName: string
-    lastName: string
+    personalInfo?: { firstName?: string; lastName?: string }
+    professionalInfo?: { title?: string; specialization?: string }
   }
 }
 
