@@ -230,8 +230,13 @@ export class Invoice {
     // Calcular total
     this.totalAmount = taxableAmount + this.taxAmount;
 
-    // Calcular monto restante
-    this.remainingAmount = this.totalAmount - this.paidAmount;
+    // Calcular monto restante. Una factura anulada o devuelta no debe nada: el
+    // saldo se extingue con ella. Este cálculo estaba fuera del `if` de abajo y
+    // corría siempre, así que deshacía en silencio el `remainingAmount = 0` que
+    // `voidInvoice()` acababa de asignar —el hook corre después—, y toda factura
+    // anulada conservaba su saldo vivo para siempre. De ahí el "0 facturas
+    // pendientes" junto a un monto por cobrar que salía entero de anuladas.
+    this.remainingAmount = isTerminalStatus ? 0 : this.totalAmount - this.paidAmount;
 
     if (!isTerminalStatus) {
       // Actualizar estado basado en pagos
