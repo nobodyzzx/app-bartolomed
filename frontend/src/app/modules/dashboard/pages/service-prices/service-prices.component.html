@@ -15,13 +15,16 @@
     </app-page-header>
 
     <!-- Resumen por categoría -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
       <app-stat-card
         label="Consultas" [value]="countOf(ServiceCategory.CONSULTATION)"
         sublabel="Tarifas por tipo de cita" icon="stethoscope" color="blue" />
       <app-stat-card
         label="Laboratorio" [value]="countOf(ServiceCategory.LABORATORY)"
         sublabel="Exámenes disponibles" icon="biotech" color="purple" />
+      <app-stat-card
+        label="Estudios Especiales" [value]="countOf(ServiceCategory.SPECIAL_STUDY)"
+        sublabel="Gabinete: ecografía, ECG…" icon="monitor_heart" color="indigo" />
       <app-stat-card
         label="Procedimientos" [value]="countOf(ServiceCategory.PROCEDURE)"
         sublabel="Prácticas y curaciones" icon="healing" color="orange" />
@@ -46,7 +49,11 @@
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Buscar</mat-label>
           <mat-icon matPrefix class="text-slate-400">search</mat-icon>
+          <!-- La búsqueda es del servidor y se dispara con Enter. Con 110
+               exámenes en el tarifario, escribir y no ver nada parece un fallo
+               si no se dice que falta pulsar Enter. -->
           <input matInput [(ngModel)]="search" (keyup.enter)="load()" placeholder="Código o nombre" />
+          <mat-hint>Pulsa Enter para buscar</mat-hint>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
@@ -98,6 +105,14 @@
                 <h3 class="font-semibold text-slate-900 m-0 leading-tight">{{ categoryLabels[category] }}</h3>
                 <p class="text-sm text-slate-500 m-0">{{ pricesOf(category).length }} servicio(s)</p>
               </div>
+              <!-- Solo donde hay costo de convenio: sin él no hay margen que
+                   aplicar. Con 110 estudios, hacerlo uno a uno no es viable. -->
+              @if (canManage() && hasCost(category)) {
+                <button type="button" (click)="openMarginDialog()" class="btn btn-ghost ml-auto">
+                  <span class="material-symbols-outlined msz-20">percent</span>
+                  Aplicar margen
+                </button>
+              }
             </div>
 
             <div class="overflow-x-auto">
@@ -108,6 +123,10 @@
                     <th class="text-left font-semibold px-6 py-3">Servicio</th>
                     @if (category === ServiceCategory.CONSULTATION) {
                       <th class="text-left font-semibold px-6 py-3">Tipo de cita</th>
+                    }
+                    @if (hasCost(category)) {
+                      <th class="text-right font-semibold px-6 py-3">Costo convenio</th>
+                      <th class="text-right font-semibold px-6 py-3">Margen</th>
                     }
                     <th class="text-right font-semibold px-6 py-3">Precio</th>
                     <th class="text-center font-semibold px-6 py-3">Estado</th>
@@ -129,6 +148,22 @@
                       @if (category === ServiceCategory.CONSULTATION) {
                         <td class="px-6 py-3 text-slate-600">
                           {{ price.appointmentType ? appointmentTypeLabels[price.appointmentType] : '—' }}
+                        </td>
+                      }
+                      @if (hasCost(category)) {
+                        <td class="px-6 py-3 text-right text-slate-500 whitespace-nowrap">
+                          {{ price.costPrice ? 'Bs ' + (price.costPrice | number: '1.2-2') : '—' }}
+                        </td>
+                        <!-- Un margen nulo o negativo significa cobrar a precio
+                             de costo o por debajo: hay que verlo, no deducirlo. -->
+                        <td class="px-6 py-3 text-right whitespace-nowrap">
+                          @if (marginPct(price) !== null) {
+                            <span [class]="marginPct(price)! > 0 ? 'text-slate-600' : 'text-red-600 font-semibold'">
+                              {{ marginPct(price) | number: '1.0-0' }}%
+                            </span>
+                          } @else {
+                            <span class="text-slate-300">—</span>
+                          }
                         </td>
                       }
                       <td class="px-6 py-3 text-right font-semibold text-slate-900 whitespace-nowrap">

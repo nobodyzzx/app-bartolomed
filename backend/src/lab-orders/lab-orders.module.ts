@@ -8,9 +8,12 @@ import { MedicalRecord } from '../medical-records/entities/medical-record.entity
 import { Patient } from '../patients/entities/patient.entity';
 import { User } from '../users/entities/user.entity';
 import { PatientsModule } from '../patients/patients.module';
+import { PdfModule } from '../pdf/pdf.module';
 import { LabOrder, LabOrderItem } from './entities/lab-order.entity';
 import { LabOrdersController } from './lab-orders.controller';
+import { SpecialStudiesController } from './special-studies.controller';
 import { LabOrdersService } from './lab-orders.service';
+import { LabResultsPdfService } from './lab-results-pdf.service';
 
 @Module({
   imports: [
@@ -19,8 +22,9 @@ import { LabOrdersService } from './lab-orders.service';
     AuditModule,
     ServicePricesModule,
     ChargesModule,
+    PdfModule,
   ],
-  providers: [LabOrdersService],
-  controllers: [LabOrdersController],
+  providers: [LabOrdersService, LabResultsPdfService],
+  controllers: [LabOrdersController, SpecialStudiesController],
 })
 export class LabOrdersModule {}

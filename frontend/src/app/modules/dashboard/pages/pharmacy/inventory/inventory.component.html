@@ -123,7 +123,7 @@
                   <td class="px-6 py-4">
                     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
                       [ngClass]="isExpiring(product) ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-700'">
-                      {{ product.expiryDate | date: 'dd/MM/yyyy' }}
+                      {{ product.expiryDate | date: 'dd/MM/yyyy' : 'UTC' }}
                     </span>
                   </td>
                   <td class="px-6 py-4">

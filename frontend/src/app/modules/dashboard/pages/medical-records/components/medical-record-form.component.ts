@@ -29,6 +29,7 @@ import {
   RecordType,
 } from '../interfaces'
 import { ConsentTemplatesService } from '../services/consent-templates.service'
+import { formatPlainDate } from '../../../../../shared/utils/date-format.util'
 import { MedicalRecordDraftService } from '../services/medical-record-draft.service'
 import { MedicalRecordDtoBuilderService } from '../services/medical-record-dto-builder.service'
 import { MedicalRecordsService } from '../services/medical-records.service'
@@ -937,7 +938,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
         firstName:      patient?.firstName ?? '',
         lastName:       patient?.lastName  ?? '',
         documentNumber: patient?.documentNumber ?? '',
-        birthDate:      patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('es-BO') : '',
+        birthDate:      formatPlainDate(patient?.birthDate),
         address:        patient?.address ?? '',
         phone:          patient?.phone   ?? '',
       },
@@ -966,7 +967,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
         firstName:      patient?.firstName ?? '',
         lastName:       patient?.lastName  ?? '',
         documentNumber: patient?.documentNumber ?? '',
-        birthDate:      patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('es-BO') : '',
+        birthDate:      formatPlainDate(patient?.birthDate),
         address:        patient?.address ?? '',
         phone:          patient?.phone   ?? '',
       },
@@ -1016,9 +1017,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
       followUpInstructions: evalData.followUpInstructions,
       patientEducation:     evalData.patientEducation,
       notes:                evalData.notes,
-      followUpDate:         evalData.followUpDate
-        ? new Date(evalData.followUpDate).toLocaleDateString('es-BO')
-        : undefined,
+      followUpDate:         formatPlainDate(evalData.followUpDate) || undefined,
     }
 
     this.medicalRecordsService.downloadSummaryPdf(dto).subscribe({

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { formatPlainDate } from '../../common/utils/date-format.util';
 import { TypstCompilerService } from '../../pdf/typst-compiler.service';
 import { ChartRasterizerService } from '../../pdf/chart-rasterizer.service';
 import { typstEscape, typstString } from '../../pdf/utils/typst-escape.util';
@@ -622,7 +623,7 @@ export class ReportsPdfService {
       typstString(s.batchNumber ?? '-'),
       typstString(this.fmtNum(s.availableQuantity)),
       typstString(this.fmtNum(s.minimumStock)),
-      typstString(s.expiryDate ? new Date(s.expiryDate).toLocaleDateString('es-BO') : '-'),
+      typstString(formatPlainDate(s.expiryDate, '-')),
       typstString(this.fmtBs(s.unitCost)),
     ]);
 
@@ -1086,7 +1087,7 @@ ${body}
     const rowsOf = (items: any[]) => items.map((r: any) => [
       `strong(${typstString(r.medicationName ?? '-')})`,
       typstString(r.batchNumber ?? '-'),
-      typstString(r.expiryDate ? new Date(r.expiryDate).toLocaleDateString('es-BO') : '-'),
+      typstString(formatPlainDate(r.expiryDate, '-')),
       typstString(this.fmtNum(r.availableQuantity)),
       typstString(this.fmtBs(r.stockValue)),
     ]);
@@ -1386,10 +1387,13 @@ ${body}
     const totalStockValue: number = data.totalStockValue ?? 0;
 
     const tableRows = rows.map((r: any) => {
-      const expiry = r.expiryDate ? new Date(r.expiryDate).toLocaleDateString('es-BO') : '-';
-      const lastSale = r.lastSaleDate
-        ? (r.lastSaleDate instanceof Date ? r.lastSaleDate : new Date(r.lastSaleDate)).toLocaleDateString('es-BO')
-        : 'Sin ventas';
+      // `expiryDate` es columna `date` y `saleDate` es `timestamp without time
+      // zone`: ninguna de las dos lleva zona, así que se imprimen tal como se
+      // guardaron. Antes dependían de la TZ del proceso (hoy UTC en el
+      // contenedor, correcto por casualidad): fijar TZ las habría corrido un
+      // día en bloque.
+      const expiry = formatPlainDate(r.expiryDate, '-');
+      const lastSale = formatPlainDate(r.lastSaleDate, 'Sin ventas');
       return [
         `strong(${typstString(r.medicationName ?? '-')})`,
         typstString(r.genericName ?? '-'),

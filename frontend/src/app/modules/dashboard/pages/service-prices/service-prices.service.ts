@@ -9,6 +9,12 @@ import { ErrorService } from '../../../../shared/components/services/error.servi
 export enum ServiceCategory {
   CONSULTATION = 'consultation',
   LABORATORY = 'laboratory',
+  /**
+   * Estudios especiales: ecografía, colonoscopía, electrocardiograma. Van
+   * aparte de `PROCEDURE` porque aquello son prácticas terapéuticas y esto son
+   * estudios diagnósticos, con su propio módulo, su rol y su informe.
+   */
+  SPECIAL_STUDY = 'special_study',
   PROCEDURE = 'procedure',
   OTHER = 'other',
 }
@@ -34,6 +40,12 @@ export interface ServicePrice {
   category: ServiceCategory
   appointmentType: AppointmentType | null
   price: number
+  /** Lo que cuesta el estudio derivado al laboratorio externo. Nulo si no se deriva. */
+  costPrice: number | null
+  labCategory: string | null
+  turnaroundMinDays: number | null
+  turnaroundMaxDays: number | null
+  turnaroundNote: string | null
   isActive: boolean
   clinicId: string
   createdAt: string
@@ -47,6 +59,48 @@ export interface ServicePriceCatalogItem {
   name: string
   category: ServiceCategory
   price: number
+  /** Categoría clínica del estudio (`HEMATOLOGIA`…), para agrupar el catálogo. */
+  labCategory?: string | null
+  turnaroundMinDays?: number | null
+  turnaroundMaxDays?: number | null
+  /** Entregas que no se expresan en días; manda sobre los días si viene. */
+  turnaroundNote?: string | null
+}
+
+/** Nombre legible de cada categoría clínica, en el orden del tarifario. */
+export const LAB_CATEGORY_LABELS: Record<string, string> = {
+  HEMATOLOGIA: 'Hematología',
+  COAGULACION: 'Coagulación',
+  QUIMICA_SANGUINEA: 'Química sanguínea',
+  MARCADORES_TUMORALES: 'Marcadores tumorales',
+  HORMONAS: 'Hormonas',
+  INMUNOLOGIA_PRUEBAS_RAPIDAS: 'Inmunología y pruebas rápidas',
+  ORINA: 'Orina',
+  HECES_FECALES: 'Heces fecales',
+  BACTERIOLOGIA: 'Bacteriología',
+  BIOLOGIA_MOLECULAR: 'Biología molecular y otros',
+}
+
+const LAB_CATEGORY_ORDER = Object.keys(LAB_CATEGORY_LABELS)
+
+export function labCategoryLabel(code: string | null | undefined): string {
+  if (!code) return 'Otros estudios'
+  return LAB_CATEGORY_LABELS[code] ?? code
+}
+
+export function labCategoryRank(code: string | null | undefined): number {
+  const i = LAB_CATEGORY_ORDER.indexOf(code ?? '')
+  return i === -1 ? LAB_CATEGORY_ORDER.length : i
+}
+
+/** "En el día", "1 a 3 días"… para decirle al paciente cuándo estará listo. */
+export function turnaroundLabel(item: ServicePriceCatalogItem): string {
+  if (item.turnaroundNote) return item.turnaroundNote
+  const { turnaroundMinDays: min, turnaroundMaxDays: max } = item
+  if (min === null || min === undefined) return ''
+  if (min === 0 && (max ?? 0) === 0) return 'En el día'
+  if (min === max) return min === 1 ? 'Al día siguiente' : `${min} días`
+  return `${min} a ${max} días`
 }
 
 export interface ServicePricePayload {
@@ -56,7 +110,37 @@ export interface ServicePricePayload {
   category: ServiceCategory
   appointmentType?: AppointmentType | null
   price: number
+  /** Costo de convenio. Si no se envía, el backend deja el que ya estaba. */
+  costPrice?: number
   isActive?: boolean
+}
+
+/** Un precio que cambiaría (o cambió) al aplicar un margen en bloque. */
+export interface MarginChange {
+  id: string
+  code: string
+  name: string
+  labCategory: string | null
+  costPrice: number
+  priceFrom: number
+  priceTo: number
+  /** Margen que queda tras redondear, que es el que se cobra de verdad. */
+  effectiveMarginPct: number
+}
+
+export interface ApplyMarginResult {
+  /** `false` cuando fue una vista previa. */
+  applied: boolean
+  affected: number
+  scanned: number
+  changes: MarginChange[]
+}
+
+export interface ApplyMarginPayload {
+  labCategory?: string
+  marginPct: number
+  roundTo?: number
+  dryRun?: boolean
 }
 
 export interface ServicePriceListFilter {
@@ -77,6 +161,7 @@ export interface ServicePriceListResponse {
 export const CATEGORY_LABELS: Record<ServiceCategory, string> = {
   [ServiceCategory.CONSULTATION]: 'Consulta',
   [ServiceCategory.LABORATORY]: 'Laboratorio',
+  [ServiceCategory.SPECIAL_STUDY]: 'Estudio especial',
   [ServiceCategory.PROCEDURE]: 'Procedimiento',
   [ServiceCategory.OTHER]: 'Otro',
 }
@@ -151,6 +236,24 @@ export class ServicePricesService {
   update(id: string, payload: Partial<ServicePricePayload>): Observable<ServicePrice> {
     return this.http.patch<ServicePrice>(`${this.base}/${id}`, payload).pipe(
       tap(() => this.alert.success('Éxito', 'Servicio actualizado')),
+      catchError(err => {
+        this.errorService.handleError(err)
+        return throwError(() => err)
+      }),
+    )
+  }
+
+  /**
+   * Recalcula precios en bloque desde el margen. Con `dryRun` solo devuelve la
+   * vista previa; el aviso de éxito se reserva para la aplicación real.
+   */
+  applyMargin(payload: ApplyMarginPayload): Observable<ApplyMarginResult> {
+    return this.http.post<ApplyMarginResult>(`${this.base}/apply-margin`, payload).pipe(
+      tap(res => {
+        if (!payload.dryRun) {
+          this.alert.success('Precios actualizados', `Se recalcularon ${res.affected} servicio(s)`)
+        }
+      }),
       catchError(err => {
         this.errorService.handleError(err)
         return throwError(() => err)

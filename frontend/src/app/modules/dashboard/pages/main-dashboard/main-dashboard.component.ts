@@ -1,7 +1,8 @@
 import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
-import { ADMIN_ONLY_ROLES, BILLING_ROLES, CLINICAL_ROLES, LAB_ROLES, PHARMACY_ROLES } from '@core/constants/role-groups'
+import { permissionLabel } from '@core/constants/permission-labels'
+import { ADMIN_ONLY_ROLES, BILLING_ROLES, CLINICAL_ROLES, LAB_ROLES, PHARMACY_ROLES, SPECIAL_STUDY_ROLES } from '@core/constants/role-groups'
 import { Permission } from '@core/enums/permission.enum'
 import { UserRoles } from '@core/enums/user-roles.enum'
 import { RoleStateService } from '@core/services/role-state.service'
@@ -281,6 +282,15 @@ export class MainDashboardComponent implements OnInit {
         color: 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100 border-cyan-100',
         roles: [UserRoles.DOCTOR, UserRoles.LABORATORY, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
       },
+      {
+        // Mismo motivo que la acción de Laboratorio de aquí arriba: sin esto,
+        // un usuario solo-SPECIAL_STUDIES entra y ve la home vacía pese a
+        // tener su módulo completo.
+        label: 'Estudios Especiales', icon: 'monitor_heart',
+        route: '/dashboard/special-studies',
+        color: 'bg-violet-50 text-violet-600 hover:bg-violet-100 border-violet-100',
+        roles: SPECIAL_STUDY_ROLES,
+      },
     ]
     return actions.filter(a => this.roleState.hasAnyRole(a.roles))
   }
@@ -356,8 +366,14 @@ export class MainDashboardComponent implements OnInit {
   ngOnInit(): void {
     this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       if (params['error'] === 'insufficient_permissions') {
-        const required = params['required']?.split(',') || []
-        this.permissionError = `No tienes permisos para acceder a ese módulo. Requeridos: ${required.join(', ')}`
+        // Se traduce a lenguaje de clínica: "patients.read" no le dice nada a
+        // quien lo lee, "ver pacientes" sí — y es lo que tiene que pedirle a
+        // quien administra el sistema.
+        const required: string[] = params['required']?.split(',').filter(Boolean) || []
+        const acciones = required.map(permissionLabel)
+        this.permissionError = acciones.length
+          ? `No tienes acceso a ese módulo. Necesitas permiso para ${acciones.join(' o ')}. Pídeselo al administrador de la clínica.`
+          : 'No tienes acceso a ese módulo. Pídele acceso al administrador de la clínica.'
         setTimeout(() => (this.permissionError = null), 8000)
       }
     })

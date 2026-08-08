@@ -35,6 +35,7 @@ const ROLE_LABELS: Record<string, string> = {
   receptionist: 'Recepcionista',
   pharmacist: 'Farmacéutico',
   laboratory: 'Laboratorio',
+  'special-studies': 'Estudios Especiales',
 }
 
 const ROLE_PRIORITY: UserRoles[] = [
@@ -45,12 +46,14 @@ const ROLE_PRIORITY: UserRoles[] = [
   UserRoles.NURSE,
   UserRoles.RECEPTIONIST,
   UserRoles.LABORATORY,
+  UserRoles.SPECIAL_STUDIES,
 ]
 
 interface AlertCounts {
   lowStock: number
   pendingAppointments: number
   overdueInvoices: number
+  readyLabResults: number
 }
 
 @Component({
@@ -135,10 +138,20 @@ export class NavbarComponent implements OnInit {
   public showStockAlertRow = computed(() => this.roleState.hasAnyRole(PHARMACY_ROLES))
   public showAppointmentsAlertRow = computed(() => this.roleState.hasAnyRole(CLINICAL_ROLES))
   public showBillingAlertRow = computed(() => this.roleState.hasAnyRole(BILLING_ROLES))
-  public alertCounts = signal<AlertCounts>({ lowStock: 0, pendingAppointments: 0, overdueInvoices: 0 })
+  // Solo al médico: es el aviso de que el examen que él pidió ya tiene
+  // resultado. Se filtra por su id, así que no tiene sentido para otros roles.
+  public showLabResultsAlertRow = computed(
+    () => this.roleState.hasAnyRole([UserRoles.DOCTOR]) && this.roleState.hasPermission(Permission.LabRead),
+  )
+  public alertCounts = signal<AlertCounts>({
+    lowStock: 0,
+    pendingAppointments: 0,
+    overdueInvoices: 0,
+    readyLabResults: 0,
+  })
   public totalAlerts = computed(() => {
     const c = this.alertCounts()
-    return c.lowStock + c.pendingAppointments + c.overdueInvoices
+    return c.lowStock + c.pendingAppointments + c.overdueInvoices + c.readyLabResults
   })
 
   ngOnInit() {
@@ -279,7 +292,9 @@ export class NavbarComponent implements OnInit {
     const needsAppointments =
       this.roleState.hasAnyRole(CLINICAL_ROLES) && this.roleState.hasPermission(Permission.AppointmentsRead)
     const needsBilling = this.roleState.hasAnyRole(BILLING_ROLES)
-    if (!needsStock && !needsAppointments && !needsBilling) return
+    const doctorId = this.authService.currentUser()?.id
+    const needsLabResults = this.showLabResultsAlertRow() && !!doctorId
+    if (!needsStock && !needsAppointments && !needsBilling && !needsLabResults) return
 
     forkJoin({
       stock: needsStock ? this.dashboardService.getLowStockAlerts() : of([]),
@@ -287,11 +302,13 @@ export class NavbarComponent implements OnInit {
       billing: needsBilling
         ? this.dashboardService.getBillingSummary()
         : of({ pendingInvoices: 0, overdueInvoices: 0, pendingRevenue: 0 }),
-    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(({ stock, pending, billing }) => {
+      labResults: needsLabResults ? this.dashboardService.getReadyLabResultsCount(doctorId!) : of(0),
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(({ stock, pending, billing, labResults }) => {
       this.alertCounts.set({
         lowStock: stock.length,
         pendingAppointments: pending,
         overdueInvoices: billing.overdueInvoices,
+        readyLabResults: labResults,
       })
     })
   }

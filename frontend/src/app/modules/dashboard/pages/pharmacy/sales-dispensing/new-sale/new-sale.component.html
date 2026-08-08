@@ -265,7 +265,7 @@
                     <mat-option value="">Sin receta</mat-option>
                     @for (pr of prescriptions(); track pr.id) {
                       <mat-option [value]="pr.id">
-                        Receta #{{ pr.prescriptionNumber || pr.id.slice(0, 8) }} — {{ pr.prescriptionDate | date: 'dd/MM/yyyy' }}
+                        Receta #{{ pr.prescriptionNumber || pr.id.slice(0, 8) }} — {{ pr.prescriptionDate | date: 'dd/MM/yyyy' : 'UTC' }}
                       </mat-option>
                     }
                   </mat-select>

@@ -4,6 +4,7 @@ import { MatDialog } from '@angular/material/dialog'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { AuthService } from '../../../auth/services/auth.service'
+import { ApplyMarginDialogComponent } from './apply-margin-dialog/apply-margin-dialog.component'
 import { ServicePriceFormDialogComponent } from './service-price-form-dialog/service-price-form-dialog.component'
 import {
   APPOINTMENT_TYPE_LABELS,
@@ -84,12 +85,45 @@ export class ServicePricesComponent implements OnInit {
     return this.pricesOf(category).length
   }
 
+  /**
+   * Las columnas de costo y margen solo tienen sentido donde hay un tercero
+   * cobrando: los estudios derivados al laboratorio externo. En consultas y
+   * procedimientos la clínica no compra nada, así que la columna sobra.
+   */
+  hasCost(category: ServiceCategory): boolean {
+    return this.pricesOf(category).some(p => p.costPrice !== null && p.costPrice !== undefined)
+  }
+
+  /** Margen sobre el costo, en porcentaje. Null cuando no hay costo con el que comparar. */
+  marginPct(price: ServicePrice): number | null {
+    const costo = Number(price.costPrice ?? 0)
+    if (!costo) return null
+    return ((Number(price.price) - costo) / costo) * 100
+  }
+
   create(): void {
     this.openForm()
   }
 
   edit(price: ServicePrice): void {
     this.openForm(price)
+  }
+
+  /** Margen en bloque: el diálogo enseña la vista previa y aplica si se confirma. */
+  openMarginDialog(): void {
+    this.dialog
+      .open(ApplyMarginDialogComponent, {
+        width: '760px',
+        maxWidth: '95vw',
+        panelClass: 'rounded-dialog',
+      })
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        // Solo recarga si de verdad se aplicó: cerrar la vista previa no debe
+        // costar una petición más.
+        if (result?.applied) this.load()
+      })
   }
 
   private openForm(price?: ServicePrice): void {

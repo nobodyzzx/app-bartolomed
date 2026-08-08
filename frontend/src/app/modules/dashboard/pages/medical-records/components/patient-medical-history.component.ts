@@ -13,6 +13,12 @@ import { AlertService } from '@core/services/alert.service'
 import { RoleStateService } from '@core/services/role-state.service'
 import { Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
+import { formatPlainDate } from '../../../../../shared/utils/date-format.util'
+import {
+  LAB_MODULE_CONFIG,
+  LABORATORY_MODULE_CONFIG,
+} from '../../lab-orders/lab-module.config'
+import { LabOrdersService } from '../../lab-orders/lab-orders.service'
 import { Patient } from '../../patients/interfaces'
 import { PatientsService } from '../../patients/services/patients.service'
 import { MedicalRecord, RecordType } from '../interfaces'
@@ -23,7 +29,14 @@ import { MedicalRecordsService } from '../services/medical-records.service'
     templateUrl: './patient-medical-history.component.html',
     styleUrls: ['./patient-medical-history.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: false
+    standalone: false,
+    // `LabOrdersService` sirve a dos módulos (laboratorio y estudios especiales)
+    // y toma su ruta de la configuración, así que no se provee en `root`: aquí
+    // se declara explícitamente cuál de los dos se está consultando.
+    providers: [
+      { provide: LAB_MODULE_CONFIG, useValue: LABORATORY_MODULE_CONFIG },
+      LabOrdersService,
+    ],
 })
 export class PatientMedicalHistoryComponent implements OnInit, OnDestroy {
   readonly RecordType = RecordType
@@ -33,6 +46,10 @@ export class PatientMedicalHistoryComponent implements OnInit, OnDestroy {
   patient: Patient | null = null
   records: MedicalRecord[] = []
   isLoading = true
+
+  labOrders: any[] = []
+  labLoading = false
+  printingLabOrderId: string | null = null
 
   // Filtros
   filterType: RecordType | 'ALL' = 'ALL'
@@ -51,6 +68,7 @@ export class PatientMedicalHistoryComponent implements OnInit, OnDestroy {
     private alert: AlertService,
     private cdr: ChangeDetectorRef,
     private roleState: RoleStateService,
+    private laboratoryService: LabOrdersService,
   ) {}
 
   /** NURSE tiene RecordsRead (entra al módulo) pero el backend solo permite escribir a DOCTOR/ADMIN. */
@@ -73,6 +91,62 @@ export class PatientMedicalHistoryComponent implements OnInit, OnDestroy {
     }
     this.loadPatient()
     this.loadRecords()
+    this.loadLabOrders()
+  }
+
+  /**
+   * Órdenes de laboratorio del paciente. Hasta ahora el resultado vivía solo
+   * en el módulo de Laboratorio: el médico que pidió el examen no tenía desde
+   * dónde llegar a él salvo ir a buscar la orden a mano.
+   */
+  private loadLabOrders() {
+    if (!this.roleState.hasPermission(Permission.LabRead)) return
+    this.labLoading = true
+    this.laboratoryService
+      .list(1, 50, { patientId: this.patientId })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (r: any) => {
+          this.labOrders = r?.items ?? []
+          this.labLoading = false
+          this.cdr.markForCheck()
+        },
+        error: () => {
+          this.labLoading = false
+          this.cdr.markForCheck()
+        },
+      })
+  }
+
+  /** Estudios con resultado cargado, que es lo que el médico viene a leer. */
+  resultedItems(order: any): any[] {
+    return (order?.items ?? []).filter((i: any) => !!i.resultedAt)
+  }
+
+  hasAbnormal(order: any): boolean {
+    return this.resultedItems(order).some((i: any) => i.isAbnormal)
+  }
+
+  printLabResults(order: any): void {
+    if (this.printingLabOrderId) return
+    this.printingLabOrderId = order.id
+    this.cdr.markForCheck()
+    this.laboratoryService
+      .getResultsPdf(order.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: blob => {
+          this.printingLabOrderId = null
+          const url = URL.createObjectURL(blob)
+          window.open(url, '_blank')
+          setTimeout(() => URL.revokeObjectURL(url), 60000)
+          this.cdr.markForCheck()
+        },
+        error: () => {
+          this.printingLabOrderId = null
+          this.cdr.markForCheck()
+        },
+      })
   }
 
   ngOnDestroy(): void {
@@ -214,6 +288,12 @@ export class PatientMedicalHistoryComponent implements OnInit, OnDestroy {
     this.location.back()
   }
 
+  /** Columna `date`: día del calendario, sin hora y sin desplazar la zona. */
+  formatBirthDate(date: string | Date | undefined): string {
+    return formatPlainDate(date)
+  }
+
+  /** Para instantes (`createdAt`): sí lleva hora y sí va en zona local. */
   formatDate(date: string | Date | undefined): string {
     if (!date) return ''
     const d = new Date(date)

@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core'
 import { RouterModule, Routes } from '@angular/router'
+import { SPECIAL_STUDY_ROLES } from '@core/constants/role-groups'
 import { Permission } from '@core/enums/permission.enum'
 import { UserRoles } from '@core/enums/user-roles.enum'
 import { permissionsGuard } from '@core/guards/permissions.guard'
@@ -119,6 +120,19 @@ const routes: Routes = [
             UserRoles.SUPER_ADMIN,
           ],
           requiredPermissions: [Permission.LabRead],
+        },
+      },
+      {
+        // Módulo aparte del laboratorio, con su propio rol y sus propios
+        // permisos: quien realiza una ecografía no tiene por qué ver los
+        // análisis clínicos del paciente.
+        path: 'special-studies',
+        loadChildren: () =>
+          import('./pages/special-studies/special-studies.module').then(m => m.SpecialStudiesModule),
+        canActivate: [permissionsGuard, roleGuard],
+        data: {
+          allowedRoles: SPECIAL_STUDY_ROLES,
+          requiredPermissions: [Permission.SpecialRead],
         },
       },
       {

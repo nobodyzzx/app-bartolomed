@@ -3,13 +3,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { RoleStateService } from '@core/services/role-state.service'
-import { UserRoles } from '@core/enums/user-roles.enum'
+import { LAB_MODULE_CONFIG } from './lab-module.config'
 import { LabOrder } from './interfaces/lab-order-ui.interface'
-import { LaboratoryService } from './laboratory.service'
+import { LabOrdersService } from './lab-orders.service'
 
 const STATUS_MAP: Record<string, { label: string; classes: string }> = {
   requested:        { label: 'Solicitada',        classes: 'bg-slate-100 text-slate-700' },
   sample_collected: { label: 'Muestra Tomada',     classes: 'bg-amber-100 text-amber-700' },
+  sent_to_provider: { label: 'En el Laboratorio',   classes: 'bg-violet-100 text-violet-700' },
   in_progress:      { label: 'En Proceso',         classes: 'bg-blue-100 text-blue-700' },
   completed:        { label: 'Completada',         classes: 'bg-emerald-100 text-emerald-700' },
   cancelled:        { label: 'Cancelada',          classes: 'bg-red-100 text-red-700' },
@@ -23,6 +24,8 @@ const STATUS_MAP: Record<string, { label: string; classes: string }> = {
 export class LabOrderListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
   private readonly roleState = inject(RoleStateService)
+  readonly config = inject(LAB_MODULE_CONFIG)
+  readonly texts = this.config.texts
 
   orders: LabOrder[] = []
   loading = false
@@ -33,7 +36,7 @@ export class LabOrderListComponent implements OnInit {
   patientNameFilter: string | null = null
 
   constructor(
-    private labService: LaboratoryService,
+    private labService: LabOrdersService,
     private router: Router,
     private route: ActivatedRoute,
     private alert: AlertService,
@@ -44,10 +47,9 @@ export class LabOrderListComponent implements OnInit {
     this.loadOrders()
   }
 
-  /** Solo DOCTOR/ADMIN/SUPER_ADMIN pueden solicitar órdenes de laboratorio. */
+  /** Solo los roles que el backend acepta en el POST pueden emitir órdenes. */
   canOrder(): boolean {
-    const roles = this.roleState.currentUserRoles()
-    return roles.includes(UserRoles.DOCTOR) || roles.includes(UserRoles.ADMIN) || roles.includes(UserRoles.SUPER_ADMIN)
+    return this.roleState.hasAnyRole(this.config.orderRoles)
   }
 
   loadOrders(): void {
@@ -67,7 +69,7 @@ export class LabOrderListComponent implements OnInit {
       },
       error: () => {
         this.loading = false
-        this.alert.fire({ icon: 'error', title: 'Error', text: 'No se pudieron cargar las órdenes de laboratorio' })
+        this.alert.fire({ icon: 'error', title: 'Error', text: `No se pudieron cargar las órdenes de ${this.texts.listTitle.toLowerCase()}` })
       },
     })
   }
@@ -84,11 +86,15 @@ export class LabOrderListComponent implements OnInit {
   }
 
   createOrder(): void {
-    this.router.navigate(['/dashboard/laboratory/new'])
+    this.router.navigate([`${this.config.routeBase}/new`])
+  }
+
+  createExternalOrder(): void {
+    this.router.navigate([`${this.config.routeBase}/new`], { queryParams: { external: 1 } })
   }
 
   viewOrder(order: LabOrder): void {
-    this.router.navigate(['/dashboard/laboratory', order.id])
+    this.router.navigate([this.config.routeBase, order.id])
   }
 
   goBack(): void {
@@ -100,6 +106,9 @@ export class LabOrderListComponent implements OnInit {
   }
 
   getStatusLabel(status: string): string {
+    // `sent_to_provider` no se llama igual en los dos módulos: la muestra va al
+    // laboratorio externo, el paciente va derivado a otro centro.
+    if (status === 'sent_to_provider') return this.texts.sentToProviderStatus
     return STATUS_MAP[status]?.label ?? status
   }
 
@@ -108,11 +117,43 @@ export class LabOrderListComponent implements OnInit {
   }
 
   getPendingCount(): number {
-    return this.orders.filter(o => o.status === 'requested' || o.status === 'sample_collected' || o.status === 'in_progress').length
+    const abiertas = ['requested', 'sample_collected', 'sent_to_provider', 'in_progress']
+    return this.orders.filter(o => abiertas.includes(o.status)).length
   }
 
   getPatientInitials(o: LabOrder): string {
-    return ((o.patient?.firstName?.charAt(0) ?? '') + (o.patient?.lastName?.charAt(0) ?? '')).toUpperCase() || '?'
+    const fromFicha = (o.patient?.firstName?.charAt(0) ?? '') + (o.patient?.lastName?.charAt(0) ?? '')
+    if (fromFicha.trim()) return fromFicha.toUpperCase()
+    // Paciente derivado, sin ficha: las iniciales salen del nombre libre.
+    const libre = (o as any).patientName?.trim() ?? ''
+    const partes = libre.split(/\s+/).filter(Boolean)
+    const iniciales = (partes[0]?.charAt(0) ?? '') + (partes[1]?.charAt(0) ?? '')
+    return iniciales.toUpperCase() || '?'
+  }
+
+  /** Nombre del paciente, tenga ficha o no. */
+  patientLabel(o: LabOrder): string {
+    if (o.patient) return `${o.patient.firstName ?? ''} ${o.patient.lastName ?? ''}`.trim()
+    return (o as any).patientName?.trim() || '—'
+  }
+
+  /** Quién indicó el examen: médico de la casa o solicitante externo. */
+  requesterLabel(o: LabOrder): string {
+    if ((o as any).origin === 'external') {
+      return (o as any).referringDoctorName?.trim() || 'Particular'
+    }
+    const info = o.doctor?.personalInfo
+    const name = `${info?.firstName ?? ''} ${info?.lastName ?? ''}`.trim()
+    return name ? `Dr. ${name}` : (o.doctor?.email ?? '—')
+  }
+
+  isExternal(o: LabOrder): boolean {
+    return (o as any).origin === 'external'
+  }
+
+  /** El servicio y recepción registran las solicitudes que llegan de fuera. */
+  canOrderExternal(): boolean {
+    return this.roleState.hasPermission(this.config.externalPermission)
   }
 
   setStatusFilter(status: string): void {

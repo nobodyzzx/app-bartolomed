@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core'
 import { Observable } from 'rxjs'
 import { tap } from 'rxjs/operators'
 import { environment } from '../../../../../environments/environments'
+import { todayLocalISO } from '../../../../../shared/utils/date-format.util'
 
 @Injectable({
   providedIn: 'root',
@@ -43,48 +44,48 @@ export class ReportsService {
   }
 
   downloadFinancialPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('financial', `reporte-financiero-${date}.pdf`, params)
   }
 
   /** Control de ingresos: origen, descuentos y cuentas por cobrar. */
   downloadRevenueControlPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('revenue-control', `control-ingresos-${date}.pdf`, params)
   }
 
   downloadDemographicsPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('demographics', `demografia-pacientes-${date}.pdf`, params)
   }
 
   downloadDoctorPerformancePdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('doctor-performance', `rendimiento-medicos-${date}.pdf`, params)
   }
 
   downloadAppointmentsPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('appointments', `estadisticas-citas-${date}.pdf`, params)
   }
 
   downloadMedicalRecordsPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('medical-records', `registros-medicos-${date}.pdf`, params)
   }
 
   downloadDashboardPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('dashboard', `dashboard-${date}.pdf`, params)
   }
 
   downloadCriticalStockPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('critical-stock', `stock-critico-${date}.pdf`, params)
   }
 
   downloadTransferEfficiencyPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('transfer-efficiency', `eficiencia-traslados-${date}.pdf`, params)
   }
 
@@ -104,135 +105,135 @@ export class ReportsService {
   }
 
   downloadCriticalStockExcel(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadBlob('export/excel/critical-stock', `stock-critico-${date}.xlsx`, params)
   }
 
   downloadPharmacyConsumptionExcel(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadBlob('export/excel/pharmacy-consumption', `consumo-farmacia-${date}.xlsx`, params)
   }
 
   // ─── Farmacia: nuevos PDFs (F1-R1..F3-R13) ───────────────────────────────
 
   downloadRotationPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('pharmacy-rotation', `rotacion-stock-${date}.pdf`, params)
   }
 
   downloadMarginsPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('pharmacy-margins', `margenes-producto-${date}.pdf`, params)
   }
 
   downloadDailySalesPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('pharmacy-daily-sales', `ventas-diarias-${date}.pdf`, params)
   }
 
   downloadExpiryBucketsPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('pharmacy-expiry-buckets', `vencimientos-${date}.pdf`, params)
   }
 
   downloadProfitabilityPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('pharmacy-profitability', `rentabilidad-mensual-${date}.pdf`, params)
   }
 
   // ─── Farmacia: nuevos Excels ──────────────────────────────────────────────
 
   downloadRotationExcel(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadBlob('export/excel/pharmacy-rotation', `rotacion-stock-${date}.xlsx`, params)
   }
 
   downloadMarginsExcel(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadBlob('export/excel/pharmacy-margins', `margenes-producto-${date}.xlsx`, params)
   }
 
   downloadTopSellingExcel(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadBlob('export/excel/pharmacy-top-selling', `top-vendidos-${date}.xlsx`, params)
   }
 
   downloadStockMovementsExcel(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadBlob('export/excel/pharmacy-stock-movements', `kardex-${date}.xlsx`, params)
   }
 
   // ─── A1: Ventas por farmacéutico ─────────────────────────────────────────
 
   downloadSalesByPharmacistPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('pharmacy-by-pharmacist', `ventas-farmaceutico-${date}.pdf`, params)
   }
 
   downloadSalesByPharmacistExcel(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadBlob('export/excel/pharmacy-by-pharmacist', `ventas-farmaceutico-${date}.xlsx`, params)
   }
 
   // ─── A2: Encargado × Día × Medicamento ───────────────────────────────────
 
   downloadPharmacistDayMedicationPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('pharmacy-pharmacist-day', `encargado-dia-medicamento-${date}.pdf`, params)
   }
 
   downloadPharmacistDayMedicationExcel(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadBlob('export/excel/pharmacy-pharmacist-day', `encargado-dia-medicamento-${date}.xlsx`, params)
   }
 
   // ─── B1: Inventario valorizado ────────────────────────────────────────────
 
   downloadValorizedInventoryPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('pharmacy-inventory-valorized', `inventario-valorizado-${date}.pdf`, params)
   }
 
   downloadValorizedInventoryExcel(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadBlob('export/excel/pharmacy-inventory-valorized', `inventario-valorizado-${date}.xlsx`, params)
   }
 
   // ─── B2: Inventario por categoría ────────────────────────────────────────
 
   downloadInventoryByCategoryPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('pharmacy-inventory-by-category', `inventario-categorias-${date}.pdf`, params)
   }
 
   // ─── B3: Sin movimiento ───────────────────────────────────────────────────
 
   downloadNoMovementPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('pharmacy-no-movement', `sin-movimiento-${date}.pdf`, params)
   }
 
   downloadNoMovementExcel(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadBlob('export/excel/pharmacy-no-movement', `sin-movimiento-${date}.xlsx`, params)
   }
 
   // ─── C1: Ventas por medicamento detalle ──────────────────────────────────
 
   downloadMedicationDetailPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('pharmacy-medication-detail', `ventas-medicamento-${date}.pdf`, params)
   }
 
   downloadMedicationDetailExcel(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadBlob('export/excel/pharmacy-medication-detail', `ventas-medicamento-${date}.xlsx`, params)
   }
 
   // ─── C2: Receta vs Venta libre ────────────────────────────────────────────
 
   downloadPrescriptionVsFreePdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('pharmacy-prescription-vs-free', `receta-vs-libre-${date}.pdf`, params)
   }
 
@@ -296,24 +297,24 @@ export class ReportsService {
   // pasar una URL ya armada como si fuera un "path" relativo a downloadBlob()
   // (que también antepone apiUrl), duplicándolo una segunda vez.
   downloadSalesByPaymentPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('pharmacy-sales-by-payment', `ventas-metodo-pago-${date}.pdf`, params)
   }
 
   downloadSalesByPaymentExcel(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadBlob('export/excel/pharmacy-sales-by-payment', `ventas-metodo-pago-${date}.xlsx`, params)
   }
 
   // ─── C6: Comparativo mensual ─────────────────────────────────────────────
 
   downloadMonthlySalesComparisonPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadReportPdf('pharmacy-monthly-comparison', `comparativo-mensual-${date}.pdf`, params)
   }
 
   downloadMonthlySalesComparisonExcel(params: Record<string, string> = {}): Observable<Blob> {
-    const date = new Date().toISOString().slice(0, 10)
+    const date = todayLocalISO()
     return this.downloadBlob('export/excel/pharmacy-monthly-comparison', `comparativo-mensual-${date}.xlsx`, params)
   }
 }

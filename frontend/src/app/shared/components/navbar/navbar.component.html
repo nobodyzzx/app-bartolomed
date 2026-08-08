@@ -145,6 +145,14 @@
                   </span>
                 </button>
               }
+              @if (showLabResultsAlertRow() && alertCounts().readyLabResults > 0) {
+                <button mat-menu-item routerLink="/dashboard/laboratory" class="!min-h-[48px]">
+                  <span class="flex items-center gap-2.5">
+                    <span class="material-symbols-outlined msz-18 text-emerald-500">biotech</span>
+                    <span class="text-sm text-slate-700">{{ alertCounts().readyLabResults }} resultado(s) de laboratorio listo(s)</span>
+                  </span>
+                </button>
+              }
               @if (showBillingAlertRow() && alertCounts().overdueInvoices > 0) {
                 <button mat-menu-item routerLink="/dashboard/billing" class="!min-h-[48px]">
                   <span class="flex items-center gap-2.5">

@@ -4,7 +4,12 @@ import { Not, Repository } from 'typeorm';
 import { AuditService } from '../audit/audit.service';
 import { AppointmentType } from '../appointments/entities/appointment.entity';
 import { User } from '../users/entities/user.entity';
-import { CreateServicePriceDto, FilterServicePricesDto, UpdateServicePriceDto } from './dto';
+import {
+  ApplyMarginDto,
+  CreateServicePriceDto,
+  FilterServicePricesDto,
+  UpdateServicePriceDto,
+} from './dto';
 import { ServiceCategory, ServicePrice } from './entities/service-price.entity';
 
 @Injectable()
@@ -76,12 +81,27 @@ export class ServicePricesService {
   async findCatalog(filter: FilterServicePricesDto = {}, clinicId?: string) {
     const scopedClinicId = this.requireClinicId(clinicId);
 
+    // `labCategory` y los días de entrega viajan también: con 110 estudios el
+    // selector necesita agruparlos, y "¿cuándo estará?" es lo primero que
+    // pregunta el paciente. `costPrice` NO se expone: es información interna
+    // del convenio, no algo que deba ver quien pide un examen.
     const qb = this.repository
       .createQueryBuilder('sp')
-      .select(['sp.id', 'sp.code', 'sp.name', 'sp.category', 'sp.price'])
+      .select([
+        'sp.id',
+        'sp.code',
+        'sp.name',
+        'sp.category',
+        'sp.price',
+        'sp.labCategory',
+        'sp.turnaroundMinDays',
+        'sp.turnaroundMaxDays',
+        'sp.turnaroundNote',
+      ])
       .where('sp.clinic_id = :clinicId', { clinicId: scopedClinicId })
       .andWhere('sp.is_active = true')
       .orderBy('sp.category', 'ASC')
+      .addOrderBy('sp.labCategory', 'ASC', 'NULLS FIRST')
       .addOrderBy('sp.name', 'ASC');
 
     if (filter.category) qb.andWhere('sp.category = :category', { category: filter.category });
@@ -173,6 +193,89 @@ export class ServicePricesService {
     }
 
     return saved;
+  }
+
+  /**
+   * Aplica un margen sobre el costo de convenio a un grupo de estudios.
+   *
+   * Con `dryRun` devuelve los cambios sin guardarlos: cambiar de golpe el
+   * precio de decenas de exámenes no debería confirmarse a ciegas.
+   *
+   * Solo alcanza a los que tienen `costPrice`; sin costo no hay margen que
+   * aplicar, y ponerles precio con esta herramienta sería inventárselo.
+   */
+  async applyMargin(dto: ApplyMarginDto, user: User, clinicId?: string) {
+    const scopedClinicId = this.requireClinicId(clinicId);
+    const roundTo = dto.roundTo ?? 5;
+
+    const qb = this.repository
+      .createQueryBuilder('sp')
+      .where('sp.clinic_id = :clinicId', { clinicId: scopedClinicId })
+      .andWhere('sp.category = :category', { category: ServiceCategory.LABORATORY })
+      .andWhere('sp.is_active = true')
+      .andWhere('sp.cost_price IS NOT NULL')
+      .andWhere('sp.cost_price > 0')
+      .orderBy('sp.name', 'ASC');
+
+    if (dto.labCategory) qb.andWhere('sp.lab_category = :labCategory', { labCategory: dto.labCategory });
+
+    const objetivo = await qb.getMany();
+
+    const cambios = objetivo
+      .map(sp => {
+        const costo = Number(sp.costPrice);
+        const bruto = costo * (1 + dto.marginPct / 100);
+        const nuevo = Math.max(0, Math.ceil(bruto / roundTo) * roundTo);
+        return {
+          id: sp.id,
+          code: sp.code,
+          name: sp.name,
+          labCategory: sp.labCategory,
+          costPrice: costo,
+          priceFrom: Number(sp.price),
+          priceTo: nuevo,
+          // El margen que queda de verdad tras redondear, que es el que se
+          // cobra: mostrar el pedido sería engañoso.
+          effectiveMarginPct: Math.round(((nuevo - costo) / costo) * 1000) / 10,
+        };
+      })
+      .filter(c => c.priceTo !== c.priceFrom);
+
+    if (dto.dryRun) {
+      return { applied: false, affected: cambios.length, scanned: objetivo.length, changes: cambios };
+    }
+
+    if (cambios.length > 0) {
+      await this.repository.manager.transaction(async manager => {
+        for (const cambio of cambios) {
+          await manager.update(ServicePrice, { id: cambio.id }, { price: cambio.priceTo });
+        }
+      });
+
+      // Un solo asiento con el detalle: son decenas de precios cambiados en un
+      // acto administrativo, y separarlos en decenas de registros haría
+      // ilegible la auditoría sin aportar nada.
+      await this.auditService.log({
+        action: 'BULK_MARGIN_APPLIED',
+        resource: 'Tarifario',
+        userId: user?.id,
+        userEmail: user?.email,
+        clinicId: scopedClinicId,
+        method: 'POST',
+        path: '/api/service-prices/apply-margin',
+        statusCode: 200,
+        status: 'success',
+        details: {
+          labCategory: dto.labCategory ?? 'TODAS',
+          marginPct: dto.marginPct,
+          roundTo,
+          affected: cambios.length,
+          changes: cambios.map(c => ({ code: c.code, from: c.priceFrom, to: c.priceTo })),
+        },
+      });
+    }
+
+    return { applied: true, affected: cambios.length, scanned: objetivo.length, changes: cambios };
   }
 
   /**

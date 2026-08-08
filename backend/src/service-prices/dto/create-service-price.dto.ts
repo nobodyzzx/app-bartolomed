@@ -33,6 +33,16 @@ export class CreateServicePriceDto {
   @Min(0)
   price: number;
 
+  /**
+   * Costo de convenio: lo que cobra el laboratorio externo por el estudio
+   * derivado. Editable porque los convenios se renegocian; si no se envía, el
+   * costo existente no se toca.
+   */
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @IsOptional()
+  costPrice?: number;
+
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;

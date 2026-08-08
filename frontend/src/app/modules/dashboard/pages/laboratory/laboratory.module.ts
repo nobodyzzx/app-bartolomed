@@ -1,14 +1,14 @@
-import { CommonModule } from '@angular/common'
-import { HttpClientModule } from '@angular/common/http'
 import { NgModule } from '@angular/core'
-import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { RouterModule, Routes } from '@angular/router'
 import { canDeactivateGuard } from '../../../../core/guards/can-deactivate.guard'
-import { MaterialModule } from '../../../../material/material.module'
-import { SharedModule } from '../../../../shared/shared.module'
-import { LabOrderDetailComponent } from './lab-order-detail.component'
-import { LabOrderFormComponent } from './lab-order-form.component'
-import { LabOrderListComponent } from './lab-order-list.component'
+import {
+  LAB_MODULE_CONFIG,
+  LABORATORY_MODULE_CONFIG,
+} from '../lab-orders/lab-module.config'
+import { LabOrdersSharedModule } from '../lab-orders/lab-orders-shared.module'
+import { LabOrderDetailComponent } from '../lab-orders/lab-order-detail.component'
+import { LabOrderFormComponent } from '../lab-orders/lab-order-form.component'
+import { LabOrderListComponent } from '../lab-orders/lab-order-list.component'
 
 const routes: Routes = [
   { path: '', component: LabOrderListComponent },
@@ -16,20 +16,12 @@ const routes: Routes = [
   { path: ':id', component: LabOrderDetailComponent },
 ]
 
+/**
+ * Laboratorio clínico. Las pantallas viven en `LabOrdersSharedModule`; aquí
+ * solo se declaran las rutas y la configuración que las particulariza.
+ */
 @NgModule({
-  declarations: [
-    LabOrderListComponent,
-    LabOrderFormComponent,
-    LabOrderDetailComponent,
-  ],
-  imports: [
-    CommonModule,
-    RouterModule.forChild(routes),
-    FormsModule,
-    ReactiveFormsModule,
-    MaterialModule,
-    HttpClientModule,
-    SharedModule,
-  ],
+  imports: [RouterModule.forChild(routes), LabOrdersSharedModule],
+  providers: [{ provide: LAB_MODULE_CONFIG, useValue: LABORATORY_MODULE_CONFIG }],
 })
 export class LaboratoryModule {}

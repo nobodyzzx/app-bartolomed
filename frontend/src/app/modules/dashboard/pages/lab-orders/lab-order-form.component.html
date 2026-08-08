@@ -1,0 +1,323 @@
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <app-page-header
+      [title]="isExternal() ? texts.externalFormTitle : texts.formTitle"
+      [subtitle]="isExternal() ? texts.externalFormSubtitle : texts.formSubtitle"
+      (back)="goBack()"
+      >
+      <button type="button" (click)="goBack()" class="btn btn-danger-outline">
+        <span class="material-symbols-outlined msz-18">cancel</span>
+        Cancelar
+      </button>
+    </app-page-header>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
+      <!-- ══════════════════════════════════════════
+      SECCIÓN 1 — Información de la Orden (azul)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">{{ config.icon }}</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Información de la Orden
+              <app-section-error-badge [count]="infoErrorCount()" />
+            </h3>
+            <p class="text-sm text-slate-500 m-0">
+              {{ isExternal() ? 'Paciente, quién lo solicitó, clínica y fecha' : 'Paciente, médico solicitante, clínica y fecha' }}
+            </p>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- La clínica ya no se elige aquí: sale del contexto del header.
+                 Como campo solo podía estorbar — el backend exige que coincida
+                 con ese contexto (`lab-orders.service.ts`), así que elegir otra
+                 daba 400 y elegir la propia era repetir lo ya dicho. -->
+            <mat-form-field appearance="outline">
+              <mat-label>N° de Orden</mat-label>
+              <mat-icon matPrefix class="text-blue-400">tag</mat-icon>
+              <input matInput formControlName="orderNumber" [placeholder]="config.orderPrefix + '-XXXXXX'" />
+              <button mat-icon-button matSuffix type="button"
+                (click)="autoGenerateNumber()" matTooltip="Generar automáticamente"
+                aria-label="Generar número de orden automáticamente">
+                <mat-icon>refresh</mat-icon>
+              </button>
+              @if (form.get('orderNumber')?.hasError('required')) {
+                <mat-error>Número requerido</mat-error>
+              }
+            </mat-form-field>
+            <!-- Buscador, no desplegable: la lista completa se cargaba con el
+                 límite por defecto del backend (25), así que con 70 pacientes
+                 activos la mayoría no aparecía y se les registraba de nuevo
+                 como nombre libre, duplicando la ficha. -->
+            <mat-form-field appearance="outline">
+              <mat-label>{{ isExternal() ? 'Paciente (si tiene ficha)' : 'Paciente' }}</mat-label>
+              <mat-icon matPrefix class="text-blue-400">person</mat-icon>
+              <input
+                matInput
+                [formControl]="patientSearch"
+                [matAutocomplete]="patientAuto"
+                [required]="!isExternal()"
+                placeholder="Nombre, apellido o carnet"
+                />
+              <mat-autocomplete
+                #patientAuto="matAutocomplete"
+                [displayWith]="displayPatient"
+                (optionSelected)="onPatientSelected($event.option.value)"
+                >
+                @if (patientSearching()) {
+                  <mat-option disabled>Buscando…</mat-option>
+                } @else {
+                  @for (p of patientResults(); track p.id) {
+                    <mat-option [value]="p">{{ p.firstName }} {{ p.lastName }} – {{ p.documentNumber }}</mat-option>
+                  }
+                  @if (patientResults().length === 0 && patientSearch.value) {
+                    <mat-option disabled>Sin resultados para "{{ patientSearch.value }}"</mat-option>
+                  }
+                }
+              </mat-autocomplete>
+              @if (selectedPatient()) {
+                <button matSuffix mat-icon-button type="button" (click)="clearPatient()" aria-label="Quitar paciente">
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+              <mat-hint>
+                {{ isExternal()
+                  ? 'Búscalo por nombre o carnet. Si no tiene ficha, déjalo vacío y escribe su nombre abajo.'
+                  : 'Escribe al menos 2 letras para buscar' }}
+              </mat-hint>
+              @if (patientSearch.hasError('required')) {
+                <mat-error>El paciente es requerido</mat-error>
+              }
+            </mat-form-field>
+
+            @if (isExternal()) {
+              <!-- Paciente sin ficha: el nombre libre solo se exige cuando no
+                   se eligió una ficha arriba. -->
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre del paciente derivado</mat-label>
+                <mat-icon matPrefix class="text-blue-400">badge</mat-icon>
+                <input matInput formControlName="patientName" placeholder="Nombre y apellidos" />
+                @if (form.get('patientName')?.hasError('required')) {
+                  <mat-error>Indique el nombre del paciente</mat-error>
+                }
+                @if (form.get('patientName')?.hasError('minlength')) {
+                  <mat-error>Mínimo 3 caracteres</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Solicitado por</mat-label>
+                <mat-icon matPrefix class="text-blue-400">medical_information</mat-icon>
+                <input
+                  matInput
+                  formControlName="referringDoctorName"
+                  placeholder="Dr. Pérez — Consultorio San Luis, o Particular"
+                  required
+                  />
+                @if (form.get('referringDoctorName')?.hasError('required')) {
+                  <mat-error>Indique quién solicitó el examen</mat-error>
+                }
+                @if (form.get('referringDoctorName')?.hasError('minlength')) {
+                  <mat-error>Mínimo 3 caracteres</mat-error>
+                }
+              </mat-form-field>
+            } @else {
+              <mat-form-field appearance="outline">
+                <mat-label>Médico Solicitante</mat-label>
+                <mat-icon matPrefix class="text-blue-400">medical_information</mat-icon>
+                <mat-select formControlName="doctorId" required>
+                  @if (doctors.length === 0) {
+                    <mat-option disabled>No hay médicos disponibles</mat-option>
+                  }
+                  @for (d of doctors; track d) {
+                    <mat-option [value]="d.id">{{ getDoctorName(d) }}</mat-option>
+                  }
+                </mat-select>
+                @if (form.get('doctorId')?.hasError('required')) {
+                  <mat-error>El médico es requerido</mat-error>
+                }
+              </mat-form-field>
+            }
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha de Orden</mat-label>
+              <mat-icon matPrefix class="text-blue-400">calendar_today</mat-icon>
+              <input matInput [matDatepicker]="orderDatePicker" formControlName="orderDate" />
+              <mat-datepicker-toggle matIconSuffix [for]="orderDatePicker"></mat-datepicker-toggle>
+              <mat-datepicker #orderDatePicker></mat-datepicker>
+              @if (form.get('orderDate')?.hasError('required')) {
+                <mat-error>Fecha requerida</mat-error>
+              }
+            </mat-form-field>
+            <div class="flex items-center">
+              <mat-checkbox formControlName="isUrgent" color="warn">Orden urgente</mat-checkbox>
+            </div>
+            <mat-form-field appearance="outline" class="md:col-span-2">
+              <mat-label>Notas Clínicas</mat-label>
+              <mat-icon matPrefix class="text-blue-400">notes</mat-icon>
+              <textarea matInput formControlName="clinicalNotes" rows="2" placeholder="Motivo de la orden, diagnóstico presuntivo, etc."></textarea>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+      SECCIÓN 2 — Estudios Solicitados (verde)
+      ══════════════════════════════════════════ -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
+          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">science</span>
+          </div>
+          <div class="flex-1">
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
+              Estudios Solicitados
+              <app-section-error-badge [count]="itemsErrorCount()" />
+            </h3>
+            <p class="text-sm text-slate-500 m-0">{{ items.length }} estudio(s) solicitado(s)</p>
+          </div>
+          <button type="button" (click)="addItem()" class="btn btn-outline-primary">
+            <span class="material-symbols-outlined msz-18 leading-none">add</span>
+            Agregar
+          </button>
+        </div>
+        <div class="p-6">
+          @if (items.length > 0) {
+            <div class="space-y-4">
+              @for (it of items.controls; track it; let i = $index) {
+                <div class="border border-slate-200 rounded-xl overflow-hidden hover:border-green-200 transition-colors">
+                  <div class="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-100">
+                    <div class="flex items-center gap-2">
+                      <div class="w-7 h-7 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-xs">
+                        {{ i + 1 }}
+                      </div>
+                      <span class="font-semibold text-slate-700 text-sm">Estudio #{{ i + 1 }}</span>
+                    </div>
+                    @if (items.length > 1) {
+                      <button type="button" (click)="removeItem(i)"
+                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors border-0"
+                        matTooltip="Eliminar">
+                        <span class="material-symbols-outlined msz-18 leading-none">delete</span>
+                      </button>
+                    }
+                  </div>
+                  <div [formGroup]="$any(it)" class="p-5">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <mat-form-field appearance="outline"
+                        [ngClass]="config.hasSpecimen ? 'md:col-span-2' : 'md:col-span-3'">
+                        <mat-label>Estudio</mat-label>
+                        <mat-icon matPrefix class="text-green-400">{{ config.icon }}</mat-icon>
+                        <!-- Agrupado y con buscador: el tarifario real tiene 110
+                             estudios y una lista plana es inusable. -->
+                        <mat-select
+                          formControlName="servicePriceId"
+                          (selectionChange)="onTestSelected(it, $event.value)"
+                          (openedChange)="onCatalogOpened($event)"
+                        >
+                          <div class="sticky top-0 z-10 bg-white px-3 py-2 border-b border-slate-100">
+                            <input
+                              #catalogFilter
+                              type="text"
+                              class="w-full text-sm outline-none"
+                              placeholder="Buscar estudio…"
+                              [value]="catalogQuery()"
+                              (input)="catalogQuery.set($any($event.target).value)"
+                              (keydown)="$event.stopPropagation()"
+                              />
+                          </div>
+                          @for (grupo of filteredCatalog(); track grupo.key) {
+                            <mat-optgroup [label]="grupo.label">
+                              @for (price of grupo.items; track price.id) {
+                                <mat-option [value]="price.id">
+                                  {{ price.name }} — {{ price.price | currency: 'BOB' : 'symbol-narrow' }}
+                                  @if (turnaround(price)) {
+                                    <span class="text-slate-400"> · {{ turnaround(price) }}</span>
+                                  }
+                                </mat-option>
+                              }
+                            </mat-optgroup>
+                          }
+                          @if (filteredCatalog().length === 0) {
+                            <mat-option disabled>Sin estudios que coincidan con "{{ catalogQuery() }}"</mat-option>
+                          }
+                        </mat-select>
+                        @if (it.get('servicePriceId')?.hasError('required')) {
+                          <mat-error>Requerido</mat-error>
+                        }
+                        @if (labCatalog.length === 0) {
+                          <mat-hint>No hay estudios activos en el tarifario de esta clínica</mat-hint>
+                        } @else if (selectedTurnaround(it)) {
+                          <mat-hint>Resultado: {{ selectedTurnaround(it) }}</mat-hint>
+                        }
+                      </mat-form-field>
+                      <!-- La categoría clínica viene del tarifario y no se
+                           escribe: es un dato del catálogo, no una elección.
+                           Antes había aquí un selector Sangre/Imagenología/Otro
+                           que duplicaba el tipo de muestra y permitía marcar un
+                           examen de sangre como imagenología. -->
+                      <!-- Solo donde el tarifario clasifica los estudios. Los de
+                           gabinete no llevan categoría clínica, y el hueco se
+                           quedaba en "—" para siempre. -->
+                      @if (config.hasSpecimen) {
+                        <div class="flex items-center">
+                          <div class="flex items-center gap-2 text-sm">
+                            <span class="material-symbols-outlined msz-20 text-green-400">category</span>
+                            <div>
+                              <div class="text-xs text-slate-500">Categoría</div>
+                              <div class="font-medium text-slate-800">
+                                {{ selectedLabCategory(it) || '—' }}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                      @if (config.hasSpecimen) {
+                        <mat-form-field appearance="outline" class="md:col-span-3">
+                          <mat-label>Tipo de Muestra</mat-label>
+                          <mat-icon matPrefix class="text-green-400">colorize</mat-icon>
+                          <input matInput formControlName="specimenType" placeholder="Ej: Sangre venosa" />
+                          <mat-hint>Se propone al elegir el estudio; ajústalo si hace falta</mat-hint>
+                        </mat-form-field>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+          @if (items.length === 0) {
+            <p class="text-sm text-slate-400 text-center py-6">Agrega al menos un estudio</p>
+          }
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+      BARRA DE ACCIONES (sticky)
+      ══════════════════════════════════════════ -->
+      <div class="form-action-bar">
+        <div class="text-sm text-slate-500">
+          <span class="font-semibold text-slate-700">{{ items.length }}</span> estudio(s)
+          @if (form.invalid) {
+            <span class="text-amber-600 font-medium ml-2">
+              <span class="material-symbols-outlined msz-14 align-middle">error</span>
+              Formulario incompleto
+            </span>
+          }
+        </div>
+        <div class="flex items-center gap-3">
+          <button type="button" (click)="goBack()" class="btn btn-danger-outline">
+            <span class="material-symbols-outlined msz-18 leading-none">cancel</span>
+            Cancelar
+          </button>
+          <button type="submit" [disabled]="loading || form.invalid" class="btn btn-primary">
+            <span class="material-symbols-outlined msz-18 leading-none">{{ loading ? 'hourglass_empty' : 'save' }}</span>
+            {{ loading ? 'Guardando...' : texts.saveButton }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

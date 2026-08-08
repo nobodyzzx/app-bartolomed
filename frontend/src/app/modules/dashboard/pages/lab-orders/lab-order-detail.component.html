@@ -10,7 +10,7 @@
     @if (!loading && order; as o) {
       <app-page-header
         [title]="'Orden ' + o.orderNumber"
-        subtitle="Detalle de la orden de laboratorio"
+        [subtitle]="texts.detailSubtitle"
         (back)="goBack()"
         >
         <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold mr-2"
@@ -26,7 +26,7 @@
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
             <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
-              <span class="material-symbols-outlined msz-20">biotech</span>
+              <span class="material-symbols-outlined msz-20">{{ config.icon }}</span>
             </div>
             <div class="flex-1">
               <h3 class="font-semibold text-slate-900 m-0 leading-tight">Datos de la Orden</h3>
@@ -46,8 +46,13 @@
                 </div>
                 <div>
                   <div class="text-xs text-slate-500 mb-0.5">Paciente</div>
-                  <div class="font-semibold text-slate-900">{{ o.patient?.firstName }} {{ o.patient?.lastName }}</div>
-                  <div class="text-xs text-slate-500">CI: {{ o.patient?.documentNumber || '—' }}</div>
+                  <!-- El paciente derivado no tiene ficha: solo se guarda su nombre. -->
+                  <div class="font-semibold text-slate-900">{{ patientName(o) }}</div>
+                  @if (o.patient) {
+                    <div class="text-xs text-slate-500">CI: {{ o.patient.documentNumber || '—' }}</div>
+                  } @else {
+                    <div class="text-xs text-slate-400">Sin ficha en la clínica</div>
+                  }
                 </div>
               </div>
               <div class="flex items-start gap-3">
@@ -55,10 +60,15 @@
                   <span class="material-symbols-outlined msz-18">stethoscope</span>
                 </div>
                 <div>
-                  <div class="text-xs text-slate-500 mb-0.5">Médico Solicitante</div>
+                  <div class="text-xs text-slate-500 mb-0.5">
+                    {{ isExternal(o) ? 'Solicitado por (externo)' : 'Médico Solicitante' }}
+                  </div>
                   <!-- Nombre y apellido: antes solo mostraba el nombre de pila, y
                        sin `personalInfo` cargado caía al email. -->
                   <div class="font-semibold text-slate-900">{{ doctorName(o) }}</div>
+                  @if (isExternal(o)) {
+                    <div class="text-xs text-slate-400">Orden de otro consultorio o particular</div>
+                  }
                 </div>
               </div>
               <div class="flex items-start gap-3">
@@ -67,9 +77,43 @@
                 </div>
                 <div>
                   <div class="text-xs text-slate-500 mb-0.5">Fecha de Orden</div>
-                  <div class="font-semibold text-slate-900">{{ o.orderDate | date: 'dd/MM/yyyy' }}</div>
+                  <!-- 'UTC': orderDate es una columna `date`, un día del
+                       calendario y no un instante. Sin esto el navegador la
+                       corre a la zona local (UTC−4) y muestra el día anterior. -->
+                  <div class="font-semibold text-slate-900">{{ o.orderDate | date: 'dd/MM/yyyy' : 'UTC' }}</div>
                 </div>
               </div>
+
+              <!-- Derivación al centro externo: a dónde fue y cuándo se
+                   espera el resultado. Sin esto, una orden derivada parecía
+                   detenida sin que nadie supiera si llegó a enviarse. -->
+              @if (isDerived()) {
+                <div class="flex items-start gap-3">
+                  <div class="w-9 h-9 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined msz-18">local_shipping</span>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500 mb-0.5">{{ texts.providerLabel }}</div>
+                    <div class="font-semibold text-slate-900">{{ providerName() }}</div>
+                    @if (o.sentToProviderAt) {
+                      <div class="text-xs text-slate-500">
+                        Enviada el {{ o.sentToProviderAt | date: 'dd/MM/yyyy HH:mm' }}
+                      </div>
+                    } @else {
+                      <div class="text-xs text-amber-600">Aún no enviada</div>
+                    }
+                    @if (o.expectedResultDate) {
+                      <div class="text-xs mt-0.5"
+                           [class]="daysOverdue() > 0 ? 'text-red-600 font-semibold' : 'text-slate-500'">
+                        Resultado esperado: {{ o.expectedResultDate | date: 'dd/MM/yyyy' : 'UTC' }}
+                        @if (daysOverdue() > 0) {
+                          · {{ daysOverdue() }} día(s) de retraso
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
               @if (o.clinicalNotes) {
                 <div class="flex items-start gap-3 md:col-span-2">
                   <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
@@ -108,8 +152,8 @@
                   <div class="flex-1">
                     <div class="flex items-center gap-2 flex-wrap">
                       <span class="font-semibold text-slate-900">{{ item.testName }}</span>
-                      <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{{ categoryLabel(item.category) }}</span>
-                      @if (item.specimenType) {
+                      <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{{ itemCategoryLabel(item) }}</span>
+                      @if (config.hasSpecimen && item.specimenType) {
                         <span class="text-xs text-slate-400">· {{ item.specimenType }}</span>
                       }
                       @if (item.resultedAt) {
@@ -188,15 +232,23 @@
           </div>
         </div>
 
-        <!-- Acciones de estado -->
-        @if (canManageStatus() && getNextStatusOptions().length > 0) {
+        <!-- Acciones -->
+        @if (canPrint() || (canManageStatus() && getNextStatusOptions().length > 0)) {
           <div class="flex flex-wrap gap-3 justify-end">
-            @for (opt of getNextStatusOptions(); track opt.status) {
-              <button type="button" (click)="changeStatus(opt.status)"
-                [class]="opt.status === 'cancelled' ? 'btn btn-danger-outline' : 'btn btn-primary'">
-                <span class="material-symbols-outlined msz-18 leading-none">{{ opt.icon }}</span>
-                {{ opt.label }}
+            @if (canPrint()) {
+              <button type="button" (click)="printResults()" [disabled]="printing" class="btn btn-secondary">
+                <span class="material-symbols-outlined msz-18 leading-none">print</span>
+                {{ printing ? 'Generando…' : printLabel() }}
               </button>
+            }
+            @if (canManageStatus()) {
+              @for (opt of getNextStatusOptions(); track opt.status) {
+                <button type="button" (click)="changeStatus(opt.status)"
+                  [class]="opt.status === 'cancelled' ? 'btn btn-danger-outline' : 'btn btn-primary'">
+                  <span class="material-symbols-outlined msz-18 leading-none">{{ opt.icon }}</span>
+                  {{ opt.label }}
+                </button>
+              }
             }
           </div>
         }

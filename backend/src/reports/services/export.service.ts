@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Response } from 'express';
 import * as PDFDocument from 'pdfkit';
 import * as ExcelJS from 'exceljs';
+import { formatPlainDate } from '../../common/utils/date-format.util';
 
 export type ExportReportType =
   | 'pharmacy-consumption'
@@ -77,7 +78,7 @@ export class ExportService {
       expiringSoon.map((s: any) => [
         s.medication?.name ?? '-',
         s.batchNumber,
-        new Date(s.expiryDate).toLocaleDateString('es-BO'),
+        formatPlainDate(s.expiryDate, '-'),
         String(s.availableQuantity),
       ])
     );
@@ -87,7 +88,7 @@ export class ExportService {
         expired.map((s: any) => [
           s.medication?.name ?? '-',
           s.batchNumber,
-          new Date(s.expiryDate).toLocaleDateString('es-BO'),
+          formatPlainDate(s.expiryDate, '-'),
           String(s.availableQuantity),
         ])
       );
@@ -219,7 +220,7 @@ export class ExportService {
           name:      s.medication?.name ?? '-',
           generic:   s.medication?.genericName ?? '-',
           batch:     s.batchNumber,
-          expiry:    s.expiryDate ? new Date(s.expiryDate).toLocaleDateString('es-BO') : '-',
+          expiry:    formatPlainDate(s.expiryDate, '-'),
           available: s.availableQuantity,
           minimum:   s.minimumStock,
           unitCost:  Number(s.unitCost),
@@ -501,7 +502,7 @@ export class ExportService {
         sellingPrice:     Number(r.sellingPrice ?? 0),
         costValue:        Number(r.costValue ?? 0),
         saleValue:        Number(r.saleValue ?? 0),
-        expiryDate:       r.expiryDate ? new Date(r.expiryDate).toLocaleDateString('es-BO') : '-',
+        expiryDate:       formatPlainDate(r.expiryDate, '-'),
         status:           r.status ?? 'ok',
       });
       const fill = statusColorMap[r.status as string] ?? 'FFFFFFFF';
@@ -538,10 +539,10 @@ export class ExportService {
         batchNumber:       r.batchNumber ?? '-',
         availableQuantity: Number(r.availableQuantity ?? 0),
         stockValue:        Number(r.stockValue ?? 0),
-        expiryDate:        r.expiryDate ? new Date(r.expiryDate).toLocaleDateString('es-BO') : '-',
-        lastSaleDate:      r.lastSaleDate
-          ? (r.lastSaleDate instanceof Date ? r.lastSaleDate : new Date(r.lastSaleDate)).toLocaleDateString('es-BO')
-          : 'Sin ventas',
+        expiryDate:        formatPlainDate(r.expiryDate, '-'),
+        // `saleDate` es `timestamp without time zone`: se muestra tal como se
+        // guardó, sin reinterpretarlo en ninguna zona.
+        lastSaleDate:      formatPlainDate(r.lastSaleDate, 'Sin ventas'),
       });
     }
   }

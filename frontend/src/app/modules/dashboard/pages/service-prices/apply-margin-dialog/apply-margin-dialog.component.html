@@ -1,0 +1,122 @@
+<h2 mat-dialog-title class="flex items-center gap-2">
+  <span class="material-symbols-outlined text-emerald-500">percent</span>
+  Aplicar margen en bloque
+</h2>
+
+<mat-dialog-content class="space-y-4">
+  <p class="text-sm text-slate-500 m-0">
+    Recalcula el precio de venta a partir del costo de convenio. Solo alcanza a los
+    estudios que tienen costo registrado.
+  </p>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Categoría</mat-label>
+      <mat-icon matPrefix class="text-slate-400">category</mat-icon>
+      <mat-select [formControl]="labCategory" (selectionChange)="onCriteriaChange()">
+        <mat-option value="">Todas las categorías</mat-option>
+        @for (opt of categoryOptions; track opt.value) {
+          <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Margen (%)</mat-label>
+      <mat-icon matPrefix class="text-slate-400">trending_up</mat-icon>
+      <input matInput type="number" [formControl]="marginPct" min="0" step="1" (input)="onCriteriaChange()" />
+      <mat-hint>El precio se redondea hacia arriba a múltiplos de Bs 5</mat-hint>
+      @if (marginPct.hasError('required')) {
+        <mat-error>Indica el margen</mat-error>
+      }
+      @if (marginPct.hasError('min')) {
+        <mat-error>No puede ser negativo</mat-error>
+      }
+    </mat-form-field>
+  </div>
+
+  @if (!preview()) {
+    <button type="button" (click)="loadPreview()" [disabled]="loading()" class="btn btn-secondary w-full">
+      <span class="material-symbols-outlined msz-20">visibility</span>
+      {{ loading() ? 'Calculando…' : 'Ver qué cambiaría' }}
+    </button>
+  } @else {
+    <div class="border border-slate-200 rounded-xl overflow-hidden">
+      <div class="px-4 py-3 bg-slate-50 border-b border-slate-200">
+        @if (preview()!.affected === 0) {
+          <p class="text-sm text-slate-600 m-0">
+            Ningún precio cambiaría: los {{ preview()!.scanned }} estudios revisados ya están
+            en ese margen.
+          </p>
+        } @else {
+          <p class="text-sm text-slate-700 m-0">
+            <strong>{{ preview()!.affected }}</strong> de {{ preview()!.scanned }} estudios
+            cambiarían de precio.
+          </p>
+        }
+      </div>
+
+      @if (preview()!.affected > 0) {
+        <div class="max-h-64 overflow-y-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-white sticky top-0">
+              <tr class="text-slate-500 text-xs uppercase">
+                <th class="text-left font-semibold px-4 py-2">Estudio</th>
+                <th class="text-right font-semibold px-4 py-2">Costo</th>
+                <th class="text-right font-semibold px-4 py-2">Antes</th>
+                <th class="text-right font-semibold px-4 py-2">Después</th>
+                <th class="text-right font-semibold px-4 py-2">Margen real</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              @for (c of preview()!.changes; track c.id) {
+                <tr>
+                  <td class="px-4 py-2">
+                    <span class="font-medium text-slate-800">{{ c.name }}</span>
+                    <span class="text-xs text-slate-400 ml-1">{{ c.code }}</span>
+                  </td>
+                  <td class="px-4 py-2 text-right text-slate-500">Bs {{ c.costPrice | number: '1.2-2' }}</td>
+                  <td class="px-4 py-2 text-right text-slate-400 line-through">
+                    Bs {{ c.priceFrom | number: '1.2-2' }}
+                  </td>
+                  <td class="px-4 py-2 text-right font-semibold"
+                      [class]="c.priceTo >= c.priceFrom ? 'text-slate-900' : 'text-amber-600'">
+                    Bs {{ c.priceTo | number: '1.2-2' }}
+                  </td>
+                  <td class="px-4 py-2 text-right text-slate-500">{{ c.effectiveMarginPct }}%</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- El redondeo hace que el margen real no coincida siempre con el
+             pedido; decirlo evita que parezca un error de cálculo. -->
+        <div class="px-4 py-2 bg-amber-50 border-t border-amber-100">
+          <p class="text-xs text-amber-800 m-0">
+            El margen real puede quedar por encima del pedido: el precio se redondea hacia
+            arriba a múltiplos de Bs 5.
+          </p>
+        </div>
+      }
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="gap-2">
+  <button type="button" (click)="cancel()" class="btn btn-ghost">Cancelar</button>
+  @if (preview()) {
+    <button type="button" (click)="loadPreview()" [disabled]="loading()" class="btn btn-ghost">
+      Recalcular
+    </button>
+    <button
+      type="button"
+      (click)="apply()"
+      [disabled]="applying() || preview()!.affected === 0"
+      class="btn btn-primary"
+      >
+      <span class="material-symbols-outlined msz-20">check</span>
+      {{ applying() ? 'Aplicando…' : 'Aplicar a ' + preview()!.affected + ' estudio(s)' }}
+    </button>
+  }
+</mat-dialog-actions>

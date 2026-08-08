@@ -15,6 +15,7 @@ arrow_forward
 arrow_right
 assessment
 assignment
+assignment_add
 assignment_ind
 attach_money
 autorenew
@@ -22,6 +23,7 @@ backup
 badge
 bar_chart
 biotech
+block
 bolt
 build
 build_circle
@@ -30,6 +32,7 @@ cake
 calculate
 calendar_month
 calendar_today
+camera_alt
 cancel
 card_membership
 cardiology
@@ -48,7 +51,6 @@ colorize
 comment
 computer
 confirmation_number
-construction
 contact_emergency
 contact_mail
 contact_phone
@@ -95,6 +97,7 @@ folder_open
 folder_shared
 gavel
 group
+handshake
 healing
 health_and_safety
 height
@@ -105,9 +108,9 @@ home
 hourglass_empty
 hourglass_top
 hub
+inbox
 info
 input
-integration_instructions
 inventory
 inventory_2
 key
@@ -151,7 +154,6 @@ notifications_active
 numbers
 open_in_new
 output
-palette
 pause_circle
 payment
 payments
@@ -172,9 +174,11 @@ play_circle
 point_of_sale
 price_change
 print
+priority_high
 progress_activity
 public
 qr_code
+radio_button_unchecked
 radiology
 receipt
 receipt_long
@@ -194,6 +198,7 @@ security
 sell
 send
 sensors
+settings
 shopping_cart
 show_chart
 stethoscope

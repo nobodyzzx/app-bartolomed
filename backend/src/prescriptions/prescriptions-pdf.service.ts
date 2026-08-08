@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { formatPlainDate, nowInClinicTz } from '../common/utils/date-format.util';
 import { TypstCompilerService } from '../pdf/typst-compiler.service';
 import { typstString } from '../pdf/utils/typst-escape.util';
 import { Prescription } from './entities/prescription.entity';
@@ -13,14 +14,17 @@ export class PrescriptionsPdfService {
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
 
+  /**
+   * `prescriptionDate`, `expiryDate` y `birthDate` son columnas `date`: días
+   * del calendario. Formatearlas en hora de la clínica las retrasaba un día
+   * (una receta emitida el 07/08 se imprimía como 06/08). Ver el util.
+   */
   private fmtDate(d: Date | string | null | undefined): string {
-    if (!d) return '—';
-    const date = d instanceof Date ? d : new Date(d);
-    return date.toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/La_Paz' });
+    return formatPlainDate(d);
   }
 
   private nowBO(): string {
-    return new Date().toLocaleString('es-BO', { timeZone: 'America/La_Paz', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return nowInClinicTz();
   }
 
   private statusLabel(s: string): string {

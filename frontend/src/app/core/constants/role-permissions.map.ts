@@ -27,7 +27,12 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
 
     Permission.LabRead,
     Permission.LabOrder,
+    Permission.LabOrderExternal,
     Permission.LabResultEnter,
+
+    Permission.SpecialRead,
+    Permission.SpecialOrder,
+    Permission.SpecialResultEnter,
 
     Permission.UsersManage,
     Permission.RolesManage,
@@ -44,6 +49,9 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
     Permission.ReportsMedical,
     Permission.LabRead,
     Permission.LabOrder,
+    // El médico también indica estudios especiales y lee su resultado.
+    Permission.SpecialRead,
+    Permission.SpecialOrder,
   ],
   [UserRoles.NURSE]: [
     Permission.PatientsRead,
@@ -57,6 +65,7 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
     // de módulos, 2026-08-04 — el permiso no habilitaba nada real antes de eso).
     Permission.ReportsMedical,
     Permission.LabRead,
+    Permission.SpecialRead,
   ],
   [UserRoles.RECEPTIONIST]: [
     Permission.PatientsRead,
@@ -65,6 +74,11 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
     Permission.AppointmentsWrite,
     Permission.BillingRead,
     Permission.BillingManage,
+    // Espejo del backend: el particular que se paga un examen entra por
+    // ventanilla. Ve el laboratorio y registra la solicitud externa, pero no
+    // indica exámenes ni carga resultados.
+    Permission.LabRead,
+    Permission.LabOrderExternal,
   ],
   [UserRoles.PHARMACIST]: [
     Permission.PrescriptionsRead,
@@ -73,9 +87,21 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
     Permission.PharmacyBilling,
     Permission.ReportsStock,
   ],
+  [UserRoles.SPECIAL_STUDIES]: [
+    // Espejo del backend: realiza los estudios y carga sus resultados. No ve
+    // los análisis clínicos del laboratorio — son módulos distintos.
+    Permission.SpecialRead,
+    Permission.SpecialResultEnter,
+    Permission.PatientsRead,
+    Permission.LabOrderExternal,
+  ],
   [UserRoles.LABORATORY]: [
     Permission.LabRead,
     Permission.LabResultEnter,
+    // Espejo del backend: identificar al paciente al registrar una solicitud
+    // externa y al rotular la muestra. Solo lectura.
+    Permission.PatientsRead,
+    Permission.LabOrderExternal,
   ],
 }
 

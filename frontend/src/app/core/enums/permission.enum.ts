@@ -35,7 +35,16 @@ export enum Permission {
   // Laboratorio
   LabRead = 'lab.read',
   LabOrder = 'lab.order',
+  /** Registrar una solicitud traída de fuera, sin indicación médica de la casa. */
+  LabOrderExternal = 'lab.order.external',
   LabResultEnter = 'lab.result.enter',
+
+  // Estudios especiales: permisos propios, no los de laboratorio — es otro
+  // módulo con otro personal, y compartirlos daría al gabinete acceso a los
+  // análisis clínicos del paciente.
+  SpecialRead = 'special.read',
+  SpecialOrder = 'special.order',
+  SpecialResultEnter = 'special.result.enter',
 
   // Administración
   UsersManage = 'users.manage',

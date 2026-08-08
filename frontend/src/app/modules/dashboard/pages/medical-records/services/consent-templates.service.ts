@@ -1,5 +1,8 @@
 import { Injectable } from '@angular/core'
 import { AlertService } from '@core/services/alert.service'
+// `birthDate` y `followUpDate` son columnas `date`: `formatDate` de aquí usa
+// los componentes locales del Date y las corría un día hacia atrás.
+import { formatPlainDate } from '../../../../../shared/utils/date-format.util'
 import { User } from '../../../../auth/interfaces/user.interface'
 import { Patient } from '../../patients/interfaces'
 
@@ -46,7 +49,7 @@ export class ConsentTemplatesService {
 
     const patientName = patient ? `${patient.firstName} ${patient.lastName}` : ''
     const patientDoc = patient?.documentNumber || ''
-    const birthDate = patient?.birthDate ? this.formatDate(new Date(patient.birthDate)) : ''
+    const birthDate = formatPlainDate(patient?.birthDate)
     const addressPhone = [patient?.address, patient?.phone].filter(Boolean).join(' · ')
 
     const doctorName = doctor
@@ -438,7 +441,7 @@ export class ConsentTemplatesService {
 
     const patientName = patient ? `${patient.firstName} ${patient.lastName}` : ''
     const patientDoc = patient?.documentNumber || ''
-    const patientBirth = patient?.birthDate ? this.formatDate(new Date(patient.birthDate)) : ''
+    const patientBirth = formatPlainDate(patient?.birthDate)
     const doctorName = doctor
       ? `${doctor.personalInfo?.firstName || ''} ${doctor.personalInfo?.lastName || ''}`.trim()
       : ''
@@ -586,7 +589,7 @@ export class ConsentTemplatesService {
       </div>
       <div class="grid2" style="margin-top:6px;">
         <div><strong>Educación al Paciente</strong><br/>${e['patientEducation'] || ''}</div>
-        <div><strong>Fecha de Seguimiento</strong><br/>${e['followUpDate'] ? this.formatDate(new Date(e['followUpDate'])) : ''}</div>
+        <div><strong>Fecha de Seguimiento</strong><br/>${formatPlainDate(e['followUpDate'] as string)}</div>
       </div>
       <div style="margin-top:8px;"><strong>Notas</strong><br/>${e['notes'] || ''}</div>
     </div>

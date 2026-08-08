@@ -16,6 +16,13 @@ import { Clinic } from '../../clinics/entities/clinic.entity';
 export enum ServiceCategory {
   CONSULTATION = 'consultation',
   LABORATORY = 'laboratory',
+  /**
+   * Estudios especiales: ecografía, colonoscopia, electrocardiograma. Van
+   * aparte de `PROCEDURE` porque aquello son prácticas terapéuticas (curaciones,
+   * inyectables) y esto son estudios diagnósticos, con su propio módulo, su rol
+   * y su informe de resultados.
+   */
+  SPECIAL_STUDY = 'special_study',
   PROCEDURE = 'procedure',
   OTHER = 'other',
 }
@@ -84,6 +91,63 @@ export class ServicePrice {
     },
   })
   price: number;
+
+  /**
+   * Lo que a la clínica le cuesta el estudio cuando lo deriva a un laboratorio
+   * externo (precio de convenio). Se guarda junto al de venta para poder ver
+   * el margen por examen y contrastar lo que factura el proveedor; `price`
+   * sigue siendo lo único que se le cobra al paciente.
+   *
+   * Nulo en todo lo que la clínica hace por su cuenta (consultas,
+   * procedimientos): ahí no hay un tercero que cobre.
+   */
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    name: 'cost_price',
+    nullable: true,
+    transformer: {
+      to: (value: number | null) => value,
+      from: (value: string | null) => (value === null ? null : parseFloat(value)),
+    },
+  })
+  costPrice: number | null;
+
+  /**
+   * Categoría clínica del estudio (`HEMATOLOGIA`, `QUIMICA_SANGUINEA`…), que
+   * es como se agrupa un tarifario de laboratorio. Distinta de `category`, que
+   * dice qué clase de servicio es dentro de la app. Texto y no enum: el
+   * tarifario del proveedor puede sumar secciones sin que eso sea un cambio de
+   * esquema.
+   */
+  @Column('text', { name: 'lab_category', nullable: true })
+  labCategory: string | null;
+
+  /**
+   * Laboratorio externo al que se deriva el estudio. Que esté relleno es lo que
+   * marca un estudio como derivado: la clínica no lo procesa, lo manda fuera y
+   * espera el resultado. Nulo en todo lo que se hace en casa.
+   *
+   * Texto y no entidad propia: hoy hay un proveedor y lo que se necesita de él
+   * es su nombre en el informe y para conciliar. Una tabla de proveedores sin
+   * más datos que el nombre sería estructura sin contenido.
+   */
+  @Column('text', { name: 'provider_name', nullable: true })
+  providerName: string | null;
+
+  /** Días hábiles de entrega del resultado, según el proveedor. */
+  @Column('smallint', { name: 'turnaround_min_days', nullable: true })
+  turnaroundMinDays: number | null;
+
+  @Column('smallint', { name: 'turnaround_max_days', nullable: true })
+  turnaroundMaxDays: number | null;
+
+  /**
+   * Para las entregas que no se expresan en días ("después de la tercera
+   * muestra"). Si está, manda sobre los días.
+   */
+  @Column('text', { name: 'turnaround_note', nullable: true })
+  turnaroundNote: string | null;
 
   @Column('boolean', { default: true, name: 'is_active' })
   isActive: boolean;

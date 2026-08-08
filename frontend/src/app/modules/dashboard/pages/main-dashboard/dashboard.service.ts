@@ -4,6 +4,7 @@ import { forkJoin, Observable, of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { environment } from '../../../../environments/environments'
 import { RecentAppointment, RecentPatient, StockAlert } from './interfaces/dashboard-ui.interfaces'
+import { toLocalISODate, todayLocalISO } from '../../../../shared/utils/date-format.util'
 
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
@@ -20,7 +21,8 @@ export class DashboardService {
 
   /** Citas de hoy desde /api/appointments. doctorId acota a las citas de un médico (vista "Mis citas"). */
   getTodayAppointments(doctorId?: string): Observable<RecentAppointment[]> {
-    const today = new Date().toISOString().slice(0, 10)
+    // Día local: con ISO, pasadas las 20:00 en Bolivia se pedían las citas de mañana.
+    const today = todayLocalISO()
     let params = new HttpParams().set('date', today).set('limit', '20')
     if (doctorId) params = params.set('doctorId', doctorId)
     return this.http.get<any>(`${this.base}/appointments`, { params }).pipe(
@@ -87,7 +89,7 @@ export class DashboardService {
   getWeeklySales(clinicId: string): Observable<{ labels: string[]; values: number[] }> {
     const end   = new Date()
     const start = new Date(); start.setDate(start.getDate() - 6)
-    const fmt   = (d: Date) => d.toISOString().slice(0, 10)
+    const fmt   = (d: Date) => toLocalISODate(d)
     const params = new HttpParams()
       .set('startDate', fmt(start)).set('endDate', fmt(end)).set('clinicId', clinicId)
     return this.http.get<any>(`${this.base}/reports/pharmacy/daily-sales`, { params }).pipe(
@@ -143,7 +145,8 @@ export class DashboardService {
 
   /** Citas pendientes de hoy (scheduled/confirmed). doctorId acota a las de un médico. */
   getPendingAppointmentsCount(doctorId?: string): Observable<number> {
-    const today = new Date().toISOString().slice(0, 10)
+    // Día local: con ISO, pasadas las 20:00 en Bolivia se pedían las citas de mañana.
+    const today = todayLocalISO()
     let params = new HttpParams().set('date', today).set('status', 'scheduled').set('limit', '100')
     if (doctorId) params = params.set('doctorId', doctorId)
     return this.http.get<any>(`${this.base}/appointments`, { params }).pipe(
@@ -161,7 +164,9 @@ export class DashboardService {
    * lo único que hasta ahora el dashboard no le mostraba a ese rol.
    */
   getOpenLabOrdersCount(): Observable<number> {
-    const abiertas = ['requested', 'sample_collected', 'in_progress']
+    // 'sent_to_provider' también está abierta: la muestra salió pero el
+    // resultado no ha vuelto, así que sigue siendo trabajo pendiente.
+    const abiertas = ['requested', 'sample_collected', 'sent_to_provider', 'in_progress']
     return forkJoin(
       abiertas.map(status =>
         this.http
@@ -175,6 +180,27 @@ export class DashboardService {
       ),
     ).pipe(
       map(totales => totales.reduce((a, b) => a + b, 0)),
+      catchError(() => of(0)),
+    )
+  }
+
+  /**
+   * Órdenes del médico con resultado cargado en los últimos días. Es el aviso
+   * que le faltaba a quien pidió el examen: hasta ahora el resultado se cargaba
+   * y nadie se enteraba hasta entrar a buscarlo a mano.
+   *
+   * Se acota por fecha porque no hay marca de "visto": sin el corte, el
+   * contador arrastraría todo el histórico y dejaría de significar nada.
+   */
+  getReadyLabResultsCount(doctorId: string, days = 7): Observable<number> {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+    const params = new HttpParams()
+      .set('doctorId', doctorId)
+      .set('status', 'completed')
+      .set('resultedSince', since)
+      .set('pageSize', '1')
+    return this.http.get<any>(`${this.base}/lab-orders`, { params }).pipe(
+      map(r => Number(r?.total ?? 0)),
       catchError(() => of(0)),
     )
   }

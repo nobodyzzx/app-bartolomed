@@ -56,8 +56,20 @@ const CHECK_ONLY = process.argv.includes('--check');
 /**
  * Iconos elegidos en runtime, que el análisis estático no puede ver.
  * Mantener corta: cada entrada es algo que alguien tuvo que recordar agregar.
+ *
+ * El recolector solo mira plantillas, así que un icono que sale de un mapa en
+ * TypeScript (`{ imaging: 'camera_alt' }`) se le escapa: el guardarraíl daba
+ * verde y el icono se veía como texto en pantalla. Estos cuatro estaban así
+ * (encontrados el 2026-08-07). Al agregar un mapa de iconos en un `.ts`, hay
+ * que sumar aquí sus valores.
  */
-const EXTRA_ICONS = [];
+const EXTRA_ICONS = [
+  'camera_alt',             // categoría "imagenología" en laboratorio y expedientes
+  'priority_high',          // cita urgente
+  'radio_button_unchecked', // acción sin icono propio en la auditoría
+  'inbox',                  // icono por defecto de <app-empty-state>
+  'monitor_heart',          // módulo Estudios Especiales — sale de lab-module.config.ts, no de una plantilla
+];
 
 /** Iconos de `AlertService.fire({ icon })`, ajenos a Material Symbols. */
 const ALERT_ICONS = new Set(['success', 'error', 'warning', 'info', 'question']);

@@ -107,7 +107,7 @@
                   class="table-row-hover">
                   <td class="px-6 py-4">
                     <span class="font-mono text-sm font-semibold text-slate-700">{{ p.prescriptionNumber }}</span>
-                    <div class="text-xs text-slate-400 mt-0.5">{{ p.prescriptionDate | date: 'dd/MM/yyyy' }}</div>
+                    <div class="text-xs text-slate-400 mt-0.5">{{ p.prescriptionDate | date: 'dd/MM/yyyy' : 'UTC' }}</div>
                   </td>
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-3">
@@ -145,7 +145,7 @@
                     }
                   </td>
                   <td class="px-6 py-4">
-                    <div class="text-sm text-slate-700">{{ p.expiryDate | date: 'dd/MM/yyyy' }}</div>
+                    <div class="text-sm text-slate-700">{{ p.expiryDate | date: 'dd/MM/yyyy' : 'UTC' }}</div>
                     @if (isExpiringSoon(p.expiryDate)) {
                       <span
                         class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 mt-0.5 inline-block">

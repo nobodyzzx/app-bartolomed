@@ -162,6 +162,13 @@ export const MENU_ITEMS: MenuItem[] = [
     requiredPermissions: [Permission.LabRead],
   },
   {
+    label: 'Estudios Especiales',
+    icon: 'monitor_heart',
+    route: '/dashboard/special-studies',
+    allowedRoles: [UserRoles.DOCTOR, UserRoles.NURSE, UserRoles.SPECIAL_STUDIES, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+    requiredPermissions: [Permission.SpecialRead],
+  },
+  {
     label: 'Control de Activos',
     icon: 'warehouse',
     route: '/assets',

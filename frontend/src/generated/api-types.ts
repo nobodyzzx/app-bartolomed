@@ -805,6 +805,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/service-prices/apply-margin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recalcula en bloque el precio de los estudios de una categoría a partir de
+         *     un margen sobre su costo de convenio. Con `dryRun` solo devuelve la vista
+         *     previa: cambiar decenas de precios de golpe no debe confirmarse a ciegas.
+         *
+         *     `POST` y no `PATCH` porque no actualiza un recurso concreto, sino que
+         *     ejecuta un recálculo sobre un conjunto.
+         */
+        post: operations["ServicePricesController_applyMargin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/service-prices/catalog": {
         parameters: {
             query?: never;
@@ -2915,6 +2939,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lab-orders/external": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint aparte, y no una bandera en `POST /lab-orders`, para que la
+         *     autorización sea explícita: aquí entran roles que **no** pueden indicar
+         *     exámenes (laboratorio, recepción) y el DTO ni siquiera acepta `doctorId`,
+         *     así que no hay forma de que quien registra acabe firmando la orden.
+         */
+        post: operations["LabOrdersController_createExternal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/lab-orders/{id}": {
         parameters: {
             query?: never;
@@ -2929,6 +2975,27 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["LabOrdersController_update"];
+        trace?: never;
+    };
+    "/api/lab-orders/{id}/results/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Informe de resultados para entregar al paciente o adjuntar al expediente.
+         *     Basta `LabRead` (el permiso de clase): lo imprime tanto el laboratorio como
+         *     el médico que pidió el examen, enfermería o recepción al entregarlo.
+         */
+        get: operations["LabOrdersController_getResultsPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/lab-orders/{id}/status": {
@@ -4144,6 +4211,12 @@ export interface components {
              */
             appointmentType?: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other";
             price: number;
+            /**
+             * @description Costo de convenio: lo que cobra el laboratorio externo por el estudio
+             *     derivado. Editable porque los convenios se renegocian; si no se envía, el
+             *     costo existente no se toca.
+             */
+            costPrice?: number;
             isActive?: boolean;
         };
         ServicePrice: {
@@ -4166,6 +4239,42 @@ export interface components {
              *     mismo defecto que ya apareció en la tasa de cobro del reporte financiero.
              */
             price: number;
+            /**
+             * @description Lo que a la clínica le cuesta el estudio cuando lo deriva a un laboratorio
+             *     externo (precio de convenio). Se guarda junto al de venta para poder ver
+             *     el margen por examen y contrastar lo que factura el proveedor; `price`
+             *     sigue siendo lo único que se le cobra al paciente.
+             *
+             *     Nulo en todo lo que la clínica hace por su cuenta (consultas,
+             *     procedimientos): ahí no hay un tercero que cobre.
+             */
+            costPrice: number | null;
+            /**
+             * @description Categoría clínica del estudio (`HEMATOLOGIA`, `QUIMICA_SANGUINEA`…), que
+             *     es como se agrupa un tarifario de laboratorio. Distinta de `category`, que
+             *     dice qué clase de servicio es dentro de la app. Texto y no enum: el
+             *     tarifario del proveedor puede sumar secciones sin que eso sea un cambio de
+             *     esquema.
+             */
+            labCategory: string | null;
+            /**
+             * @description Laboratorio externo al que se deriva el estudio. Que esté relleno es lo que
+             *     marca un estudio como derivado: la clínica no lo procesa, lo manda fuera y
+             *     espera el resultado. Nulo en todo lo que se hace en casa.
+             *
+             *     Texto y no entidad propia: hoy hay un proveedor y lo que se necesita de él
+             *     es su nombre en el informe y para conciliar. Una tabla de proveedores sin
+             *     más datos que el nombre sería estructura sin contenido.
+             */
+            providerName: string | null;
+            /** @description Días hábiles de entrega del resultado, según el proveedor. */
+            turnaroundMinDays: number | null;
+            turnaroundMaxDays: number | null;
+            /**
+             * @description Para las entregas que no se expresan en días ("después de la tercera
+             *     muestra"). Si está, manda sobre los días.
+             */
+            turnaroundNote: string | null;
             isActive: boolean;
             clinic: components["schemas"]["Clinic"];
             clinicId: string;
@@ -4175,6 +4284,26 @@ export interface components {
             updatedAt: string;
             /** Format: date-time */
             deletedAt?: string;
+        };
+        ApplyMarginDto: {
+            /**
+             * @description Categoría clínica a la que se aplica (`HEMATOLOGIA`, `HORMONAS`…). Si no
+             *     viene, alcanza a **todos** los estudios de laboratorio con costo.
+             */
+            labCategory?: string;
+            /** @description Margen sobre el costo, en porcentaje. */
+            marginPct: number;
+            /**
+             * @description Múltiplo al que se redondea el precio resultante, hacia arriba. 5 Bs es
+             *     como se cobra en mostrador; 1 desactiva el redondeo.
+             */
+            roundTo?: number;
+            /**
+             * @description `true` calcula y devuelve los cambios **sin guardarlos**. Es lo que
+             *     alimenta la vista previa: un cambio de precios en bloque no debería
+             *     confirmarse sin ver antes a cuántos estudios afecta y con qué resultado.
+             */
+            dryRun?: boolean;
         };
         UpdateServicePriceDto: {
             /** @description Único por clínica — el servicio devuelve 409 si ya existe. */
@@ -4191,6 +4320,12 @@ export interface components {
              */
             appointmentType?: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other";
             price?: number;
+            /**
+             * @description Costo de convenio: lo que cobra el laboratorio externo por el estudio
+             *     derivado. Editable porque los convenios se renegocian; si no se envía, el
+             *     costo existente no se toca.
+             */
+            costPrice?: number;
             isActive?: boolean;
         };
         CreateMedicalRecordDto: {
@@ -4952,11 +5087,26 @@ export interface components {
             id: string;
             orderNumber: string;
             /** @enum {string} */
-            status: "requested" | "sample_collected" | "in_progress" | "completed" | "cancelled";
+            status: "requested" | "sample_collected" | "sent_to_provider" | "in_progress" | "completed" | "cancelled";
             /** Format: date-time */
             orderDate: string;
             clinicalNotes: string;
             isUrgent: boolean;
+            /**
+             * Format: date-time
+             * @description Cuándo salió la muestra hacia el laboratorio externo.
+             */
+            sentToProviderAt: string | null;
+            /**
+             * @description Cuándo debería estar el resultado, calculado al enviar con los días de
+             *     entrega del estudio más lento de la orden. Es lo que se le dice al paciente
+             *     y lo que permite ver qué órdenes ya se pasaron de plazo.
+             *
+             *     Tipado como `string` ('YYYY-MM-DD') y no `Date` a propósito: es lo que
+             *     TypeORM devuelve para una columna `date`, y tratarlo como instante es
+             *     justo lo que corre las fechas un día (ver `date-format.util`).
+             */
+            expectedResultDate: string | null;
             /**
              * @description Nullable desde la Fase 2 de facturación: el laboratorio recibe pacientes
              *     **derivados de otro consultorio**, que vienen solo por el examen y no
@@ -4966,7 +5116,20 @@ export interface components {
             patient: components["schemas"]["Patient"] | null;
             /** @description Nombre libre del paciente derivado, cuando no hay ficha. */
             patientName: string | null;
-            doctor: components["schemas"]["User"];
+            /**
+             * @description Nullable solo para las órdenes `EXTERNAL`: el médico que las indicó no es
+             *     usuario del sistema. En las `INTERNAL` sigue siendo obligatorio — lo
+             *     garantiza el DTO, no la columna, porque la regla depende de `origin`.
+             */
+            doctor: components["schemas"]["User"] | null;
+            /** @enum {string} */
+            origin: "internal" | "external";
+            /**
+             * @description Quién indicó el examen cuando no es un médico de la casa: "Dr. Pérez —
+             *     Consultorio San Luis", o "Particular, sin orden médica". Solo se usa en
+             *     las órdenes `EXTERNAL`.
+             */
+            referringDoctorName: string | null;
             clinic: components["schemas"]["Clinic"];
             medicalRecord: components["schemas"]["MedicalRecord"];
             items: Record<string, never>[];
@@ -4978,9 +5141,12 @@ export interface components {
             /** Format: date-time */
             deletedAt?: string;
         };
+        CreateExternalLabOrderDto: {
+            referringDoctorName: string;
+        };
         UpdateLabOrderDto: {
             /** @enum {string} */
-            status?: "requested" | "sample_collected" | "in_progress" | "completed" | "cancelled";
+            status?: "requested" | "sample_collected" | "sent_to_provider" | "in_progress" | "completed" | "cancelled";
         };
         EnterLabResultDto: {
             resultValue?: string;
@@ -6882,6 +7048,27 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ServicePrice"];
                 };
+            };
+        };
+    };
+    ServicePricesController_applyMargin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplyMarginDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -9952,6 +10139,29 @@ export interface operations {
             };
         };
     };
+    LabOrdersController_createExternal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateExternalLabOrderDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabOrder"];
+                };
+            };
+        };
+    };
     LabOrdersController_findOne: {
         parameters: {
             query?: never;
@@ -10014,6 +10224,25 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["LabOrder"];
                 };
+            };
+        };
+    };
+    LabOrdersController_getResultsPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -10517,7 +10746,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                field: "type" | "category" | "manufacturer" | "location";
+                field: "type" | "location" | "manufacturer" | "category";
             };
             cookie?: never;
         };

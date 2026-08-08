@@ -2,14 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { LabOrdersService } from './lab-orders.service';
-import { LabOrder, LabOrderItem, LabOrderStatus, LabTestCategory } from './entities/lab-order.entity';
+import { LabOrder, LabOrderItem, LabOrderStatus, LabOrderType, LabTestCategory } from './entities/lab-order.entity';
 import { ChargesService } from '../charges/charges.service';
 import { ServicePricesService } from '../service-prices/service-prices.service';
 import { MedicalRecord } from 'src/medical-records/entities/medical-record.entity';
 import { Patient } from 'src/patients/entities/patient.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Clinic } from 'src/clinics/entities/clinic.entity';
-import { createMockRepository, MockRepository } from 'src/test/helpers/mock-repository.factory';
+import { createMockQueryBuilder, createMockRepository, MockRepository } from 'src/test/helpers/mock-repository.factory';
 import { makeClinic, makePatient, makeUser } from 'src/test/helpers/test-data.factory';
 
 const makeLabOrder = (overrides: Record<string, any> = {}) => ({
@@ -192,6 +192,42 @@ describe('LabOrdersService', () => {
 
   // ─── setStatus (transiciones) ─────────────────────────────────────────────
 
+  // ─── aislamiento entre módulos ────────────────────────────────────────────
+
+  describe('separación entre laboratorio y estudios especiales', () => {
+    it.each([
+      ['el módulo que se le pide', LabOrderType.SPECIAL, LabOrderType.SPECIAL],
+      ['laboratorio si nadie dice lo contrario', undefined, LabOrderType.LAB],
+    ])('findAll filtra por %s', async (_caso, pedido, esperado) => {
+      const qb = createMockQueryBuilder();
+      orderRepo.createQueryBuilder!.mockReturnValue(qb);
+
+      await service.findAll(1, 20, {}, 'clinic-1', pedido as LabOrderType | undefined);
+
+      expect(qb.andWhere).toHaveBeenCalledWith('o.order_type = :orderType', {
+        orderType: esperado,
+      });
+    });
+
+    it('findOne no devuelve una orden del otro módulo', async () => {
+      // Un análisis clínico pedido desde el módulo de estudios especiales
+      // responde 404: quien hace una ecografía no tiene por qué saber siquiera
+      // que ese paciente tiene un examen de laboratorio.
+      orderRepo.findOne!.mockResolvedValue(makeLabOrder({ orderType: LabOrderType.LAB }));
+
+      await expect(
+        service.findOne('order-1', 'clinic-1', LabOrderType.SPECIAL),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('findOne sí devuelve la orden cuando el módulo coincide', async () => {
+      orderRepo.findOne!.mockResolvedValue(makeLabOrder({ orderType: LabOrderType.SPECIAL }));
+
+      const result = await service.findOne('order-1', 'clinic-1', LabOrderType.SPECIAL);
+      expect(result.orderType).toBe(LabOrderType.SPECIAL);
+    });
+  });
+
   describe('setStatus', () => {
     it('permite REQUESTED -> SAMPLE_COLLECTED', async () => {
       const order = makeLabOrder({ status: LabOrderStatus.REQUESTED });
@@ -202,6 +238,45 @@ describe('LabOrdersService', () => {
       expect(result.status).toBe(LabOrderStatus.SAMPLE_COLLECTED);
     });
 
+    it('no deja completar una orden sin ningún resultado cargado', async () => {
+      // Una orden "completada" vacía dice que el trabajo está hecho cuando no
+      // hay nada que entregar, y falsea cualquier recuento de productividad.
+      const order = makeLabOrder({
+        status: LabOrderStatus.IN_PROGRESS,
+        items: [{ id: 'item-1', testName: 'Hemograma completo', resultedAt: null }],
+      });
+      orderRepo.findOne!.mockResolvedValue(order);
+
+      await expect(service.setStatus('order-1', LabOrderStatus.COMPLETED, 'clinic-1')).rejects.toThrow(
+        /sin ningún resultado cargado/,
+      );
+      expect(orderRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('sí deja completar en cuanto hay al menos un resultado', async () => {
+      const order = makeLabOrder({
+        status: LabOrderStatus.IN_PROGRESS,
+        items: [
+          { id: 'item-1', testName: 'Hemograma completo', resultedAt: new Date() },
+          { id: 'item-2', testName: 'Glucemia', resultedAt: null },
+        ],
+      });
+      orderRepo.findOne!.mockResolvedValue(order);
+      orderRepo.save!.mockImplementation(async (v: any) => v);
+
+      const result = await service.setStatus('order-1', LabOrderStatus.COMPLETED, 'clinic-1');
+      expect(result.status).toBe(LabOrderStatus.COMPLETED);
+    });
+
+    it('permite saltar el envío al proveedor cuando la clínica procesa el estudio', async () => {
+      const order = makeLabOrder({ status: LabOrderStatus.SAMPLE_COLLECTED });
+      orderRepo.findOne!.mockResolvedValue(order);
+      orderRepo.save!.mockImplementation(async (v: any) => v);
+
+      const result = await service.setStatus('order-1', LabOrderStatus.IN_PROGRESS, 'clinic-1');
+      expect(result.status).toBe(LabOrderStatus.IN_PROGRESS);
+    });
+
     it('rechaza una transición inválida (REQUESTED -> COMPLETED, saltando pasos)', async () => {
       const order = makeLabOrder({ status: LabOrderStatus.REQUESTED });
       orderRepo.findOne!.mockResolvedValue(order);
@@ -209,6 +284,32 @@ describe('LabOrdersService', () => {
       await expect(service.setStatus('order-1', LabOrderStatus.COMPLETED, 'clinic-1')).rejects.toThrow(
         BadRequestException,
       );
+    });
+
+    it('un estudio especial va de REQUESTED a IN_PROGRESS sin pasar por la muestra', async () => {
+      // No hay muestra que recoger: la ecografía se le hace al paciente. Exigir
+      // `SAMPLE_COLLECTED` obligaría a marcar un paso que nunca ocurre.
+      const order = makeLabOrder({
+        status: LabOrderStatus.REQUESTED,
+        orderType: LabOrderType.SPECIAL,
+      });
+      orderRepo.findOne!.mockResolvedValue(order);
+      orderRepo.save!.mockImplementation(async (v: any) => v);
+
+      const result = await service.setStatus('order-1', LabOrderStatus.IN_PROGRESS, 'clinic-1');
+      expect(result.status).toBe(LabOrderStatus.IN_PROGRESS);
+    });
+
+    it('una orden de laboratorio sigue sin poder saltarse la toma de muestra', async () => {
+      const order = makeLabOrder({
+        status: LabOrderStatus.REQUESTED,
+        orderType: LabOrderType.LAB,
+      });
+      orderRepo.findOne!.mockResolvedValue(order);
+
+      await expect(
+        service.setStatus('order-1', LabOrderStatus.IN_PROGRESS, 'clinic-1'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('rechaza cualquier transición desde CANCELLED (estado terminal)', async () => {

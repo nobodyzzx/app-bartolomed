@@ -33,8 +33,10 @@ describe('ServicePricesService', () => {
     findOne: jest.Mock;
     softRemove: jest.Mock;
     createQueryBuilder: jest.Mock;
+    manager: { transaction: jest.Mock };
   };
   let audit: { log: jest.Mock };
+  let updateMock: jest.Mock;
   let qb: Record<string, jest.Mock>;
 
   beforeEach(async () => {
@@ -46,6 +48,7 @@ describe('ServicePricesService', () => {
       skip: jest.fn().mockReturnThis(),
       take: jest.fn().mockReturnThis(),
       getManyAndCount: jest.fn().mockResolvedValue([[makePrice()], 1]),
+      getMany: jest.fn().mockResolvedValue([]),
     };
     repo = {
       create: jest.fn(dto => dto),
@@ -53,7 +56,11 @@ describe('ServicePricesService', () => {
       findOne: jest.fn().mockResolvedValue(null),
       softRemove: jest.fn().mockResolvedValue(undefined),
       createQueryBuilder: jest.fn().mockReturnValue(qb),
+      manager: {
+        transaction: jest.fn(async (cb: any) => cb({ update: updateMock })),
+      },
     };
+    updateMock = jest.fn().mockResolvedValue(undefined);
     audit = { log: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -244,6 +251,85 @@ describe('ServicePricesService', () => {
       expect(qb.andWhere).toHaveBeenCalledWith('(sp.code ILIKE :search OR sp.name ILIKE :search)', {
         search: '%hemo%',
       });
+    });
+  });
+
+  // ─── margen en bloque ─────────────────────────────────────────────────────
+
+  describe('applyMargin', () => {
+    const lab = (over: Partial<ServicePrice>) =>
+      makePrice({ category: ServiceCategory.LABORATORY, labCategory: 'HEMATOLOGIA', ...over });
+
+    it('calcula el precio con el margen y redondea hacia arriba a múltiplos de 5', async () => {
+      qb.getMany.mockResolvedValue([
+        lab({ id: 'a', code: 'HEM-001', costPrice: 30, price: 45 }),
+        lab({ id: 'b', code: 'HEM-002', costPrice: 25, price: 40 }),
+      ]);
+
+      const res = await service.applyMargin({ marginPct: 33, dryRun: true }, actor, CLINIC_ID);
+
+      // 30 -> 39,9 -> 40 ; 25 -> 33,25 -> 35
+      expect(res.changes.map(c => c.priceTo)).toEqual([40, 35]);
+      // Y el margen que de verdad queda tras redondear, no el pedido.
+      expect(res.changes.map(c => c.effectiveMarginPct)).toEqual([33.3, 40]);
+    });
+
+    it('dryRun no escribe nada ni deja rastro en auditoría', async () => {
+      qb.getMany.mockResolvedValue([lab({ costPrice: 30, price: 45 })]);
+
+      const res = await service.applyMargin({ marginPct: 100, dryRun: true }, actor, CLINIC_ID);
+
+      expect(res.applied).toBe(false);
+      expect(res.affected).toBe(1);
+      expect(repo.manager.transaction).not.toHaveBeenCalled();
+      expect(audit.log).not.toHaveBeenCalled();
+    });
+
+    it('sin dryRun guarda en una transacción y registra un solo asiento', async () => {
+      qb.getMany.mockResolvedValue([
+        lab({ id: 'a', costPrice: 30, price: 45 }),
+        lab({ id: 'b', costPrice: 25, price: 40 }),
+      ]);
+
+      const res = await service.applyMargin({ marginPct: 100 }, actor, CLINIC_ID);
+
+      expect(res.applied).toBe(true);
+      expect(repo.manager.transaction).toHaveBeenCalledTimes(1);
+      expect(updateMock).toHaveBeenCalledTimes(2);
+      expect(audit.log).toHaveBeenCalledTimes(1);
+      expect(audit.log).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'BULK_MARGIN_APPLIED' }),
+      );
+    });
+
+    it('deja fuera los estudios cuyo precio no cambiaría', async () => {
+      // 30 con 50% da 45, que es justo lo que ya vale.
+      qb.getMany.mockResolvedValue([lab({ costPrice: 30, price: 45 })]);
+
+      const res = await service.applyMargin({ marginPct: 50 }, actor, CLINIC_ID);
+
+      expect(res.affected).toBe(0);
+      expect(res.scanned).toBe(1);
+      expect(repo.manager.transaction).not.toHaveBeenCalled();
+    });
+
+    it('solo mira laboratorio activo con costo, y acota por categoría clínica', async () => {
+      await service.applyMargin({ marginPct: 40, labCategory: 'HORMONAS', dryRun: true }, actor, CLINIC_ID);
+
+      expect(qb.andWhere).toHaveBeenCalledWith('sp.category = :category', {
+        category: ServiceCategory.LABORATORY,
+      });
+      expect(qb.andWhere).toHaveBeenCalledWith('sp.cost_price IS NOT NULL');
+      expect(qb.andWhere).toHaveBeenCalledWith('sp.is_active = true');
+      expect(qb.andWhere).toHaveBeenCalledWith('sp.lab_category = :labCategory', {
+        labCategory: 'HORMONAS',
+      });
+    });
+
+    it('exige clinicId', async () => {
+      await expect(service.applyMargin({ marginPct: 40 }, actor, undefined)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 });

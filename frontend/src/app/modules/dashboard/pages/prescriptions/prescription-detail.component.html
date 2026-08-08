@@ -86,7 +86,7 @@
                 </div>
                 <div>
                   <div class="text-xs text-slate-500 mb-0.5">Fecha de Emisión</div>
-                  <div class="font-semibold text-slate-900">{{ p.prescriptionDate | date: 'dd/MM/yyyy' }}</div>
+                  <div class="font-semibold text-slate-900">{{ p.prescriptionDate | date: 'dd/MM/yyyy' : 'UTC' }}</div>
                 </div>
               </div>
               <!-- Vencimiento -->
@@ -98,7 +98,7 @@
                 <div>
                   <div class="text-xs text-slate-500 mb-0.5">Vence</div>
                   <div class="font-semibold" [ngClass]="isExpired(p.expiryDate) ? 'text-red-700' : 'text-slate-900'">
-                    {{ p.expiryDate | date: 'dd/MM/yyyy' }}
+                    {{ p.expiryDate | date: 'dd/MM/yyyy' : 'UTC' }}
                   </div>
                   @if (!isExpired(p.expiryDate)) {
                     <div class="text-xs text-amber-600">

@@ -2,8 +2,8 @@
   <div class="page-inner">
 
     <app-page-header
-      title="Laboratorio"
-      subtitle="Órdenes de análisis clínicos e imagenología"
+      [title]="texts.listTitle"
+      [subtitle]="texts.listSubtitle"
       (back)="goBack()"
       >
       @if (canOrder()) {
@@ -13,7 +13,17 @@
           class="btn btn-primary"
           >
           <span class="material-symbols-outlined msz-18 leading-none">add</span>
-          Nueva Orden
+          {{ texts.newButton }}
+        </button>
+      }
+      @if (canOrderExternal()) {
+        <button
+          type="button"
+          (click)="createExternalOrder()"
+          [class]="canOrder() ? 'btn btn-secondary' : 'btn btn-primary'"
+          >
+          <span class="material-symbols-outlined msz-18 leading-none">assignment_add</span>
+          Solicitud Externa
         </button>
       }
     </app-page-header>
@@ -37,7 +47,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <app-stat-card
         label="Total" [value]="orders.length" sublabel="Órdenes registradas"
-        icon="biotech" color="blue"
+        [icon]="config.icon" color="blue"
         [active]="selectedStatus === ''" [clickable]="true"
         (cardClick)="setStatusFilter('')"
         />
@@ -79,10 +89,10 @@
 
       @if (!loading && orders.length === 0) {
         <app-empty-state
-          icon="biotech"
-          title="Sin órdenes de laboratorio"
-          [subtitle]="searchTerm || selectedStatus ? 'Intenta ajustar los filtros' : 'Comienza creando la primera orden de laboratorio'"
-          [actionLabel]="!searchTerm && !selectedStatus && canOrder() ? 'Nueva Orden' : ''"
+          [icon]="config.icon"
+          [title]="texts.emptyTitle"
+          [subtitle]="searchTerm || selectedStatus ? 'Intenta ajustar los filtros' : texts.emptyHint"
+          [actionLabel]="!searchTerm && !selectedStatus && canOrder() ? texts.newButton : ''"
           (action)="createOrder()"
           />
       }
@@ -105,9 +115,14 @@
                 <tr (click)="viewOrder(o)" class="table-row-hover">
                   <td class="px-6 py-4">
                     <span class="font-mono text-sm font-semibold text-slate-700">{{ o.orderNumber }}</span>
-                    <div class="text-xs text-slate-400 mt-0.5">{{ o.orderDate | date: 'dd/MM/yyyy' }}</div>
+                    <!-- 'UTC': `orderDate` es una columna `date`; sin esto el
+                         navegador la corre a UTC−4 y muestra el día anterior. -->
+                    <div class="text-xs text-slate-400 mt-0.5">{{ o.orderDate | date: 'dd/MM/yyyy' : 'UTC' }}</div>
                     @if (o.isUrgent) {
                       <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 mt-0.5 inline-block">Urgente</span>
+                    }
+                    @if (isExternal(o)) {
+                      <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 mt-0.5 inline-block">Externa</span>
                     }
                   </td>
                   <td class="px-6 py-4">
@@ -116,13 +131,21 @@
                         {{ getPatientInitials(o) }}
                       </div>
                       <div>
-                        <div class="font-medium text-slate-900">{{ o.patient.firstName }} {{ o.patient.lastName }}</div>
-                        <div class="text-xs text-slate-400">CI: {{ o.patient.documentNumber }}</div>
+                        <!-- El paciente derivado no tiene ficha: `o.patient` es
+                             null y el nombre vive en `patientName`. -->
+                        <div class="font-medium text-slate-900">{{ patientLabel(o) }}</div>
+                        @if (o.patient) {
+                          <div class="text-xs text-slate-400">CI: {{ o.patient.documentNumber }}</div>
+                        } @else {
+                          <div class="text-xs text-slate-400">Sin ficha</div>
+                        }
                       </div>
                     </div>
                   </td>
                   <td class="px-6 py-4 text-sm text-slate-700">
-                    Dr. {{ o.doctor.personalInfo?.firstName || o.doctor.email }}
+                    <!-- En una solicitud externa no hay médico de la casa:
+                         `o.doctor` es null y el solicitante es texto libre. -->
+                    {{ requesterLabel(o) }}
                   </td>
                   <td class="px-6 py-4">
                     @if (o.items?.length) {

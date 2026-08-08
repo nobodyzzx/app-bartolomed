@@ -1,10 +1,25 @@
-/* Material Symbols Outlined — self-hosted para producción */
+/* Material Symbols Outlined — self-hosted para producción.
+ *
+ * Este archivo se carga desde `styles` en angular.json, no como asset. Los
+ * .woff2 de esta carpeta están en el `ignore` del copiado de assets: los emite
+ * el bundler en media/ con hash a partir de las URLs de aquí abajo, y copiarlos
+ * además a assets/fonts/ duplicaba 292 KB que ya nadie referencia.
+ *
+ * La ruta es RELATIVA a propósito: así el bundler resuelve el archivo, le pone
+ * un hash en el nombre y reescribe esta URL. Con la ruta absoluta anterior el
+ * archivo se servía siempre con el mismo nombre, así que al agregar un icono y
+ * regenerar la fuente recortada, cualquier navegador con la versión anterior en
+ * caché seguía sirviéndola: las ligaduras nuevas no existían en ese archivo y
+ * el icono aparecía descompuesto en texto (`assignment_add` se dibujaba como
+ * `assignment` + `_` + `add`). Con hash, un archivo distinto es una URL
+ * distinta y el problema no puede darse.
+ */
 @font-face {
   font-family: "Material Symbols Outlined";
   font-style: normal;
   font-weight: 100 700;
   font-display: block;
-  src: url("/assets/fonts/material-symbols-outlined.woff2") format("woff2");
+  src: url("./material-symbols-outlined.woff2") format("woff2");
 }
 .material-symbols-outlined {
   font-family: "Material Symbols Outlined";
@@ -30,7 +45,7 @@
   font-style: normal;
   font-weight: 400;
   font-display: block;
-  src: url("/assets/fonts/material-icons.woff2") format("woff2");
+  src: url("./material-icons.woff2") format("woff2");
 }
 .material-icons {
   font-family: "Material Icons";

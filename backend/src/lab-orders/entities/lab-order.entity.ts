@@ -18,6 +18,12 @@ import { MedicalRecord } from '../../medical-records/entities/medical-record.ent
 export enum LabOrderStatus {
   REQUESTED = 'requested',
   SAMPLE_COLLECTED = 'sample_collected',
+  /**
+   * La muestra salió hacia el laboratorio externo. Sin este tramo, una orden
+   * derivada se quedaba en "en proceso" durante días y nadie sabía si llegó a
+   * enviarse o seguía en un cajón.
+   */
+  SENT_TO_PROVIDER = 'sent_to_provider',
   IN_PROGRESS = 'in_progress',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
@@ -27,6 +33,36 @@ export enum LabTestCategory {
   BLOOD = 'blood',
   IMAGING = 'imaging',
   OTHER = 'other',
+}
+
+/**
+ * De dónde nace la solicitud. `INTERNAL` es una indicación médica de la casa
+ * y siempre tiene `doctor`. `EXTERNAL` es el paciente que llega al mesón con
+ * una orden en papel de otro consultorio, o el particular que se paga el
+ * examen sin consulta previa: no hay médico de la casa que la firme, así que
+ * el solicitante se guarda como texto en `referringDoctorName`.
+ */
+export enum LabOrderOrigin {
+  INTERNAL = 'internal',
+  EXTERNAL = 'external',
+}
+
+/**
+ * Qué clase de estudio es. Separa dos módulos que comparten motor:
+ *
+ * - `LAB`: análisis clínicos, con muestra que se toma y se procesa.
+ * - `SPECIAL`: estudios especiales (ecografía, colonoscopia,
+ *   electrocardiograma). Se hacen sobre el paciente, no hay muestra que
+ *   recoger ni derivar.
+ *
+ * Comparten cargos, informe en PDF, estados y solicitud externa; lo que cambia
+ * es quién los ve y quién los hace. Cada módulo tiene su endpoint y su rol, y
+ * filtra por este campo: así el gabinete no ve las órdenes del laboratorio ni
+ * al revés.
+ */
+export enum LabOrderType {
+  LAB = 'lab',
+  SPECIAL = 'special',
 }
 
 @Entity('lab_orders')
@@ -54,6 +90,22 @@ export class LabOrder {
   @Column('boolean', { default: false })
   isUrgent: boolean;
 
+  /** Cuándo salió la muestra hacia el laboratorio externo. */
+  @Column('timestamptz', { name: 'sent_to_provider_at', nullable: true })
+  sentToProviderAt: Date | null;
+
+  /**
+   * Cuándo debería estar el resultado, calculado al enviar con los días de
+   * entrega del estudio más lento de la orden. Es lo que se le dice al paciente
+   * y lo que permite ver qué órdenes ya se pasaron de plazo.
+   *
+   * Tipado como `string` ('YYYY-MM-DD') y no `Date` a propósito: es lo que
+   * TypeORM devuelve para una columna `date`, y tratarlo como instante es
+   * justo lo que corre las fechas un día (ver `date-format.util`).
+   */
+  @Column('date', { name: 'expected_result_date', nullable: true })
+  expectedResultDate: string | null;
+
   /**
    * Nullable desde la Fase 2 de facturación: el laboratorio recibe pacientes
    * **derivados de otro consultorio**, que vienen solo por el examen y no
@@ -68,9 +120,37 @@ export class LabOrder {
   @Column('text', { name: 'patient_name', nullable: true })
   patientName: string | null;
 
-  @ManyToOne(() => User)
+  /**
+   * Nullable solo para las órdenes `EXTERNAL`: el médico que las indicó no es
+   * usuario del sistema. En las `INTERNAL` sigue siendo obligatorio — lo
+   * garantiza el DTO, no la columna, porque la regla depende de `origin`.
+   */
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'doctor_id' })
-  doctor: User;
+  doctor: User | null;
+
+  @Column({
+    type: 'enum',
+    enum: LabOrderOrigin,
+    default: LabOrderOrigin.INTERNAL,
+  })
+  origin: LabOrderOrigin;
+
+  @Column({
+    type: 'enum',
+    enum: LabOrderType,
+    default: LabOrderType.LAB,
+    name: 'order_type',
+  })
+  orderType: LabOrderType;
+
+  /**
+   * Quién indicó el examen cuando no es un médico de la casa: "Dr. Pérez —
+   * Consultorio San Luis", o "Particular, sin orden médica". Solo se usa en
+   * las órdenes `EXTERNAL`.
+   */
+  @Column('text', { name: 'referring_doctor_name', nullable: true })
+  referringDoctorName: string | null;
 
   @Index()
   @ManyToOne(() => Clinic)
@@ -147,6 +227,23 @@ export class LabOrderItem {
   /** Servicio del tarifario del que salió el precio, si se encontró. */
   @Column('uuid', { name: 'service_price_id', nullable: true })
   servicePriceId: string | null;
+
+  /**
+   * Laboratorio externo al que se deriva este estudio, copiado del tarifario al
+   * crear la orden. Que esté relleno es lo que dice que hay que enviarlo fuera.
+   * Se copia en vez de referenciarse, igual que el precio: el informe debe
+   * poder decir a qué laboratorio se mandó aunque el convenio cambie después.
+   */
+  @Column('text', { name: 'provider_name', nullable: true })
+  providerName: string | null;
+
+  /**
+   * Categoría clínica del tarifario (`HEMATOLOGIA`, `QUIMICA_SANGUINEA`…),
+   * copiada al crear la orden. Es la que usa de verdad un laboratorio para
+   * agrupar su trabajo; `category` solo distingue el tipo de muestra.
+   */
+  @Column('text', { name: 'lab_category', nullable: true })
+  labCategory: string | null;
 
   @Column('text', { nullable: true })
   resultValue: string;

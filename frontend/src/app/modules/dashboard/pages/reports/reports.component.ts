@@ -7,6 +7,7 @@ import { ChartData, ChartOptions } from 'chart.js'
 import { Observable, forkJoin } from 'rxjs'
 import { finalize } from 'rxjs/operators'
 import { ReportsService } from './services/reports.service'
+import { toLocalISODate } from '../../../../shared/utils/date-format.util'
 
 @Component({
     selector: 'app-reports',
@@ -345,8 +346,10 @@ export class ReportsComponent implements OnInit {
   private buildParams(): Record<string, string> {
     const { startDate, endDate } = this.rangeForm.value
     const p: Record<string, string> = {}
-    if (startDate) p['startDate'] = (startDate as Date).toISOString().slice(0, 10)
-    if (endDate)   p['endDate']   = (endDate   as Date).toISOString().slice(0, 10)
+    // Día local: el datepicker devuelve medianoche local y con ISO el rango
+    // se corría un día para quien consulta de noche.
+    if (startDate) p['startDate'] = toLocalISODate(startDate as Date)
+    if (endDate)   p['endDate']   = toLocalISODate(endDate as Date)
     return p
   }
 }

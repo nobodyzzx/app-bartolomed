@@ -3,6 +3,7 @@ import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
+import { formatPlainDate } from '../../../../shared/utils/date-format.util'
 import { BillingService } from './billing.service'
 import { BillingStatistics, RecentInvoice } from './interfaces/billing-ui.interfaces'
 
@@ -117,13 +118,13 @@ export class BillingPageComponent implements OnInit {
     return classes[status] || 'bg-gray-100 text-gray-700'
   }
 
+  /**
+   * `issueDate` es una columna `date`: formatearla en la zona local del
+   * navegador (UTC−4) la retrasaba un día, así que una factura emitida hoy
+   * aparecía con la fecha de ayer en el listado.
+   */
   formatDate(dateStr: string): string {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    })
+    return formatPlainDate(dateStr)
   }
 
   formatCurrency(amount: number): string {

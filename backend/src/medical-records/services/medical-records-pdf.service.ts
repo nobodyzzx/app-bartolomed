@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { formatPlainDate } from '../../common/utils/date-format.util';
 import { TypstCompilerService } from '../../pdf/typst-compiler.service';
 import { typstString } from '../../pdf/utils/typst-escape.util';
 import { ConsentPdfDto, SummaryPdfDto } from '../dto/pdf.dto';
@@ -27,15 +28,14 @@ export class MedicalRecordsPdfService {
     return String(v);
   }
 
+  /**
+   * Se usa con `birthDate` y `followUpDate`, ambas columnas `date`: días del
+   * calendario, que formateados en hora de la clínica salían un día antes.
+   * Ver el util. El fallback conserva el texto original si no es fecha válida.
+   */
   private fmtDate(d?: string | null): string {
     if (!d) return '—';
-    try {
-      return new Date(d).toLocaleDateString('es-BO', {
-        timeZone: 'America/La_Paz', day: '2-digit', month: '2-digit', year: 'numeric',
-      });
-    } catch {
-      return d;
-    }
+    return formatPlainDate(d, d);
   }
 
   private nowBO(): string {

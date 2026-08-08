@@ -9,6 +9,7 @@ import { Medication, Supplier } from '../../interfaces/pharmacy.interfaces'
 import { InventoryService } from '../../services/inventory.service'
 import { PurchaseOrdersService } from '../../services/purchase-orders.service'
 import { SuppliersService } from '../../services/suppliers.service'
+import { todayLocalISO } from '../../../../../../shared/utils/date-format.util'
 
 @Component({
     selector: 'app-purchase-order-form',
@@ -61,7 +62,8 @@ export class PurchaseOrderFormComponent implements OnInit {
   initForm(): void {
     this.orderForm = this.fb.group({
       supplierId: ['', Validators.required],
-      orderDate: [new Date().toISOString().split('T')[0], Validators.required],
+      // Día local: con ISO, una orden creada de noche nacía fechada mañana.
+      orderDate: [todayLocalISO(), Validators.required],
       expectedDeliveryDate: ['', Validators.required],
       notes: [''],
       items: this.fb.array([]),
@@ -156,10 +158,11 @@ export class PurchaseOrderFormComponent implements OnInit {
       next: order => {
         this.orderForm.patchValue({
           supplierId: order.supplierId,
-          orderDate: order.orderDate ? new Date(order.orderDate).toISOString().split('T')[0] : '',
-          expectedDeliveryDate: order.expectedDeliveryDate
-            ? new Date(order.expectedDeliveryDate).toISOString().split('T')[0]
-            : '',
+          // Ya llegan como 'YYYY-MM-DD' (columnas `date`): se recortan tal
+          // cual. Pasarlas por `new Date()` las reinterpretaría como medianoche
+          // UTC y en Bolivia mostrarían el día anterior.
+          orderDate: String(order.orderDate ?? '').slice(0, 10),
+          expectedDeliveryDate: String(order.expectedDeliveryDate ?? '').slice(0, 10),
           notes: order.notes,
         })
 

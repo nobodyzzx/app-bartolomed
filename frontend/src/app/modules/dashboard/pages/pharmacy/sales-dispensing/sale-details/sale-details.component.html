@@ -169,7 +169,7 @@
                               <p class="text-sm font-semibold text-slate-900">{{ item.medicationStock?.medication?.name || 'Producto' }}</p>
                               <p class="text-xs text-slate-500">Lote: {{ item.batchNumber || item.medicationStock?.batchNumber || '—' }}</p>
                               @if (item.expiryDate) {
-                                <p class="text-xs text-slate-500">Vence: {{ item.expiryDate | date: 'dd/MM/yyyy' }}</p>
+                                <p class="text-xs text-slate-500">Vence: {{ item.expiryDate | date: 'dd/MM/yyyy' : 'UTC' }}</p>
                               }
                             </div>
                           </div>

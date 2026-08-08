@@ -46,7 +46,10 @@
                 @if (patient.birthDate) {
                   <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-slate-400 text-sm">cake</span>
-                    <span class="text-sm text-slate-700">{{ formatDate(patient.birthDate) }}</span>
+                    <!-- `formatDate` incluye hora: sirve para instantes como
+                         `createdAt`, no para una fecha de nacimiento (que
+                         además salía corrida un día por la zona horaria). -->
+                    <span class="text-sm text-slate-700">{{ formatBirthDate(patient.birthDate) }}</span>
                   </div>
                 }
                 @if (patient.phone) {
@@ -206,6 +209,67 @@
               </div>
             </div>
           </div>
+
+          <!-- Resultados de Laboratorio -->
+          @if (!labLoading && labOrders.length > 0) {
+            <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined msz-20">biotech</span>
+                </div>
+                <div>
+                  <h2 class="text-xl font-bold text-slate-900 m-0 leading-tight">Resultados de Laboratorio</h2>
+                  <p class="text-sm text-slate-500 m-0">Órdenes del paciente y sus resultados</p>
+                </div>
+              </div>
+
+              <div class="space-y-3">
+                @for (order of labOrders; track order.id) {
+                  <div class="border border-slate-200 rounded-xl p-4">
+                    <div class="flex flex-wrap items-center gap-3 mb-3">
+                      <span class="font-semibold text-slate-900">{{ order.orderNumber }}</span>
+                      <span class="text-sm text-slate-500">{{ order.orderDate | date: 'dd/MM/yyyy' : 'UTC' }}</span>
+                      @if (order.origin === 'external') {
+                        <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">Externa</span>
+                      }
+                      @if (hasAbnormal(order)) {
+                        <span class="px-2 py-0.5 rounded-full bg-red-50 text-red-600 text-xs font-semibold">Fuera de rango</span>
+                      }
+                      @if (resultedItems(order).length > 0) {
+                        <button
+                          type="button"
+                          (click)="printLabResults(order)"
+                          [disabled]="printingLabOrderId === order.id"
+                          class="btn btn-ghost ml-auto"
+                          >
+                          <span class="material-symbols-outlined msz-20">print</span>
+                          {{ printingLabOrderId === order.id ? 'Generando…' : 'Imprimir' }}
+                        </button>
+                      }
+                    </div>
+
+                    @if (resultedItems(order).length === 0) {
+                      <p class="text-sm text-slate-400 m-0">Sin resultados cargados todavía</p>
+                    } @else {
+                      <div class="space-y-1.5">
+                        @for (item of resultedItems(order); track item.id) {
+                          <div class="flex flex-wrap items-baseline gap-x-2 text-sm">
+                            <span class="font-medium text-slate-800">{{ item.testName }}:</span>
+                            <span [class]="item.isAbnormal ? 'font-bold text-red-600' : 'font-semibold text-slate-900'">
+                              {{ item.resultValue }} {{ item.resultUnit }}
+                            </span>
+                            @if (item.referenceRange) {
+                              <span class="text-slate-500">(ref. {{ item.referenceRange }})</span>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
 
           <!-- Timeline de Consultas -->
           @if (!isLoading) {

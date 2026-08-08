@@ -6,4 +6,6 @@ export enum ValidRoles {
   RECEPTIONIST = 'receptionist',
   PHARMACIST = 'pharmacist',
   LABORATORY = 'laboratory',
+  /** Quien realiza los estudios especiales: ecografía, colonoscopia, ECG. */
+  SPECIAL_STUDIES = 'special-studies',
 }

@@ -19,6 +19,7 @@ import { CanComponentDeactivate, confirmDiscardChanges } from '../../../../core/
 import { VALIDATION_PATTERNS } from '../../../../shared/validators/validation-patterns'
 import { PrescriptionsService } from './prescriptions.service'
 import { DrugSearchService } from './drug-search.service'
+import { toLocalISODate } from '../../../../shared/utils/date-format.util'
 
 // Validators
 function dateFormatValidator(control: AbstractControl): ValidationErrors | null {
@@ -314,12 +315,10 @@ export class PrescriptionFormComponent implements CanComponentDeactivate {
 
     const v = this.form.value as any
 
-    const prescriptionDate =
-      v.prescriptionDate instanceof Date
-        ? v.prescriptionDate.toISOString().slice(0, 10)
-        : v.prescriptionDate
-    const expiryDate =
-      v.expiryDate instanceof Date ? v.expiryDate.toISOString().slice(0, 10) : v.expiryDate
+    // Componentes locales: con `toISOString()` una receta emitida de noche
+    // quedaba fechada al día siguiente.
+    const prescriptionDate = toLocalISODate(v.prescriptionDate)
+    const expiryDate = toLocalISODate(v.expiryDate)
 
     const payload: any = {
       prescriptionNumber: v.prescriptionNumber,

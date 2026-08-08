@@ -18,6 +18,7 @@ const ROLE_LABELS: Record<string, string> = {
   receptionist: 'Recepcionista',
   pharmacist: 'Farmacéutico',
   laboratory: 'Laboratorio',
+  'special-studies': 'Estudios Especiales',
 }
 const ROLE_PRIORITY: UserRoles[] = [
   UserRoles.SUPER_ADMIN,
@@ -27,6 +28,7 @@ const ROLE_PRIORITY: UserRoles[] = [
   UserRoles.NURSE,
   UserRoles.RECEPTIONIST,
   UserRoles.LABORATORY,
+  UserRoles.SPECIAL_STUDIES,
 ]
 
 @Component({
