@@ -6,14 +6,16 @@
       subtitle="Gestión de recetas y prescripciones"
       (back)="goBack()"
       >
-      <button
-        type="button"
-        (click)="createPrescription()"
-        class="btn btn-primary"
-        >
-        <span class="material-symbols-outlined msz-18 leading-none">add</span>
-        Nueva Receta
-      </button>
+      @if (canManagePrescriptions) {
+        <button
+          type="button"
+          (click)="createPrescription()"
+          class="btn btn-primary"
+          >
+          <span class="material-symbols-outlined msz-18 leading-none">add</span>
+          Nueva Receta
+        </button>
+      }
     </app-page-header>
 
     @if (patientIdFilter) {
@@ -81,7 +83,7 @@
           icon="receipt_long"
           title="Sin recetas"
           [subtitle]="searchTerm || selectedStatus ? 'Intenta ajustar los filtros' : 'Comienza creando la primera receta médica'"
-          [actionLabel]="!searchTerm && !selectedStatus ? 'Nueva Receta' : ''"
+          [actionLabel]="canManagePrescriptions && !searchTerm && !selectedStatus ? 'Nueva Receta' : ''"
           (action)="createPrescription()"
           />
       }
@@ -166,11 +168,13 @@
                         class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0">
                         <span class="material-symbols-outlined msz-18">visibility</span>
                       </button>
-                      <button type="button" (click)="editPrescription(p); $event.stopPropagation()"
-                        matTooltip="Editar"
-                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0">
-                        <span class="material-symbols-outlined msz-18">edit</span>
-                      </button>
+                      @if (canManagePrescriptions) {
+                        <button type="button" (click)="editPrescription(p); $event.stopPropagation()"
+                          matTooltip="Editar"
+                          class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0">
+                          <span class="material-symbols-outlined msz-18">edit</span>
+                        </button>
+                      }
                       @if (p.status === 'draft') {
                         <button
                           type="button" (click)="activate(p); $event.stopPropagation()"
@@ -187,7 +191,7 @@
                           <span class="material-symbols-outlined msz-18">local_pharmacy</span>
                         </button>
                       }
-                      @if (canRefill(p)) {
+                      @if (canManagePrescriptions && canRefill(p)) {
                         <button
                           type="button" (click)="doRefill(p); $event.stopPropagation()"
                           matTooltip="Resurtir"

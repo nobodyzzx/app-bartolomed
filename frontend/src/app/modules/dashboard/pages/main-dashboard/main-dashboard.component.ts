@@ -269,10 +269,13 @@ export class MainDashboardComponent implements OnInit {
         roles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN, UserRoles.DOCTOR],
       },
       {
+        // Sin PHARMACIST: `POST /prescriptions` es `@Auth(DOCTOR, ADMIN)`, así que
+        // al farmacéutico se le abría el formulario entero para acabar en 403 al
+        // guardar. Él lee, activa, dispensa e imprime recetas, pero no las emite.
         label: 'Nueva Receta', icon: 'receipt_long',
         route: '/dashboard/prescriptions/new',
         color: 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border-indigo-100',
-        roles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN, UserRoles.DOCTOR, UserRoles.PHARMACIST],
+        roles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN, UserRoles.DOCTOR],
       },
       {
         // Apuntaba a `/dashboard/billing/invoices/new`, una ruta que no existe en

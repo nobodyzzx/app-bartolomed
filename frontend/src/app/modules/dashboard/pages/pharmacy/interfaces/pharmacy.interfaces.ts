@@ -328,27 +328,39 @@ export interface SaleItem {
   expiryDate?: string
 }
 
+/**
+ * Espejo de lo que devuelve `GET /pharmacy-sales`. Los nombres importan: la
+ * interfaz declaraba `totalAmount`, `taxAmount`, `discountAmount`, `changeAmount`
+ * y `createdById`, que el backend no manda, y omitía `saleDate`, `total`, `tax`,
+ * `discount`, `change` y `soldBy`, que sí. Como TypeScript no protege lo que no
+ * está declarado, la columna "Fecha" leía `sale.date` —campo inexistente— y salía
+ * vacía en todas las filas sin que nada fallara.
+ */
 export interface Sale {
   id: string
   saleNumber: string
+  saleDate: string
   patientId?: string
   patient?: any
   patientName?: string
+  doctorName?: string
   paymentMethod: PaymentMethod
   subtotal: number
   taxRate?: number
-  taxAmount?: number
-  discountAmount?: number
-  totalAmount: number
+  tax?: number
+  discount?: number
+  total: number
   amountPaid: number
-  changeAmount?: number
+  change?: number
+  chargedToAccount?: boolean
   status: SaleStatus
   notes?: string
+  prescriptionId?: string
   prescriptionNumber?: string
   items: SaleItem[]
   clinicId: string
-  createdById?: string
-  createdBy?: any
+  soldById?: string
+  soldBy?: any
   createdAt?: string
   updatedAt?: string
 }

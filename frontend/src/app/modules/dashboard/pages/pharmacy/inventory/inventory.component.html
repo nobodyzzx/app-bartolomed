@@ -54,7 +54,7 @@
         (cardClick)="setStatFilter('expiring')"
         />
       <app-stat-card
-        label="Valor Total" [value]="'$' + (stats.totalValue | number: '1.2-2')" sublabel="Valor del inventario"
+        label="Valor Total" [value]="'Bs ' + (stats.totalValue | number: '1.2-2')" sublabel="Valor del inventario"
         icon="attach_money" color="green"
         />
     </div>
@@ -216,10 +216,9 @@
         </div>
         <div class="px-3 py-2 bg-slate-50 text-xs text-slate-500 border-t flex justify-between">
           <span>{{ importRows.length }} filas</span>
-          <button type="button"
-            class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100"
+          <button type="button" class="btn btn-danger-outline h-8 px-3 text-xs"
             (click)="resetImport()">
-            <span class="material-symbols-outlined msz-18">delete</span>
+            <span class="material-symbols-outlined msz-16">delete</span>
             Limpiar
           </button>
         </div>

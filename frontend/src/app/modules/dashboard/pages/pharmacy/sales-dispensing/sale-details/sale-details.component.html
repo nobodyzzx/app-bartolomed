@@ -108,10 +108,10 @@
                     <span class="text-sm text-slate-600">Monto Pagado:</span>
                     <span class="text-sm font-semibold text-slate-900">Bs {{ s.amountPaid | number: '1.2-2' }}</span>
                   </div>
-                  @if (s.changeAmount && s.changeAmount > 0) {
+                  @if (s.change && s.change > 0) {
                     <div class="flex justify-between p-2 bg-green-50 rounded-lg">
                       <span class="text-sm text-green-700 font-medium">Cambio:</span>
-                      <span class="text-sm font-bold text-green-700">Bs {{ s.changeAmount | number: '1.2-2' }}</span>
+                      <span class="text-sm font-bold text-green-700">Bs {{ s.change | number: '1.2-2' }}</span>
                     </div>
                   }
                 </div>
@@ -210,7 +210,7 @@
                 <div class="border-t-2 border-slate-200 pt-3 mt-3">
                   <div class="flex justify-between items-center">
                     <span class="text-xl font-bold text-slate-900">TOTAL:</span>
-                    <span class="text-3xl font-bold text-blue-600">Bs {{ s.totalAmount | number: '1.2-2' }}</span>
+                    <span class="text-3xl font-bold text-blue-600">Bs {{ s.total | number: '1.2-2' }}</span>
                   </div>
                 </div>
               </div>

@@ -2,6 +2,8 @@ import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
+import { RoleStateService } from '@core/services/role-state.service'
+import { UserRoles } from '@core/enums/user-roles.enum'
 import { Prescription } from './interfaces/prescription-ui.interface'
 import { PrescriptionsService } from './prescriptions.service'
 import { openPdfInNewTab } from '../../../../shared/utils/pdf-viewer.util'
@@ -23,6 +25,23 @@ const STATUS_MAP: Record<string, { label: string; classes: string }> = {
 })
 export class PrescriptionListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
+
+  private readonly roleState = inject(RoleStateService)
+
+  /**
+   * Quién puede crear, editar o resurtir una receta. Va por ROL y no por permiso
+   * porque el backend lo gatea así: `POST /prescriptions`, `PATCH /:id` y
+   * `POST /:id/refill` son `@Auth(DOCTOR, ADMIN)`. Por permiso no saldría igual —
+   * `PrescriptionsSign` lo tienen DOCTOR y SUPER_ADMIN, pero no ADMIN, que sí
+   * puede por rol.
+   *
+   * Al farmacéutico se le mostraban las tres acciones y las tres acababan en 403:
+   * tiene `PrescriptionsRead` y entra al módulo, pero solo puede activar,
+   * dispensar e imprimir, que siguen visibles para él.
+   */
+  get canManagePrescriptions(): boolean {
+    return this.roleState.hasAnyRole([UserRoles.DOCTOR, UserRoles.ADMIN, UserRoles.SUPER_ADMIN])
+  }
 
   prescriptions: Prescription[] = []
   filteredPrescriptions: Prescription[] = []

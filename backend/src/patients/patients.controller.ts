@@ -82,7 +82,12 @@ export class PatientsController {
     return this.patientsService.findByDocumentNumber(documentNumber, clinicId);
   }
 
+  // Mismo caso que `search`: la pantalla de venta de farmacia cae aquí cuando el
+  // paciente elegido no está entre las opciones ya cargadas, y sin
+  // `PharmacyDispense` devolvía 403. El `error:` del componente se lo tragaba y la
+  // venta quedaba con el nombre del paciente en blanco, sin decir por qué.
   @Get(':id')
+  @RequirePermissions(Permission.PatientsRead, Permission.PatientsWrite, Permission.PharmacyDispense)
   findOne(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const clinicId = resolveClinicId(req);
     return this.patientsService.findOne(id, clinicId);

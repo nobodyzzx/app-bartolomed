@@ -220,15 +220,24 @@ export class InventoryComponent implements OnInit, OnDestroy {
     this.importRows = rows
   }
 
+  /**
+   * Solo previsualiza: **la importación no está implementada**. No existe endpoint
+   * de carga masiva en `pharmacy/inventory`, así que nada de esto llega a la base.
+   *
+   * Antes cerraba con un `icon: 'success'` y "Archivo cargado / Vista previa
+   * lista", con lo que se daba por hecho que el stock había entrado. El aviso
+   * ahora dice lo que de verdad pasa; queda pendiente decidir si se implementa la
+   * carga o se retira la pantalla.
+   */
   confirmImportPreview() {
     if (!this.importRows.length) {
       this.alertService.error('Validación', 'Carga un archivo con datos primero')
       return
     }
     this.alertService.fire({
-      icon: 'success',
-      title: 'Archivo cargado',
-      text: 'Vista previa lista',
+      icon: 'warning',
+      title: 'Solo vista previa',
+      text: `Se leyeron ${this.importRows.length} fila(s), pero la importación masiva todavía no está disponible: no se guardó nada. Carga el stock desde "Nuevo Stock".`,
     })
     this.importOpen.set(false)
   }
