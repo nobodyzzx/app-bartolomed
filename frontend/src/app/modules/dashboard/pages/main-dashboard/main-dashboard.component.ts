@@ -14,6 +14,14 @@ import { ClinicContextService } from '../../../clinics/services/clinic-context.s
 import { DashboardService } from './dashboard.service'
 import { DashboardStats, RecentAppointment, RecentPatient, StockAlert } from './interfaces/dashboard-ui.interfaces'
 
+/**
+ * `permissions` es opcional y se suma al filtro por rol: hay pantallas que un rol
+ * ve por pertenecer al grupo pero que el backend le niega igual. El caso vivo es
+ * DOCTOR con las citas —está en `CLINICAL_ROLES` pero no tiene `AppointmentsRead`
+ * a propósito—: sin este filtro se le pintaban las tarjetas "Mis Citas Hoy" y
+ * "Por Confirmar" con un 0 que no era real (el dato ni se pide) y que además
+ * llevaban a una ruta que su guard bloquea.
+ */
 interface StatCardDef {
   label: string
   sublabel: string
@@ -22,6 +30,7 @@ interface StatCardDef {
   route: string
   value: string | number
   roles: UserRoles[]
+  permissions?: Permission[]
 }
 
 interface QuickActionDef {
@@ -30,6 +39,7 @@ interface QuickActionDef {
   route: string
   color: string
   roles: UserRoles[]
+  permissions?: Permission[]
 }
 
 // Roles que ven "todas" las citas/pacientes de la clínica en vez de solo las propias.
@@ -158,12 +168,14 @@ export class MainDashboardComponent implements OnInit {
         icon: 'calendar_today', color: 'green', route: '/dashboard/appointments',
         value: this.stats.totalAppointments,
         roles: CLINICAL_ROLES,
+        permissions: [Permission.AppointmentsRead],
       },
       {
         label: 'Por Confirmar', sublabel: this.isDoctorOnlyView ? 'Mis citas pendientes' : 'Citas pendientes',
         icon: 'pending_actions', color: 'amber', route: '/dashboard/appointments',
         value: this.stats.pendingAppointments,
         roles: CLINICAL_ROLES,
+        permissions: [Permission.AppointmentsRead],
       },
       {
         label: 'Personal Activo', sublabel: this.staffBreakdownLabel(totalStaff),
@@ -206,7 +218,12 @@ export class MainDashboardComponent implements OnInit {
         roles: BILLING_ROLES,
       },
     ]
-    return cards.filter(c => this.roleState.hasAnyRole(c.roles))
+    return cards.filter(c => this.roleState.hasAnyRole(c.roles) && this.hasCardPermissions(c))
+  }
+
+  /** Sin `permissions` declarados, basta el rol. Con ellos, hacen falta todos. */
+  private hasCardPermissions(item: { permissions?: Permission[] }): boolean {
+    return (item.permissions ?? []).every(p => this.roleState.hasPermission(p))
   }
 
   private staffBreakdownLabel(totalStaff: number): string {
@@ -235,6 +252,7 @@ export class MainDashboardComponent implements OnInit {
         route: '/dashboard/appointments/new',
         color: 'bg-green-50 text-green-600 hover:bg-green-100 border-green-100',
         roles: [...CLINICAL_ROLES],
+        permissions: [Permission.AppointmentsWrite],
       },
       {
         label: 'Nueva Venta', icon: 'point_of_sale',
@@ -301,7 +319,7 @@ export class MainDashboardComponent implements OnInit {
         roles: SPECIAL_STUDY_ROLES,
       },
     ]
-    return actions.filter(a => this.roleState.hasAnyRole(a.roles))
+    return actions.filter(a => this.roleState.hasAnyRole(a.roles) && this.hasCardPermissions(a))
   }
 
   // ── Visibilidad de secciones por rol ─────────────────────────────────────
@@ -336,8 +354,14 @@ export class MainDashboardComponent implements OnInit {
     return this.roleState.hasAnyRole(ADMIN_ONLY_ROLES)
   }
 
+  /**
+   * Mismo gate que el timeline: el gráfico se alimenta de `todayAppointments`, que
+   * solo se pide si hay permiso. Filtrando únicamente por rol, a DOCTOR le salía
+   * un "Citas de Hoy — Sin citas hoy" permanente aunque tuviera la agenda llena:
+   * el dato nunca se pedía.
+   */
   get showAppointmentChart(): boolean {
-    return this.roleState.hasAnyRole(CLINICAL_ROLES)
+    return this.showAppointmentsSection
   }
 
   get showBillingSection(): boolean {

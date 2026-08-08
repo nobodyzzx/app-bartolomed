@@ -62,17 +62,31 @@ describe('MainDashboardComponent', () => {
   // ─── visibleStatCards — granularidad por rol ───────────────────────────────
 
   describe('visibleStatCards', () => {
-    it('DOCTOR solo ve tarjetas clínicas, no Personal Activo ni facturación', () => {
+    // Este test fijaba el bug: daba por buena la tarjeta "Mis Citas Hoy" para
+    // DOCTOR, que está en CLINICAL_ROLES pero NO tiene `AppointmentsRead` (decisión
+    // deliberada). El dato de citas ni se pedía, así que la tarjeta mostraba un 0
+    // que no era real y llevaba a una ruta que su guard bloquea.
+    it('DOCTOR ve tarjetas clínicas, pero no las de citas: no tiene AppointmentsRead', () => {
       roles = [UserRoles.DOCTOR]
       const component = createComponent()
       const labels = component.visibleStatCards.map(c => c.label)
 
       expect(labels).toContain('Total Pacientes')
-      expect(labels).toContain('Mis Citas Hoy')
+      expect(labels).not.toContain('Mis Citas Hoy')
+      expect(labels).not.toContain('Por Confirmar')
       expect(labels).not.toContain('Personal Activo')
       expect(labels).not.toContain('Stock Bajo')
       expect(labels).not.toContain('Facturas Pendientes')
       expect(labels).not.toContain('Por Cobrar')
+    })
+
+    it('NURSE sí ve las tarjetas de citas: tiene AppointmentsRead', () => {
+      roles = [UserRoles.NURSE]
+      const component = createComponent()
+      const labels = component.visibleStatCards.map(c => c.label)
+
+      expect(labels).toContain('Citas Hoy')
+      expect(labels).toContain('Por Confirmar')
     })
 
     it('RECEPTIONIST ve tarjetas de facturación pese a no ser PHARMACY', () => {

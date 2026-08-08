@@ -228,6 +228,20 @@ export class PrescriptionListComponent implements OnInit {
     })
   }
 
+  /**
+   * Nombre del médico que firma. Vive en `personalInfo`, y el tratamiento en
+   * `professionalInfo.title`. La plantilla caía al `email` cuando no venía el
+   * nombre —y no venía nunca, porque el backend no cargaba la relación—, así que
+   * la columna "Doctor" mostraba "Dr. dr.vargas@sanjorge.local".
+   */
+  doctorName(p: Prescription): string {
+    const doctor = p.doctor as any
+    const fullName = `${doctor?.personalInfo?.firstName ?? ''} ${doctor?.personalInfo?.lastName ?? ''}`.trim()
+    if (!fullName) return 'Médico no registrado'
+    const title = doctor?.professionalInfo?.title?.trim()
+    return title ? `${title} ${fullName}` : fullName
+  }
+
   printPdf(p: Prescription) {
     this.prescriptionsService.getPdf(p.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: blob => openPdfInNewTab(blob, 'receta.pdf'),

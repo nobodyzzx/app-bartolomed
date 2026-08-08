@@ -104,11 +104,16 @@ export interface MedicalRecord {
     lastName: string
     documentNumber: string
   }
+  // El médico es un `User`: su nombre vive en `personalInfo` y su tratamiento y
+  // especialidad en `professionalInfo`, nunca en columnas propias. Declararlo
+  // plano —como estaba— compila igual pero devuelve `undefined` en runtime; es lo
+  // que dejó "Atendido por: Dr(a)." sin nombre y "Doctor anterior: undefined
+  // undefined". Los consumidores ya leen `personalInfo`, pero lo hacían con
+  // `as any` porque el tipo mentía.
   doctor?: {
     id: string
-    firstName: string
-    lastName: string
-    specialization?: string
+    personalInfo?: { firstName?: string; lastName?: string }
+    professionalInfo?: { title?: string; specialization?: string }
   }
 }
 

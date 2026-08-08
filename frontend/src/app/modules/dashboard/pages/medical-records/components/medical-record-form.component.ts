@@ -568,7 +568,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
                 <div class="bg-blue-50 p-3 rounded-lg text-sm border border-blue-200">
                   <p class="font-semibold text-blue-900 mb-2">📋 Consulta Original</p>
                   <p><strong>Paciente:</strong> ${originalRecord.patient?.firstName} ${originalRecord.patient?.lastName}</p>
-                  <p><strong>Doctor anterior:</strong> ${this.formatDoctorName((originalRecord as any).doctor)}</p>
+                  <p><strong>Doctor anterior:</strong> ${this.formatDoctorName(originalRecord.doctor)}</p>
                   <p><strong>Motivo:</strong> ${originalRecord.chiefComplaint}</p>
                   <p><strong>Diagnóstico previo:</strong> ${originalRecord.diagnosis || 'No especificado'}</p>
                 </div>
@@ -620,7 +620,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
     // campo "Paciente" en blanco — y `printConsent()`, que usa el mismo lookup,
     // generaba el consentimiento sin datos del paciente.
     this.recordPatient = (record.patient as Patient) ?? null
-    this.recordDoctor = this.toClinicalStaffMember((record as any).doctor)
+    this.recordDoctor = this.toClinicalStaffMember(record.doctor)
 
     // Poblar formularios con datos existentes
     this.patientInfoForm.patchValue({

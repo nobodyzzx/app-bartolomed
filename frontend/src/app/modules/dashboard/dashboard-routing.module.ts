@@ -179,12 +179,11 @@ const routes: Routes = [
         loadChildren: () => import('./pages/pharmacy/pharmacy.module').then(m => m.PharmacyModule),
         canActivate: [permissionsGuard, roleGuard],
         data: {
-          allowedRoles: [
-            UserRoles.PHARMACIST,
-            UserRoles.DOCTOR,
-            UserRoles.ADMIN,
-            UserRoles.SUPER_ADMIN,
-          ],
+          // Sin DOCTOR: no tiene `PharmacyInventoryManage`, así que el roleGuard lo
+          // dejaba pasar y el permissionsGuard lo rebotaba a home con el banner de
+          // permiso insuficiente. Ninguna ruta hija de farmacia lo lista, ni el menú
+          // tampoco — era el único sitio que lo mencionaba, y no abría nada.
+          allowedRoles: [UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
           requiredPermissions: [Permission.PharmacyInventoryManage],
         },
       },

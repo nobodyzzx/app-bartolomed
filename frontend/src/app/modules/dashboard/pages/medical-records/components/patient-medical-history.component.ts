@@ -311,7 +311,7 @@ export class PatientMedicalHistoryComponent implements OnInit, OnDestroy {
    * que no existe en la entidad User, así que salía un "Dr(a)." sin nombre.
    */
   doctorName(record: MedicalRecord): string {
-    const doctor = (record as any).doctor
+    const doctor = record.doctor
     const fullName = `${doctor?.personalInfo?.firstName ?? ''} ${doctor?.personalInfo?.lastName ?? ''}`.trim()
     if (!fullName) return 'Médico no registrado'
     const title = doctor?.professionalInfo?.title?.trim()

@@ -75,6 +75,10 @@ export class PrescriptionsService {
       .createQueryBuilder('p')
       .leftJoinAndSelect('p.patient', 'patient')
       .leftJoinAndSelect('p.doctor', 'doctor')
+      // El nombre del médico vive en `personalInfo`: sin estos joins la lista de
+      // recetas imprimía su correo en la columna "Doctor".
+      .leftJoinAndSelect('doctor.personalInfo', 'doctorPersonalInfo')
+      .leftJoinAndSelect('doctor.professionalInfo', 'doctorProfessionalInfo')
       .leftJoinAndSelect('p.clinic', 'clinic')
       .leftJoinAndSelect('p.items', 'items')
       .where('clinic.id = :clinicId', { clinicId })
@@ -101,7 +105,7 @@ export class PrescriptionsService {
     if (!clinicId) throw new BadRequestException('clinicId is required');
     const pres = await this.prescriptionRepository.findOne({
       where: { id, clinic: { id: clinicId } },
-      relations: ['patient', 'doctor', 'clinic', 'items'],
+      relations: ['patient', 'doctor', 'doctor.personalInfo', 'doctor.professionalInfo', 'clinic', 'items'],
     });
     if (!pres) throw new NotFoundException('Prescription not found');
     return pres;
@@ -115,7 +119,7 @@ export class PrescriptionsService {
 
       const pres = await presRepo.findOne({
         where: { id, clinic: { id: clinicId } },
-        relations: ['patient', 'doctor', 'clinic', 'items'],
+        relations: ['patient', 'doctor', 'doctor.personalInfo', 'doctor.professionalInfo', 'clinic', 'items'],
       });
       if (!pres) throw new NotFoundException('Prescription not found');
       if (updateDto.status && updateDto.status !== pres.status) {
@@ -192,7 +196,7 @@ export class PrescriptionsService {
       }
 
       await presRepo.save(pres);
-      const updated = await presRepo.findOne({ where: { id, clinic: { id: clinicId } }, relations: ['patient', 'doctor', 'clinic', 'items'] });
+      const updated = await presRepo.findOne({ where: { id, clinic: { id: clinicId } }, relations: ['patient', 'doctor', 'doctor.personalInfo', 'doctor.professionalInfo', 'clinic', 'items'] });
       if (!updated) throw new NotFoundException('Prescripción no encontrada tras actualización');
       return updated;
     });
