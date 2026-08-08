@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, Req , ParseUUIDPipe } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthClinic } from '../../auth/decorators';
 import { resolveClinicId } from '../../auth/decorators/clinic-roles.decorator';
@@ -40,17 +40,17 @@ export class InventoryController {
   }
 
   @Get('medications/:id')
-  findMedicationById(@Param('id') id: string) {
+  findMedicationById(@Param('id', ParseUUIDPipe) id: string) {
     return this.inventoryService.findMedicationById(id);
   }
 
   @Patch('medications/:id')
-  updateMedication(@Param('id') id: string, @Body() updateMedicationDto: UpdateMedicationDto) {
+  updateMedication(@Param('id', ParseUUIDPipe) id: string, @Body() updateMedicationDto: UpdateMedicationDto) {
     return this.inventoryService.updateMedication(id, updateMedicationDto);
   }
 
   @Delete('medications/:id')
-  deleteMedication(@Param('id') id: string) {
+  deleteMedication(@Param('id', ParseUUIDPipe) id: string) {
     return this.inventoryService.deleteMedication(id);
   }
 
@@ -87,31 +87,31 @@ export class InventoryController {
   }
 
   @Get('stock/:id')
-  findStockById(@Param('id') id: string, @Req() req: Request) {
+  findStockById(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const clinicId = resolveClinicId(req);
     return this.inventoryService.findStockById(id, clinicId);
   }
 
   @Patch('stock/:id')
-  updateStock(@Param('id') id: string, @Body() updateStockDto: UpdateMedicationStockDto, @Req() req: Request) {
+  updateStock(@Param('id', ParseUUIDPipe) id: string, @Body() updateStockDto: UpdateMedicationStockDto, @Req() req: Request) {
     const clinicId = resolveClinicId(req);
     return this.inventoryService.updateStock(id, updateStockDto, clinicId);
   }
 
   @Post('stock/:id/reserve')
-  reserveStock(@Param('id') id: string, @Body('quantity') quantity: number, @Req() req: Request) {
+  reserveStock(@Param('id', ParseUUIDPipe) id: string, @Body('quantity') quantity: number, @Req() req: Request) {
     const clinicId = resolveClinicId(req);
     return this.inventoryService.reserveStock(id, quantity, clinicId);
   }
 
   @Post('stock/:id/release')
-  releaseStock(@Param('id') id: string, @Body('quantity') quantity: number, @Req() req: Request) {
+  releaseStock(@Param('id', ParseUUIDPipe) id: string, @Body('quantity') quantity: number, @Req() req: Request) {
     const clinicId = resolveClinicId(req);
     return this.inventoryService.releaseStock(id, quantity, clinicId);
   }
 
   @Post('stock/:id/consume')
-  consumeStock(@Param('id') id: string, @Body('quantity') quantity: number, @Req() req: Request) {
+  consumeStock(@Param('id', ParseUUIDPipe) id: string, @Body('quantity') quantity: number, @Req() req: Request) {
     const clinicId = resolveClinicId(req);
     return this.inventoryService.consumeStock(id, quantity, clinicId);
   }

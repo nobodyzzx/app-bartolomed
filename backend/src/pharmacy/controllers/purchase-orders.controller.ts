@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   Request,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -62,14 +63,14 @@ export class PurchaseOrdersController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @Request() req?: any) {
+  findOne(@Param('id', ParseUUIDPipe) id: string, @Request() req?: any) {
     const clinicId = req ? resolveClinicId(req) : undefined;
     return this.purchaseOrdersService.findOne(id, clinicId);
   }
 
   @Patch(':id')
   @Auth(ValidRoles.PHARMACIST, ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
-  update(@Param('id') id: string, @Body() updatePurchaseOrderDto: UpdatePurchaseOrderDto, @Request() req?: any) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updatePurchaseOrderDto: UpdatePurchaseOrderDto, @Request() req?: any) {
     const clinicId = req ? resolveClinicId(req) : undefined;
     return this.purchaseOrdersService.update(id, updatePurchaseOrderDto, clinicId);
   }
@@ -77,7 +78,7 @@ export class PurchaseOrdersController {
   @Patch(':id/status')
   @Auth(ValidRoles.PHARMACIST, ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
   updateStatus(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateStatusDto: UpdatePurchaseOrderStatusDto,
     @GetUser() user: User,
     @Request() req?: any,
@@ -88,14 +89,14 @@ export class PurchaseOrdersController {
 
   @Post(':id/receive')
   @Auth(ValidRoles.PHARMACIST, ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
-  receive(@Param('id') id: string, @Body() dto: ReceivePurchaseOrderDto, @Request() req?: any) {
+  receive(@Param('id', ParseUUIDPipe) id: string, @Body() dto: ReceivePurchaseOrderDto, @Request() req?: any) {
     const clinicId = req ? resolveClinicId(req) : undefined;
     return this.purchaseOrdersService.receive(id, dto, clinicId);
   }
 
   @Delete(':id')
   @Auth(ValidRoles.PHARMACIST, ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN)
-  remove(@Param('id') id: string, @Request() req?: any) {
+  remove(@Param('id', ParseUUIDPipe) id: string, @Request() req?: any) {
     const clinicId = req ? resolveClinicId(req) : undefined;
     return this.purchaseOrdersService.remove(id, clinicId);
   }

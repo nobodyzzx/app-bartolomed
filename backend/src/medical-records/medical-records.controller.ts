@@ -109,6 +109,26 @@ export class MedicalRecordsController {
     return this.medicalRecordsService.getMedicalRecordsByDoctor(doctorId, clinicId);
   }
 
+  // Antes que `@Get(':id')`: una ruta literal tiene que declararse antes que la
+  // paramétrica del mismo nivel, o `:id` la captura primero. Aquí `:id` tomaba
+  // "consent-forms" como si fuera un id y lo rechazaba con "uuid is expected",
+  // dejando la lista de consentimientos inalcanzable (400 permanente).
+  @Get('consent-forms')
+  findAllConsentForms(
+    @Query('patientId') patientId?: string,
+    @Query('medicalRecordId') medicalRecordId?: string,
+    @Query('status') status?: ConsentStatus,
+    @Req() req?: Request,
+  ) {
+    const clinicId = req ? resolveClinicId(req) : undefined;
+    return this.medicalRecordsService.findAllConsentForms({
+      patientId,
+      medicalRecordId,
+      status,
+      clinicId,
+    });
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const clinicId = resolveClinicId(req);
@@ -163,22 +183,6 @@ export class MedicalRecordsController {
   createConsentForm(@Body() createConsentFormDto: CreateConsentFormDto, @Req() req: Request) {
     const clinicId = resolveClinicId(req)!;
     return this.medicalRecordsService.createConsentForm(createConsentFormDto, clinicId);
-  }
-
-  @Get('consent-forms')
-  findAllConsentForms(
-    @Query('patientId') patientId?: string,
-    @Query('medicalRecordId') medicalRecordId?: string,
-    @Query('status') status?: ConsentStatus,
-    @Req() req?: Request,
-  ) {
-    const clinicId = req ? resolveClinicId(req) : undefined;
-    return this.medicalRecordsService.findAllConsentForms({
-      patientId,
-      medicalRecordId,
-      status,
-      clinicId,
-    });
   }
 
   @Get('consent-forms/:id')

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Request } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Request , ParseUUIDPipe } from '@nestjs/common';
 import { AuthClinic } from '../../auth/decorators';
 import { resolveClinicId } from '../../auth/decorators/clinic-roles.decorator';
 import { RequirePermissions } from '../../auth/permissions/permissions.decorator';
@@ -26,25 +26,25 @@ export class SuppliersController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @Request() req: any) {
+  findOne(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
     const clinicId = resolveClinicId(req)!;
     return this.suppliersService.findOne(id, clinicId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSupplierDto: UpdateSupplierDto, @Request() req: any) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateSupplierDto: UpdateSupplierDto, @Request() req: any) {
     const clinicId = resolveClinicId(req)!;
     return this.suppliersService.update(id, updateSupplierDto, clinicId);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @Request() req: any) {
+  remove(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
     const clinicId = resolveClinicId(req)!;
     return this.suppliersService.remove(id, clinicId);
   }
 
   @Patch(':id/restore')
-  restore(@Param('id') id: string, @Request() req: any) {
+  restore(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
     const clinicId = resolveClinicId(req)!;
     return this.suppliersService.restore(id, clinicId);
   }

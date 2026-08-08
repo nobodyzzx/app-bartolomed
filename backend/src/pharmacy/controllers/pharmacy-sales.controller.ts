@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   Request,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { AuthClinic } from '../../auth/decorators';
 import { SkipAutoAudit } from '../../audit/decorators/skip-auto-audit.decorator';
@@ -79,26 +80,26 @@ export class PharmacySalesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @Request() req: any) {
+  findOne(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
     const clinicId = resolveClinicId(req);
     return this.pharmacySalesService.findOne(id, clinicId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePharmacySaleDto: UpdatePharmacySaleDto, @Request() req: any) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updatePharmacySaleDto: UpdatePharmacySaleDto, @Request() req: any) {
     const clinicId = resolveClinicId(req)!;
     return this.pharmacySalesService.update(id, updatePharmacySaleDto, clinicId);
   }
 
   @Patch(':id/status')
-  updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdatePharmacySaleStatusDto, @Request() req: any) {
+  updateStatus(@Param('id', ParseUUIDPipe) id: string, @Body() updateStatusDto: UpdatePharmacySaleStatusDto, @Request() req: any) {
     const clinicId = resolveClinicId(req)!;
     return this.pharmacySalesService.updateStatus(id, updateStatusDto, clinicId);
   }
 
   @Patch(':id/adjust-payment')
   @SkipAutoAudit()
-  adjustPayment(@Param('id') id: string, @Body() dto: AdjustPaymentDto, @Request() req: any) {
+  adjustPayment(@Param('id', ParseUUIDPipe) id: string, @Body() dto: AdjustPaymentDto, @Request() req: any) {
     const user = req.user;
     return this.pharmacySalesService.adjustPayment(id, dto, {
       id: user?.id ?? user?.sub,
@@ -112,7 +113,7 @@ export class PharmacySalesController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @Request() req: any) {
+  remove(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
     const clinicId = resolveClinicId(req)!;
     return this.pharmacySalesService.remove(id, clinicId);
   }

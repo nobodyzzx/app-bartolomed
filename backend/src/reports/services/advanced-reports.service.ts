@@ -9,6 +9,8 @@ import { PrescriptionItem } from '../../prescriptions/entities/prescription.enti
 import { StockTransfer } from '../../transfers/entities/stock-transfer.entity';
 import { ReportFilters } from './reports.service';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 @Injectable()
 export class AdvancedReportsService {
   constructor(
@@ -200,7 +202,33 @@ export class AdvancedReportsService {
         lo.clinic_id,
         c.name           AS clinic_name,
         CONCAT('Orden de laboratorio: ', lo."orderNumber", ' — ', lo.status::text) AS summary,
-        lo."clinicalNotes" AS detail
+        -- El timeline solo decía el número y el estado, así que el médico tenía
+        -- que abrir la orden para enterarse de qué salió. Se listan los estudios
+        -- con su valor, y se marca el que está fuera de rango, que es lo que
+        -- hace falta leer de un vistazo.
+        NULLIF(
+          CONCAT_WS(
+            ' — ',
+            NULLIF(lo."clinicalNotes", ''),
+            (
+              SELECT string_agg(
+                CONCAT(
+                  loi."testName",
+                  CASE
+                    WHEN loi."resultedAt" IS NULL THEN ': pendiente'
+                    ELSE CONCAT(': ', COALESCE(loi."resultValue", '—'), COALESCE(' ' || loi."resultUnit", ''))
+                  END,
+                  CASE WHEN loi."isAbnormal" THEN ' (fuera de rango)' ELSE '' END
+                ),
+                ' · '
+                ORDER BY loi."createdAt"
+              )
+              FROM lab_order_items loi
+              WHERE loi.order_id = lo.id
+            )
+          ),
+          ''
+        ) AS detail
       FROM lab_orders lo
       LEFT JOIN clinics c ON c.id = lo.clinic_id
       WHERE lo.patient_id = $1
@@ -604,8 +632,10 @@ export class AdvancedReportsService {
           SUM(poi."receivedQuantity")          AS "qtyPurchased"
         FROM purchase_orders po
         JOIN purchase_order_items poi ON poi.order_id = po.id
-        JOIN medications med          ON med.id = poi."medicationId"
-        WHERE po.clinic_id = $1
+        -- poi."medicationId" es text (guarda el uuid como cadena); sin el cast
+        -- Postgres corta con "operator does not exist: uuid = text".
+        JOIN medications med          ON med.id::text = poi."medicationId"
+        WHERE po."clinicId" = $1
           AND po.status = 'received'
           ${dateFilterPO}
         GROUP BY TO_CHAR(po."orderDate", 'YYYY-MM'), med.id, med.name
@@ -693,16 +723,24 @@ export class AdvancedReportsService {
   async getStockMovementsReport(filters: ReportFilters & { medicationId?: string }) {
     const { clinicId, dateRange, medicationId } = filters;
     if (!clinicId) throw new BadRequestException('clinicId es requerido');
+    // Un `medicationId` que no sea uuid es una petición mal formada: se rechaza
+    // con 400 en vez de dejar que el cast de Postgres devuelva un 500.
+    if (medicationId && !UUID_RE.test(medicationId)) {
+      throw new BadRequestException('medicationId debe ser un uuid válido');
+    }
 
     const startDate = dateRange?.startDate;
     const endDate   = dateRange?.endDate;
 
+    // `medicationId` llega crudo del cliente: parametrizado, no interpolado. Con
+    // interpolación un `medicationId` malicioso inyectaba SQL (y de paso, un uuid
+    // inválido tumbaba la consulta con un 500). Las fechas salen del propio
+    // servidor, pero se parametrizan igual por coherencia.
     const params: unknown[] = [clinicId];
-    const dateFilter = `
-      ${startDate ? `AND sm."movementDate" >= '${startDate}'` : ''}
-      ${endDate   ? `AND sm."movementDate" <= '${endDate}'`   : ''}
-    `;
-    const medFilter = medicationId ? `AND ms.medication_id = '${medicationId}'` : '';
+    const cond: string[] = [];
+    if (startDate) { params.push(startDate); cond.push(`AND sm."movementDate" >= $${params.length}`); }
+    if (endDate)   { params.push(endDate);   cond.push(`AND sm."movementDate" <= $${params.length}`); }
+    if (medicationId) { params.push(medicationId); cond.push(`AND ms.medication_id = $${params.length}`); }
 
     return this.dataSource.query(`
       SELECT
@@ -720,8 +758,7 @@ export class AdvancedReportsService {
       JOIN medication_stock ms ON ms.id  = sm.stock_id
       JOIN medications med     ON med.id = ms.medication_id
       WHERE ms.clinic_id = $1
-        ${dateFilter}
-        ${medFilter}
+        ${cond.join('\n        ')}
       ORDER BY sm."movementDate" DESC
     `, params);
   }
@@ -754,17 +791,18 @@ export class AdvancedReportsService {
     const { clinicId } = filters;
     if (!clinicId) throw new BadRequestException('clinicId es requerido');
 
+    // Columnas reales: `prescriptionDate` y `deletedAt` son camelCase entrecomillado.
     const [row]: Array<Record<string, unknown>> = await this.dataSource.query(`
       SELECT
         COUNT(*) FILTER (WHERE p.status NOT IN ('dispensed','cancelled')) AS "totalActive",
         COUNT(*) FILTER (WHERE p.status = 'dispensed')                   AS "totalDispensed",
         COUNT(*) FILTER (
           WHERE p.status NOT IN ('dispensed','cancelled')
-            AND p.prescription_date < NOW() - INTERVAL '30 days'
+            AND p."prescriptionDate" < NOW() - INTERVAL '30 days'
         )                                                                  AS "totalExpiredUndispensed"
       FROM prescriptions p
       WHERE p.clinic_id = $1
-        AND p.deleted_at IS NULL
+        AND p."deletedAt" IS NULL
     `, [clinicId]);
 
     const totalActive     = Number(row?.['totalActive'] ?? 0);
@@ -927,16 +965,20 @@ export class AdvancedReportsService {
     const { clinicId, doctorId, dateRange } = filters;
     if (!clinicId) throw new BadRequestException('clinicId es requerido');
 
-    // Recetas con sus ítems + ventas de farmacia asociadas vía prescription_id FK
+    // Recetas con sus ítems + ventas de farmacia asociadas vía prescription_id FK.
+    // Los identificadores son `alias.propiedad` de la entidad (TypeORM los mapea a
+    // su columna real), no nombres de columna sueltos: el paciente guarda su
+    // nombre en columnas propias —no tiene relación `personalInfo` como el
+    // usuario— y las columnas son camelCase entrecomillado en la base.
     const qb = this.prescriptionItemRepo
       .createQueryBuilder('pi')
       .select('p.id',                  'prescriptionId')
-      .addSelect('p.prescription_number', 'prescriptionNumber')
+      .addSelect('p.prescriptionNumber', 'prescriptionNumber')
       .addSelect('p.status',           'prescriptionStatus')
-      .addSelect('p.prescription_date','prescriptionDate')
-      .addSelect("CONCAT(up.first_name, ' ', up.last_name)", 'doctorName')
-      .addSelect("CONCAT(pat_pi.first_name, ' ', pat_pi.last_name)", 'patientName')
-      .addSelect('pi.medication_name', 'medicationName')
+      .addSelect('p.prescriptionDate', 'prescriptionDate')
+      .addSelect("CONCAT(up.firstName, ' ', up.lastName)", 'doctorName')
+      .addSelect("CONCAT(pat.firstName, ' ', pat.lastName)", 'patientName')
+      .addSelect('pi.medicationName',  'medicationName')
       .addSelect('pi.quantity',        'prescribedQty')   // text field en esta entidad
       .addSelect('COALESCE(SUM(psi.quantity), 0)', 'dispensedQty')
       .innerJoin('pi.prescription',    'p')
@@ -944,20 +986,26 @@ export class AdvancedReportsService {
       .innerJoin('p.doctor',           'doctor')
       .innerJoin('doctor.personalInfo','up')
       .innerJoin('p.patient',          'pat')
-      .innerJoin('pat.personalInfo',   'pat_pi')
       .leftJoin('pharmacy_sales', 'ps',
         'ps.prescription_id = p.id AND ps.status = :saleStatus', { saleStatus: 'completed' })
       .leftJoin('pharmacy_sale_items', 'psi', 'psi.sale_id = ps.id')
       .where('clinic.id = :clinicId', { clinicId })
-      .andWhere('p.deleted_at IS NULL')
-      .groupBy(`p.id, p.prescription_number, p.status, p.prescription_date,
-                up.first_name, up.last_name, pat_pi.first_name, pat_pi.last_name,
-                pi.id, pi.medication_name, pi.quantity`)
-      .orderBy('p.prescription_date', 'DESC');
+      .groupBy('p.id')
+      .addGroupBy('p.prescriptionNumber')
+      .addGroupBy('p.status')
+      .addGroupBy('p.prescriptionDate')
+      .addGroupBy('up.firstName')
+      .addGroupBy('up.lastName')
+      .addGroupBy('pat.firstName')
+      .addGroupBy('pat.lastName')
+      .addGroupBy('pi.id')
+      .addGroupBy('pi.medicationName')
+      .addGroupBy('pi.quantity')
+      .orderBy('p.prescriptionDate', 'DESC');
 
     if (doctorId) qb.andWhere('doctor.id = :doctorId', { doctorId });
-    if (dateRange?.startDate) qb.andWhere('p.prescription_date >= :startDate', { startDate: dateRange.startDate });
-    if (dateRange?.endDate)   qb.andWhere('p.prescription_date <= :endDate',   { endDate: dateRange.endDate });
+    if (dateRange?.startDate) qb.andWhere('p.prescriptionDate >= :startDate', { startDate: dateRange.startDate });
+    if (dateRange?.endDate)   qb.andWhere('p.prescriptionDate <= :endDate',   { endDate: dateRange.endDate });
 
     const rows = await qb.getRawMany();
 

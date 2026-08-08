@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   Request,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { AuthClinic } from '../../auth/decorators';
 import { resolveClinicId } from '../../auth/decorators/clinic-roles.decorator';
@@ -75,25 +76,25 @@ export class PharmacyInvoicesController {
   }
 
   @Get('by-sale/:saleId')
-  findBySale(@Param('saleId') saleId: string, @Request() req: any) {
+  findBySale(@Param('saleId', ParseUUIDPipe) saleId: string, @Request() req: any) {
     const clinicId = resolveClinicId(req)!;
     return this.pharmacyInvoicesService.findBySale(saleId, clinicId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @Request() req: any) {
+  findOne(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
     const clinicId = resolveClinicId(req);
     return this.pharmacyInvoicesService.findOne(id, clinicId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePharmacyInvoiceDto: UpdatePharmacyInvoiceDto, @Request() req: any) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updatePharmacyInvoiceDto: UpdatePharmacyInvoiceDto, @Request() req: any) {
     const clinicId = resolveClinicId(req);
     return this.pharmacyInvoicesService.update(id, updatePharmacyInvoiceDto, clinicId);
   }
 
   @Patch(':id/status')
-  updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdatePharmacyInvoiceStatusDto, @Request() req: any) {
+  updateStatus(@Param('id', ParseUUIDPipe) id: string, @Body() updateStatusDto: UpdatePharmacyInvoiceStatusDto, @Request() req: any) {
     const clinicId = resolveClinicId(req);
     return this.pharmacyInvoicesService.updateStatus(id, updateStatusDto, clinicId);
   }
@@ -105,7 +106,7 @@ export class PharmacyInvoicesController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @Request() req: any) {
+  remove(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
     const clinicId = resolveClinicId(req);
     return this.pharmacyInvoicesService.remove(id, clinicId);
   }

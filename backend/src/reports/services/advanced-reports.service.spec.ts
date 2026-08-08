@@ -294,10 +294,19 @@ describe('AdvancedReportsService', () => {
       expect(result).toEqual([{ category: 'Analgésicos' }]);
     });
 
-    it('getStockMovementsReport agrega el filtro de medicationId si viene informado', async () => {
+    it('getStockMovementsReport agrega el filtro de medicationId parametrizado si viene informado', async () => {
       dataSource.query.mockResolvedValue([]);
-      await service.getStockMovementsReport({ clinicId: CLINIC_ID, medicationId: 'med-9' });
-      expect(dataSource.query.mock.calls[0][0]).toContain("ms.medication_id = 'med-9'");
+      const medId = '11111111-1111-4111-8111-111111111111';
+      await service.getStockMovementsReport({ clinicId: CLINIC_ID, medicationId: medId });
+      // Parametrizado, no interpolado: el valor viaja en los binds, no en el SQL.
+      expect(dataSource.query.mock.calls[0][0]).toContain('ms.medication_id = $');
+      expect(dataSource.query.mock.calls[0][1]).toContain(medId);
+    });
+
+    it('getStockMovementsReport rechaza un medicationId que no es uuid', async () => {
+      await expect(
+        service.getStockMovementsReport({ clinicId: CLINIC_ID, medicationId: 'med-9' }),
+      ).rejects.toThrow('medicationId debe ser un uuid válido');
     });
 
     it('getStockMovementsReport no agrega filtro de medicationId si no viene', async () => {
@@ -515,8 +524,8 @@ describe('AdvancedReportsService', () => {
       });
 
       expect(qb.andWhere).toHaveBeenCalledWith('doctor.id = :doctorId', { doctorId: 'doc-1' });
-      expect(qb.andWhere).toHaveBeenCalledWith('p.prescription_date >= :startDate', { startDate: '2026-01-01' });
-      expect(qb.andWhere).toHaveBeenCalledWith('p.prescription_date <= :endDate', { endDate: '2026-01-31' });
+      expect(qb.andWhere).toHaveBeenCalledWith('p.prescriptionDate >= :startDate', { startDate: '2026-01-01' });
+      expect(qb.andWhere).toHaveBeenCalledWith('p.prescriptionDate <= :endDate', { endDate: '2026-01-31' });
     });
   });
 
