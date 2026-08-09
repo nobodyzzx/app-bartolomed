@@ -3,8 +3,13 @@ import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-va
 import { MedicationCategory, StorageCondition } from '../entities/pharmacy.entity';
 
 export class CreateMedicationDto {
+  /**
+   * Opcional: si no viene, el servicio genera el siguiente libre (`MED-0471`).
+   * Era obligatorio y lo fabricaba el navegador con azar.
+   */
   @IsString()
-  code: string;
+  @IsOptional()
+  code?: string;
 
   @IsString()
   name: string;

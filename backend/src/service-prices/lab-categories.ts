@@ -6,6 +6,27 @@
  * copia en `service-prices.service.ts`: son dos programas distintos y no
  * comparten módulos, pero el contenido debe coincidir.
  */
+/**
+ * Prefijo de código por categoría clínica.
+ *
+ * No es una convención nueva: es la que ya traía el tarifario del proveedor
+ * (`HEM-001`, `QMS-032`…) y que hasta ahora solo existía dentro de los datos.
+ * Al escribirla aquí, un examen dado de alta desde la pantalla recibe el mismo
+ * prefijo que sus hermanos en vez de caer en un cajón genérico.
+ */
+export const LAB_CATEGORY_CODE_PREFIXES: Record<string, string> = {
+  HEMATOLOGIA: 'HEM',
+  COAGULACION: 'COA',
+  QUIMICA_SANGUINEA: 'QMS',
+  MARCADORES_TUMORALES: 'MTU',
+  HORMONAS: 'HOR',
+  INMUNOLOGIA_PRUEBAS_RAPIDAS: 'INM',
+  ORINA: 'ORI',
+  HECES_FECALES: 'HEC',
+  BACTERIOLOGIA: 'BAC',
+  BIOLOGIA_MOLECULAR: 'BMO',
+};
+
 export const LAB_CATEGORY_LABELS: Record<string, string> = {
   HEMATOLOGIA: 'Hematología',
   COAGULACION: 'Coagulación',

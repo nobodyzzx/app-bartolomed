@@ -11,6 +11,7 @@ import {
   UpdateServicePriceDto,
 } from './dto';
 import { ServiceCategory, ServicePrice } from './entities/service-price.entity';
+import { LAB_CATEGORY_CODE_PREFIXES } from './lab-categories';
 
 /**
  * Prefijo de código por categoría. No es decorativo: el tarifario se lee
@@ -19,6 +20,9 @@ import { ServiceCategory, ServicePrice } from './entities/service-price.entity';
  */
 const CODE_PREFIXES: Record<ServiceCategory, string> = {
   [ServiceCategory.CONSULTATION]: 'CONS',
+  // Laboratorio no usa un prefijo único: cada examen lleva el de su categoría
+  // clínica (`HEM`, `QMS`…), que es la convención del tarifario del proveedor.
+  // Este valor solo se usa si el examen llega sin categoría clínica.
   [ServiceCategory.LABORATORY]: 'LAB',
   [ServiceCategory.SPECIAL_STUDY]: 'ESP',
   [ServiceCategory.PROCEDURE]: 'PROC',
@@ -45,7 +49,9 @@ export class ServicePricesService {
     // inventar quien daba de alta el servicio, sin ver los que ya existían:
     // o se repetía uno (409 sin explicación útil) o se rompía la convención
     // por categoría, que es lo que hace el tarifario legible.
-    const code = dto.code?.trim() ? dto.code.trim().toUpperCase() : await this.generateCode(dto.category, scopedClinicId);
+    const code = dto.code?.trim()
+      ? dto.code.trim().toUpperCase()
+      : await this.generateCode(dto.category, scopedClinicId, dto.labCategory);
     await this.assertCodeIsFree(code, scopedClinicId);
 
     // El alta no se audita a mano: `AuditInterceptor` ya registra toda
@@ -69,8 +75,17 @@ export class ServicePricesService {
    * daría 409. Numera desde el mayor existente y no desde el total, para que
    * borrar un servicio no haga que el siguiente choque con otro.
    */
-  private async generateCode(category: ServiceCategory, clinicId: string): Promise<string> {
-    const prefijo = CODE_PREFIXES[category] ?? 'SRV';
+  private async generateCode(
+    category: ServiceCategory,
+    clinicId: string,
+    labCategory?: string | null,
+  ): Promise<string> {
+    // En laboratorio manda la categoría clínica: un cultivo nuevo debe salir
+    // `BAC-007`, junto al resto de bacteriología, y no en un cajón `LAB-001`.
+    const prefijo =
+      category === ServiceCategory.LABORATORY && labCategory
+        ? (LAB_CATEGORY_CODE_PREFIXES[labCategory] ?? CODE_PREFIXES[category])
+        : (CODE_PREFIXES[category] ?? 'SRV');
     const existentes = await this.repository.find({
       where: { clinicId },
       select: ['code'],

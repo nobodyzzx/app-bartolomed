@@ -69,14 +69,15 @@ export class MedicationFormComponent implements OnInit {
     if (this.medicationId) {
       this.isEditMode = true
       this.loadMedication()
-    } else {
-      this.generateCode()
     }
   }
 
   initForm(): void {
     this.medicationForm = this.fb.group({
-      code: [{ value: '', disabled: true }, Validators.required],
+      // Deshabilitado y sin `required`: al crear se queda vacío y lo asigna el
+      // backend, que es el único que ve el catálogo entero; al editar se carga
+      // el que ya tiene y no se toca.
+      code: [{ value: '', disabled: true }],
       nombreComercial: ['', [Validators.required, Validators.minLength(2)]],
       principioActivo: ['', Validators.required],
       concentracionValor: [null, [Validators.required, Validators.min(0.0001)]],
@@ -86,16 +87,6 @@ export class MedicationFormComponent implements OnInit {
       laboratorio: [''],
       esMuestraMedica: [false],
     })
-  }
-
-  generateCode(): void {
-    const now = new Date()
-    const y = String(now.getFullYear()).slice(-2)
-    const m = String(now.getMonth() + 1).padStart(2, '0')
-    const d = String(now.getDate()).padStart(2, '0')
-    const rand = Math.random().toString(36).substring(2, 6).toUpperCase()
-    const code = `MED-${y}${m}${d}-${rand}`
-    this.medicationForm.patchValue({ code })
   }
 
   loadMedication(): void {
@@ -140,7 +131,9 @@ export class MedicationFormComponent implements OnInit {
     const strength = `${formValue.concentracionValor} ${formValue.concentracionUnidad}`
 
     const dto: CreateMedicationDto = {
-      code: formValue.code,
+      // Vacío = que lo genere el backend, que es el único que ve el catálogo
+      // entero y puede dar el siguiente de la secuencia.
+      code: formValue.code || undefined,
       name: formValue.nombreComercial,
       strength,
       dosageForm: formValue.formaFarmaceutica,

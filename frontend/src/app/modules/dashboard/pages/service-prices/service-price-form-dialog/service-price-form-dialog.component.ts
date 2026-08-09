@@ -5,10 +5,28 @@ import {
   APPOINTMENT_TYPE_LABELS,
   AppointmentType,
   CATEGORY_LABELS,
+  LAB_CATEGORY_LABELS,
   ServiceCategory,
   ServicePrice,
   ServicePricePayload,
 } from '../service-prices.service'
+
+/**
+ * Espejo de `LAB_CATEGORY_CODE_PREFIXES` del backend. En laboratorio el prefijo
+ * lo pone la categoría clínica, no la categoría de la aplicación.
+ */
+const LAB_PREFIXES: Record<string, string> = {
+  HEMATOLOGIA: 'HEM',
+  COAGULACION: 'COA',
+  QUIMICA_SANGUINEA: 'QMS',
+  MARCADORES_TUMORALES: 'MTU',
+  HORMONAS: 'HOR',
+  INMUNOLOGIA_PRUEBAS_RAPIDAS: 'INM',
+  ORINA: 'ORI',
+  HECES_FECALES: 'HEC',
+  BACTERIOLOGIA: 'BAC',
+  BIOLOGIA_MOLECULAR: 'BMO',
+}
 
 /** Espejo de `CODE_PREFIXES` del backend, que es quien genera el código real. */
 const CODE_PREFIXES: Record<ServiceCategory, string> = {
@@ -29,6 +47,7 @@ export class ServicePriceFormDialogComponent {
   readonly categories = Object.values(ServiceCategory)
   readonly appointmentTypes = Object.values(AppointmentType)
   readonly categoryLabels = CATEGORY_LABELS
+  readonly labCategories = Object.entries(LAB_CATEGORY_LABELS)
   readonly appointmentTypeLabels = APPOINTMENT_TYPE_LABELS
 
   form: FormGroup
@@ -52,6 +71,7 @@ export class ServicePriceFormDialogComponent {
       description: [data?.price?.description ?? ''],
       category: [data?.price?.category ?? ServiceCategory.CONSULTATION, Validators.required],
       appointmentType: [data?.price?.appointmentType ?? null],
+      labCategory: [data?.price?.labCategory ?? null],
       price: [data?.price?.price ?? null, [Validators.required, Validators.min(0)]],
       costPrice: [data?.price?.costPrice ?? null, [Validators.min(0)]],
       // No viaja al backend: es solo otra forma de escribir el precio.
@@ -71,7 +91,12 @@ export class ServicePriceFormDialogComponent {
    * solo se conocen los que el listado tiene cargados, de ahí el "p. ej.".
    */
   codigoSugerido(): string {
-    const prefijo = CODE_PREFIXES[this.form.get('category')?.value as ServiceCategory] ?? 'SRV'
+    const categoria = this.form.get('category')?.value as ServiceCategory
+    const labCat = this.form.get('labCategory')?.value as string | null
+    const prefijo =
+      categoria === ServiceCategory.LABORATORY && labCat
+        ? (LAB_PREFIXES[labCat] ?? CODE_PREFIXES[categoria])
+        : (CODE_PREFIXES[categoria] ?? 'SRV')
     const patron = new RegExp(`^${prefijo}-(\\d+)$`, 'i')
     const mayor = (this.data?.codes ?? []).reduce((max, code) => {
       const m = patron.exec(code ?? '')
@@ -135,6 +160,10 @@ export class ServicePriceFormDialogComponent {
   }
 
   /** `appointmentType` solo aplica a consultas — igual criterio que el backend. */
+  get isLaboratory(): boolean {
+    return this.form.get('category')?.value === ServiceCategory.LABORATORY
+  }
+
   get isConsultation(): boolean {
     return this.form.get('category')?.value === ServiceCategory.CONSULTATION
   }
@@ -157,6 +186,7 @@ export class ServicePriceFormDialogComponent {
       // Vacío = que lo genere el servidor.
       category: raw.category,
       appointmentType: raw.category === ServiceCategory.CONSULTATION ? raw.appointmentType : null,
+      labCategory: raw.category === ServiceCategory.LABORATORY ? raw.labCategory : null,
       price: Number(raw.price),
       // `marginPct` se queda en la pantalla: el margen es una consecuencia del
       // par costo/precio, no un dato aparte que pueda contradecirlos.

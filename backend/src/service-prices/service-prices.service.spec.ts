@@ -156,6 +156,31 @@ describe('ServicePricesService', () => {
       expect(repo.find).toHaveBeenCalledWith(expect.objectContaining({ withDeleted: true }));
     });
 
+    it('en laboratorio usa el prefijo de la categoría clínica, no un cajón genérico', async () => {
+      repo.find.mockResolvedValue([{ code: 'BAC-006' }, { code: 'QMS-032' }]);
+
+      await service.create(
+        { category: ServiceCategory.LABORATORY, labCategory: 'BACTERIOLOGIA', name: 'Cultivo', price: 0 } as any,
+        actor,
+        CLINIC_ID,
+      );
+
+      // `LAB-001` lo dejaría fuera de su familia en el selector de órdenes.
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ code: 'BAC-007' }));
+    });
+
+    it('un examen sin categoría clínica cae en el prefijo genérico', async () => {
+      repo.find.mockResolvedValue([]);
+
+      await service.create(
+        { category: ServiceCategory.LABORATORY, name: 'Suelto', price: 0 } as any,
+        actor,
+        CLINIC_ID,
+      );
+
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ code: 'LAB-001' }));
+    });
+
     it('respeta el código que se le pase, normalizado a mayúsculas', async () => {
       await service.create(
         { code: ' cons-esp ', category: ServiceCategory.CONSULTATION, name: 'X', price: 0 } as any,

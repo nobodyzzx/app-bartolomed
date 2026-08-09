@@ -113,6 +113,8 @@ export interface ServicePricePayload {
   description?: string
   category: ServiceCategory
   appointmentType?: AppointmentType | null
+  /** Categoría clínica del examen. Solo en laboratorio; define su prefijo de código. */
+  labCategory?: string | null
   price: number
   /** Costo de convenio. Si no se envía, el backend deja el que ya estaba. */
   costPrice?: number

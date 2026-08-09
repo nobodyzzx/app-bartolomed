@@ -127,6 +127,23 @@
       </mat-form-field>
     }
 
+    <!-- Faltaba, y por eso los exámenes creados desde aquí caían en "Otros
+         estudios" al pedir una orden: el selector agrupa por esta categoría.
+         Además es la que decide el prefijo del código (HEM, QMS, BAC…). -->
+    @if (isLaboratory) {
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Categoría clínica</mat-label>
+        <mat-icon matPrefix class="text-emerald-400">labs</mat-icon>
+        <mat-select formControlName="labCategory">
+          <mat-option [value]="null">Sin categoría</mat-option>
+          @for (c of labCategories; track c[0]) {
+            <mat-option [value]="c[0]">{{ c[1] }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>Agrupa el examen al pedirlo y define su código</mat-hint>
+      </mat-form-field>
+    }
+
     <mat-form-field appearance="outline" class="w-full md:col-span-2">
       <mat-label>Descripción</mat-label>
       <mat-icon matPrefix class="text-emerald-400">notes</mat-icon>

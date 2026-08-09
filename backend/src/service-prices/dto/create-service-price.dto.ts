@@ -37,6 +37,20 @@ export class CreateServicePriceDto {
   @IsOptional()
   appointmentType?: AppointmentType;
 
+  /**
+   * Categoría clínica del examen (`HEMATOLOGIA`, `QUIMICA_SANGUINEA`…). Solo
+   * en laboratorio.
+   *
+   * Faltaba, y no era un detalle: sin ella un examen dado de alta desde la
+   * pantalla quedaba fuera de su grupo en el selector de órdenes —caía en
+   * "Otros estudios"— y ahora además no podría recibir el prefijo de código de
+   * su familia.
+   */
+  @ValidateIf(o => o.category === ServiceCategory.LABORATORY)
+  @IsString()
+  @IsOptional()
+  labCategory?: string;
+
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   price: number;

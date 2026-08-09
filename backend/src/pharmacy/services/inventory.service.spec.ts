@@ -76,6 +76,39 @@ describe('InventoryService', () => {
       const result = await service.createMedication({ code: 'MED-NUEVO', name: 'Ibuprofeno' } as any);
       expect(result).toBeDefined();
     });
+
+    it('sin código lo genera secuencial, con cuatro dígitos', async () => {
+      medRepo.findOne!.mockResolvedValue(null);
+      medRepo.find!.mockResolvedValue([{ code: 'MED-0468' }, { code: 'MED-0012' }]);
+      medRepo.create!.mockReturnValue(makeMedication());
+      medRepo.save!.mockResolvedValue(makeMedication());
+
+      await service.createMedication({ name: 'Ibuprofeno' } as any);
+
+      expect(medRepo.create).toHaveBeenCalledWith(expect.objectContaining({ code: 'MED-0469' }));
+    });
+
+    it('numera desde el mayor, no desde el total', async () => {
+      medRepo.findOne!.mockResolvedValue(null);
+      medRepo.find!.mockResolvedValue([{ code: 'MED-0007' }]);
+      medRepo.create!.mockReturnValue(makeMedication());
+      medRepo.save!.mockResolvedValue(makeMedication());
+
+      await service.createMedication({ name: 'X' } as any);
+
+      expect(medRepo.create).toHaveBeenCalledWith(expect.objectContaining({ code: 'MED-0008' }));
+    });
+
+    it('el catálogo vacío arranca en MED-0001', async () => {
+      medRepo.findOne!.mockResolvedValue(null);
+      medRepo.find!.mockResolvedValue([]);
+      medRepo.create!.mockReturnValue(makeMedication());
+      medRepo.save!.mockResolvedValue(makeMedication());
+
+      await service.createMedication({ name: 'X' } as any);
+
+      expect(medRepo.create).toHaveBeenCalledWith(expect.objectContaining({ code: 'MED-0001' }));
+    });
   });
 
   // ─── findMedicationById ───────────────────────────────────────────────────

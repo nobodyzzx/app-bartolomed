@@ -9652,6 +9652,10 @@
               "other"
             ]
           },
+          "labCategory": {
+            "type": "string",
+            "description": "Categoría clínica del examen (`HEMATOLOGIA`, `QUIMICA_SANGUINEA`…). Solo\nen laboratorio.\n\nFaltaba, y no era un detalle: sin ella un examen dado de alta desde la\npantalla quedaba fuera de su grupo en el selector de órdenes —caía en\n\"Otros estudios\"— y ahora además no podría recibir el prefijo de código de\nsu familia."
+          },
           "price": {
             "type": "number",
             "minimum": 0
@@ -9868,6 +9872,10 @@
               "other"
             ],
             "type": "string"
+          },
+          "labCategory": {
+            "type": "string",
+            "description": "Categoría clínica del examen (`HEMATOLOGIA`, `QUIMICA_SANGUINEA`…). Solo\nen laboratorio.\n\nFaltaba, y no era un detalle: sin ella un examen dado de alta desde la\npantalla quedaba fuera de su grupo en el selector de órdenes —caía en\n\"Otros estudios\"— y ahora además no podría recibir el prefijo de código de\nsu familia."
           },
           "price": {
             "type": "number",
@@ -12152,7 +12160,8 @@
         "type": "object",
         "properties": {
           "code": {
-            "type": "string"
+            "type": "string",
+            "description": "Opcional: si no viene, el servicio genera el siguiente libre (`MED-0471`).\nEra obligatorio y lo fabricaba el navegador con azar."
           },
           "name": {
             "type": "string"
@@ -12238,7 +12247,6 @@
           }
         },
         "required": [
-          "code",
           "name",
           "strength",
           "dosageForm",

@@ -38,8 +38,11 @@
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Código</mat-label>
             <mat-icon matPrefix class="text-blue-400">tag</mat-icon>
-            <input matInput formControlName="code" readonly />
-            <mat-hint>Generado automáticamente</mat-hint>
+            <input matInput formControlName="code" readonly
+              [placeholder]="isEditMode ? '' : 'Se genera al guardar'" />
+            <mat-hint>
+              @if (isEditMode) { Código del producto } @else { Se asigna solo al guardar (MED-0001, MED-0002…) }
+            </mat-hint>
           </mat-form-field>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

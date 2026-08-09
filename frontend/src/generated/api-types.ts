@@ -4314,6 +4314,16 @@ export interface components {
              * @enum {string}
              */
             appointmentType?: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other";
+            /**
+             * @description Categoría clínica del examen (`HEMATOLOGIA`, `QUIMICA_SANGUINEA`…). Solo
+             *     en laboratorio.
+             *
+             *     Faltaba, y no era un detalle: sin ella un examen dado de alta desde la
+             *     pantalla quedaba fuera de su grupo en el selector de órdenes —caía en
+             *     "Otros estudios"— y ahora además no podría recibir el prefijo de código de
+             *     su familia.
+             */
+            labCategory?: string;
             price: number;
             /**
              * @description Costo de convenio: lo que cobra el laboratorio externo por el estudio
@@ -4439,6 +4449,16 @@ export interface components {
              * @enum {string}
              */
             appointmentType?: "consultation" | "follow_up" | "emergency" | "surgery" | "laboratory" | "imaging" | "vaccination" | "therapy" | "other";
+            /**
+             * @description Categoría clínica del examen (`HEMATOLOGIA`, `QUIMICA_SANGUINEA`…). Solo
+             *     en laboratorio.
+             *
+             *     Faltaba, y no era un detalle: sin ella un examen dado de alta desde la
+             *     pantalla quedaba fuera de su grupo en el selector de órdenes —caía en
+             *     "Otros estudios"— y ahora además no podría recibir el prefijo de código de
+             *     su familia.
+             */
+            labCategory?: string;
             price?: number;
             /**
              * @description Costo de convenio: lo que cobra el laboratorio externo por el estudio
@@ -5123,7 +5143,11 @@ export interface components {
             notes?: string;
         };
         CreateMedicationDto: {
-            code: string;
+            /**
+             * @description Opcional: si no viene, el servicio genera el siguiente libre (`MED-0471`).
+             *     Era obligatorio y lo fabricaba el navegador con azar.
+             */
+            code?: string;
             name: string;
             genericName?: string;
             brandName?: string;

@@ -33,16 +33,44 @@ export class InventoryService {
 
   // Medication CRUD
   async createMedication(createMedicationDto: CreateMedicationDto): Promise<Medication> {
-    const existingMedication = await this.medicationRepository.findOne({
-      where: { code: createMedicationDto.code },
-    });
+    // Si no viene código, se genera aquí. Lo hacía el navegador, y no con una
+    // secuencia sino con fecha y cuatro caracteres al azar (`MED-260809-K3F2`):
+    // sin ver el catálogo no puede haber secuencia, así que el azar era la
+    // única salida — y produce códigos ilegibles que además pueden chocar.
+    const code = createMedicationDto.code?.trim()
+      ? createMedicationDto.code.trim().toUpperCase()
+      : await this.generateMedicationCode();
+
+    const existingMedication = await this.medicationRepository.findOne({ where: { code } });
 
     if (existingMedication) {
       throw new BadRequestException('Medication with this code already exists');
     }
 
-    const medication = this.medicationRepository.create(createMedicationDto);
+    const medication = this.medicationRepository.create({ ...createMedicationDto, code });
     return await this.medicationRepository.save(medication);
+  }
+
+  /**
+   * Siguiente código libre del catálogo: `MED-0001`, `MED-0002`…
+   *
+   * Cuatro dígitos porque el catálogo ya ronda los 470 productos. Sin prefijo
+   * de clínica a propósito: `medications` es un catálogo **global**, y un
+   * prefijo como `SB-` mentiría en cuanto una segunda clínica cargue el suyo.
+   *
+   * Numera desde el mayor existente y no desde el total, para que dar de baja
+   * un producto no haga que el siguiente choque con otro.
+   */
+  private async generateMedicationCode(): Promise<string> {
+    const existentes = await this.medicationRepository.find({ select: ['code'] });
+
+    const patron = /^MED-(\d+)$/i;
+    const mayor = existentes.reduce((max, { code }) => {
+      const m = patron.exec(code ?? '');
+      return m ? Math.max(max, Number(m[1])) : max;
+    }, 0);
+
+    return `MED-${String(mayor + 1).padStart(4, '0')}`;
   }
 
   async findAllMedications(page = 1, limit = 100): Promise<PaginatedResult<Medication>> {
