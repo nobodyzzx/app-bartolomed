@@ -44,6 +44,12 @@
 #let bartolomedDoc(
   title: "",
   paper: "a4",
+  /// Apaisado. Los informes de datos son tablas de 8-10 columnas y en vertical
+  /// los encabezados se parten a la mitad ("CATEGO-RÍA", "DISPO-NIBLE") y las
+  /// celdas se estrechan hasta ser ilegibles. Los documentos de una sola
+  /// columna —recetas, recibos, consentimientos, informes de laboratorio— se
+  /// quedan en vertical, que es como se archivan y se firman.
+  landscape: false,
   body,
 ) = {
   set document(title: title, author: "Bartolomed")
@@ -55,6 +61,7 @@
   set text(font: "Inter", size: 9.5pt, lang: "es", hyphenate: true)
   set page(
     paper: paper,
+    flipped: landscape,
     margin: (top: 0pt, bottom: 14mm, x: 0pt),
     footer: context {
       line(length: 100%, stroke: 0.5pt + borde-suave)

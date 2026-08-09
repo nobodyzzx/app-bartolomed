@@ -822,14 +822,25 @@ export class ReportsPdfService {
 
   // ─── Helpers Typst compartidos (Fase 2 en adelante) ───────────────────────
 
-  /** Envuelve un `body` .typ ya armado con el import + bartolomedDoc + header + metaBar estándar. */
+  /**
+   * Envuelve un `body` .typ ya armado con el import + bartolomedDoc + header +
+   * metaBar estándar.
+   *
+   * **Apaisado**: los 23 informes de esta clase son tablas de datos de 8 a 10
+   * columnas. En vertical los encabezados se partían a la mitad
+   * ("CATEGO-RÍA", "DISPO-NIBLE", "MÍNI-MO") y las celdas quedaban tan
+   * estrechas que el nombre del medicamento ocupaba tres renglones. Los
+   * documentos de una sola columna —recetas, recibos, consentimientos,
+   * resultados de laboratorio— no pasan por aquí y siguen en vertical, que es
+   * como se archivan y se firman.
+   */
   private wrapTypstDoc(title: string, badge: string, metaFields: Array<[string, string]>, body: string): string {
     // Coma final obligatoria — ver nota en typstRows(): sin ella, un reporte
     // con un solo metaField (ej. dashboardTypst) rompe metaBar() en silencio.
     const metaTypst = metaFields.map(([k, v]) => `(${typstString(k)}, ${typstString(v)})`).join(',\n  ') + ',';
     return `#import "/templates/bartolomed-base.typ": bartolomedDoc, header, metaBar, section, kpiCard, kpiGrid, styledTable, badge, noData, hBarChart, chartLabel, gris-texto
 
-#show: bartolomedDoc.with(title: ${typstString(title)}, paper: "a4")
+#show: bartolomedDoc.with(title: ${typstString(title)}, paper: "a4", landscape: true)
 
 #header(name: "BARTOLOMED", subtitle: "Sistema de Gestión Clínica", badge: ${typstString(badge)})
 #metaBar((
@@ -932,7 +943,7 @@ ${body}
 
     return `#import "/templates/bartolomed-base.typ": bartolomedDoc, header, metaBar, section, kpiCard, kpiGrid, styledTable, badge, noData
 
-#show: bartolomedDoc.with(title: ${typstString('Márgenes por Producto — Farmacia')}, paper: "a4")
+#show: bartolomedDoc.with(title: ${typstString('Márgenes por Producto — Farmacia')}, paper: "a4", landscape: true)
 
 #header(name: "BARTOLOMED", subtitle: "Sistema de Gestión Clínica", badge: ${typstString('Márgenes por Producto')})
 #metaBar((
@@ -1045,7 +1056,7 @@ ${body}
 
     return `#import "/templates/bartolomed-base.typ": bartolomedDoc, header, metaBar, section, kpiCard, kpiGrid, styledTable, noData
 
-#show: bartolomedDoc.with(title: ${typstString('Ventas Diarias — Farmacia')}, paper: "a4")
+#show: bartolomedDoc.with(title: ${typstString('Ventas Diarias — Farmacia')}, paper: "a4", landscape: true)
 
 #header(name: "BARTOLOMED", subtitle: "Sistema de Gestión Clínica", badge: ${typstString('Ventas Diarias')})
 #metaBar((
