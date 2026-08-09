@@ -258,10 +258,16 @@ export class MedicationStock {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  // Virtual property for clinicId (for frontend compatibility)
+  // OJO: este getter **no viaja en el JSON**. Los getters de clase viven en el
+  // prototipo y `JSON.stringify` solo serializa propiedades propias, así que la
+  // respuesta de la API trae `clinic` como objeto y ningún `clinicId`. Quien lo
+  // necesite plano debe leer `clinic?.id` — es lo que ya hace el punto de venta
+  // con `s.clinicId || s.clinic?.id`. Se conserva por si algún consumidor usa
+  // la entidad dentro del backend, donde sí funciona.
   get clinicId(): string | undefined {
     return this.clinic?.id;
   }
+
 
   // Helper methods
   //

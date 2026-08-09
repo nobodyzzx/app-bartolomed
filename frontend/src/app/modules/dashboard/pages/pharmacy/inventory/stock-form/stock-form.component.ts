@@ -98,10 +98,22 @@ export class StockFormComponent implements OnInit {
     this.stockForm = this.fb.group(
       {
         medicationId: ['', Validators.required],
-        batchNumber: ['', [Validators.required, Validators.minLength(3)]],
+        // Opcional: si se deja vacío lo genera el backend, que es el único que
+        // ve todos los lotes. `batchNumber` es único en **todo el sistema**, no
+        // por clínica, así que inventarlo a mano se choca antes o después.
+        batchNumber: [''],
         quantity: [null, [Validators.required, Validators.min(1)]],
-        unitCost: [null, [Validators.required, Validators.min(0.01)]],
-        sellingPrice: [null, [Validators.required, Validators.min(0.01)]],
+        // `min(0)` y no `min(0.01)`: Bs 0 es un estado real y deliberado, no un
+        // error. El inventario oficial entró con costo 0 en los 488 lotes —la
+        // planilla no trae precio de compra— y 86 están sin precio de venta a
+        // propósito. Con `min(0.01)` **ningún lote se podía editar**, y los que
+        // había que corregir eran precisamente los que el formulario rechazaba:
+        // para poner un precio había que tenerlo ya puesto.
+        //
+        // Vender a Bs 0 lo sigue impidiendo el punto de venta, que es donde
+        // corresponde.
+        unitCost: [null, [Validators.required, Validators.min(0)]],
+        sellingPrice: [null, [Validators.required, Validators.min(0)]],
         // Sin `required`: hay stock que llega sin vencimiento a la vista y
         // obligar a una fecha solo consigue que se invente una.
         expiryDate: [null],
@@ -133,7 +145,9 @@ export class StockFormComponent implements OnInit {
     this.inventoryService.getProductById(this.stockId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: stock => {
         this.stockForm.patchValue({
-          medicationId: stock.medicationId,
+          // `medication.id` como respaldo: la relación viaja como objeto y el
+          // id plano es un getter virtual de la entidad.
+          medicationId: stock.medicationId ?? stock.medication?.id,
           batchNumber: stock.batchNumber,
           quantity: stock.quantity,
           unitCost: stock.unitCost,
@@ -191,7 +205,7 @@ export class StockFormComponent implements OnInit {
     const dto: CreateMedicationStockDto = {
       medicationId: formValue.medicationId,
       clinicId: this.clinicId!,
-      batchNumber: formValue.batchNumber,
+      batchNumber: formValue.batchNumber?.trim() || undefined,
       quantity: Number(formValue.quantity) || 0,
       unitCost: Number(formValue.unitCost) || 0,
       sellingPrice: Number(formValue.sellingPrice) || 0,

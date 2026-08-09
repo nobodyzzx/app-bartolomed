@@ -94,18 +94,12 @@
         <div class="p-6 space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Número de lote *</mat-label>
+              <mat-label>Número de lote</mat-label>
               <mat-icon matPrefix class="text-green-400">tag</mat-icon>
-              <input matInput formControlName="batchNumber" placeholder="Ej: LOTE-2024-001" />
-              @if (stockForm.get('batchNumber')?.hasError('required')) {
-                <mat-error>
-                  El lote es requerido
-                </mat-error>
-              }
-              @if (stockForm.get('batchNumber')?.hasError('minlength')) {
-                <mat-error>
-                  Mínimo 3 caracteres
-                </mat-error>
+              <input matInput formControlName="batchNumber"
+                [placeholder]="isEditMode ? '' : 'Se genera solo'" />
+              @if (!isEditMode) {
+                <mat-hint>Déjalo vacío y se asigna el siguiente (LOTE-0001, LOTE-0002…)</mat-hint>
               }
             </mat-form-field>
 
@@ -210,9 +204,10 @@
               }
               @if (stockForm.get('unitCost')?.hasError('min')) {
                 <mat-error>
-                  Debe ser mayor a 0
+                  No puede ser negativo
                 </mat-error>
               }
+              <mat-hint>Déjalo en 0 si no conoces el precio de compra</mat-hint>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
@@ -233,7 +228,7 @@
               }
               @if (stockForm.get('sellingPrice')?.hasError('min')) {
                 <mat-error>
-                  Debe ser mayor a 0
+                  No puede ser negativo
                 </mat-error>
               }
               @if (stockForm.get('sellingPrice')?.hasError('priceBelowCost')) {

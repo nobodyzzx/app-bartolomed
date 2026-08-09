@@ -6,6 +6,7 @@ import { AlertService } from '@core/services/alert.service'
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs'
 import { ClinicContextService } from '../../../../clinics/services/clinic-context.service'
 import { MedicationStock } from '../interfaces/pharmacy.interfaces'
+import { matchesSearch } from '../../../../../shared/utils/text-search.util'
 import { InventoryService } from '../services/inventory.service'
 
 /**
@@ -266,9 +267,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
     const rows = !term
       ? base
       : base.filter(p =>
-          [p.medication?.name, p.medication?.brandName, p.batchNumber, p.location]
-            .filter(Boolean)
-            .some(v => String(v).toLowerCase().includes(term)),
+          matchesSearch(term, p.medication?.name, p.medication?.brandName, p.batchNumber, p.location),
         )
     this.filteredProducts = [...rows].sort((a, b) => {
       const lowA = this.isLowStock(a) ? 1 : 0

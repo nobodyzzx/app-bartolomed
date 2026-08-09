@@ -52,6 +52,27 @@ export class InventoryService {
   }
 
   /**
+   * Siguiente número de lote libre: `LOTE-0001`, `LOTE-0002`…
+   *
+   * Global y no por clínica, porque el índice único de `batchNumber` lo es: dos
+   * clínicas no pueden compartir número aunque sean lotes distintos.
+   *
+   * Numera desde el mayor existente y no desde el total, para que dar de baja
+   * un lote no haga que el siguiente choque con otro.
+   */
+  private async generateBatchNumber(): Promise<string> {
+    const existentes = await this.stockRepository.find({ select: ['batchNumber'] });
+
+    const patron = /^LOTE-(\d+)$/i;
+    const mayor = existentes.reduce((max, { batchNumber }) => {
+      const m = patron.exec(batchNumber ?? '');
+      return m ? Math.max(max, Number(m[1])) : max;
+    }, 0);
+
+    return `LOTE-${String(mayor + 1).padStart(4, '0')}`;
+  }
+
+  /**
    * Siguiente código libre del catálogo: `MED-0001`, `MED-0002`…
    *
    * Cuatro dígitos porque el catálogo ya ronda los 470 productos. Sin prefijo
@@ -143,16 +164,21 @@ export class InventoryService {
       throw new BadRequestException(`Clinic with id ${createStockDto.clinicId} not found`);
     }
 
-    const existingStock = await this.stockRepository.findOne({
-      where: { batchNumber: createStockDto.batchNumber, clinic: { id: scopedClinicId } },
-    });
+    const batchNumber = createStockDto.batchNumber?.trim()
+      ? createStockDto.batchNumber.trim().toUpperCase()
+      : await this.generateBatchNumber();
+
+    // Se busca **sin acotar por clínica**: el índice único de `batchNumber` es
+    // global, así que un lote repetido en otra clínica también revienta, y
+    // hacerlo aquí da un mensaje claro en vez de un 500 de Postgres.
+    const existingStock = await this.stockRepository.findOne({ where: { batchNumber } });
 
     if (existingStock) {
-      throw new BadRequestException('Stock with this batch number already exists in this clinic');
+      throw new BadRequestException(`Ya existe un lote con el número "${batchNumber}"`);
     }
 
     const stockData = {
-      batchNumber: createStockDto.batchNumber,
+      batchNumber,
       quantity: Number(createStockDto.quantity),
       unitCost: Number(createStockDto.unitCost),
       sellingPrice: Number(createStockDto.sellingPrice),

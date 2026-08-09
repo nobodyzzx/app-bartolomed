@@ -99,8 +99,15 @@ export class CreateMedicationStockDto {
   @IsString()
   medicationId: string;
 
+  /**
+   * Opcional: si no viene, el servicio genera el siguiente libre (`LOTE-0001`).
+   * Era obligatorio y había que inventárselo a mano al registrar stock, sin ver
+   * los que ya existen — y `batchNumber` es único **en todo el sistema**, no
+   * por clínica, así que repetirlo daba un error sin pista útil.
+   */
   @IsString()
-  batchNumber: string;
+  @IsOptional()
+  batchNumber?: string;
 
   @IsNumber()
   @Min(1)

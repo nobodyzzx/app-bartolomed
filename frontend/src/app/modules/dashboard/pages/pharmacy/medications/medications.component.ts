@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { Medication, ProductType } from '../interfaces/pharmacy.interfaces'
+import { matchesSearch } from '../../../../../shared/utils/text-search.util'
 import { InventoryService } from '../services/inventory.service'
 
 @Component({
@@ -29,9 +30,7 @@ export class MedicationsComponent implements OnInit {
       // que las tarjetas de analgésicos y antibióticos no separaban nada.
       if (cat !== 'all' && (m.productType ?? ProductType.MEDICATION) !== cat) return false
       if (!term) return true
-      return [m.name, m.genericName, m.brandName, m.code, m.manufacturer]
-        .filter(Boolean)
-        .some(v => v!.toLowerCase().includes(term))
+      return matchesSearch(term, m.name, m.genericName, m.brandName, m.code, m.manufacturer)
     })
   })
 

@@ -1,5 +1,6 @@
 import { computed, Injectable, signal } from '@angular/core'
 import { MedicationStock } from '../../interfaces/pharmacy.interfaces'
+import { matchesSearch } from '../../../../../../shared/utils/text-search.util'
 
 /** Ítem en el carrito de venta (modelo UI, distinto de SaleItem del API) */
 export interface CartItem {
@@ -31,9 +32,7 @@ export class SaleCartService {
     if (!term) return this._stocks()
     return this._stocks().filter(
       s =>
-        s.medication?.name?.toLowerCase().includes(term) ||
-        s.batchNumber?.toLowerCase().includes(term) ||
-        s.medication?.activeIngredients?.toLowerCase().includes(term),
+        matchesSearch(term, s.medication?.name, s.batchNumber, s.medication?.activeIngredients),
     )
   })
 

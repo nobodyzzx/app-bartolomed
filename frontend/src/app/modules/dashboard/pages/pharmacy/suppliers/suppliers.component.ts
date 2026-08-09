@@ -5,6 +5,7 @@ import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { Supplier, SupplierType } from '../interfaces/pharmacy.interfaces'
 import { SuppliersService } from '../services/suppliers.service'
+import { matchesSearch } from '../../../../../shared/utils/text-search.util'
 
 @Component({
     selector: 'app-suppliers',
@@ -29,7 +30,7 @@ export class SuppliersComponent implements OnInit {
       if (!term) return true
       return [s.nombreComercial || s.name, s.razonSocial, s.contactPerson, s.email, s.city, s.country]
         .filter(Boolean)
-        .some(v => v!.toLowerCase().includes(term))
+        .some(v => matchesSearch(term, v))
     })
   })
 

@@ -5209,7 +5209,13 @@ export interface components {
         };
         CreateMedicationStockDto: {
             medicationId: string;
-            batchNumber: string;
+            /**
+             * @description Opcional: si no viene, el servicio genera el siguiente libre (`LOTE-0001`).
+             *     Era obligatorio y había que inventárselo a mano al registrar stock, sin ver
+             *     los que ya existen — y `batchNumber` es único **en todo el sistema**, no
+             *     por clínica, así que repetirlo daba un error sin pista útil.
+             */
+            batchNumber?: string;
             quantity: number;
             unitCost: number;
             sellingPrice: number;
