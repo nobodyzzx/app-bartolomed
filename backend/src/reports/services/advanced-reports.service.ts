@@ -11,6 +11,25 @@ import { ReportFilters } from './reports.service';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/**
+ * Etiqueta del tipo de producto, en español, para los informes.
+ *
+ * Los informes mostraban `med.category`, que es la clase farmacológica
+ * (analgésico, antibiótico…) y que en el catálogo real está en `other` para los
+ * 485 productos: la columna "Categoría" salía con `other` en todas las filas y
+ * el informe "Inventario por categoría" agrupaba todo en un solo montón. Lo que
+ * de verdad separa el catálogo es `product_type`, que sí está clasificado.
+ *
+ * Se traduce en SQL y no en la capa de PDF para que JSON, PDF y Excel digan lo
+ * mismo sin repetir el mapeo en tres sitios.
+ */
+const TIPO_PRODUCTO_SQL = `CASE med.product_type
+        WHEN 'medication'    THEN 'Medicamento'
+        WHEN 'supply'        THEN 'Insumo'
+        WHEN 'personal_care' THEN 'Cuidado personal'
+        ELSE 'Sin clasificar'
+      END`;
+
 @Injectable()
 export class AdvancedReportsService {
   constructor(
@@ -386,7 +405,7 @@ export class AdvancedReportsService {
       SELECT
         med.name                            AS "medicationName",
         med."genericName"                   AS "genericName",
-        med.category                        AS category,
+        ${TIPO_PRODUCTO_SQL}                        AS category,
         ms."availableQuantity"              AS "availableQty",
         ms."unitCost"                       AS "unitCost",
         COALESCE(sold.total_sold, 0)        AS "totalSold30d",
@@ -439,7 +458,7 @@ export class AdvancedReportsService {
       SELECT
         med.name                          AS "medicationName",
         med."genericName"                 AS "genericName",
-        med.category                      AS category,
+        ${TIPO_PRODUCTO_SQL}                      AS category,
         SUM(psi.quantity)                 AS "totalQty",
         SUM(psi.subtotal)                 AS "totalRevenue",
         ROUND(AVG(psi."unitPrice"), 2)    AS "avgUnitPrice"
@@ -450,7 +469,7 @@ export class AdvancedReportsService {
       WHERE ps.clinic_id = $1
         AND ps.status = 'completed'
         ${dateFilter}
-      GROUP BY med.id, med.name, med."genericName", med.category
+      GROUP BY med.id, med.name, med."genericName", med.product_type
       ORDER BY SUM(psi.quantity) DESC
       LIMIT 30
     `, [clinicId]);
@@ -552,7 +571,7 @@ export class AdvancedReportsService {
         ms.id,
         med.name                   AS "medicationName",
         med."genericName"          AS "genericName",
-        med.category               AS category,
+        ${TIPO_PRODUCTO_SQL}               AS category,
         ms."batchNumber"           AS "batchNumber",
         ms."expiryDate"            AS "expiryDate",
         ms."availableQuantity"     AS "availableQuantity",
@@ -697,7 +716,7 @@ export class AdvancedReportsService {
 
     return this.dataSource.query(`
       SELECT
-        med.category                                                          AS category,
+        ${TIPO_PRODUCTO_SQL}                                                          AS category,
         SUM(psi.quantity)                                                     AS "totalQty",
         SUM(psi.subtotal)                                                     AS "totalRevenue",
         COUNT(DISTINCT med.id)                                                AS "itemCount",
@@ -713,7 +732,7 @@ export class AdvancedReportsService {
       WHERE ps.clinic_id = $1
         AND ps.status = 'completed'
         ${dateFilter}
-      GROUP BY med.category
+      GROUP BY med.product_type
       ORDER BY SUM(psi.subtotal) DESC
     `, [clinicId]);
   }
@@ -1089,7 +1108,7 @@ export class AdvancedReportsService {
         DATE(ps."saleDate")                                    AS "saleDay",
         med.name                                               AS "medicationName",
         med."genericName"                                      AS "genericName",
-        med.category                                           AS category,
+        ${TIPO_PRODUCTO_SQL}                                           AS category,
         SUM(psi.quantity)::int                                 AS "qtySold",
         ROUND(SUM(psi.subtotal)::numeric, 2)                   AS "totalRevenue",
         ROUND(AVG(psi."unitPrice")::numeric, 2)                AS "unitPrice"
@@ -1103,7 +1122,7 @@ export class AdvancedReportsService {
         AND ps.status = 'completed'
         ${dateFilter}
       GROUP BY pi."firstName", pi."lastName", DATE(ps."saleDate"),
-               med.id, med.name, med."genericName", med.category
+               med.id, med.name, med."genericName", med.product_type
       ORDER BY "saleDay" DESC, "pharmacistName", "totalRevenue" DESC
     `, [clinicId]);
 
@@ -1149,7 +1168,7 @@ export class AdvancedReportsService {
       SELECT
         med.name                                                          AS "medicationName",
         med."genericName"                                                 AS "genericName",
-        med.category                                                      AS category,
+        ${TIPO_PRODUCTO_SQL}                                                      AS category,
         med."dosageForm"                                                  AS "dosageForm",
         ms."batchNumber"                                                  AS "batchNumber",
         ms."availableQuantity"                                            AS "availableQuantity",
@@ -1170,7 +1189,7 @@ export class AdvancedReportsService {
       JOIN medications med ON med.id = ms.medication_id
       WHERE ms.clinic_id = $1
         AND ms."isActive" = true
-      ORDER BY med.category, med.name
+      ORDER BY med.product_type, med.name
     `, [clinicId]);
 
     const totalCostValue = rows.reduce((s, r) => s + Number(r['costValue'] ?? 0), 0);
@@ -1198,7 +1217,7 @@ export class AdvancedReportsService {
 
     return this.dataSource.query(`
       SELECT
-        COALESCE(med.category::text, 'Sin categoría')                        AS category,
+        ${TIPO_PRODUCTO_SQL}                        AS category,
         COUNT(DISTINCT med.id)::int                                          AS "productCount",
         SUM(ms."availableQuantity")::int                                     AS "totalUnits",
         ROUND(SUM(ms."availableQuantity" * ms."unitCost")::numeric, 2)       AS "totalCostValue",
@@ -1212,7 +1231,7 @@ export class AdvancedReportsService {
       JOIN medications med ON med.id = ms.medication_id
       WHERE ms.clinic_id = $1
         AND ms."isActive" = true
-      GROUP BY med.category
+      GROUP BY med.product_type
       ORDER BY "totalCostValue" DESC
     `, [clinicId]);
   }
@@ -1227,7 +1246,7 @@ export class AdvancedReportsService {
       SELECT
         med.name                                                           AS "medicationName",
         med."genericName"                                                  AS "genericName",
-        med.category                                                       AS category,
+        ${TIPO_PRODUCTO_SQL}                                                       AS category,
         ms."batchNumber"                                                   AS "batchNumber",
         ms."availableQuantity"                                             AS "availableQuantity",
         ROUND((ms."availableQuantity" * ms."unitCost")::numeric, 2)        AS "stockValue",
@@ -1240,7 +1259,7 @@ export class AdvancedReportsService {
       WHERE ms.clinic_id = $1
         AND ms."isActive" = true
         AND ms."availableQuantity" > 0
-      GROUP BY med.id, med.name, med."genericName", med.category,
+      GROUP BY med.id, med.name, med."genericName", med.product_type,
                ms.id, ms."batchNumber", ms."availableQuantity", ms."unitCost", ms."expiryDate"
       HAVING MAX(ps."saleDate") < NOW() - INTERVAL '${days} days'
           OR MAX(ps."saleDate") IS NULL
@@ -1268,7 +1287,7 @@ export class AdvancedReportsService {
       SELECT
         med.name                                                              AS "medicationName",
         med."genericName"                                                     AS "genericName",
-        med.category                                                          AS category,
+        ${TIPO_PRODUCTO_SQL}                                                          AS category,
         med."dosageForm"                                                      AS "dosageForm",
         SUM(psi.quantity)::int                                                AS "qtySold",
         ROUND(SUM(psi.subtotal)::numeric, 2)                                  AS "totalRevenue",
@@ -1288,7 +1307,7 @@ export class AdvancedReportsService {
       WHERE ps.clinic_id = $1
         AND ps.status = 'completed'
         ${dateFilter}
-      GROUP BY med.id, med.name, med."genericName", med.category, med."dosageForm"
+      GROUP BY med.id, med.name, med."genericName", med.product_type, med."dosageForm"
       ORDER BY "totalRevenue" DESC
     `, [clinicId]);
   }
