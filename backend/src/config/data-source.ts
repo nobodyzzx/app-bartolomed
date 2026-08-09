@@ -11,7 +11,6 @@ import { DataSource } from 'typeorm';
 import { Appointment } from '../appointments/entities/appointment.entity';
 import { AuditLog } from '../audit/entities/audit-log.entity';
 import { AssetMaintenance } from '../assets/entities/asset-maintenance.entity';
-import { AssetReport } from '../assets/entities/asset-report.entity';
 import {
   AssetTransfer,
   AssetTransferAuditLog,
@@ -70,7 +69,6 @@ export const AppDataSource = new DataSource({
     Payment,
     Asset,
     AssetMaintenance,
-    AssetReport,
     AssetTransfer,
     AssetTransferItem,
     AssetTransferAuditLog,

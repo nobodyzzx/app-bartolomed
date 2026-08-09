@@ -327,4 +327,52 @@ export class ReportsService {
     const date = todayLocalISO()
     return this.downloadBlob('export/excel/pharmacy-monthly-comparison', `comparativo-mensual-${date}.xlsx`, params)
   }
+
+  // ─── Activos fijos ────────────────────────────────────────────────────────
+  // Cuelgan de /assets, no de /reports: el permiso que los cubre es
+  // AssetsManage (ADMIN/SUPER_ADMIN) y no los ReportsMedical/Financial/Stock de
+  // esta página, así que el guard del backend vive en AssetsController.
+
+  private readonly assetsPrintUrl = `${environment.baseUrl}/assets/reports/print`
+
+  private openAssetPdf(
+    template: string,
+    filename: string,
+    params: Record<string, string> = {},
+  ): Observable<Blob> {
+    const query = new URLSearchParams(params).toString()
+    return this.http
+      .get(`${this.assetsPrintUrl}/${template}${query ? '?' + query : ''}`, { responseType: 'blob' })
+      .pipe(tap(blob => openPdfInNewTab(blob, filename)))
+  }
+
+  /** Listado por ambiente: el que se imprime para el traspaso y se archiva. */
+  downloadAssetInventoryPdf(params: Record<string, string> = {}): Observable<Blob> {
+    return this.openAssetPdf('inventory-by-location', `inventario-activos-${todayLocalISO()}.pdf`, params)
+  }
+
+  /** Acta de entrega y recepción, con columna de observaciones y firmas. */
+  downloadAssetHandoverActPdf(params: Record<string, string> = {}): Observable<Blob> {
+    return this.openAssetPdf('handover-act', `acta-entrega-activos-${todayLocalISO()}.pdf`, params)
+  }
+
+  /** Hoja para salir a contar: casillas está/falta y observaciones en blanco. */
+  downloadAssetCountSheetPdf(params: Record<string, string> = {}): Observable<Blob> {
+    return this.openAssetPdf('count-sheet', `hoja-conteo-activos-${todayLocalISO()}.pdf`, params)
+  }
+
+  /** Una hoja para dirección: cuánto hay, dónde y en qué condición. */
+  downloadAssetSummaryPdf(params: Record<string, string> = {}): Observable<Blob> {
+    return this.openAssetPdf('executive-summary', `resumen-activos-${todayLocalISO()}.pdf`, params)
+  }
+
+  /** Lo que hay que reparar, reponer o dar de baja. */
+  downloadAssetConditionPdf(params: Record<string, string> = {}): Observable<Blob> {
+    return this.openAssetPdf('condition-and-disposals', `activos-mal-estado-${todayLocalISO()}.pdf`, params)
+  }
+
+  /** Ambientes con al menos un activo — alimenta el filtro de la sección. */
+  getAssetLocations(): Observable<string[]> {
+    return this.http.get<string[]>(`${environment.baseUrl}/assets/unique/location`)
+  }
 }

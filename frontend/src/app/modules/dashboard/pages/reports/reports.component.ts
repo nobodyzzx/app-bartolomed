@@ -38,6 +38,16 @@ export class ReportsComponent implements OnInit {
     return this.roleState.hasPermission(Permission.ReportsStock)
   }
 
+  /**
+   * Los informes de activos cuelgan de `/assets` y el backend los cubre con
+   * `AssetsManage` (ADMIN/SUPER_ADMIN), no con los permisos de reportes: gatear
+   * la sección por `ReportsStock` mostraría al farmacéutico cinco botones que
+   * siempre le devolverían 403.
+   */
+  get canViewAssets(): boolean {
+    return this.roleState.hasPermission(Permission.AssetsManage)
+  }
+
   rangeForm: FormGroup = this.fb.group({ startDate: [null], endDate: [null] })
 
   loadingStats = false
@@ -101,6 +111,13 @@ export class ReportsComponent implements OnInit {
       endDate: now,
     })
     this.loadStats()
+
+    if (this.canViewAssets) {
+      this.reportsService.getAssetLocations().subscribe({
+        next: locations => (this.assetLocations = [...locations].sort((a, b) => a.localeCompare(b, 'es'))),
+        error: () => (this.assetLocations = []),
+      })
+    }
   }
 
   loadStats(): void {
@@ -221,6 +238,25 @@ export class ReportsComponent implements OnInit {
   // ── C6: Comparativo mensual ───────────────────────────────────────────────
   downloadMonthlySalesComparisonPdf()   { this.download('monthlyPdf', () => this.reportsService.downloadMonthlySalesComparisonPdf(this.buildParams())) }
   downloadMonthlySalesComparisonExcel() { this.download('monthlyXls', () => this.reportsService.downloadMonthlySalesComparisonExcel(this.buildParams())) }
+
+  // ── Activos fijos ─────────────────────────────────────────────────────────
+  // Sin rango de fechas: el inventario se cargó sin fecha de compra, así que
+  // filtrar por período dejaría los cinco informes en cero. El filtro que sí
+  // sirve acá es el ambiente.
+  assetLocations: string[] = []
+  assetLocation = ''
+
+  private assetParams(): Record<string, string> {
+    return this.assetLocation ? { location: this.assetLocation } : {}
+  }
+
+  downloadAssetInventory()    { this.download('assetInv',   () => this.reportsService.downloadAssetInventoryPdf(this.assetParams())) }
+  downloadAssetHandoverAct()  { this.download('assetActa',  () => this.reportsService.downloadAssetHandoverActPdf(this.assetParams())) }
+  downloadAssetCountSheet()   { this.download('assetCount', () => this.reportsService.downloadAssetCountSheetPdf(this.assetParams())) }
+  // Resumen y bajas son de toda la clínica: partirlos por ambiente los vacía de
+  // sentido (el resumen justamente compara ambientes entre sí).
+  downloadAssetSummary()      { this.download('assetSum',   () => this.reportsService.downloadAssetSummaryPdf()) }
+  downloadAssetCondition()    { this.download('assetCond',  () => this.reportsService.downloadAssetConditionPdf()) }
 
   goBack(): void { this.router.navigateByUrl('/dashboard/home') }
 

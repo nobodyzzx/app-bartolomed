@@ -636,5 +636,73 @@
     </div>
     }
 
+    <!-- ── SECCIÓN ACTIVOS FIJOS ── -->
+    <!-- No usa el rango de fechas de arriba: el inventario está cargado sin
+         fecha de compra, así que filtrar por período dejaría los cinco informes
+         en cero. El filtro con sentido acá es el ambiente. -->
+    @if (canViewAssets) {
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+      <div class="flex items-center gap-4 px-6 py-4 bg-amber-50 border-b border-amber-100">
+        <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">warehouse</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Activos Fijos</h3>
+          <p class="text-sm text-slate-500 m-0">Inventario por ambiente, actas de entrega y control de estado</p>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="flex flex-wrap items-end gap-4 mb-5">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full sm:w-72">
+            <mat-label>Ambiente</mat-label>
+            <mat-select [(ngModel)]="assetLocation" [ngModelOptions]="{standalone: true}">
+              <mat-option value="">Todos los ambientes</mat-option>
+              @for (loc of assetLocations; track loc) {
+              <mat-option [value]="loc">{{ loc }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <p class="text-sm text-slate-500 m-0 pb-2">
+            Aplica al inventario, al acta y a la hoja de conteo. El resumen y el control de estado
+            siempre salen de toda la clínica.
+          </p>
+        </div>
+
+        <p class="text-xs text-slate-400 font-medium mb-2">Para recorrer y firmar</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadAssetInventory()" [disabled]="downloading['assetInv']">
+            <span class="material-symbols-outlined text-amber-700">{{downloading['assetInv'] ? 'hourglass_top' : 'format_list_bulleted'}}</span>
+            Inventario por Ambiente
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadAssetHandoverAct()" [disabled]="downloading['assetActa']">
+            <span class="material-symbols-outlined text-amber-700">{{downloading['assetActa'] ? 'hourglass_top' : 'assignment_turned_in'}}</span>
+            Acta de Entrega
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadAssetCountSheet()" [disabled]="downloading['assetCount']">
+            <span class="material-symbols-outlined text-amber-700">{{downloading['assetCount'] ? 'hourglass_top' : 'checklist_rtl'}}</span>
+            Hoja de Conteo
+          </button>
+        </div>
+
+        <p class="text-xs text-slate-400 font-medium mb-2">Para revisar</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadAssetSummary()" [disabled]="downloading['assetSum']">
+            <span class="material-symbols-outlined text-amber-700">{{downloading['assetSum'] ? 'hourglass_top' : 'summarize'}}</span>
+            Resumen (1 hoja)
+          </button>
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadAssetCondition()" [disabled]="downloading['assetCond']">
+            <span class="material-symbols-outlined text-amber-700">{{downloading['assetCond'] ? 'hourglass_top' : 'build'}}</span>
+            Mal Estado y Bajas
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+
   </div>
 </div>

@@ -13,15 +13,12 @@ export interface PaginatedResult<T> {
   limit: number;
 }
 import { CreateAssetMaintenanceDto, UpdateAssetMaintenanceDto } from './dto/asset-maintenance.dto';
-import { GenerateReportDto } from './dto/asset-report.dto';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { FilterAssetsDto } from './dto/filter-assets.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
 import { AssetMaintenance, MaintenanceStatus } from './entities/asset-maintenance.entity';
-import { AssetReport, ReportStatus, ReportType } from './entities/asset-report.entity';
 import { AssetTransferItem, AssetTransferStatus } from './entities/asset-transfer.entity';
 import { Asset, AssetStatus } from './entities/asset.entity';
-import { AssetReportExportService, ExportedAssetReport } from './services/asset-report-export.service';
 
 @Injectable()
 export class AssetsService {
@@ -32,11 +29,8 @@ export class AssetsService {
     private readonly assetRepository: Repository<Asset>,
     @InjectRepository(AssetMaintenance)
     private readonly maintenanceRepository: Repository<AssetMaintenance>,
-    @InjectRepository(AssetReport)
-    private readonly reportRepository: Repository<AssetReport>,
     @InjectRepository(AssetTransferItem)
     private readonly transferItemRepository: Repository<AssetTransferItem>,
-    private readonly reportExportService: AssetReportExportService,
   ) {}
 
   private requireClinicId(clinicId?: string): string {
@@ -507,195 +501,6 @@ export class AssetsService {
       completed: toInt(row?.completed),
       inProgress: toInt(row?.inProgress),
       cancelled: toInt(row?.cancelled),
-    };
-  }
-
-  // ==================== REPORTS METHODS ====================
-  async findAllReports(filters?: any, clinicId?: string): Promise<AssetReport[]> {
-    const scopedClinicId = this.requireClinicId(clinicId);
-    const qb = this.reportRepository
-      .createQueryBuilder('report')
-      .leftJoinAndSelect('report.generatedBy', 'generatedBy')
-      .leftJoinAndSelect('report.clinic', 'clinic')
-      .where('clinic.id = :scopedClinicId', { scopedClinicId })
-      .orderBy('report.createdAt', 'DESC');
-
-    if (filters?.status) {
-      qb.andWhere('report.status = :status', { status: filters.status });
-    }
-
-    if (filters?.type) {
-      qb.andWhere('report.type = :type', { type: filters.type });
-    }
-
-    return qb.getMany();
-  }
-
-  async findOneReport(id: string, clinicId?: string): Promise<AssetReport> {
-    const scopedClinicId = this.requireClinicId(clinicId);
-    const report = await this.reportRepository.findOne({
-      where: { id, clinicId: scopedClinicId },
-      relations: ['generatedBy', 'clinic'],
-    });
-
-    if (!report) {
-      throw new NotFoundException(`Report with ID ${id} not found`);
-    }
-
-    return report;
-  }
-
-  async generateReport(data: GenerateReportDto, userId: string, clinicId?: string): Promise<AssetReport> {
-    const scopedClinicId = this.requireClinicId(clinicId);
-    const report = this.reportRepository.create({
-      ...data,
-      status: ReportStatus.PENDING,
-      generatedById: userId,
-      clinicId: scopedClinicId,
-    });
-
-    const saved = await this.reportRepository.save(report);
-    const reportEntity = Array.isArray(saved) ? saved[0] : saved;
-
-    // Generación síncrona: los reportes de este módulo son agregaciones sobre
-    // los propios activos de la clínica, no un job pesado que justifique cola
-    // async. Antes markAsCompleted() nunca se invocaba y todo reporte quedaba
-    // PENDING para siempre.
-    try {
-      const statusFilter = (reportEntity.filters as { status?: AssetStatus } | null)?.status;
-      const rows = await this.buildReportData(
-        reportEntity.type,
-        scopedClinicId,
-        reportEntity.dateFrom,
-        reportEntity.dateTo,
-        statusFilter,
-      );
-      reportEntity.data = rows;
-      const fileName = `${reportEntity.title.replace(/\s+/g, '_')}-${reportEntity.id.slice(0, 8)}`;
-      reportEntity.markAsCompleted(fileName, 0, rows.length);
-      reportEntity.fileName = fileName;
-    } catch (error) {
-      reportEntity.markAsFailed(error instanceof Error ? error.message : 'Error desconocido al generar el reporte');
-    }
-
-    return await this.reportRepository.save(reportEntity);
-  }
-
-  async downloadReport(id: string, clinicId?: string): Promise<ExportedAssetReport> {
-    const report = await this.findOneReport(id, clinicId);
-    if (!report.canBeDownloaded()) {
-      throw new BadRequestException('El reporte todavía no está listo para descargar');
-    }
-
-    const exported = await this.reportExportService.export(report);
-
-    // `fileSize` se guardaba siempre en 0 porque el archivo no existe hasta
-    // que alguien lo descarga (la generación es on-demand, no hay artefacto en
-    // disco). Se persiste acá el tamaño real del último render para que el
-    // dato deje de ser falso; no afecta la respuesta.
-    if (report.fileSize !== exported.content.length) {
-      await this.reportRepository.update(report.id, { fileSize: exported.content.length });
-    }
-
-    return exported;
-  }
-
-  private async buildReportData(
-    type: AssetReport['type'],
-    clinicId: string,
-    dateFrom?: Date,
-    dateTo?: Date,
-    statusFilter?: AssetStatus,
-  ): Promise<Record<string, any>[]> {
-    const base = this.assetRepository
-      .createQueryBuilder('asset')
-      .leftJoin('asset.clinic', 'clinic')
-      .where('asset.isActive = :isActive', { isActive: true })
-      .andWhere('clinic.id = :clinicId', { clinicId });
-
-    if (dateFrom) base.andWhere('asset.purchaseDate >= :dateFrom', { dateFrom });
-    if (dateTo) base.andWhere('asset.purchaseDate <= :dateTo', { dateTo });
-    // No aplica al tipo MAINTENANCE: esa rama consulta maintenanceRepository,
-    // no `base` (los registros de mantenimiento no tienen su propio "status" de activo).
-    if (statusFilter) base.andWhere('asset.status = :statusFilter', { statusFilter });
-
-    switch (type) {
-      case ReportType.LOCATION:
-        return base
-          .select(['asset.assetTag AS "assetTag"', 'asset.name AS "name"', 'asset.location AS "location"', 'asset.room AS "room"', 'asset.status AS "status"'])
-          .orderBy('asset.location', 'ASC')
-          .getRawMany();
-      case ReportType.STATUS:
-        return base
-          .select(['asset.assetTag AS "assetTag"', 'asset.name AS "name"', 'asset.status AS "status"', 'asset.condition AS "condition"'])
-          .orderBy('asset.status', 'ASC')
-          .getRawMany();
-      case ReportType.MAINTENANCE:
-        return this.maintenanceRepository
-          .createQueryBuilder('maintenance')
-          .leftJoin('maintenance.asset', 'asset')
-          .leftJoin('asset.clinic', 'clinic')
-          .where('clinic.id = :clinicId', { clinicId })
-          .select([
-            'asset.assetTag AS "assetTag"',
-            'asset.name AS "assetName"',
-            'maintenance.type AS "type"',
-            'maintenance.status AS "status"',
-            'maintenance.scheduledDate AS "scheduledDate"',
-            'maintenance.actualCost AS "actualCost"',
-          ])
-          .orderBy('maintenance.scheduledDate', 'DESC')
-          .getRawMany();
-      case ReportType.DEPRECIATION:
-        return base
-          .select([
-            'asset.assetTag AS "assetTag"',
-            'asset.name AS "name"',
-            'asset.purchasePrice AS "purchasePrice"',
-            'asset.currentValue AS "currentValue"',
-            'asset.accumulatedDepreciation AS "accumulatedDepreciation"',
-          ])
-          .orderBy('asset.accumulatedDepreciation', 'DESC')
-          .getRawMany();
-      case ReportType.OBSOLETE:
-        return base
-          .andWhere('asset.condition IN (:...poor)', { poor: ['poor', 'critical'] })
-          .select(['asset.assetTag AS "assetTag"', 'asset.name AS "name"', 'asset.condition AS "condition"', 'asset.purchaseDate AS "purchaseDate"'])
-          .orderBy('asset.purchaseDate', 'ASC')
-          .getRawMany();
-      case ReportType.FINANCIAL:
-        return base
-          .select([
-            'asset.assetTag AS "assetTag"',
-            'asset.name AS "name"',
-            'asset.purchasePrice AS "purchasePrice"',
-            'asset.currentValue AS "currentValue"',
-            'asset.totalMaintenanceCost AS "totalMaintenanceCost"',
-          ])
-          .orderBy('asset.purchasePrice', 'DESC')
-          .getRawMany();
-      default:
-        return base.select(['asset.assetTag AS "assetTag"', 'asset.name AS "name"']).getRawMany();
-    }
-  }
-
-  async deleteReport(id: string, clinicId?: string): Promise<void> {
-    const report = await this.findOneReport(id, clinicId);
-    const result = await this.reportRepository.delete(report.id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Report with ID ${id} not found`);
-    }
-  }
-
-  async getReportsStats(clinicId?: string): Promise<any> {
-    const reports = await this.findAllReports(undefined, clinicId);
-    const total = reports.length;
-
-    return {
-      total,
-      pending: reports.filter(r => r.status === ReportStatus.PENDING).length,
-      completed: reports.filter(r => r.status === ReportStatus.COMPLETED).length,
-      failed: reports.filter(r => r.status === ReportStatus.FAILED).length,
     };
   }
 

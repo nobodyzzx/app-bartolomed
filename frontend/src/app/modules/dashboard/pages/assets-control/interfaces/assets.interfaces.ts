@@ -77,25 +77,6 @@ export interface AssetMaintenance {
   updatedAt?: Date
 }
 
-export interface AssetReport {
-  id: string
-  title: string
-  type: ReportType
-  description?: string
-  date: Date
-  dateFrom?: Date
-  dateTo?: Date
-  generatedBy?: { id: string; personalInfo?: { firstName: string; lastName: string } }
-  parameters?: any
-  filters?: { status?: AssetStatus }
-  status: ReportStatus
-  format?: ReportFormat
-  filePath?: string
-  fileName?: string
-  errorMessage?: string
-  createdAt?: Date
-}
-
 // Enums
 // Valores en inglés/minúscula para que coincidan EXACTAMENTE con
 // backend/src/assets/entities/asset.entity.ts (AssetStatus/AssetCondition) —
@@ -150,47 +131,6 @@ export enum MaintenanceStatus {
   COMPLETED = 'Completado',
   CANCELLED = 'Cancelado',
   DELAYED = 'Retrasado',
-}
-
-export enum ReportType {
-  LOCATION = 'Por Ubicación',
-  STATUS = 'Por Estado',
-  MAINTENANCE = 'Mantenimiento',
-  DEPRECIATION = 'Depreciación',
-  OBSOLETE = 'Obsoletos',
-  FINANCIAL = 'Financiero',
-}
-
-export enum ReportStatus {
-  PENDING = 'Pendiente',
-  GENERATING = 'Generando',
-  COMPLETED = 'Completado',
-  FAILED = 'Fallido',
-}
-
-// Valores en mayúsculas para coincidir con backend/src/assets/entities/asset-report.entity.ts
-// (ReportFormat) — el reporte se guarda con @IsEnum(ReportFormat), 'pdf' en minúscula
-// era rechazado con 400.
-export enum ReportFormat {
-  PDF = 'PDF',
-  EXCEL = 'EXCEL',
-  CSV = 'CSV',
-  JSON = 'JSON',
-}
-
-/**
- * Extensión del archivo que sirve `GET /assets/reports/:id/download` según el
- * formato elegido al generar. Antes el backend servía CSV siempre y ambas
- * pantallas hardcodeaban `.csv`.
- */
-export function reportFileExtension(format: ReportFormat | undefined): string {
-  const extensions: Record<ReportFormat, string> = {
-    [ReportFormat.PDF]: 'pdf',
-    [ReportFormat.EXCEL]: 'xlsx',
-    [ReportFormat.CSV]: 'csv',
-    [ReportFormat.JSON]: 'json',
-  }
-  return (format && extensions[format]) || 'csv'
 }
 
 // DTOs y Filtros
@@ -250,22 +190,6 @@ export interface UpdateMaintenanceDto {
   notes?: string
   priority?: number
   nextMaintenanceDate?: string
-}
-
-// Alineado 1:1 con backend/src/assets/dto/asset-report.dto.ts — bug real: antes
-// dateFrom/dateTo iban anidados dentro de `filters` (que el backend nunca lee para
-// eso, son campos propios del DTO) y `date` (NOT NULL sin default) faltaba por
-// completo, así que el rango de fechas del formulario no hacía nada y el 500 de
-// Postgres podía volver a aparecer si el backend dejaba de tolerar el campo ausente.
-export interface GenerateReportDto {
-  title: string
-  type: ReportType
-  description?: string
-  format: ReportFormat
-  date: string
-  dateFrom?: string
-  dateTo?: string
-  filters?: { status?: AssetStatus }
 }
 
 // ─── Traslados de activos entre clínicas ──────────────────────────────────────

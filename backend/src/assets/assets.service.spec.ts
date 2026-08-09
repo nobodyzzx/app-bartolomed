@@ -4,9 +4,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AssetsService } from './assets.service';
 import { Asset, AssetStatus, AssetType, AssetCondition, DepreciationMethod } from './entities/asset.entity';
 import { AssetMaintenance, MaintenanceStatus, MaintenanceType } from './entities/asset-maintenance.entity';
-import { AssetReport, ReportFormat, ReportStatus, ReportType } from './entities/asset-report.entity';
 import { AssetTransferItem } from './entities/asset-transfer.entity';
-import { AssetReportExportService } from './services/asset-report-export.service';
 import {
   createMockRepository,
   createMockQueryBuilder,
@@ -64,30 +62,13 @@ const makeMaintenance = (overrides: Partial<AssetMaintenance> = {}): AssetMainte
     ...overrides,
   } as any);
 
-const makeReport = (overrides: Partial<AssetReport> = {}): AssetReport =>
-  // Instancia real (no un objeto plano) para que markAsCompleted()/markAsFailed()/
-  // canBeDownloaded() — métodos de la entidad que generateReport()/downloadReport()
-  // invocan de verdad — existan en runtime durante los tests.
-  Object.assign(new AssetReport(), {
-    id: 'report-1',
-    title: 'Reporte de prueba',
-    status: ReportStatus.PENDING,
-    type: ReportType.STATUS,
-    format: ReportFormat.PDF,
-    clinicId: CLINIC_ID,
-    generatedById: USER_ID,
-    ...overrides,
-  });
-
 // ─── suite ────────────────────────────────────────────────────────────────────
 
 describe('AssetsService', () => {
   let service: AssetsService;
   let assetRepo: MockRepository<Asset>;
   let maintenanceRepo: MockRepository<AssetMaintenance>;
-  let reportRepo: MockRepository<AssetReport>;
   let transferItemRepo: MockRepository<AssetTransferItem>;
-  let reportExport: { export: jest.Mock };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -95,18 +76,14 @@ describe('AssetsService', () => {
         AssetsService,
         { provide: getRepositoryToken(Asset), useValue: createMockRepository() },
         { provide: getRepositoryToken(AssetMaintenance), useValue: createMockRepository() },
-        { provide: getRepositoryToken(AssetReport), useValue: createMockRepository() },
         { provide: getRepositoryToken(AssetTransferItem), useValue: createMockRepository() },
-        { provide: AssetReportExportService, useValue: { export: jest.fn() } },
       ],
     }).compile();
 
     service = module.get<AssetsService>(AssetsService);
     assetRepo = module.get(getRepositoryToken(Asset));
     maintenanceRepo = module.get(getRepositoryToken(AssetMaintenance));
-    reportRepo = module.get(getRepositoryToken(AssetReport));
     transferItemRepo = module.get(getRepositoryToken(AssetTransferItem));
-    reportExport = module.get(AssetReportExportService);
 
     // remove() consulta traslados activos por defecto sin ninguno encontrado;
     // los tests que sí quieren simular un traslado activo lo sobreescriben.
@@ -643,178 +620,6 @@ describe('AssetsService', () => {
   });
 
   // ─── generateReport ───────────────────────────────────────────────────────
-
-  describe('generateReport', () => {
-    const baseDto = () => ({ title: 'Activos por estado', type: ReportType.STATUS, format: ReportFormat.PDF, date: '2026-08-02' });
-
-    it('crea el reporte, genera los datos y lo marca COMPLETED (bug real: antes markAsCompleted() nunca se invocaba y quedaba PENDING para siempre)', async () => {
-      const report = makeReport();
-      reportRepo.create!.mockReturnValue(report);
-      reportRepo.save!.mockImplementation(async (r: any) => r);
-      const qb = createMockQueryBuilder({ getRawMany: jest.fn().mockResolvedValue([{ assetTag: 'A-1' }]) });
-      assetRepo.createQueryBuilder!.mockReturnValue(qb);
-
-      const result = await service.generateReport(baseDto() as any, USER_ID, CLINIC_ID);
-
-      expect(reportRepo.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          status: ReportStatus.PENDING,
-          generatedById: USER_ID,
-          clinicId: CLINIC_ID,
-        }),
-      );
-      expect(result.status).toBe(ReportStatus.COMPLETED);
-      expect(result.data).toEqual([{ assetTag: 'A-1' }]);
-      expect(result.recordCount).toBe(1);
-    });
-
-    it('marca el reporte FAILED si la generación de datos falla, sin lanzar la excepción al caller', async () => {
-      const report = makeReport();
-      reportRepo.create!.mockReturnValue(report);
-      reportRepo.save!.mockImplementation(async (r: any) => r);
-      assetRepo.createQueryBuilder!.mockImplementation(() => {
-        throw new Error('DB caída');
-      });
-
-      const result = await service.generateReport(baseDto() as any, USER_ID, CLINIC_ID);
-
-      expect(result.status).toBe(ReportStatus.FAILED);
-      expect(result.errorMessage).toBe('DB caída');
-    });
-
-    it('lanza BadRequestException si no se proporciona clinicId', async () => {
-      await expect(
-        service.generateReport(baseDto() as any, USER_ID),
-      ).rejects.toThrow(BadRequestException);
-    });
-  });
-
-  describe('downloadReport', () => {
-    it('lanza BadRequestException si el reporte no está COMPLETED', async () => {
-      reportRepo.findOne!.mockResolvedValue(makeReport({ status: ReportStatus.PENDING }));
-
-      await expect(service.downloadReport('report-1', CLINIC_ID)).rejects.toThrow(BadRequestException);
-    });
-
-    it('delega la serialización al formato guardado en el reporte', async () => {
-      const report = makeReport({
-        status: ReportStatus.COMPLETED,
-        filePath: 'x',
-        fileName: 'reporte-activos',
-        format: ReportFormat.PDF,
-        data: [{ assetTag: 'A-1', name: 'Ecógrafo' }],
-      });
-      reportRepo.findOne!.mockResolvedValue(report);
-      const exported = {
-        fileName: 'reporte-activos.pdf',
-        contentType: 'application/pdf',
-        content: Buffer.from('%PDF-1.7'),
-      };
-      reportExport.export.mockResolvedValue(exported);
-
-      const result = await service.downloadReport('report-1', CLINIC_ID);
-
-      // Antes este método servía CSV siempre, ignorando `format` — pedir un
-      // reporte PDF bajaba un .csv.
-      expect(reportExport.export).toHaveBeenCalledWith(report);
-      expect(result).toBe(exported);
-    });
-
-    it('persiste el fileSize real del contenido servido', async () => {
-      reportRepo.findOne!.mockResolvedValue(
-        makeReport({ status: ReportStatus.COMPLETED, filePath: 'x', fileSize: 0, data: [] }),
-      );
-      reportExport.export.mockResolvedValue({
-        fileName: 'r.pdf',
-        contentType: 'application/pdf',
-        content: Buffer.alloc(2048),
-      });
-
-      await service.downloadReport('report-1', CLINIC_ID);
-
-      expect(reportRepo.update).toHaveBeenCalledWith('report-1', { fileSize: 2048 });
-    });
-
-    it('no reescribe el fileSize si no cambió', async () => {
-      reportRepo.findOne!.mockResolvedValue(
-        makeReport({ status: ReportStatus.COMPLETED, filePath: 'x', fileSize: 2048, data: [] }),
-      );
-      reportExport.export.mockResolvedValue({
-        fileName: 'r.pdf',
-        contentType: 'application/pdf',
-        content: Buffer.alloc(2048),
-      });
-
-      await service.downloadReport('report-1', CLINIC_ID);
-
-      expect(reportRepo.update).not.toHaveBeenCalled();
-    });
-  });
-
-  // ─── findOneReport ────────────────────────────────────────────────────────
-
-  describe('findOneReport', () => {
-    it('devuelve el reporte cuando existe', async () => {
-      const report = makeReport();
-      reportRepo.findOne!.mockResolvedValue(report);
-
-      const result = await service.findOneReport('report-1', CLINIC_ID);
-
-      expect(result).toEqual(report);
-    });
-
-    it('lanza NotFoundException si el reporte no existe', async () => {
-      reportRepo.findOne!.mockResolvedValue(null);
-
-      await expect(service.findOneReport('no-existe', CLINIC_ID)).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-  });
-
-  // ─── deleteReport ─────────────────────────────────────────────────────────
-
-  describe('deleteReport', () => {
-    it('elimina el reporte correctamente', async () => {
-      reportRepo.findOne!.mockResolvedValue(makeReport());
-      reportRepo.delete!.mockResolvedValue({ affected: 1 });
-
-      await expect(service.deleteReport('report-1', CLINIC_ID)).resolves.not.toThrow();
-      expect(reportRepo.delete).toHaveBeenCalledWith('report-1');
-    });
-
-    it('lanza NotFoundException si el reporte no existe', async () => {
-      reportRepo.findOne!.mockResolvedValue(null);
-
-      await expect(service.deleteReport('no-existe', CLINIC_ID)).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-  });
-
-  // ─── getReportsStats ──────────────────────────────────────────────────────
-
-  describe('getReportsStats', () => {
-    it('devuelve conteos por estado de reportes', async () => {
-      const reports = [
-        makeReport({ status: ReportStatus.PENDING }),
-        makeReport({ id: 'r2', status: ReportStatus.COMPLETED }),
-        makeReport({ id: 'r3', status: ReportStatus.FAILED }),
-        makeReport({ id: 'r4', status: ReportStatus.PENDING }),
-      ];
-      const qb = createMockQueryBuilder({ getMany: jest.fn().mockResolvedValue(reports) });
-      reportRepo.createQueryBuilder!.mockReturnValue(qb);
-
-      const stats = await service.getReportsStats(CLINIC_ID);
-
-      expect(stats.total).toBe(4);
-      expect(stats.pending).toBe(2);
-      expect(stats.completed).toBe(1);
-      expect(stats.failed).toBe(1);
-    });
-  });
-
-  // ─── generateAssetTag (comportamiento observable via create) ──────────────
 
   describe('generación de assetTag', () => {
     it('el assetTag tiene el formato PREFIX-TIMESTAMP-RANDOM', async () => {

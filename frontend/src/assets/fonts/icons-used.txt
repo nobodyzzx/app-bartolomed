@@ -13,11 +13,11 @@ apartment
 arrow_back
 arrow_forward
 arrow_right
-assessment
 assignment
 assignment_add
 assignment_ind
 assignment_late
+assignment_turned_in
 autorenew
 backup
 badge
@@ -41,6 +41,7 @@ chair
 check
 check_circle
 checklist
+checklist_rtl
 chevron_left
 chevron_right
 clear
@@ -91,11 +92,11 @@ family_restroom
 favorite
 filter_alt
 filter_alt_off
-filter_list
 flag
 flash_on
 folder_open
 folder_shared
+format_list_bulleted
 gavel
 group
 handshake

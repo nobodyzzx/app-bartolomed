@@ -9,10 +9,11 @@ import { ValidRoles } from '../auth/interfaces';
 import { User } from '../users/entities/user.entity';
 import { AssetsService } from './assets.service';
 import { CreateAssetMaintenanceDto, UpdateAssetMaintenanceDto } from './dto/asset-maintenance.dto';
-import { GenerateReportDto } from './dto/asset-report.dto';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { FilterAssetsDto } from './dto/filter-assets.dto';
+import { PrintAssetReportDto, PrintHandoverActDto } from './dto/print-asset-report.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
+import { AssetPrintReportsService } from './services/asset-print-reports.service';
 import { contentDisposition } from '../common/utils/content-disposition.util';
 
 // Sin @Auth() por método: @AuthClinic a nivel de clase ya monta
@@ -24,7 +25,10 @@ import { contentDisposition } from '../common/utils/content-disposition.util';
 @AuthClinic({ roles: [ValidRoles.ADMIN, ValidRoles.SUPER_ADMIN] })
 @RequirePermissions(Permission.AssetsManage)
 export class AssetsController {
-  constructor(private readonly assetsService: AssetsService) {}
+  constructor(
+    private readonly assetsService: AssetsService,
+    private readonly printReports: AssetPrintReportsService,
+  ) {}
 
   @Post()
   create(@Body() createAssetDto: CreateAssetDto, @GetUser() user: User, @Req() req: Request) {
@@ -110,55 +114,52 @@ export class AssetsController {
     return this.assetsService.deleteMaintenance(id, clinicId);
   }
 
-  // ==================== REPORTS ROUTES ====================
-  @Get('reports')
-  // DOCTOR no tiene Permission.AssetsManage — ver nota arriba.
-  findAllReports(@Query() filters?: any, @Req() req?: Request) {
-    const clinicId = req ? resolveClinicId(req) : undefined;
-    return this.assetsService.findAllReports(filters, clinicId);
-  }
-
-  @Get('reports/stats')
-  getReportsStats(@Req() req?: Request) {
-    const clinicId = req ? resolveClinicId(req) : undefined;
-    return this.assetsService.getReportsStats(clinicId);
-  }
-
-  @Post('reports/generate')
-  // DOCTOR no tiene Permission.AssetsManage — ver nota arriba.
-  generateReport(@Body() data: GenerateReportDto, @GetUser() user: User, @Req() req?: Request) {
-    const clinicId = req ? resolveClinicId(req) : undefined;
-    return this.assetsService.generateReport(data, user.id, clinicId);
-  }
+  // ==================== INFORMES PARA IMPRIMIR ====================
 
   /**
-   * El nombre del archivo sale del título que puso el usuario, y en español eso
-   * trae tildes casi siempre. Node rechaza cualquier carácter no ASCII en una
-   * cabecera (`ERR_INVALID_CHAR`), así que un informe llamado "Inventario de
-   * activos — traspaso" hacía fallar la descarga con un 500 después de haberse
-   * generado bien. Se manda un `filename` plano para clientes antiguos y el
-   * nombre real en `filename*`, que es el mecanismo previsto para esto.
+   * Los cinco informes de papel del control de activos, expuestos en la página
+   * unificada de Reportes. Se compilan al vuelo y no se persisten: un activo
+   * corregido no debe dejar un PDF archivado que lo contradiga (mismo criterio
+   * que el informe de resultados de laboratorio).
+   *
+   * Reemplazan al generador de `AssetReport`, que archivaba una copia de los
+   * datos en la fila y ofrecía seis tipos de los que cuatro salían vacíos o en
+   * Bs 0,00 contra el inventario real, cargado sin precios ni fechas de compra.
    */
-  @Get('reports/:reportId/download')
-  async downloadReport(@Param('reportId', ParseUUIDPipe) id: string, @Res() res: Response, @Req() req?: Request) {
-    const clinicId = req ? resolveClinicId(req) : undefined;
-    const { fileName, contentType, content } = await this.assetsService.downloadReport(id, clinicId);
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', contentDisposition(fileName));
-    res.send(content);
+  @Get('reports/print/inventory-by-location')
+  async printInventoryByLocation(@Query() q: PrintAssetReportDto, @Req() req: Request, @Res() res: Response) {
+    const buf = await this.printReports.inventoryByLocation(resolveClinicId(req), q);
+    this.sendPdf(res, 'inventario-activos', buf);
   }
 
-  @Get('reports/:reportId')
-  // DOCTOR no tiene Permission.AssetsManage — ver nota arriba.
-  findOneReport(@Param('reportId', ParseUUIDPipe) id: string, @Req() req?: Request) {
-    const clinicId = req ? resolveClinicId(req) : undefined;
-    return this.assetsService.findOneReport(id, clinicId);
+  @Get('reports/print/handover-act')
+  async printHandoverAct(@Query() q: PrintHandoverActDto, @Req() req: Request, @Res() res: Response) {
+    const buf = await this.printReports.handoverAct(resolveClinicId(req), q);
+    this.sendPdf(res, 'acta-entrega-activos', buf);
   }
 
-  @Delete('reports/:reportId')
-  deleteReport(@Param('reportId', ParseUUIDPipe) id: string, @Req() req?: Request) {
-    const clinicId = req ? resolveClinicId(req) : undefined;
-    return this.assetsService.deleteReport(id, clinicId);
+  @Get('reports/print/count-sheet')
+  async printCountSheet(@Query() q: PrintAssetReportDto, @Req() req: Request, @Res() res: Response) {
+    const buf = await this.printReports.countSheet(resolveClinicId(req), q);
+    this.sendPdf(res, 'hoja-conteo-activos', buf);
+  }
+
+  @Get('reports/print/executive-summary')
+  async printExecutiveSummary(@Query() q: PrintAssetReportDto, @Req() req: Request, @Res() res: Response) {
+    const buf = await this.printReports.executiveSummary(resolveClinicId(req), q);
+    this.sendPdf(res, 'resumen-activos', buf);
+  }
+
+  @Get('reports/print/condition-and-disposals')
+  async printConditionAndDisposals(@Query() q: PrintAssetReportDto, @Req() req: Request, @Res() res: Response) {
+    const buf = await this.printReports.conditionAndDisposals(resolveClinicId(req), q);
+    this.sendPdf(res, 'activos-mal-estado-y-bajas', buf);
+  }
+
+  private sendPdf(res: Response, base: string, buf: Buffer): void {
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', contentDisposition(`${base}-${new Date().toISOString().slice(0, 10)}.pdf`));
+    res.end(buf);
   }
 
   // ==================== ASSET ROUTES (KEEP AT END) ====================

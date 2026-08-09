@@ -13,7 +13,6 @@ import { AppointmentsModule } from './appointments/appointments.module';
 import { Appointment } from './appointments/entities/appointment.entity';
 import { AssetsModule } from './assets/assets.module';
 import { AssetMaintenance } from './assets/entities/asset-maintenance.entity';
-import { AssetReport } from './assets/entities/asset-report.entity';
 import {
   AssetTransfer,
   AssetTransferAuditLog,
@@ -97,7 +96,6 @@ import { UsersModule } from './users/users.module';
         Payment,
         Asset,
         AssetMaintenance,
-        AssetReport,
         AssetTransfer,
         AssetTransferItem,
         AssetTransferAuditLog,

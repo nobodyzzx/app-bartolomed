@@ -1,5 +1,6 @@
 import { AssetsController } from './assets.controller';
 import { AssetsService } from './assets.service';
+import { AssetPrintReportsService } from './services/asset-print-reports.service';
 import { User } from '../users/entities/user.entity';
 
 const makeReq = (overrides: Record<string, any> = {}) =>
@@ -8,6 +9,7 @@ const makeReq = (overrides: Record<string, any> = {}) =>
 describe('AssetsController', () => {
   let controller: AssetsController;
   let service: jest.Mocked<AssetsService>;
+  let printReports: jest.Mocked<AssetPrintReportsService>;
   const user = { id: 'user-1' } as User;
 
   beforeEach(() => {
@@ -23,17 +25,18 @@ describe('AssetsController', () => {
       findOneMaintenance: jest.fn().mockResolvedValue({ id: 'maint-1' }),
       updateMaintenance: jest.fn().mockResolvedValue({ id: 'maint-1' }),
       deleteMaintenance: jest.fn().mockResolvedValue(undefined),
-      findAllReports: jest.fn().mockResolvedValue({ data: [], total: 0 }),
-      getReportsStats: jest.fn().mockResolvedValue({ total: 0 }),
-      generateReport: jest.fn().mockResolvedValue({ id: 'report-1' }),
-      downloadReport: jest.fn().mockResolvedValue({ fileName: 'reporte.csv', contentType: 'text/csv', content: 'a,b\n1,2' }),
-      findOneReport: jest.fn().mockResolvedValue({ id: 'report-1' }),
-      deleteReport: jest.fn().mockResolvedValue(undefined),
       update: jest.fn().mockResolvedValue({ id: 'asset-1' }),
       remove: jest.fn().mockResolvedValue(undefined),
       findOne: jest.fn().mockResolvedValue({ id: 'asset-1' }),
     } as unknown as jest.Mocked<AssetsService>;
-    controller = new AssetsController(service);
+    printReports = {
+      inventoryByLocation: jest.fn().mockResolvedValue(Buffer.from('%PDF-inventario')),
+      handoverAct: jest.fn().mockResolvedValue(Buffer.from('%PDF-acta')),
+      countSheet: jest.fn().mockResolvedValue(Buffer.from('%PDF-conteo')),
+      executiveSummary: jest.fn().mockResolvedValue(Buffer.from('%PDF-resumen')),
+      conditionAndDisposals: jest.fn().mockResolvedValue(Buffer.from('%PDF-bajas')),
+    } as unknown as jest.Mocked<AssetPrintReportsService>;
+    controller = new AssetsController(service, printReports);
   });
 
   it('create delega dto, userId y clinicId', async () => {
@@ -101,65 +104,41 @@ describe('AssetsController', () => {
     expect(service.deleteMaintenance).toHaveBeenCalledWith('maint-1', 'clinic-1');
   });
 
-  it('findAllReports delega filtros y clinicId', async () => {
-    const filters = { type: 'status' };
-    await controller.findAllReports(filters, makeReq());
-    expect(service.findAllReports).toHaveBeenCalledWith(filters, 'clinic-1');
-  });
+  describe('informes para imprimir', () => {
+    const makeRes = () => ({ setHeader: jest.fn(), end: jest.fn() }) as any;
 
-  it('getReportsStats delega clinicId', async () => {
-    await controller.getReportsStats(makeReq());
-    expect(service.getReportsStats).toHaveBeenCalledWith('clinic-1');
-  });
-
-  it('generateReport delega data, userId y clinicId', async () => {
-    const data = { type: 'status' } as any;
-    await controller.generateReport(data, user, makeReq());
-    expect(service.generateReport).toHaveBeenCalledWith(data, 'user-1', 'clinic-1');
-  });
-
-  it('findOneReport delega id y clinicId', async () => {
-    await controller.findOneReport('report-1', makeReq());
-    expect(service.findOneReport).toHaveBeenCalledWith('report-1', 'clinic-1');
-  });
-
-  it('downloadReport arma la respuesta HTTP con Content-Type/Content-Disposition y envía el contenido (endpoint nuevo, antes no existía)', async () => {
-    const res = { setHeader: jest.fn(), send: jest.fn() } as any;
-    await controller.downloadReport('report-1', res, makeReq());
-    expect(service.downloadReport).toHaveBeenCalledWith('report-1', 'clinic-1');
-    expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/csv');
-    // Dos formatos (RFC 6266): `filename` transliterado para clientes antiguos
-    // y `filename*` con el nombre real. Ver el test de acentos de abajo.
-    expect(res.setHeader).toHaveBeenCalledWith(
-      'Content-Disposition',
-      `attachment; filename="reporte.csv"; filename*=UTF-8''reporte.csv`,
-    );
-    expect(res.send).toHaveBeenCalledWith('a,b\n1,2');
-  });
-
-  it('un nombre con acentos no rompe la cabecera (Node rechaza no-ASCII)', async () => {
-    // Bug real: un informe llamado "Inventario de activos — traspaso" hacía
-    // fallar la descarga con 500 (`ERR_INVALID_CHAR`) **después** de haberse
-    // generado bien. En español casi todos los títulos llevan tilde.
-    service.downloadReport.mockResolvedValue({
-      fileName: 'Inventario de activos — traspaso.pdf',
-      contentType: 'application/pdf',
-      content: Buffer.from('x'),
+    it('inventoryByLocation delega clinicId y opciones, y responde un PDF', async () => {
+      const res = makeRes();
+      await controller.printInventoryByLocation({ location: 'SALA ECOGRAFIA' }, makeReq(), res);
+      expect(printReports.inventoryByLocation).toHaveBeenCalledWith('clinic-1', { location: 'SALA ECOGRAFIA' });
+      expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/pdf');
+      expect(res.end).toHaveBeenCalledWith(Buffer.from('%PDF-inventario'));
     });
-    const res = { setHeader: jest.fn(), send: jest.fn() } as any;
 
-    await controller.downloadReport('report-1', res, { headers: {} } as any);
+    it('handoverAct delega los nombres de las firmas', async () => {
+      const q = { deliveredBy: 'Ana Quispe', receivedBy: 'Luis Mamani' };
+      await controller.printHandoverAct(q, makeReq(), makeRes());
+      expect(printReports.handoverAct).toHaveBeenCalledWith('clinic-1', q);
+    });
 
-    const cabecera = res.setHeader.mock.calls.find((c: any[]) => c[0] === 'Content-Disposition')[1];
-    // eslint-disable-next-line no-control-regex
-    expect(cabecera).toMatch(/^[\x00-\x7F]*$/); // solo ASCII: es lo que exige Node
-    expect(cabecera).toContain('filename="Inventario de activos - traspaso.pdf"');
-    expect(cabecera).toContain("filename*=UTF-8''");
-  });
+    it('countSheet, executiveSummary y conditionAndDisposals delegan clinicId', async () => {
+      await controller.printCountSheet({}, makeReq(), makeRes());
+      await controller.printExecutiveSummary({}, makeReq(), makeRes());
+      await controller.printConditionAndDisposals({}, makeReq(), makeRes());
+      expect(printReports.countSheet).toHaveBeenCalledWith('clinic-1', {});
+      expect(printReports.executiveSummary).toHaveBeenCalledWith('clinic-1', {});
+      expect(printReports.conditionAndDisposals).toHaveBeenCalledWith('clinic-1', {});
+    });
 
-  it('deleteReport delega id y clinicId', async () => {
-    await controller.deleteReport('report-1', makeReq());
-    expect(service.deleteReport).toHaveBeenCalledWith('report-1', 'clinic-1');
+    it('el nombre del archivo lleva la fecha y va en los dos formatos de Content-Disposition', async () => {
+      const res = makeRes();
+      await controller.printCountSheet({}, makeReq(), res);
+      const hoy = new Date().toISOString().slice(0, 10);
+      expect(res.setHeader).toHaveBeenCalledWith(
+        'Content-Disposition',
+        `attachment; filename="hoja-conteo-activos-${hoy}.pdf"; filename*=UTF-8''hoja-conteo-activos-${hoy}.pdf`,
+      );
+    });
   });
 
   it('update delega id, dto y clinicId', async () => {

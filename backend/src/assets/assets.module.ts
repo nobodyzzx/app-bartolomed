@@ -7,14 +7,13 @@ import { AssetsController } from './assets.controller';
 import { AssetsService } from './assets.service';
 import { AssetTransfersController } from './controllers/asset-transfers.controller';
 import { AssetMaintenance } from './entities/asset-maintenance.entity';
-import { AssetReport } from './entities/asset-report.entity';
 import {
   AssetTransfer,
   AssetTransferAuditLog,
   AssetTransferItem,
 } from './entities/asset-transfer.entity';
 import { Asset } from './entities/asset.entity';
-import { AssetReportExportService } from './services/asset-report-export.service';
+import { AssetPrintReportsService } from './services/asset-print-reports.service';
 import { AssetTransfersService } from './services/asset-transfers.service';
 
 @Module({
@@ -22,7 +21,6 @@ import { AssetTransfersService } from './services/asset-transfers.service';
     TypeOrmModule.forFeature([
       Asset,
       AssetMaintenance,
-      AssetReport,
       AssetTransfer,
       AssetTransferItem,
       AssetTransferAuditLog,
@@ -32,7 +30,7 @@ import { AssetTransfersService } from './services/asset-transfers.service';
     PdfModule,
   ],
   controllers: [AssetsController, AssetTransfersController],
-  providers: [AssetsService, AssetTransfersService, AssetReportExportService],
+  providers: [AssetsService, AssetTransfersService, AssetPrintReportsService],
   exports: [TypeOrmModule, AssetsService, AssetTransfersService],
 })
 export class AssetsModule {}

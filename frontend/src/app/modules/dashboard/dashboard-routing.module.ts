@@ -281,7 +281,7 @@ const routes: Routes = [
       },
       {
         path: 'asset-reports',
-        redirectTo: 'assets-control/reports',
+        redirectTo: 'reports',
         pathMatch: 'full',
       },
       // Rutas para funcionalidades administrativas

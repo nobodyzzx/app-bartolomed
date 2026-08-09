@@ -2,7 +2,6 @@ import { NgModule } from '@angular/core'
 import { RouterModule, Routes } from '@angular/router'
 import { AssetInventoryControlComponent } from './asset-inventory-control/asset-inventory-control.component'
 import { AssetMaintenanceComponent } from './asset-maintenance/asset-maintenance.component'
-import { AssetReportsComponent } from './asset-reports/asset-reports.component'
 import { AssetTransfersComponent } from './asset-transfers/asset-transfers.component'
 import { AssetsFormComponent } from './assets-form/assets-form.component'
 
@@ -37,9 +36,15 @@ const routes: Routes = [
     path: 'maintenance',
     component: AssetMaintenanceComponent,
   },
+  // Los informes de activos viven en /dashboard/reports, junto al resto de la
+  // clínica. La página propia generaba y archivaba reportes en `asset_reports`
+  // (Depreciación y Financiero incluidos, que imprimían Bs 0,00 en cada fila
+  // porque el inventario se cargó sin precios) — se retiró en favor de las
+  // cinco plantillas de papel que el dato real sí sostiene.
   {
     path: 'reports',
-    component: AssetReportsComponent,
+    redirectTo: '/dashboard/reports',
+    pathMatch: 'full',
   },
 ]
 
