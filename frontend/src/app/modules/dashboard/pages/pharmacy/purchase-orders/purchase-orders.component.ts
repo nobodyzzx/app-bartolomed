@@ -72,7 +72,10 @@ export class PurchaseOrdersComponent implements OnInit {
       pending: all.filter(o => o.status === PurchaseOrderStatus.PENDING).length,
       approved: all.filter(o => o.status === PurchaseOrderStatus.APPROVED).length,
       received: all.filter(o => o.status === PurchaseOrderStatus.RECEIVED).length,
-      totalValue: all.reduce((sum, o) => sum + (o.totalAmount || 0), 0),
+      // Number(): `totalAmount` es `decimal` y viaja como string; sin esto la
+      // suma concatena y el KPI de valor total rompe la pantalla (mismo fallo
+      // que tuvo el inventario de activos).
+      totalValue: all.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0),
     }
   })
 

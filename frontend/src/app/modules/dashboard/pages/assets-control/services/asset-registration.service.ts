@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http'
 import { Injectable } from '@angular/core'
-import { Observable, throwError } from 'rxjs'
-import { catchError, tap } from 'rxjs/operators'
+import { Observable, forkJoin, of, throwError } from 'rxjs'
+import { catchError, map, switchMap, tap } from 'rxjs/operators'
 import { AlertService } from '../../../../../core/services/alert.service'
 import { environment } from '../../../../../environments/environments'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
@@ -58,6 +58,33 @@ export class AssetRegistrationService {
     return this.http
       .get<PaginatedResult<BaseAsset>>(this.apiUrl, { params })
       .pipe(catchError(this.handleHttpError))
+  }
+
+  /**
+   * Trae el inventario **completo**, no la primera página.
+   *
+   * `getAssets()` sin argumentos pide 25 filas, y el listado las metía en un
+   * paginador de cliente: con el inventario cargado, la pantalla mostraba 25, el
+   * buscador buscaba entre esos 25 y los contadores contaban 25. El resto era
+   * inalcanzable.
+   *
+   * Se pide de a 100 —el tope que acepta `FilterAssetsDto`— y se completa según
+   * el `total` que devuelve la primera página.
+   */
+  getAllAssets(filters?: AssetFilters): Observable<BaseAsset[]> {
+    const TAM = 100
+    // Tope de seguridad: si el inventario creciera a decenas de miles, es
+    // preferible mostrar los primeros 5.000 que disparar 200 peticiones.
+    const MAX_PAGINAS = 50
+
+    return this.getAssets(filters, 1, TAM).pipe(
+      switchMap(primera => {
+        const paginas = Math.min(Math.ceil((primera.total ?? 0) / TAM), MAX_PAGINAS)
+        if (paginas <= 1) return of(primera.data)
+        const resto = Array.from({ length: paginas - 1 }, (_, i) => this.getAssets(filters, i + 2, TAM))
+        return forkJoin(resto).pipe(map(rs => [primera.data, ...rs.map(r => r.data)].flat()))
+      }),
+    )
   }
 
   getAssetById(id: string): Observable<BaseAsset> {

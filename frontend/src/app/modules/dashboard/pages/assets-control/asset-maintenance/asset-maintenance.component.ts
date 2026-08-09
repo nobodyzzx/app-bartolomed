@@ -120,7 +120,10 @@ export class AssetMaintenanceComponent implements OnInit {
     ).length
     this.totalCost = this.maintenanceRecords
       .filter(r => r.actualCost !== undefined || r.estimatedCost !== undefined)
-      .reduce((sum, r) => sum + (r.actualCost ?? r.estimatedCost ?? 0), 0)
+      // Number(): `actualCost`/`estimatedCost` son `decimal` y llegan como
+      // string, igual que `currentValue` en el inventario — sumarlos con `+` los
+      // concatena y el pipe de moneda revienta el template entero (NG02100).
+      .reduce((sum, r) => sum + (Number(r.actualCost ?? r.estimatedCost) || 0), 0)
   }
 
   async onScheduleMaintenance(): Promise<void> {

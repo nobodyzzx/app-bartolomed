@@ -106,9 +106,12 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
 
   loadAssets(): void {
     this.isLoading = true
-    this.assetService.getAssets().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    // getAllAssets y no getAssets: este último trae solo la primera página (25),
+    // y toda la pantalla —paginador, buscador y contadores— trabaja en cliente
+    // sobre lo que reciba, así que el resto del inventario quedaba invisible.
+    this.assetService.getAllAssets().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: result => {
-        this.assets = result.data
+        this.assets = result
         this.applyFilters()
         this.isLoading = false
       },
@@ -230,7 +233,19 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
     return this.assets.filter(a => a.status === AssetStatus.RETIRED).length
   }
 
+  /**
+   * `Number(...)` y no `+` a secas: las columnas `decimal` de Postgres viajan
+   * como **string** ("0.00"), aunque la interfaz las declare `number`. Sumarlas
+   * con `+` las concatenaba —"0.00"+"0.00" = "0.000.00"— y con el inventario
+   * cargado el resultado era una cadena de 100 caracteres que hacía reventar al
+   * `DecimalPipe` del KPI con NG02100. Ese error tumbaba el render del template
+   * entero: la tabla se quedaba en esqueletos y los contadores en cero, así que
+   * la pantalla no mostraba nada.
+   *
+   * No saltó antes porque el inventario estaba vacío y `reduce` devolvía el `0`
+   * inicial; apareció con la primera carga real de activos.
+   */
   getTotalValue(): number {
-    return this.assets.reduce((sum, a) => sum + (a.currentValue ?? 0), 0)
+    return this.assets.reduce((sum, a) => sum + (Number(a.currentValue) || 0), 0)
   }
 }
