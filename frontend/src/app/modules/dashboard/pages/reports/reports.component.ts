@@ -196,6 +196,7 @@ export class ReportsComponent implements OnInit {
   downloadPharmacistDayExcel() { this.download('pharmDayXls', () => this.reportsService.downloadPharmacistDayMedicationExcel(this.buildParams())) }
 
   // ── B1: Inventario valorizado ─────────────────────────────────────────────
+  downloadInventoryListPdf()        { this.download('invListPdf', () => this.reportsService.downloadInventoryListPdf(this.buildParams())) }
   downloadValorizedInventoryPdf()   { this.download('invValPdf', () => this.reportsService.downloadValorizedInventoryPdf(this.buildParams())) }
   downloadValorizedInventoryExcel() { this.download('invValXls', () => this.reportsService.downloadValorizedInventoryExcel(this.buildParams())) }
 

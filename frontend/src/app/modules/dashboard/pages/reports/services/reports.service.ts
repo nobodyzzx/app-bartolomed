@@ -199,6 +199,16 @@ export class ReportsService {
     return this.downloadBlob('export/excel/pharmacy-inventory-valorized', `inventario-valorizado-${date}.xlsx`, params)
   }
 
+  /**
+   * Listado compacto para imprimir y recorrer el estante: medicamento,
+   * disponible, precio y estado. En papel oficio y a tres columnas por hoja,
+   * entra en 7 hojas frente a las 27 del valorizado.
+   */
+  downloadInventoryListPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = todayLocalISO()
+    return this.downloadReportPdf('pharmacy-inventory-list', `listado-inventario-${date}.pdf`, params)
+  }
+
   // ─── B2: Inventario por categoría ────────────────────────────────────────
 
   downloadInventoryByCategoryPdf(params: Record<string, string> = {}): Observable<Blob> {

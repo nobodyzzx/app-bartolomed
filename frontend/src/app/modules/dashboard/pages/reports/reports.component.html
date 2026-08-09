@@ -529,10 +529,18 @@
         </div>
       </div>
       <div class="p-6">
-        <p class="text-sm text-slate-500 mb-4">Valorización del stock actual, distribución por categoría y medicamentos sin movimiento.</p>
+        <p class="text-sm text-slate-500 mb-4">Listado para imprimir, valorización del stock, distribución por categoría y medicamentos sin movimiento.</p>
 
         <p class="text-xs text-slate-400 font-medium mb-2">PDFs</p>
         <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
+          <!-- Primero el listado: es el de uso diario, el que se imprime para
+               recorrer el estante. El valorizado es de valoración y ocupa 27
+               hojas. -->
+          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+            (click)="downloadInventoryListPdf()" [disabled]="downloading['invListPdf']">
+            <span class="material-symbols-outlined text-teal-600">{{downloading['invListPdf'] ? 'hourglass_top' : 'checklist'}}</span>
+            Listado para Imprimir
+          </button>
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadValorizedInventoryPdf()" [disabled]="downloading['invValPdf']">
             <span class="material-symbols-outlined text-teal-600">{{downloading['invValPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
