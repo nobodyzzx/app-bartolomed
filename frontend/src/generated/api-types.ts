@@ -1927,6 +1927,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/export/pdf/pharmacy-inventory-list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listado compacto para imprimir y recorrer el estante: medicamento,
+         *     disponible, precio y estado. Reusa los datos del valorizado —son los
+         *     mismos— y solo cambia cómo se presentan: el valorizado ocupa 27 hojas para
+         *     488 ítems y este entra en un tercio, a dos columnas por hoja.
+         */
+        get: operations["ReportsController_exportInventoryListPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/pharmacy/inventory-by-category": {
         parameters: {
             query?: never;
@@ -8672,6 +8694,23 @@ export interface operations {
         };
     };
     ReportsController_exportValorizedInventoryExcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportInventoryListPdf: {
         parameters: {
             query?: never;
             header?: never;

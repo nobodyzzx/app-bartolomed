@@ -599,6 +599,25 @@ export class ReportsController {
     );
   }
 
+  /**
+   * Listado compacto para imprimir y recorrer el estante: medicamento,
+   * disponible, precio y estado. Reusa los datos del valorizado —son los
+   * mismos— y solo cambia cómo se presentan: el valorizado ocupa 27 hojas para
+   * 488 ítems y este entra en un tercio, a dos columnas por hoja.
+   */
+  @Get('export/pdf/pharmacy-inventory-list')
+  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
+  async exportInventoryListPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.advancedReportsService.getValorizedInventory(this.scope(filters, req));
+    const buf = await this.reportsPdfService.generateInventoryListPdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="listado-inventario-${new Date().toISOString().slice(0, 10)}.pdf"`,
+    );
+    res.end(buf);
+  }
+
   // ─── B2: Inventario por categoría ────────────────────────────────────────
 
   @Get('pharmacy/inventory-by-category')

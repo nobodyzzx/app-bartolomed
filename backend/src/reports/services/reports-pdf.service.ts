@@ -1319,6 +1319,84 @@ ${body}
     ], body);
   }
 
+  // ─── B1b: PDF Listado de Inventario (compacto) ───────────────────────────
+
+  /**
+   * Listado de inventario para imprimir y recorrer el estante.
+   *
+   * Existe aparte del valorizado porque son dos documentos distintos: aquel es
+   * de valoración —costo, margen, valor por lote— y ocupaba 27 hojas para 488
+   * ítems, que no se imprimen ni se revisan. Este responde a la única pregunta
+   * que se hace de pie frente a la estantería: **qué hay, cuánto queda, a qué
+   * precio y si se puede vender**.
+   *
+   * Cuatro columnas y **dos columnas de tabla por hoja**: ahí está el ahorro,
+   * no en achicar la letra. El valorizado se queda como está para quien
+   * necesite los números.
+   */
+  async generateInventoryListPdf(data: any): Promise<Buffer> {
+    return this.typstCompiler.compile(this.inventoryListTypst(data));
+  }
+
+  private inventoryListTypst(data: any): string {
+    const rows: any[] = data.rows ?? [];
+    const summary     = data.summary ?? {};
+
+    const statusLabel: Record<string, string> = {
+      ok: 'Normal', critico: 'Crítico', sin_stock: 'Sin stock', por_vencer: 'Por vencer',
+    };
+    const statusColor: Record<string, string> = {
+      ok: 'green', critico: 'red', sin_stock: 'red', por_vencer: 'amber',
+    };
+
+    // Sin precio manda sobre el resto: es lo que impide cobrarlo, y en este
+    // inventario son 86 lotes. Un "Normal" en algo que el punto de venta
+    // rechaza sería justo el dato que hace perder el tiempo frente al estante.
+    const estado = (r: any) =>
+      Number(r.sellingPrice ?? 0) <= 0
+        ? `badge(${typstString('Sin precio')}, color: "amber")`
+        : `badge(${typstString(statusLabel[r.status] ?? r.status)}, color: "${statusColor[r.status] ?? 'green'}")`;
+
+    const tableRows = rows.map((r: any) => [
+      typstString(r.medicationName ?? '-'),
+      typstString(this.fmtNum(r.availableQuantity)),
+      typstString(this.fmtBs(r.sellingPrice)),
+      estado(r),
+    ]);
+
+    const sinPrecio = rows.filter((r: any) => Number(r.sellingPrice ?? 0) <= 0).length;
+
+    const body = `
+  #kpiGrid((
+    kpiCard(${typstString('Ítems')}, ${typstString(this.fmtNum(rows.length))}, ${typstString('En el listado')}, color: "blue"),
+    kpiCard(${typstString('Sin stock')}, ${typstString(this.fmtNum(summary.sinStock ?? 0))}, ${typstString('Sin existencias')}, color: "red"),
+    kpiCard(${typstString('Sin precio')}, ${typstString(this.fmtNum(sinPrecio))}, ${typstString('No se pueden vender')}, color: "amber"),
+    kpiCard(${typstString('Valor Venta')}, ${typstString(this.fmtBs(summary.totalSaleValue))}, ${typstString('Precio de venta')}, color: "green"),
+  ))
+
+  #v(10pt)
+  // Dos columnas por hoja: es lo que baja el listado de 27 hojas a un tercio.
+  // El texto a 7.5pt y el interlineado apretado hacen el resto; achicar más
+  // haría ilegible el nombre del medicamento, que es lo que se busca.
+  #columns(2, gutter: 14pt)[
+    #set text(size: 7.5pt)
+    #styledTable(
+      (${['Medicamento', 'Disp.', 'Precio', 'Estado'].map(h => typstString(h)).join(', ')}),
+      (${tableRows.map(r => `(${r.join(', ')})`).join(',\n      ')}),
+      align: (left, right, right, center),
+      widths: (2.4fr, 0.7fr, 0.9fr, 1.1fr),
+    )
+  ]
+  `;
+
+    return this.wrapTypstDoc('Listado de Inventario — Farmacia', 'Listado de Inventario', [
+      ['Generado', this.nowBO()],
+      ['Ítems', this.fmtNum(rows.length)],
+      ['Sin precio', this.fmtNum(sinPrecio)],
+      ['Valor Venta', this.fmtBs(summary.totalSaleValue)],
+    ], body);
+  }
+
   // ─── B2: PDF Inventario por Categoría ────────────────────────────────────
 
   async generateInventoryByCategoryPdf(data: InventoryByCategoryRow[]): Promise<Buffer> {

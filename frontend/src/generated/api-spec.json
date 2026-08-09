@@ -3676,6 +3676,21 @@
         ]
       }
     },
+    "/api/reports/export/pdf/pharmacy-inventory-list": {
+      "get": {
+        "operationId": "ReportsController_exportInventoryListPdf",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Listado compacto para imprimir y recorrer el estante: medicamento,\ndisponible, precio y estado. Reusa los datos del valorizado —son los\nmismos— y solo cambia cómo se presentan: el valorizado ocupa 27 hojas para\n488 ítems y este entra en un tercio, a dos columnas por hoja.",
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
     "/api/reports/pharmacy/inventory-by-category": {
       "get": {
         "operationId": "ReportsController_getInventoryByCategory",
