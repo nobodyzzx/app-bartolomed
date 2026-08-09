@@ -1330,7 +1330,12 @@ ${body}
           type: 'doughnut',
           data: {
             labels: d.map((r: any) => r.category ?? 'Sin categoría'),
-            datasets: [{ data: d.map((r: any) => Number(r.totalCostValue ?? 0)), backgroundColor: this.PALETTE_MIXED, borderWidth: 2 }],
+            // Por valor de **venta** y no de costo: el costo sale de las
+            // órdenes de compra, y mientras el inventario se cargue desde una
+            // planilla sin precio de compra vale 0 en todas las categorías,
+            // así que el gráfico salía vacío — solo la leyenda, sin una sola
+            // porción. El valor de venta siempre tiene dato.
+            datasets: [{ data: d.map((r: any) => Number(r.totalSaleValue ?? 0)), backgroundColor: this.PALETTE_MIXED, borderWidth: 2 }],
           },
           options: { responsive: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } } },
         }, 320, 220)
@@ -1365,7 +1370,7 @@ ${body}
     kpiCard(${typstString('Valor Costo Total')}, ${typstString(this.fmtBs(totalCost))}, ${typstString('Inversión en inventario')}, color: "orange"),
   ), columns: 3)
 
-  #section(${typstString('Distribución por Categoría (valor costo)')})[
+  #section(${typstString('Distribución por Categoría (valor de venta)')})[
     ${chartTypst}
   ]
 
