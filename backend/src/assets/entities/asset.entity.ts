@@ -106,8 +106,16 @@ export class Asset {
   @Column('decimal', { precision: 12, scale: 2 })
   purchasePrice: number;
 
-  @Column('date')
-  purchaseDate: Date;
+  /**
+   * Nulo = fecha de compra sin registrar, que no es lo mismo que comprado hoy.
+   *
+   * Era obligatorio, y eso obligaba a inventarse una fecha para todo activo que
+   * llegara sin ella —el inventario en papel de la clínica no la trae para
+   * ninguno de sus 207 ítems—. Una fecha inventada no es neutral: de ella sale
+   * la antigüedad y la depreciación.
+   */
+  @Column('date', { nullable: true })
+  purchaseDate: Date | null;
 
   @Column('text', { nullable: true })
   vendor: string;
@@ -207,7 +215,12 @@ export class Asset {
   updatedAt: Date;
 
   // Helper methods
-  getAge(): number {
+  /**
+   * Años desde la compra, o `null` si no consta la fecha. Devolver 0 sería
+   * indistinguible de "comprado este año", y `new Date(null)` daría 56 años.
+   */
+  getAge(): number | null {
+    if (!this.purchaseDate) return null;
     const today = new Date();
     const purchaseDate = new Date(this.purchaseDate);
     const diffTime = today.getTime() - purchaseDate.getTime();
@@ -244,6 +257,17 @@ export class Asset {
     const monthsOwned = this.getMonthsOwned();
     const totalMonths = this.usefulLifeYears * 12;
 
+    // Sin fecha de compra o sin vida útil no hay depreciación que calcular. Sin
+    // esta guarda, `new Date(null)` da 1970 —660 meses de antigüedad— y una
+    // vida útil de 0 divide por cero: el activo quedaría depreciado a cero o
+    // con `Infinity` persistido, y en silencio.
+    if (monthsOwned === null || totalMonths <= 0) {
+      this.monthlyDepreciation = 0;
+      this.accumulatedDepreciation = 0;
+      this.currentValue = this.purchasePrice;
+      return;
+    }
+
     if (this.depreciationMethod === DepreciationMethod.STRAIGHT_LINE) {
       const depreciableAmount = this.purchasePrice - this.salvageValue;
       this.monthlyDepreciation = depreciableAmount / totalMonths;
@@ -252,7 +276,9 @@ export class Asset {
     }
   }
 
-  private getMonthsOwned(): number {
+  /** `null` cuando no hay fecha de compra registrada. */
+  private getMonthsOwned(): number | null {
+    if (!this.purchaseDate) return null;
     const today = new Date();
     const purchaseDate = new Date(this.purchaseDate);
     const diffTime = today.getTime() - purchaseDate.getTime();

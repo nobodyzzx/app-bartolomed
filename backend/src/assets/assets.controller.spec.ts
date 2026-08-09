@@ -128,8 +128,33 @@ describe('AssetsController', () => {
     await controller.downloadReport('report-1', res, makeReq());
     expect(service.downloadReport).toHaveBeenCalledWith('report-1', 'clinic-1');
     expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/csv');
-    expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename="reporte.csv"');
+    // Dos formatos (RFC 6266): `filename` transliterado para clientes antiguos
+    // y `filename*` con el nombre real. Ver el test de acentos de abajo.
+    expect(res.setHeader).toHaveBeenCalledWith(
+      'Content-Disposition',
+      `attachment; filename="reporte.csv"; filename*=UTF-8''reporte.csv`,
+    );
     expect(res.send).toHaveBeenCalledWith('a,b\n1,2');
+  });
+
+  it('un nombre con acentos no rompe la cabecera (Node rechaza no-ASCII)', async () => {
+    // Bug real: un informe llamado "Inventario de activos — traspaso" hacía
+    // fallar la descarga con 500 (`ERR_INVALID_CHAR`) **después** de haberse
+    // generado bien. En español casi todos los títulos llevan tilde.
+    service.downloadReport.mockResolvedValue({
+      fileName: 'Inventario de activos — traspaso.pdf',
+      contentType: 'application/pdf',
+      content: Buffer.from('x'),
+    });
+    const res = { setHeader: jest.fn(), send: jest.fn() } as any;
+
+    await controller.downloadReport('report-1', res, { headers: {} } as any);
+
+    const cabecera = res.setHeader.mock.calls.find((c: any[]) => c[0] === 'Content-Disposition')[1];
+    // eslint-disable-next-line no-control-regex
+    expect(cabecera).toMatch(/^[\x00-\x7F]*$/); // solo ASCII: es lo que exige Node
+    expect(cabecera).toContain('filename="Inventario de activos - traspaso.pdf"');
+    expect(cabecera).toContain("filename*=UTF-8''");
   });
 
   it('deleteReport delega id y clinicId', async () => {

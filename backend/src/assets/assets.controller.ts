@@ -13,6 +13,7 @@ import { GenerateReportDto } from './dto/asset-report.dto';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { FilterAssetsDto } from './dto/filter-assets.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
+import { contentDisposition } from '../common/utils/content-disposition.util';
 
 // Sin @Auth() por método: @AuthClinic a nivel de clase ya monta
 // JwtAuthGuard+UserRoleGuard+PermissionsGuard+ClinicScopeGuard con estos
@@ -130,12 +131,20 @@ export class AssetsController {
     return this.assetsService.generateReport(data, user.id, clinicId);
   }
 
+  /**
+   * El nombre del archivo sale del título que puso el usuario, y en español eso
+   * trae tildes casi siempre. Node rechaza cualquier carácter no ASCII en una
+   * cabecera (`ERR_INVALID_CHAR`), así que un informe llamado "Inventario de
+   * activos — traspaso" hacía fallar la descarga con un 500 después de haberse
+   * generado bien. Se manda un `filename` plano para clientes antiguos y el
+   * nombre real en `filename*`, que es el mecanismo previsto para esto.
+   */
   @Get('reports/:reportId/download')
   async downloadReport(@Param('reportId', ParseUUIDPipe) id: string, @Res() res: Response, @Req() req?: Request) {
     const clinicId = req ? resolveClinicId(req) : undefined;
     const { fileName, contentType, content } = await this.assetsService.downloadReport(id, clinicId);
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Disposition', contentDisposition(fileName));
     res.send(content);
   }
 

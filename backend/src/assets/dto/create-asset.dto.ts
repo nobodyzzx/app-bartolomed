@@ -48,8 +48,10 @@ export class CreateAssetDto {
   @Min(0)
   purchasePrice: number;
 
+  /** Opcional: hay activos cuya fecha de compra no consta en ningún papel. */
   @IsDateString()
-  purchaseDate: string;
+  @IsOptional()
+  purchaseDate?: string;
 
   @IsString()
   @IsOptional()
