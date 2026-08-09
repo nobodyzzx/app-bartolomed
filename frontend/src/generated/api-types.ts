@@ -8712,7 +8712,9 @@ export interface operations {
     };
     ReportsController_exportInventoryListPdf: {
         parameters: {
-            query?: never;
+            query?: {
+                papel?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;

@@ -50,6 +50,11 @@
   /// columna —recetas, recibos, consentimientos, informes de laboratorio— se
   /// quedan en vertical, que es como se archivan y se firman.
   landscape: false,
+  /// Tamaño explícito, que gana sobre `paper`. Existe para el oficio boliviano
+  /// (21,6 × 33 cm), que no está entre los tamaños con nombre de Typst y es el
+  /// papel que la clínica tiene en la impresora.
+  width: none,
+  height: none,
   body,
 ) = {
   set document(title: title, author: "Bartolomed")
@@ -60,7 +65,11 @@
   // Medicamentos Sin Movimiento).
   set text(font: "Inter", size: 9.5pt, lang: "es", hyphenate: true)
   set page(
-    paper: paper,
+    ..if width != none and height != none {
+      (width: width, height: height)
+    } else {
+      (paper: paper)
+    },
     flipped: landscape,
     margin: (top: 0pt, bottom: 14mm, x: 0pt),
     footer: context {
@@ -187,7 +196,11 @@
 #let badge(txt, color: "gray") = {
   let estilo = estilos-badge.at(color)
   box(fill: estilo.fondo, radius: 999pt, inset: (x: 8pt, y: 2pt))[
-    #text(size: 7pt, weight: "bold", fill: estilo.texto, tracking: 0.3pt)[#upper(txt)]
+    // `hyphenate: false`: el documento activa el guionado para que los nombres
+    // largos de medicamento quepan en columnas angostas, pero dentro de una
+    // píldora eso parte la etiqueta a la mitad ("AGOTA-DO", "SIN PRE-CIO") y
+    // ensucia toda la columna de estado.
+    #text(size: 7pt, weight: "bold", fill: estilo.texto, tracking: 0.3pt, hyphenate: false)[#upper(txt)]
   ]
 }
 

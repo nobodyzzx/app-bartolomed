@@ -607,9 +607,17 @@ export class ReportsController {
    */
   @Get('export/pdf/pharmacy-inventory-list')
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
-  async exportInventoryListPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+  async exportInventoryListPdf(
+    @Query() filters: ReportFilters,
+    @Query('papel') papel: 'oficio' | 'a4' = 'oficio',
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
     const data = await this.advancedReportsService.getValorizedInventory(this.scope(filters, req));
-    const buf = await this.reportsPdfService.generateInventoryListPdf(data);
+    // Oficio por defecto: es el papel de la impresora de la clínica y permite
+    // tres columnas por hoja (7 hojas en vez de 10). `?papel=a4` da la versión
+    // en A4 apaisado, a dos columnas.
+    const buf = await this.reportsPdfService.generateInventoryListPdf(data, papel === 'a4' ? 'a4' : 'oficio');
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',

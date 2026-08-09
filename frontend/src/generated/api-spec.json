@@ -3679,7 +3679,16 @@
     "/api/reports/export/pdf/pharmacy-inventory-list": {
       "get": {
         "operationId": "ReportsController_exportInventoryListPdf",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "papel",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": ""

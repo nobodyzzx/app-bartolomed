@@ -834,6 +834,16 @@ export class ReportsPdfService {
    * resultados de laboratorio— no pasan por aquí y siguen en vertical, que es
    * como se archivan y se firman.
    */
+  /**
+   * Variante en papel oficio (21,6 × 33 cm) apaisado, que es el que la clínica
+   * tiene en la impresora. Con esa hoja caben **tres** columnas de tabla en vez
+   * de dos y el listado baja de 10 hojas a 7.
+   */
+  private wrapTypstDocOficio(title: string, badge: string, metaFields: Array<[string, string]>, body: string): string {
+    return this.wrapTypstDoc(title, badge, metaFields, body)
+      .replace('paper: "a4", landscape: true', 'width: 21.6cm, height: 33cm, landscape: true');
+  }
+
   private wrapTypstDoc(title: string, badge: string, metaFields: Array<[string, string]>, body: string): string {
     // Coma final obligatoria — ver nota en typstRows(): sin ella, un reporte
     // con un solo metaField (ej. dashboardTypst) rompe metaBar() en silencio.
@@ -1334,16 +1344,18 @@ ${body}
    * no en achicar la letra. El valorizado se queda como está para quien
    * necesite los números.
    */
-  async generateInventoryListPdf(data: any): Promise<Buffer> {
-    return this.typstCompiler.compile(this.inventoryListTypst(data));
+  async generateInventoryListPdf(data: any, papel: 'oficio' | 'a4' = 'oficio'): Promise<Buffer> {
+    return this.typstCompiler.compile(this.inventoryListTypst(data, papel));
   }
 
-  private inventoryListTypst(data: any): string {
+  private inventoryListTypst(data: any, papel: 'oficio' | 'a4' = 'oficio'): string {
     const rows: any[] = data.rows ?? [];
     const summary     = data.summary ?? {};
 
+    // Una sola palabra cada estado: con dos, la etiqueta se parte en la mitad
+    // de la píldora ("SIN PRE-CIO", "POR VEN-CER") y ensucia toda la columna.
     const statusLabel: Record<string, string> = {
-      ok: 'Normal', critico: 'Crítico', sin_stock: 'Sin stock', por_vencer: 'Por vencer',
+      ok: 'Normal', critico: 'Crítico', sin_stock: 'Agotado', por_vencer: 'Vencido',
     };
     const statusColor: Record<string, string> = {
       ok: 'green', critico: 'red', sin_stock: 'red', por_vencer: 'amber',
@@ -1354,7 +1366,7 @@ ${body}
     // rechaza sería justo el dato que hace perder el tiempo frente al estante.
     const estado = (r: any) =>
       Number(r.sellingPrice ?? 0) <= 0
-        ? `badge(${typstString('Sin precio')}, color: "amber")`
+        ? `badge(${typstString('S/precio')}, color: "amber")`
         : `badge(${typstString(statusLabel[r.status] ?? r.status)}, color: "${statusColor[r.status] ?? 'green'}")`;
 
     const tableRows = rows.map((r: any) => [
@@ -1378,18 +1390,19 @@ ${body}
   // Dos columnas por hoja: es lo que baja el listado de 27 hojas a un tercio.
   // El texto a 7.5pt y el interlineado apretado hacen el resto; achicar más
   // haría ilegible el nombre del medicamento, que es lo que se busca.
-  #columns(2, gutter: 14pt)[
+  #columns(${papel === 'oficio' ? 3 : 2}, gutter: 12pt)[
     #set text(size: 7.5pt)
     #styledTable(
       (${['Medicamento', 'Disp.', 'Precio', 'Estado'].map(h => typstString(h)).join(', ')}),
       (${tableRows.map(r => `(${r.join(', ')})`).join(',\n      ')}),
       align: (left, right, right, center),
-      widths: (2.4fr, 0.7fr, 0.9fr, 1.1fr),
+      widths: (2.3fr, 0.6fr, 0.85fr, 1.05fr),
     )
   ]
   `;
 
-    return this.wrapTypstDoc('Listado de Inventario — Farmacia', 'Listado de Inventario', [
+    const wrap = papel === 'oficio' ? this.wrapTypstDocOficio.bind(this) : this.wrapTypstDoc.bind(this);
+    return wrap('Listado de Inventario — Farmacia', 'Listado de Inventario', [
       ['Generado', this.nowBO()],
       ['Ítems', this.fmtNum(rows.length)],
       ['Sin precio', this.fmtNum(sinPrecio)],
