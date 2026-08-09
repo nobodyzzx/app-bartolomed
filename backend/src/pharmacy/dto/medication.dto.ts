@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
-import { MedicationCategory, StorageCondition } from '../entities/pharmacy.entity';
+import { MedicationCategory, ProductType, StorageCondition } from '../entities/pharmacy.entity';
 
 export class CreateMedicationDto {
   /**
@@ -27,6 +27,11 @@ export class CreateMedicationDto {
 
   @IsString()
   dosageForm: string;
+
+  /** Medicamento, insumo o cuidado personal. Por defecto, medicamento. */
+  @IsEnum(ProductType)
+  @IsOptional()
+  productType?: ProductType;
 
   @IsEnum(MedicationCategory)
   category: MedicationCategory;

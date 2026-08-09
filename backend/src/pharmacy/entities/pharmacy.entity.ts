@@ -31,6 +31,28 @@ export enum MedicationCategory {
   OTHER = 'other',
 }
 
+/**
+ * Qué clase de producto es, con independencia de su categoría farmacológica.
+ *
+ * Son dos preguntas distintas y por eso son dos campos: `productType` dice si
+ * es un fármaco siquiera, y `category` de qué clase es (analgésico, antibiótico)
+ * — pregunta que solo tiene sentido en los medicamentos. Meter "insumo" dentro
+ * de `category` habría impedido para siempre decir que la Amoxicilina es un
+ * antibiótico, porque sería el mismo campo.
+ *
+ * Alrededor de un 20% del catálogo real de la clínica no es medicamento:
+ * bajalenguas, barbijos, jeringas y gasas por un lado; biberones, cepillos
+ * dentales y protector solar por otro.
+ */
+export enum ProductType {
+  /** Fármaco. Es donde `requiresPrescription` e `isControlledSubstance` significan algo. */
+  MEDICATION = 'medication',
+  /** Material clínico: jeringas, gasas, bajalenguas, barbijos, sondas. */
+  SUPPLY = 'supply',
+  /** Venta de mostrador que no es clínica: biberones, cepillos, protector solar. */
+  PERSONAL_CARE = 'personal_care',
+}
+
 export enum StorageCondition {
   ROOM_TEMPERATURE = 'room_temperature',
   REFRIGERATED = 'refrigerated',
@@ -63,6 +85,18 @@ export class Medication {
   @Column('text')
   dosageForm: string; // tablet, capsule, liquid, injection, etc.
 
+  @Column({
+    type: 'enum',
+    enum: ProductType,
+    default: ProductType.MEDICATION,
+    name: 'product_type',
+  })
+  productType: ProductType;
+
+  /**
+   * Clase farmacológica. Solo significa algo cuando `productType` es
+   * `MEDICATION`; en un barbijo no hay nada que clasificar.
+   */
   @Column({
     type: 'enum',
     enum: MedicationCategory,

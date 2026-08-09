@@ -200,6 +200,7 @@ sensors
 settings
 shopping_cart
 show_chart
+soap
 stethoscope
 storage
 store

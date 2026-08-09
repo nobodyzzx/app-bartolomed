@@ -11513,7 +11513,16 @@
           "dosageForm": {
             "type": "string"
           },
+          "productType": {
+            "enum": [
+              "medication",
+              "supply",
+              "personal_care"
+            ],
+            "type": "string"
+          },
           "category": {
+            "description": "Clase farmacológica. Solo significa algo cuando `productType` es\n`MEDICATION`; en un barbijo no hay nada que clasificar.",
             "enum": [
               "analgesic",
               "antibiotic",
@@ -11606,6 +11615,7 @@
           "brandName",
           "strength",
           "dosageForm",
+          "productType",
           "category",
           "manufacturer",
           "supplier",
@@ -12177,6 +12187,15 @@
           },
           "dosageForm": {
             "type": "string"
+          },
+          "productType": {
+            "type": "string",
+            "description": "Medicamento, insumo o cuidado personal. Por defecto, medicamento.",
+            "enum": [
+              "medication",
+              "supply",
+              "personal_care"
+            ]
           },
           "category": {
             "type": "string",

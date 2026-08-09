@@ -3,7 +3,7 @@ import { Component, DestroyRef, computed, inject, OnInit, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
-import { Medication } from '../interfaces/pharmacy.interfaces'
+import { Medication, ProductType } from '../interfaces/pharmacy.interfaces'
 import { InventoryService } from '../services/inventory.service'
 
 @Component({
@@ -24,7 +24,10 @@ export class MedicationsComponent implements OnInit {
     const term = this.search().toLowerCase().trim()
     const cat = this.categoryFilter()
     return this.medications().filter(m => {
-      if (cat !== 'all' && m.category !== cat) return false
+      // Se filtra por **tipo de producto**, no por categoría farmacológica: los
+      // 468 productos del catálogo real estaban todos en `category = other`, así
+      // que las tarjetas de analgésicos y antibióticos no separaban nada.
+      if (cat !== 'all' && (m.productType ?? ProductType.MEDICATION) !== cat) return false
       if (!term) return true
       return [m.name, m.genericName, m.brandName, m.code, m.manufacturer]
         .filter(Boolean)
@@ -33,7 +36,7 @@ export class MedicationsComponent implements OnInit {
   })
 
   countByCategory = computed(() => (cat: string) =>
-    this.medications().filter(m => m.category === cat).length
+    this.medications().filter(m => (m.productType ?? ProductType.MEDICATION) === cat).length
   )
 
   setCategoryFilter(cat: string): void {

@@ -8,6 +8,8 @@ import { countInvalidFields, scrollToFirstInvalidField } from '../../../../../..
 import {
   CreateMedicationDto,
   MedicationCategory,
+  PRODUCT_TYPE_LABELS,
+  ProductType,
   StorageCondition,
 } from '../../interfaces/pharmacy.interfaces'
 import { InventoryService } from '../../services/inventory.service'
@@ -19,6 +21,9 @@ import { InventoryService } from '../../services/inventory.service'
     standalone: false
 })
 export class MedicationFormComponent implements OnInit {
+  readonly productTypes = Object.entries(PRODUCT_TYPE_LABELS)
+  readonly ProductType = ProductType
+
   private readonly destroyRef = inject(DestroyRef)
 
   medicationForm!: FormGroup
@@ -86,6 +91,7 @@ export class MedicationFormComponent implements OnInit {
       viaAdministracion: [this.administrationRoutes[0], Validators.required],
       laboratorio: [''],
       esMuestraMedica: [false],
+      tipoProducto: [ProductType.MEDICATION, Validators.required],
     })
   }
 
@@ -109,6 +115,7 @@ export class MedicationFormComponent implements OnInit {
           viaAdministracion: medication.dosageInstructions || this.administrationRoutes[0],
           laboratorio: medication.manufacturer || '',
           esMuestraMedica: medication.isMedicalSample ?? false,
+          tipoProducto: medication.productType ?? ProductType.MEDICATION,
         })
         this.loading = false
       },
@@ -143,6 +150,7 @@ export class MedicationFormComponent implements OnInit {
       manufacturer: formValue.laboratorio || undefined,
       dosageInstructions: formValue.viaAdministracion || undefined,
       isMedicalSample: !!formValue.esMuestraMedica,
+      productType: formValue.tipoProducto,
     }
 
     this.loading = true

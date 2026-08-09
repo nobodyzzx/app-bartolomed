@@ -4936,6 +4936,12 @@ export interface components {
             strength: string;
             dosageForm: string;
             /** @enum {string} */
+            productType: "medication" | "supply" | "personal_care";
+            /**
+             * @description Clase farmacológica. Solo significa algo cuando `productType` es
+             *     `MEDICATION`; en un barbijo no hay nada que clasificar.
+             * @enum {string}
+             */
             category: "analgesic" | "antibiotic" | "antiviral" | "antihistamine" | "cardiovascular" | "gastrointestinal" | "respiratory" | "neurological" | "dermatological" | "endocrine" | "vaccine" | "supplement" | "controlled" | "other";
             manufacturer: string;
             supplier: string;
@@ -5153,6 +5159,11 @@ export interface components {
             brandName?: string;
             strength: string;
             dosageForm: string;
+            /**
+             * @description Medicamento, insumo o cuidado personal. Por defecto, medicamento.
+             * @enum {string}
+             */
+            productType?: "medication" | "supply" | "personal_care";
             /** @enum {string} */
             category: "analgesic" | "antibiotic" | "antiviral" | "antihistamine" | "cardiovascular" | "gastrointestinal" | "respiratory" | "neurological" | "dermatological" | "endocrine" | "vaccine" | "supplement" | "controlled" | "other";
             manufacturer?: string;

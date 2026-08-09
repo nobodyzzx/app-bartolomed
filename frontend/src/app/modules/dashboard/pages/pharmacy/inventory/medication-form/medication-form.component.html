@@ -74,6 +74,20 @@
             </mat-form-field>
           </div>
 
+          <!-- Qué clase de producto es, aparte de su categoría farmacológica.
+               El catálogo de farmacia tiene bajalenguas y biberones, no solo
+               fármacos, y `requiereReceta` solo significa algo en un fármaco. -->
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Tipo de producto</mat-label>
+            <mat-icon matPrefix class="text-blue-400">inventory_2</mat-icon>
+            <mat-select formControlName="tipoProducto">
+              @for (t of productTypes; track t[0]) {
+                <mat-option [value]="t[0]">{{ t[1] }}</mat-option>
+              }
+            </mat-select>
+            <mat-hint>Insumo: gasas, jeringas, barbijos. Cuidado personal: biberones, jabones</mat-hint>
+          </mat-form-field>
+
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Laboratorio</mat-label>
             <mat-icon matPrefix class="text-blue-400">business</mat-icon>

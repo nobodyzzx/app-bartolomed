@@ -23,42 +23,45 @@
       <app-stat-card
         label="Total"
         [value]="medications().length"
-        sublabel="Medicamentos registrados"
+        sublabel="Productos registrados"
         icon="medication"
         color="blue"
         [clickable]="true"
         [active]="categoryFilter() === 'all'"
         (cardClick)="setCategoryFilter('all')"
         />
+      <!-- Por tipo de producto y no por categoría farmacológica: los 468
+           productos del catálogo real están todos en `category = other`, así
+           que las tarjetas de analgésicos y antibióticos contaban cero. -->
       <app-stat-card
-        label="Analgésicos"
-        [value]="countByCategory()('analgesic')"
-        sublabel="Para el dolor"
-        icon="healing"
-        color="red"
+        label="Medicamentos"
+        [value]="countByCategory()('medication')"
+        sublabel="Fármacos"
+        icon="pill"
+        color="blue"
         [clickable]="true"
-        [active]="categoryFilter() === 'analgesic'"
-        (cardClick)="setCategoryFilter('analgesic')"
+        [active]="categoryFilter() === 'medication'"
+        (cardClick)="setCategoryFilter('medication')"
         />
       <app-stat-card
-        label="Antibióticos"
-        [value]="countByCategory()('antibiotic')"
-        sublabel="Antimicrobianos"
-        icon="biotech"
+        label="Insumos"
+        [value]="countByCategory()('supply')"
+        sublabel="Gasas, jeringas, barbijos"
+        icon="medical_services"
         color="amber"
         [clickable]="true"
-        [active]="categoryFilter() === 'antibiotic'"
-        (cardClick)="setCategoryFilter('antibiotic')"
+        [active]="categoryFilter() === 'supply'"
+        (cardClick)="setCategoryFilter('supply')"
         />
       <app-stat-card
-        label="Otros"
-        [value]="countByCategory()('other')"
-        sublabel="Otras categorías"
-        icon="category"
+        label="Cuidado personal"
+        [value]="countByCategory()('personal_care')"
+        sublabel="Biberones, jabones, pañales"
+        icon="soap"
         color="slate"
         [clickable]="true"
-        [active]="categoryFilter() === 'other'"
-        (cardClick)="setCategoryFilter('other')"
+        [active]="categoryFilter() === 'personal_care'"
+        (cardClick)="setCategoryFilter('personal_care')"
         />
     </div>
 

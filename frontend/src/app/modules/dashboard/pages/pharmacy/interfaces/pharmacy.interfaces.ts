@@ -84,6 +84,8 @@ export interface Medication {
   sideEffects?: string
   dosageInstructions?: string
   storageCondition: StorageCondition
+  /** Medicamento, insumo o cuidado personal. */
+  productType?: ProductType
   requiresPrescription?: boolean
   isControlledSubstance?: boolean
   controlledSubstanceSchedule?: string
@@ -92,6 +94,23 @@ export interface Medication {
   isActive?: boolean
   createdAt?: string
   updatedAt?: string
+}
+
+/**
+ * Qué clase de producto es, aparte de su categoría farmacológica. Un 20% del
+ * catálogo no son medicamentos: bajalenguas y barbijos por un lado, biberones
+ * y cepillos por otro.
+ */
+export enum ProductType {
+  MEDICATION = 'medication',
+  SUPPLY = 'supply',
+  PERSONAL_CARE = 'personal_care',
+}
+
+export const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
+  [ProductType.MEDICATION]: 'Medicamento',
+  [ProductType.SUPPLY]: 'Insumo',
+  [ProductType.PERSONAL_CARE]: 'Cuidado personal',
 }
 
 export interface CreateMedicationDto {
@@ -114,6 +133,7 @@ export interface CreateMedicationDto {
   requiresPrescription?: boolean
   isControlledSubstance?: boolean
   controlledSubstanceSchedule?: string
+  productType?: ProductType
   isMedicalSample?: boolean
 }
 
