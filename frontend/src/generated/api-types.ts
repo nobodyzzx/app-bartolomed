@@ -2779,7 +2779,7 @@ export interface paths {
         get: operations["InventoryController_findStockById"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["InventoryController_deleteStock"];
         options?: never;
         head?: never;
         patch: operations["InventoryController_updateStock"];
@@ -3571,6 +3571,14 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * El nombre del archivo sale del título que puso el usuario, y en español eso
+         *     trae tildes casi siempre. Node rechaza cualquier carácter no ASCII en una
+         *     cabecera (`ERR_INVALID_CHAR`), así que un informe llamado "Inventario de
+         *     activos — traspaso" hacía fallar la descarga con un 500 después de haberse
+         *     generado bien. Se manda un `filename` plano para clientes antiguos y el
+         *     nombre real en `filename*`, que es el mecanismo previsto para esto.
+         */
         get: operations["AssetsController_downloadReport"];
         put?: never;
         post?: never;
@@ -5556,7 +5564,8 @@ export interface components {
             /** @enum {string} */
             condition?: "excellent" | "good" | "fair" | "poor" | "critical";
             purchasePrice: number;
-            purchaseDate: string;
+            /** @description Opcional: hay activos cuya fecha de compra no consta en ningún papel. */
+            purchaseDate?: string;
             vendor?: string;
             invoiceNumber?: string;
             warrantyInfo?: string;
@@ -5594,8 +5603,16 @@ export interface components {
             /** @enum {string} */
             condition: "excellent" | "good" | "fair" | "poor" | "critical";
             purchasePrice: number;
-            /** Format: date-time */
-            purchaseDate: string;
+            /**
+             * Format: date-time
+             * @description Nulo = fecha de compra sin registrar, que no es lo mismo que comprado hoy.
+             *
+             *     Era obligatorio, y eso obligaba a inventarse una fecha para todo activo que
+             *     llegara sin ella —el inventario en papel de la clínica no la trae para
+             *     ninguno de sus 207 ítems—. Una fecha inventada no es neutral: de ella sale
+             *     la antigüedad y la depreciación.
+             */
+            purchaseDate: string | null;
             vendor: string;
             invoiceNumber: string;
             warrantyInfo: string;
@@ -10090,6 +10107,25 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MedicationStock"];
                 };
+            };
+        };
+    };
+    InventoryController_deleteStock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

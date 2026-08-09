@@ -251,6 +251,32 @@ export class InventoryService {
     return await this.stockRepository.save(stock);
   }
 
+  /**
+   * Da de baja un lote. Baja lógica, como en el catálogo: el lote está
+   * referenciado por sus movimientos y por las ventas que salieron de él, así
+   * que borrarlo de verdad dejaría ese historial apuntando a la nada.
+   *
+   * Si quedaban existencias se anota un ajuste con lo que había, para que el
+   * inventario valorizado de ayer siga cuadrando con el de hoy. Un lote con
+   * unidades reservadas no se da de baja: hay una venta a medio hacer.
+   */
+  async deleteStock(id: string, clinicId?: string): Promise<void> {
+    const stock = await this.findStockById(id, clinicId);
+
+    if (stock.reservedQuantity > 0) {
+      throw new BadRequestException(
+        'No se puede dar de baja un lote con unidades reservadas',
+      );
+    }
+
+    if (stock.quantity > 0) {
+      await this.recordMovement(stock, MovementType.ADJUSTMENT, stock.quantity, 'stock_delete');
+    }
+
+    stock.isActive = false;
+    await this.stockRepository.save(stock);
+  }
+
   async getLowStockItems(clinicId: string): Promise<MedicationStock[]> {
     if (!clinicId) {
       throw new BadRequestException('clinicId is required');

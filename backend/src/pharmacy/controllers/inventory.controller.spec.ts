@@ -23,6 +23,7 @@ describe('InventoryController', () => {
       getExpiringItems: jest.fn().mockResolvedValue([]),
       findStockById: jest.fn().mockResolvedValue({ id: 'stock-1' }),
       updateStock: jest.fn().mockResolvedValue({ id: 'stock-1' }),
+      deleteStock: jest.fn().mockResolvedValue(undefined),
       reserveStock: jest.fn().mockResolvedValue({ id: 'stock-1' }),
       releaseStock: jest.fn().mockResolvedValue({ id: 'stock-1' }),
       consumeStock: jest.fn().mockResolvedValue({ id: 'stock-1' }),
@@ -120,6 +121,11 @@ describe('InventoryController', () => {
     const dto = { availableQuantity: 5 } as any;
     await controller.updateStock('stock-1', dto, makeReq());
     expect(service.updateStock).toHaveBeenCalledWith('stock-1', dto, 'clinic-1');
+  });
+
+  it('deleteStock delega id y clinicId', async () => {
+    await controller.deleteStock('stock-1', makeReq());
+    expect(service.deleteStock).toHaveBeenCalledWith('stock-1', 'clinic-1');
   });
 
   it('reserveStock delega id, quantity y clinicId', async () => {

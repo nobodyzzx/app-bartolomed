@@ -98,6 +98,12 @@ export class InventoryController {
     return this.inventoryService.updateStock(id, updateStockDto, clinicId);
   }
 
+  @Delete('stock/:id')
+  deleteStock(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
+    const clinicId = resolveClinicId(req);
+    return this.inventoryService.deleteStock(id, clinicId);
+  }
+
   @Post('stock/:id/reserve')
   reserveStock(@Param('id', ParseUUIDPipe) id: string, @Body('quantity') quantity: number, @Req() req: Request) {
     const clinicId = resolveClinicId(req);

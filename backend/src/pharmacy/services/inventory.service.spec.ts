@@ -315,6 +315,57 @@ describe('InventoryService', () => {
     });
   });
 
+  // ─── deleteStock ──────────────────────────────────────────────────────────
+
+  describe('deleteStock', () => {
+    it('da de baja el lote sin borrarlo de la base', async () => {
+      const stock = makeMedicationStock({ quantity: 0, reservedQuantity: 0, availableQuantity: 0 });
+      stockRepo.findOne!.mockResolvedValue(stock);
+      stockRepo.save!.mockResolvedValue({ ...stock, isActive: false });
+
+      await service.deleteStock('stock-1', 'clinic-1');
+
+      expect(stockRepo.save).toHaveBeenCalledWith(expect.objectContaining({ isActive: false }));
+      expect(stockRepo.delete).not.toHaveBeenCalled();
+    });
+
+    it('rechaza dar de baja un lote con unidades reservadas', async () => {
+      const stock = makeMedicationStock({ quantity: 20, reservedQuantity: 5, availableQuantity: 15 });
+      stockRepo.findOne!.mockResolvedValue(stock);
+
+      await expect(service.deleteStock('stock-1', 'clinic-1')).rejects.toThrow(BadRequestException);
+      expect(stockRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('anota un ajuste con las existencias que quedaban', async () => {
+      const stock = makeMedicationStock({ quantity: 12, reservedQuantity: 0, availableQuantity: 12 });
+      stockRepo.findOne!.mockResolvedValue(stock);
+      stockRepo.save!.mockResolvedValue({ ...stock, isActive: false });
+      movementRepo.create!.mockReturnValue({ type: MovementType.ADJUSTMENT });
+      movementRepo.save!.mockResolvedValue({});
+
+      await service.deleteStock('stock-1', 'clinic-1');
+
+      expect(movementRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ type: MovementType.ADJUSTMENT, quantity: 12, reason: 'stock_delete' }),
+      );
+    });
+
+    it('no anota movimiento si el lote estaba en cero', async () => {
+      const stock = makeMedicationStock({ quantity: 0, reservedQuantity: 0, availableQuantity: 0 });
+      stockRepo.findOne!.mockResolvedValue(stock);
+      stockRepo.save!.mockResolvedValue({ ...stock, isActive: false });
+
+      await service.deleteStock('stock-1', 'clinic-1');
+
+      expect(movementRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('exige contexto de clínica', async () => {
+      await expect(service.deleteStock('stock-1', undefined)).rejects.toThrow(BadRequestException);
+    });
+  });
+
   // ─── transferStock ────────────────────────────────────────────────────────
 
   describe('transferStock', () => {

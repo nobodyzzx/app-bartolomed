@@ -204,7 +204,12 @@ export class InventoryComponent implements OnInit, OnDestroy {
 
   deleteProduct(product: MedicationStock): void {
     this.alertService
-      .confirm({ title: 'Eliminar stock', text: '¿Desea eliminar este registro?' })
+      .confirm({
+        title: 'Dar de baja el lote',
+        text: product.quantity > 0
+          ? `${product.medication?.name ?? 'Este lote'} — lote ${product.batchNumber} tiene ${product.quantity} unidades. Al darlo de baja sale del inventario y del listado impreso. ¿Continuar?`
+          : `${product.medication?.name ?? 'Este lote'} — lote ${product.batchNumber} saldrá del inventario. ¿Continuar?`,
+      })
       .then(result => {
         if (result.isConfirmed) {
           this.inventoryService.deleteProduct(product.id).subscribe({

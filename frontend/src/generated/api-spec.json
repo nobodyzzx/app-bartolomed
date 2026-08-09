@@ -5504,6 +5504,27 @@
         "tags": [
           "Inventory"
         ]
+      },
+      "delete": {
+        "operationId": "InventoryController_deleteStock",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Inventory"
+        ]
       }
     },
     "/api/pharmacy/inventory/stock/{id}/reserve": {
@@ -7360,6 +7381,7 @@
             "description": ""
           }
         },
+        "summary": "El nombre del archivo sale del título que puso el usuario, y en español eso\ntrae tildes casi siempre. Node rechaza cualquier carácter no ASCII en una\ncabecera (`ERR_INVALID_CHAR`), así que un informe llamado \"Inventario de\nactivos — traspaso\" hacía fallar la descarga con un 500 después de haberse\ngenerado bien. Se manda un `filename` plano para clientes antiguos y el\nnombre real en `filename*`, que es el mecanismo previsto para esto.",
         "tags": [
           "Assets"
         ]
@@ -13355,7 +13377,8 @@
             "minimum": 0
           },
           "purchaseDate": {
-            "type": "string"
+            "type": "string",
+            "description": "Opcional: hay activos cuya fecha de compra no consta en ningún papel."
           },
           "vendor": {
             "type": "string"
@@ -13421,8 +13444,7 @@
         "required": [
           "name",
           "type",
-          "purchasePrice",
-          "purchaseDate"
+          "purchasePrice"
         ]
       },
       "Asset": {
@@ -13496,7 +13518,9 @@
           },
           "purchaseDate": {
             "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "nullable": true,
+            "description": "Nulo = fecha de compra sin registrar, que no es lo mismo que comprado hoy.\n\nEra obligatorio, y eso obligaba a inventarse una fecha para todo activo que\nllegara sin ella —el inventario en papel de la clínica no la trae para\nninguno de sus 207 ítems—. Una fecha inventada no es neutral: de ella sale\nla antigüedad y la depreciación."
           },
           "vendor": {
             "type": "string"
