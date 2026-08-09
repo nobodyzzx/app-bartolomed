@@ -2,8 +2,8 @@
   <div class="page-inner">
 
     <app-page-header
-      [title]="isViewMode ? 'Detalle del Activo' : isEditMode ? 'Editar Activo' : 'Nuevo Activo'"
-      [subtitle]="isViewMode ? 'Información completa del activo' : isEditMode ? 'Actualice la información del activo' : 'Complete el formulario para registrar un nuevo activo'"
+      [title]="isViewMode ? 'Detalle del Ítem' : isEditMode ? 'Editar Ítem' : 'Nuevo Ítem'"
+      [subtitle]="isViewMode ? 'Información del ítem del inventario' : isEditMode ? 'Actualice qué es, cuánto hay y dónde está' : 'Registre qué es, cuánto hay y dónde está'"
       (back)="goBack()"
       >
       @if (isViewMode) {
@@ -30,36 +30,83 @@
 
     <form [formGroup]="assetForm" (ngSubmit)="onSubmit()" class="space-y-6">
 
-      <!-- ══════ SECCIÓN 1 — Información Básica (azul) ══════ -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
           <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
-            <span class="material-symbols-outlined msz-20">info</span>
+            <span class="material-symbols-outlined msz-20">inventory_2</span>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
-              Información Básica
-              <app-section-error-badge [count]="basicInfoErrorCount()" />
-            </h3>
-            <p class="text-sm text-slate-500 m-0">Nombre, tipo, descripción y categoría</p>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Datos del ítem</h3>
+            <p class="text-sm text-slate-500 m-0">Qué es, cuántos hay, dónde está y si sirve</p>
           </div>
         </div>
-        <div class="p-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Nombre del Activo</mat-label>
+
+        <div class="p-6 space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <mat-form-field appearance="outline" class="w-full md:col-span-2">
+              <mat-label>Nombre</mat-label>
               <mat-icon matPrefix class="text-blue-400">inventory_2</mat-icon>
-              <input matInput formControlName="name" placeholder="Ej: Máquina de Rayos X" required />
+              <input matInput formControlName="name" placeholder="Ej: Tensiómetro manual" required />
               @if (assetForm.get('name')?.hasError('required')) {
                 <mat-error>El nombre es requerido</mat-error>
+              }
+              @if (assetForm.get('name')?.hasError('maxlength')) {
+                <mat-error>Máximo 200 caracteres</mat-error>
               }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Tipo de Activo</mat-label>
+              <mat-label>Cantidad</mat-label>
+              <mat-icon matPrefix class="text-blue-400">tag</mat-icon>
+              <input matInput type="number" formControlName="quantity" min="1" step="1" required />
+              <mat-hint>Unidades en esta ubicación</mat-hint>
+              @if (assetForm.get('quantity')?.hasError('required')) {
+                <mat-error>La cantidad es requerida</mat-error>
+              }
+              @if (assetForm.get('quantity')?.hasError('min')) {
+                <mat-error>Debe ser al menos 1</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Ubicación con opciones libres: los ambientes salen del propio
+                 inventario, pero se puede escribir uno nuevo. -->
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Ambiente</mat-label>
+              <mat-icon matPrefix class="text-blue-400">location_on</mat-icon>
+              <input matInput formControlName="location" [matAutocomplete]="amb"
+                placeholder="Ej: SALA ENFERMERIA" required />
+              <mat-autocomplete #amb="matAutocomplete">
+                @for (loc of locations; track loc) {
+                  <mat-option [value]="loc">{{ loc }}</mat-option>
+                }
+              </mat-autocomplete>
+              @if (assetForm.get('location')?.hasError('required')) {
+                <mat-error>El ambiente es requerido</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Estado</mat-label>
+              <mat-select formControlName="estado" required>
+                <mat-select-trigger>{{ estadoLabel(assetForm.get('estado')?.value) }}</mat-select-trigger>
+                @for (e of estados; track e.value) {
+                  <mat-option [value]="e.value">
+                    <span class="flex flex-col leading-tight py-1">
+                      <span>{{ e.label }}</span>
+                      <span class="text-xs text-slate-500">{{ e.hint }}</span>
+                    </span>
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Tipo</mat-label>
               <mat-select formControlName="type" required>
                 <mat-select-trigger>{{ typeLabel(assetForm.get('type')?.value) }}</mat-select-trigger>
-                @for (type of assetTypes; track type) {
+                @for (type of assetTypes; track type.value) {
                   <mat-option [value]="type.value">
                     <span class="flex items-center gap-2">
                       <span class="material-symbols-outlined text-slate-600">{{ type.icon }}</span>
@@ -68,336 +115,13 @@
                   </mat-option>
                 }
               </mat-select>
-              @if (assetForm.get('type')?.hasError('required')) {
-                <mat-error>El tipo es requerido</mat-error>
-              }
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="w-full md:col-span-2">
-              <mat-label>Descripción</mat-label>
-              <mat-icon matPrefix class="text-blue-400">description</mat-icon>
-              <textarea matInput formControlName="description" rows="3" placeholder="Descripción detallada del activo"></textarea>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Categoría</mat-label>
-              <mat-icon matPrefix class="text-blue-400">category</mat-icon>
-              <input matInput formControlName="category" placeholder="Ej: Diagnóstico" />
             </mat-form-field>
           </div>
-        </div>
-      </div>
 
-      <!-- ══════ SECCIÓN 2 — Fabricante y Modelo (morado) ══════ -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
-          <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
-            <span class="material-symbols-outlined msz-20">manufacturing</span>
-          </div>
-          <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
-              Fabricante y Modelo
-              <app-section-error-badge [count]="manufacturerErrorCount()" />
-            </h3>
-            <p class="text-sm text-slate-500 m-0">Fabricante, modelo y número de serie</p>
-          </div>
-        </div>
-        <div class="p-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Fabricante</mat-label>
-              <mat-icon matPrefix class="text-purple-400">factory</mat-icon>
-              <input matInput formControlName="manufacturer" placeholder="Ej: Siemens" required />
-              @if (assetForm.get('manufacturer')?.hasError('required')) {
-                <mat-error>El fabricante es requerido</mat-error>
-              }
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Modelo</mat-label>
-              <mat-icon matPrefix class="text-purple-400">model_training</mat-icon>
-              <input matInput formControlName="model" placeholder="Ej: MULTIX Fusion" />
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="w-full md:col-span-2">
-              <mat-label>Número de Serie</mat-label>
-              <mat-icon matPrefix class="text-purple-400">tag</mat-icon>
-              <input matInput formControlName="serialNumber" placeholder="Ej: SX-2024-001" required />
-              @if (assetForm.get('serialNumber')?.hasError('required')) {
-                <mat-error>El número de serie es requerido</mat-error>
-              }
-            </mat-form-field>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══════ SECCIÓN 3 — Estado y Condición (naranja) ══════ -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="flex items-center gap-4 px-6 py-4 bg-orange-50 border-b border-orange-100">
-          <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0">
-            <span class="material-symbols-outlined msz-20">health_and_safety</span>
-          </div>
-          <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
-              Estado y Condición
-              <app-section-error-badge [count]="statusErrorCount()" />
-            </h3>
-            <p class="text-sm text-slate-500 m-0">Estado operativo y condición física del activo</p>
-          </div>
-        </div>
-        <div class="p-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Estado</mat-label>
-              <mat-icon matPrefix class="text-orange-400">info</mat-icon>
-              <mat-select formControlName="status" required>
-                @for (status of assetStatuses; track status) {
-                  <mat-option [value]="status.value">{{ status.label }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Condición</mat-label>
-              <mat-icon matPrefix class="text-orange-400">fact_check</mat-icon>
-              <mat-select formControlName="condition" required>
-                @for (condition of assetConditions; track condition) {
-                  <mat-option [value]="condition.value">{{ condition.label }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══════ SECCIÓN 4 — Información de Compra (verde) ══════ -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
-          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
-            <span class="material-symbols-outlined msz-20">shopping_cart</span>
-          </div>
-          <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
-              Información de Compra
-              <app-section-error-badge [count]="purchaseInfoErrorCount()" />
-            </h3>
-            <p class="text-sm text-slate-500 m-0">Precio, fechas, proveedor y garantía</p>
-          </div>
-        </div>
-        <div class="p-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Precio de Compra</mat-label>
-              <mat-icon matPrefix class="text-green-400">payments</mat-icon>
-              <input matInput type="number" formControlName="purchasePrice" required min="0" />
-              @if (assetForm.get('purchasePrice')?.hasError('required')) {
-                <mat-error>El precio de compra es requerido</mat-error>
-              }
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Fecha de Compra</mat-label>
-              <mat-icon matPrefix class="text-green-400">calendar_today</mat-icon>
-              <input matInput [matDatepicker]="purchaseDatePicker" formControlName="purchaseDate" placeholder="dd/mm/aaaa" required />
-              <mat-datepicker-toggle matIconSuffix [for]="purchaseDatePicker" />
-              <mat-datepicker #purchaseDatePicker />
-              @if (assetForm.get('purchaseDate')?.hasError('required')) {
-                <mat-error>La fecha de compra es requerida</mat-error>
-              }
-            </mat-form-field>
-
-            @if (showMorePurchaseFields) {
-              <mat-form-field appearance="outline" class="w-full animate-field-reveal">
-                <mat-label>Proveedor</mat-label>
-                <mat-icon matPrefix class="text-green-400">store</mat-icon>
-                <input matInput formControlName="vendor" placeholder="Nombre del proveedor" />
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full animate-field-reveal">
-                <mat-label>Número de Factura</mat-label>
-                <mat-icon matPrefix class="text-green-400">receipt</mat-icon>
-                <input matInput formControlName="invoiceNumber" placeholder="Ej: INV-2024-001" />
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full animate-field-reveal">
-                <mat-label>Vencimiento de Garantía</mat-label>
-                <mat-icon matPrefix class="text-green-400">verified</mat-icon>
-                <input matInput [matDatepicker]="warrantyExpiryPicker" formControlName="warrantyExpiry" placeholder="dd/mm/aaaa" />
-                <mat-datepicker-toggle matIconSuffix [for]="warrantyExpiryPicker" />
-                <mat-datepicker #warrantyExpiryPicker />
-              </mat-form-field>
-            }
-          </div>
-
-          <button
-            type="button"
-            (click)="showMorePurchaseFields = !showMorePurchaseFields"
-            class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800 border-0 bg-transparent p-0 cursor-pointer"
-          >
-            <span class="material-symbols-outlined msz-18">{{ showMorePurchaseFields ? 'expand_less' : 'expand_more' }}</span>
-            {{ showMorePurchaseFields ? 'Mostrar menos campos' : 'Mostrar más campos (proveedor, factura, garantía)' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- ══════ SECCIÓN 5 — Depreciación (teal) ══════ -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="flex items-center gap-4 px-6 py-4 bg-teal-50 border-b border-teal-100">
-          <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center flex-shrink-0">
-            <span class="material-symbols-outlined msz-20">trending_down</span>
-          </div>
-          <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
-              Depreciación
-              <app-section-error-badge [count]="depreciationErrorCount()" />
-              <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium ml-2">Opcional</span>
-            </h3>
-            <p class="text-sm text-slate-500 m-0">Método, vida útil y valor residual</p>
-          </div>
-        </div>
-        <div class="p-6">
-          @if (showMoreDepreciationFields) {
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-field-reveal">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Método de Depreciación</mat-label>
-                <mat-icon matPrefix class="text-teal-400">calculate</mat-icon>
-                <mat-select formControlName="depreciationMethod">
-                  @for (method of depreciationMethods; track method) {
-                    <mat-option [value]="method.value">{{ method.label }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Vida Útil (años)</mat-label>
-                <mat-icon matPrefix class="text-teal-400">schedule</mat-icon>
-                <input matInput type="number" formControlName="usefulLifeYears" min="1" />
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Valor Residual</mat-label>
-                <mat-icon matPrefix class="text-teal-400">savings</mat-icon>
-                <input matInput type="number" formControlName="salvageValue" min="0" />
-              </mat-form-field>
-            </div>
-          }
-
-          <button
-            type="button"
-            (click)="showMoreDepreciationFields = !showMoreDepreciationFields"
-            class="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800 border-0 bg-transparent p-0 cursor-pointer"
-            [class.mt-4]="showMoreDepreciationFields"
-          >
-            <span class="material-symbols-outlined msz-18">{{ showMoreDepreciationFields ? 'expand_less' : 'expand_more' }}</span>
-            {{ showMoreDepreciationFields ? 'Ocultar depreciación' : 'Configurar depreciación (método, vida útil, valor residual)' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- ══════ SECCIÓN 6 — Ubicación (slate) ══════ -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200">
-          <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
-            <span class="material-symbols-outlined msz-20">location_on</span>
-          </div>
-          <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
-              Ubicación
-              <app-section-error-badge [count]="locationErrorCount()" />
-            </h3>
-            <p class="text-sm text-slate-500 m-0">Sala, edificio y piso del activo</p>
-          </div>
-        </div>
-        <div class="p-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Ubicación</mat-label>
-              <mat-icon matPrefix class="text-slate-400">place</mat-icon>
-              <input matInput formControlName="location" placeholder="Ej: Sala de Radiología A" />
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Sala/Habitación</mat-label>
-              <mat-icon matPrefix class="text-slate-400">meeting_room</mat-icon>
-              <input matInput formControlName="room" placeholder="Ej: 102" />
-            </mat-form-field>
-
-            @if (showMoreLocationFields) {
-              <mat-form-field appearance="outline" class="w-full animate-field-reveal">
-                <mat-label>Edificio</mat-label>
-                <mat-icon matPrefix class="text-slate-400">apartment</mat-icon>
-                <input matInput formControlName="building" placeholder="Ej: Edificio Principal" />
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full animate-field-reveal">
-                <mat-label>Piso</mat-label>
-                <mat-icon matPrefix class="text-slate-400">layers</mat-icon>
-                <input matInput formControlName="floor" placeholder="Ej: 1" />
-              </mat-form-field>
-            }
-          </div>
-
-          <button
-            type="button"
-            (click)="showMoreLocationFields = !showMoreLocationFields"
-            class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800 border-0 bg-transparent p-0 cursor-pointer"
-          >
-            <span class="material-symbols-outlined msz-18">{{ showMoreLocationFields ? 'expand_less' : 'expand_more' }}</span>
-            {{ showMoreLocationFields ? 'Mostrar menos campos' : 'Mostrar más campos (edificio, piso)' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- ══════ SECCIÓN 7 — Mantenimiento (amber) ══════ -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="flex items-center gap-4 px-6 py-4 bg-amber-50 border-b border-amber-100">
-          <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
-            <span class="material-symbols-outlined msz-20">build</span>
-          </div>
-          <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
-              Mantenimiento
-              <app-section-error-badge [count]="maintenanceErrorCount()" />
-            </h3>
-            <p class="text-sm text-slate-500 m-0">Intervalo y último mantenimiento</p>
-          </div>
-        </div>
-        <div class="p-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Intervalo de Mantenimiento (meses)</mat-label>
-              <mat-icon matPrefix class="text-amber-400">event_repeat</mat-icon>
-              <input matInput type="number" formControlName="maintenanceIntervalMonths" min="1" />
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Último Mantenimiento</mat-label>
-              <mat-icon matPrefix class="text-amber-400">history</mat-icon>
-              <input matInput [matDatepicker]="lastMaintenanceDatePicker" formControlName="lastMaintenanceDate" placeholder="dd/mm/aaaa" />
-              <mat-datepicker-toggle matIconSuffix [for]="lastMaintenanceDatePicker" />
-              <mat-datepicker #lastMaintenanceDatePicker />
-            </mat-form-field>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══════ SECCIÓN 8 — Notas Adicionales (slate) ══════ -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200">
-          <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
-            <span class="material-symbols-outlined msz-20">note</span>
-          </div>
-          <div>
-            <h3 class="font-semibold text-slate-900 m-0 leading-tight flex items-center">
-              Notas Adicionales
-              <app-section-error-badge [count]="notesErrorCount()" />
-            </h3>
-          </div>
-        </div>
-        <div class="p-6">
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Notas</mat-label>
-            <textarea matInput formControlName="notes" rows="4" placeholder="Observaciones, comentarios o información adicional"></textarea>
+            <mat-label>Observaciones</mat-label>
+            <textarea matInput formControlName="notes" rows="3"
+              placeholder="Marca, color, detalles del conteo o lo que haya que revisar"></textarea>
           </mat-form-field>
         </div>
       </div>
@@ -424,7 +148,7 @@
               <span>Guardando...</span>
             } @else {
               <span class="material-symbols-outlined msz-18 leading-none">save</span>
-              <span>{{ isEditMode ? 'Actualizar Activo' : 'Registrar Activo' }}</span>
+              <span>{{ isEditMode ? 'Actualizar Ítem' : 'Registrar Ítem' }}</span>
             }
           </button>
         </div>

@@ -3516,14 +3516,14 @@ export interface paths {
         patch: operations["AssetsController_updateMaintenance"];
         trace?: never;
     };
-    "/api/assets/reports": {
+    "/api/assets/reports/print/inventory-by-location": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["AssetsController_findAllReports"];
+        get: operations["AssetsController_printInventoryByLocation"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3532,14 +3532,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/assets/reports/stats": {
+    "/api/assets/reports/print/handover-act": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["AssetsController_getReportsStats"];
+        get: operations["AssetsController_printHandoverAct"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3548,38 +3548,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/assets/reports/generate": {
+    "/api/assets/reports/print/count-sheet": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
-        post: operations["AssetsController_generateReport"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/assets/reports/{reportId}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * El nombre del archivo sale del título que puso el usuario, y en español eso
-         *     trae tildes casi siempre. Node rechaza cualquier carácter no ASCII en una
-         *     cabecera (`ERR_INVALID_CHAR`), así que un informe llamado "Inventario de
-         *     activos — traspaso" hacía fallar la descarga con un 500 después de haberse
-         *     generado bien. Se manda un `filename` plano para clientes antiguos y el
-         *     nombre real en `filename*`, que es el mecanismo previsto para esto.
-         */
-        get: operations["AssetsController_downloadReport"];
+        get: operations["AssetsController_printCountSheet"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3588,17 +3564,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/assets/reports/{reportId}": {
+    "/api/assets/reports/print/executive-summary": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["AssetsController_findOneReport"];
+        get: operations["AssetsController_printExecutiveSummary"];
         put?: never;
         post?: never;
-        delete: operations["AssetsController_deleteReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assets/reports/print/condition-and-disposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AssetsController_printConditionAndDisposals"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -5550,6 +5542,8 @@ export interface components {
         };
         CreateAssetDto: {
             name: string;
+            /** @description Unidades del ítem en su ubicación. Por defecto 1. */
+            quantity?: number;
             description?: string;
             /** @enum {string} */
             type: "medical_equipment" | "furniture" | "computer" | "vehicle" | "building" | "other";
@@ -5589,6 +5583,17 @@ export interface components {
             id: string;
             assetTag: string;
             name: string;
+            /**
+             * @description Cuántas unidades hay de este ítem en su ubicación.
+             *
+             *     El inventario de la clínica es un conteo de existencias por ambiente, no un
+             *     registro de bienes contables: lo que se necesita saber es qué hay, cuánto y
+             *     dónde. Sin este campo, la misma planilla se cargaba con dos criterios —una
+             *     caja de 137 agujas quedaba como una ficha con la cantidad escondida en una
+             *     nota, mientras 4 sensores se abrían en cuatro fichas "(1 de 4)"—, y ninguno
+             *     de los dos permitía sumar unidades.
+             */
+            quantity: number;
             description: string;
             /** @enum {string} */
             type: "medical_equipment" | "furniture" | "computer" | "vehicle" | "building" | "other";
@@ -5714,60 +5719,6 @@ export interface components {
             notes?: string;
             priority?: number;
             nextMaintenanceDate?: string;
-        };
-        AssetReport: {
-            id: string;
-            title: string;
-            description: string;
-            /** @enum {string} */
-            type: "Por Ubicación" | "Por Estado" | "Mantenimiento" | "Depreciación" | "Obsoletos" | "Financiero";
-            /** @enum {string} */
-            status: "Pendiente" | "Generando" | "Completado" | "Fallido";
-            /** @enum {string} */
-            format: "PDF" | "EXCEL" | "CSV" | "JSON";
-            /** Format: date-time */
-            date: string;
-            /** Format: date-time */
-            dateFrom: string;
-            /** Format: date-time */
-            dateTo: string;
-            parameters: Record<string, never>;
-            filters: Record<string, never>;
-            data: Record<string, never>;
-            filePath: string;
-            fileSize: number;
-            fileName: string;
-            executionTime: string;
-            recordCount: number;
-            errorMessage: string;
-            notes: string;
-            isScheduled: boolean;
-            isRecurring: boolean;
-            scheduleExpression: string;
-            /** Format: date-time */
-            nextExecutionDate: string;
-            isActive: boolean;
-            generatedBy: components["schemas"]["User"];
-            generatedById: string;
-            clinic: components["schemas"]["Clinic"];
-            clinicId: string;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-        };
-        GenerateReportDto: {
-            title: string;
-            description?: string;
-            /** @enum {string} */
-            type: "Por Ubicación" | "Por Estado" | "Mantenimiento" | "Depreciación" | "Obsoletos" | "Financiero";
-            /** @enum {string} */
-            format: "PDF" | "EXCEL" | "CSV" | "JSON";
-            date: string;
-            dateFrom?: string;
-            dateTo?: string;
-            parameters?: Record<string, never>;
-            filters?: Record<string, never>;
         };
         UpdateAssetDto: Record<string, never>;
         CreateAssetTransferItemDto: {
@@ -11354,74 +11305,16 @@ export interface operations {
             };
         };
     };
-    AssetsController_findAllReports: {
+    AssetsController_printInventoryByLocation: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Limita el informe a un solo ambiente (coincidencia exacta con la ubicación del activo) */
+                location?: string;
+                /** @description Tamaño de papel. `oficio` (21,6 × 33 cm) es el que la clínica tiene en la impresora */
+                paper?: "oficio" | "a4";
+            };
             header?: never;
             path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssetReport"][];
-                };
-            };
-        };
-    };
-    AssetsController_getReportsStats: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-        };
-    };
-    AssetsController_generateReport: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerateReportDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssetReport"];
-                };
-            };
-        };
-    };
-    AssetsController_downloadReport: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                reportId: string;
-            };
             cookie?: never;
         };
         requestBody?: never;
@@ -11434,13 +11327,20 @@ export interface operations {
             };
         };
     };
-    AssetsController_findOneReport: {
+    AssetsController_printHandoverAct: {
         parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                reportId: string;
+            query?: {
+                /** @description Limita el informe a un solo ambiente (coincidencia exacta con la ubicación del activo) */
+                location?: string;
+                /** @description Tamaño de papel. `oficio` (21,6 × 33 cm) es el que la clínica tiene en la impresora */
+                paper?: "oficio" | "a4";
+                /** @description Nombre de quien entrega; en blanco, la línea de firma sale vacía */
+                deliveredBy?: string;
+                /** @description Nombre de quien recibe; en blanco, la línea de firma sale vacía */
+                receivedBy?: string;
             };
+            header?: never;
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -11449,19 +11349,64 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["AssetReport"];
-                };
+                content?: never;
             };
         };
     };
-    AssetsController_deleteReport: {
+    AssetsController_printCountSheet: {
         parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                reportId: string;
+            query?: {
+                /** @description Limita el informe a un solo ambiente (coincidencia exacta con la ubicación del activo) */
+                location?: string;
+                /** @description Tamaño de papel. `oficio` (21,6 × 33 cm) es el que la clínica tiene en la impresora */
+                paper?: "oficio" | "a4";
             };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AssetsController_printExecutiveSummary: {
+        parameters: {
+            query?: {
+                /** @description Limita el informe a un solo ambiente (coincidencia exacta con la ubicación del activo) */
+                location?: string;
+                /** @description Tamaño de papel. `oficio` (21,6 × 33 cm) es el que la clínica tiene en la impresora */
+                paper?: "oficio" | "a4";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AssetsController_printConditionAndDisposals: {
+        parameters: {
+            query?: {
+                /** @description Limita el informe a un solo ambiente (coincidencia exacta con la ubicación del activo) */
+                location?: string;
+                /** @description Tamaño de papel. `oficio` (21,6 × 33 cm) es el que la clínica tiene en la impresora */
+                paper?: "oficio" | "a4";
+            };
+            header?: never;
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;

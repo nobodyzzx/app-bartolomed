@@ -61,6 +61,19 @@ export class Asset {
   @Column('text')
   name: string;
 
+  /**
+   * Cuántas unidades hay de este ítem en su ubicación.
+   *
+   * El inventario de la clínica es un conteo de existencias por ambiente, no un
+   * registro de bienes contables: lo que se necesita saber es qué hay, cuánto y
+   * dónde. Sin este campo, la misma planilla se cargaba con dos criterios —una
+   * caja de 137 agujas quedaba como una ficha con la cantidad escondida en una
+   * nota, mientras 4 sensores se abrían en cuatro fichas "(1 de 4)"—, y ninguno
+   * de los dos permitía sumar unidades.
+   */
+  @Column('int', { default: 1 })
+  quantity: number;
+
   @Column('text', { nullable: true })
   description: string;
 

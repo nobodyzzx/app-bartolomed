@@ -15,6 +15,8 @@ export interface PaginatedResult<T> {
 export interface BaseAsset {
   id: string
   name: string
+  /** Unidades del ítem en su ubicación. El backend nunca la devuelve vacía. */
+  quantity: number
   type: AssetType
   assetTag?: string
   category?: string

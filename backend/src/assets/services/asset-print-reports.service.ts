@@ -124,18 +124,19 @@ export class AssetPrintReportsService {
     const secciones = groups
       .map(g =>
         this.section(
-          `${g.location} — ${g.assets.length} activo(s)`,
+          this.tituloAmbiente(g),
           this.table(
-            ['Código', 'Descripción', 'Tipo', 'Condición', 'Estado'],
+            ['Código', 'Descripción', 'Cant.', 'Tipo', 'Condición', 'Estado'],
             g.assets.map(a => [
               typstString(a.assetTag),
               typstString(a.name),
+              `strong(${typstString(String(a.quantity ?? 1))})`,
               typstString(TYPE_LABELS[a.type] ?? a.type),
               this.badge(CONDITION_LABELS[a.condition] ?? a.condition, CONDITION_COLORS[a.condition]),
               this.badge(STATUS_LABELS[a.status] ?? a.status, STATUS_COLORS[a.status]),
             ]),
-            ['left', 'left', 'left', 'center', 'center'],
-            ['0.85fr', '3.4fr', '1.05fr', '0.95fr', '0.95fr'],
+            ['left', 'left', 'center', 'left', 'center', 'center'],
+            ['0.85fr', '3.2fr', '0.55fr', '1fr', '0.9fr', '0.9fr'],
           ),
         ),
       )
@@ -159,7 +160,8 @@ export class AssetPrintReportsService {
       badge: 'Inventario',
       clinic,
       meta: [
-        ['Activos', String(assets.length)],
+        ['Ítems', String(assets.length)],
+        ['Unidades', String(this.unidades(assets))],
         ['Ambientes', String(groups.length)],
         ...(opts.location ? ([['Filtro', opts.location]] as Array<[string, string]>) : []),
       ],
@@ -192,18 +194,19 @@ export class AssetPrintReportsService {
     const secciones = groups
       .map(g =>
         this.section(
-          `${g.location} — ${g.assets.length} activo(s)`,
+          this.tituloAmbiente(g),
           this.table(
-            ['Código', 'Descripción', 'Condición', 'Observaciones'],
+            ['Código', 'Descripción', 'Cant.', 'Condición', 'Observaciones'],
             g.assets.map(a => [
               typstString(a.assetTag),
               typstString(a.name),
+              `strong(${typstString(String(a.quantity ?? 1))})`,
               this.badge(CONDITION_LABELS[a.condition] ?? a.condition, CONDITION_COLORS[a.condition]),
               // En blanco a propósito: se llena a mano al recorrer el ambiente.
               '[]',
             ]),
-            ['left', 'left', 'center', 'left'],
-            ['0.85fr', '3.1fr', '0.9fr', '2.2fr'],
+            ['left', 'left', 'center', 'center', 'left'],
+            ['0.85fr', '2.9fr', '0.55fr', '0.9fr', '2.1fr'],
           ),
         ),
       )
@@ -224,8 +227,9 @@ export class AssetPrintReportsService {
       // ambiente con asterisco o guion bajo como marcas de formato.
       #(${typstString(encabezadoFecha)}) se procede a la entrega y recepción de los activos fijos
       #(${typstString(ambitoTexto)}), detallados a continuación.
-      Quien recibe declara haber verificado físicamente cada uno de los #strong[${assets.length}] bienes
-      listados, así como su condición al momento de la entrega, y asume la responsabilidad de su
+      Quien recibe declara haber verificado físicamente las #strong[${this.unidades(assets)}] unidades
+      de los #strong[${assets.length}] ítems listados, así como su condición al momento de la entrega,
+      y asume la responsabilidad de su
       custodia, uso y conservación. Toda observación se consigna en la columna correspondiente.
     ]
   ]
@@ -245,7 +249,8 @@ export class AssetPrintReportsService {
       badge: 'Acta',
       clinic,
       meta: [
-        ['Activos', String(assets.length)],
+        ['Ítems', String(assets.length)],
+        ['Unidades', String(this.unidades(assets))],
         ['Ambientes', String(groups.length)],
         ...(opts.location ? ([['Ambiente', opts.location]] as Array<[string, string]>) : []),
       ],
@@ -275,12 +280,23 @@ export class AssetPrintReportsService {
     const secciones = groups
       .map(g =>
         this.section(
-          `${g.location} — ${g.assets.length} activo(s)`,
+          this.tituloAmbiente(g),
           this.table(
-            ['Código', 'Descripción', 'Está', 'Falta', 'Observaciones'],
-            g.assets.map(a => [typstString(a.assetTag), typstString(a.name), casilla, casilla, '[]']),
+            // "Esperado" contra "Contado" en vez de una casilla está/falta: con
+            // cantidades, marcar una casilla no dice nada de las 4 unidades que
+            // debería haber. La casilla se conserva para los ítems de una sola.
+            // "Cant." y no "Esperado": con la columna angosta, el encabezado
+            // largo se parte por el guionado ("ESPERA-DO") y se lee peor.
+            ['Código', 'Descripción', 'Cant.', 'Contado', 'Observaciones'],
+            g.assets.map(a => [
+              typstString(a.assetTag),
+              typstString(a.name),
+              `strong(${typstString(String(a.quantity ?? 1))})`,
+              (a.quantity ?? 1) === 1 ? casilla : '[]',
+              '[]',
+            ]),
             ['left', 'left', 'center', 'center', 'left'],
-            ['0.85fr', '3.2fr', '0.5fr', '0.5fr', '2.4fr'],
+            ['0.85fr', '3.1fr', '0.7fr', '0.7fr', '2.2fr'],
           ),
         ),
       )
@@ -289,8 +305,9 @@ export class AssetPrintReportsService {
     const body = `
   #block(below: 10pt)[
     #text(size: 8.5pt, fill: gris-muted)[
-      Marque una casilla por activo y anote en observaciones todo lo que no coincida
-      (activo movido a otro ambiente, deterioro, o bienes encontrados que no figuran en esta hoja).
+      Anote en "Contado" las unidades halladas de cada ítem —o marque la casilla si es una sola— y
+      use observaciones para todo lo que no coincida: bienes movidos a otro ambiente, deterioro,
+      o encontrados que no figuran en esta hoja.
     ]
   ]
 
@@ -299,7 +316,7 @@ export class AssetPrintReportsService {
   #v(16pt)
   #section("Activos encontrados que no figuran en esta hoja")[
     ${this.table(
-      ['Descripción', 'Ambiente', 'Condición'],
+      ['Descripción', 'Ambiente', 'Cantidad'],
       // Cuatro filas en blanco: sin ellas no hay dónde anotar lo que aparece de
       // más, que es justo lo que una toma de inventario busca detectar.
       Array.from({ length: 4 }, () => ['[]', '[]', '[]']),
@@ -320,7 +337,8 @@ export class AssetPrintReportsService {
       badge: 'Conteo físico',
       clinic,
       meta: [
-        ['A contar', String(assets.length)],
+        ['Ítems', String(assets.length)],
+        ['Unidades esperadas', String(this.unidades(assets))],
         ['Ambientes', String(groups.length)],
         ['Fecha del conteo', '____ / ____ / ________'],
       ],
@@ -364,9 +382,9 @@ export class AssetPrintReportsService {
 
     const body = `
   #kpiGrid((
-    kpiCard("Activos", ${typstString(String(assets.length))}, "En piso", color: "blue"),
-    kpiCard("Ambientes", ${typstString(String(groups.length))}, "Con activos asignados", color: "green"),
-    kpiCard("Equipo médico", ${typstString(String(assets.filter(a => a.type === AssetType.MEDICAL_EQUIPMENT).length))}, "Del total", color: "purple"),
+    kpiCard("Ítems", ${typstString(String(assets.length))}, "Distintos, en piso", color: "blue"),
+    kpiCard("Unidades", ${typstString(String(this.unidades(assets)))}, "Sumando cantidades", color: "green"),
+    kpiCard("Equipo médico", ${typstString(String(assets.filter(a => a.type === AssetType.MEDICAL_EQUIPMENT).length))}, "Ítems del total", color: "purple"),
     kpiCard("Requieren atención", ${typstString(String(enMalEstado + enMantenimiento))}, "Mal estado o en mantenimiento", color: "amber"),
   ))
 
@@ -430,7 +448,8 @@ export class AssetPrintReportsService {
       badge: 'Resumen',
       clinic,
       meta: [
-        ['Activos', String(assets.length)],
+        ['Ítems', String(assets.length)],
+        ['Unidades', String(this.unidades(assets))],
         ['Ambientes', String(groups.length)],
         ['Requieren atención', String(enMalEstado + enMantenimiento)],
       ],
@@ -469,15 +488,16 @@ export class AssetPrintReportsService {
     const filaDetalle = (a: Asset) => [
       typstString(a.assetTag),
       typstString(a.name),
+      `strong(${typstString(String(a.quantity ?? 1))})`,
       typstString(a.location || SIN_UBICACION),
       this.badge(CONDITION_LABELS[a.condition] ?? a.condition, CONDITION_COLORS[a.condition]),
       this.badge(STATUS_LABELS[a.status] ?? a.status, STATUS_COLORS[a.status]),
       typstString(a.notes || '—'),
     ];
 
-    const headers = ['Código', 'Descripción', 'Ambiente', 'Condición', 'Estado', 'Observaciones'];
-    const aligns = ['left', 'left', 'left', 'center', 'center', 'left'];
-    const widths = ['0.8fr', '2.6fr', '1.4fr', '0.85fr', '0.85fr', '2fr'];
+    const headers = ['Código', 'Descripción', 'Cant.', 'Ambiente', 'Condición', 'Estado', 'Observaciones'];
+    const aligns = ['left', 'left', 'center', 'left', 'center', 'center', 'left'];
+    const widths = ['0.8fr', '2.4fr', '0.5fr', '1.3fr', '0.85fr', '0.85fr', '1.9fr'];
 
     const body = `
   #kpiGrid((
@@ -578,11 +598,24 @@ export class AssetPrintReportsService {
   private kpiRow(assets: Asset[], groups: LocationGroup[]): string {
     const malEstado = assets.filter(a => CONDICIONES_MALAS.includes(a.condition)).length;
     return `#kpiGrid((
-    kpiCard("Activos", ${typstString(String(assets.length))}, "En el listado", color: "blue"),
-    kpiCard("Ambientes", ${typstString(String(groups.length))}, "Con activos", color: "green"),
+    kpiCard("Ítems", ${typstString(String(assets.length))}, "En el listado", color: "blue"),
+    kpiCard("Unidades", ${typstString(String(this.unidades(assets)))}, ${typstString(`En ${groups.length} ambiente(s)`)}, color: "green"),
     kpiCard("Equipo médico", ${typstString(String(assets.filter(a => a.type === AssetType.MEDICAL_EQUIPMENT).length))}, "Del total", color: "purple"),
     kpiCard("En mal estado", ${typstString(String(malEstado))}, "Regular o peor", color: "amber"),
   ))`;
+  }
+
+  /** Suma de existencias: los informes hablan de ítems y de unidades, no son lo mismo. */
+  private unidades(assets: Asset[]): number {
+    return assets.reduce((n, a) => n + (Number(a.quantity) || 1), 0);
+  }
+
+  /** "SALA ECOGRAFIA — 58 ítems / 190 unidades" (omite el segundo si coinciden). */
+  private tituloAmbiente(g: LocationGroup): string {
+    const u = this.unidades(g.assets);
+    return u === g.assets.length
+      ? `${g.location} — ${g.assets.length} ítem(s)`
+      : `${g.location} — ${g.assets.length} ítem(s) / ${u} unidades`;
   }
 
   private badge(text: string, color = 'gray'): string {

@@ -16,6 +16,7 @@ const makeAsset = (overrides: Partial<Asset> = {}): Asset =>
     type: AssetType.MEDICAL_EQUIPMENT,
     status: AssetStatus.ACTIVE,
     condition: AssetCondition.GOOD,
+    quantity: 1,
     location: 'SALA ECOGRAFIA',
     isActive: true,
     ...overrides,
@@ -83,8 +84,8 @@ describe('AssetPrintReportsService', () => {
 
     await service.inventoryByLocation(CLINIC_ID);
     const fuente = typ();
-    expect(fuente.indexOf('SALA ECOGRAFIA — 2 activo(s)')).toBeLessThan(fuente.indexOf('FARMACIA — 1 activo(s)'));
-    expect(fuente).toContain('Sin ubicación asignada — 1 activo(s)');
+    expect(fuente.indexOf('SALA ECOGRAFIA — 2 ítem(s)')).toBeLessThan(fuente.indexOf('FARMACIA — 1 ítem(s)'));
+    expect(fuente).toContain('Sin ubicación asignada — 1 ítem(s)');
   });
 
   it('traduce los enums al español — sin esto el papel dice "medical_equipment"', async () => {
@@ -127,13 +128,32 @@ describe('AssetPrintReportsService', () => {
     expect(typ(1)).toContain('(name: "Luis Mamani", role: "Recibe — Nombre, firma y C.I.")');
   });
 
-  it('la hoja de conteo no filtra la condición del sistema: se marca lo que se ve', async () => {
+  it('la hoja de conteo pide contar unidades y no muestra la condición del sistema', async () => {
+    assetRepo.find.mockResolvedValue([makeAsset({ quantity: 1 }), makeAsset({ assetTag: 'AF-2', quantity: 4 })]);
     await service.countSheet(CLINIC_ID);
-    expect(typ()).toContain('"Está"');
-    expect(typ()).toContain('"Falta"');
-    // Casillas dibujadas, no el glifo ☐ (la fuente Inter no lo trae).
-    expect(typ()).toContain('box(width: 9pt, height: 9pt');
+    expect(typ()).toContain('"Cant."');
+    expect(typ()).toContain('"Contado"');
+    // Casilla solo para los de una unidad: marcar un cuadrito no dice nada de
+    // las 4 unidades que deberían estar, ahí se escribe el número contado.
+    expect(typ().match(/box\(width: 9pt/g) ?? []).toHaveLength(1);
     expect(typ()).not.toContain('badge("Bueno"');
+  });
+
+  it('cuenta ítems y unidades por separado en cada informe', async () => {
+    assetRepo.find.mockResolvedValue([makeAsset({ quantity: 4 }), makeAsset({ assetTag: 'AF-2', quantity: 137 })]);
+    await service.inventoryByLocation(CLINIC_ID);
+    // 2 ítems, 141 unidades: sin esto el inventario decía "2 activos" de una
+    // caja de 137 agujas y 4 sensores.
+    expect(typ()).toContain('("Ítems", "2")');
+    expect(typ()).toContain('("Unidades", "141")');
+    expect(typ()).toContain('SALA ECOGRAFIA — 2 ítem(s) / 141 unidades');
+  });
+
+  it('el acta declara unidades verificadas, no fichas', async () => {
+    assetRepo.find.mockResolvedValue([makeAsset({ quantity: 4 })]);
+    await service.handoverAct(CLINIC_ID);
+    expect(typ()).toContain('#strong[4] unidades');
+    expect(typ()).toContain('#strong[1] ítems');
   });
 
   it('el resumen omite los tipos sin ningún activo', async () => {

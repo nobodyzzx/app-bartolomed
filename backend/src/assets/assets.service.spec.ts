@@ -313,10 +313,15 @@ describe('AssetsService', () => {
       [AssetStatus.ACTIVE, AssetStatus.MAINTENANCE, true],
       [AssetStatus.ACTIVE, AssetStatus.RETIRED, true],
       [AssetStatus.MAINTENANCE, AssetStatus.ACTIVE, true],
-      [AssetStatus.RETIRED, AssetStatus.ACTIVE, false],
+      // Dar de baja por error tiene que poder deshacerse: quien marca el estado
+      // es la persona que recorre la clínica con la hoja, no un contador.
+      [AssetStatus.RETIRED, AssetStatus.ACTIVE, true],
+      // Reparado sin registrar un mantenimiento — esta clínica no los registra.
+      [AssetStatus.DAMAGED, AssetStatus.ACTIVE, true],
+      [AssetStatus.DAMAGED, AssetStatus.MAINTENANCE, true],
+      // Vendido y extraviado sí son terminales: el bien no está y no va a estar.
       [AssetStatus.SOLD, AssetStatus.ACTIVE, false],
       [AssetStatus.LOST, AssetStatus.ACTIVE, false],
-      [AssetStatus.DAMAGED, AssetStatus.MAINTENANCE, true],
     ];
 
     test.each(cases)(

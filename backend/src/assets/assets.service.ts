@@ -504,25 +504,22 @@ export class AssetsService {
     };
   }
 
+  /**
+   * Estados desde los que el ítem ya no puede volver a circulación: se vendió o
+   * se perdió, y en ambos casos no está y no va a estar.
+   *
+   * `RETIRED` **no** está entre ellos, a diferencia de antes. El inventario se
+   * lleva contando existencias por ambiente y quien lo marca es la persona que
+   * recorre la clínica con la hoja en la mano: marcar "dado de baja" por error y
+   * que el sistema no deje corregirlo obliga a crear una ficha nueva y perder el
+   * código. Lo mismo con `DAMAGED`, que antes no podía volver a `ACTIVE` —
+   * reparar algo exigía pasar por un mantenimiento que esta clínica no registra.
+   */
+  private readonly ESTADOS_TERMINALES = [AssetStatus.SOLD, AssetStatus.LOST];
+
   private assertAssetStatusTransition(current: AssetStatus, next: AssetStatus): void {
     if (current === next) return;
-    const transitions: Record<AssetStatus, AssetStatus[]> = {
-      [AssetStatus.ACTIVE]: [
-        AssetStatus.MAINTENANCE,
-        AssetStatus.INACTIVE,
-        AssetStatus.RETIRED,
-        AssetStatus.SOLD,
-        AssetStatus.LOST,
-        AssetStatus.DAMAGED,
-      ],
-      [AssetStatus.MAINTENANCE]: [AssetStatus.ACTIVE, AssetStatus.INACTIVE, AssetStatus.RETIRED, AssetStatus.DAMAGED],
-      [AssetStatus.INACTIVE]: [AssetStatus.ACTIVE, AssetStatus.MAINTENANCE, AssetStatus.RETIRED, AssetStatus.SOLD],
-      [AssetStatus.DAMAGED]: [AssetStatus.MAINTENANCE, AssetStatus.RETIRED, AssetStatus.SOLD],
-      [AssetStatus.RETIRED]: [],
-      [AssetStatus.SOLD]: [],
-      [AssetStatus.LOST]: [],
-    };
-    if (!transitions[current].includes(next)) {
+    if (this.ESTADOS_TERMINALES.includes(current)) {
       throw new BadRequestException(`Invalid asset status transition from ${current} to ${next}`);
     }
   }

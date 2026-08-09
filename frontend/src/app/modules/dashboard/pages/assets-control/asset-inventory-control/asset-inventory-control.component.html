@@ -35,11 +35,11 @@
     </app-page-header>
 
     <!-- Tarjetas de estadísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
       <app-stat-card
-        label="Total Activos"
+        label="Ítems"
         [value]="assets.length"
-        sublabel="En inventario"
+        sublabel="Distintos en inventario"
         icon="inventory_2"
         color="blue"
         [clickable]="true"
@@ -47,9 +47,16 @@
         (cardClick)="setStatusFilter(null)"
         />
       <app-stat-card
-        label="En Operación"
+        label="Unidades"
+        [value]="getTotalUnits()"
+        sublabel="Sumando cantidades"
+        icon="tag"
+        color="slate"
+        />
+      <app-stat-card
+        label="En Uso"
         [value]="getActiveCount()"
-        sublabel="Activos operativos"
+        sublabel="Disponibles y operativos"
         icon="check_circle"
         color="green"
         [clickable]="true"
@@ -57,21 +64,24 @@
         (cardClick)="setStatusFilter(AssetStatus.ACTIVE)"
         />
       <app-stat-card
-        label="Mantenimiento"
-        [value]="getMaintenanceCount()"
-        sublabel="Requieren atención"
-        icon="build"
+        label="Por Confirmar"
+        [value]="getPendingCount()"
+        sublabel="Sin entrega registrada"
+        icon="help"
         color="amber"
         [clickable]="true"
-        [active]="activeStatusFilter === AssetStatus.MAINTENANCE"
-        (cardClick)="setStatusFilter(AssetStatus.MAINTENANCE)"
+        [active]="activeStatusFilter === AssetStatus.INACTIVE"
+        (cardClick)="setStatusFilter(AssetStatus.INACTIVE)"
         />
       <app-stat-card
-        label="Valor Total"
-        [value]="'Bs ' + (getTotalValue() | number: '1.2-2')"
-        sublabel="Valor del inventario"
-        icon="payments"
-        color="slate"
+        label="En Desuso"
+        [value]="getUnusableCount()"
+        sublabel="Están pero no sirven"
+        icon="build"
+        color="red"
+        [clickable]="true"
+        [active]="activeStatusFilter === AssetStatus.DAMAGED"
+        (cardClick)="setStatusFilter(AssetStatus.DAMAGED)"
         />
     </div>
 
@@ -234,15 +244,13 @@
               </td>
             </ng-container>
             <!-- Valor Actual -->
-            <ng-container matColumnDef="currentValue">
+            <ng-container matColumnDef="quantity">
               <th mat-header-cell *matHeaderCellDef mat-sort-header
                 class="bg-slate-100 px-6 py-4">
-                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Valor</span>
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Cantidad</span>
               </th>
               <td mat-cell *matCellDef="let asset" class="px-6 py-4">
-                <span class="font-medium text-slate-900">
-                  {{ (asset.currentValue ?? 0) | currency: 'BOB' : 'symbol-narrow' : '1.2-2' }}
-                </span>
+                <span class="font-semibold text-slate-900 tabular-nums">{{ asset.quantity ?? 1 }}</span>
               </td>
             </ng-container>
             <!-- Acciones -->

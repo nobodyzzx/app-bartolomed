@@ -6,7 +6,7 @@ import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
-import { AssetStatus, BaseAsset } from '../interfaces/assets.interfaces'
+import { AssetCondition, AssetStatus, BaseAsset } from '../interfaces/assets.interfaces'
 import { AssetRegistrationService } from '../services/asset-registration.service'
 
 @Component({
@@ -18,15 +18,10 @@ import { AssetRegistrationService } from '../services/asset-registration.service
 export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
   private readonly destroyRef = inject(DestroyRef)
 
-  displayedColumns: string[] = [
-    'assetTag',
-    'name',
-    'type',
-    'status',
-    'location',
-    'currentValue',
-    'actions',
-  ]
+  // El inventario responde qué hay, cuánto y dónde. La columna de valor se
+  // retiró: el inventario se lleva por existencias, no para contabilidad, y
+  // mostraba "Bs 0,00" en las 235 filas.
+  displayedColumns: string[] = ['assetTag', 'name', 'quantity', 'type', 'status', 'location', 'actions']
   dataSource: MatTableDataSource<BaseAsset>
   isLoading = false
   searchTerm = ''
@@ -236,16 +231,28 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
   /**
    * `Number(...)` y no `+` a secas: las columnas `decimal` de Postgres viajan
    * como **string** ("0.00"), aunque la interfaz las declare `number`. Sumarlas
-   * con `+` las concatenaba —"0.00"+"0.00" = "0.000.00"— y con el inventario
-   * cargado el resultado era una cadena de 100 caracteres que hacía reventar al
+   * con `+` las concatenaba —"0.00"+"0.00" = "0.000.00"— y con 334 activos el
+   * resultado era una cadena de 100 caracteres que hacía reventar al
    * `DecimalPipe` del KPI con NG02100. Ese error tumbaba el render del template
-   * entero: la tabla se quedaba en esqueletos y los contadores en cero, así que
-   * la pantalla no mostraba nada.
+   * entero, así que la tabla se quedaba en esqueletos y los cuatro contadores en
+   * cero: la pantalla no mostraba nada.
    *
    * No saltó antes porque el inventario estaba vacío y `reduce` devolvía el `0`
    * inicial; apareció con la primera carga real de activos.
    */
-  getTotalValue(): number {
-    return this.assets.reduce((sum, a) => sum + (Number(a.currentValue) || 0), 0)
+  /** Unidades: el inventario cuenta existencias, y 235 ítems son 778 unidades. */
+  getTotalUnits(): number {
+    return this.assets.reduce((n, a) => n + (Number(a.quantity) || 1), 0)
+  }
+
+  /** Lo que está pero no sirve, más lo que se fue a mantenimiento. */
+  getUnusableCount(): number {
+    return this.assets.filter(
+      a => a.status === AssetStatus.DAMAGED || a.condition === AssetCondition.POOR || a.condition === AssetCondition.CRITICAL,
+    ).length
+  }
+
+  getPendingCount(): number {
+    return this.assets.filter(a => a.status === AssetStatus.INACTIVE).length
   }
 }

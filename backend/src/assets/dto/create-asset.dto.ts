@@ -1,9 +1,15 @@
-import { IsDateString, IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { AssetCondition, AssetStatus, AssetType, DepreciationMethod } from '../entities/asset.entity';
 
 export class CreateAssetDto {
   @IsString()
   name: string;
+
+  /** Unidades del ítem en su ubicación. Por defecto 1. */
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  quantity?: number;
 
   @IsString()
   @IsOptional()

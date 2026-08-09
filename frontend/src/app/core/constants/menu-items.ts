@@ -191,13 +191,10 @@ export const MENU_ITEMS: MenuItem[] = [
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
         requiredPermissions: [Permission.AssetsManage],
       },
-      {
-        label: 'Mantenimiento',
-        icon: 'build',
-        route: '/dashboard/assets-control/maintenance',
-        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
-        requiredPermissions: [Permission.AssetsManage],
-      },
+      // "Mantenimiento" se retiró del menú: cero registros desde que existe, y
+      // el inventario de esta clínica se lleva para contar existencias por
+      // ambiente, no para programar mantenimientos. La pantalla sigue en
+      // /dashboard/assets-control/maintenance por si se retoma.
     ],
   },
   {
