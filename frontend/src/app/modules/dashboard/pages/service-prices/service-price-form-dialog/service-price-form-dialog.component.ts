@@ -10,6 +10,15 @@ import {
   ServicePricePayload,
 } from '../service-prices.service'
 
+/** Espejo de `CODE_PREFIXES` del backend, que es quien genera el código real. */
+const CODE_PREFIXES: Record<ServiceCategory, string> = {
+  [ServiceCategory.CONSULTATION]: 'CONS',
+  [ServiceCategory.LABORATORY]: 'LAB',
+  [ServiceCategory.SPECIAL_STUDY]: 'ESP',
+  [ServiceCategory.PROCEDURE]: 'PROC',
+  [ServiceCategory.OTHER]: 'OTR',
+}
+
 @Component({
   selector: 'app-service-price-form-dialog',
   templateUrl: './service-price-form-dialog.component.html',
@@ -28,12 +37,17 @@ export class ServicePriceFormDialogComponent {
   constructor(
     private fb: FormBuilder,
     public dialogRef: MatDialogRef<ServicePriceFormDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { price?: ServicePrice },
+    @Inject(MAT_DIALOG_DATA) public data: { price?: ServicePrice; codes?: string[] },
   ) {
     this.isEdit = !!data?.price
 
     this.form = this.fb.group({
-      code: [data?.price?.code ?? '', [Validators.required, Validators.maxLength(30)]],
+      // Obligatorio solo al editar. En el alta puede ir vacío y lo genera el
+      // servidor: exigirlo obligaba a inventárselo sin ver los que ya existen.
+      code: [
+        data?.price?.code ?? '',
+        this.isEdit ? [Validators.required, Validators.maxLength(30)] : [Validators.maxLength(30)],
+      ],
       name: [data?.price?.name ?? '', [Validators.required, Validators.maxLength(120)]],
       description: [data?.price?.description ?? ''],
       category: [data?.price?.category ?? ServiceCategory.CONSULTATION, Validators.required],
@@ -47,6 +61,23 @@ export class ServicePriceFormDialogComponent {
     })
 
     this.recalcMargin()
+  }
+
+  /**
+   * Código de ejemplo para el hint, con el prefijo de la categoría elegida.
+   *
+   * Es orientativo: quien decide es el servidor, que ve todos los códigos de la
+   * clínica (incluidos los dados de baja, que siguen ocupando el suyo). Aquí
+   * solo se conocen los que el listado tiene cargados, de ahí el "p. ej.".
+   */
+  codigoSugerido(): string {
+    const prefijo = CODE_PREFIXES[this.form.get('category')?.value as ServiceCategory] ?? 'SRV'
+    const patron = new RegExp(`^${prefijo}-(\\d+)$`, 'i')
+    const mayor = (this.data?.codes ?? []).reduce((max, code) => {
+      const m = patron.exec(code ?? '')
+      return m ? Math.max(max, Number(m[1])) : max
+    }, 0)
+    return `${prefijo}-${String(mayor + 1).padStart(3, '0')}`
   }
 
   // ── Margen ──────────────────────────────────────────────────────────────
@@ -120,9 +151,10 @@ export class ServicePriceFormDialogComponent {
 
     const raw = this.form.getRawValue()
     const payload: ServicePricePayload = {
-      code: raw.code.trim().toUpperCase(),
+      code: raw.code?.trim() ? raw.code.trim().toUpperCase() : undefined,
       name: raw.name.trim(),
       description: raw.description?.trim() || undefined,
+      // Vacío = que lo genere el servidor.
       category: raw.category,
       appointmentType: raw.category === ServiceCategory.CONSULTATION ? raw.appointmentType : null,
       price: Number(raw.price),

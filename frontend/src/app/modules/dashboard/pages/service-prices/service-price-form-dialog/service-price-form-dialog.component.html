@@ -13,8 +13,17 @@
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>Código</mat-label>
       <mat-icon matPrefix class="text-emerald-400">tag</mat-icon>
-      <input matInput formControlName="code" placeholder="CONS-GEN" maxlength="30" />
-      <mat-hint>Único dentro de la clínica</mat-hint>
+      <!-- Opcional al dar de alta: si se deja vacío lo genera el servidor, que
+           es el único que ve todos los códigos de la clínica y puede dar el
+           siguiente libre sin chocar. Se deja escribible por si se quiere uno
+           mnemotécnico (CONS-GEN). -->
+      <input matInput formControlName="code"
+        [placeholder]="isEdit ? 'CONS-GEN' : 'Se genera solo'" maxlength="30" />
+      @if (isEdit) {
+        <mat-hint>Único dentro de la clínica</mat-hint>
+      } @else {
+        <mat-hint>Déjalo vacío y se genera solo (p. ej. {{ codigoSugerido() }})</mat-hint>
+      }
       @if (form.get('code')?.hasError('required') && form.get('code')?.touched) {
         <mat-error>El código es obligatorio</mat-error>
       }

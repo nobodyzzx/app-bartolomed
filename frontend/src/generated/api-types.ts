@@ -4294,8 +4294,15 @@ export interface components {
             reason: string;
         };
         CreateServicePriceDto: {
-            /** @description Único por clínica — el servicio devuelve 409 si ya existe. */
-            code: string;
+            /**
+             * @description Único por clínica — el servicio devuelve 409 si ya existe.
+             *
+             *     Opcional: si no viene, el servicio genera el siguiente libre de la
+             *     categoría (`CONS-009`, `PROC-021`…). Era obligatorio, y obligaba a
+             *     inventárselo a mano sin ver los que ya existen. Se sigue aceptando para
+             *     quien quiera uno mnemotécnico.
+             */
+            code?: string;
             name: string;
             description?: string;
             /** @enum {string} */
@@ -4412,7 +4419,14 @@ export interface components {
             dryRun?: boolean;
         };
         UpdateServicePriceDto: {
-            /** @description Único por clínica — el servicio devuelve 409 si ya existe. */
+            /**
+             * @description Único por clínica — el servicio devuelve 409 si ya existe.
+             *
+             *     Opcional: si no viene, el servicio genera el siguiente libre de la
+             *     categoría (`CONS-009`, `PROC-021`…). Era obligatorio, y obligaba a
+             *     inventárselo a mano sin ver los que ya existen. Se sigue aceptando para
+             *     quien quiera uno mnemotécnico.
+             */
             code?: string;
             name?: string;
             description?: string;

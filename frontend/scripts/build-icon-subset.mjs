@@ -77,6 +77,11 @@ const EXTRA_ICONS = [
   'update',
   'biotech',
   'description',
+  // Flechas de orden del tarifario: salen de `sortIcon()`, un método del
+  // componente, así que este escáner —que solo lee plantillas— no las ve.
+  'unfold_more',
+  'arrow_upward',
+  'arrow_downward',
 ];
 
 /** Iconos de `AlertService.fire({ icon })`, ajenos a Material Symbols. */

@@ -107,7 +107,8 @@ export function turnaroundLabel(item: ServicePriceCatalogItem): string {
 }
 
 export interface ServicePricePayload {
-  code: string
+  /** Opcional al crear: si se omite, el backend genera el siguiente libre. */
+  code?: string
   name: string
   description?: string
   category: ServiceCategory

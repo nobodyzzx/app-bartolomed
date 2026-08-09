@@ -33,6 +33,7 @@ describe('ServicePricesService', () => {
     findOne: jest.Mock;
     softRemove: jest.Mock;
     createQueryBuilder: jest.Mock;
+    find: jest.Mock;
     manager: { transaction: jest.Mock };
   };
   let audit: { log: jest.Mock };
@@ -56,6 +57,7 @@ describe('ServicePricesService', () => {
       findOne: jest.fn().mockResolvedValue(null),
       softRemove: jest.fn().mockResolvedValue(undefined),
       createQueryBuilder: jest.fn().mockReturnValue(qb),
+      find: jest.fn().mockResolvedValue([]),
       manager: {
         transaction: jest.fn(async (cb: any) => cb({ update: updateMock })),
       },
@@ -100,6 +102,69 @@ describe('ServicePricesService', () => {
       expect(repo.findOne).toHaveBeenCalledWith({
         where: { id: 'price-1', clinicId: OTHER_CLINIC_ID },
       });
+    });
+  });
+
+  // ─── código automático ────────────────────────────────────────────────────
+
+  describe('generación del código', () => {
+    it('sin código, lo genera con el prefijo de la categoría', async () => {
+      repo.find.mockResolvedValue([{ code: 'PROC-001' }, { code: 'PROC-004' }, { code: 'CONS-009' }]);
+
+      await service.create({ category: ServiceCategory.PROCEDURE, name: 'X', price: 0 } as any, actor, CLINIC_ID);
+
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ code: 'PROC-005' }));
+    });
+
+    it.each([
+      [ServiceCategory.CONSULTATION, 'CONS-001'],
+      [ServiceCategory.LABORATORY, 'LAB-001'],
+      [ServiceCategory.SPECIAL_STUDY, 'ESP-001'],
+      [ServiceCategory.PROCEDURE, 'PROC-001'],
+      [ServiceCategory.OTHER, 'OTR-001'],
+    ])('la categoría %s arranca en %s', async (category, esperado) => {
+      repo.find.mockResolvedValue([]);
+
+      await service.create({ category, name: 'X', price: 0 } as any, actor, CLINIC_ID);
+
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ code: esperado }));
+    });
+
+    it('numera desde el mayor, no desde el total: borrar uno no provoca choques', async () => {
+      // Dos códigos, pero el mayor es el 7: el siguiente debe ser el 8, no el 3.
+      repo.find.mockResolvedValue([{ code: 'OTR-002' }, { code: 'OTR-007' }]);
+
+      await service.create({ category: ServiceCategory.OTHER, name: 'X', price: 0 } as any, actor, CLINIC_ID);
+
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ code: 'OTR-008' }));
+    });
+
+    it('ignora los códigos mnemotécnicos al numerar', async () => {
+      // `CONS-GEN` no es un número; no debe romper ni contar.
+      repo.find.mockResolvedValue([{ code: 'CONS-GEN' }, { code: 'CONS-003' }]);
+
+      await service.create({ category: ServiceCategory.CONSULTATION, name: 'X', price: 0 } as any, actor, CLINIC_ID);
+
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ code: 'CONS-004' }));
+    });
+
+    it('mira también los dados de baja, que siguen ocupando su código', async () => {
+      repo.find.mockResolvedValue([]);
+
+      await service.create({ category: ServiceCategory.OTHER, name: 'X', price: 0 } as any, actor, CLINIC_ID);
+
+      expect(repo.find).toHaveBeenCalledWith(expect.objectContaining({ withDeleted: true }));
+    });
+
+    it('respeta el código que se le pase, normalizado a mayúsculas', async () => {
+      await service.create(
+        { code: ' cons-esp ', category: ServiceCategory.CONSULTATION, name: 'X', price: 0 } as any,
+        actor,
+        CLINIC_ID,
+      );
+
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ code: 'CONS-ESP' }));
+      expect(repo.find).not.toHaveBeenCalled();
     });
   });
 

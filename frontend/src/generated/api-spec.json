@@ -9615,7 +9615,7 @@
         "properties": {
           "code": {
             "type": "string",
-            "description": "Único por clínica — el servicio devuelve 409 si ya existe.",
+            "description": "Único por clínica — el servicio devuelve 409 si ya existe.\n\nOpcional: si no viene, el servicio genera el siguiente libre de la\ncategoría (`CONS-009`, `PROC-021`…). Era obligatorio, y obligaba a\ninventárselo a mano sin ver los que ya existen. Se sigue aceptando para\nquien quiera uno mnemotécnico.",
             "minLength": 2,
             "maxLength": 30
           },
@@ -9670,7 +9670,6 @@
           }
         },
         "required": [
-          "code",
           "name",
           "category",
           "price"
@@ -9833,7 +9832,7 @@
         "properties": {
           "code": {
             "type": "string",
-            "description": "Único por clínica — el servicio devuelve 409 si ya existe.",
+            "description": "Único por clínica — el servicio devuelve 409 si ya existe.\n\nOpcional: si no viene, el servicio genera el siguiente libre de la\ncategoría (`CONS-009`, `PROC-021`…). Era obligatorio, y obligaba a\ninventárselo a mano sin ver los que ya existen. Se sigue aceptando para\nquien quiera uno mnemotécnico.",
             "minLength": 2,
             "maxLength": 30
           },

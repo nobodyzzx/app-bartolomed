@@ -12,6 +12,19 @@ import {
 } from './dto';
 import { ServiceCategory, ServicePrice } from './entities/service-price.entity';
 
+/**
+ * Prefijo de código por categoría. No es decorativo: el tarifario se lee
+ * agrupado y el prefijo es lo que permite reconocer de un vistazo qué es cada
+ * fila en el punto de cobro, donde solo se ve el código.
+ */
+const CODE_PREFIXES: Record<ServiceCategory, string> = {
+  [ServiceCategory.CONSULTATION]: 'CONS',
+  [ServiceCategory.LABORATORY]: 'LAB',
+  [ServiceCategory.SPECIAL_STUDY]: 'ESP',
+  [ServiceCategory.PROCEDURE]: 'PROC',
+  [ServiceCategory.OTHER]: 'OTR',
+};
+
 @Injectable()
 export class ServicePricesService {
   constructor(
@@ -27,17 +40,50 @@ export class ServicePricesService {
 
   async create(dto: CreateServicePriceDto, user: User, clinicId?: string): Promise<ServicePrice> {
     const scopedClinicId = this.requireClinicId(clinicId);
-    await this.assertCodeIsFree(dto.code, scopedClinicId);
+
+    // Si no viene código, se genera. Antes era obligatorio y lo tenía que
+    // inventar quien daba de alta el servicio, sin ver los que ya existían:
+    // o se repetía uno (409 sin explicación útil) o se rompía la convención
+    // por categoría, que es lo que hace el tarifario legible.
+    const code = dto.code?.trim() ? dto.code.trim().toUpperCase() : await this.generateCode(dto.category, scopedClinicId);
+    await this.assertCodeIsFree(code, scopedClinicId);
 
     // El alta no se audita a mano: `AuditInterceptor` ya registra toda
     // mutación (POST/PATCH/PUT/DELETE) de forma global. Solo el cambio de
     // precio necesita log propio, porque requiere el valor anterior.
     const entity = this.repository.create({
       ...dto,
+      code,
       appointmentType: this.normalizeAppointmentType(dto.category, dto.appointmentType),
       clinicId: scopedClinicId,
     });
     return this.repository.save(entity);
+  }
+
+  /**
+   * Siguiente código libre de la categoría, con el prefijo que ya usa el
+   * tarifario (`CONS-`, `LAB-`, `ESP-`, `PROC-`, `OTR-`).
+   *
+   * Mira **todos** los códigos de la clínica, incluidos los de servicios dados
+   * de baja: `assertCodeIsFree` también los cuenta, así que reutilizar uno
+   * daría 409. Numera desde el mayor existente y no desde el total, para que
+   * borrar un servicio no haga que el siguiente choque con otro.
+   */
+  private async generateCode(category: ServiceCategory, clinicId: string): Promise<string> {
+    const prefijo = CODE_PREFIXES[category] ?? 'SRV';
+    const existentes = await this.repository.find({
+      where: { clinicId },
+      select: ['code'],
+      withDeleted: true,
+    });
+
+    const patron = new RegExp(`^${prefijo}-(\\d+)$`, 'i');
+    const mayor = existentes.reduce((max, { code }) => {
+      const m = patron.exec(code ?? '');
+      return m ? Math.max(max, Number(m[1])) : max;
+    }, 0);
+
+    return `${prefijo}-${String(mayor + 1).padStart(3, '0')}`;
   }
 
   async findAll(filter: FilterServicePricesDto = {}, clinicId?: string) {

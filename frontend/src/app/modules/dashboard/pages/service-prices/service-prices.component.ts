@@ -1,5 +1,6 @@
 import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs'
 import { MatDialog } from '@angular/material/dialog'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
@@ -14,6 +15,9 @@ import {
   ServicePricePayload,
   ServicePricesService,
 } from './service-prices.service'
+
+/** Columnas por las que se puede ordenar el tarifario. */
+type SortKey = 'code' | 'name' | 'appointmentType' | 'costPrice' | 'margin' | 'price' | 'isActive'
 
 @Component({
   selector: 'app-service-prices',
@@ -33,6 +37,18 @@ export class ServicePricesComponent implements OnInit {
 
   categoryFilter: ServiceCategory | '' = ''
   search = ''
+
+  /**
+   * La búsqueda pega al servidor, así que se espera a que se deje de teclear.
+   * Antes había que pulsar Enter, y era el único buscador de la aplicación que
+   * lo pedía: escribir y no ver nada parece un fallo, no una instrucción.
+   * 300 ms es lo que usan los demás listados.
+   */
+  private readonly searchInput$ = new Subject<string>()
+
+  /** Columna por la que se ordena dentro de cada categoría. */
+  sortKey: SortKey = 'name'
+  sortDir: 'asc' | 'desc' = 'asc'
   /**
    * Encendido por defecto: esta es la pantalla desde la que se administra el
    * tarifario, y un servicio que no se ve es un servicio que no se puede
@@ -52,6 +68,38 @@ export class ServicePricesComponent implements OnInit {
 
   ngOnInit(): void {
     this.load()
+    this.searchInput$
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe(value => {
+        this.search = (value ?? '').trim()
+        this.load()
+      })
+  }
+
+  onSearchInput(value: string): void {
+    this.searchInput$.next(value)
+  }
+
+  /**
+   * Ordena por una columna; volver a pulsarla invierte el sentido.
+   *
+   * El orden se aplica dentro de cada categoría, que es como está agrupado el
+   * tarifario: mezclar consultas con exámenes en una sola lista ordenada
+   * rompería la lectura por bloques.
+   */
+  sortBy(key: SortKey): void {
+    if (this.sortKey === key) {
+      this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'
+    } else {
+      this.sortKey = key
+      this.sortDir = 'asc'
+    }
+    this.indexByCategory()
+  }
+
+  sortIcon(key: SortKey): string {
+    if (this.sortKey !== key) return 'unfold_more'
+    return this.sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'
   }
 
   /**
@@ -79,6 +127,7 @@ export class ServicePricesComponent implements OnInit {
       .subscribe({
         next: res => {
           this.prices = res.items
+          this.indexByCategory()
           this.loading = false
         },
         error: () => {
@@ -87,12 +136,52 @@ export class ServicePricesComponent implements OnInit {
       })
   }
 
+  /**
+   * Filas por categoría, ya ordenadas. Se calcula una vez por carga o por
+   * cambio de orden y no en cada ciclo de detección de cambios: la plantilla
+   * llama a esto varias veces por categoría y otra vez por fila, y con 165
+   * servicios filtrar y ordenar en cada pasada se nota.
+   */
+  private byCategory = new Map<ServiceCategory, ServicePrice[]>()
+
   pricesOf(category: ServiceCategory): ServicePrice[] {
-    return this.prices.filter(p => p.category === category)
+    return this.byCategory.get(category) ?? []
   }
 
   countOf(category: ServiceCategory): number {
     return this.pricesOf(category).length
+  }
+
+  private indexByCategory(): void {
+    const dir = this.sortDir === 'asc' ? 1 : -1
+    const valor = (p: ServicePrice): string | number => {
+      switch (this.sortKey) {
+        case 'code': return p.code ?? ''
+        case 'appointmentType': return p.appointmentType ? this.appointmentTypeLabels[p.appointmentType] : ''
+        case 'costPrice': return Number(p.costPrice ?? -1)
+        case 'margin': return this.marginPct(p) ?? Number.NEGATIVE_INFINITY
+        case 'price': return Number(p.price)
+        case 'isActive': return p.isActive ? 1 : 0
+        default: return p.name ?? ''
+      }
+    }
+
+    this.byCategory = new Map(
+      this.categories.map(category => [
+        category,
+        this.prices
+          .filter(p => p.category === category)
+          .sort((a, b) => {
+            const va = valor(a)
+            const vb = valor(b)
+            const cmp =
+              typeof va === 'number' && typeof vb === 'number'
+                ? va - vb
+                : String(va).localeCompare(String(vb), 'es', { numeric: true })
+            return cmp * dir
+          }),
+      ]),
+    )
   }
 
   /**
@@ -151,7 +240,9 @@ export class ServicePricesComponent implements OnInit {
 
   private openForm(price?: ServicePrice): void {
     const dialogRef = this.dialog.open(ServicePriceFormDialogComponent, {
-      data: { price },
+      // Los códigos ya cargados alimentan la sugerencia del hint; quien genera
+      // el definitivo es el backend, que los ve todos.
+      data: { price, codes: this.prices.map(p => p.code) },
       width: '720px',
       maxWidth: '95vw',
       panelClass: 'rounded-dialog',

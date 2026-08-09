@@ -3,10 +3,18 @@ import { AppointmentType } from '../../appointments/entities/appointment.entity'
 import { ServiceCategory } from '../entities/service-price.entity';
 
 export class CreateServicePriceDto {
-  /** Único por clínica — el servicio devuelve 409 si ya existe. */
+  /**
+   * Único por clínica — el servicio devuelve 409 si ya existe.
+   *
+   * Opcional: si no viene, el servicio genera el siguiente libre de la
+   * categoría (`CONS-009`, `PROC-021`…). Era obligatorio, y obligaba a
+   * inventárselo a mano sin ver los que ya existen. Se sigue aceptando para
+   * quien quiera uno mnemotécnico.
+   */
   @IsString()
   @Length(2, 30)
-  code: string;
+  @IsOptional()
+  code?: string;
 
   @IsString()
   @Length(2, 120)

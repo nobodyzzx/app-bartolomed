@@ -66,11 +66,12 @@
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Buscar</mat-label>
           <mat-icon matPrefix class="text-slate-400">search</mat-icon>
-          <!-- La búsqueda es del servidor y se dispara con Enter. Con 110
-               exámenes en el tarifario, escribir y no ver nada parece un fallo
-               si no se dice que falta pulsar Enter. -->
-          <input matInput [(ngModel)]="search" (keyup.enter)="load()" placeholder="Código o nombre" />
-          <mat-hint>Pulsa Enter para buscar</mat-hint>
+          <!-- Busca mientras se escribe, como el resto de la aplicación. La
+               consulta es del servidor, así que se espera a que pares (300 ms)
+               en vez de pegarle en cada tecla. -->
+          <input matInput [ngModel]="search" (ngModelChange)="onSearchInput($event)"
+            placeholder="Código o nombre" />
+          <mat-hint>Busca mientras escribes</mat-hint>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
@@ -135,18 +136,56 @@
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
                 <thead>
+                  <!-- Cabeceras ordenables: al pulsarlas se ordena por esa
+                       columna y al repetir se invierte. El orden se aplica
+                       dentro de cada categoría, que es como se lee el tarifario. -->
                   <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
-                    <th class="text-left font-semibold px-6 py-3">Código</th>
-                    <th class="text-left font-semibold px-6 py-3">Servicio</th>
+                    <th class="text-left font-semibold px-6 py-3">
+                      <button type="button" (click)="sortBy('code')" class="inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-800">
+                        Código
+                        <span class="material-symbols-outlined msz-14 leading-none">{{ sortIcon('code') }}</span>
+                      </button>
+                    </th>
+                    <th class="text-left font-semibold px-6 py-3">
+                      <button type="button" (click)="sortBy('name')" class="inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-800">
+                        Servicio
+                        <span class="material-symbols-outlined msz-14 leading-none">{{ sortIcon('name') }}</span>
+                      </button>
+                    </th>
                     @if (category === ServiceCategory.CONSULTATION) {
-                      <th class="text-left font-semibold px-6 py-3">Tipo de cita</th>
+                      <th class="text-left font-semibold px-6 py-3">
+                        <button type="button" (click)="sortBy('appointmentType')" class="inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-800">
+                          Tipo de cita
+                          <span class="material-symbols-outlined msz-14 leading-none">{{ sortIcon('appointmentType') }}</span>
+                        </button>
+                      </th>
                     }
                     @if (hasCost(category)) {
-                      <th class="text-right font-semibold px-6 py-3">Costo convenio</th>
-                      <th class="text-right font-semibold px-6 py-3">Margen</th>
+                      <th class="text-right font-semibold px-6 py-3">
+                        <button type="button" (click)="sortBy('costPrice')" class="inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-800">
+                          Costo convenio
+                          <span class="material-symbols-outlined msz-14 leading-none">{{ sortIcon('costPrice') }}</span>
+                        </button>
+                      </th>
+                      <th class="text-right font-semibold px-6 py-3">
+                        <button type="button" (click)="sortBy('margin')" class="inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-800">
+                          Margen
+                          <span class="material-symbols-outlined msz-14 leading-none">{{ sortIcon('margin') }}</span>
+                        </button>
+                      </th>
                     }
-                    <th class="text-right font-semibold px-6 py-3">Precio</th>
-                    <th class="text-center font-semibold px-6 py-3">Estado</th>
+                    <th class="text-right font-semibold px-6 py-3">
+                      <button type="button" (click)="sortBy('price')" class="inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-800">
+                        Precio
+                        <span class="material-symbols-outlined msz-14 leading-none">{{ sortIcon('price') }}</span>
+                      </button>
+                    </th>
+                    <th class="text-center font-semibold px-6 py-3">
+                      <button type="button" (click)="sortBy('isActive')" class="inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-800">
+                        Estado
+                        <span class="material-symbols-outlined msz-14 leading-none">{{ sortIcon('isActive') }}</span>
+                      </button>
+                    </th>
                     @if (canManage()) {
                       <th class="text-right font-semibold px-6 py-3">Acciones</th>
                     }
