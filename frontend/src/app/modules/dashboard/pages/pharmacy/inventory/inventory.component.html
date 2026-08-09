@@ -16,11 +16,6 @@
         <span class="material-symbols-outlined msz-18 leading-none">local_shipping</span>
         Transferir
       </button>
-      <button type="button" (click)="openImportModal()"
-        class="inline-flex items-center gap-2 px-4 h-10 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-sm hover:shadow-md transition-all border-0">
-        <span class="material-symbols-outlined msz-18 leading-none">upload_file</span>
-        Importar
-      </button>
       <button type="button" (click)="createMedication()"
         class="inline-flex items-center gap-2 px-4 h-10 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-sm hover:shadow-md transition-all border-0">
         <span class="material-symbols-outlined msz-18 leading-none">medication</span>
@@ -211,76 +206,3 @@
     </div>
   </div>
 </div>
-
-<!-- Modal: Importar desde CSV -->
-<pharmacy-ui-modal
-  [open]="importOpen()"
-  (closed)="importOpen.set(false)"
-  (submitted)="confirmImportPreview()"
-  [loading]="importLoading()"
-  [title]="'Importar listado'"
-  [size]="'xl'"
-  [confirmText]="'Confirmar'"
-  [cancelText]="'Cancelar'"
-  >
-  <div class="space-y-6">
-    <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
-      <p class="text-sm text-slate-700 mb-3">
-        Selecciona un archivo <strong>.csv</strong> (separado por coma o punto y coma).
-      </p>
-      <input
-        type="file"
-        accept=".csv"
-        aria-label="Seleccionar archivo CSV para importar"
-        (change)="onFileSelected($event)"
-        class="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-        />
-      @if (importFileName()) {
-        <div class="mt-3 text-xs text-slate-600 flex items-center gap-2">
-          <span class="material-symbols-outlined msz-18 text-blue-500">description</span>
-          {{ importFileName() }}
-        </div>
-      }
-    </div>
-
-    @if (importRows.length) {
-      <div class="border rounded-lg overflow-hidden">
-        <div class="overflow-auto max-h-72 custom-scroll">
-          <table class="min-w-full text-sm">
-            <thead class="bg-slate-100 sticky top-0">
-              <tr>
-                @for (h of importHeaders; track h) {
-                  <th class="px-3 py-2 text-left font-semibold text-slate-600 border-b">{{ h }}</th>
-                }
-              </tr>
-            </thead>
-            <tbody>
-              @for (r of importRows; track r) {
-                <tr class="odd:bg-white even:bg-slate-50">
-                  @for (h of importHeaders; track h) {
-                    <td class="px-3 py-1 border-b border-slate-200 align-top">{{ r[h] }}</td>
-                  }
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        <div class="px-3 py-2 bg-slate-50 text-xs text-slate-500 border-t flex justify-between">
-          <span>{{ importRows.length }} filas</span>
-          <button type="button" class="btn btn-danger-outline h-8 px-3 text-xs"
-            (click)="resetImport()">
-            <span class="material-symbols-outlined msz-16">delete</span>
-            Limpiar
-          </button>
-        </div>
-      </div>
-    }
-
-    @if (!importRows.length) {
-      <div class="text-center py-10 text-slate-400">
-        <span class="material-symbols-outlined msz-48 mb-3 block">upload_file</span>
-        <p class="text-sm">Aún no hay datos cargados</p>
-      </div>
-    }
-  </div>
-</pharmacy-ui-modal>

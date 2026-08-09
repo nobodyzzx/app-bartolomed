@@ -55,12 +55,6 @@ export class InventoryComponent implements OnInit, OnDestroy {
     this.refreshView()
   }
 
-  importOpen = signal(false)
-  importLoading = signal(false)
-  importHeaders: string[] = []
-  importRows: any[] = []
-  importFileName = signal('')
-
   constructor(
     private inventoryService: InventoryService,
     private location: Location,
@@ -223,75 +217,6 @@ export class InventoryComponent implements OnInit, OnDestroy {
           })
         }
       })
-  }
-
-  openImportModal() {
-    this.resetImport()
-    this.importOpen.set(true)
-  }
-
-  resetImport() {
-    this.importHeaders = []
-    this.importRows = []
-    this.importFileName.set('')
-  }
-
-  async onFileSelected(event: Event) {
-    const input = event.target as HTMLInputElement
-    const file = input.files?.[0]
-    if (!file) return
-    this.importFileName.set(file.name)
-    this.importLoading.set(true)
-    try {
-      const ext = file.name.toLowerCase()
-      if (ext.endsWith('.csv')) {
-        const text = await file.text()
-        this.parseCSV(text)
-      } else {
-        this.alertService.error('Archivo no soportado', 'Seleccione un .csv')
-      }
-    } catch (e) {
-      this.alertService.error('Error', 'No se pudo leer el archivo')
-    } finally {
-      this.importLoading.set(false)
-    }
-  }
-
-  private parseCSV(text: string) {
-    const lines = text.split(/\r?\n/).filter(l => l.trim().length)
-    if (lines.length === 0) return
-    const sep = lines[0].includes(';') ? ';' : ','
-    const headers = lines[0].split(sep).map(h => h.trim())
-    const rows = lines.slice(1).map(line => {
-      const cols = line.split(sep)
-      const obj: any = {}
-      headers.forEach((h, i) => (obj[h] = (cols[i] ?? '').trim()))
-      return obj
-    })
-    this.importHeaders = headers
-    this.importRows = rows
-  }
-
-  /**
-   * Solo previsualiza: **la importación no está implementada**. No existe endpoint
-   * de carga masiva en `pharmacy/inventory`, así que nada de esto llega a la base.
-   *
-   * Antes cerraba con un `icon: 'success'` y "Archivo cargado / Vista previa
-   * lista", con lo que se daba por hecho que el stock había entrado. El aviso
-   * ahora dice lo que de verdad pasa; queda pendiente decidir si se implementa la
-   * carga o se retira la pantalla.
-   */
-  confirmImportPreview() {
-    if (!this.importRows.length) {
-      this.alertService.error('Validación', 'Carga un archivo con datos primero')
-      return
-    }
-    this.alertService.fire({
-      icon: 'warning',
-      title: 'Solo vista previa',
-      text: `Se leyeron ${this.importRows.length} fila(s), pero la importación masiva todavía no está disponible: no se guardó nada. Carga el stock desde "Nuevo Stock".`,
-    })
-    this.importOpen.set(false)
   }
 
   /**
