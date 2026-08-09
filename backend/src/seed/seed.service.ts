@@ -351,6 +351,13 @@ export class SeedService {
       'invoice_items',
       'invoices',
       'appointments',
+      // `charges` referencia `patients` y no estaba en la lista: bastaba un
+      // cargo en la base para que el reset fallara al borrar pacientes. Es la
+      // cuarta vez que esta lista se queda corta (ya pasó con laboratorio, con
+      // facturas de farmacia y con traslados de activos), y por eso ahora todo
+      // corre dentro de una transacción: una lista incompleta seguirá siendo
+      // posible, pero ya no dejará la base a medio vaciar.
+      'charges',
       'medical_records',
       'medical_reports',
       'consent_forms',
@@ -370,17 +377,23 @@ export class SeedService {
       'service_prices',
     ];
 
-    for (const table of tables) {
-      await this.dataSource.query(`DELETE FROM "${table}"`);
-    }
+    // Todo o nada. Antes era una ristra de DELETE sueltos: al fallar uno
+    // —siempre por una tabla nueva que nadie añadió a la lista— lo ya borrado
+    // no volvía, y la base quedaba a medio vaciar, con cargos apuntando a
+    // facturas inexistentes. Un reset que falla debe no dejar rastro.
+    await this.dataSource.transaction(async manager => {
+      for (const table of tables) {
+        await manager.query(`DELETE FROM "${table}"`);
+      }
 
-    // Romper referencias circulares antes de borrar users/clinics
-    await this.dataSource.query('UPDATE clinics SET created_by_id = NULL');
-    await this.dataSource.query('UPDATE users SET "clinicId" = NULL');
-    await this.dataSource.query(`DELETE FROM users WHERE email != 'admin@bartolomed.com'`);
-    await this.dataSource.query('DELETE FROM clinics');
-    await this.dataSource.query('DELETE FROM personal_info WHERE id NOT IN (SELECT "personalInfoId" FROM users WHERE "personalInfoId" IS NOT NULL)');
-    await this.dataSource.query('DELETE FROM professional_info WHERE id NOT IN (SELECT "professionalInfoId" FROM users WHERE "professionalInfoId" IS NOT NULL)');
+      // Romper referencias circulares antes de borrar users/clinics
+      await manager.query('UPDATE clinics SET created_by_id = NULL');
+      await manager.query('UPDATE users SET "clinicId" = NULL');
+      await manager.query(`DELETE FROM users WHERE email != 'admin@bartolomed.com'`);
+      await manager.query('DELETE FROM clinics');
+      await manager.query('DELETE FROM personal_info WHERE id NOT IN (SELECT "personalInfoId" FROM users WHERE "personalInfoId" IS NOT NULL)');
+      await manager.query('DELETE FROM professional_info WHERE id NOT IN (SELECT "professionalInfoId" FROM users WHERE "professionalInfoId" IS NOT NULL)');
+    });
   }
 
   // ---------------------------------------------------------------------------

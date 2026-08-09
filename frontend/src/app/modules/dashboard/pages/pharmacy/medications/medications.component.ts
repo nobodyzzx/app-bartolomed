@@ -41,6 +41,27 @@ export class MedicationsComponent implements OnInit {
 
   setCategoryFilter(cat: string): void {
     this.categoryFilter.set(cat)
+    this.page.set(0)
+  }
+
+  // Se trae el catálogo entero —el buscador filtra en cliente— pero se dibuja
+  // de a poco: 468 filas de tabla de golpe es lo que colgó el inventario.
+  page = signal(0)
+  pageSize = signal(50)
+
+  paged = computed(() => {
+    const inicio = this.page() * this.pageSize()
+    return this.filtered().slice(inicio, inicio + this.pageSize())
+  })
+
+  setSearch(term: string): void {
+    this.search.set(term)
+    this.page.set(0)
+  }
+
+  onPageChange(e: { pageIndex: number; pageSize: number }): void {
+    this.page.set(e.pageIndex)
+    this.pageSize.set(e.pageSize)
   }
 
   constructor(

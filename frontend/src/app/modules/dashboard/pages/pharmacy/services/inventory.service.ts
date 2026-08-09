@@ -14,6 +14,13 @@ import {
   UpdateMedicationStockDto,
 } from '../interfaces/pharmacy.interfaces'
 
+/**
+ * Tope para las llamadas que quieren el catálogo completo. No es paginación:
+ * quien llama filtra o dibuja en cliente, así que traer una página parcial
+ * esconde productos en vez de repartirlos.
+ */
+const FULL_CATALOG = 2000
+
 @Injectable({
   providedIn: 'root',
 })
@@ -29,11 +36,12 @@ export class InventoryService {
    * INVENTARIO (STOCK)
    */
   // Alias para compatibilidad con NewSaleComponent
-  getAllStock(clinicId: string, page = 1, limit = 100): Observable<PaginatedResult<MedicationStock>> {
+  /** Todo el stock de la clínica. Ver la nota de `getAllMedications`. */
+  getAllStock(clinicId: string, page = 1, limit = FULL_CATALOG): Observable<PaginatedResult<MedicationStock>> {
     return this.getProducts(clinicId, page, limit)
   }
 
-  getProducts(clinicId: string, page = 1, limit = 100): Observable<PaginatedResult<MedicationStock>> {
+  getProducts(clinicId: string, page = 1, limit = FULL_CATALOG): Observable<PaginatedResult<MedicationStock>> {
     const params = new HttpParams().set('page', page.toString()).set('limit', limit.toString())
     return this.http.get<PaginatedResult<MedicationStock>>(`${this.baseUrl}/stock`, { params }).pipe(
       catchError(error => {
@@ -112,7 +120,14 @@ export class InventoryService {
     )
   }
 
-  getAllMedications(page = 1, limit = 100): Observable<PaginatedResult<Medication>> {
+  /**
+   * El catálogo entero. El límite por defecto era 100 y el catálogo real tiene
+   * 468: el buscador del catálogo —que filtra en cliente— no encontraba a los
+   * otros 368, y en "Agregar Stock" y en las órdenes de compra el desplegable
+   * solo los ofrecía a ellos, así que **a 368 productos no se les podía añadir
+   * stock ni pedirlos**. Un método llamado `getAll` que devuelve 100 miente.
+   */
+  getAllMedications(page = 1, limit = FULL_CATALOG): Observable<PaginatedResult<Medication>> {
     const params = new HttpParams().set('page', page.toString()).set('limit', limit.toString())
     return this.http.get<PaginatedResult<Medication>>(`${this.baseUrl}/medications`, { params }).pipe(
       catchError(error => {

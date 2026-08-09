@@ -74,8 +74,8 @@
           placeholder="Nombre, código, fabricante..."
           [value]="search()"
           [showClear]="!!(search() || categoryFilter() !== 'all')"
-          (valueChange)="search.set($event)"
-          (cleared)="search.set(''); setCategoryFilter('all')"
+          (valueChange)="setSearch($event)"
+          (cleared)="setSearch(''); setCategoryFilter('all')"
           />
       </div>
 
@@ -111,7 +111,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
-              @for (m of filtered(); track trackById($index, m)) {
+              @for (m of paged(); track trackById($index, m)) {
                 <tr class="hover:bg-blue-50/40 transition-colors">
                   <td class="px-6 py-4">
                     <span class="font-mono text-sm text-slate-900">{{ m.code }}</span>
@@ -169,11 +169,22 @@
 
       <!-- Footer -->
       @if (!loading() && filtered().length > 0) {
+        <!-- Se trae el catálogo entero (el buscador filtra en cliente) pero se
+             dibuja de a poco: 468 filas de golpe es lo que colgó el inventario. -->
         <div class="table-footer">
           <span class="text-sm text-slate-500">
-            Mostrando <span class="font-semibold text-slate-700">{{ filtered().length }}</span> de
-            <span class="font-semibold text-slate-700">{{ medications().length }}</span> medicamentos
+            <span class="font-semibold text-slate-700">{{ filtered().length }}</span>
+            de <span class="font-semibold text-slate-700">{{ medications().length }}</span> productos
           </span>
+          <mat-paginator
+            [length]="filtered().length"
+            [pageSize]="pageSize()"
+            [pageIndex]="page()"
+            [pageSizeOptions]="[25, 50, 100]"
+            showFirstLastButtons
+            class="bg-transparent border-0"
+            (page)="onPageChange($event)"
+            />
         </div>
       }
 
