@@ -3,20 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChargesService } from '../../charges/charges.service';
 import { ChargeOrigin, ChargeStatus } from '../../charges/entities/charge.entity';
+import { unaccentedColumn, unaccentedTerm } from '../../common/utils/accent-insensitive.util';
 import { Patient } from '../../patients/entities/patient.entity';
 import { Prescription, PrescriptionStatus } from '../../prescriptions/entities/prescription.entity';
-
-/**
- * Vocales acentuadas y su equivalente plano, para que la búsqueda ignore tildes.
- * El orden de los dos strings tiene que coincidir carácter a carácter: es lo que
- * espera `translate()` de Postgres.
- */
-const ACCENTED = 'áéíóúüñÁÉÍÓÚÜÑ';
-const UNACCENTED = 'aeiouunAEIOUUN';
-
-function stripAccents(value: string): string {
-  return value.replace(/[áéíóúüñ]/g, c => UNACCENTED[ACCENTED.indexOf(c)] ?? c);
-}
 
 export interface PaginatedResult<T> {
   data: T[];
@@ -326,10 +315,10 @@ export class PharmacySalesService {
       // "Noemí". Se usa `translate` en vez de la extensión `unaccent` para no
       // depender de que esté instalada en la base. Los mismos reemplazos se
       // aplican al término en JS, o el patrón nunca casaría.
-      const term = `%${stripAccents(options.search.trim().toLowerCase())}%`;
+      const term = unaccentedTerm(options.search);
       qb.andWhere(
-        `(translate(LOWER(sale."saleNumber"), '${ACCENTED}', '${UNACCENTED}') LIKE :term
-          OR translate(LOWER(sale."patientName"), '${ACCENTED}', '${UNACCENTED}') LIKE :term)`,
+        `(${unaccentedColumn('sale."saleNumber"')} LIKE :term
+          OR ${unaccentedColumn('sale."patientName"')} LIKE :term)`,
         { term },
       );
     }

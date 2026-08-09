@@ -351,8 +351,19 @@ describe('ServicePricesService', () => {
     it('busca por código o nombre', async () => {
       await service.findAll({ search: 'hemo' }, CLINIC_ID);
 
-      expect(qb.andWhere).toHaveBeenCalledWith('(sp.code ILIKE :search OR sp.name ILIKE :search)', {
+      expect(qb.andWhere).toHaveBeenCalledWith(expect.stringContaining('translate(LOWER(sp.code)'), {
         search: '%hemo%',
+      });
+    });
+
+    it('ignora los acentos en los dos lados de la comparación', async () => {
+      // En el mostrador nadie escribe "cirugía" con tilde. El término se
+      // aplana en JS y la columna en SQL; si solo se hiciera uno de los dos,
+      // el patrón no casaría nunca.
+      await service.findAll({ search: 'CIRUGÍA' }, CLINIC_ID);
+
+      expect(qb.andWhere).toHaveBeenCalledWith(expect.stringContaining('translate(LOWER(sp.name)'), {
+        search: '%cirugia%',
       });
     });
   });

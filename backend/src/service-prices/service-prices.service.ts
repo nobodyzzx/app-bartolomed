@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
 import { AuditService } from '../audit/audit.service';
+import { unaccentedColumn, unaccentedTerm } from '../common/utils/accent-insensitive.util';
 import { AppointmentType } from '../appointments/entities/appointment.entity';
 import { User } from '../users/entities/user.entity';
 import {
@@ -124,9 +125,13 @@ export class ServicePricesService {
       qb.andWhere('sp.is_active = :isActive', { isActive: filter.isActive === 'true' });
     }
     if (filter.search) {
-      qb.andWhere('(sp.code ILIKE :search OR sp.name ILIKE :search)', {
-        search: `%${filter.search}%`,
-      });
+      // Insensible a mayúsculas y a acentos: en el mostrador nadie escribe
+      // "cirugía" con tilde, y exigirla devolvía "sin resultados" sobre un
+      // servicio que sí está.
+      qb.andWhere(
+        `(${unaccentedColumn('sp.code')} LIKE :search OR ${unaccentedColumn('sp.name')} LIKE :search)`,
+        { search: unaccentedTerm(filter.search) },
+      );
     }
 
     const [items, total] = await qb.getManyAndCount();
