@@ -1,6 +1,7 @@
 import { Location } from '@angular/common'
 import { Component, OnDestroy, OnInit, signal } from '@angular/core'
 import { Router } from '@angular/router'
+import { PageEvent } from '@angular/material/paginator'
 import { AlertService } from '@core/services/alert.service'
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs'
 import { ClinicContextService } from '../../../../clinics/services/clinic-context.service'
@@ -16,12 +17,13 @@ import { InventoryService } from '../services/inventory.service'
 const INVENTORY_PAGE_SIZE = 2000
 
 /**
- * Filas pintadas a la vez. Se carga el inventario entero —el buscador filtra en
- * cliente y el resumen se calcula sobre todo— pero se dibuja de a poco: 475
- * filas, cada una con sus tooltips y sus cinco llamadas de plantilla, bastan
- * para colgar el navegador.
+ * Filas pintadas a la vez, por defecto. Se carga el inventario entero —el
+ * buscador filtra en cliente y el resumen se calcula sobre todo— pero se dibuja
+ * de a poco: 475 filas, cada una con sus tooltips y sus cinco llamadas de
+ * plantilla, bastan para colgar el navegador. El usuario puede cambiarlo desde
+ * el paginador.
  */
-const PAGE_SIZE = 50
+const DEFAULT_PAGE_SIZE = 50
 
 @Component({
     selector: 'app-inventory',
@@ -230,30 +232,29 @@ export class InventoryComponent implements OnInit, OnDestroy {
    */
   filteredProducts: MedicationStock[] = []
 
-  /** Solo lo que se pinta. Ver `PAGE_SIZE`. */
+  /** Solo lo que se pinta. Ver `DEFAULT_PAGE_SIZE`. */
   pagedProducts: MedicationStock[] = []
   page = signal(1)
-
-  get totalPages(): number {
-    return Math.max(1, Math.ceil(this.filteredProducts.length / PAGE_SIZE))
-  }
+  pageSize = DEFAULT_PAGE_SIZE
 
   get rangeFrom(): number {
-    return this.filteredProducts.length === 0 ? 0 : (this.page() - 1) * PAGE_SIZE + 1
+    return this.filteredProducts.length === 0 ? 0 : (this.page() - 1) * this.pageSize + 1
   }
 
   get rangeTo(): number {
-    return Math.min(this.page() * PAGE_SIZE, this.filteredProducts.length)
+    return Math.min(this.page() * this.pageSize, this.filteredProducts.length)
   }
 
-  goToPage(p: number): void {
-    this.page.set(Math.min(Math.max(1, p), this.totalPages))
+  /** `mat-paginator` cuenta las páginas desde 0; aquí se llevan desde 1. */
+  onPageChange(event: PageEvent): void {
+    this.pageSize = event.pageSize
+    this.page.set(event.pageIndex + 1)
     this.applyPage()
   }
 
   private applyPage(): void {
-    const start = (this.page() - 1) * PAGE_SIZE
-    this.pagedProducts = this.filteredProducts.slice(start, start + PAGE_SIZE)
+    const start = (this.page() - 1) * this.pageSize
+    this.pagedProducts = this.filteredProducts.slice(start, start + this.pageSize)
   }
 
   /** Rehace la vista. Llamar cada vez que cambien datos, búsqueda o filtro. */

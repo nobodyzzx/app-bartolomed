@@ -1,5 +1,6 @@
 import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
+import { Sort } from '@angular/material/sort'
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs'
 import { MatDialog } from '@angular/material/dialog'
 import { Router } from '@angular/router'
@@ -81,25 +82,18 @@ export class ServicePricesComponent implements OnInit {
   }
 
   /**
-   * Ordena por una columna; volver a pulsarla invierte el sentido.
+   * Cambio de orden desde `matSort`. El orden se aplica dentro de cada
+   * categoría, que es como está agrupado el tarifario: mezclar consultas con
+   * exámenes en una sola lista rompería la lectura por bloques.
    *
-   * El orden se aplica dentro de cada categoría, que es como está agrupado el
-   * tarifario: mezclar consultas con exámenes en una sola lista ordenada
-   * rompería la lectura por bloques.
+   * Las cinco tablas comparten estado, así que ordenar por una cabecera ordena
+   * todas igual. `matSort` admite un tercer estado sin orden (`''`); ahí se
+   * vuelve al alfabético por nombre, que es el orden natural del tarifario.
    */
-  sortBy(key: SortKey): void {
-    if (this.sortKey === key) {
-      this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'
-    } else {
-      this.sortKey = key
-      this.sortDir = 'asc'
-    }
+  onSort(sort: Sort): void {
+    this.sortKey = (sort.direction ? sort.active : 'name') as SortKey
+    this.sortDir = sort.direction || 'asc'
     this.indexByCategory()
-  }
-
-  sortIcon(key: SortKey): string {
-    if (this.sortKey !== key) return 'unfold_more'
-    return this.sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'
   }
 
   /**

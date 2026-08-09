@@ -174,31 +174,24 @@
               }
             </tbody>
           </table>
-          <!-- Se carga el inventario entero (el buscador filtra sobre todo)
-               pero se pinta de a 50: 475 filas de golpe cuelgan el navegador. -->
-          <div class="table-footer flex items-center justify-between gap-4 flex-wrap">
+          <!-- `mat-paginator`, el mismo de pacientes, clínicas y auditoría:
+               se carga el inventario entero (el buscador filtra sobre todo)
+               pero se pinta de a poco, porque 475 filas de golpe cuelgan el
+               navegador. -->
+          <div class="table-footer">
             <span class="text-sm text-slate-500">
-              Mostrando
-              <span class="font-semibold text-slate-700">{{ rangeFrom }}–{{ rangeTo }}</span>
+              Mostrando <span class="font-semibold text-slate-700">{{ rangeFrom }}–{{ rangeTo }}</span>
               de <span class="font-semibold text-slate-700">{{ filteredProducts.length }}</span> productos
             </span>
-            @if (totalPages > 1) {
-              <div class="flex items-center gap-2">
-                <button type="button" (click)="goToPage(page() - 1)" [disabled]="page() === 1"
-                  class="w-9 h-9 rounded-full hover:bg-slate-100 text-slate-600 flex items-center justify-center disabled:opacity-30 disabled:hover:bg-transparent"
-                  matTooltip="Página anterior">
-                  <span class="material-symbols-outlined msz-20">chevron_left</span>
-                </button>
-                <span class="text-sm text-slate-600">
-                  Página <span class="font-semibold text-slate-800">{{ page() }}</span> de {{ totalPages }}
-                </span>
-                <button type="button" (click)="goToPage(page() + 1)" [disabled]="page() === totalPages"
-                  class="w-9 h-9 rounded-full hover:bg-slate-100 text-slate-600 flex items-center justify-center disabled:opacity-30 disabled:hover:bg-transparent"
-                  matTooltip="Página siguiente">
-                  <span class="material-symbols-outlined msz-20">chevron_right</span>
-                </button>
-              </div>
-            }
+            <mat-paginator
+              [length]="filteredProducts.length"
+              [pageSize]="pageSize"
+              [pageIndex]="page() - 1"
+              [pageSizeOptions]="[25, 50, 100]"
+              showFirstLastButtons
+              class="bg-transparent border-0"
+              (page)="onPageChange($event)"
+              />
           </div>
         </div>
       }

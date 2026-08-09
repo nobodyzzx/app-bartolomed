@@ -134,60 +134,46 @@
             </div>
 
             <div class="overflow-x-auto">
-              <table class="w-full text-sm">
+              <!-- `matSort` y no unas flechas propias: es lo que usan el resto
+                   de listados de la aplicación (pacientes, clínicas, activos,
+                   órdenes de compra), y así la cabecera se ve y se comporta
+                   igual en todas. El estado del orden es común a las cinco
+                   tablas —una por categoría— para que no queden ordenadas cada
+                   una por su lado. -->
+              <table class="w-full text-sm" matSort
+                [matSortActive]="sortKey" [matSortDirection]="sortDir"
+                (matSortChange)="onSort($event)">
                 <thead>
-                  <!-- Cabeceras ordenables: al pulsarlas se ordena por esa
-                       columna y al repetir se invierte. El orden se aplica
-                       dentro de cada categoría, que es como se lee el tarifario. -->
-                  <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
-                    <th class="text-left font-semibold px-6 py-3">
-                      <button type="button" (click)="sortBy('code')" class="inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-800">
-                        Código
-                        <span class="material-symbols-outlined msz-14 leading-none">{{ sortIcon('code') }}</span>
-                      </button>
+                  <tr class="bg-slate-50">
+                    <th mat-sort-header="code" class="text-left px-6 py-3 bg-slate-50">
+                      <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Código</span>
                     </th>
-                    <th class="text-left font-semibold px-6 py-3">
-                      <button type="button" (click)="sortBy('name')" class="inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-800">
-                        Servicio
-                        <span class="material-symbols-outlined msz-14 leading-none">{{ sortIcon('name') }}</span>
-                      </button>
+                    <th mat-sort-header="name" class="text-left px-6 py-3 bg-slate-50">
+                      <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Servicio</span>
                     </th>
                     @if (category === ServiceCategory.CONSULTATION) {
-                      <th class="text-left font-semibold px-6 py-3">
-                        <button type="button" (click)="sortBy('appointmentType')" class="inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-800">
-                          Tipo de cita
-                          <span class="material-symbols-outlined msz-14 leading-none">{{ sortIcon('appointmentType') }}</span>
-                        </button>
-                      </th>
+                    <th mat-sort-header="appointmentType" class="text-left px-6 py-3 bg-slate-50">
+                      <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Tipo de cita</span>
+                    </th>
                     }
                     @if (hasCost(category)) {
-                      <th class="text-right font-semibold px-6 py-3">
-                        <button type="button" (click)="sortBy('costPrice')" class="inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-800">
-                          Costo convenio
-                          <span class="material-symbols-outlined msz-14 leading-none">{{ sortIcon('costPrice') }}</span>
-                        </button>
-                      </th>
-                      <th class="text-right font-semibold px-6 py-3">
-                        <button type="button" (click)="sortBy('margin')" class="inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-800">
-                          Margen
-                          <span class="material-symbols-outlined msz-14 leading-none">{{ sortIcon('margin') }}</span>
-                        </button>
-                      </th>
-                    }
-                    <th class="text-right font-semibold px-6 py-3">
-                      <button type="button" (click)="sortBy('price')" class="inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-800">
-                        Precio
-                        <span class="material-symbols-outlined msz-14 leading-none">{{ sortIcon('price') }}</span>
-                      </button>
+                    <th mat-sort-header="costPrice" class="text-right px-6 py-3 bg-slate-50">
+                      <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Costo convenio</span>
                     </th>
-                    <th class="text-center font-semibold px-6 py-3">
-                      <button type="button" (click)="sortBy('isActive')" class="inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-800">
-                        Estado
-                        <span class="material-symbols-outlined msz-14 leading-none">{{ sortIcon('isActive') }}</span>
-                      </button>
+                    <th mat-sort-header="margin" class="text-right px-6 py-3 bg-slate-50">
+                      <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Margen</span>
+                    </th>
+                    }
+                    <th mat-sort-header="price" class="text-right px-6 py-3 bg-slate-50">
+                      <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Precio</span>
+                    </th>
+                    <th mat-sort-header="isActive" class="text-center px-6 py-3 bg-slate-50">
+                      <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
                     </th>
                     @if (canManage()) {
-                      <th class="text-right font-semibold px-6 py-3">Acciones</th>
+                      <th class="text-right px-6 py-3 bg-slate-50">
+                        <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span>
+                      </th>
                     }
                   </tr>
                 </thead>
@@ -239,26 +225,30 @@
                       </td>
                       @if (canManage()) {
                         <td class="px-6 py-3">
-                          <div class="flex items-center justify-end gap-2">
+                          <!-- Espec. de `docs/GUIA-DISENO-UI.md`: base siempre
+                               `text-slate-500`, el color semántico solo en
+                               hover, `rounded-lg` y `msz-18`. Editar → ámbar,
+                               eliminar → rojo, activar → verde. -->
+                          <div class="flex items-center justify-end gap-1">
                             <button type="button" (click)="edit(price)"
-                              class="w-9 h-9 rounded-full hover:bg-slate-100 text-slate-500 flex items-center justify-center"
+                              class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0"
                               matTooltip="Editar">
-                              <span class="material-symbols-outlined msz-20">edit</span>
+                              <span class="material-symbols-outlined msz-18">edit</span>
                             </button>
                             <!-- La baja es reversible: se desactiva, no se
                                  borra. Sin este botón habría que abrir el
                                  formulario entero para un solo interruptor. -->
                             @if (price.isActive) {
                               <button type="button" (click)="remove(price)"
-                                class="w-9 h-9 rounded-full hover:bg-red-50 text-red-500 flex items-center justify-center"
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors border-0"
                                 matTooltip="Dar de baja">
-                                <span class="material-symbols-outlined msz-20">delete</span>
+                                <span class="material-symbols-outlined msz-18">delete</span>
                               </button>
                             } @else {
                               <button type="button" (click)="reactivate(price)"
-                                class="w-9 h-9 rounded-full hover:bg-green-50 text-green-600 flex items-center justify-center"
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors border-0"
                                 matTooltip="Reactivar">
-                                <span class="material-symbols-outlined msz-20">restart_alt</span>
+                                <span class="material-symbols-outlined msz-18">restart_alt</span>
                               </button>
                             }
                           </div>
