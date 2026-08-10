@@ -26,7 +26,6 @@ biotech
 block
 bolt
 build
-build_circle
 business
 cake
 calculate
@@ -82,12 +81,10 @@ event
 event_available
 event_busy
 event_note
-event_repeat
 expand_less
 expand_more
 explore
 fact_check
-factory
 family_restroom
 favorite
 filter_alt
@@ -119,7 +116,6 @@ key
 label
 labs
 lan
-layers
 library_books
 link
 list
@@ -136,18 +132,16 @@ mail
 man
 manage_accounts
 manage_search
-manufacturing
 map
 medical_information
 medical_services
 medication
 medication_liquid
-meeting_room
 menu
-model_training
 monitor_heart
 monitor_weight
 more_horiz
+move_down
 note
 note_add
 notes
@@ -174,6 +168,7 @@ pill
 pin
 place
 play_circle
+playlist_add_check
 point_of_sale
 price_change
 print
@@ -189,7 +184,6 @@ restart_alt
 restore
 route
 save
-savings
 scale
 schedule
 school
@@ -217,7 +211,6 @@ task_alt
 thermostat
 timeline
 timer
-title
 today
 toggle_on
 trending_down

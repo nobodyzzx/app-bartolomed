@@ -6867,6 +6867,330 @@
         ]
       }
     },
+    "/api/assets/{id}/move": {
+      "post": {
+        "operationId": "AssetsController_moveAsset",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveAssetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetMovement"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
+    "/api/assets/movements": {
+      "get": {
+        "operationId": "AssetsController_findMovements",
+        "parameters": [
+          {
+            "name": "location",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
+    "/api/assets/{id}/movements": {
+      "get": {
+        "operationId": "AssetsController_findAssetMovements",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AssetMovement"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
+    "/api/assets/counts": {
+      "post": {
+        "operationId": "AssetsController_startCount",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartInventoryCountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryCount"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Assets"
+        ]
+      },
+      "get": {
+        "operationId": "AssetsController_findCounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InventoryCount"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
+    "/api/assets/counts/{countId}": {
+      "get": {
+        "operationId": "AssetsController_findCount",
+        "parameters": [
+          {
+            "name": "countId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
+    "/api/assets/counts/{countId}/items": {
+      "patch": {
+        "operationId": "AssetsController_saveCounted",
+        "parameters": [
+          {
+            "name": "countId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveCountedItemsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryCount"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
+    "/api/assets/counts/{countId}/close": {
+      "post": {
+        "operationId": "AssetsController_closeCount",
+        "parameters": [
+          {
+            "name": "countId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseInventoryCountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryCount"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
+    "/api/assets/counts/{countId}/cancel": {
+      "post": {
+        "operationId": "AssetsController_cancelCount",
+        "parameters": [
+          {
+            "name": "countId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryCount"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
+    "/api/assets/counts/{countId}/act": {
+      "get": {
+        "operationId": "AssetsController_printCountAct",
+        "parameters": [
+          {
+            "name": "countId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Acta de diferencias del conteo, para archivar firmada.",
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
     "/api/assets": {
       "post": {
         "operationId": "AssetsController_create",
@@ -13194,69 +13518,26 @@
           "updatedAt"
         ]
       },
-      "CreateAssetDto": {
+      "MoveAssetDto": {
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string"
+          "toLocation": {
+            "type": "string",
+            "description": "Ambiente al que va. Se acepta texto libre: es el mismo campo del ítem.",
+            "maxLength": 200
           },
           "quantity": {
             "type": "number",
-            "description": "Unidades del ítem en su ubicación. Por defecto 1.",
+            "description": "Unidades que se mueven. Omitida, va el ítem completo.",
             "minimum": 1
           },
-          "type": {
-            "type": "string",
-            "enum": [
-              "medical_equipment",
-              "furniture",
-              "computer",
-              "vehicle",
-              "building",
-              "other"
-            ]
-          },
-          "manufacturer": {
-            "type": "string"
-          },
-          "model": {
-            "type": "string"
-          },
-          "serialNumber": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "active",
-              "inactive",
-              "maintenance",
-              "retired",
-              "sold",
-              "lost",
-              "damaged"
-            ]
-          },
-          "condition": {
-            "type": "string",
-            "enum": [
-              "excellent",
-              "good",
-              "fair",
-              "poor",
-              "critical"
-            ]
-          },
-          "location": {
-            "type": "string"
-          },
           "notes": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 500
           }
         },
         "required": [
-          "name",
-          "type"
+          "toLocation"
         ]
       },
       "Asset": {
@@ -13360,6 +13641,314 @@
           "updatedAt",
           "clinic",
           "createdBy"
+        ]
+      },
+      "AssetMovement": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "assetId": {
+            "type": "string"
+          },
+          "asset": {
+            "$ref": "#/components/schemas/Asset"
+          },
+          "assetName": {
+            "type": "string",
+            "description": "Nombre del ítem al momento del movimiento. Se copia en vez de depender del\n`asset`, porque un traspaso parcial crea un ítem nuevo en destino y el de\norigen puede renombrarse o darse de baja después: el historial tiene que\nseguir diciendo qué se movió."
+          },
+          "fromLocation": {
+            "type": "string"
+          },
+          "toLocation": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "targetAssetId": {
+            "type": "string",
+            "description": "Ítem que recibió las unidades en destino, cuando el traspaso fue parcial."
+          },
+          "notes": {
+            "type": "string"
+          },
+          "movedBy": {
+            "$ref": "#/components/schemas/User"
+          },
+          "clinic": {
+            "$ref": "#/components/schemas/Clinic"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "assetId",
+          "asset",
+          "assetName",
+          "fromLocation",
+          "toLocation",
+          "quantity",
+          "targetAssetId",
+          "notes",
+          "movedBy",
+          "clinic",
+          "createdAt"
+        ]
+      },
+      "StartInventoryCountDto": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "description": "Ambiente a recorrer. Omitido, el conteo abarca toda la clínica.",
+            "maxLength": 200
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      },
+      "InventoryCount": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "countNumber": {
+            "type": "string",
+            "description": "Correlativo legible: CONT-2026-0001."
+          },
+          "location": {
+            "type": "string",
+            "description": "Ambiente recorrido; nulo cuando el conteo abarca toda la clínica."
+          },
+          "status": {
+            "enum": [
+              "open",
+              "closed",
+              "cancelled"
+            ],
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InventoryCountItem"
+            }
+          },
+          "startedBy": {
+            "$ref": "#/components/schemas/User"
+          },
+          "closedBy": {
+            "$ref": "#/components/schemas/User"
+          },
+          "closedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "clinic": {
+            "$ref": "#/components/schemas/Clinic"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "countNumber",
+          "location",
+          "status",
+          "notes",
+          "items",
+          "startedBy",
+          "closedBy",
+          "closedAt",
+          "clinic",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "InventoryCountItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "countId": {
+            "type": "string"
+          },
+          "count": {
+            "$ref": "#/components/schemas/InventoryCount"
+          },
+          "assetId": {
+            "type": "string"
+          },
+          "asset": {
+            "$ref": "#/components/schemas/Asset"
+          },
+          "assetName": {
+            "type": "string",
+            "description": "Nombre y código al abrir el conteo, para que el acta no dependa de la ficha."
+          },
+          "assetTag": {
+            "type": "string"
+          },
+          "expectedQuantity": {
+            "type": "number"
+          },
+          "countedQuantity": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "countId",
+          "count",
+          "assetId",
+          "asset",
+          "assetName",
+          "assetTag",
+          "expectedQuantity",
+          "countedQuantity",
+          "notes",
+          "updatedAt"
+        ]
+      },
+      "CountedItemDto": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "countedQuantity": {
+            "type": "number",
+            "description": "Unidades halladas. 0 significa que no apareció ninguna.",
+            "minimum": 0
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "itemId",
+          "countedQuantity"
+        ]
+      },
+      "SaveCountedItemsDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CountedItemDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "CloseInventoryCountDto": {
+        "type": "object",
+        "properties": {
+          "adjustInventory": {
+            "type": "boolean",
+            "description": "Si es `true`, las cantidades del inventario se ajustan a lo contado. En\n`false` el conteo queda como registro de la diferencia sin tocar el stock:\nsirve cuando lo que falta se va a buscar antes de darlo por perdido."
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      },
+      "CreateAssetDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Unidades del ítem en su ubicación. Por defecto 1.",
+            "minimum": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "medical_equipment",
+              "furniture",
+              "computer",
+              "vehicle",
+              "building",
+              "other"
+            ]
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "serialNumber": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "maintenance",
+              "retired",
+              "sold",
+              "lost",
+              "damaged"
+            ]
+          },
+          "condition": {
+            "type": "string",
+            "enum": [
+              "excellent",
+              "good",
+              "fair",
+              "poor",
+              "critical"
+            ]
+          },
+          "location": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "type"
         ]
       },
       "UpdateAssetDto": {

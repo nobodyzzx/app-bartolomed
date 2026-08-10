@@ -10,9 +10,17 @@ import { User } from '../users/entities/user.entity';
 import { AssetsService } from './assets.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { FilterAssetsDto } from './dto/filter-assets.dto';
+import { FilterMovementsDto, MoveAssetDto } from './dto/asset-movement.dto';
+import {
+  CloseInventoryCountDto,
+  SaveCountedItemsDto,
+  StartInventoryCountDto,
+} from './dto/inventory-count.dto';
 import { PrintAssetReportDto, PrintHandoverActDto } from './dto/print-asset-report.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
+import { AssetMovementsService } from './services/asset-movements.service';
 import { AssetPrintReportsService } from './services/asset-print-reports.service';
+import { InventoryCountsService } from './services/inventory-counts.service';
 import { contentDisposition } from '../common/utils/content-disposition.util';
 
 // Sin @Auth() por método: @AuthClinic a nivel de clase ya monta
@@ -27,7 +35,94 @@ export class AssetsController {
   constructor(
     private readonly assetsService: AssetsService,
     private readonly printReports: AssetPrintReportsService,
+    private readonly movements: AssetMovementsService,
+    private readonly counts: InventoryCountsService,
   ) {}
+
+  // ==================== MOVIMIENTOS ENTRE AMBIENTES ====================
+
+  /**
+   * Traspasa unidades a otro ambiente de la misma clínica, en un paso.
+   *
+   * Es lo que pasa a diario y antes no dejaba rastro: mover una silla era editar
+   * el campo Ambiente. El flujo de `/asset-transfers` no cubre esto — exige
+   * clínica destino distinta y pasa por despacho y confirmación de recepción.
+   */
+  @Post(':id/move')
+  moveAsset(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: MoveAssetDto,
+    @GetUser() user: User,
+    @Req() req: Request,
+  ) {
+    return this.movements.move(id, dto, user.id, resolveClinicId(req)!);
+  }
+
+  @Get('movements')
+  findMovements(@Query() filters: FilterMovementsDto, @Req() req: Request) {
+    return this.movements.findAll(resolveClinicId(req)!, filters);
+  }
+
+  @Get(':id/movements')
+  findAssetMovements(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
+    return this.movements.findByAsset(id, resolveClinicId(req)!);
+  }
+
+  // ==================== TOMA DE INVENTARIO ====================
+
+  /**
+   * Abre un conteo y congela lo esperado de cada ítem. Sin ese congelado, una
+   * edición hecha mientras se recorre la clínica movería el blanco contra el que
+   * se mide la diferencia.
+   */
+  @Post('counts')
+  startCount(@Body() dto: StartInventoryCountDto, @GetUser() user: User, @Req() req: Request) {
+    return this.counts.start(dto, user.id, resolveClinicId(req)!);
+  }
+
+  @Get('counts')
+  findCounts(@Req() req: Request) {
+    return this.counts.findAll(resolveClinicId(req)!);
+  }
+
+  @Get('counts/:countId')
+  async findCount(@Param('countId', ParseUUIDPipe) id: string, @Req() req: Request) {
+    const count = await this.counts.findOne(id, resolveClinicId(req)!);
+    return { ...count, summary: this.counts.summarize(count) };
+  }
+
+  @Patch('counts/:countId/items')
+  saveCounted(
+    @Param('countId', ParseUUIDPipe) id: string,
+    @Body() dto: SaveCountedItemsDto,
+    @Req() req: Request,
+  ) {
+    return this.counts.saveCounted(id, dto, resolveClinicId(req)!);
+  }
+
+  @Post('counts/:countId/close')
+  closeCount(
+    @Param('countId', ParseUUIDPipe) id: string,
+    @Body() dto: CloseInventoryCountDto,
+    @GetUser() user: User,
+    @Req() req: Request,
+  ) {
+    return this.counts.close(id, dto, user.id, resolveClinicId(req)!);
+  }
+
+  @Post('counts/:countId/cancel')
+  cancelCount(@Param('countId', ParseUUIDPipe) id: string, @Req() req: Request) {
+    return this.counts.cancel(id, resolveClinicId(req)!);
+  }
+
+  /** Acta de diferencias del conteo, para archivar firmada. */
+  @Get('counts/:countId/act')
+  async printCountAct(@Param('countId', ParseUUIDPipe) id: string, @Req() req: Request, @Res() res: Response) {
+    const clinicId = resolveClinicId(req);
+    const count = await this.counts.findOne(id, clinicId!);
+    const buf = await this.printReports.countAct(count, this.counts.summarize(count));
+    this.sendPdf(res, `acta-conteo-${count.countNumber}`, buf);
+  }
 
   @Post()
   create(@Body() createAssetDto: CreateAssetDto, @GetUser() user: User, @Req() req: Request) {

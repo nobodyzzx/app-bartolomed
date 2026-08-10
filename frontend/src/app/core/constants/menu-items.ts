@@ -191,6 +191,13 @@ export const MENU_ITEMS: MenuItem[] = [
         allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
         requiredPermissions: [Permission.AssetsManage],
       },
+      {
+        label: 'Toma de Inventario',
+        icon: 'checklist_rtl',
+        route: '/dashboard/assets-control/counts',
+        allowedRoles: [UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+        requiredPermissions: [Permission.AssetsManage],
+      },
       // "Mantenimiento" se retiró del menú: cero registros desde que existe, y
       // el inventario de esta clínica se lleva para contar existencias por
       // ambiente, no para programar mantenimientos. La pantalla sigue en

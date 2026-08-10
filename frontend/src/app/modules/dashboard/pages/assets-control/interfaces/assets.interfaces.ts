@@ -141,3 +141,67 @@ export interface AssetTransferAuditLog {
   snapshot?: Record<string, any>
   createdAt: Date
 }
+
+// ─── Movimientos entre ambientes ─────────────────────────────────────────────
+
+export interface AssetMovement {
+  id: string
+  assetId: string
+  assetName: string
+  fromLocation?: string
+  toLocation: string
+  quantity: number
+  notes?: string
+  movedBy?: { id: string; personalInfo?: { firstName: string; lastName: string } }
+  createdAt: string
+}
+
+export interface MoveAssetDto {
+  toLocation: string
+  quantity?: number
+  notes?: string
+}
+
+// ─── Toma de inventario físico ───────────────────────────────────────────────
+
+export enum InventoryCountStatus {
+  OPEN = 'open',
+  CLOSED = 'closed',
+  CANCELLED = 'cancelled',
+}
+
+export interface InventoryCountItem {
+  id: string
+  assetId: string
+  assetName: string
+  assetTag?: string
+  expectedQuantity: number
+  /** `null` = sin contar todavía, distinto de haber contado 0. */
+  countedQuantity: number | null
+  notes?: string
+}
+
+export interface InventoryCountSummary {
+  items: number
+  contados: number
+  sinContar: number
+  coinciden: number
+  faltantes: number
+  sobrantes: number
+  unidadesEsperadas: number
+  unidadesContadas: number
+}
+
+export interface InventoryCount {
+  id: string
+  countNumber: string
+  location?: string
+  status: InventoryCountStatus
+  notes?: string
+  items?: InventoryCountItem[]
+  summary?: InventoryCountSummary
+  startedBy?: { id: string; personalInfo?: { firstName: string; lastName: string } }
+  closedBy?: { id: string; personalInfo?: { firstName: string; lastName: string } }
+  closedAt?: string
+  createdAt: string
+}

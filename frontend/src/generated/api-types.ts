@@ -3404,6 +3404,151 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/assets/{id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AssetsController_moveAsset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assets/movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AssetsController_findMovements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assets/{id}/movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AssetsController_findAssetMovements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assets/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AssetsController_findCounts"];
+        put?: never;
+        post: operations["AssetsController_startCount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assets/counts/{countId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AssetsController_findCount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assets/counts/{countId}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["AssetsController_saveCounted"];
+        trace?: never;
+    };
+    "/api/assets/counts/{countId}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AssetsController_closeCount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assets/counts/{countId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AssetsController_cancelCount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assets/counts/{countId}/act": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Acta de diferencias del conteo, para archivar firmada. */
+        get: operations["AssetsController_printCountAct"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/assets": {
         parameters: {
             query?: never;
@@ -5492,20 +5637,11 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
-        CreateAssetDto: {
-            name: string;
-            /** @description Unidades del ítem en su ubicación. Por defecto 1. */
+        MoveAssetDto: {
+            /** @description Ambiente al que va. Se acepta texto libre: es el mismo campo del ítem. */
+            toLocation: string;
+            /** @description Unidades que se mueven. Omitida, va el ítem completo. */
             quantity?: number;
-            /** @enum {string} */
-            type: "medical_equipment" | "furniture" | "computer" | "vehicle" | "building" | "other";
-            manufacturer?: string;
-            model?: string;
-            serialNumber?: string;
-            /** @enum {string} */
-            status?: "active" | "inactive" | "maintenance" | "retired" | "sold" | "lost" | "damaged";
-            /** @enum {string} */
-            condition?: "excellent" | "good" | "fair" | "poor" | "critical";
-            location?: string;
             notes?: string;
         };
         Asset: {
@@ -5540,6 +5676,103 @@ export interface components {
             updatedAt: string;
             clinic: components["schemas"]["Clinic"];
             createdBy: components["schemas"]["User"];
+        };
+        AssetMovement: {
+            id: string;
+            assetId: string;
+            asset: components["schemas"]["Asset"];
+            /**
+             * @description Nombre del ítem al momento del movimiento. Se copia en vez de depender del
+             *     `asset`, porque un traspaso parcial crea un ítem nuevo en destino y el de
+             *     origen puede renombrarse o darse de baja después: el historial tiene que
+             *     seguir diciendo qué se movió.
+             */
+            assetName: string;
+            fromLocation: string;
+            toLocation: string;
+            quantity: number;
+            /** @description Ítem que recibió las unidades en destino, cuando el traspaso fue parcial. */
+            targetAssetId: string;
+            notes: string;
+            movedBy: components["schemas"]["User"];
+            clinic: components["schemas"]["Clinic"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        StartInventoryCountDto: {
+            /** @description Ambiente a recorrer. Omitido, el conteo abarca toda la clínica. */
+            location?: string;
+            notes?: string;
+        };
+        InventoryCount: {
+            id: string;
+            /** @description Correlativo legible: CONT-2026-0001. */
+            countNumber: string;
+            /** @description Ambiente recorrido; nulo cuando el conteo abarca toda la clínica. */
+            location: string;
+            /** @enum {string} */
+            status: "open" | "closed" | "cancelled";
+            notes: string;
+            items: components["schemas"]["InventoryCountItem"][];
+            startedBy: components["schemas"]["User"];
+            closedBy: components["schemas"]["User"];
+            /** Format: date-time */
+            closedAt: string;
+            clinic: components["schemas"]["Clinic"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        InventoryCountItem: {
+            id: string;
+            countId: string;
+            count: components["schemas"]["InventoryCount"];
+            assetId: string;
+            asset: components["schemas"]["Asset"];
+            /** @description Nombre y código al abrir el conteo, para que el acta no dependa de la ficha. */
+            assetName: string;
+            assetTag: string;
+            expectedQuantity: number;
+            countedQuantity: number;
+            notes: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        CountedItemDto: {
+            /** Format: uuid */
+            itemId: string;
+            /** @description Unidades halladas. 0 significa que no apareció ninguna. */
+            countedQuantity: number;
+            notes?: string;
+        };
+        SaveCountedItemsDto: {
+            items: components["schemas"]["CountedItemDto"][];
+        };
+        CloseInventoryCountDto: {
+            /**
+             * @description Si es `true`, las cantidades del inventario se ajustan a lo contado. En
+             *     `false` el conteo queda como registro de la diferencia sin tocar el stock:
+             *     sirve cuando lo que falta se va a buscar antes de darlo por perdido.
+             */
+            adjustInventory?: boolean;
+            notes?: string;
+        };
+        CreateAssetDto: {
+            name: string;
+            /** @description Unidades del ítem en su ubicación. Por defecto 1. */
+            quantity?: number;
+            /** @enum {string} */
+            type: "medical_equipment" | "furniture" | "computer" | "vehicle" | "building" | "other";
+            manufacturer?: string;
+            model?: string;
+            serialNumber?: string;
+            /** @enum {string} */
+            status?: "active" | "inactive" | "maintenance" | "retired" | "sold" | "lost" | "damaged";
+            /** @enum {string} */
+            condition?: "excellent" | "good" | "fair" | "poor" | "critical";
+            location?: string;
+            notes?: string;
         };
         UpdateAssetDto: Record<string, never>;
         CreateAssetTransferItemDto: {
@@ -10873,6 +11106,224 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AssetsController_moveAsset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveAssetDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetMovement"];
+                };
+            };
+        };
+    };
+    AssetsController_findMovements: {
+        parameters: {
+            query?: {
+                location?: string;
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AssetsController_findAssetMovements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetMovement"][];
+                };
+            };
+        };
+    };
+    AssetsController_findCounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryCount"][];
+                };
+            };
+        };
+    };
+    AssetsController_startCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartInventoryCountDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryCount"];
+                };
+            };
+        };
+    };
+    AssetsController_findCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                countId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AssetsController_saveCounted: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                countId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveCountedItemsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryCount"];
+                };
+            };
+        };
+    };
+    AssetsController_closeCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                countId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CloseInventoryCountDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryCount"];
+                };
+            };
+        };
+    };
+    AssetsController_cancelCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                countId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryCount"];
+                };
+            };
+        };
+    };
+    AssetsController_printCountAct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                countId: string;
+            };
             cookie?: never;
         };
         requestBody?: never;

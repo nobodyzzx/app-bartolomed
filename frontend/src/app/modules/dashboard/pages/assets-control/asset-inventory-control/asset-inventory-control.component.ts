@@ -6,7 +6,9 @@ import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
+import { MatDialog } from '@angular/material/dialog'
 import { AssetCondition, AssetStatus, BaseAsset } from '../interfaces/assets.interfaces'
+import { MoveAssetDialogComponent } from '../move-asset-dialog/move-asset-dialog.component'
 import { AssetRegistrationService } from '../services/asset-registration.service'
 
 @Component({
@@ -76,6 +78,7 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
     private router: Router,
     private location: Location,
     private alert: AlertService,
+    private dialog: MatDialog,
   ) {
     this.dataSource = new MatTableDataSource<BaseAsset>([])
     this.dataSource.filterPredicate = (asset: BaseAsset, filter: string) => {
@@ -241,6 +244,16 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
    * inicial; apareció con la primera carga real de activos.
    */
   /** Unidades: el inventario cuenta existencias, y 235 ítems son 778 unidades. */
+  /** Traspaso a otro ambiente: un paso, con registro de quién y cuándo. */
+  moveAsset(asset: BaseAsset): void {
+    this.dialog
+      .open(MoveAssetDialogComponent, { data: { asset }, width: '520px', autoFocus: false })
+      .afterClosed()
+      .subscribe(movido => {
+        if (movido) this.loadAssets()
+      })
+  }
+
   getTotalUnits(): number {
     return this.assets.reduce((n, a) => n + (Number(a.quantity) || 1), 0)
   }

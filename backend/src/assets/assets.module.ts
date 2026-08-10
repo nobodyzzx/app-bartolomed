@@ -11,8 +11,12 @@ import {
   AssetTransferAuditLog,
   AssetTransferItem,
 } from './entities/asset-transfer.entity';
+import { AssetMovement } from './entities/asset-movement.entity';
 import { Asset } from './entities/asset.entity';
+import { InventoryCount, InventoryCountItem } from './entities/inventory-count.entity';
+import { AssetMovementsService } from './services/asset-movements.service';
 import { AssetPrintReportsService } from './services/asset-print-reports.service';
+import { InventoryCountsService } from './services/inventory-counts.service';
 import { AssetTransfersService } from './services/asset-transfers.service';
 
 @Module({
@@ -23,12 +27,21 @@ import { AssetTransfersService } from './services/asset-transfers.service';
       AssetTransferItem,
       AssetTransferAuditLog,
       Clinic,
+      AssetMovement,
+      InventoryCount,
+      InventoryCountItem,
     ]),
     AuthModule,
     PdfModule,
   ],
   controllers: [AssetsController, AssetTransfersController],
-  providers: [AssetsService, AssetTransfersService, AssetPrintReportsService],
+  providers: [
+    AssetsService,
+    AssetTransfersService,
+    AssetPrintReportsService,
+    AssetMovementsService,
+    InventoryCountsService,
+  ],
   exports: [TypeOrmModule, AssetsService, AssetTransfersService],
 })
 export class AssetsModule {}

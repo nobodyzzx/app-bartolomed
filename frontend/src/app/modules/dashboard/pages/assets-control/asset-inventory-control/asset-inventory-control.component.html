@@ -270,6 +270,14 @@
                   </button>
                   <button
                     type="button"
+                    (click)="moveAsset(asset)"
+                    matTooltip="Mover a otro ambiente"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-0"
+                    >
+                    <span class="material-symbols-outlined msz-18">move_down</span>
+                  </button>
+                  <button
+                    type="button"
                     (click)="editAsset(asset)"
                     matTooltip="Editar"
                     class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 hover:bg-amber-50 hover:text-amber-600 transition-colors border-0"

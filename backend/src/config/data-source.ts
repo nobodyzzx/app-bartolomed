@@ -15,7 +15,9 @@ import {
   AssetTransferAuditLog,
   AssetTransferItem,
 } from '../assets/entities/asset-transfer.entity';
+import { AssetMovement } from '../assets/entities/asset-movement.entity';
 import { Asset } from '../assets/entities/asset.entity';
+import { InventoryCount, InventoryCountItem } from '../assets/entities/inventory-count.entity';
 import { Invoice, InvoiceItem, Payment } from '../billing/entities/billing.entity';
 import { Clinic } from '../clinics/entities';
 import { LabOrder, LabOrderItem } from '../lab-orders/entities/lab-order.entity';
@@ -70,6 +72,9 @@ export const AppDataSource = new DataSource({
     AssetTransfer,
     AssetTransferItem,
     AssetTransferAuditLog,
+    AssetMovement,
+    InventoryCount,
+    InventoryCountItem,
     Medication,
     MedicationStock,
     StockMovement,

@@ -1,6 +1,8 @@
 import { AssetsController } from './assets.controller';
 import { AssetsService } from './assets.service';
+import { AssetMovementsService } from './services/asset-movements.service';
 import { AssetPrintReportsService } from './services/asset-print-reports.service';
+import { InventoryCountsService } from './services/inventory-counts.service';
 import { User } from '../users/entities/user.entity';
 
 const makeReq = (overrides: Record<string, any> = {}) =>
@@ -10,6 +12,8 @@ describe('AssetsController', () => {
   let controller: AssetsController;
   let service: jest.Mocked<AssetsService>;
   let printReports: jest.Mocked<AssetPrintReportsService>;
+  let movements: jest.Mocked<AssetMovementsService>;
+  let counts: jest.Mocked<InventoryCountsService>;
   const user = { id: 'user-1' } as User;
 
   beforeEach(() => {
@@ -30,7 +34,21 @@ describe('AssetsController', () => {
       executiveSummary: jest.fn().mockResolvedValue(Buffer.from('%PDF-resumen')),
       conditionAndDisposals: jest.fn().mockResolvedValue(Buffer.from('%PDF-bajas')),
     } as unknown as jest.Mocked<AssetPrintReportsService>;
-    controller = new AssetsController(service, printReports);
+    movements = {
+      move: jest.fn().mockResolvedValue({ id: 'mov-1' }),
+      findAll: jest.fn().mockResolvedValue({ data: [], total: 0 }),
+      findByAsset: jest.fn().mockResolvedValue([]),
+    } as unknown as jest.Mocked<AssetMovementsService>;
+    counts = {
+      start: jest.fn().mockResolvedValue({ id: 'count-1' }),
+      findAll: jest.fn().mockResolvedValue([]),
+      findOne: jest.fn().mockResolvedValue({ id: 'count-1', countNumber: 'CONT-2026-0001', items: [] }),
+      saveCounted: jest.fn().mockResolvedValue({ id: 'count-1' }),
+      close: jest.fn().mockResolvedValue({ id: 'count-1' }),
+      cancel: jest.fn().mockResolvedValue({ id: 'count-1' }),
+      summarize: jest.fn().mockReturnValue({ items: 0, contados: 0 }),
+    } as unknown as jest.Mocked<InventoryCountsService>;
+    controller = new AssetsController(service, printReports, movements, counts);
   });
 
   it('create delega dto, userId y clinicId', async () => {

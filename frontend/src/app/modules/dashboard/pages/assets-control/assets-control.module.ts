@@ -9,10 +9,14 @@ import { AssetTransferAuditDialogComponent } from './asset-transfers/asset-trans
 import { AssetTransfersComponent } from './asset-transfers/asset-transfers.component'
 import { AssetsControlRoutingModule } from './assets-control-routing.module'
 import { AssetsFormComponent } from './assets-form/assets-form.component'
+import { InventoryCountsComponent } from './inventory-counts/inventory-counts.component'
+import { MoveAssetDialogComponent } from './move-asset-dialog/move-asset-dialog.component'
 
 @NgModule({
   declarations: [
     AssetsFormComponent,
+    InventoryCountsComponent,
+    MoveAssetDialogComponent,
     AssetInventoryControlComponent,
     AssetTransfersComponent,
     AssetTransferAuditDialogComponent,

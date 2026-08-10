@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router'
 import { AssetInventoryControlComponent } from './asset-inventory-control/asset-inventory-control.component'
 import { AssetTransfersComponent } from './asset-transfers/asset-transfers.component'
 import { AssetsFormComponent } from './assets-form/assets-form.component'
+import { InventoryCountsComponent } from './inventory-counts/inventory-counts.component'
 
 const routes: Routes = [
   {
@@ -26,6 +27,10 @@ const routes: Routes = [
     path: 'inventory/view/:id',
     component: AssetsFormComponent,
     data: { viewMode: true },
+  },
+  {
+    path: 'counts',
+    component: InventoryCountsComponent,
   },
   {
     path: 'transfers',

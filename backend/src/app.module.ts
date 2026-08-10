@@ -17,7 +17,9 @@ import {
   AssetTransferAuditLog,
   AssetTransferItem,
 } from './assets/entities/asset-transfer.entity';
+import { AssetMovement } from './assets/entities/asset-movement.entity';
 import { Asset } from './assets/entities/asset.entity';
+import { InventoryCount, InventoryCountItem } from './assets/entities/inventory-count.entity';
 import { AuthModule } from './auth/auth.module';
 import { BillingModule } from './billing/billing.module';
 import { Invoice, InvoiceItem, Payment } from './billing/entities/billing.entity';
@@ -97,6 +99,12 @@ import { UsersModule } from './users/users.module';
         AssetTransfer,
         AssetTransferItem,
         AssetTransferAuditLog,
+    AssetMovement,
+    InventoryCount,
+    InventoryCountItem,
+        AssetMovement,
+        InventoryCount,
+        InventoryCountItem,
         Medication,
         MedicationStock,
         StockMovement,

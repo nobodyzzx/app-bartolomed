@@ -5,6 +5,8 @@ import { Clinic } from '../../clinics/entities/clinic.entity';
 import { TypstCompilerService } from '../../pdf/typst-compiler.service';
 import { typstString } from '../../pdf/utils/typst-escape.util';
 import { Asset, AssetCondition, AssetStatus, AssetType } from '../entities/asset.entity';
+import { InventoryCount } from '../entities/inventory-count.entity';
+import type { CountSummary } from './inventory-counts.service';
 
 export type PaperSize = 'oficio' | 'a4';
 
@@ -546,6 +548,96 @@ export class AssetPrintReportsService {
       ],
       body,
       paper: opts.paper,
+      landscape: true,
+    });
+  }
+
+  // ─── 6. Acta de diferencias de un conteo ──────────────────────────────────
+
+  /**
+   * El cierre del ciclo del conteo físico: qué se esperaba, qué se encontró y
+   * dónde no coincide. Se archiva firmada, y es el respaldo de cualquier ajuste
+   * de cantidades que el conteo haya provocado.
+   */
+  async countAct(count: InventoryCount, resumen: CountSummary): Promise<Buffer> {
+    const clinic = count.clinic ?? (await this.loadClinic((count as any).clinicId));
+    const items = [...(count.items ?? [])];
+
+    const contado = (i: { countedQuantity: number | null }) =>
+      i.countedQuantity === null || i.countedQuantity === undefined;
+
+    const diferencias = items.filter(i => !contado(i) && i.countedQuantity !== i.expectedQuantity);
+    const sinContar = items.filter(contado);
+
+    const fila = (i: (typeof items)[number]) => {
+      // Sin contar no es faltante: calcular la diferencia contra 0 hacía que los
+      // ítems que nadie llegó a revisar aparecieran como pérdidas en el acta.
+      const sinContar = contado(i);
+      const dif = (i.countedQuantity ?? 0) - i.expectedQuantity;
+      return [
+        typstString(i.assetTag ?? '—'),
+        typstString(i.assetName),
+        typstString(String(i.expectedQuantity)),
+        typstString(sinContar ? '—' : String(i.countedQuantity)),
+        sinContar
+          ? typstString('—')
+          : dif === 0
+            ? typstString('0')
+            : this.badge(`${dif > 0 ? '+' : ''}${dif}`, dif > 0 ? 'blue' : 'red'),
+        typstString(i.notes || '—'),
+      ];
+    };
+
+    const headers = ['Código', 'Descripción', 'Esperado', 'Contado', 'Dif.', 'Observaciones'];
+    const aligns = ['left', 'left', 'center', 'center', 'center', 'left'];
+    const widths = ['0.8fr', '2.8fr', '0.7fr', '0.7fr', '0.6fr', '2fr'];
+
+    const body = `
+  #kpiGrid((
+    kpiCard("Ítems contados", ${typstString(`${resumen.contados} de ${resumen.items}`)}, ${typstString(`${resumen.unidadesContadas} de ${resumen.unidadesEsperadas} unidades`)}, color: "blue"),
+    kpiCard("Coinciden", ${typstString(String(resumen.coinciden))}, "Sin diferencia", color: "green"),
+    kpiCard("Faltantes", ${typstString(String(resumen.faltantes))}, "Menos de lo esperado", color: "red"),
+    kpiCard("Sobrantes", ${typstString(String(resumen.sobrantes))}, "Más de lo esperado", color: "amber"),
+  ))
+
+  #v(10pt)
+  ${
+    diferencias.length > 0
+      ? this.section('Diferencias encontradas', this.table(headers, diferencias.map(fila), aligns, widths))
+      : `#section("Diferencias encontradas")[
+    #align(center)[#v(10pt) #text(size: 8.5pt, fill: gris-muted)[Todo lo contado coincide con lo registrado.] #v(10pt)]
+  ]`
+  }
+
+  ${
+    sinContar.length > 0
+      ? this.section(
+          `Sin contar — ${sinContar.length} ítem(s)`,
+          this.table(headers, sinContar.map(fila), aligns, widths),
+        )
+      : ''
+  }
+
+  #v(18pt)
+  #sigRow((
+    (name: "", role: "Realizó el conteo"),
+    (name: "", role: "Verificó"),
+    (name: "", role: "Vo. Bo. Administración"),
+  ))
+`;
+
+    return this.compile({
+      title: `Acta de Conteo ${count.countNumber}`,
+      badge: 'Acta de conteo',
+      clinic,
+      meta: [
+        ['Conteo', count.countNumber],
+        ['Ambiente', count.location ?? 'Toda la clínica'],
+        ['Estado', count.status === 'closed' ? 'Cerrado' : 'Abierto'],
+        ['Diferencias', String(diferencias.length)],
+      ],
+      body,
+      paper: 'oficio',
       landscape: true,
     });
   }

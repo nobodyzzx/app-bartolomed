@@ -1,0 +1,62 @@
+<h2 mat-dialog-title class="flex items-center gap-2">
+  <span class="material-symbols-outlined text-blue-600">move_down</span>
+  Mover a otro ambiente
+</h2>
+
+<mat-dialog-content>
+  <div class="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 mb-5">
+    <p class="text-sm font-semibold text-slate-900 m-0">{{ data.asset.name }}</p>
+    <p class="text-xs text-slate-500 m-0 mt-1">
+      {{ data.asset.assetTag }} · {{ disponibles }} unidad(es) en
+      {{ data.asset.location || 'sin ambiente' }}
+    </p>
+  </div>
+
+  <form [formGroup]="form" class="flex flex-col gap-1">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Ambiente de destino</mat-label>
+      <mat-icon matPrefix class="text-blue-400">location_on</mat-icon>
+      <input matInput formControlName="toLocation" [matAutocomplete]="amb"
+        placeholder="Ej: SALA ENFERMERIA" required />
+      <mat-autocomplete #amb="matAutocomplete">
+        @for (loc of locations; track loc) {
+          <mat-option [value]="loc">{{ loc }}</mat-option>
+        }
+      </mat-autocomplete>
+      @if (form.get('toLocation')?.hasError('required')) {
+        <mat-error>Indica a qué ambiente va</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Unidades a mover</mat-label>
+      <mat-icon matPrefix class="text-blue-400">tag</mat-icon>
+      <input matInput type="number" formControlName="quantity" min="1" [max]="disponibles" required />
+      <mat-hint>Hay {{ disponibles }} disponible(s). Si mueves todas, el ítem cambia de ambiente.</mat-hint>
+      @if (form.get('quantity')?.hasError('max')) {
+        <mat-error>No puedes mover más de {{ disponibles }}</mat-error>
+      }
+      @if (form.get('quantity')?.hasError('min')) {
+        <mat-error>Debe ser al menos 1</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Motivo (opcional)</mat-label>
+      <input matInput formControlName="notes" placeholder="Quién lo movió o por qué" />
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="gap-2 px-6 pb-4">
+  <button type="button" (click)="cancel()" class="btn btn-danger-outline">Cancelar</button>
+  <button type="button" (click)="submit()" [disabled]="isSubmitting || form.invalid" class="btn btn-primary">
+    @if (isSubmitting) {
+      <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+      <span>Moviendo...</span>
+    } @else {
+      <span class="material-symbols-outlined msz-18 leading-none">move_down</span>
+      <span>Mover</span>
+    }
+  </button>
+</mat-dialog-actions>
