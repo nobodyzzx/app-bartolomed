@@ -271,7 +271,7 @@ const routes: Routes = [
       },
       {
         path: 'asset-maintenance',
-        redirectTo: 'assets-control/maintenance',
+        redirectTo: 'assets-control/inventory',
         pathMatch: 'full',
       },
       {

@@ -2,8 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AssetsService } from './assets.service';
-import { Asset, AssetStatus, AssetType, AssetCondition, DepreciationMethod } from './entities/asset.entity';
-import { AssetMaintenance, MaintenanceStatus, MaintenanceType } from './entities/asset-maintenance.entity';
+import { Asset, AssetStatus, AssetType, AssetCondition } from './entities/asset.entity';
 import { AssetTransferItem } from './entities/asset-transfer.entity';
 import {
   createMockRepository,
@@ -24,50 +23,22 @@ const makeAsset = (overrides: Partial<Asset> = {}): Asset =>
     type: AssetType.MEDICAL_EQUIPMENT,
     status: AssetStatus.ACTIVE,
     condition: AssetCondition.GOOD,
-    purchasePrice: 5000,
-    purchaseDate: new Date('2023-01-15'),
-    depreciationMethod: DepreciationMethod.STRAIGHT_LINE,
-    usefulLifeYears: 5,
-    salvageValue: 500,
-    currentValue: 4500,
-    accumulatedDepreciation: 500,
-    monthlyDepreciation: 75,
-    totalMaintenanceCost: 0,
-    maintenanceIntervalMonths: 12,
     isActive: true,
     clinic: { id: CLINIC_ID },
-    isUnderWarranty: jest.fn().mockReturnValue(false),
-    isMaintenanceDue: jest.fn().mockReturnValue(false),
     ...overrides,
   } as any);
 
 const makeCreateAssetDto = (overrides: Record<string, any> = {}) => ({
   name: 'Ecógrafo',
   type: AssetType.MEDICAL_EQUIPMENT,
-  purchasePrice: 5000,
-  purchaseDate: '2023-01-15',
   ...overrides,
 });
-
-const makeMaintenance = (overrides: Partial<AssetMaintenance> = {}): AssetMaintenance =>
-  ({
-    id: 'maint-1',
-    title: 'Mantenimiento preventivo',
-    type: MaintenanceType.PREVENTIVE,
-    status: MaintenanceStatus.SCHEDULED,
-    scheduledDate: new Date('2026-05-01'),
-    assetId: 'asset-1',
-    asset: makeAsset(),
-    isActive: true,
-    ...overrides,
-  } as any);
 
 // ─── suite ────────────────────────────────────────────────────────────────────
 
 describe('AssetsService', () => {
   let service: AssetsService;
   let assetRepo: MockRepository<Asset>;
-  let maintenanceRepo: MockRepository<AssetMaintenance>;
   let transferItemRepo: MockRepository<AssetTransferItem>;
 
   beforeEach(async () => {
@@ -75,14 +46,12 @@ describe('AssetsService', () => {
       providers: [
         AssetsService,
         { provide: getRepositoryToken(Asset), useValue: createMockRepository() },
-        { provide: getRepositoryToken(AssetMaintenance), useValue: createMockRepository() },
         { provide: getRepositoryToken(AssetTransferItem), useValue: createMockRepository() },
       ],
     }).compile();
 
     service = module.get<AssetsService>(AssetsService);
     assetRepo = module.get(getRepositoryToken(Asset));
-    maintenanceRepo = module.get(getRepositoryToken(AssetMaintenance));
     transferItemRepo = module.get(getRepositoryToken(AssetTransferItem));
 
     // remove() consulta traslados activos por defecto sin ninguno encontrado;
@@ -205,21 +174,6 @@ describe('AssetsService', () => {
       expect(qb.andWhere).toHaveBeenCalledWith(
         expect.stringContaining('asset.name ILIKE :search'),
         { search: '%ecógrafo%' },
-      );
-    });
-
-    it('aplica filtro de rango de fechas (from y to)', async () => {
-      const qb = createMockQueryBuilder({ getManyAndCount: jest.fn().mockResolvedValue([[], 0]) });
-      assetRepo.createQueryBuilder!.mockReturnValue(qb);
-
-      await service.findAll(
-        { purchaseDateFrom: '2023-01-01', purchaseDateTo: '2023-12-31' } as any,
-        CLINIC_ID,
-      );
-
-      expect(qb.andWhere).toHaveBeenCalledWith(
-        'asset.purchaseDate BETWEEN :from AND :to',
-        expect.objectContaining({ from: '2023-01-01', to: '2023-12-31' }),
       );
     });
 
@@ -413,218 +367,61 @@ describe('AssetsService', () => {
   // ─── getStats ─────────────────────────────────────────────────────────────
 
   describe('getStats', () => {
-    it('calcula estadísticas a partir de aggregates SQL', async () => {
-      // getStats lanza 5 queries en paralelo. Cada llamada a createQueryBuilder
-      // recibe un mock distinto con su getRaw* correspondiente.
+    it('cuenta ítems, unidades y estados — ya no importes ni depreciación', async () => {
+      // getStats lanza 4 queries en paralelo: resumen + agrupados por tipo,
+      // condición y ambiente. Cada createQueryBuilder recibe su propio mock.
       const summaryQb = createMockQueryBuilder({
         getRawOne: jest.fn().mockResolvedValue({
           total: '3',
+          units: '11',
           active: '1',
           inactive: '1',
           maintenance: '1',
           retired: '0',
-          totalValue: '3500',
-          currentValue: '2900',
-          totalDepreciation: '600',
+          damaged: '0',
         }),
       });
       const typeQb = createMockQueryBuilder({
         getRawMany: jest.fn().mockResolvedValue([
-          { key: 'medical_equipment', count: '2' },
-          { key: 'office', count: '1' },
+          { key: 'medical_equipment', count: '2', units: '8' },
+          { key: 'furniture', count: '1', units: '3' },
         ]),
       });
       const conditionQb = createMockQueryBuilder({
-        getRawMany: jest.fn().mockResolvedValue([{ key: 'good', count: '3' }]),
+        getRawMany: jest.fn().mockResolvedValue([{ key: 'good', count: '3', units: '11' }]),
       });
-      const warrantyQb = createMockQueryBuilder({
-        getRawOne: jest.fn().mockResolvedValue({ count: '1' }),
-      });
-      const maintenanceDueQb = createMockQueryBuilder({
-        getRawOne: jest.fn().mockResolvedValue({ count: '0' }),
+      const locationQb = createMockQueryBuilder({
+        getRawMany: jest.fn().mockResolvedValue([
+          { key: 'SALA ECOGRAFIA', count: '2', units: '8' },
+          { key: null, count: '1', units: '3' },
+        ]),
       });
       assetRepo
         .createQueryBuilder!.mockReturnValueOnce(summaryQb)
         .mockReturnValueOnce(typeQb)
         .mockReturnValueOnce(conditionQb)
-        .mockReturnValueOnce(warrantyQb)
-        .mockReturnValueOnce(maintenanceDueQb);
+        .mockReturnValueOnce(locationQb);
 
       const stats = await service.getStats(CLINIC_ID);
 
       expect(stats.total).toBe(3);
+      // 3 ítems son 11 unidades: es la cifra que el inventario necesita y que
+      // antes no existía (la pantalla mostraba "Valor Total Bs 0,00" en su lugar).
+      expect(stats.units).toBe(11);
       expect(stats.active).toBe(1);
       expect(stats.maintenance).toBe(1);
       expect(stats.inactive).toBe(1);
-      expect(stats.totalValue).toBe(3500);
-      expect(stats.currentValue).toBe(2900);
-      expect(stats.totalDepreciation).toBe(600);
-      expect(stats.underWarranty).toBe(1);
-      expect(stats.maintenanceDue).toBe(0);
-      expect(stats.byType).toEqual({ medical_equipment: 2, office: 1 });
+      expect(stats.byType).toEqual({ medical_equipment: 2, furniture: 1 });
       expect(stats.byCondition).toEqual({ good: 3 });
-    });
-  });
-
-  // ─── createMaintenance ────────────────────────────────────────────────────
-
-  describe('createMaintenance', () => {
-    it('crea un registro de mantenimiento y cambia estado del activo a MAINTENANCE', async () => {
-      const asset = makeAsset({ status: AssetStatus.ACTIVE });
-      const maintenance = makeMaintenance();
-
-      assetRepo.findOne!.mockResolvedValue(asset);
-      maintenanceRepo.create!.mockReturnValue(maintenance);
-      maintenanceRepo.save!.mockResolvedValue(maintenance);
-      assetRepo.save!.mockResolvedValue({ ...asset, status: AssetStatus.MAINTENANCE });
-
-      const result = await service.createMaintenance(
-        { assetId: 'asset-1', title: 'Preventivo', scheduledDate: '2026-05-01' },
-        USER_ID,
-        CLINIC_ID,
-      );
-
-      expect(result).toEqual(maintenance);
-      expect(assetRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ status: AssetStatus.MAINTENANCE }),
-      );
-    });
-
-    it('lanza BadRequestException si no se pasa assetId', async () => {
-      await expect(
-        service.createMaintenance({ title: 'Sin activo' } as any, USER_ID, CLINIC_ID),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('lanza BadRequestException si el activo está RETIRED', async () => {
-      assetRepo.findOne!.mockResolvedValue(makeAsset({ status: AssetStatus.RETIRED }));
-
-      await expect(
-        service.createMaintenance({ assetId: 'asset-1', title: 'X', scheduledDate: '2026-05-01' }, USER_ID, CLINIC_ID),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('lanza BadRequestException si el activo está SOLD', async () => {
-      assetRepo.findOne!.mockResolvedValue(makeAsset({ status: AssetStatus.SOLD }));
-
-      await expect(
-        service.createMaintenance({ assetId: 'asset-1', title: 'X', scheduledDate: '2026-05-01' }, USER_ID, CLINIC_ID),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('lanza BadRequestException si el activo está LOST', async () => {
-      assetRepo.findOne!.mockResolvedValue(makeAsset({ status: AssetStatus.LOST }));
-
-      await expect(
-        service.createMaintenance({ assetId: 'asset-1', title: 'X', scheduledDate: '2026-05-01' }, USER_ID, CLINIC_ID),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('lanza BadRequestException si no se proporciona clinicId', async () => {
-      await expect(
-        service.createMaintenance({ assetId: 'asset-1', title: 'X', scheduledDate: '2026-05-01' }, USER_ID),
-      ).rejects.toThrow(BadRequestException);
-    });
-  });
-
-  // ─── updateMaintenance ────────────────────────────────────────────────────
-
-  describe('updateMaintenance', () => {
-    it('actualiza estado a COMPLETED: asigna fecha y restaura activo a ACTIVE', async () => {
-      const maintenance = makeMaintenance({
-        status: MaintenanceStatus.SCHEDULED,
-        actualCost: 200,
-        nextMaintenanceDate: new Date('2027-05-01'),
+      expect(stats.byLocation).toEqual({
+        'SALA ECOGRAFIA': { items: 2, units: 8 },
+        'Sin ubicación': { items: 1, units: 3 },
       });
-      const asset = makeAsset({ status: AssetStatus.MAINTENANCE, totalMaintenanceCost: 100, isActive: true });
-
-      maintenanceRepo.findOne!
-        .mockResolvedValueOnce(maintenance) // findOneMaintenance primera llamada
-        .mockResolvedValueOnce({ ...maintenance, status: MaintenanceStatus.COMPLETED }); // findOneMaintenance final
-      assetRepo.findOne!.mockResolvedValue(asset);
-      maintenanceRepo.save!.mockResolvedValue(maintenance);
-      assetRepo.save!.mockResolvedValue(asset);
-
-      await service.updateMaintenance(
-        'maint-1',
-        { status: MaintenanceStatus.COMPLETED, actualCost: 200 },
-        CLINIC_ID,
-        USER_ID,
-      );
-
-      expect(assetRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          status: AssetStatus.ACTIVE,
-          totalMaintenanceCost: 300, // 100 + 200
-        }),
-      );
-    });
-
-    it('actualiza estado a IN_PROGRESS: pone activo en MAINTENANCE', async () => {
-      const maintenance = makeMaintenance({ status: MaintenanceStatus.SCHEDULED });
-      const asset = makeAsset({ status: AssetStatus.ACTIVE, isActive: true });
-
-      maintenanceRepo.findOne!
-        .mockResolvedValueOnce(maintenance)
-        .mockResolvedValueOnce({ ...maintenance, status: MaintenanceStatus.IN_PROGRESS });
-      assetRepo.findOne!.mockResolvedValue(asset);
-      maintenanceRepo.save!.mockResolvedValue(maintenance);
-      assetRepo.save!.mockResolvedValue(asset);
-
-      await service.updateMaintenance('maint-1', { status: MaintenanceStatus.IN_PROGRESS }, CLINIC_ID);
-
-      expect(assetRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ status: AssetStatus.MAINTENANCE }),
-      );
+      // Los importes se fueron con las columnas que nadie llenaba.
+      expect(stats.totalValue).toBeUndefined();
+      expect(stats.underWarranty).toBeUndefined();
     });
   });
-
-  // ─── deleteMaintenance ────────────────────────────────────────────────────
-
-  describe('deleteMaintenance', () => {
-    it('elimina el registro de mantenimiento correctamente', async () => {
-      maintenanceRepo.findOne!.mockResolvedValue(makeMaintenance());
-      maintenanceRepo.delete!.mockResolvedValue({ affected: 1 });
-
-      await expect(service.deleteMaintenance('maint-1', CLINIC_ID)).resolves.not.toThrow();
-      expect(maintenanceRepo.delete).toHaveBeenCalledWith('maint-1');
-    });
-
-    it('lanza NotFoundException si el registro no existe', async () => {
-      maintenanceRepo.findOne!.mockResolvedValue(null);
-
-      await expect(service.deleteMaintenance('no-existe', CLINIC_ID)).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-  });
-
-  // ─── getMaintenanceStats ──────────────────────────────────────────────────
-
-  describe('getMaintenanceStats', () => {
-    it('devuelve conteos por estado vía aggregate SQL', async () => {
-      const qb = createMockQueryBuilder({
-        getRawOne: jest.fn().mockResolvedValue({
-          total: '4',
-          scheduled: '2',
-          completed: '1',
-          inProgress: '1',
-          cancelled: '0',
-        }),
-      });
-      maintenanceRepo.createQueryBuilder!.mockReturnValue(qb);
-
-      const stats = await service.getMaintenanceStats(CLINIC_ID);
-
-      expect(stats.total).toBe(4);
-      expect(stats.scheduled).toBe(2);
-      expect(stats.completed).toBe(1);
-      expect(stats.inProgress).toBe(1);
-      expect(stats.cancelled).toBe(0);
-    });
-  });
-
-  // ─── generateReport ───────────────────────────────────────────────────────
 
   describe('generación de assetTag', () => {
     it('el assetTag tiene el formato PREFIX-TIMESTAMP-RANDOM', async () => {

@@ -1,6 +1,11 @@
-import { IsDateString, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
-import { AssetCondition, AssetStatus, AssetType, DepreciationMethod } from '../entities/asset.entity';
+import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { AssetCondition, AssetStatus, AssetType } from '../entities/asset.entity';
 
+/**
+ * Alta de un ítem del inventario. El DTO pedía 24 campos —con número de serie,
+ * fabricante, precio y fecha de compra **obligatorios**— y ninguno de los 235
+ * ítems reales los tiene, así que dar de alta algo de la planilla era imposible.
+ */
 export class CreateAssetDto {
   @IsString()
   name: string;
@@ -11,20 +16,8 @@ export class CreateAssetDto {
   @IsOptional()
   quantity?: number;
 
-  @IsString()
-  @IsOptional()
-  description?: string;
-
   @IsEnum(AssetType)
   type: AssetType;
-
-  @IsString()
-  @IsOptional()
-  category?: string;
-
-  @IsString()
-  @IsOptional()
-  subCategory?: string;
 
   @IsString()
   @IsOptional()
@@ -38,10 +31,6 @@ export class CreateAssetDto {
   @IsOptional()
   serialNumber?: string;
 
-  @IsString()
-  @IsOptional()
-  barcodeNumber?: string;
-
   @IsEnum(AssetStatus)
   @IsOptional()
   status?: AssetStatus;
@@ -50,81 +39,11 @@ export class CreateAssetDto {
   @IsOptional()
   condition?: AssetCondition;
 
-  @IsNumber()
-  @Min(0)
-  purchasePrice: number;
-
-  /** Opcional: hay activos cuya fecha de compra no consta en ningún papel. */
-  @IsDateString()
-  @IsOptional()
-  purchaseDate?: string;
-
-  @IsString()
-  @IsOptional()
-  vendor?: string;
-
-  @IsString()
-  @IsOptional()
-  invoiceNumber?: string;
-
-  @IsString()
-  @IsOptional()
-  warrantyInfo?: string;
-
-  @IsDateString()
-  @IsOptional()
-  warrantyExpiry?: string;
-
-  @IsEnum(DepreciationMethod)
-  @IsOptional()
-  depreciationMethod?: DepreciationMethod;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(1)
-  usefulLifeYears?: number;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  salvageValue?: number;
-
   @IsString()
   @IsOptional()
   location?: string;
 
   @IsString()
   @IsOptional()
-  room?: string;
-
-  @IsString()
-  @IsOptional()
-  building?: string;
-
-  @IsString()
-  @IsOptional()
-  floor?: string;
-
-  @IsDateString()
-  @IsOptional()
-  lastMaintenanceDate?: string;
-
-  @IsDateString()
-  @IsOptional()
-  nextMaintenanceDate?: string;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(1)
-  maintenanceIntervalMonths?: number;
-
-  @IsString()
-  @IsOptional()
   notes?: string;
-
-  @IsOptional()
-  specifications?: any;
-
-  @IsOptional()
-  attachments?: any;
 }

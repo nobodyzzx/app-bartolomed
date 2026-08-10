@@ -3468,54 +3468,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/assets/maintenance": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["AssetsController_findAllMaintenance"];
-        put?: never;
-        post: operations["AssetsController_createMaintenance"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/assets/maintenance/stats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["AssetsController_getMaintenanceStats"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/assets/maintenance/{maintenanceId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["AssetsController_findOneMaintenance"];
-        put?: never;
-        post?: never;
-        delete: operations["AssetsController_deleteMaintenance"];
-        options?: never;
-        head?: never;
-        patch: operations["AssetsController_updateMaintenance"];
-        trace?: never;
-    };
     "/api/assets/reports/print/inventory-by-location": {
         parameters: {
             query?: never;
@@ -5544,40 +5496,17 @@ export interface components {
             name: string;
             /** @description Unidades del ítem en su ubicación. Por defecto 1. */
             quantity?: number;
-            description?: string;
             /** @enum {string} */
             type: "medical_equipment" | "furniture" | "computer" | "vehicle" | "building" | "other";
-            category?: string;
-            subCategory?: string;
             manufacturer?: string;
             model?: string;
             serialNumber?: string;
-            barcodeNumber?: string;
             /** @enum {string} */
             status?: "active" | "inactive" | "maintenance" | "retired" | "sold" | "lost" | "damaged";
             /** @enum {string} */
             condition?: "excellent" | "good" | "fair" | "poor" | "critical";
-            purchasePrice: number;
-            /** @description Opcional: hay activos cuya fecha de compra no consta en ningún papel. */
-            purchaseDate?: string;
-            vendor?: string;
-            invoiceNumber?: string;
-            warrantyInfo?: string;
-            warrantyExpiry?: string;
-            /** @enum {string} */
-            depreciationMethod?: "straight_line" | "declining_balance" | "units_of_production" | "no_depreciation";
-            usefulLifeYears?: number;
-            salvageValue?: number;
             location?: string;
-            room?: string;
-            building?: string;
-            floor?: string;
-            lastMaintenanceDate?: string;
-            nextMaintenanceDate?: string;
-            maintenanceIntervalMonths?: number;
             notes?: string;
-            specifications?: Record<string, never>;
-            attachments?: Record<string, never>;
         };
         Asset: {
             id: string;
@@ -5586,139 +5515,31 @@ export interface components {
             /**
              * @description Cuántas unidades hay de este ítem en su ubicación.
              *
-             *     El inventario de la clínica es un conteo de existencias por ambiente, no un
-             *     registro de bienes contables: lo que se necesita saber es qué hay, cuánto y
-             *     dónde. Sin este campo, la misma planilla se cargaba con dos criterios —una
-             *     caja de 137 agujas quedaba como una ficha con la cantidad escondida en una
-             *     nota, mientras 4 sensores se abrían en cuatro fichas "(1 de 4)"—, y ninguno
-             *     de los dos permitía sumar unidades.
+             *     Sin este campo, la misma planilla se cargaba con dos criterios —una caja de
+             *     137 agujas quedaba como una ficha con la cantidad escondida en una nota,
+             *     mientras 4 sensores se abrían en cuatro fichas "(1 de 4)"—, y ninguno de los
+             *     dos permitía responder cuántos hay.
              */
             quantity: number;
-            description: string;
             /** @enum {string} */
             type: "medical_equipment" | "furniture" | "computer" | "vehicle" | "building" | "other";
-            category: string;
-            subCategory: string;
             manufacturer: string;
             model: string;
             serialNumber: string;
-            barcodeNumber: string;
             /** @enum {string} */
             status: "active" | "inactive" | "maintenance" | "retired" | "sold" | "lost" | "damaged";
             /** @enum {string} */
             condition: "excellent" | "good" | "fair" | "poor" | "critical";
-            purchasePrice: number;
-            /**
-             * Format: date-time
-             * @description Nulo = fecha de compra sin registrar, que no es lo mismo que comprado hoy.
-             *
-             *     Era obligatorio, y eso obligaba a inventarse una fecha para todo activo que
-             *     llegara sin ella —el inventario en papel de la clínica no la trae para
-             *     ninguno de sus 207 ítems—. Una fecha inventada no es neutral: de ella sale
-             *     la antigüedad y la depreciación.
-             */
-            purchaseDate: string | null;
-            vendor: string;
-            invoiceNumber: string;
-            warrantyInfo: string;
-            /** Format: date-time */
-            warrantyExpiry: string;
-            /** @enum {string} */
-            depreciationMethod: "straight_line" | "declining_balance" | "units_of_production" | "no_depreciation";
-            usefulLifeYears: number;
-            salvageValue: number;
-            currentValue: number;
-            accumulatedDepreciation: number;
-            monthlyDepreciation: number;
+            /** @description Ambiente donde está el ítem: "SALA ECOGRAFIA", "ESTERILIZACION". */
             location: string;
-            room: string;
-            building: string;
-            floor: string;
-            /** Format: date-time */
-            lastMaintenanceDate: string;
-            /** Format: date-time */
-            nextMaintenanceDate: string;
-            maintenanceIntervalMonths: number;
-            totalMaintenanceCost: number;
             notes: string;
-            specifications: Record<string, never>;
-            attachments: Record<string, never>;
             isActive: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
             clinic: components["schemas"]["Clinic"];
-            assignedTo: components["schemas"]["User"];
-            maintenanceRecords: components["schemas"]["AssetMaintenance"][];
             createdBy: components["schemas"]["User"];
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-        };
-        AssetMaintenance: {
-            id: string;
-            title: string;
-            description: string;
-            /** @enum {string} */
-            type: "Preventivo" | "Correctivo" | "Emergencia" | "Calibración" | "Inspección";
-            /** @enum {string} */
-            status: "Programado" | "En Progreso" | "Completado" | "Cancelado" | "Retrasado";
-            /** Format: date-time */
-            scheduledDate: string;
-            /** Format: date-time */
-            completedDate: string;
-            estimatedCost: number;
-            actualCost: number;
-            technician: string;
-            vendor: string;
-            workPerformed: string;
-            partsReplaced: string;
-            notes: string;
-            priority: number;
-            /** Format: date-time */
-            nextMaintenanceDate: string;
-            isActive: boolean;
-            asset: components["schemas"]["Asset"];
-            assetId: string;
-            scheduledBy: components["schemas"]["User"];
-            scheduledById: string;
-            completedBy: components["schemas"]["User"];
-            completedById: string;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-        };
-        CreateAssetMaintenanceDto: {
-            /** Format: uuid */
-            assetId: string;
-            title: string;
-            description?: string;
-            /** @enum {string} */
-            type?: "Preventivo" | "Correctivo" | "Emergencia" | "Calibración" | "Inspección";
-            scheduledDate: string;
-            estimatedCost?: number;
-            technician?: string;
-            vendor?: string;
-            notes?: string;
-            priority?: number;
-        };
-        UpdateAssetMaintenanceDto: {
-            title?: string;
-            description?: string;
-            /** @enum {string} */
-            type?: "Preventivo" | "Correctivo" | "Emergencia" | "Calibración" | "Inspección";
-            /** @enum {string} */
-            status?: "Programado" | "En Progreso" | "Completado" | "Cancelado" | "Retrasado";
-            scheduledDate?: string;
-            completedDate?: string;
-            estimatedCost?: number;
-            actualCost?: number;
-            technician?: string;
-            vendor?: string;
-            workPerformed?: string;
-            partsReplaced?: string;
-            notes?: string;
-            priority?: number;
-            nextMaintenanceDate?: string;
         };
         UpdateAssetDto: Record<string, never>;
         CreateAssetTransferItemDto: {
@@ -11072,9 +10893,6 @@ export interface operations {
                 condition?: "excellent" | "good" | "fair" | "poor" | "critical";
                 manufacturer?: string;
                 location?: string;
-                category?: string;
-                purchaseDateFrom?: string;
-                purchaseDateTo?: string;
                 search?: string;
                 page?: number;
                 limit?: number;
@@ -11175,132 +10993,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": string[];
-                };
-            };
-        };
-    };
-    AssetsController_findAllMaintenance: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssetMaintenance"][];
-                };
-            };
-        };
-    };
-    AssetsController_createMaintenance: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateAssetMaintenanceDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssetMaintenance"];
-                };
-            };
-        };
-    };
-    AssetsController_getMaintenanceStats: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-        };
-    };
-    AssetsController_findOneMaintenance: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                maintenanceId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssetMaintenance"];
-                };
-            };
-        };
-    };
-    AssetsController_deleteMaintenance: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                maintenanceId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AssetsController_updateMaintenance: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                maintenanceId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateAssetMaintenanceDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssetMaintenance"];
                 };
             };
         };

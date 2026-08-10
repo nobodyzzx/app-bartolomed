@@ -8,7 +8,6 @@ import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
 import { User } from '../users/entities/user.entity';
 import { AssetsService } from './assets.service';
-import { CreateAssetMaintenanceDto, UpdateAssetMaintenanceDto } from './dto/asset-maintenance.dto';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { FilterAssetsDto } from './dto/filter-assets.dto';
 import { PrintAssetReportDto, PrintHandoverActDto } from './dto/print-asset-report.dto';
@@ -62,56 +61,6 @@ export class AssetsController {
   getUniqueValues(@Param('field') field: 'type' | 'manufacturer' | 'location' | 'category', @Req() req: Request) {
     const clinicId = resolveClinicId(req);
     return this.assetsService.getUniqueValues(field, clinicId);
-  }
-
-  // ==================== MAINTENANCE ROUTES ====================
-  @Get('maintenance')
-  // DOCTOR/NURSE no tienen Permission.AssetsManage (class-level, solo
-  // ADMIN/SUPER_ADMIN) — listarlos acá era decorativo, PermissionsGuard los
-  // bloqueaba igual. El frontend tampoco enruta /dashboard/assets-control
-  // para esos roles.
-  findAllMaintenance(@Query() filters?: any, @Req() req?: Request) {
-    const clinicId = req ? resolveClinicId(req) : undefined;
-    return this.assetsService.findAllMaintenance(filters, clinicId);
-  }
-
-  @Get('maintenance/stats')
-  getMaintenanceStats(@Req() req?: Request) {
-    const clinicId = req ? resolveClinicId(req) : undefined;
-    return this.assetsService.getMaintenanceStats(clinicId);
-  }
-
-  @Post('maintenance')
-  createMaintenance(@Body() data: CreateAssetMaintenanceDto, @GetUser() user: User, @Req() req?: Request) {
-    const clinicId = req ? resolveClinicId(req) : undefined;
-    return this.assetsService.createMaintenance(data, user.id, clinicId);
-  }
-
-  @Get('maintenance/:maintenanceId')
-  // DOCTOR/NURSE no tienen Permission.AssetsManage (class-level, solo
-  // ADMIN/SUPER_ADMIN) — listarlos acá era decorativo, PermissionsGuard los
-  // bloqueaba igual. El frontend tampoco enruta /dashboard/assets-control
-  // para esos roles.
-  findOneMaintenance(@Param('maintenanceId', ParseUUIDPipe) id: string, @Req() req?: Request) {
-    const clinicId = req ? resolveClinicId(req) : undefined;
-    return this.assetsService.findOneMaintenance(id, clinicId);
-  }
-
-  @Patch('maintenance/:maintenanceId')
-  updateMaintenance(
-    @Param('maintenanceId', ParseUUIDPipe) id: string,
-    @Body() data: UpdateAssetMaintenanceDto,
-    @Req() req?: Request,
-    @GetUser() user?: User,
-  ) {
-    const clinicId = req ? resolveClinicId(req) : undefined;
-    return this.assetsService.updateMaintenance(id, data, clinicId, user?.id);
-  }
-
-  @Delete('maintenance/:maintenanceId')
-  deleteMaintenance(@Param('maintenanceId', ParseUUIDPipe) id: string, @Req() req?: Request) {
-    const clinicId = req ? resolveClinicId(req) : undefined;
-    return this.assetsService.deleteMaintenance(id, clinicId);
   }
 
   // ==================== INFORMES PARA IMPRIMIR ====================

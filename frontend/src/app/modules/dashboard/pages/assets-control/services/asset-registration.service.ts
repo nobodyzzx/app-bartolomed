@@ -47,11 +47,7 @@ export class AssetRegistrationService {
       if (filters.type) params = params.set('type', filters.type)
       if (filters.location) params = params.set('location', filters.location)
       if (filters.manufacturer) params = params.set('manufacturer', filters.manufacturer)
-      if (filters.category) params = params.set('category', filters.category)
       if (filters.condition) params = params.set('condition', filters.condition)
-      if (filters.purchaseDateFrom)
-        params = params.set('purchaseDateFrom', filters.purchaseDateFrom)
-      if (filters.purchaseDateTo) params = params.set('purchaseDateTo', filters.purchaseDateTo)
       if (filters.search) params = params.set('search', filters.search)
     }
 

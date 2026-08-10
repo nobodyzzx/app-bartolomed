@@ -85,7 +85,7 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
         (asset.assetTag ?? '').toLowerCase().includes(term) ||
         (asset.location ?? '').toLowerCase().includes(term) ||
         this.getTypeLabel(asset.type).toLowerCase().includes(term) ||
-        asset.manufacturer.toLowerCase().includes(term)
+        (asset.manufacturer ?? '').toLowerCase().includes(term)
       )
     }
   }
@@ -180,14 +180,14 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
   }
 
   exportToCSV(): void {
-    const headers = ['Tag', 'Nombre', 'Tipo', 'Estado', 'Ubicación', 'Valor Actual']
+    const headers = ['Código', 'Nombre', 'Cantidad', 'Tipo', 'Estado', 'Ambiente']
     const rows = this.assets.map(a => [
       a.assetTag ?? '',
       a.name,
+      String(a.quantity ?? 1),
       this.getTypeLabel(a.type),
-      a.status,
+      this.getStatusLabel(a.status),
       a.location ?? '',
-      (a.currentValue ?? 0).toString(),
     ])
     const csv = [headers, ...rows].map(row => row.map(c => `"${c}"`).join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })

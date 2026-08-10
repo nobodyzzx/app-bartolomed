@@ -1,7 +1,6 @@
 import { NgModule } from '@angular/core'
 import { RouterModule, Routes } from '@angular/router'
 import { AssetInventoryControlComponent } from './asset-inventory-control/asset-inventory-control.component'
-import { AssetMaintenanceComponent } from './asset-maintenance/asset-maintenance.component'
 import { AssetTransfersComponent } from './asset-transfers/asset-transfers.component'
 import { AssetsFormComponent } from './assets-form/assets-form.component'
 
@@ -32,9 +31,12 @@ const routes: Routes = [
     path: 'transfers',
     component: AssetTransfersComponent,
   },
+  // El mantenimiento de activos se retiró: cero registros desde que existe, y el
+  // inventario se lleva para contar existencias por ambiente.
   {
     path: 'maintenance',
-    component: AssetMaintenanceComponent,
+    redirectTo: 'inventory',
+    pathMatch: 'full',
   },
   // Los informes de activos viven en /dashboard/reports, junto al resto de la
   // clínica. La página propia generaba y archivaba reportes en `asset_reports`

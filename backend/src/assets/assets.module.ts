@@ -6,7 +6,6 @@ import { PdfModule } from '../pdf/pdf.module';
 import { AssetsController } from './assets.controller';
 import { AssetsService } from './assets.service';
 import { AssetTransfersController } from './controllers/asset-transfers.controller';
-import { AssetMaintenance } from './entities/asset-maintenance.entity';
 import {
   AssetTransfer,
   AssetTransferAuditLog,
@@ -20,7 +19,6 @@ import { AssetTransfersService } from './services/asset-transfers.service';
   imports: [
     TypeOrmModule.forFeature([
       Asset,
-      AssetMaintenance,
       AssetTransfer,
       AssetTransferItem,
       AssetTransferAuditLog,

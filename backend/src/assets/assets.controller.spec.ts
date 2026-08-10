@@ -19,12 +19,6 @@ describe('AssetsController', () => {
       getStats: jest.fn().mockResolvedValue({ total: 0 }),
       validateSerialNumber: jest.fn().mockResolvedValue({ available: true }),
       getUniqueValues: jest.fn().mockResolvedValue([]),
-      findAllMaintenance: jest.fn().mockResolvedValue({ data: [], total: 0 }),
-      getMaintenanceStats: jest.fn().mockResolvedValue({ total: 0 }),
-      createMaintenance: jest.fn().mockResolvedValue({ id: 'maint-1' }),
-      findOneMaintenance: jest.fn().mockResolvedValue({ id: 'maint-1' }),
-      updateMaintenance: jest.fn().mockResolvedValue({ id: 'maint-1' }),
-      deleteMaintenance: jest.fn().mockResolvedValue(undefined),
       update: jest.fn().mockResolvedValue({ id: 'asset-1' }),
       remove: jest.fn().mockResolvedValue(undefined),
       findOne: jest.fn().mockResolvedValue({ id: 'asset-1' }),
@@ -69,39 +63,6 @@ describe('AssetsController', () => {
   it('getUniqueValues delega field y clinicId', async () => {
     await controller.getUniqueValues('category', makeReq());
     expect(service.getUniqueValues).toHaveBeenCalledWith('category', 'clinic-1');
-  });
-
-  it('findAllMaintenance delega filtros y clinicId', async () => {
-    const filters = { status: 'scheduled' };
-    await controller.findAllMaintenance(filters, makeReq());
-    expect(service.findAllMaintenance).toHaveBeenCalledWith(filters, 'clinic-1');
-  });
-
-  it('getMaintenanceStats delega clinicId', async () => {
-    await controller.getMaintenanceStats(makeReq());
-    expect(service.getMaintenanceStats).toHaveBeenCalledWith('clinic-1');
-  });
-
-  it('createMaintenance delega data, userId y clinicId', async () => {
-    const data = { title: 'Mantenimiento' } as any;
-    await controller.createMaintenance(data, user, makeReq());
-    expect(service.createMaintenance).toHaveBeenCalledWith(data, 'user-1', 'clinic-1');
-  });
-
-  it('findOneMaintenance delega id y clinicId', async () => {
-    await controller.findOneMaintenance('maint-1', makeReq());
-    expect(service.findOneMaintenance).toHaveBeenCalledWith('maint-1', 'clinic-1');
-  });
-
-  it('updateMaintenance delega id, data, clinicId y userId', async () => {
-    const data = { status: 'completed' } as any;
-    await controller.updateMaintenance('maint-1', data, makeReq(), user);
-    expect(service.updateMaintenance).toHaveBeenCalledWith('maint-1', data, 'clinic-1', 'user-1');
-  });
-
-  it('deleteMaintenance delega id y clinicId', async () => {
-    await controller.deleteMaintenance('maint-1', makeReq());
-    expect(service.deleteMaintenance).toHaveBeenCalledWith('maint-1', 'clinic-1');
   });
 
   describe('informes para imprimir', () => {

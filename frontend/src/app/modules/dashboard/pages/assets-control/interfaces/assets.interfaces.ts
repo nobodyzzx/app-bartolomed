@@ -5,13 +5,12 @@ export interface PaginatedResult<T> {
   limit: number
 }
 
-// Alineado 1:1 con backend/src/assets/entities/asset.entity.ts — bug real: el
-// campo de garantía se llamaba warrantyExpiration acá pero warrantyExpiry en
-// el backend (nunca se usaba, quedaba huérfano); faltaban además la mayoría
-// de los campos que el formulario ya envía (category, condition, vendor,
-// depreciación, ubicación detallada, mantenimiento), así que CreateAssetDto
-// no representaba el payload real (funcionaba solo porque assetForm.value es
-// `any` y TS no lo validaba).
+/**
+ * Ítem del inventario, alineado con `backend/src/assets/entities/asset.entity.ts`.
+ * La ficha se redujo a lo que la clínica usa: qué es, cuánto hay, dónde está y
+ * si sirve. Precio, depreciación, garantía, categoría y ubicación detallada se
+ * retiraron de la base — ver `SlimDownAssets`.
+ */
 export interface BaseAsset {
   id: string
   name: string
@@ -19,65 +18,23 @@ export interface BaseAsset {
   quantity: number
   type: AssetType
   assetTag?: string
-  category?: string
-  subCategory?: string
-  manufacturer: string
+  manufacturer?: string
   model?: string
   serialNumber?: string
-  barcodeNumber?: string
-  purchaseDate: Date
-  purchasePrice?: number
-  currentValue?: number
-  warrantyExpiry?: Date
   status: AssetStatus
   condition?: AssetCondition
   location?: string
-  description?: string
+  notes?: string
   createdAt?: Date
   updatedAt?: Date
 }
 
-export interface AssetRegistration extends Omit<BaseAsset, 'id' | 'createdAt' | 'updatedAt'> {
-  vendor?: string
-  invoiceNumber?: string
-  warrantyInfo?: string
-  depreciationMethod?: DepreciationMethod
-  usefulLifeYears?: number
-  salvageValue?: number
-  room?: string
-  building?: string
-  floor?: string
-  lastMaintenanceDate?: Date
-  nextMaintenanceDate?: Date
-  maintenanceIntervalMonths?: number
-  notes?: string
-}
-
-// Campos alineados 1:1 con backend/src/assets/entities/asset-maintenance.entity.ts
-// (bug real: antes usaba assetName/maintenanceDate/cost/performedBy, campos que
-// no existen en el backend — el formulario nunca podía guardar correctamente).
-export interface AssetMaintenance {
-  id: string
-  assetId: string
-  asset?: { id: string; name: string; assetTag: string }
-  title: string
-  description?: string
-  type: MaintenanceType
-  status: MaintenanceStatus
-  scheduledDate: Date
-  completedDate?: Date
-  estimatedCost?: number
-  actualCost?: number
-  technician?: string
-  vendor?: string
-  workPerformed?: string
-  partsReplaced?: string
-  notes?: string
-  priority?: number
-  nextMaintenanceDate?: Date
-  createdAt?: Date
-  updatedAt?: Date
-}
+/**
+ * Alta y edición: los mismos campos que la ficha. Antes agregaba proveedor,
+ * factura, garantía, método de depreciación, vida útil, valor residual, sala,
+ * edificio, piso y fechas de mantenimiento — todos retirados de la ficha.
+ */
+export interface AssetRegistration extends Omit<BaseAsset, 'id' | 'createdAt' | 'updatedAt'> {}
 
 // Enums
 // Valores en inglés/minúscula para que coincidan EXACTAMENTE con
@@ -104,13 +61,6 @@ export enum AssetType {
   OTHER = 'other',
 }
 
-export enum DepreciationMethod {
-  STRAIGHT_LINE = 'straight_line',
-  DECLINING_BALANCE = 'declining_balance',
-  UNITS_OF_PRODUCTION = 'units_of_production',
-  NO_DEPRECIATION = 'no_depreciation',
-}
-
 export enum AssetCondition {
   EXCELLENT = 'excellent',
   GOOD = 'good',
@@ -119,80 +69,20 @@ export enum AssetCondition {
   CRITICAL = 'critical',
 }
 
-export enum MaintenanceType {
-  PREVENTIVE = 'Preventivo',
-  CORRECTIVE = 'Correctivo',
-  EMERGENCY = 'Emergencia',
-  CALIBRATION = 'Calibración',
-  INSPECTION = 'Inspección',
-}
-
-export enum MaintenanceStatus {
-  SCHEDULED = 'Programado',
-  IN_PROGRESS = 'En Progreso',
-  COMPLETED = 'Completado',
-  CANCELLED = 'Cancelado',
-  DELAYED = 'Retrasado',
-}
-
 // DTOs y Filtros
 export interface AssetFilters {
   status?: AssetStatus
   type?: string
   location?: string
   manufacturer?: string
-  category?: string
   condition?: AssetCondition
-  purchaseDateFrom?: string
-  purchaseDateTo?: string
   search?: string
-  dateFrom?: Date
-  dateTo?: Date
-}
-
-export interface MaintenanceFilters {
-  assetId?: string
-  status?: MaintenanceStatus
-  type?: MaintenanceType
-  dateFrom?: Date
-  dateTo?: Date
 }
 
 export interface CreateAssetDto extends AssetRegistration {}
 
 // Espejo de backend/src/assets/dto/update-asset.dto.ts (PartialType(CreateAssetDto))
 export interface UpdateAssetDto extends Partial<AssetRegistration> {}
-
-export interface CreateMaintenanceDto {
-  assetId: string
-  title: string
-  description?: string
-  type?: MaintenanceType
-  scheduledDate: string
-  estimatedCost?: number
-  technician?: string
-  vendor?: string
-  notes?: string
-  priority?: number
-}
-
-export interface UpdateMaintenanceDto {
-  title?: string
-  description?: string
-  type?: MaintenanceType
-  status?: MaintenanceStatus
-  scheduledDate?: string
-  completedDate?: string
-  estimatedCost?: number
-  actualCost?: number
-  technician?: string
-  vendor?: string
-  workPerformed?: string
-  partsReplaced?: string
-  notes?: string
-  priority?: number
-  nextMaintenanceDate?: string
-}
 
 // ─── Traslados de activos entre clínicas ──────────────────────────────────────
 

@@ -1287,88 +1287,58 @@ export class SeedService {
     clinicTag: 'CHU' | 'IRU',
   ): Promise<void> {
     const assetDefs = [
-      { tag: `${clinicTag}-MED-001`, name: 'Tensiómetro digital', type: 'medical_equipment', category: 'Diagnóstico', manufacturer: 'Omron', model: 'M2', price: 350, life: 7, condition: 'good', status: 'active', location: 'Consultorio 1' },
-      { tag: `${clinicTag}-MED-002`, name: 'Estetoscopio', type: 'medical_equipment', category: 'Diagnóstico', manufacturer: 'Littmann', model: 'Classic III', price: 280, life: 10, condition: 'good', status: 'active', location: 'Consultorio 1' },
-      { tag: `${clinicTag}-MED-003`, name: 'Glucómetro', type: 'medical_equipment', category: 'Diagnóstico', manufacturer: 'Accu-Chek', model: 'Active', price: 180, life: 5, condition: 'excellent', status: 'active', location: 'Farmacia' },
-      { tag: `${clinicTag}-MED-004`, name: 'Termómetro digital', type: 'medical_equipment', category: 'Diagnóstico', manufacturer: 'Microlife', model: 'MT 850', price: 80, life: 5, condition: 'good', status: 'active', location: 'Consultorio 1' },
-      { tag: `${clinicTag}-MED-005`, name: 'Oxímetro de pulso', type: 'medical_equipment', category: 'Diagnóstico', manufacturer: 'Nonin', model: '9590', price: 250, life: 7, condition: 'excellent', status: 'active', location: 'Emergencias' },
-      { tag: `${clinicTag}-MED-006`, name: 'Balanza médica', type: 'medical_equipment', category: 'Diagnóstico', manufacturer: 'Seca', model: '700', price: 650, life: 15, condition: 'good', status: 'active', location: 'Sala de espera' },
-      { tag: `${clinicTag}-MED-007`, name: 'Refrigerador de medicamentos', type: 'medical_equipment', category: 'Almacenamiento', manufacturer: 'Haier', model: 'HYC-68', price: 2200, life: 10, condition: 'good', status: 'active', location: 'Farmacia' },
-      { tag: `${clinicTag}-MED-008`, name: 'Nebulizador', type: 'medical_equipment', category: 'Tratamiento', manufacturer: 'Omron', model: 'NE-C28', price: 320, life: 7, condition: 'fair', status: 'active', location: 'Consultorio 2' },
-      { tag: `${clinicTag}-MED-009`, name: 'Equipo de inyección', type: 'medical_equipment', category: 'Tratamiento', manufacturer: 'BD', model: 'Kit Básico', price: 150, life: 5, condition: 'good', status: 'active', location: 'Enfermería' },
-      { tag: `${clinicTag}-MED-010`, name: 'Camilla médica', type: 'medical_equipment', category: 'Mobiliario médico', manufacturer: 'Local', model: 'Est-01', price: 800, life: 20, condition: 'good', status: 'active', location: 'Consultorio 1' },
-      { tag: `${clinicTag}-MED-011`, name: 'Tensiómetro manual', type: 'medical_equipment', category: 'Diagnóstico', manufacturer: 'Welch Allyn', model: 'Tycos', price: 220, life: 10, condition: 'fair', status: 'maintenance', location: 'Consultorio 2' },
-      { tag: `${clinicTag}-MED-012`, name: 'Lámpara de examinación', type: 'medical_equipment', category: 'Iluminación médica', manufacturer: 'Luxor', model: 'LED-500', price: 420, life: 10, condition: 'good', status: 'active', location: 'Consultorio 1' },
-      { tag: `${clinicTag}-OFC-001`, name: 'Computadora de escritorio', type: 'computer', category: 'Tecnología', manufacturer: 'HP', model: 'ProDesk 400', price: 3500, life: 5, condition: 'good', status: 'active', location: 'Recepción' },
-      { tag: `${clinicTag}-OFC-002`, name: 'Impresora multifuncional', type: 'computer', category: 'Tecnología', manufacturer: 'Epson', model: 'L3250', price: 1200, life: 5, condition: 'good', status: 'active', location: 'Recepción' },
-      { tag: `${clinicTag}-OFC-003`, name: 'Computadora farmacia', type: 'computer', category: 'Tecnología', manufacturer: 'Lenovo', model: 'ThinkCentre', price: 3200, life: 5, condition: 'excellent', status: 'active', location: 'Farmacia' },
-      { tag: `${clinicTag}-MOB-001`, name: 'Escritorio médico', type: 'furniture', category: 'Mobiliario', manufacturer: 'Local', model: 'Esc-01', price: 600, life: 15, condition: 'good', status: 'active', location: 'Consultorio 1' },
-      { tag: `${clinicTag}-MOB-002`, name: 'Silla médica ergonómica', type: 'furniture', category: 'Mobiliario', manufacturer: 'Local', model: 'Sil-01', price: 350, life: 10, condition: 'good', status: 'active', location: 'Consultorio 1' },
-      { tag: `${clinicTag}-MOB-003`, name: 'Archivador metálico', type: 'furniture', category: 'Mobiliario', manufacturer: 'Local', model: 'Arch-02', price: 450, life: 20, condition: 'good', status: 'active', location: 'Administración' },
-      { tag: `${clinicTag}-MOB-004`, name: 'Sillas sala de espera (set 4)', type: 'furniture', category: 'Mobiliario', manufacturer: 'Local', model: 'Set-04', price: 800, life: 10, condition: 'fair', status: 'active', location: 'Sala de espera' },
-      { tag: `${clinicTag}-MED-013`, name: 'Balanza pediátrica', type: 'medical_equipment', category: 'Diagnóstico', manufacturer: 'Seca', model: '354', price: 1200, life: 15, condition: 'good', status: 'active', location: 'Consultorio 2' },
+      { tag: `${clinicTag}-MED-001`, name: 'Tensiómetro digital', type: 'medical_equipment', manufacturer: 'Omron', model: 'M2', condition: 'good', status: 'active', location: 'Consultorio 1' },
+      { tag: `${clinicTag}-MED-002`, name: 'Estetoscopio', type: 'medical_equipment', manufacturer: 'Littmann', model: 'Classic III', condition: 'good', status: 'active', location: 'Consultorio 1' },
+      { tag: `${clinicTag}-MED-003`, name: 'Glucómetro', type: 'medical_equipment', manufacturer: 'Accu-Chek', model: 'Active', condition: 'excellent', status: 'active', location: 'Farmacia' },
+      { tag: `${clinicTag}-MED-004`, name: 'Termómetro digital', type: 'medical_equipment', manufacturer: 'Microlife', model: 'MT 850', condition: 'good', status: 'active', location: 'Consultorio 1' },
+      { tag: `${clinicTag}-MED-005`, name: 'Oxímetro de pulso', type: 'medical_equipment', manufacturer: 'Nonin', model: '9590', condition: 'excellent', status: 'active', location: 'Emergencias' },
+      { tag: `${clinicTag}-MED-006`, name: 'Balanza médica', type: 'medical_equipment', manufacturer: 'Seca', model: '700', condition: 'good', status: 'active', location: 'Sala de espera' },
+      { tag: `${clinicTag}-MED-007`, name: 'Refrigerador de medicamentos', type: 'medical_equipment', manufacturer: 'Haier', model: 'HYC-68', condition: 'good', status: 'active', location: 'Farmacia' },
+      { tag: `${clinicTag}-MED-008`, name: 'Nebulizador', type: 'medical_equipment', manufacturer: 'Omron', model: 'NE-C28', condition: 'fair', status: 'active', location: 'Consultorio 2' },
+      { tag: `${clinicTag}-MED-009`, name: 'Equipo de inyección', type: 'medical_equipment', manufacturer: 'BD', model: 'Kit Básico', condition: 'good', status: 'active', location: 'Enfermería' },
+      { tag: `${clinicTag}-MED-010`, name: 'Camilla médica', type: 'medical_equipment', manufacturer: 'Local', model: 'Est-01', condition: 'good', status: 'active', location: 'Consultorio 1' },
+      { tag: `${clinicTag}-MED-011`, name: 'Tensiómetro manual', type: 'medical_equipment', manufacturer: 'Welch Allyn', model: 'Tycos', condition: 'fair', status: 'maintenance', location: 'Consultorio 2' },
+      { tag: `${clinicTag}-MED-012`, name: 'Lámpara de examinación', type: 'medical_equipment', manufacturer: 'Luxor', model: 'LED-500', condition: 'good', status: 'active', location: 'Consultorio 1' },
+      { tag: `${clinicTag}-OFC-001`, name: 'Computadora de escritorio', type: 'computer', manufacturer: 'HP', model: 'ProDesk 400', condition: 'good', status: 'active', location: 'Recepción' },
+      { tag: `${clinicTag}-OFC-002`, name: 'Impresora multifuncional', type: 'computer', manufacturer: 'Epson', model: 'L3250', condition: 'good', status: 'active', location: 'Recepción' },
+      { tag: `${clinicTag}-OFC-003`, name: 'Computadora farmacia', type: 'computer', manufacturer: 'Lenovo', model: 'ThinkCentre', condition: 'excellent', status: 'active', location: 'Farmacia' },
+      { tag: `${clinicTag}-MOB-001`, name: 'Escritorio médico', type: 'furniture', manufacturer: 'Local', model: 'Esc-01', condition: 'good', status: 'active', location: 'Consultorio 1' },
+      { tag: `${clinicTag}-MOB-002`, name: 'Silla médica ergonómica', type: 'furniture', manufacturer: 'Local', model: 'Sil-01', condition: 'good', status: 'active', location: 'Consultorio 1' },
+      { tag: `${clinicTag}-MOB-003`, name: 'Archivador metálico', type: 'furniture', manufacturer: 'Local', model: 'Arch-02', condition: 'good', status: 'active', location: 'Administración' },
+      { tag: `${clinicTag}-MOB-004`, name: 'Sillas sala de espera', quantity: 4, type: 'furniture', manufacturer: 'Local', model: 'Set-04', condition: 'fair', status: 'active', location: 'Sala de espera' },
+      { tag: `${clinicTag}-MED-013`, name: 'Balanza pediátrica', type: 'medical_equipment', manufacturer: 'Seca', model: '354', condition: 'good', status: 'active', location: 'Consultorio 2' },
     ];
 
-    for (let i = 0; i < assetDefs.length; i++) {
-      const d = assetDefs[i];
+    for (const d of assetDefs) {
       const existingTag = await this.dataSource.query(
         `SELECT id FROM assets WHERE "assetTag" = $1 LIMIT 1`, [d.tag],
       );
       if (existingTag.length > 0) continue;
 
-      const purchaseDaysAgo = 180 + Math.floor(Math.random() * 730);
-      const purchaseDate = new Date();
-      purchaseDate.setDate(purchaseDate.getDate() - purchaseDaysAgo);
-
-      const warrantyExpiry = new Date(purchaseDate);
-      warrantyExpiry.setFullYear(warrantyExpiry.getFullYear() + 1);
-
-      const monthlyDep = parseFloat(((d.price * 0.9) / (d.life * 12)).toFixed(2));
-      const monthsElapsed = Math.floor(purchaseDaysAgo / 30);
-      const accumulated = parseFloat(Math.min(monthlyDep * monthsElapsed, d.price * 0.9).toFixed(2));
-      const currentValue = parseFloat((d.price - accumulated).toFixed(2));
-
-      const nextMaint = new Date();
-      nextMaint.setMonth(nextMaint.getMonth() + 6);
-
+      // Sin precio, depreciación ni garantía: esas columnas se retiraron de la
+      // ficha (`SlimDownAssets`) porque el inventario cuenta existencias por
+      // ambiente y no amortiza nada. La demo replica ese modelo.
       await this.dataSource.query(`
         INSERT INTO assets (
-          id, "assetTag", name, type, category,
+          id, "assetTag", name, quantity, type,
           manufacturer, model,
           status, condition,
-          "purchasePrice", "purchaseDate",
-          vendor, "warrantyExpiry",
-          "depreciationMethod", "usefulLifeYears", "salvageValue",
-          "currentValue", "accumulatedDepreciation", "monthlyDepreciation",
           location,
-          "maintenanceIntervalMonths", "totalMaintenanceCost",
-          "nextMaintenanceDate",
           "isActive", "createdAt", "updatedAt",
           clinic_id, created_by
         ) VALUES (
-          gen_random_uuid(), $1, $2, $3::assets_type_enum, $4,
+          gen_random_uuid(), $1, $2, $3, $4::assets_type_enum,
           $5, $6,
           $7::assets_status_enum, $8::assets_condition_enum,
-          $9, $10,
-          'Proveedor Demo', $11,
-          'straight_line'::assets_depreciationmethod_enum, $12, 0,
-          $13, $14, $15,
-          $16,
-          12, 0,
-          $17,
+          $9,
           true, NOW(), NOW(),
-          $18, $19
+          $10, $11
         )
       `, [
-        d.tag, d.name, d.type, d.category,
+        d.tag, d.name, 'quantity' in d ? d.quantity : 1, d.type,
         d.manufacturer, d.model,
         d.status, d.condition,
-        d.price, purchaseDate.toISOString().slice(0, 10),
-        warrantyExpiry.toISOString().slice(0, 10),
-        d.life,
-        currentValue, accumulated, monthlyDep,
         d.location,
-        nextMaint.toISOString().slice(0, 10),
         clinic.id, createdBy.id,
       ]);
     }

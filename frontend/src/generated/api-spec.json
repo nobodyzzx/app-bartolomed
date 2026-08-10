@@ -6965,30 +6965,6 @@
             }
           },
           {
-            "name": "category",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "purchaseDateFrom",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "purchaseDateTo",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "search",
             "required": false,
             "in": "query",
@@ -7117,169 +7093,6 @@
                 }
               }
             }
-          }
-        },
-        "tags": [
-          "Assets"
-        ]
-      }
-    },
-    "/api/assets/maintenance": {
-      "get": {
-        "operationId": "AssetsController_findAllMaintenance",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AssetMaintenance"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Assets"
-        ]
-      },
-      "post": {
-        "operationId": "AssetsController_createMaintenance",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateAssetMaintenanceDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssetMaintenance"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Assets"
-        ]
-      }
-    },
-    "/api/assets/maintenance/stats": {
-      "get": {
-        "operationId": "AssetsController_getMaintenanceStats",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Assets"
-        ]
-      }
-    },
-    "/api/assets/maintenance/{maintenanceId}": {
-      "get": {
-        "operationId": "AssetsController_findOneMaintenance",
-        "parameters": [
-          {
-            "name": "maintenanceId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssetMaintenance"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Assets"
-        ]
-      },
-      "patch": {
-        "operationId": "AssetsController_updateMaintenance",
-        "parameters": [
-          {
-            "name": "maintenanceId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateAssetMaintenanceDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssetMaintenance"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Assets"
-        ]
-      },
-      "delete": {
-        "operationId": "AssetsController_deleteMaintenance",
-        "parameters": [
-          {
-            "name": "maintenanceId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
           }
         },
         "tags": [
@@ -13392,9 +13205,6 @@
             "description": "Unidades del ítem en su ubicación. Por defecto 1.",
             "minimum": 1
           },
-          "description": {
-            "type": "string"
-          },
           "type": {
             "type": "string",
             "enum": [
@@ -13406,12 +13216,6 @@
               "other"
             ]
           },
-          "category": {
-            "type": "string"
-          },
-          "subCategory": {
-            "type": "string"
-          },
           "manufacturer": {
             "type": "string"
           },
@@ -13419,9 +13223,6 @@
             "type": "string"
           },
           "serialNumber": {
-            "type": "string"
-          },
-          "barcodeNumber": {
             "type": "string"
           },
           "status": {
@@ -13446,79 +13247,16 @@
               "critical"
             ]
           },
-          "purchasePrice": {
-            "type": "number",
-            "minimum": 0
-          },
-          "purchaseDate": {
-            "type": "string",
-            "description": "Opcional: hay activos cuya fecha de compra no consta en ningún papel."
-          },
-          "vendor": {
-            "type": "string"
-          },
-          "invoiceNumber": {
-            "type": "string"
-          },
-          "warrantyInfo": {
-            "type": "string"
-          },
-          "warrantyExpiry": {
-            "type": "string"
-          },
-          "depreciationMethod": {
-            "type": "string",
-            "enum": [
-              "straight_line",
-              "declining_balance",
-              "units_of_production",
-              "no_depreciation"
-            ]
-          },
-          "usefulLifeYears": {
-            "type": "number",
-            "minimum": 1
-          },
-          "salvageValue": {
-            "type": "number",
-            "minimum": 0
-          },
           "location": {
             "type": "string"
           },
-          "room": {
-            "type": "string"
-          },
-          "building": {
-            "type": "string"
-          },
-          "floor": {
-            "type": "string"
-          },
-          "lastMaintenanceDate": {
-            "type": "string"
-          },
-          "nextMaintenanceDate": {
-            "type": "string"
-          },
-          "maintenanceIntervalMonths": {
-            "type": "number",
-            "minimum": 1
-          },
           "notes": {
             "type": "string"
-          },
-          "specifications": {
-            "type": "object"
-          },
-          "attachments": {
-            "type": "object"
           }
         },
         "required": [
           "name",
-          "type",
-          "purchasePrice"
+          "type"
         ]
       },
       "Asset": {
@@ -13535,10 +13273,7 @@
           },
           "quantity": {
             "type": "number",
-            "description": "Cuántas unidades hay de este ítem en su ubicación.\n\nEl inventario de la clínica es un conteo de existencias por ambiente, no un\nregistro de bienes contables: lo que se necesita saber es qué hay, cuánto y\ndónde. Sin este campo, la misma planilla se cargaba con dos criterios —una\ncaja de 137 agujas quedaba como una ficha con la cantidad escondida en una\nnota, mientras 4 sensores se abrían en cuatro fichas \"(1 de 4)\"—, y ninguno\nde los dos permitía sumar unidades."
-          },
-          "description": {
-            "type": "string"
+            "description": "Cuántas unidades hay de este ítem en su ubicación.\n\nSin este campo, la misma planilla se cargaba con dos criterios —una caja de\n137 agujas quedaba como una ficha con la cantidad escondida en una nota,\nmientras 4 sensores se abrían en cuatro fichas \"(1 de 4)\"—, y ninguno de los\ndos permitía responder cuántos hay."
           },
           "type": {
             "enum": [
@@ -13551,12 +13286,6 @@
             ],
             "type": "string"
           },
-          "category": {
-            "type": "string"
-          },
-          "subCategory": {
-            "type": "string"
-          },
           "manufacturer": {
             "type": "string"
           },
@@ -13564,9 +13293,6 @@
             "type": "string"
           },
           "serialNumber": {
-            "type": "string"
-          },
-          "barcodeNumber": {
             "type": "string"
           },
           "status": {
@@ -13591,104 +13317,15 @@
             ],
             "type": "string"
           },
-          "purchasePrice": {
-            "type": "number"
-          },
-          "purchaseDate": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true,
-            "description": "Nulo = fecha de compra sin registrar, que no es lo mismo que comprado hoy.\n\nEra obligatorio, y eso obligaba a inventarse una fecha para todo activo que\nllegara sin ella —el inventario en papel de la clínica no la trae para\nninguno de sus 207 ítems—. Una fecha inventada no es neutral: de ella sale\nla antigüedad y la depreciación."
-          },
-          "vendor": {
-            "type": "string"
-          },
-          "invoiceNumber": {
-            "type": "string"
-          },
-          "warrantyInfo": {
-            "type": "string"
-          },
-          "warrantyExpiry": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "depreciationMethod": {
-            "enum": [
-              "straight_line",
-              "declining_balance",
-              "units_of_production",
-              "no_depreciation"
-            ],
-            "type": "string"
-          },
-          "usefulLifeYears": {
-            "type": "number"
-          },
-          "salvageValue": {
-            "type": "number"
-          },
-          "currentValue": {
-            "type": "number"
-          },
-          "accumulatedDepreciation": {
-            "type": "number"
-          },
-          "monthlyDepreciation": {
-            "type": "number"
-          },
           "location": {
-            "type": "string"
-          },
-          "room": {
-            "type": "string"
-          },
-          "building": {
-            "type": "string"
-          },
-          "floor": {
-            "type": "string"
-          },
-          "lastMaintenanceDate": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "nextMaintenanceDate": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "maintenanceIntervalMonths": {
-            "type": "number"
-          },
-          "totalMaintenanceCost": {
-            "type": "number"
+            "type": "string",
+            "description": "Ambiente donde está el ítem: \"SALA ECOGRAFIA\", \"ESTERILIZACION\"."
           },
           "notes": {
             "type": "string"
           },
-          "specifications": {
-            "type": "object"
-          },
-          "attachments": {
-            "type": "object"
-          },
           "isActive": {
             "type": "boolean"
-          },
-          "clinic": {
-            "$ref": "#/components/schemas/Clinic"
-          },
-          "assignedTo": {
-            "$ref": "#/components/schemas/User"
-          },
-          "maintenanceRecords": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AssetMaintenance"
-            }
-          },
-          "createdBy": {
-            "$ref": "#/components/schemas/User"
           },
           "createdAt": {
             "format": "date-time",
@@ -13697,6 +13334,12 @@
           "updatedAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "clinic": {
+            "$ref": "#/components/schemas/Clinic"
+          },
+          "createdBy": {
+            "$ref": "#/components/schemas/User"
           }
         },
         "required": [
@@ -13704,292 +13347,20 @@
           "assetTag",
           "name",
           "quantity",
-          "description",
           "type",
-          "category",
-          "subCategory",
           "manufacturer",
           "model",
           "serialNumber",
-          "barcodeNumber",
           "status",
           "condition",
-          "purchasePrice",
-          "purchaseDate",
-          "vendor",
-          "invoiceNumber",
-          "warrantyInfo",
-          "warrantyExpiry",
-          "depreciationMethod",
-          "usefulLifeYears",
-          "salvageValue",
-          "currentValue",
-          "accumulatedDepreciation",
-          "monthlyDepreciation",
           "location",
-          "room",
-          "building",
-          "floor",
-          "lastMaintenanceDate",
-          "nextMaintenanceDate",
-          "maintenanceIntervalMonths",
-          "totalMaintenanceCost",
           "notes",
-          "specifications",
-          "attachments",
           "isActive",
+          "createdAt",
+          "updatedAt",
           "clinic",
-          "assignedTo",
-          "maintenanceRecords",
-          "createdBy",
-          "createdAt",
-          "updatedAt"
+          "createdBy"
         ]
-      },
-      "AssetMaintenance": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "type": {
-            "enum": [
-              "Preventivo",
-              "Correctivo",
-              "Emergencia",
-              "Calibración",
-              "Inspección"
-            ],
-            "type": "string"
-          },
-          "status": {
-            "enum": [
-              "Programado",
-              "En Progreso",
-              "Completado",
-              "Cancelado",
-              "Retrasado"
-            ],
-            "type": "string"
-          },
-          "scheduledDate": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "completedDate": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "estimatedCost": {
-            "type": "number"
-          },
-          "actualCost": {
-            "type": "number"
-          },
-          "technician": {
-            "type": "string"
-          },
-          "vendor": {
-            "type": "string"
-          },
-          "workPerformed": {
-            "type": "string"
-          },
-          "partsReplaced": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string"
-          },
-          "priority": {
-            "type": "number"
-          },
-          "nextMaintenanceDate": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "asset": {
-            "$ref": "#/components/schemas/Asset"
-          },
-          "assetId": {
-            "type": "string"
-          },
-          "scheduledBy": {
-            "$ref": "#/components/schemas/User"
-          },
-          "scheduledById": {
-            "type": "string"
-          },
-          "completedBy": {
-            "$ref": "#/components/schemas/User"
-          },
-          "completedById": {
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "description",
-          "type",
-          "status",
-          "scheduledDate",
-          "completedDate",
-          "estimatedCost",
-          "actualCost",
-          "technician",
-          "vendor",
-          "workPerformed",
-          "partsReplaced",
-          "notes",
-          "priority",
-          "nextMaintenanceDate",
-          "isActive",
-          "asset",
-          "assetId",
-          "scheduledBy",
-          "scheduledById",
-          "completedBy",
-          "completedById",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "CreateAssetMaintenanceDto": {
-        "type": "object",
-        "properties": {
-          "assetId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "Preventivo",
-              "Correctivo",
-              "Emergencia",
-              "Calibración",
-              "Inspección"
-            ]
-          },
-          "scheduledDate": {
-            "type": "string"
-          },
-          "estimatedCost": {
-            "type": "number",
-            "minimum": 0
-          },
-          "technician": {
-            "type": "string"
-          },
-          "vendor": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string"
-          },
-          "priority": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 4
-          }
-        },
-        "required": [
-          "assetId",
-          "title",
-          "scheduledDate"
-        ]
-      },
-      "UpdateAssetMaintenanceDto": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "Preventivo",
-              "Correctivo",
-              "Emergencia",
-              "Calibración",
-              "Inspección"
-            ]
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "Programado",
-              "En Progreso",
-              "Completado",
-              "Cancelado",
-              "Retrasado"
-            ]
-          },
-          "scheduledDate": {
-            "type": "string"
-          },
-          "completedDate": {
-            "type": "string"
-          },
-          "estimatedCost": {
-            "type": "number",
-            "minimum": 0
-          },
-          "actualCost": {
-            "type": "number",
-            "minimum": 0
-          },
-          "technician": {
-            "type": "string"
-          },
-          "vendor": {
-            "type": "string"
-          },
-          "workPerformed": {
-            "type": "string"
-          },
-          "partsReplaced": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string"
-          },
-          "priority": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 4
-          },
-          "nextMaintenanceDate": {
-            "type": "string"
-          }
-        }
       },
       "UpdateAssetDto": {
         "type": "object",

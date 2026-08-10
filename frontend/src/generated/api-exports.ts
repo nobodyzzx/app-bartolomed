@@ -77,5 +77,3 @@ export type ApiUpdateServicePriceDto = components['schemas']['UpdateServicePrice
 // ─── Activos ──────────────────────────────────────────────────────────────────
 export type ApiAsset = components['schemas']['Asset']
 export type ApiCreateAssetDto = components['schemas']['CreateAssetDto']
-export type ApiAssetMaintenance = components['schemas']['AssetMaintenance']
-export type ApiAssetReport = components['schemas']['AssetReport']
