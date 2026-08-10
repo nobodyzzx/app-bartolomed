@@ -3420,6 +3420,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/assets/movements/target-clinics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Declarado antes que `movements`: Nest resuelve por orden y una ruta estática
+         *     detrás de otra más corta igual entra, pero el orden explícito evita que un
+         *     futuro `movements/:algo` se coma esta.
+         */
+        get: operations["AssetsController_findTargetClinics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/assets/movements": {
         parameters: {
             query?: never;
@@ -5640,6 +5661,12 @@ export interface components {
         MoveAssetDto: {
             /** @description Ambiente al que va. Se acepta texto libre: es el mismo campo del ítem. */
             toLocation: string;
+            /**
+             * Format: uuid
+             * @description Clínica a la que va. Omitida, el ítem se queda en la suya, que es el caso
+             *     corriente. Solo se admite una clínica de la que el usuario sea miembro.
+             */
+            toClinicId?: string;
             /** @description Unidades que se mueven. Omitida, va el ítem completo. */
             quantity?: number;
             notes?: string;
@@ -5695,7 +5722,16 @@ export interface components {
             targetAssetId: string;
             notes: string;
             movedBy: components["schemas"]["User"];
+            /** @description Clínica de origen. */
             clinic: components["schemas"]["Clinic"];
+            /**
+             * @description Clínica de destino, solo cuando el ítem cruzó de una a otra. Nula en el
+             *     movimiento corriente entre ambientes de la misma.
+             *
+             *     Sin esta columna el historial sería cojo: la consulta filtra por clínica, y
+             *     el destino —que es justo quien necesita saber qué le llegó— no vería nada.
+             */
+            toClinic: components["schemas"]["Clinic"];
             /** Format: date-time */
             createdAt: string;
         };
@@ -11139,6 +11175,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AssetMovement"];
+                };
+            };
+        };
+    };
+    AssetsController_findTargetClinics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>[];
                 };
             };
         };

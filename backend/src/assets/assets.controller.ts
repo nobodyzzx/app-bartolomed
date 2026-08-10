@@ -11,11 +11,7 @@ import { AssetsService } from './assets.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { FilterAssetsDto } from './dto/filter-assets.dto';
 import { FilterMovementsDto, MoveAssetDto } from './dto/asset-movement.dto';
-import {
-  CloseInventoryCountDto,
-  SaveCountedItemsDto,
-  StartInventoryCountDto,
-} from './dto/inventory-count.dto';
+import { CloseInventoryCountDto, SaveCountedItemsDto, StartInventoryCountDto } from './dto/inventory-count.dto';
 import { PrintAssetReportDto, PrintHandoverActDto } from './dto/print-asset-report.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
 import { AssetMovementsService } from './services/asset-movements.service';
@@ -42,11 +38,12 @@ export class AssetsController {
   // ==================== MOVIMIENTOS ENTRE AMBIENTES ====================
 
   /**
-   * Traspasa unidades a otro ambiente de la misma clínica, en un paso.
+   * Traspasa unidades a otro ambiente en un paso, sea de esta clínica o de la de
+   * al lado.
    *
    * Es lo que pasa a diario y antes no dejaba rastro: mover una silla era editar
-   * el campo Ambiente. El flujo de `/asset-transfers` no cubre esto — exige
-   * clínica destino distinta y pasa por despacho y confirmación de recepción.
+   * el campo Ambiente. El flujo de `/asset-transfers` sigue disponible para el
+   * traslado que necesite despacho y confirmación de recepción firmada.
    */
   @Post(':id/move')
   moveAsset(
@@ -56,6 +53,16 @@ export class AssetsController {
     @Req() req: Request,
   ) {
     return this.movements.move(id, dto, user.id, resolveClinicId(req)!);
+  }
+
+  /**
+   * Declarado antes que `movements`: Nest resuelve por orden y una ruta estática
+   * detrás de otra más corta igual entra, pero el orden explícito evita que un
+   * futuro `movements/:algo` se coma esta.
+   */
+  @Get('movements/target-clinics')
+  findTargetClinics(@GetUser() user: User, @Req() req: Request) {
+    return this.movements.targetClinics(user.id, resolveClinicId(req)!);
   }
 
   @Get('movements')
@@ -92,11 +99,7 @@ export class AssetsController {
   }
 
   @Patch('counts/:countId/items')
-  saveCounted(
-    @Param('countId', ParseUUIDPipe) id: string,
-    @Body() dto: SaveCountedItemsDto,
-    @Req() req: Request,
-  ) {
+  saveCounted(@Param('countId', ParseUUIDPipe) id: string, @Body() dto: SaveCountedItemsDto, @Req() req: Request) {
     return this.counts.saveCounted(id, dto, resolveClinicId(req)!);
   }
 
@@ -147,7 +150,11 @@ export class AssetsController {
   }
 
   @Get('validate-serial/:serialNumber')
-  validateSerialNumber(@Param('serialNumber') serialNumber: string, @Query('excludeId') excludeId?: string, @Req() req?: Request) {
+  validateSerialNumber(
+    @Param('serialNumber') serialNumber: string,
+    @Query('excludeId') excludeId?: string,
+    @Req() req?: Request,
+  ) {
     const clinicId = req ? resolveClinicId(req) : undefined;
     return this.assetsService.validateSerialNumber(serialNumber, excludeId, clinicId);
   }

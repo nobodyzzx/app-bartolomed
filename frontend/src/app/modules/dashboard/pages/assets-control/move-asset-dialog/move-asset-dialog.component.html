@@ -1,6 +1,6 @@
 <h2 mat-dialog-title class="flex items-center gap-2">
   <span class="material-symbols-outlined text-blue-600">move_down</span>
-  Mover a otro ambiente
+  {{ destinoClinica ? 'Mover a ' + destinoClinica.name : 'Mover a otro ambiente' }}
 </h2>
 
 <mat-dialog-content>
@@ -13,6 +13,19 @@
   </div>
 
   <form [formGroup]="form" class="flex flex-col gap-1">
+    @if (otrasClinicas.length) {
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Clínica de destino</mat-label>
+        <mat-icon matPrefix class="text-blue-400">domain</mat-icon>
+        <mat-select formControlName="toClinicId">
+          <mat-option value="">Se queda en esta clínica</mat-option>
+          @for (c of otrasClinicas; track c.id) {
+            <mat-option [value]="c.id">{{ c.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>Ambiente de destino</mat-label>
       <mat-icon matPrefix class="text-blue-400">location_on</mat-icon>
@@ -23,6 +36,9 @@
           <mat-option [value]="loc">{{ loc }}</mat-option>
         }
       </mat-autocomplete>
+      @if (destinoClinica && !locations.length) {
+        <mat-hint>{{ destinoClinica.name }} todavía no tiene ambientes: escribe el nombre.</mat-hint>
+      }
       @if (form.get('toLocation')?.hasError('required')) {
         <mat-error>Indica a qué ambiente va</mat-error>
       }
@@ -33,6 +49,9 @@
       <mat-icon matPrefix class="text-blue-400">tag</mat-icon>
       <input matInput type="number" formControlName="quantity" min="1" [max]="disponibles" required />
       <mat-hint>Hay {{ disponibles }} disponible(s). Si mueves todas, el ítem cambia de ambiente.</mat-hint>
+      @if (form.get('quantity')?.hasError('required')) {
+        <mat-error>Indica cuántas unidades</mat-error>
+      }
       @if (form.get('quantity')?.hasError('max')) {
         <mat-error>No puedes mover más de {{ disponibles }}</mat-error>
       }
@@ -45,6 +64,16 @@
       <mat-label>Motivo (opcional)</mat-label>
       <input matInput formControlName="notes" placeholder="Quién lo movió o por qué" />
     </mat-form-field>
+
+    @if (destinoClinica) {
+      <div class="flex items-start gap-3 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200">
+        <span class="material-symbols-outlined msz-20 text-amber-700 flex-shrink-0">swap_horiz</span>
+        <p class="text-sm text-amber-900 m-0">
+          Sale del inventario de esta clínica y entra al de
+          <strong>{{ destinoClinica.name }}</strong>. Queda anotado en el historial de las dos.
+        </p>
+      </div>
+    }
   </form>
 </mat-dialog-content>
 

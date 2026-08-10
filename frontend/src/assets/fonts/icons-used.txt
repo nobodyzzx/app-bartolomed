@@ -203,6 +203,7 @@ store
 storefront
 straighten
 summarize
+swap_horiz
 sync
 sync_alt
 table_chart

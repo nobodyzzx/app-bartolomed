@@ -6,7 +6,12 @@ import { AlertService } from '../../../../../core/services/alert.service'
 import { environment } from '../../../../../environments/environments'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
 import { openPdfInNewTab } from '../../../../../shared/utils/pdf-viewer.util'
-import { AssetMovement, InventoryCount, MoveAssetDto } from '../interfaces/assets.interfaces'
+import {
+  AssetMovement,
+  InventoryCount,
+  MoveAssetDto,
+  TargetClinic,
+} from '../interfaces/assets.interfaces'
 
 /**
  * Movimientos entre ambientes y tomas de inventario: las dos cosas que cierran
@@ -29,9 +34,25 @@ export class InventoryCountsService {
 
   move(assetId: string, dto: MoveAssetDto): Observable<AssetMovement> {
     return this.http.post<AssetMovement>(`${this.apiUrl}/${assetId}/move`, dto).pipe(
-      tap(m => this.alert.success('Movido', `${m.quantity} unidad(es) a ${m.toLocation}`)),
+      tap(m =>
+        this.alert.success(
+          'Movido',
+          // Cruzando de clínica se nombra: es un cambio de inventario, no un
+          // cambio de cuarto, y conviene que quede claro en el aviso.
+          m.toClinic
+            ? `${m.quantity} unidad(es) a ${m.toLocation}, en ${m.toClinic.name}`
+            : `${m.quantity} unidad(es) a ${m.toLocation}`,
+        ),
+      ),
       catchError(this.handleHttpError),
     )
+  }
+
+  /** Clínicas a las que se puede mandar un ítem, con sus ambientes. */
+  getTargetClinics(): Observable<TargetClinic[]> {
+    return this.http
+      .get<TargetClinic[]>(`${this.apiUrl}/movements/target-clinics`)
+      .pipe(catchError(this.handleHttpError))
   }
 
   getMovements(location?: string): Observable<{ data: AssetMovement[]; total: number }> {

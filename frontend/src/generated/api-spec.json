@@ -6907,6 +6907,31 @@
         ]
       }
     },
+    "/api/assets/movements/target-clinics": {
+      "get": {
+        "operationId": "AssetsController_findTargetClinics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Declarado antes que `movements`: Nest resuelve por orden y una ruta estática\ndetrás de otra más corta igual entra, pero el orden explícito evita que un\nfuturo `movements/:algo` se coma esta.",
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
     "/api/assets/movements": {
       "get": {
         "operationId": "AssetsController_findMovements",
@@ -13526,6 +13551,11 @@
             "description": "Ambiente al que va. Se acepta texto libre: es el mismo campo del ítem.",
             "maxLength": 200
           },
+          "toClinicId": {
+            "type": "string",
+            "description": "Clínica a la que va. Omitida, el ítem se queda en la suya, que es el caso\ncorriente. Solo se admite una clínica de la que el usuario sea miembro.",
+            "format": "uuid"
+          },
           "quantity": {
             "type": "number",
             "description": "Unidades que se mueven. Omitida, va el ítem completo.",
@@ -13679,7 +13709,20 @@
             "$ref": "#/components/schemas/User"
           },
           "clinic": {
-            "$ref": "#/components/schemas/Clinic"
+            "description": "Clínica de origen.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Clinic"
+              }
+            ]
+          },
+          "toClinic": {
+            "description": "Clínica de destino, solo cuando el ítem cruzó de una a otra. Nula en el\nmovimiento corriente entre ambientes de la misma.\n\nSin esta columna el historial sería cojo: la consulta filtra por clínica, y\nel destino —que es justo quien necesita saber qué le llegó— no vería nada.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Clinic"
+              }
+            ]
           },
           "createdAt": {
             "format": "date-time",
@@ -13698,6 +13741,7 @@
           "notes",
           "movedBy",
           "clinic",
+          "toClinic",
           "createdAt"
         ]
       },

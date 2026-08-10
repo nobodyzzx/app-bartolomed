@@ -153,13 +153,25 @@ export interface AssetMovement {
   quantity: number
   notes?: string
   movedBy?: { id: string; personalInfo?: { firstName: string; lastName: string } }
+  clinic?: { id: string; name: string }
+  /** Solo cuando el ítem cruzó a la otra clínica. */
+  toClinic?: { id: string; name: string }
   createdAt: string
 }
 
 export interface MoveAssetDto {
   toLocation: string
+  /** Omitido, el ítem se queda en su clínica, que es el caso corriente. */
+  toClinicId?: string
   quantity?: number
   notes?: string
+}
+
+/** Clínica a la que se puede mandar un ítem, con los ambientes que ya tiene. */
+export interface TargetClinic {
+  id: string
+  name: string
+  locations: string[]
 }
 
 // ─── Toma de inventario físico ───────────────────────────────────────────────
