@@ -32,8 +32,10 @@
       <input matInput formControlName="toLocation" [matAutocomplete]="amb"
         placeholder="Ej: SALA ENFERMERIA" required />
       <mat-autocomplete #amb="matAutocomplete">
-        @for (loc of locations; track loc) {
+        @for (loc of filteredLocations; track loc) {
           <mat-option [value]="loc">{{ loc }}</mat-option>
+        } @empty {
+          <mat-option disabled>Ningún ambiente coincide — se creará con ese nombre</mat-option>
         }
       </mat-autocomplete>
       @if (destinoClinica && !locations.length) {

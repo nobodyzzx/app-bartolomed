@@ -231,19 +231,6 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
     return this.assets.filter(a => a.status === AssetStatus.RETIRED).length
   }
 
-  /**
-   * `Number(...)` y no `+` a secas: las columnas `decimal` de Postgres viajan
-   * como **string** ("0.00"), aunque la interfaz las declare `number`. Sumarlas
-   * con `+` las concatenaba —"0.00"+"0.00" = "0.000.00"— y con 334 activos el
-   * resultado era una cadena de 100 caracteres que hacía reventar al
-   * `DecimalPipe` del KPI con NG02100. Ese error tumbaba el render del template
-   * entero, así que la tabla se quedaba en esqueletos y los cuatro contadores en
-   * cero: la pantalla no mostraba nada.
-   *
-   * No saltó antes porque el inventario estaba vacío y `reduce` devolvía el `0`
-   * inicial; apareció con la primera carga real de activos.
-   */
-  /** Unidades: el inventario cuenta existencias, y 235 ítems son 778 unidades. */
   /** Traspaso a otro ambiente: un paso, con registro de quién y cuándo. */
   moveAsset(asset: BaseAsset): void {
     this.dialog
@@ -254,6 +241,17 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
       })
   }
 
+  /**
+   * Unidades: el inventario cuenta existencias, y 235 ítems son 778 unidades.
+   *
+   * `Number(...)` y no `+` a secas: las columnas numéricas de Postgres viajan
+   * como **string**, aunque la interfaz las declare `number`. Sumarlas con `+`
+   * las concatenaba, y el resultado era una cadena larguísima que reventaba al
+   * `DecimalPipe` del KPI con NG02100. Ese error tumbaba el render del template
+   * entero, así que la tabla se quedaba en esqueletos y los contadores en cero:
+   * la pantalla no mostraba nada. No saltó antes porque el inventario estaba
+   * vacío y `reduce` devolvía el `0` inicial.
+   */
   getTotalUnits(): number {
     return this.assets.reduce((n, a) => n + (Number(a.quantity) || 1), 0)
   }

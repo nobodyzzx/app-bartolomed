@@ -259,7 +259,13 @@
                 <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</span>
               </th>
               <td mat-cell *matCellDef="let asset" class="px-6 py-4">
-                <div class="flex items-center justify-end gap-1">
+                <!--
+                  La fila entera navega al detalle, así que sin frenar el evento
+                  aquí cada botón de acción hacía las dos cosas: "Mover" abría el
+                  diálogo y a la vez saltaba al detalle, que quedaba mostrando la
+                  cantidad vieja porque quien recarga la lista es esta pantalla.
+                -->
+                <div class="flex items-center justify-end gap-1" (click)="$event.stopPropagation()">
                   <button
                     type="button"
                     (click)="viewAsset(asset)"

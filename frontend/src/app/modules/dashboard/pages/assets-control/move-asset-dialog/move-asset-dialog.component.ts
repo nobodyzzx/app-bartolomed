@@ -57,6 +57,30 @@ export class MoveAssetDialogComponent implements OnInit {
     return this.destinoClinica ? this.destinoClinica.locations : this.propias
   }
 
+  /**
+   * La lista se recorta con lo que se va tecleando. Sin esto mostraba los treinta
+   * y pico ambientes enteros escribiera uno lo que escribiera, así que teclear no
+   * servía de nada y sólo quedaba buscar a ojo desplazando la lista.
+   *
+   * Sin tildes ni mayúsculas a los dos lados: los ambientes de la planilla vienen
+   * en mayúscula y sin acentos ("ADMINISTRACION") mientras que los cargados a
+   * mano llevan ambas cosas ("Administración"), y nadie va a teclear la variante
+   * exacta que le tocó a cada uno.
+   */
+  get filteredLocations(): string[] {
+    const escrito = this.normalizar(this.form?.value?.toLocation ?? '')
+    if (!escrito) return this.locations
+    return this.locations.filter(l => this.normalizar(l).includes(escrito))
+  }
+
+  private normalizar(texto: string): string {
+    return texto
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+  }
+
   ngOnInit(): void {
     this.form = this.fb.group({
       toClinicId: [AQUI],
