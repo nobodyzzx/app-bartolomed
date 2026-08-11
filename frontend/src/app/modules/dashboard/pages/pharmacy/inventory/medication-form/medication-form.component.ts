@@ -31,8 +31,19 @@ export class MedicationFormComponent implements OnInit {
   isEditMode = false
   medicationId: string | null = null
 
-  readonly concentrationUnits: string[] = ['mg', 'g', 'ml', 'mg/ml', 'UI', '%']
-  readonly dosageForms: string[] = [
+  /**
+   * Concentración tal como vino del catálogo, para no reescribirla cuando nadie
+   * la tocó. El catálogo real de esta farmacia trae 323 productos con `N/D`, y
+   * recomponerla desde los campos del formulario los convertía en "null mg".
+   */
+  private strengthOriginal: string | null = null
+
+  // No son `readonly`: al abrir un producto cuya unidad o forma no está en la
+  // lista —el catálogo real usa "Unidad"— se agrega, o el selector aparecería
+  // vacío y guardar cambiaría el dato sin que nadie lo pidiera.
+  concentrationUnits: string[] = ['mg', 'g', 'ml', 'mg/ml', 'UI', '%']
+  dosageForms: string[] = [
+    'Unidad',
     'Comprimido',
     'Cápsula',
     'Jarabe',
@@ -45,7 +56,7 @@ export class MedicationFormComponent implements OnInit {
     'Gotas',
     'Spray',
   ]
-  readonly administrationRoutes: string[] = [
+  administrationRoutes: string[] = [
     'Oral',
     'Tópica',
     'Intravenosa',
@@ -84,15 +95,31 @@ export class MedicationFormComponent implements OnInit {
       // el que ya tiene y no se toca.
       code: [{ value: '', disabled: true }],
       nombreComercial: ['', [Validators.required, Validators.minLength(2)]],
-      principioActivo: ['', Validators.required],
-      concentracionValor: [null, [Validators.required, Validators.min(0.0001)]],
-      concentracionUnidad: [this.concentrationUnits[0], Validators.required],
+      // Principio activo y concentración son opcionales, igual que en el
+      // backend. Exigirlos dejaba el catálogo real inservible: 485 de sus 486
+      // productos vienen sin principio activo y 323 sin concentración numérica,
+      // así que el formulario nacía inválido y el botón de guardar no se
+      // habilitaba nunca. No se puede pedir un dato que nadie tiene para
+      // permitir corregir una falta de ortografía en el nombre.
+      principioActivo: [''],
+      concentracionValor: [null, [Validators.min(0.0001)]],
+      concentracionUnidad: [this.concentrationUnits[0]],
       formaFarmaceutica: [this.dosageForms[0], Validators.required],
       viaAdministracion: [this.administrationRoutes[0], Validators.required],
       laboratorio: [''],
       esMuestraMedica: [false],
       tipoProducto: [ProductType.MEDICATION, Validators.required],
     })
+  }
+
+  /**
+   * Añade a un desplegable el valor que trae el producto si no estaba entre las
+   * opciones. Sin esto el selector se abre en blanco y guardar sustituye el dato
+   * original por la primera opción de la lista.
+   */
+  private agregarSiFalta(lista: string[], valor?: string | null): void {
+    const v = valor?.trim()
+    if (v && !lista.includes(v)) lista.unshift(v)
   }
 
   loadMedication(): void {
@@ -104,6 +131,11 @@ export class MedicationFormComponent implements OnInit {
         const strengthMatch = medication.strength?.match(/^([\d.]+)\s*(.+)$/)
         const concentracionValor = strengthMatch ? parseFloat(strengthMatch[1]) : null
         const concentracionUnidad = strengthMatch ? strengthMatch[2] : this.concentrationUnits[0]
+        this.strengthOriginal = medication.strength ?? null
+
+        this.agregarSiFalta(this.concentrationUnits, concentracionUnidad)
+        this.agregarSiFalta(this.dosageForms, medication.dosageForm)
+        this.agregarSiFalta(this.administrationRoutes, medication.dosageInstructions)
 
         this.medicationForm.patchValue({
           code: medication.code,
@@ -135,7 +167,13 @@ export class MedicationFormComponent implements OnInit {
     }
 
     const formValue = this.medicationForm.getRawValue()
-    const strength = `${formValue.concentracionValor} ${formValue.concentracionUnidad}`
+    // Sin concentración cargada se conserva la que traía —`N/D` en la mayoría
+    // del catálogo real—, en vez de inventar un "null mg" que ni es un dato ni
+    // un vacío honesto.
+    const strength =
+      formValue.concentracionValor !== null && formValue.concentracionValor !== ''
+        ? `${formValue.concentracionValor} ${formValue.concentracionUnidad}`
+        : (this.strengthOriginal ?? 'N/D')
 
     const dto: CreateMedicationDto = {
       // Vacío = que lo genere el backend, que es el único que ve el catálogo
@@ -144,7 +182,7 @@ export class MedicationFormComponent implements OnInit {
       name: formValue.nombreComercial,
       strength,
       dosageForm: formValue.formaFarmaceutica,
-      activeIngredients: formValue.principioActivo,
+      activeIngredients: formValue.principioActivo || undefined,
       category: MedicationCategory.OTHER,
       storageCondition: StorageCondition.ROOM_TEMPERATURE,
       manufacturer: formValue.laboratorio || undefined,

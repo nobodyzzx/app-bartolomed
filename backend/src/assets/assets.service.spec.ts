@@ -120,6 +120,18 @@ describe('AssetsService', () => {
       });
     });
 
+    it('no pide relaciones que la ficha ya no tiene (bug real: 500 al abrir o editar)', async () => {
+      assetRepo.findOne!.mockResolvedValue(makeAsset());
+
+      await service.findOne('asset-1', CLINIC_ID);
+
+      // `assignedTo` se fue con el adelgazamiento de la ficha; seguía en la
+      // lista de relaciones y TypeORM tiraba EntityPropertyNotFoundError, así
+      // que ni la vista de detalle ni la edición funcionaban.
+      const [{ relations }] = assetRepo.findOne!.mock.calls.at(-1)!;
+      expect(relations).toEqual(['clinic', 'createdBy']);
+    });
+
     it('no verifica duplicado si no se envía serialNumber', async () => {
       const dto = makeCreateAssetDto(); // sin serialNumber
       const saved = makeAsset();

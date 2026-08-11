@@ -66,11 +66,7 @@
               <mat-label>Principio activo</mat-label>
               <mat-icon matPrefix class="text-blue-400">science</mat-icon>
               <input matInput formControlName="principioActivo" placeholder="Ej: Paracetamol" />
-              @if (medicationForm.get('principioActivo')?.hasError('required')) {
-                <mat-error>
-                  El principio activo es requerido
-                </mat-error>
-              }
+              <mat-hint>Opcional</mat-hint>
             </mat-form-field>
           </div>
 
@@ -140,11 +136,6 @@
                 formControlName="concentracionValor"
                 placeholder="Ej: 500"
                 />
-              @if (medicationForm.get('concentracionValor')?.hasError('required')) {
-                <mat-error>
-                  Requerido
-                </mat-error>
-              }
               @if (medicationForm.get('concentracionValor')?.hasError('min')) {
                 <mat-error>
                   Debe ser mayor a 0

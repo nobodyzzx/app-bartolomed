@@ -7,19 +7,25 @@ import { environment } from '../../../../../environments/environments'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
 import { AssetFilters, BaseAsset, CreateAssetDto, PaginatedResult } from '../interfaces/assets.interfaces'
 
+/**
+ * Espejo de lo que devuelve `GET /assets/stats`. Los campos de dinero
+ * —`totalValue`, `currentValue`, `totalDepreciation`— y los de garantía y
+ * mantenimiento se fueron con el adelgazamiento de la ficha: el backend ya no
+ * los calcula, y dejarlos declarados prometía datos que llegan `undefined`.
+ */
 export interface AssetStats {
+  /** Filas del inventario. */
   total: number
+  /** Cosas contadas: un ítem de 4 sillas suma 4. */
+  units: number
   active: number
   inactive: number
   maintenance: number
   retired: number
-  totalValue: number
-  currentValue: number
-  totalDepreciation: number
-  underWarranty: number
-  maintenanceDue: number
+  damaged: number
   byType: Record<string, number>
   byCondition: Record<string, number>
+  byLocation: Record<string, number>
 }
 
 @Injectable({

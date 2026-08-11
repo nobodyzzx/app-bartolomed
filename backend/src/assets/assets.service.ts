@@ -111,7 +111,10 @@ export class AssetsService {
     const scopedClinicId = this.requireClinicId(clinicId);
     const asset = await this.assetRepository.findOne({
       where: { id, isActive: true, clinic: { id: scopedClinicId } },
-      relations: ['clinic', 'createdBy', 'assignedTo'],
+      // `assignedTo` se retiró con el adelgazamiento de la ficha: pedirla acá
+      // hacía que TypeORM tirara EntityPropertyNotFoundError y devolvía 500 al
+      // abrir o editar cualquier activo.
+      relations: ['clinic', 'createdBy'],
     });
 
     if (!asset) {
