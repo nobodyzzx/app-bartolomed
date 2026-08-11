@@ -1,5 +1,5 @@
 import { Location } from '@angular/common'
-import { AfterViewInit, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
@@ -11,13 +11,16 @@ import { AssetCondition, AssetStatus, BaseAsset } from '../interfaces/assets.int
 import { MoveAssetDialogComponent } from '../move-asset-dialog/move-asset-dialog.component'
 import { AssetRegistrationService } from '../services/asset-registration.service'
 
+/** Qué subconjunto del inventario se está mirando. */
+export type VistaInventario = 'todos' | 'enUso' | 'porConfirmar' | 'enDesuso'
+
 @Component({
     selector: 'app-asset-inventory-control',
     templateUrl: './asset-inventory-control.component.html',
     styleUrls: ['./asset-inventory-control.component.css'],
     standalone: false
 })
-export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
+export class AssetInventoryControlComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
 
   // El inventario responde qué hay, cuánto y dónde. La columna de valor se
@@ -28,12 +31,59 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
   isLoading = false
   searchTerm = ''
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator
-  @ViewChild(MatSort) sort!: MatSort
+  /**
+   * Por `set` y no por propiedad: el paginador y el ordenador viven dentro de un
+   * `@if` que solo aparece cuando ya hay filas, así que en `ngAfterViewInit`
+   * todavía no existen. Asignándolos allí quedaban en `undefined` para siempre
+   * —el paginador marcaba "0 de 0" y la tabla pintaba los 256 ítems de una
+   * sentada, sin paginar ni poder ordenar por columna.
+   */
+  @ViewChild(MatPaginator)
+  set paginator(paginator: MatPaginator | undefined) {
+    if (paginator) this.dataSource.paginator = paginator
+  }
 
-  readonly AssetStatus = AssetStatus
+  @ViewChild(MatSort)
+  set sort(sort: MatSort | undefined) {
+    if (sort) this.dataSource.sort = sort
+  }
+
   assets: BaseAsset[] = []
-  activeStatusFilter: string | null = null
+
+  /**
+   * Las tres preguntas que responde el inventario, más "todo". Y no los estados
+   * de la ficha: "en desuso" no es un estado sino un estado **o** una condición
+   * mala, así que filtrar por `status` dejaba fuera justo lo que la tarjeta
+   * contaba.
+   */
+  vista: VistaInventario = 'todos'
+
+  /**
+   * Un solo criterio por categoría, compartido por el número de la tarjeta y por
+   * el filtro que aplica al pulsarla. Cuando eran dos cálculos distintos, la
+   * tarjeta decía 2 y al pulsarla salía otra cosa.
+   */
+  private readonly criterios: Record<Exclude<VistaInventario, 'todos'>, (a: BaseAsset) => boolean> = {
+    // "Operativo" excluye lo que la tarjeta de al lado da por inservible: una
+    // camilla en condición crítica figuraba en las dos, y entre las tres
+    // tarjetas salían más ítems de los que hay.
+    enUso: a => a.status === AssetStatus.ACTIVE && !this.inservible(a),
+    porConfirmar: a => a.status === AssetStatus.INACTIVE,
+    enDesuso: a => this.inservible(a),
+  }
+
+  /**
+   * Está pero no sirve. Son dos cosas distintas en la ficha —el estado "dañado"
+   * y una condición mala— y para quien recorre los ambientes es la misma: hay
+   * que reponerlo.
+   */
+  private inservible(a: BaseAsset): boolean {
+    return (
+      a.status === AssetStatus.DAMAGED ||
+      a.condition === AssetCondition.POOR ||
+      a.condition === AssetCondition.CRITICAL
+    )
+  }
 
   private readonly typeLabels: Record<string, string> = {
     medical_equipment: 'Equipo Médico',
@@ -97,11 +147,6 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
     this.loadAssets()
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator
-    this.dataSource.sort = this.sort
-  }
-
   loadAssets(): void {
     this.isLoading = true
     // getAllAssets y no getAssets: este último trae solo la primera página (25),
@@ -124,15 +169,23 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
     this.applyFilters()
   }
 
-  setStatusFilter(status: string | null): void {
-    this.activeStatusFilter = status
+  setVista(vista: VistaInventario): void {
+    this.vista = vista
     this.applyFilters()
   }
 
+  /** Si la tabla muestra un recorte del inventario y no el inventario entero. */
+  get hayFiltro(): boolean {
+    return this.vista !== 'todos' || this.searchTerm.trim() !== ''
+  }
+
+  contar(vista: VistaInventario): number {
+    return vista === 'todos' ? this.assets.length : this.assets.filter(this.criterios[vista]).length
+  }
+
   private applyFilters(): void {
-    const filtered = this.activeStatusFilter
-      ? this.assets.filter(a => a.status === this.activeStatusFilter)
-      : this.assets
+    const filtered =
+      this.vista === 'todos' ? this.assets : this.assets.filter(this.criterios[this.vista])
     this.dataSource.data = filtered
     this.dataSource.filter = this.searchTerm.trim().toLowerCase()
     if (this.dataSource.paginator) {
@@ -219,18 +272,6 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
     return this.typeIcons[type] ?? 'inventory_2'
   }
 
-  getActiveCount(): number {
-    return this.assets.filter(a => a.status === AssetStatus.ACTIVE).length
-  }
-
-  getMaintenanceCount(): number {
-    return this.assets.filter(a => a.status === AssetStatus.MAINTENANCE).length
-  }
-
-  getRetiredCount(): number {
-    return this.assets.filter(a => a.status === AssetStatus.RETIRED).length
-  }
-
   /** Traspaso a otro ambiente: un paso, con registro de quién y cuándo. */
   moveAsset(asset: BaseAsset): void {
     this.dialog
@@ -256,14 +297,4 @@ export class AssetInventoryControlComponent implements OnInit, AfterViewInit {
     return this.assets.reduce((n, a) => n + (Number(a.quantity) || 1), 0)
   }
 
-  /** Lo que está pero no sirve, más lo que se fue a mantenimiento. */
-  getUnusableCount(): number {
-    return this.assets.filter(
-      a => a.status === AssetStatus.DAMAGED || a.condition === AssetCondition.POOR || a.condition === AssetCondition.CRITICAL,
-    ).length
-  }
-
-  getPendingCount(): number {
-    return this.assets.filter(a => a.status === AssetStatus.INACTIVE).length
-  }
 }

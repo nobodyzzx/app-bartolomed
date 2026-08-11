@@ -34,17 +34,22 @@
       </button>
     </app-page-header>
 
-    <!-- Tarjetas de estadísticas -->
+    <!--
+      Las tarjetas son el filtro: pulsar una recorta la tabla a esa categoría.
+      Debajo hubo una fila de chips que hacía lo mismo, pero con las categorías
+      del módulo viejo —"Mantenimiento", que ya no existe, y "De Baja", que
+      siempre daba cero— y sin las dos que de verdad importan aquí.
+    -->
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
       <app-stat-card
         label="Ítems"
-        [value]="assets.length"
+        [value]="contar('todos')"
         sublabel="Distintos en inventario"
         icon="inventory_2"
         color="blue"
         [clickable]="true"
-        [active]="activeStatusFilter === null"
-        (cardClick)="setStatusFilter(null)"
+        [active]="vista === 'todos'"
+        (cardClick)="setVista('todos')"
         />
       <app-stat-card
         label="Unidades"
@@ -55,99 +60,46 @@
         />
       <app-stat-card
         label="En Uso"
-        [value]="getActiveCount()"
+        [value]="contar('enUso')"
         sublabel="Disponibles y operativos"
         icon="check_circle"
         color="green"
         [clickable]="true"
-        [active]="activeStatusFilter === AssetStatus.ACTIVE"
-        (cardClick)="setStatusFilter(AssetStatus.ACTIVE)"
+        [active]="vista === 'enUso'"
+        (cardClick)="setVista('enUso')"
         />
       <app-stat-card
         label="Por Confirmar"
-        [value]="getPendingCount()"
+        [value]="contar('porConfirmar')"
         sublabel="Sin entrega registrada"
         icon="help"
         color="amber"
         [clickable]="true"
-        [active]="activeStatusFilter === AssetStatus.INACTIVE"
-        (cardClick)="setStatusFilter(AssetStatus.INACTIVE)"
+        [active]="vista === 'porConfirmar'"
+        (cardClick)="setVista('porConfirmar')"
         />
       <app-stat-card
         label="En Desuso"
-        [value]="getUnusableCount()"
+        [value]="contar('enDesuso')"
         sublabel="Están pero no sirven"
-        icon="build"
+        icon="dangerous"
         color="red"
         [clickable]="true"
-        [active]="activeStatusFilter === AssetStatus.DAMAGED"
-        (cardClick)="setStatusFilter(AssetStatus.DAMAGED)"
+        [active]="vista === 'enDesuso'"
+        (cardClick)="setVista('enDesuso')"
         />
     </div>
 
     <!-- Contenedor principal: buscador + tabla -->
     <div class="table-container">
 
-      <!-- Buscador y filtros -->
+      <!-- Buscador -->
       <div class="table-toolbar">
         <app-search-bar
           placeholder="Nombre, tag, ubicación, fabricante..."
           [value]="searchTerm"
           (valueChange)="searchTerm = $event; applyFilter($event)"
-          >
-          <div class="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              (click)="setStatusFilter(null)"
-              class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium transition-all border-0"
-              [ngClass]="activeStatusFilter === null
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'"
-              >
-              Todos
-              <span class="text-xs opacity-70">({{ assets.length }})</span>
-            </button>
-            <button
-              type="button"
-              (click)="setStatusFilter(AssetStatus.ACTIVE)"
-              class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium transition-all border-0"
-              [ngClass]="activeStatusFilter === AssetStatus.ACTIVE
-                ? 'bg-green-600 text-white shadow-md'
-                : 'bg-green-50 text-green-700 hover:bg-green-100'"
-              >
-              <span class="w-1.5 h-1.5 rounded-full"
-              [ngClass]="activeStatusFilter === AssetStatus.ACTIVE ? 'bg-green-200' : 'bg-green-500'"></span>
-              Activo
-              <span class="text-xs opacity-70">({{ getActiveCount() }})</span>
-            </button>
-            <button
-              type="button"
-              (click)="setStatusFilter(AssetStatus.MAINTENANCE)"
-              class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium transition-all border-0"
-              [ngClass]="activeStatusFilter === AssetStatus.MAINTENANCE
-                ? 'bg-amber-600 text-white shadow-md'
-                : 'bg-amber-50 text-amber-700 hover:bg-amber-100'"
-              >
-              <span class="w-1.5 h-1.5 rounded-full"
-              [ngClass]="activeStatusFilter === AssetStatus.MAINTENANCE ? 'bg-amber-200' : 'bg-amber-500'"></span>
-              Mantenimiento
-              <span class="text-xs opacity-70">({{ getMaintenanceCount() }})</span>
-            </button>
-            <button
-              type="button"
-              (click)="setStatusFilter(AssetStatus.RETIRED)"
-              class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium transition-all border-0"
-              [ngClass]="activeStatusFilter === AssetStatus.RETIRED
-                ? 'bg-red-600 text-white shadow-md'
-                : 'bg-red-50 text-red-700 hover:bg-red-100'"
-              >
-              <span class="w-1.5 h-1.5 rounded-full"
-              [ngClass]="activeStatusFilter === AssetStatus.RETIRED ? 'bg-red-200' : 'bg-red-500'"></span>
-              De Baja
-              <span class="text-xs opacity-70">({{ getRetiredCount() }})</span>
-            </button>
-          </div>
-        </app-search-bar>
+          />
       </div>
 
       <!-- Cargando -->
@@ -159,11 +111,11 @@
       @if (!isLoading && dataSource.filteredData.length === 0) {
         <app-empty-state
           icon="inventory_2"
-          [title]="activeStatusFilter || searchTerm ? 'Sin resultados' : 'Sin activos registrados'"
-        [subtitle]="activeStatusFilter || searchTerm
+          [title]="hayFiltro ? 'Sin resultados' : 'Sin activos registrados'"
+        [subtitle]="hayFiltro
           ? 'Intenta con otro filtro o término de búsqueda'
           : 'Comienza agregando el primer activo al inventario'"
-          [actionLabel]="!activeStatusFilter && !searchTerm ? 'Agregar Activo' : ''"
+          [actionLabel]="hayFiltro ? '' : 'Agregar Activo'"
           (action)="addAsset()"
           />
       }
@@ -315,7 +267,7 @@
           <span class="text-sm text-slate-500">
             <span class="font-semibold text-slate-700">{{ dataSource.filteredData.length }}</span>
             {{ dataSource.filteredData.length === 1 ? 'activo' : 'activos' }}
-            {{ activeStatusFilter || searchTerm ? 'encontrados' : 'en total' }}
+            {{ hayFiltro ? 'encontrados' : 'en total' }}
           </span>
           <mat-paginator
             [pageSizeOptions]="[10, 25, 50]"
