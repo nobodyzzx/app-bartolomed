@@ -90,20 +90,22 @@
 
       @if (!loading && filteredPrescriptions.length > 0) {
         <div class="overflow-x-auto">
-          <table class="w-full">
+          <table class="w-full" matSort
+            [matSortActive]="orden.key" [matSortDirection]="orden.dir"
+            (matSortChange)="onSort($event)">
             <thead class="bg-slate-100">
               <tr>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Nº Receta</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Doctor</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Medicamentos</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Vencimiento</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
+                <th mat-sort-header="numero" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Nº Receta</th>
+                <th mat-sort-header="paciente" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</th>
+                <th mat-sort-header="doctor" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Doctor</th>
+                <th mat-sort-header="medicamentos" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Medicamentos</th>
+                <th mat-sort-header="vencimiento" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Vencimiento</th>
+                <th mat-sort-header="estado" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
                 <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
-              @for (p of filteredPrescriptions; track p) {
+              @for (p of ordenadas; track p) {
                 <tr
                   (click)="viewPrescription(p)"
                   class="table-row-hover">

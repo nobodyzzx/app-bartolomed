@@ -1,5 +1,7 @@
 import { Location } from '@angular/common'
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core'
+import { Sort } from '@angular/material/sort'
+import { EstadoOrden, leerOrden, ordenar } from '../../../../../shared/utils/table-sort.util'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
@@ -33,6 +35,30 @@ export class SuppliersComponent implements OnInit {
         .some(v => matchesSearch(term, v))
     })
   })
+
+  /** Columna por la que se ordena. Vacío = como vino del servidor. */
+  orden = signal<EstadoOrden>({ key: '', dir: '' })
+
+  onSort(sort: Sort): void {
+    this.orden.set(leerOrden(sort))
+  }
+
+  ordenadas = computed(() =>
+    ordenar(this.filtered(), this.orden(), (s, key) => {
+      switch (key) {
+        case 'nombre': return s.nombreComercial || s.name
+        case 'razonSocial': return s.razonSocial
+        // La etiqueta y no el valor del enum: la columna dice "Medicamentos".
+        case 'tipo': return this.getSupplierTypeLabel(s.tipoProveedor)
+        case 'contacto': return s.contactPerson
+        case 'email': return s.email
+        // Ciudad y luego departamento, como se lee la celda.
+        case 'ubicacion': return [s.city, s.state].filter(Boolean).join(', ')
+        case 'estado': return s.isActive ? 'Activo' : 'Inactivo'
+        default: return null
+      }
+    }),
+  )
 
   activeCount       = computed(() => this.suppliers().filter(s => s.isActive).length)
   inactiveCount     = computed(() => this.suppliers().filter(s => !s.isActive).length)

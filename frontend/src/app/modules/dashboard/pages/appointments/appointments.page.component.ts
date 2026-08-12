@@ -1,6 +1,8 @@
 import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
+import { Sort } from '@angular/material/sort'
 import { ActivatedRoute, Router } from '@angular/router'
+import { EstadoOrden, leerOrden, ordenar } from '../../../../shared/utils/table-sort.util'
 import { AlertService } from '@core/services/alert.service'
 import {
   Appointment,
@@ -20,6 +22,28 @@ export class AppointmentsPageComponent implements OnInit {
 
   appointments: Appointment[] = []
   filteredAppointments: Appointment[] = []
+
+  /** Columna elegida en la cabecera. Vacío = como vino del servidor. */
+  orden: EstadoOrden = { key: '', dir: '' }
+
+  onSort(sort: Sort): void {
+    this.orden = leerOrden(sort)
+  }
+
+  get ordenadas(): Appointment[] {
+    return ordenar(this.filteredAppointments, this.orden, (apt, key) => {
+      switch (key) {
+        case 'fecha': return apt.appointmentDate ? new Date(apt.appointmentDate) : null
+        // Por apellido, que es como se busca a alguien en una lista.
+        case 'paciente': return `${apt.patient?.lastName ?? ''} ${apt.patient?.firstName ?? ''}`.trim()
+        case 'doctor': return this.getDoctorFullName(apt)
+        case 'motivo': return apt.reason
+        // La etiqueta y no el valor del enum: la columna dice "Confirmada".
+        case 'estado': return this.getStatusLabel(apt.status)
+        default: return null
+      }
+    })
+  }
   loading: boolean = false
   searchTerm: string = ''
   selectedStatus: string = 'all'

@@ -7,6 +7,8 @@ import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs'
 import { ClinicContextService } from '../../../../clinics/services/clinic-context.service'
 import { MedicationStock } from '../interfaces/pharmacy.interfaces'
 import { matchesSearch } from '../../../../../shared/utils/text-search.util'
+import { Sort } from '@angular/material/sort'
+import { EstadoOrden, leerOrden, num, ordenar } from '../../../../../shared/utils/table-sort.util'
 import { InventoryService } from '../services/inventory.service'
 
 /**
@@ -263,6 +265,17 @@ export class InventoryComponent implements OnInit, OnDestroy {
     this.pagedProducts = this.filteredProducts.slice(start, start + this.pageSize)
   }
 
+  /**
+   * Columna elegida en la cabecera. Vacío = el orden por defecto de la
+   * pantalla, que no es alfabético: primero lo que falta.
+   */
+  orden = signal<EstadoOrden>({ key: '', dir: '' })
+
+  onSort(sort: Sort): void {
+    this.orden.set(leerOrden(sort))
+    this.refreshView()
+  }
+
   /** Rehace la vista. Llamar cada vez que cambien datos, búsqueda o filtro. */
   private refreshView(): void {
     const term = (this.searchTerm || '').toLowerCase()
@@ -274,14 +287,32 @@ export class InventoryComponent implements OnInit, OnDestroy {
       : base.filter(p =>
           matchesSearch(term, p.medication?.name, p.medication?.brandName, p.batchNumber, p.location),
         )
-    this.filteredProducts = [...rows].sort((a, b) => {
-      const lowA = this.isLowStock(a) ? 1 : 0
-      const lowB = this.isLowStock(b) ? 1 : 0
-      if (lowA !== lowB) return lowB - lowA
-      const nameA = a.medication?.name || ''
-      const nameB = b.medication?.name || ''
-      return nameA.localeCompare(nameB)
-    })
+    // Sin columna elegida se conserva el orden propio de esta pantalla: el
+    // stock bajo primero. No es una preferencia estética — es la lista de lo
+    // que hay que reponer, y alfabético la escondería entre 475 lotes.
+    this.filteredProducts = this.orden().dir
+      ? ordenar(rows, this.orden(), (p, key) => {
+          switch (key) {
+            case 'lote': return p.batchNumber
+            case 'medicamento': return p.medication?.name
+            case 'marca': return p.medication?.brandName
+            case 'stock': return num(p.quantity)
+            // Sin precio es un hueco, no un cero: el helper lo manda al final
+            // en los dos sentidos, que es donde estorba menos.
+            case 'precio': return this.needsPrice(p) ? null : num(p.sellingPrice)
+            case 'vencimiento': return p.expiryDate ? new Date(p.expiryDate) : null
+            case 'estado': return this.productStatus(p).label
+            default: return null
+          }
+        })
+      : [...rows].sort((a, b) => {
+          const lowA = this.isLowStock(a) ? 1 : 0
+          const lowB = this.isLowStock(b) ? 1 : 0
+          if (lowA !== lowB) return lowB - lowA
+          const nameA = a.medication?.name || ''
+          const nameB = b.medication?.name || ''
+          return nameA.localeCompare(nameB, 'es')
+        })
     // Al filtrar, volver a la primera página: quedarse en la 7 de una lista que
     // ahora tiene 2 mostraría una tabla vacía con resultados detrás.
     this.page.set(1)

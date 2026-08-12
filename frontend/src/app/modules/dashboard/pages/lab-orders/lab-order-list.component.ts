@@ -1,3 +1,5 @@
+import { Sort } from '@angular/material/sort'
+import { EstadoOrden, leerOrden, ordenar } from '../../../../shared/utils/table-sort.util'
 import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
@@ -28,6 +30,30 @@ export class LabOrderListComponent implements OnInit {
   readonly texts = this.config.texts
 
   orders: LabOrder[] = []
+
+  /** Columna elegida en la cabecera. Vacío = como vino del servidor. */
+  orden: EstadoOrden = { key: '', dir: '' }
+
+  onSort(sort: Sort): void {
+    this.orden = leerOrden(sort)
+  }
+
+  get ordenadas(): LabOrder[] {
+    return ordenar(this.orders, this.orden, (o, key) => {
+      switch (key) {
+        case 'numero': return o.orderNumber
+        case 'paciente': return this.patientLabel(o)
+        case 'medico': return this.requesterLabel(o)
+        // Por cuántos estudios lleva la orden: es lo que se compara de un
+        // vistazo entre una orden de uno y una de doce.
+        case 'estudios': return o.items?.length ?? 0
+        case 'resultados': return this.resultCount(o)
+        // La etiqueta y no el valor del enum: la columna dice "En proceso".
+        case 'estado': return this.getStatusLabel(o.status)
+        default: return null
+      }
+    })
+  }
   loading = false
   searchTerm = ''
   selectedStatus = ''

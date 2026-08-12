@@ -1,3 +1,5 @@
+import { Sort } from '@angular/material/sort'
+import { EstadoOrden, leerOrden, ordenar } from '../../../../shared/utils/table-sort.util'
 import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
@@ -45,6 +47,30 @@ export class PrescriptionListComponent implements OnInit {
 
   prescriptions: Prescription[] = []
   filteredPrescriptions: Prescription[] = []
+
+  /** Columna elegida en la cabecera. Vacío = como vino del servidor. */
+  orden: EstadoOrden = { key: '', dir: '' }
+
+  onSort(sort: Sort): void {
+    this.orden = leerOrden(sort)
+  }
+
+  get ordenadas(): Prescription[] {
+    return ordenar(this.filteredPrescriptions, this.orden, (p, key) => {
+      switch (key) {
+        case 'numero': return p.prescriptionNumber
+        // Por apellido, que es como se busca a alguien en una lista.
+        case 'paciente': return `${p.patient?.lastName ?? ''} ${p.patient?.firstName ?? ''}`.trim()
+        case 'doctor': return this.doctorName(p)
+        // Por cuántos medicamentos lleva: es lo que se compara de un vistazo.
+        case 'medicamentos': return p.items?.length ?? 0
+        case 'vencimiento': return p.expiryDate ? new Date(p.expiryDate) : null
+        // La etiqueta y no el valor del enum: la columna dice "Dispensada".
+        case 'estado': return this.getStatusLabel(p.status)
+        default: return null
+      }
+    })
+  }
   loading = false
   searchTerm = ''
   selectedStatus = ''

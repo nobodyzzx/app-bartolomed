@@ -92,21 +92,23 @@
       <!-- Tabla -->
       @if (!loading() && filtered().length > 0) {
         <div class="overflow-x-auto">
-          <table class="w-full">
+          <table class="w-full" matSort
+            [matSortActive]="orden().key" [matSortDirection]="orden().dir"
+            (matSortChange)="onSort($event)">
             <thead class="bg-slate-100">
               <tr>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Nombre</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Razón Social</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Tipo</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Contacto</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Email</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Ubicación</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
+                <th mat-sort-header="nombre" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Nombre</th>
+                <th mat-sort-header="razonSocial" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Razón Social</th>
+                <th mat-sort-header="tipo" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Tipo</th>
+                <th mat-sort-header="contacto" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Contacto</th>
+                <th mat-sort-header="email" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Email</th>
+                <th mat-sort-header="ubicacion" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Ubicación</th>
+                <th mat-sort-header="estado" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
                 <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
-              @for (s of filtered(); track trackById($index, s)) {
+              @for (s of ordenadas(); track trackById($index, s)) {
                 <tr
                   class="hover:bg-blue-50/40 transition-colors"
                   >

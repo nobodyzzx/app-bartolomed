@@ -2,6 +2,8 @@ import { Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { MatDialog } from '@angular/material/dialog'
 import { MatPaginator } from '@angular/material/paginator'
+import { MatSort } from '@angular/material/sort'
+import { ordenarComoLasDemas } from '../../../../../../shared/utils/table-sort.util'
 import { MatTableDataSource } from '@angular/material/table'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
@@ -34,7 +36,20 @@ export class UserListComponent implements OnInit {
   filterStatus: 'all' | 'active' | 'inactive' = 'all'
   isLoading = false
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator
+  /**
+   * Por `set` y no por propiedad: la tabla vive dentro de un `@if` que solo
+   * aparece cuando ya hay filas, así que en `ngAfterViewInit` el paginador y el
+   * ordenador todavía no existen.
+   */
+  @ViewChild(MatPaginator)
+  set paginator(paginator: MatPaginator | undefined) {
+    if (paginator) this.dataSource.paginator = paginator
+  }
+
+  @ViewChild(MatSort)
+  set sort(sort: MatSort | undefined) {
+    if (sort) this.dataSource.sort = sort
+  }
 
   private readonly roleState = inject(RoleStateService)
 
@@ -45,16 +60,36 @@ export class UserListComponent implements OnInit {
     private dialog: MatDialog,
   ) {
     this.dataSource = new MatTableDataSource<User>([])
+    ordenarComoLasDemas(this.dataSource)
     this.dataSource.filterPredicate = this.createFilter()
+
+    /**
+     * Ninguna de estas columnas es un campo del usuario: el nombre cuelga de
+     * `personalInfo`, la fecha de alta de `professionalInfo`, y los roles son
+     * una lista. Sin traducirlas, las cabeceras pintan la flecha y no mueven
+     * nada.
+     */
+    this.dataSource.sortingDataAccessor = (user, columna) => {
+      switch (columna) {
+        // Por apellido, que es como se busca a alguien en una lista.
+        case 'fullName': return `${user.personalInfo?.lastName ?? ''} ${user.personalInfo?.firstName ?? ''}`.trim()
+        case 'phone': return user.personalInfo?.phone ?? ''
+        case 'startDate': return user.professionalInfo?.startDate
+          ? new Date(user.professionalInfo.startDate).getTime()
+          : ''
+        // Por el primero de la lista: con varios roles no hay un orden único,
+        // y el primero es el que la celda enseña delante.
+        case 'roles': return user.roles?.[0] ?? ''
+        case 'isActive': return user.isActive ? 'Activo' : 'Inactivo'
+        default: return ''
+      }
+    }
   }
 
   ngOnInit(): void {
     this.loadUsers()
   }
 
-  ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator
-  }
 
   // Bug real: getUsers() sin argumentos siempre traía limit=25/offset=0, y el
   // MatPaginator solo paginaba client-side ese array — usuarios 26+ quedaban

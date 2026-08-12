@@ -83,16 +83,18 @@
 
       @if (!loading() && filteredProducts.length > 0) {
         <div class="overflow-x-auto">
-          <table class="w-full">
+          <table class="w-full" matSort
+            [matSortActive]="orden().key" [matSortDirection]="orden().dir"
+            (matSortChange)="onSort($event)">
             <thead class="bg-slate-100">
               <tr>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Lote</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Medicamento</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Marca</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Stock</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Precio Venta</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Vencimiento</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
+                <th mat-sort-header="lote" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Lote</th>
+                <th mat-sort-header="medicamento" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Medicamento</th>
+                <th mat-sort-header="marca" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Marca</th>
+                <th mat-sort-header="stock" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Stock</th>
+                <th mat-sort-header="precio" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Precio Venta</th>
+                <th mat-sort-header="vencimiento" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Vencimiento</th>
+                <th mat-sort-header="estado" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
                 <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</th>
               </tr>
             </thead>

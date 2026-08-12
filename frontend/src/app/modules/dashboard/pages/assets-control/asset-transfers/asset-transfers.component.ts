@@ -1,5 +1,5 @@
 import { Location } from '@angular/common'
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core'
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { MatDialog } from '@angular/material/dialog'
@@ -8,7 +8,9 @@ import { ClinicContextService } from '../../../../../modules/clinics/services/cl
 import { Clinic } from '../../admin/clinics/interfaces'
 import { ClinicsService } from '../../admin/clinics/services/clinics.service'
 import { AssetRegistrationService } from '../services/asset-registration.service'
+import { Sort } from '@angular/material/sort'
 import { AssetTransfersService } from '../services/asset-transfers.service'
+import { EstadoOrden, leerOrden, ordenar } from '../../../../../shared/utils/table-sort.util'
 import {
   AssetTransfer,
   AssetTransferStatus,
@@ -45,6 +47,27 @@ export class AssetTransfersComponent implements OnInit {
   selectedAssetIds = signal<string[]>([])
 
   readonly AssetTransferStatus = AssetTransferStatus
+
+  /** Columna por la que se ordena. Vacío = como vino del servidor: lo último primero. */
+  orden = signal<EstadoOrden>({ key: '', dir: '' })
+
+  onSort(sort: Sort): void {
+    this.orden.set(leerOrden(sort))
+  }
+
+  ordenadas = computed(() =>
+    ordenar(this.transfers(), this.orden(), (t, key) => {
+      switch (key) {
+        case 'transferNumber': return t.transferNumber
+        // Por la ruta entera, origen y luego destino: es como se lee la celda.
+        case 'route': return `${t.sourceClinic?.name ?? ''} ${t.targetClinic?.name ?? ''}`.trim()
+        // La etiqueta y no el valor del enum: la columna dice "Despachado".
+        case 'status': return this.getStatusLabel(t.status)
+        case 'date': return t.createdAt ? new Date(t.createdAt).getTime() : null
+        default: return null
+      }
+    }),
+  )
 
   constructor(
     private fb: FormBuilder,
