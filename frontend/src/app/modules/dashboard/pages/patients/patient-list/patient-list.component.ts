@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { MatPaginator, PageEvent } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
+import { ordenarComoLasDemas } from '../../../../../shared/utils/table-sort.util'
 import { ActivatedRoute, Router } from '@angular/router'
 import { Subject } from 'rxjs'
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
@@ -67,6 +68,26 @@ export class PatientListComponent implements OnInit {
     private alert: AlertService,
   ) {
     this.dataSource = new MatTableDataSource<Patient>([])
+    ordenarComoLasDemas(this.dataSource)
+
+    /**
+     * "Nombre" y "Edad" no son campos del paciente: uno se arma juntando
+     * `firstName` y `lastName`, la otra se calcula de `birthDate`. Sin esto
+     * `MatTableDataSource` buscaba `patient.name` y `patient.age`, no
+     * encontraba nada, y las dos cabeceras pintaban la flecha sin mover una
+     * sola fila.
+     */
+    this.dataSource.sortingDataAccessor = (patient, columna) => {
+      switch (columna) {
+        // Por apellido, que es como se busca a alguien en una lista.
+        case 'name': return `${patient.lastName ?? ''} ${patient.firstName ?? ''}`.trim()
+        // Por fecha de nacimiento y no por la edad ya calculada: es el mismo
+        // orden invertido y evita recalcularla en cada comparación.
+        case 'age': return patient.birthDate ? -new Date(patient.birthDate).getTime() : ''
+        case 'gender': return patient.gender === Gender.MALE ? 'Masculino' : 'Femenino'
+        default: return (patient as unknown as Record<string, string>)[columna] ?? ''
+      }
+    }
   }
 
   ngOnInit(): void {

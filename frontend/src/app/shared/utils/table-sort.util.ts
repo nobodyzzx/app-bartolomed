@@ -1,4 +1,5 @@
-import { Sort } from '@angular/material/sort'
+import { MatSort, Sort } from '@angular/material/sort'
+import { MatTableDataSource } from '@angular/material/table'
 
 /**
  * Ordenamiento por cabecera para las tablas que pintan un array a mano, sin
@@ -110,6 +111,30 @@ function comparar(a: ValorOrdenable, b: ValorOrdenable): number {
 function fecha(v: ValorOrdenable): number {
   const t = v instanceof Date ? v.getTime() : new Date(String(v)).getTime()
   return Number.isNaN(t) ? 0 : t
+}
+
+/**
+ * Hace que una tabla de Material ordene igual que las demás.
+ *
+ * `MatTableDataSource` compara con `<` a secas: sin configuración regional y
+ * sin entender números dentro del texto. Por eso en sus tablas "Ávila" caía
+ * después de "Zurita" —la vocal acentuada vive fuera del rango ASCII— y
+ * "Lote 10" antes que "Lote 9". Las tablas planas usan `ordenar()` y no tenían
+ * ese problema, así que media aplicación ordenaba de una manera y media de
+ * otra.
+ *
+ * Se cambia solo la **comparación**. El `sortingDataAccessor` de cada tabla
+ * sigue mandando sobre qué valor se compara, que es lo propio de cada una.
+ *
+ * Llamar una vez, al construir el dataSource.
+ */
+export function ordenarComoLasDemas<T>(dataSource: MatTableDataSource<T>): void {
+  // `sortData` recibe la directiva `MatSort`, no el evento `Sort`; los dos
+  // campos que importan se llaman igual.
+  dataSource.sortData = (data: T[], sort: MatSort) =>
+    ordenar(data, { key: sort.active, dir: sort.direction }, (item, key) =>
+      dataSource.sortingDataAccessor(item, key) as ValorOrdenable,
+    )
 }
 
 /**

@@ -1,4 +1,6 @@
-import { EstadoOrden, num, ordenar } from './table-sort.util'
+import { MatSort } from '@angular/material/sort'
+import { MatTableDataSource } from '@angular/material/table'
+import { EstadoOrden, num, ordenar, ordenarComoLasDemas } from './table-sort.util'
 
 interface Fila {
   nombre: string
@@ -168,5 +170,88 @@ describe('num', () => {
 
   it('lo que no es un número es un hueco, no un cero', () => {
     expect(num('—')).toBeNull()
+  })
+})
+
+/**
+ * El comportamiento que se corrige aquí es el de `MatTableDataSource`, que
+ * compara con `<` a secas. Los casos son los mismos que ya cubre `ordenar`,
+ * pero entrando por donde entra una tabla de Material de verdad.
+ */
+describe('ordenarComoLasDemas', () => {
+  interface Fila { nombre: string; lote: string; precio: number | null }
+
+  function tabla(filas: Fila[]): MatTableDataSource<Fila> {
+    const ds = new MatTableDataSource<Fila>(filas)
+    ordenarComoLasDemas(ds)
+    return ds
+  }
+
+  function ordenadas(ds: MatTableDataSource<Fila>, active: string, direction: 'asc' | 'desc' | '') {
+    // Basta con los dos campos que `sortData` mira de la directiva.
+    return ds.sortData(ds.data, { active, direction } as MatSort).map(f => f.nombre)
+  }
+
+  it('coloca las tildes donde se las espera, no donde caen por código', () => {
+    const ds = tabla([
+      { nombre: 'Zurita', lote: '', precio: null },
+      { nombre: 'Ávila', lote: '', precio: null },
+      { nombre: 'Nogales', lote: '', precio: null },
+    ])
+
+    expect(ordenadas(ds, 'nombre', 'asc')).toEqual(['Ávila', 'Nogales', 'Zurita'])
+  })
+
+  it('lee los números dentro del texto como números', () => {
+    const ds = tabla([
+      { nombre: 'a', lote: 'Lote 10', precio: null },
+      { nombre: 'b', lote: 'Lote 9', precio: null },
+    ])
+
+    expect(ordenadas(ds, 'lote', 'asc')).toEqual(['b', 'a'])
+  })
+
+  /** Material pone los nulos arriba al invertir; aquí el hueco se queda abajo. */
+  it('deja las celdas vacías al final en los dos sentidos', () => {
+    const ds = tabla([
+      { nombre: 'sin precio', lote: '', precio: null },
+      { nombre: 'caro', lote: '', precio: 90 },
+      { nombre: 'barato', lote: '', precio: 10 },
+    ])
+
+    expect(ordenadas(ds, 'precio', 'asc')).toEqual(['barato', 'caro', 'sin precio'])
+    expect(ordenadas(ds, 'precio', 'desc')).toEqual(['caro', 'barato', 'sin precio'])
+  })
+
+  it('respeta el accesor propio de la tabla', () => {
+    const ds = tabla([
+      { nombre: 'Ana Zurita', lote: '', precio: null },
+      { nombre: 'Beto Ávila', lote: '', precio: null },
+    ])
+    // Por apellido, como hacen las tablas con nombre compuesto.
+    ds.sortingDataAccessor = (f, _k) => f.nombre.split(' ')[1].toLowerCase()
+
+    expect(ordenadas(ds, 'nombre', 'asc')).toEqual(['Beto Ávila', 'Ana Zurita'])
+  })
+
+  it('sin sentido de orden devuelve las filas como venían', () => {
+    const ds = tabla([
+      { nombre: 'Zurita', lote: '', precio: null },
+      { nombre: 'Ávila', lote: '', precio: null },
+    ])
+
+    expect(ordenadas(ds, 'nombre', '')).toEqual(['Zurita', 'Ávila'])
+  })
+
+  /** `sort()` de Material muta el array; el nuestro no debe tocar los datos. */
+  it('no reordena los datos originales de la tabla', () => {
+    const ds = tabla([
+      { nombre: 'Zurita', lote: '', precio: null },
+      { nombre: 'Ávila', lote: '', precio: null },
+    ])
+
+    ordenadas(ds, 'nombre', 'asc')
+
+    expect(ds.data.map(f => f.nombre)).toEqual(['Zurita', 'Ávila'])
   })
 })

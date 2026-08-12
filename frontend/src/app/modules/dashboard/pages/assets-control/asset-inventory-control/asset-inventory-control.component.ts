@@ -7,6 +7,7 @@ import { MatTableDataSource } from '@angular/material/table'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { MatDialog } from '@angular/material/dialog'
+import { ordenarComoLasDemas } from '../../../../../shared/utils/table-sort.util'
 import { AssetCondition, AssetStatus, BaseAsset } from '../interfaces/assets.interfaces'
 import { MoveAssetDialogComponent } from '../move-asset-dialog/move-asset-dialog.component'
 import { AssetRegistrationService } from '../services/asset-registration.service'
@@ -156,6 +157,23 @@ export class AssetInventoryControlComponent implements OnInit {
     private dialog: MatDialog,
   ) {
     this.dataSource = new MatTableDataSource<BaseAsset>([])
+    ordenarComoLasDemas(this.dataSource)
+
+    /**
+     * Tipo y estado se ordenan por la etiqueta que se lee, no por el valor del
+     * enum: la columna dice "Equipo Médico" y "En Mantenimiento", y ordenar por
+     * `medical_equipment` y `maintenance` da un orden que no se corresponde con
+     * nada de lo que hay en pantalla.
+     */
+    this.dataSource.sortingDataAccessor = (asset, columna) => {
+      switch (columna) {
+        case 'type': return this.getTypeLabel(asset.type)
+        case 'status': return this.getStatusLabel(asset.status)
+        case 'quantity': return Number(asset.quantity ?? 1)
+        default: return (asset as unknown as Record<string, string>)[columna] ?? ''
+      }
+    }
+
     this.dataSource.filterPredicate = (asset: BaseAsset, filter: string) => {
       const term = filter.toLowerCase()
       return (

@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
+import { ordenarComoLasDemas } from '../../../../shared/utils/table-sort.util'
 import { Router } from '@angular/router'
 import { Permission } from '@core/enums/permission.enum'
 import { AlertService } from '@core/services/alert.service'
@@ -69,6 +70,8 @@ export class MedicalRecordsDashboardComponent implements OnInit {
     private router: Router,
     private location: Location,
   ) {
+    ordenarComoLasDemas(this.dataSource)
+
     /**
      * Sin esto las cabeceras pintan la flecha y no ordenan nada. Por defecto
      * `MatTableDataSource` busca un campo con el nombre de la columna, y aquí

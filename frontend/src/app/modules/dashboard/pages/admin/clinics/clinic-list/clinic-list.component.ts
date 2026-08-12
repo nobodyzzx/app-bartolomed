@@ -4,6 +4,7 @@ import { MatDialog } from '@angular/material/dialog'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
+import { ordenarComoLasDemas } from '../../../../../../shared/utils/table-sort.util'
 import { ActivatedRoute, Router } from '@angular/router'
 import { ConfirmDialogComponent } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.component'
 import { Clinic } from '../interfaces'
@@ -46,7 +47,9 @@ export class ClinicListComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private dialog: MatDialog,
-  ) {}
+  ) {
+    ordenarComoLasDemas(this.dataSource)
+  }
 
   ngOnInit(): void {
     this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {

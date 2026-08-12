@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
+import { ordenarComoLasDemas } from '../../../../../shared/utils/table-sort.util'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { PurchaseOrder, PurchaseOrderStatus, Supplier } from '../interfaces/pharmacy.interfaces'
@@ -102,6 +103,8 @@ export class PurchaseOrdersComponent implements OnInit {
     private router: Router,
     private location: Location,
   ) {
+    ordenarComoLasDemas(this.dataSource)
+
     // Efecto para actualizar dataSource cuando cambien los filtros
     effect(() => {
       this.dataSource.data = this.filtered()

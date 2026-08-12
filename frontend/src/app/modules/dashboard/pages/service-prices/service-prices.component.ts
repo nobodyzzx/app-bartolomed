@@ -1,6 +1,7 @@
 import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { Sort } from '@angular/material/sort'
+import { EstadoOrden, num, ordenar, ValorOrdenable } from '../../../../shared/utils/table-sort.util'
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs'
 import { MatDialog } from '@angular/material/dialog'
 import { Router } from '@angular/router'
@@ -146,34 +147,29 @@ export class ServicePricesComponent implements OnInit {
     return this.pricesOf(category).length
   }
 
+  /**
+   * La comparación sale del helper compartido y no de aquí: es la misma que
+   * usan las demás tablas, así que el tarifario coloca las tildes y los huecos
+   * igual que el resto de la aplicación.
+   */
   private indexByCategory(): void {
-    const dir = this.sortDir === 'asc' ? 1 : -1
-    const valor = (p: ServicePrice): string | number => {
-      switch (this.sortKey) {
-        case 'code': return p.code ?? ''
-        case 'appointmentType': return p.appointmentType ? this.appointmentTypeLabels[p.appointmentType] : ''
-        case 'costPrice': return Number(p.costPrice ?? -1)
-        case 'margin': return this.marginPct(p) ?? Number.NEGATIVE_INFINITY
-        case 'price': return Number(p.price)
-        case 'isActive': return p.isActive ? 1 : 0
-        default: return p.name ?? ''
+    const orden: EstadoOrden = { key: this.sortKey, dir: this.sortDir }
+    const valor = (p: ServicePrice, key: string): ValorOrdenable => {
+      switch (key as SortKey) {
+        case 'code': return p.code
+        case 'appointmentType': return p.appointmentType ? this.appointmentTypeLabels[p.appointmentType] : null
+        case 'costPrice': return num(p.costPrice)
+        case 'margin': return this.marginPct(p)
+        case 'price': return num(p.price)
+        case 'isActive': return p.isActive
+        default: return p.name
       }
     }
 
     this.byCategory = new Map(
       this.categories.map(category => [
         category,
-        this.prices
-          .filter(p => p.category === category)
-          .sort((a, b) => {
-            const va = valor(a)
-            const vb = valor(b)
-            const cmp =
-              typeof va === 'number' && typeof vb === 'number'
-                ? va - vb
-                : String(va).localeCompare(String(vb), 'es', { numeric: true })
-            return cmp * dir
-          }),
+        ordenar(this.prices.filter(p => p.category === category), orden, valor),
       ]),
     )
   }
