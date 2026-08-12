@@ -4,10 +4,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
-import { Router } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { MatDialog } from '@angular/material/dialog'
 import { ordenarComoLasDemas } from '../../../../../shared/utils/table-sort.util'
+import { ListStateService } from '../../../../../shared/services/list-state.service'
 import { AssetCondition, AssetStatus, BaseAsset } from '../interfaces/assets.interfaces'
 import { MoveAssetDialogComponent } from '../move-asset-dialog/move-asset-dialog.component'
 import { AssetRegistrationService } from '../services/asset-registration.service'
@@ -23,6 +24,11 @@ export type VistaInventario = 'todos' | 'enUso' | 'porConfirmar' | 'enDesuso'
 })
 export class AssetInventoryControlComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
+  private readonly listState = inject(ListStateService)
+  private readonly route = inject(ActivatedRoute)
+
+  /** Clave con la que se recuerda la vista de este listado. */
+  private static readonly RUTA = '/dashboard/assets-control/inventory'
 
   // El inventario responde qué hay, cuánto y dónde. La columna de valor se
   // retiró: el inventario se lleva por existencias, no para contabilidad, y
@@ -187,7 +193,29 @@ export class AssetInventoryControlComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Volviendo de una ficha manda lo recordado: al abrir un activo Angular
+    // destruye este componente, y sin esto la vuelta dejaba la lista entera y
+    // en la página 1 aunque se viniera de la 12 con una tarjeta activa.
+    const guardado = this.listState.recuperarSiVuelve(AssetInventoryControlComponent.RUTA)
+    const params = this.route.snapshot.queryParamMap
+    const vista = (guardado?.['vista'] ?? params.get('vista')) as VistaInventario | undefined
+    if (vista && vista in { todos: 1, enUso: 1, porConfirmar: 1, enDesuso: 1 }) this.vista = vista
+    this.searchTerm = String(guardado?.['q'] ?? params.get('q') ?? '')
+    this.verDeBaja = String(guardado?.['baja'] ?? params.get('baja') ?? '') === '1'
+
     this.loadAssets()
+  }
+
+  /** Deja la vista en la URL y la recuerda para cuando se vuelva de una ficha. */
+  private recordarVista(): void {
+    const estado = {
+      vista: this.vista === 'todos' ? undefined : this.vista,
+      q: this.searchTerm.trim() || undefined,
+      baja: this.verDeBaja ? '1' : undefined,
+      page: (this.dataSource.paginator?.pageIndex ?? 0) + 1,
+    }
+    this.listState.guardar(AssetInventoryControlComponent.RUTA, estado)
+    this.listState.reflejarEnUrl(this.route, estado)
   }
 
   loadAssets(): void {
@@ -211,11 +239,13 @@ export class AssetInventoryControlComponent implements OnInit {
 
   applyFilter(value: string): void {
     this.searchTerm = value
+    this.recordarVista()
     this.applyFilters()
   }
 
   setVista(vista: VistaInventario): void {
     this.vista = vista
+    this.recordarVista()
     // Las tarjetas cuentan existencias, así que pulsar una siempre devuelve al
     // inventario: no tendría sentido dejar la tabla en los dados de baja.
     this.verDeBaja = false
@@ -226,6 +256,7 @@ export class AssetInventoryControlComponent implements OnInit {
   toggleDeBaja(): void {
     this.verDeBaja = !this.verDeBaja
     if (this.verDeBaja) this.vista = 'todos'
+    this.recordarVista()
     this.applyFilters()
   }
 

@@ -7,6 +7,7 @@ import { RoleStateService } from '@core/services/role-state.service'
 import { of, ReplaySubject, throwError } from 'rxjs'
 import { Gender, Patient, PatientStatistics } from '../interfaces'
 import { PatientsService } from '../services'
+import { ListStateService } from '../../../../../shared/services/list-state.service'
 import { PatientListComponent } from './patient-list.component'
 import { createSpyObj, SpyObj } from '../../../../../../testing/spy'
 
@@ -48,6 +49,8 @@ describe('PatientListComponent', () => {
       ...overrides,
     }) as PatientStatistics
 
+  let listState: SpyObj<ListStateService>
+
   const createComponent = () => {
     TestBed.resetTestingModule()
     TestBed.configureTestingModule({
@@ -59,6 +62,9 @@ describe('PatientListComponent', () => {
         { provide: AlertService, useValue: alert },
         { provide: ActivatedRoute, useValue: { queryParamMap: queryParamMap$ } },
         { provide: RoleStateService, useValue: fakeRoleState },
+        // Doble del recuerdo de la vista: aquí se prueba el listado, no el
+        // servicio, que tiene su propio spec.
+        { provide: ListStateService, useValue: listState },
       ],
     })
     return TestBed.inject(PatientListComponent)
@@ -74,6 +80,10 @@ describe('PatientListComponent', () => {
     router = createSpyObj('Router', ['navigate'])
     location = createSpyObj('Location', ['back'])
     alert = createSpyObj('AlertService', ['error', 'success', 'fire'])
+    listState = createSpyObj<ListStateService>('ListStateService', [
+      'guardar', 'olvidar', 'recuperarSiVuelve', 'reflejarEnUrl',
+    ])
+    listState.recuperarSiVuelve.mockReturnValue(undefined)
     queryParamMap$ = new ReplaySubject(1)
     queryParamMap$.next(convertToParamMap({}))
     roles = [UserRoles.ADMIN]
@@ -107,6 +117,66 @@ describe('PatientListComponent', () => {
 
       component = createComponent()
       expect(() => component.ngOnInit()).not.toThrow()
+    })
+  })
+
+  /**
+   * Al abrir una ficha Angular destruye el listado; al volver se construye otro
+   * en blanco. Filtrar, avanzar de página, corregir un paciente y aparecer al
+   * principio de la lista sin filtro era el síntoma.
+   */
+  describe('volver de una ficha', () => {
+    it('restaura el filtro recordado en vez de lo que traiga la URL', () => {
+      listState.recuperarSiVuelve.mockReturnValue({ q: 'mamani', sexo: Gender.FEMALE })
+
+      component = createComponent()
+      component.ngOnInit()
+
+      expect(component.searchTerm).toBe('mamani')
+      expect(component.activeGenderFilter).toBe(Gender.FEMALE)
+    })
+
+    it('sin nada recordado, lee la URL', () => {
+      listState.recuperarSiVuelve.mockReturnValue(undefined)
+      queryParamMap$.next(convertToParamMap({ q: 'juan', sexo: Gender.MALE }))
+
+      component = createComponent()
+      component.ngOnInit()
+
+      expect(component.searchTerm).toBe('juan')
+      expect(component.activeGenderFilter).toBe(Gender.MALE)
+    })
+
+    it('un sexo que no existe no deja el filtro en un valor inventado', () => {
+      queryParamMap$.next(convertToParamMap({ sexo: 'lo-que-sea' }))
+
+      component = createComponent()
+      component.ngOnInit()
+
+      expect(component.activeGenderFilter).toBeNull()
+    })
+
+    it('cambiar el filtro deja la vista recordada y en la URL', () => {
+      component = createComponent()
+      component.ngOnInit()
+
+      component.setGenderFilter(Gender.FEMALE)
+
+      expect(listState.guardar).toHaveBeenCalledWith(
+        '/dashboard/patients',
+        expect.objectContaining({ sexo: Gender.FEMALE }),
+      )
+      expect(listState.reflejarEnUrl).toHaveBeenCalled()
+    })
+
+    /** Limpiar es explícito: no debe resucitar al volver de editar. */
+    it('limpiar los filtros olvida también lo recordado', () => {
+      component = createComponent()
+      component.ngOnInit()
+
+      component.clearFilters()
+
+      expect(listState.olvidar).toHaveBeenCalledWith('/dashboard/patients')
     })
   })
 

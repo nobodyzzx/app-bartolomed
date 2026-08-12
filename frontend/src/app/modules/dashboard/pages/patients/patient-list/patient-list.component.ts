@@ -5,6 +5,7 @@ import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
 import { ordenarComoLasDemas } from '../../../../../shared/utils/table-sort.util'
+import { deParams, ListStateService } from '../../../../../shared/services/list-state.service'
 import { ActivatedRoute, Router } from '@angular/router'
 import { Subject } from 'rxjs'
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
@@ -26,6 +27,10 @@ const DELETE_ROLES: UserRoles[] = [UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserR
 export class PatientListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
   private readonly roleState = inject(RoleStateService)
+  private readonly listState = inject(ListStateService)
+
+  /** Clave con la que se recuerda la vista de este listado. */
+  private static readonly RUTA = '/dashboard/patients'
 
   displayedColumns: string[] = ['documentNumber', 'name', 'age', 'gender', 'phone', 'actions']
   dataSource: MatTableDataSource<Patient>
@@ -41,14 +46,30 @@ export class PatientListComponent implements OnInit {
   @ViewChild(MatPaginator)
   set paginatorRef(paginator: MatPaginator | undefined) {
     this.paginator = paginator
-    if (paginator) this.dataSource.paginator = paginator
+    if (!paginator) return
+    this.dataSource.paginator = paginator
+    if (this.paginaPedida > 1) {
+      paginator.pageIndex = this.paginaPedida - 1
+      this.paginaPedida = 1
+    }
+    paginator.page.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.recordarVista())
   }
+
+  private paginaPedida = 1
 
   paginator?: MatPaginator
 
   @ViewChild(MatSort)
   set sort(sort: MatSort | undefined) {
-    if (sort) this.dataSource.sort = sort
+    if (!sort) return
+    this.dataSource.sort = sort
+    if (this.ordenPedido) {
+      sort.active = this.ordenPedido.key
+      sort.direction = this.ordenPedido.dir
+      sort.sortChange.emit({ active: sort.active, direction: sort.direction })
+      this.ordenPedido = null
+    }
+    sort.sortChange.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.recordarVista())
   }
 
   readonly Gender = Gender
@@ -97,14 +118,48 @@ export class PatientListComponent implements OnInit {
       takeUntilDestroyed(this.destroyRef),
     ).subscribe(() => {
       if (this.paginator) this.paginator.firstPage()
+      this.recordarVista()
       this.loadPatients()
     })
 
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
-      const q = (params.get('q') || '').trim()
-      this.searchTerm = q
+      // Volviendo de una ficha manda lo recordado: los 37 sitios que navegan al
+      // listado por su ruta pelada llegan sin ningún parámetro, y sin esto la
+      // vuelta de editar dejaba la lista al principio y sin filtro.
+      const guardado = this.listState.recuperarSiVuelve(PatientListComponent.RUTA)
+      const estado = guardado ?? deParams({
+        q: params.get('q') ?? undefined,
+        sort: params.get('sort') ?? undefined,
+        dir: params.get('dir') ?? undefined,
+        sexo: params.get('sexo') ?? undefined,
+      })
+
+      this.searchTerm = (estado.q ?? '').trim()
+      this.ordenPedido = estado.sort && estado.dir ? { key: estado.sort, dir: estado.dir } : null
+      const sexo = (guardado?.['sexo'] ?? params.get('sexo')) as Gender | undefined
+      this.activeGenderFilter = sexo === Gender.MALE || sexo === Gender.FEMALE ? sexo : null
+
       this.loadPatients()
     })
+  }
+
+  /**
+   * Orden llegado de la URL o de la vuelta de una ficha. Se aplica cuando el
+   * ordenador existe —vive dentro de un `@if`—, no antes.
+   */
+  private ordenPedido: { key: string; dir: 'asc' | 'desc' } | null = null
+
+  /** Deja la vista en la URL y la recuerda para cuando se vuelva de una ficha. */
+  private recordarVista(): void {
+    const estado = {
+      q: this.searchTerm.trim() || undefined,
+      sexo: this.activeGenderFilter ?? undefined,
+      sort: this.dataSource.sort?.active || undefined,
+      dir: (this.dataSource.sort?.direction || undefined) as 'asc' | 'desc' | undefined,
+      page: (this.paginator?.pageIndex ?? 0) + 1,
+    }
+    this.listState.guardar(PatientListComponent.RUTA, estado)
+    this.listState.reflejarEnUrl(this.route, estado)
   }
 
   loadStatistics(): void {
@@ -169,12 +224,16 @@ export class PatientListComponent implements OnInit {
     this.searchTerm = ''
     this.activeGenderFilter = null
     if (this.paginator) this.paginator.firstPage()
+    // Limpiar es una decisión explícita: se olvida también para la vuelta.
+    this.listState.olvidar(PatientListComponent.RUTA)
+    this.listState.reflejarEnUrl(this.route, { q: undefined, sexo: undefined, sort: undefined, dir: undefined, page: 1 })
     this.loadPatients()
   }
 
   setGenderFilter(gender: Gender | null): void {
     this.activeGenderFilter = gender
     if (this.paginator) this.paginator.firstPage()
+    this.recordarVista()
     this.loadPatients()
   }
 

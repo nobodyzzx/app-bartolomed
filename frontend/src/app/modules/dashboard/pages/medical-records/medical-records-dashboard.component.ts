@@ -5,7 +5,8 @@ import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
 import { ordenarComoLasDemas } from '../../../../shared/utils/table-sort.util'
-import { Router } from '@angular/router'
+import { ListStateService } from '../../../../shared/services/list-state.service'
+import { ActivatedRoute, Router } from '@angular/router'
 import { Permission } from '@core/enums/permission.enum'
 import { AlertService } from '@core/services/alert.service'
 import { RoleStateService } from '@core/services/role-state.service'
@@ -23,6 +24,11 @@ export class MedicalRecordsDashboardComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
   private alert = inject(AlertService)
   private roleState = inject(RoleStateService)
+  private readonly listState = inject(ListStateService)
+  private readonly route = inject(ActivatedRoute)
+
+  /** Clave con la que se recuerda la vista de este listado. */
+  private static readonly RUTA = '/dashboard/medical-records'
 
   /** NURSE tiene RecordsRead (entra al módulo) pero el backend solo permite escribir a DOCTOR/ADMIN. */
   get canWriteRecords(): boolean {
@@ -97,6 +103,17 @@ export class MedicalRecordsDashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Volviendo de un expediente manda lo recordado: con 350 en la lista,
+    // corregir uno devolvía al principio y sin filtro.
+    const guardado = this.listState.recuperarSiVuelve(MedicalRecordsDashboardComponent.RUTA)
+    const params = this.route.snapshot.queryParamMap
+    this.searchTerm = String(guardado?.['q'] ?? params.get('q') ?? '')
+    const estado = String(guardado?.['estado'] ?? params.get('estado') ?? '')
+    if (estado) this.filters = { ...this.filters, status: estado as RecordStatus }
+    if (String(guardado?.['urgencia'] ?? params.get('urgencia') ?? '') === '1') {
+      this.filters = { ...this.filters, isEmergency: true }
+    }
+
     this.loadMedicalRecords()
     // Las estadísticas están reservadas a médico/admin (el endpoint es
     // @Auth(DOCTOR, ADMIN)). Enfermería ve la lista de expedientes pero no las
@@ -152,25 +169,42 @@ export class MedicalRecordsDashboardComponent implements OnInit {
     this.searchTerm = value
     this.dataSource.filter = value.trim().toLowerCase()
     if (this.dataSource.paginator) this.dataSource.paginator.firstPage()
+    this.recordarVista()
+  }
+
+  /** Deja la vista en la URL y la recuerda para cuando se vuelva de un expediente. */
+  private recordarVista(): void {
+    const estado = {
+      q: this.searchTerm.trim() || undefined,
+      estado: this.filters.status || undefined,
+      urgencia: this.filters.isEmergency ? '1' : undefined,
+      page: (this.dataSource.paginator?.pageIndex ?? 0) + 1,
+    }
+    this.listState.guardar(MedicalRecordsDashboardComponent.RUTA, estado)
+    this.listState.reflejarEnUrl(this.route, estado)
   }
 
   showAllRecords(): void {
     this.filters = {}
+    this.recordarVista()
     this.loadMedicalRecords()
   }
 
   showDrafts(): void {
     this.filters = { ...this.filters, status: RecordStatus.DRAFT }
+    this.recordarVista()
     this.loadMedicalRecords()
   }
 
   showCompleted(): void {
     this.filters = { ...this.filters, status: RecordStatus.COMPLETED }
+    this.recordarVista()
     this.loadMedicalRecords()
   }
 
   showEmergencies(): void {
     this.filters = { ...this.filters, isEmergency: true }
+    this.recordarVista()
     this.loadMedicalRecords()
   }
 
@@ -178,6 +212,8 @@ export class MedicalRecordsDashboardComponent implements OnInit {
     this.filters = {}
     this.searchTerm = ''
     this.dataSource.filter = ''
+    // Limpiar es explícito: no debe resucitar al volver de un expediente.
+    this.listState.olvidar(MedicalRecordsDashboardComponent.RUTA)
     this.loadMedicalRecords()
   }
 

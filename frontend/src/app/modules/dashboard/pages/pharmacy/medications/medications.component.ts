@@ -2,11 +2,12 @@ import { Location } from '@angular/common'
 import { Component, DestroyRef, computed, inject, OnInit, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { Sort } from '@angular/material/sort'
-import { Router } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { Medication, ProductType } from '../interfaces/pharmacy.interfaces'
 import { matchesSearch } from '../../../../../shared/utils/text-search.util'
 import { EstadoOrden, leerOrden, ordenar } from '../../../../../shared/utils/table-sort.util'
+import { ListStateService } from '../../../../../shared/services/list-state.service'
 import { InventoryService } from '../services/inventory.service'
 
 @Component({
@@ -17,6 +18,11 @@ import { InventoryService } from '../services/inventory.service'
 })
 export class MedicationsComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
+  private readonly listState = inject(ListStateService)
+  private readonly route = inject(ActivatedRoute)
+
+  /** Clave con la que se recuerda la vista de este listado. */
+  private static readonly RUTA = '/dashboard/pharmacy/medications'
 
   loading = signal(false)
   medications = signal<Medication[]>([])
@@ -46,8 +52,10 @@ export class MedicationsComponent implements OnInit {
   onSort(sort: Sort): void {
     this.orden.set(leerOrden(sort))
     // De vuelta a la primera página: quien reordena quiere ver lo que quedó
-    // arriba, no la página 7 del orden anterior.
+    // arriba, no la página 7 del orden anterior. Antes de recordar la vista, o
+    // se guardaría la página vieja.
     this.page.set(0)
+    this.recordarVista()
   }
 
   ordenadas = computed(() =>
@@ -66,6 +74,7 @@ export class MedicationsComponent implements OnInit {
   setCategoryFilter(cat: string): void {
     this.categoryFilter.set(cat)
     this.page.set(0)
+    this.recordarVista()
   }
 
   // Se trae el catálogo entero —el buscador filtra en cliente— pero se dibuja
@@ -81,11 +90,13 @@ export class MedicationsComponent implements OnInit {
   setSearch(term: string): void {
     this.search.set(term)
     this.page.set(0)
+    this.recordarVista()
   }
 
   onPageChange(e: { pageIndex: number; pageSize: number }): void {
     this.page.set(e.pageIndex)
     this.pageSize.set(e.pageSize)
+    this.recordarVista()
   }
 
   constructor(
@@ -96,7 +107,31 @@ export class MedicationsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Volviendo de una ficha manda lo recordado: sin esto, corregir un producto
+    // devolvía el catálogo entero desde la página 1.
+    const guardado = this.listState.recuperarSiVuelve(MedicationsComponent.RUTA)
+    const params = this.route.snapshot.queryParamMap
+    this.search.set(String(guardado?.['q'] ?? params.get('q') ?? ''))
+    this.categoryFilter.set(String(guardado?.['tipo'] ?? params.get('tipo') ?? 'all'))
+    this.page.set(Math.max(0, Number(guardado?.['page'] ?? params.get('page') ?? 1) - 1))
+    const sort = String(guardado?.['sort'] ?? params.get('sort') ?? '')
+    const dir = String(guardado?.['dir'] ?? params.get('dir') ?? '')
+    if (sort && (dir === 'asc' || dir === 'desc')) this.orden.set({ key: sort, dir })
+
     this.loadMedications()
+  }
+
+  /** Deja la vista en la URL y la recuerda para cuando se vuelva de una ficha. */
+  private recordarVista(): void {
+    const estado = {
+      q: this.search().trim() || undefined,
+      tipo: this.categoryFilter() === 'all' ? undefined : this.categoryFilter(),
+      sort: this.orden().dir ? this.orden().key : undefined,
+      dir: this.orden().dir || undefined,
+      page: this.page() + 1,
+    }
+    this.listState.guardar(MedicationsComponent.RUTA, estado)
+    this.listState.reflejarEnUrl(this.route, estado)
   }
 
   loadMedications(): void {

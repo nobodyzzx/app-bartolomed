@@ -1,12 +1,13 @@
 import { Location } from '@angular/common'
 import { TestBed } from '@angular/core/testing'
 import { MatDialog } from '@angular/material/dialog'
-import { Router } from '@angular/router'
+import { ActivatedRoute, convertToParamMap, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { of } from 'rxjs'
 import { createSpyObj, SpyObj } from '../../../../../../testing/spy'
 import { AssetCondition, AssetStatus, AssetType, BaseAsset } from '../interfaces/assets.interfaces'
 import { AssetRegistrationService } from '../services/asset-registration.service'
+import { ListStateService } from '../../../../../shared/services/list-state.service'
 import { AssetInventoryControlComponent } from './asset-inventory-control.component'
 
 let n = 0
@@ -32,6 +33,7 @@ function activo(parcial: Partial<BaseAsset> = {}): BaseAsset {
 describe('AssetInventoryControlComponent', () => {
   let component: AssetInventoryControlComponent
   let assetService: SpyObj<AssetRegistrationService>
+  let listState: SpyObj<ListStateService>
 
   beforeEach(() => {
     assetService = createSpyObj<AssetRegistrationService>('AssetRegistrationService', [
@@ -39,6 +41,10 @@ describe('AssetInventoryControlComponent', () => {
       'deleteAsset',
     ])
     assetService.getAllAssets.mockReturnValue(of([]))
+    listState = createSpyObj<ListStateService>('ListStateService', [
+      'guardar', 'olvidar', 'recuperarSiVuelve', 'reflejarEnUrl',
+    ])
+    listState.recuperarSiVuelve.mockReturnValue(undefined)
 
     TestBed.configureTestingModule({
       providers: [
@@ -48,6 +54,10 @@ describe('AssetInventoryControlComponent', () => {
         { provide: Location, useValue: createSpyObj('Location', ['back']) },
         { provide: AlertService, useValue: createSpyObj('AlertService', ['fire', 'success']) },
         { provide: MatDialog, useValue: createSpyObj('MatDialog', ['open']) },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
+        // Doble del recuerdo de la vista: aquí se prueban las tarjetas, no el
+        // servicio, que tiene su propio spec.
+        { provide: ListStateService, useValue: listState },
       ],
     })
 

@@ -1,6 +1,6 @@
 import { Location } from '@angular/common'
 import { Component, OnDestroy, OnInit, signal } from '@angular/core'
-import { Router } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { PageEvent } from '@angular/material/paginator'
 import { AlertService } from '@core/services/alert.service'
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs'
@@ -9,6 +9,7 @@ import { MedicationStock } from '../interfaces/pharmacy.interfaces'
 import { matchesSearch } from '../../../../../shared/utils/text-search.util'
 import { Sort } from '@angular/material/sort'
 import { EstadoOrden, leerOrden, num, ordenar } from '../../../../../shared/utils/table-sort.util'
+import { ListStateService } from '../../../../../shared/services/list-state.service'
 import { InventoryService } from '../services/inventory.service'
 
 /**
@@ -58,6 +59,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
   setStatFilter(filter: 'all' | 'low' | 'expiring'): void {
     this.statFilter.set(filter)
     this.refreshView()
+    this.recordarVista()
   }
 
   constructor(
@@ -66,6 +68,8 @@ export class InventoryComponent implements OnInit, OnDestroy {
     private clinicContext: ClinicContextService,
     private alertService: AlertService,
     private router: Router,
+    private route: ActivatedRoute,
+    private listState: ListStateService,
   ) {}
 
   ngOnInit(): void {
@@ -77,12 +81,17 @@ export class InventoryComponent implements OnInit, OnDestroy {
       )
       return
     }
+    // Volviendo de una ficha manda lo recordado: sin esto, editar el stock de
+    // un lote devolvía los 488 desde la página 1 y sin la tarjeta activa.
+    this.restaurarVista()
+
     this.reloadAll()
     this.searchInput$
       .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(value => {
         this.searchTerm = (value || '').trim()
         this.refreshView()
+        this.recordarVista()
       })
   }
 
@@ -258,6 +267,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
     this.pageSize = event.pageSize
     this.page.set(event.pageIndex + 1)
     this.applyPage()
+    this.recordarVista()
   }
 
   private applyPage(): void {
@@ -274,6 +284,37 @@ export class InventoryComponent implements OnInit, OnDestroy {
   onSort(sort: Sort): void {
     this.orden.set(leerOrden(sort))
     this.refreshView()
+    this.recordarVista()
+  }
+
+  /** Clave con la que se recuerda la vista de este listado. */
+  private static readonly RUTA = '/dashboard/pharmacy/inventory'
+
+  /** Deja la vista en la URL y la recuerda para cuando se vuelva de una ficha. */
+  private recordarVista(): void {
+    const estado = {
+      q: (this.searchTerm || '').trim() || undefined,
+      tarjeta: this.statFilter() || undefined,
+      sort: this.orden().dir ? this.orden().key : undefined,
+      dir: this.orden().dir || undefined,
+      page: this.page(),
+    }
+    this.listState.guardar(InventoryComponent.RUTA, estado)
+    this.listState.reflejarEnUrl(this.route, estado)
+  }
+
+  /** Restaura la vista si se vuelve de una ficha; si no, lee la URL. */
+  private restaurarVista(): void {
+    const guardado = this.listState.recuperarSiVuelve(InventoryComponent.RUTA)
+    const params = this.route.snapshot.queryParamMap
+    this.searchTerm = String(guardado?.['q'] ?? params.get('q') ?? '')
+    const tarjeta = String(guardado?.['tarjeta'] ?? params.get('tarjeta') ?? '')
+    if (tarjeta === 'low' || tarjeta === 'expiring') this.statFilter.set(tarjeta)
+    const sort = String(guardado?.['sort'] ?? params.get('sort') ?? '')
+    const dir = String(guardado?.['dir'] ?? params.get('dir') ?? '')
+    if (sort && (dir === 'asc' || dir === 'desc')) this.orden.set({ key: sort, dir })
+    const page = Number(guardado?.['page'] ?? params.get('page') ?? 1)
+    if (page > 1) this.page.set(page)
   }
 
   /** Rehace la vista. Llamar cada vez que cambien datos, búsqueda o filtro. */
