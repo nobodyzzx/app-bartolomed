@@ -98,15 +98,17 @@
       <!-- Tabla -->
       @if (!loading() && filtered().length > 0) {
         <div class="overflow-x-auto">
-          <table class="w-full">
+          <table class="w-full" matSort
+            [matSortActive]="orden().key" [matSortDirection]="orden().dir"
+            (matSortChange)="onSort($event)">
             <thead class="bg-slate-100">
               <tr>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Código</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Nombre</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Concentración</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Forma</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Categoría</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Fabricante</th>
+                <th mat-sort-header="code" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Código</th>
+                <th mat-sort-header="name" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Nombre</th>
+                <th mat-sort-header="strength" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Concentración</th>
+                <th mat-sort-header="dosageForm" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Forma</th>
+                <th mat-sort-header="category" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Categoría</th>
+                <th mat-sort-header="manufacturer" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Fabricante</th>
                 <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</th>
               </tr>
             </thead>

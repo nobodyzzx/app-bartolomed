@@ -1,5 +1,5 @@
 import { Location } from '@angular/common'
-import { AfterViewInit, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { MatPaginator, PageEvent } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
@@ -22,7 +22,7 @@ const DELETE_ROLES: UserRoles[] = [UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserR
     styleUrl: './patient-list.component.css',
     standalone: false
 })
-export class PatientListComponent implements OnInit, AfterViewInit {
+export class PatientListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
   private readonly roleState = inject(RoleStateService)
 
@@ -31,8 +31,24 @@ export class PatientListComponent implements OnInit, AfterViewInit {
   isLoading = false
   searchTerm = ''
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator
-  @ViewChild(MatSort) sort!: MatSort
+  /**
+   * El paginador no se engancha al `dataSource` a propósito: aquí se pagina
+   * contra el servidor (`onPageChange` recarga la página pedida), y dejar que
+   * además `MatTableDataSource` recorte en cliente partiría cada página otra
+   * vez. Se guarda solo para poder volver a la primera al filtrar.
+   */
+  @ViewChild(MatPaginator) paginator?: MatPaginator
+
+  /**
+   * Por `set` y no por propiedad: la tabla vive dentro de un `@if` que solo
+   * aparece cuando ya hay filas, así que en `ngAfterViewInit` el ordenador
+   * todavía no existe. Asignándolo allí quedaba en `undefined` para siempre y
+   * las cabeceras no ordenaban nada.
+   */
+  @ViewChild(MatSort)
+  set sort(sort: MatSort | undefined) {
+    if (sort) this.dataSource.sort = sort
+  }
 
   readonly Gender = Gender
   totalRecords = 0
@@ -71,10 +87,6 @@ export class PatientListComponent implements OnInit, AfterViewInit {
       this.searchTerm = q
       this.loadPatients()
     })
-  }
-
-  ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort
   }
 
   loadStatistics(): void {

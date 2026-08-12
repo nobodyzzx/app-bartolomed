@@ -19,8 +19,21 @@ import { SuppliersService } from '../services/suppliers.service'
 export class PurchaseOrdersComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator
-  @ViewChild(MatSort) sort!: MatSort
+  /**
+   * Por `set` y no por propiedad: la tabla vive dentro de un `@if` que solo
+   * aparece cuando ya hay filas, así que en `ngAfterViewInit` el paginador y el
+   * ordenador todavía no existen. Asignándolos allí quedaban en `undefined`
+   * para siempre y las cabeceras no ordenaban nada.
+   */
+  @ViewChild(MatPaginator)
+  set paginator(paginator: MatPaginator | undefined) {
+    if (paginator) this.dataSource.paginator = paginator
+  }
+
+  @ViewChild(MatSort)
+  set sort(sort: MatSort | undefined) {
+    if (sort) this.dataSource.sort = sort
+  }
 
   displayedColumns: string[] = [
     'orderNumber',
@@ -98,11 +111,6 @@ export class PurchaseOrdersComponent implements OnInit {
   ngOnInit(): void {
     this.loadOrders()
     this.loadSuppliers()
-  }
-
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator
-    this.dataSource.sort = this.sort
 
     // Asegurar ordenamiento correcto por campos derivados
     this.dataSource.sortingDataAccessor = (item: PurchaseOrder, property: string) => {

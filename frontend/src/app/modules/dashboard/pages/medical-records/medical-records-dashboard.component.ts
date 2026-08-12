@@ -1,5 +1,5 @@
 import { Location } from '@angular/common'
-import { AfterViewInit, Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core'
+import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
@@ -18,7 +18,7 @@ import { recordTypeIcon, recordTypeLabel } from './utils/record-type.util'
     styleUrls: ['./medical-records-dashboard.component.css'],
     standalone: false
 })
-export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
+export class MedicalRecordsDashboardComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
   private alert = inject(AlertService)
   private roleState = inject(RoleStateService)
@@ -33,8 +33,21 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
   dataSource = new MatTableDataSource<MedicalRecord>([])
   totalRecords = 0
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator
-  @ViewChild(MatSort) sort!: MatSort
+  /**
+   * Por `set` y no por propiedad: la tabla vive dentro de un `@if` que solo
+   * aparece cuando ya hay filas, así que en `ngAfterViewInit` el paginador y el
+   * ordenador todavía no existen. Asignándolos allí quedaban en `undefined`
+   * para siempre y las cabeceras no ordenaban nada.
+   */
+  @ViewChild(MatPaginator)
+  set paginator(paginator: MatPaginator | undefined) {
+    if (paginator) this.dataSource.paginator = paginator
+  }
+
+  @ViewChild(MatSort)
+  set sort(sort: MatSort | undefined) {
+    if (sort) this.dataSource.sort = sort
+  }
 
   filters: MedicalRecordFilters = {}
   searchTerm = ''
@@ -64,11 +77,6 @@ export class MedicalRecordsDashboardComponent implements OnInit, AfterViewInit {
     // tarjetas de resumen: no se piden, para no provocar un 403 que la pantalla
     // mostraba como error. Ver `canWriteRecords`.
     if (this.canWriteRecords) this.loadStats()
-  }
-
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator
-    this.dataSource.sort = this.sort
   }
 
   loadMedicalRecords(): void {

@@ -1,10 +1,12 @@
 import { Location } from '@angular/common'
 import { Component, DestroyRef, computed, inject, OnInit, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
+import { Sort } from '@angular/material/sort'
 import { Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { Medication, ProductType } from '../interfaces/pharmacy.interfaces'
 import { matchesSearch } from '../../../../../shared/utils/text-search.util'
+import { EstadoOrden, leerOrden, ordenar } from '../../../../../shared/utils/table-sort.util'
 import { InventoryService } from '../services/inventory.service'
 
 @Component({
@@ -38,6 +40,29 @@ export class MedicationsComponent implements OnInit {
     this.medications().filter(m => (m.productType ?? ProductType.MEDICATION) === cat).length
   )
 
+  /** Columna por la que se ordena. Vacío = el orden en que llegó del catálogo. */
+  orden = signal<EstadoOrden>({ key: '', dir: '' })
+
+  onSort(sort: Sort): void {
+    this.orden.set(leerOrden(sort))
+    // De vuelta a la primera página: quien reordena quiere ver lo que quedó
+    // arriba, no la página 7 del orden anterior.
+    this.page.set(0)
+  }
+
+  ordenadas = computed(() =>
+    ordenar(this.filtered(), this.orden(), (m, key) => {
+      switch (key) {
+        case 'code': return m.code
+        case 'strength': return m.strength
+        case 'dosageForm': return m.dosageForm
+        case 'category': return this.getCategoryLabel(m.category)
+        case 'manufacturer': return m.manufacturer
+        default: return m.name
+      }
+    }),
+  )
+
   setCategoryFilter(cat: string): void {
     this.categoryFilter.set(cat)
     this.page.set(0)
@@ -50,7 +75,7 @@ export class MedicationsComponent implements OnInit {
 
   paged = computed(() => {
     const inicio = this.page() * this.pageSize()
-    return this.filtered().slice(inicio, inicio + this.pageSize())
+    return this.ordenadas().slice(inicio, inicio + this.pageSize())
   })
 
   setSearch(term: string): void {
