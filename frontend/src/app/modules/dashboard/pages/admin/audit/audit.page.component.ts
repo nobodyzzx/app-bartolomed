@@ -5,6 +5,8 @@ import { PageEvent } from '@angular/material/paginator'
 import { ChartData, ChartOptions } from 'chart.js'
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs'
 import { AlertService } from '@core/services/alert.service'
+import { Sort } from '@angular/material/sort'
+import { EstadoOrden, leerOrden } from '../../../../../shared/utils/table-sort.util'
 import { AuditService } from './audit.service'
 import {
   AuditDistinctValues,
@@ -279,9 +281,27 @@ export class AuditPageComponent implements OnInit {
       })
   }
 
+  /**
+   * Columna elegida en la cabecera. El orden lo resuelve el backend: aquí solo
+   * llega una página, así que ordenar en el navegador reordenaría lo cargado y
+   * dejaría el resto del registro fuera.
+   */
+  orden: EstadoOrden = { key: '', dir: '' }
+
+  onSort(sort: Sort): void {
+    this.orden = leerOrden(sort)
+    // A la primera página: quien reordena quiere ver lo que quedó arriba.
+    this.page = 1
+    this.loadLogs()
+  }
+
   private buildFilters(): AuditFilters {
     const v = this.filterForm.value
     const filters: AuditFilters = { page: this.page, pageSize: this.pageSize }
+    if (this.orden.dir) {
+      filters.sortBy = this.orden.key
+      filters.sortDir = this.orden.dir === 'asc' ? 'ASC' : 'DESC'
+    }
     if (v.search)    filters.search    = v.search
     if (v.action)    filters.action    = v.action
     if (v.resource)  filters.resource  = v.resource

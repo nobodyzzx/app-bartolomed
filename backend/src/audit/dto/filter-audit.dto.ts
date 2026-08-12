@@ -38,4 +38,21 @@ export class FilterAuditDto {
   @IsOptional()
   @IsDateString()
   endDate?: string;
+
+  /**
+   * Columna por la que ordenar. La lista blanca no es cosmética: el valor entra
+   * en `orderBy()`, que TypeORM interpola en el SQL sin parametrizar, así que
+   * aceptar texto libre aquí sería una inyección.
+   *
+   * El orden tiene que ser del servidor: el registro puede tener decenas de
+   * miles de eventos y la pantalla solo recibe una página, de modo que ordenar
+   * en el navegador reordenaría lo cargado y dejaría el resto fuera.
+   */
+  @IsOptional()
+  @IsIn(['createdAt', 'userEmail', 'action', 'resource', 'method', 'statusCode', 'status', 'ipAddress'])
+  sortBy?: string;
+
+  @IsOptional()
+  @IsIn(['ASC', 'DESC'])
+  sortDir?: 'ASC' | 'DESC';
 }

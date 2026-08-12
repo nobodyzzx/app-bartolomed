@@ -50,7 +50,9 @@ describe('PharmacySalesController', () => {
 
   describe('findAll', () => {
     it('arma el objeto de filtros con paginación, fechas parseadas y clinicId', async () => {
-      await controller.findAll(2, 50, 'completed' as any, 'cash', 'ana', '2026-01-01', '2026-01-31', makeReq());
+      await controller.findAll(
+        2, 50, 'completed' as any, 'cash', 'ana', '2026-01-01', '2026-01-31', 'total', 'ASC', makeReq(),
+      );
 
       expect(service.listWithFilters).toHaveBeenCalledWith({
         status: 'completed',
@@ -61,11 +63,15 @@ describe('PharmacySalesController', () => {
         endDate: new Date('2026-01-31'),
         page: 2,
         limit: 50,
+        sortBy: 'total',
+        sortDir: 'ASC',
       });
     });
 
     it('deja startDate/endDate undefined si no vienen', async () => {
-      await controller.findAll(1, 25, undefined, undefined, undefined, undefined, undefined, makeReq());
+      await controller.findAll(
+        1, 25, undefined, undefined, undefined, undefined, undefined, undefined, undefined, makeReq(),
+      );
       const filters = service.listWithFilters.mock.calls[0][0];
       expect(filters.startDate).toBeUndefined();
       expect(filters.endDate).toBeUndefined();

@@ -26,6 +26,16 @@ import { InventoryService } from './inventory.service';
 
 @Injectable()
 export class PharmacySalesService {
+  /**
+   * Columnas por las que se puede ordenar el listado de ventas. Son las mismas
+   * que la tabla enseña: `saleDate` y no `createdAt` —es la fecha que se pinta,
+   * y en una venta registrada más tarde no coinciden— y `total`, que es como se
+   * llama la columna del importe.
+   */
+  private static readonly COLUMNAS_ORDENABLES = [
+    'saleNumber', 'patientName', 'saleDate', 'total', 'paymentMethod', 'status',
+  ];
+
   constructor(
     @InjectRepository(PharmacySale)
     private pharmacySaleRepository: Repository<PharmacySale>,
@@ -282,6 +292,8 @@ export class PharmacySalesService {
     endDate?: Date;
     page?: number;
     limit?: number;
+    sortBy?: string;
+    sortDir?: 'ASC' | 'DESC';
   }): Promise<PaginatedResult<PharmacySale>> {
     if (!options.clinicId) {
       throw new BadRequestException('clinicId is required');
@@ -290,11 +302,25 @@ export class PharmacySalesService {
     const page = options.page ?? 1;
     const limit = options.limit ?? 25;
 
+    // El orden es del servidor porque la pantalla solo recibe una página:
+    // ordenar en el navegador reordenaría lo cargado y dejaría el resto fuera,
+    // igual que le pasaba a la búsqueda antes de moverla aquí.
+    //
+    // Lista blanca y no el texto que llegue: `orderBy()` interpola sin
+    // parametrizar, así que aceptarlo tal cual sería una inyección.
+    const columna = PharmacySalesService.COLUMNAS_ORDENABLES.includes(options.sortBy ?? '')
+      ? options.sortBy!
+      : 'saleDate';
+    const sentido = options.sortDir === 'ASC' ? 'ASC' : 'DESC';
+
     const qb = this.pharmacySaleRepository
       .createQueryBuilder('sale')
       .leftJoinAndSelect('sale.items', 'items')
       .leftJoinAndSelect('sale.soldBy', 'soldBy')
-      .orderBy('sale.createdAt', 'DESC');
+      .orderBy(`sale.${columna}`, sentido)
+      // Desempate estable: sin él, dos ventas del mismo día pueden cambiar de
+      // sitio entre página y página, repetirse o desaparecer al avanzar.
+      .addOrderBy('sale.id', 'DESC');
 
     qb.andWhere('sale.clinicId = :clinicId', { clinicId: options.clinicId });
 

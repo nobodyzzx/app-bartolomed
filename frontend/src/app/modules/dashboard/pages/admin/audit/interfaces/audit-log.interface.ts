@@ -51,6 +51,9 @@ export interface AuditFilters {
   search?: string;
   startDate?: string;
   endDate?: string;
+  /** Debe ser una de las columnas que el backend acepta en su lista blanca. */
+  sortBy?: string;
+  sortDir?: 'ASC' | 'DESC';
 }
 
 export interface AuditDistinctValues {

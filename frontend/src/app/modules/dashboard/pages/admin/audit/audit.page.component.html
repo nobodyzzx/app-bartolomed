@@ -393,17 +393,19 @@
       <!-- Tabla -->
       @if (!loading) {
         <div class="overflow-x-auto">
-          <table mat-table [dataSource]="logs" class="w-full">
+          <table mat-table [dataSource]="logs" matSort
+            [matSortActive]="orden.key" [matSortDirection]="orden.dir"
+            (matSortChange)="onSort($event)" class="w-full">
             <!-- Fecha/hora -->
             <ng-container matColumnDef="createdAt">
-              <th mat-header-cell *matHeaderCellDef class="whitespace-nowrap !pl-6">Fecha y hora</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="whitespace-nowrap !pl-6">Fecha y hora</th>
               <td mat-cell *matCellDef="let log" class="whitespace-nowrap text-xs text-slate-600 !pl-6">
                 {{ formatDate(log.createdAt) }}
               </td>
             </ng-container>
             <!-- Usuario -->
             <ng-container matColumnDef="userEmail">
-              <th mat-header-cell *matHeaderCellDef>Usuario</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Usuario</th>
               <td mat-cell *matCellDef="let log">
                 <div class="max-w-[150px]">
                   <button
@@ -419,7 +421,7 @@
             </ng-container>
             <!-- Acción -->
             <ng-container matColumnDef="action">
-              <th mat-header-cell *matHeaderCellDef>Acción</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Acción</th>
               <td mat-cell *matCellDef="let log">
                 <span
                   class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
@@ -432,14 +434,14 @@
             </ng-container>
             <!-- Recurso -->
             <ng-container matColumnDef="resource">
-              <th mat-header-cell *matHeaderCellDef>Recurso</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Recurso</th>
               <td mat-cell *matCellDef="let log">
                 <span class="text-sm text-slate-700">{{ log.resource }}</span>
               </td>
             </ng-container>
             <!-- Método HTTP -->
             <ng-container matColumnDef="method">
-              <th mat-header-cell *matHeaderCellDef>Método</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Método</th>
               <td mat-cell *matCellDef="let log">
                 <span class="text-xs font-mono font-bold" [ngClass]="getMethodClass(log.method)">
                   {{ log.method }}
@@ -448,7 +450,7 @@
             </ng-container>
             <!-- Código HTTP -->
             <ng-container matColumnDef="statusCode">
-              <th mat-header-cell *matHeaderCellDef>HTTP</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>HTTP</th>
               <td mat-cell *matCellDef="let log">
                 <span class="text-xs font-mono font-bold" [ngClass]="getHttpCodeClass(log.statusCode)">
                   {{ log.statusCode }}
@@ -457,7 +459,7 @@
             </ng-container>
             <!-- Estado -->
             <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
               <td mat-cell *matCellDef="let log">
                 <span
                   class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
@@ -472,7 +474,7 @@
             </ng-container>
             <!-- IP -->
             <ng-container matColumnDef="ipAddress">
-              <th mat-header-cell *matHeaderCellDef>IP</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>IP</th>
               <td mat-cell *matCellDef="let log">
                 <span class="text-xs font-mono text-slate-400">{{ log.ipAddress || '—' }}</span>
               </td>

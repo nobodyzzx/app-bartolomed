@@ -36,6 +36,10 @@ export class AuditService {
     if (filters.search) params = params.set('search', filters.search);
     if (filters.startDate) params = params.set('startDate', filters.startDate);
     if (filters.endDate) params = params.set('endDate', filters.endDate);
+    // El orden va al servidor: la pantalla solo recibe una página, y el
+    // registro puede tener decenas de miles de eventos.
+    if (filters.sortBy) params = params.set('sortBy', filters.sortBy);
+    if (filters.sortDir) params = params.set('sortDir', filters.sortDir);
     return this.http.get<AuditLogsResponse>(this.base, { params }).pipe(catchError(this.handleError));
   }
 

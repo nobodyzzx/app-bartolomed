@@ -1,4 +1,6 @@
 import { Location } from '@angular/common'
+import { Sort } from '@angular/material/sort'
+import { EstadoOrden, leerOrden } from '../../../../../shared/utils/table-sort.util'
 import { Component, DestroyRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormControl } from '@angular/forms'
@@ -103,6 +105,8 @@ export class SalesDispensingComponent implements OnInit, OnDestroy {
         paymentMethod: this.paymentFilter || undefined,
         startDate: toLocalISODate(this.dateFromControl.value) || undefined,
         endDate: toLocalISODate(this.dateToControl.value) || undefined,
+        sortBy: this.orden.dir ? this.orden.key : undefined,
+        sortDir: this.orden.dir ? (this.orden.dir === 'asc' ? 'ASC' : 'DESC') : undefined,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -113,6 +117,20 @@ export class SalesDispensingComponent implements OnInit, OnDestroy {
         },
         error: () => (this.loading = false),
       })
+  }
+
+  /**
+   * Columna elegida en la cabecera. El orden lo resuelve el backend: aquí solo
+   * llega una página, así que ordenar en el navegador reordenaría lo cargado y
+   * dejaría el resto de las ventas fuera.
+   */
+  orden: EstadoOrden = { key: '', dir: '' }
+
+  onSort(sort: Sort): void {
+    this.orden = leerOrden(sort)
+    // A la primera página: quien reordena quiere ver lo que quedó arriba.
+    this.currentPage = 0
+    this.loadSales()
   }
 
   onPageChange(event: PageEvent): void {

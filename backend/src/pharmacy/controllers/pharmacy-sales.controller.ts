@@ -52,6 +52,10 @@ export class PharmacySalesController {
     @Query('search') search?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    // El servicio valida `sortBy` contra su lista blanca: `orderBy()` interpola
+    // sin parametrizar, así que no puede llegar texto libre a la consulta.
+    @Query('sortBy') sortBy?: string,
+    @Query('sortDir') sortDir?: 'ASC' | 'DESC',
     @Request() req?: any,
   ) {
     const clinicId = req ? resolveClinicId(req) : undefined;
@@ -64,6 +68,8 @@ export class PharmacySalesController {
       endDate: endDate ? new Date(endDate) : undefined,
       page,
       limit,
+      sortBy,
+      sortDir,
     });
   }
 

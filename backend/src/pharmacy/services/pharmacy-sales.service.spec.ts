@@ -660,10 +660,71 @@ describe('PharmacySalesService', () => {
 
   // ─── listWithFilters — búsqueda ───────────────────────────────────────────
 
+  /**
+   * Mismo motivo que la búsqueda: la pantalla solo recibe una página, así que
+   * ordenar en el navegador reordenaría lo cargado y dejaría el resto fuera.
+   */
+  describe('listWithFilters: orden', () => {
+    const makeQb = () => ({
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+    });
+
+    it('sin pedir orden, la venta más reciente primero', async () => {
+      const qb = makeQb();
+      saleRepo.createQueryBuilder!.mockReturnValue(qb as any);
+
+      await service.listWithFilters({ clinicId: 'clinic-1' });
+
+      expect(qb.orderBy).toHaveBeenCalledWith('sale.saleDate', 'DESC');
+    });
+
+    it('ordena por la columna pedida y en el sentido pedido', async () => {
+      const qb = makeQb();
+      saleRepo.createQueryBuilder!.mockReturnValue(qb as any);
+
+      await service.listWithFilters({ clinicId: 'clinic-1', sortBy: 'total', sortDir: 'ASC' });
+
+      expect(qb.orderBy).toHaveBeenCalledWith('sale.total', 'ASC');
+    });
+
+    /** `orderBy()` interpola sin parametrizar: fuera de la lista blanca, no entra. */
+    it('ignora una columna que no esté en la lista blanca', async () => {
+      const qb = makeQb();
+      saleRepo.createQueryBuilder!.mockReturnValue(qb as any);
+
+      await service.listWithFilters({
+        clinicId: 'clinic-1',
+        sortBy: "total'; DROP TABLE pharmacy_sales; --",
+      });
+
+      expect(qb.orderBy).toHaveBeenCalledWith('sale.saleDate', 'DESC');
+    });
+
+    /**
+     * Sin desempate, dos ventas del mismo día pueden cambiar de sitio entre
+     * página y página: una se repite y otra desaparece al avanzar.
+     */
+    it('desempata por id para que paginar sea estable', async () => {
+      const qb = makeQb();
+      saleRepo.createQueryBuilder!.mockReturnValue(qb as any);
+
+      await service.listWithFilters({ clinicId: 'clinic-1', sortBy: 'status' });
+
+      expect(qb.addOrderBy).toHaveBeenCalledWith('sale.id', 'DESC');
+    });
+  });
+
   describe('listWithFilters: búsqueda', () => {
     const makeQb = () => ({
       leftJoinAndSelect: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       skip: jest.fn().mockReturnThis(),
       take: jest.fn().mockReturnThis(),

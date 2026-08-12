@@ -29,9 +29,10 @@ export class SalesDispensingService {
   ) {}
 
   /**
-   * `search`, `paymentMethod` y el rango de fechas van al backend: filtrar en el
-   * cliente solo alcanzaba las filas de la página cargada, así que buscar algo de
-   * la página 3 no encontraba nada.
+   * `search`, `paymentMethod`, el rango de fechas y el orden van al backend:
+   * resolverlos en el cliente solo alcanzaba las filas de la página cargada,
+   * así que buscar algo de la página 3 no encontraba nada y ordenar reordenaba
+   * un recorte haciéndolo pasar por la lista entera.
    */
   getSales(
     options: {
@@ -42,6 +43,9 @@ export class SalesDispensingService {
       paymentMethod?: string
       startDate?: string
       endDate?: string
+      /** Debe ser una de las columnas que el backend acepta en su lista blanca. */
+      sortBy?: string
+      sortDir?: 'ASC' | 'DESC'
     } = {},
   ): Observable<PaginatedResult<Sale>> {
     const params = new HttpParams({

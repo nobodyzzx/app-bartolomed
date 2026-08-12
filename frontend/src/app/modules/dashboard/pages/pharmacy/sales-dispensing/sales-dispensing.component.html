@@ -121,15 +121,17 @@
 
       @if (!loading && sales.length > 0) {
         <div class="overflow-x-auto">
-          <table class="w-full">
+          <table class="w-full" matSort
+            [matSortActive]="orden.key" [matSortDirection]="orden.dir"
+            (matSortChange)="onSort($event)">
             <thead class="bg-slate-100">
               <tr>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Nº Venta</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</th>
-                <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Total</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Método de Pago</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
+                <th mat-sort-header="saleNumber" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Nº Venta</th>
+                <th mat-sort-header="patientName" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</th>
+                <th mat-sort-header="saleDate" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</th>
+                <th mat-sort-header="total" class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Total</th>
+                <th mat-sort-header="paymentMethod" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Método de Pago</th>
+                <th mat-sort-header="status" class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</th>
                 <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wide">Acciones</th>
               </tr>
             </thead>

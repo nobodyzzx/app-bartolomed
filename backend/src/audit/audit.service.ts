@@ -31,6 +31,11 @@ export class AuditService {
     private readonly auditLogRepository: Repository<AuditLog>,
   ) {}
 
+  /** Columnas por las que se puede ordenar el registro. Espeja el `@IsIn` del DTO. */
+  private static readonly COLUMNAS_ORDENABLES = [
+    'createdAt', 'userEmail', 'action', 'resource', 'method', 'statusCode', 'status', 'ipAddress',
+  ];
+
   /** Persiste un evento de auditoría. Nunca lanza excepción para no interrumpir el flujo principal. */
   async log(dto: CreateAuditLogDto): Promise<void> {
     try {
@@ -59,12 +64,25 @@ export class AuditService {
     const { page = 1, pageSize = 50, action, resource, status, search, startDate, endDate } = filter;
     const skip = (page - 1) * pageSize;
 
+    // Lo más reciente primero mientras no se pida otra cosa: es lo que se mira
+    // al abrir el registro. `sortBy` viene de una lista blanca en el DTO —
+    // `orderBy()` interpola sin parametrizar—, y aun así se vuelve a comprobar
+    // aquí para que este método sea seguro llamándolo desde donde sea.
+    const columna = AuditService.COLUMNAS_ORDENABLES.includes(filter.sortBy ?? '')
+      ? filter.sortBy!
+      : 'createdAt';
+    const sentido = filter.sortDir === 'ASC' ? 'ASC' : 'DESC';
+
     const qb = this.scopeToClinic(
       this.auditLogRepository.createQueryBuilder('log'),
       actor,
       clinicId,
     )
-      .orderBy('log.createdAt', 'DESC')
+      .orderBy(`log.${columna}`, sentido)
+      // Desempate estable: sin él, dos eventos con el mismo estado pueden
+      // cambiar de sitio entre página y página y aparecer repetidos o
+      // desaparecer al pasar de una a otra.
+      .addOrderBy('log.id', 'DESC')
       .skip(skip)
       .take(pageSize);
 
