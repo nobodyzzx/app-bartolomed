@@ -169,6 +169,10 @@ export class BillingPageComponent implements OnInit {
       overdue: 'Vencida',
       cancelled: 'Cancelada',
       draft: 'Borrador',
+      // Faltaban los dos: la celda enseñaba `partially_paid` y `refunded` en
+      // crudo, con guion bajo, entre etiquetas en español.
+      partially_paid: 'Pago parcial',
+      refunded: 'Reembolsada',
     }
     return labels[status] || status
   }
@@ -180,6 +184,9 @@ export class BillingPageComponent implements OnInit {
       overdue: 'bg-red-100 text-red-700',
       cancelled: 'bg-slate-100 text-slate-700',
       draft: 'bg-blue-100 text-blue-700',
+      // Ámbar: está cobrada a medias, ni pendiente del todo ni saldada.
+      partially_paid: 'bg-amber-100 text-amber-700',
+      refunded: 'bg-purple-100 text-purple-700',
     }
     return classes[status] || 'bg-gray-100 text-gray-700'
   }

@@ -103,6 +103,32 @@ describe('ListStateService', () => {
     })
   })
 
+  /**
+   * Sin esto, una pantalla que escucha `queryParamMap` recarga al reflejar su
+   * propia vista, y la recarga devuelve el paginador a la primera página:
+   * avanzar de página parecía no hacer nada.
+   */
+  describe('consumirEscrituraPropia', () => {
+    const route = {} as never
+
+    it('es falso mientras no se escriba la URL', () => {
+      expect(service.consumirEscrituraPropia()).toBe(false)
+    })
+
+    it('es verdadero justo después de reflejar la vista', () => {
+      service.reflejarEnUrl(route, { q: 'ana' })
+
+      expect(service.consumirEscrituraPropia()).toBe(true)
+    })
+
+    it('se consume: el segundo preguntón ya no se lo lleva', () => {
+      service.reflejarEnUrl(route, { q: 'ana' })
+      service.consumirEscrituraPropia()
+
+      expect(service.consumirEscrituraPropia()).toBe(false)
+    })
+  })
+
   describe('aParams', () => {
     it('descarta lo vacío para no ensuciar el enlace', () => {
       expect(aParams({ q: '', sort: undefined, dir: '' as never, page: 3 })).toEqual({ page: '3' })

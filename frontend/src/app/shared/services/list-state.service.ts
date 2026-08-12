@@ -44,6 +44,12 @@ export class ListStateService {
   private urlAnterior = ''
   private urlActual = ''
 
+  /**
+   * Marca de que el próximo cambio de parámetros lo provoca `reflejarEnUrl` y
+   * no una navegación del usuario.
+   */
+  private escrituraPropia = false
+
   constructor() {
     this.urlActual = this.router.url
     this.router.events
@@ -88,6 +94,7 @@ export class ListStateService {
    * pulsarse una vez por carácter para salir de la pantalla.
    */
   reflejarEnUrl(route: ActivatedRoute, estado: EstadoListado): void {
+    this.escrituraPropia = true
     this.router.navigate([], {
       relativeTo: route,
       queryParams: aParams(estado),
@@ -96,6 +103,23 @@ export class ListStateService {
       queryParamsHandling: 'merge',
       replaceUrl: true,
     })
+  }
+
+  /**
+   * ¿El cambio de parámetros que se está atendiendo lo escribió esta pantalla?
+   *
+   * Una pantalla que escucha `queryParamMap` para recargar entra en bucle sin
+   * esto: reflejar la vista cambia los parámetros, eso despierta la suscripción,
+   * la recarga reasigna los datos y el paginador se va a la primera página. Se
+   * veía como que avanzar de página no hacía nada — la URL decía `page=2` y la
+   * tabla seguía en «1 – 10 de 18».
+   *
+   * Se consume: solo el primer preguntón se lleva el `true`.
+   */
+  consumirEscrituraPropia(): boolean {
+    const propia = this.escrituraPropia
+    this.escrituraPropia = false
+    return propia
   }
 }
 

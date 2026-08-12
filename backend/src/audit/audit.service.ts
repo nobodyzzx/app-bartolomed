@@ -78,7 +78,11 @@ export class AuditService {
       actor,
       clinicId,
     )
-      .orderBy(`log.${columna}`, sentido)
+      // `NULLS LAST`: Postgres pone los nulos primero al ordenar descendiendo, y
+      // una columna con la mitad vacía se llenaría de huecos arriba. El mismo
+      // criterio que el comparador del navegador — el hueco estorba en los dos
+      // sentidos, así que va al final en los dos.
+      .orderBy(`log.${columna}`, sentido, 'NULLS LAST')
       // Desempate estable: sin él, dos eventos con el mismo estado pueden
       // cambiar de sitio entre página y página y aparecer repetidos o
       // desaparecer al pasar de una a otra.

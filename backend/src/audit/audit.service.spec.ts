@@ -75,7 +75,7 @@ describe('AuditService', () => {
 
       await service.findAll({} as any, makeAdmin(), ACTIVE_CLINIC);
 
-      expect(qb.orderBy).toHaveBeenCalledWith('log.createdAt', 'DESC');
+      expect(qb.orderBy).toHaveBeenCalledWith('log.createdAt', 'DESC', 'NULLS LAST');
     });
 
     it('ordena por la columna pedida y en el sentido pedido', async () => {
@@ -83,7 +83,20 @@ describe('AuditService', () => {
 
       await service.findAll({ sortBy: 'userEmail', sortDir: 'ASC' } as any, makeAdmin(), ACTIVE_CLINIC);
 
-      expect(qb.orderBy).toHaveBeenCalledWith('log.userEmail', 'ASC');
+      expect(qb.orderBy).toHaveBeenCalledWith('log.userEmail', 'ASC', 'NULLS LAST');
+    });
+
+    /**
+     * Postgres pone los nulos primero al ordenar descendiendo. Una columna como
+     * `userEmail` —vacía en los eventos sin sesión— se llenaba de huecos arriba
+     * al invertirla. Mismo criterio que el comparador del navegador.
+     */
+    it('los huecos van al final también descendiendo', async () => {
+      const qb = conQb();
+
+      await service.findAll({ sortBy: 'userEmail', sortDir: 'DESC' } as any, makeAdmin(), ACTIVE_CLINIC);
+
+      expect(qb.orderBy).toHaveBeenCalledWith('log.userEmail', 'DESC', 'NULLS LAST');
     });
 
     /**
@@ -101,7 +114,7 @@ describe('AuditService', () => {
         ACTIVE_CLINIC,
       );
 
-      expect(qb.orderBy).toHaveBeenCalledWith('log.createdAt', 'DESC');
+      expect(qb.orderBy).toHaveBeenCalledWith('log.createdAt', 'DESC', 'NULLS LAST');
     });
 
     it('un sentido inválido cae en DESC', async () => {
@@ -109,7 +122,7 @@ describe('AuditService', () => {
 
       await service.findAll({ sortBy: 'action', sortDir: 'lo-que-sea' } as any, makeAdmin(), ACTIVE_CLINIC);
 
-      expect(qb.orderBy).toHaveBeenCalledWith('log.action', 'DESC');
+      expect(qb.orderBy).toHaveBeenCalledWith('log.action', 'DESC', 'NULLS LAST');
     });
 
     /**

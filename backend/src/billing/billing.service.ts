@@ -154,7 +154,11 @@ export class BillingService {
       .leftJoinAndSelect('invoice.items', 'items')
       .leftJoinAndSelect('invoice.payments', 'payments')
       .where('clinic.id = :clinicId', { clinicId })
-      .orderBy(columna, sentido)
+      // `NULLS LAST`: Postgres pone los nulos primero al ordenar descendiendo, y
+      // una columna con la mitad vacía se llenaría de huecos arriba. El mismo
+      // criterio que el comparador del navegador — el hueco estorba en los dos
+      // sentidos, así que va al final en los dos.
+      .orderBy(columna, sentido, 'NULLS LAST')
       // Desempate estable: sin él, dos facturas del mismo día pueden cambiar de
       // sitio entre página y página, repetirse o desaparecer al avanzar.
       .addOrderBy('invoice.id', 'DESC')

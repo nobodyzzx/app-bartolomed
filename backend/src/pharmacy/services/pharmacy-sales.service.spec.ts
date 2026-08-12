@@ -681,7 +681,7 @@ describe('PharmacySalesService', () => {
 
       await service.listWithFilters({ clinicId: 'clinic-1' });
 
-      expect(qb.orderBy).toHaveBeenCalledWith('sale.saleDate', 'DESC');
+      expect(qb.orderBy).toHaveBeenCalledWith('sale.saleDate', 'DESC', 'NULLS LAST');
     });
 
     it('ordena por la columna pedida y en el sentido pedido', async () => {
@@ -690,7 +690,7 @@ describe('PharmacySalesService', () => {
 
       await service.listWithFilters({ clinicId: 'clinic-1', sortBy: 'total', sortDir: 'ASC' });
 
-      expect(qb.orderBy).toHaveBeenCalledWith('sale.total', 'ASC');
+      expect(qb.orderBy).toHaveBeenCalledWith('sale.total', 'ASC', 'NULLS LAST');
     });
 
     /** `orderBy()` interpola sin parametrizar: fuera de la lista blanca, no entra. */
@@ -703,7 +703,7 @@ describe('PharmacySalesService', () => {
         sortBy: "total'; DROP TABLE pharmacy_sales; --",
       });
 
-      expect(qb.orderBy).toHaveBeenCalledWith('sale.saleDate', 'DESC');
+      expect(qb.orderBy).toHaveBeenCalledWith('sale.saleDate', 'DESC', 'NULLS LAST');
     });
 
     /**

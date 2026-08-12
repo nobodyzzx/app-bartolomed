@@ -81,9 +81,10 @@ describe('PatientListComponent', () => {
     location = createSpyObj('Location', ['back'])
     alert = createSpyObj('AlertService', ['error', 'success', 'fire'])
     listState = createSpyObj<ListStateService>('ListStateService', [
-      'guardar', 'olvidar', 'recuperarSiVuelve', 'reflejarEnUrl',
+      'guardar', 'olvidar', 'recuperarSiVuelve', 'reflejarEnUrl', 'consumirEscrituraPropia',
     ])
     listState.recuperarSiVuelve.mockReturnValue(undefined)
+    listState.consumirEscrituraPropia.mockReturnValue(false)
     queryParamMap$ = new ReplaySubject(1)
     queryParamMap$.next(convertToParamMap({}))
     roles = [UserRoles.ADMIN]
@@ -167,6 +168,21 @@ describe('PatientListComponent', () => {
         expect.objectContaining({ sexo: Gender.FEMALE }),
       )
       expect(listState.reflejarEnUrl).toHaveBeenCalled()
+    })
+
+    /**
+     * Reflejar la vista cambia los parámetros y despierta la misma suscripción
+     * que recarga: sin ignorarlo, avanzar de página se deshacía solo.
+     */
+    it('no recarga cuando el cambio de parámetros lo escribió la propia pantalla', () => {
+      component = createComponent()
+      component.ngOnInit()
+      patientsService.getAllPatients.mockClear()
+
+      listState.consumirEscrituraPropia.mockReturnValue(true)
+      queryParamMap$.next(convertToParamMap({ page: '2' }))
+
+      expect(patientsService.getAllPatients).not.toHaveBeenCalled()
     })
 
     /** Limpiar es explícito: no debe resucitar al volver de editar. */

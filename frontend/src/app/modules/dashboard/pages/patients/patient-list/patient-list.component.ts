@@ -123,6 +123,12 @@ export class PatientListComponent implements OnInit {
     })
 
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      // Reflejar la vista cambia los parámetros y despierta esta misma
+      // suscripción; recargar entonces reasigna los datos y devuelve el
+      // paginador a la primera página. Se veía como que avanzar de página no
+      // hacía nada: la URL decía `page=2` y la tabla seguía en «1 – 10 de 18».
+      if (this.listState.consumirEscrituraPropia()) return
+
       // Volviendo de una ficha manda lo recordado: los 37 sitios que navegan al
       // listado por su ruta pelada llegan sin ningún parámetro, y sin esto la
       // vuelta de editar dejaba la lista al principio y sin filtro.
@@ -136,6 +142,7 @@ export class PatientListComponent implements OnInit {
 
       this.searchTerm = (estado.q ?? '').trim()
       this.ordenPedido = estado.sort && estado.dir ? { key: estado.sort, dir: estado.dir } : null
+      this.paginaPedida = Number(guardado?.['page'] ?? params.get('page') ?? 1) || 1
       const sexo = (guardado?.['sexo'] ?? params.get('sexo')) as Gender | undefined
       this.activeGenderFilter = sexo === Gender.MALE || sexo === Gender.FEMALE ? sexo : null
 
