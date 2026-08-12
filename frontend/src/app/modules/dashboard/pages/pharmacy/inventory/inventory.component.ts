@@ -315,6 +315,11 @@ export class InventoryComponent implements OnInit, OnDestroy {
     if (sort && (dir === 'asc' || dir === 'desc')) this.orden.set({ key: sort, dir })
     const page = Number(guardado?.['page'] ?? params.get('page') ?? 1)
     if (page > 1) this.page.set(page)
+
+    // Guardar lo restaurado, no solo leerlo: si nadie toca un filtro no habría
+    // nada en memoria, y al volver de una ficha la pantalla —a la que se llega
+    // por su ruta pelada, sin parámetros— aparecería en la página 1 y sin orden.
+    this.recordarVista()
   }
 
   /** Rehace la vista. Llamar cada vez que cambien datos, búsqueda o filtro. */

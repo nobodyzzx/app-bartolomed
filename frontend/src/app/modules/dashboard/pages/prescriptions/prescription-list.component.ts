@@ -1,4 +1,5 @@
 import { Sort } from '@angular/material/sort'
+import { ListStateService } from '../../../../shared/services/list-state.service'
 import { EstadoOrden, leerOrden, ordenar } from '../../../../shared/utils/table-sort.util'
 import { Component, DestroyRef, inject, OnInit } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
@@ -27,6 +28,10 @@ const STATUS_MAP: Record<string, { label: string; classes: string }> = {
 })
 export class PrescriptionListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
+  private readonly listState = inject(ListStateService)
+
+  /** Clave con la que se recuerda la vista de este listado. */
+  private static readonly RUTA = '/dashboard/prescriptions'
 
   private readonly roleState = inject(RoleStateService)
 
@@ -53,6 +58,40 @@ export class PrescriptionListComponent implements OnInit {
 
   onSort(sort: Sort): void {
     this.orden = leerOrden(sort)
+    this.recordarVista()
+  }
+
+  /** Deja la vista en la URL y la recuerda para cuando se vuelva de una ficha. */
+  private recordarVista(): void {
+    const estado = {
+      q: this.searchTerm.trim() || undefined,
+      estado: this.selectedStatus && this.selectedStatus !== 'all' ? this.selectedStatus : undefined,
+      sort: this.orden.dir ? this.orden.key : undefined,
+      dir: this.orden.dir || undefined,
+    }
+    this.listState.guardar(PrescriptionListComponent.RUTA, estado)
+    this.listState.reflejarEnUrl(this.route, estado)
+  }
+
+  /**
+   * Restaura la vista si se vuelve de una ficha; si no, lee la URL. Al abrir un
+   * registro Angular destruye este componente, y sin esto la vuelta dejaba la
+   * lista entera y sin filtro.
+   */
+  private restaurarVista(): void {
+    const guardado = this.listState.recuperarSiVuelve(PrescriptionListComponent.RUTA)
+    const params = this.route.snapshot.queryParamMap
+    this.searchTerm = String(guardado?.['q'] ?? params.get('q') ?? '')
+    const estado = String(guardado?.['estado'] ?? params.get('estado') ?? '')
+    if (estado) this.selectedStatus = estado
+    const sort = String(guardado?.['sort'] ?? params.get('sort') ?? '')
+    const dir = String(guardado?.['dir'] ?? params.get('dir') ?? '')
+    if (sort && (dir === 'asc' || dir === 'desc')) this.orden = { key: sort, dir }
+
+    // Guardar lo restaurado, no solo leerlo: si nadie toca un filtro no habría
+    // nada en memoria, y al volver de una ficha la pantalla —a la que se llega
+    // por su ruta pelada, sin parámetros— aparecería en la página 1 y sin orden.
+    this.recordarVista()
   }
 
   get ordenadas(): Prescription[] {
@@ -88,6 +127,7 @@ export class PrescriptionListComponent implements OnInit {
 
   ngOnInit(): void {
     this.patientIdFilter = this.route.snapshot.queryParamMap.get('patientId')
+    this.restaurarVista()
     this.loadPrescriptions()
   }
 
@@ -133,6 +173,7 @@ export class PrescriptionListComponent implements OnInit {
   }
 
   onSearch(): void {
+    this.recordarVista()
     this.loadPrescriptions()
   }
 
@@ -218,6 +259,7 @@ export class PrescriptionListComponent implements OnInit {
 
   setStatusFilter(status: string): void {
     this.selectedStatus = status
+    this.recordarVista()
     this.loadPrescriptions()
   }
 

@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { of } from 'rxjs'
 import { Prescription } from './interfaces/prescription-ui.interface'
+import { ListStateService } from '../../../../shared/services/list-state.service'
 import { PrescriptionListComponent } from './prescription-list.component'
 import { PrescriptionsService } from './prescriptions.service'
 import { createSpyObj, SpyObj } from '../../../../../testing/spy'
@@ -10,6 +11,7 @@ import { createSpyObj, SpyObj } from '../../../../../testing/spy'
 describe('PrescriptionListComponent', () => {
   let component: PrescriptionListComponent
   let prescriptionsService: SpyObj<PrescriptionsService>
+  let listState: SpyObj<ListStateService>
   let router: SpyObj<Router>
   let alert: SpyObj<AlertService>
 
@@ -39,6 +41,9 @@ describe('PrescriptionListComponent', () => {
     TestBed.resetTestingModule()
     TestBed.configureTestingModule({
       providers: [
+        // Doble del recuerdo de la vista: aquí se prueba la pantalla, no el
+        // servicio, que tiene su propio spec.
+        { provide: ListStateService, useValue: listState },
         PrescriptionListComponent,
         { provide: PrescriptionsService, useValue: prescriptionsService },
         { provide: Router, useValue: router },
@@ -57,6 +62,11 @@ describe('PrescriptionListComponent', () => {
     router = createSpyObj('Router', ['navigate'])
     alert = createSpyObj('AlertService', ['fire', 'success'])
     alert.fire.mockReturnValue(Promise.resolve({ isConfirmed: false } as any))
+    listState = createSpyObj<ListStateService>('ListStateService', [
+      'guardar', 'olvidar', 'recuperarSiVuelve', 'reflejarEnUrl', 'consumirEscrituraPropia',
+    ])
+    listState.recuperarSiVuelve.mockReturnValue(undefined)
+    listState.consumirEscrituraPropia.mockReturnValue(false)
   })
 
   describe('bug real: badge de estado ignoraba el vencimiento', () => {

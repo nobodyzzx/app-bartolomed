@@ -2,8 +2,9 @@ import { Location } from '@angular/common'
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core'
 import { Sort } from '@angular/material/sort'
 import { EstadoOrden, leerOrden, ordenar } from '../../../../../shared/utils/table-sort.util'
+import { ListStateService } from '../../../../../shared/services/list-state.service'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
-import { Router } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { Supplier, SupplierType } from '../interfaces/pharmacy.interfaces'
 import { SuppliersService } from '../services/suppliers.service'
@@ -17,6 +18,11 @@ import { matchesSearch } from '../../../../../shared/utils/text-search.util'
 })
 export class SuppliersComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
+  private readonly listState = inject(ListStateService)
+  private readonly route = inject(ActivatedRoute)
+
+  /** Clave con la que se recuerda la vista de este listado. */
+  private static readonly RUTA = '/dashboard/pharmacy/suppliers'
 
   loading = signal(false)
   suppliers = signal<Supplier[]>([])
@@ -41,6 +47,19 @@ export class SuppliersComponent implements OnInit {
 
   onSort(sort: Sort): void {
     this.orden.set(leerOrden(sort))
+    this.recordarVista()
+  }
+
+  /** Deja la vista en la URL y la recuerda para cuando se vuelva de una ficha. */
+  private recordarVista(): void {
+    const estado = {
+      q: this.search().trim() || undefined,
+      estado: this.statusFilter() === 'all' ? undefined : this.statusFilter(),
+      sort: this.orden().dir ? this.orden().key : undefined,
+      dir: this.orden().dir || undefined,
+    }
+    this.listState.guardar(SuppliersComponent.RUTA, estado)
+    this.listState.reflejarEnUrl(this.route, estado)
   }
 
   ordenadas = computed(() =>
@@ -64,8 +83,22 @@ export class SuppliersComponent implements OnInit {
   inactiveCount     = computed(() => this.suppliers().filter(s => !s.isActive).length)
   medicamentosCount = computed(() => this.suppliers().filter(s => s.tipoProveedor === SupplierType.MEDICAMENTOS).length)
 
+  setSearch(term: string): void {
+    this.search.set(term)
+    this.recordarVista()
+  }
+
+  limpiar(): void {
+    this.search.set('')
+    this.statusFilter.set('all')
+    // Limpiar es explícito: no debe resucitar al volver de una ficha.
+    this.listState.olvidar(SuppliersComponent.RUTA)
+    this.listState.reflejarEnUrl(this.route, { q: undefined, estado: undefined })
+  }
+
   setStatusFilter(f: 'all' | 'active' | 'inactive'): void {
     this.statusFilter.set(f)
+    this.recordarVista()
   }
 
   constructor(
@@ -76,6 +109,25 @@ export class SuppliersComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    /**
+     * Volviendo de una ficha manda lo recordado: al abrir un proveedor Angular
+     * destruye este componente, y sin esto la vuelta dejaba la lista entera y
+     * sin filtro.
+     */
+    const guardado = this.listState.recuperarSiVuelve(SuppliersComponent.RUTA)
+    const params = this.route.snapshot.queryParamMap
+    this.search.set(String(guardado?.['q'] ?? params.get('q') ?? ''))
+    const estado = String(guardado?.['estado'] ?? params.get('estado') ?? '')
+    if (estado === 'active' || estado === 'inactive') this.statusFilter.set(estado)
+    const sort = String(guardado?.['sort'] ?? params.get('sort') ?? '')
+    const dir = String(guardado?.['dir'] ?? params.get('dir') ?? '')
+    if (sort && (dir === 'asc' || dir === 'desc')) this.orden.set({ key: sort, dir })
+
+    // Guardar lo restaurado, no solo leerlo: si nadie toca un filtro no habría
+    // nada en memoria, y al volver de una ficha —a la que se llega por la ruta
+    // pelada, sin parámetros— la pantalla aparecería sin filtro y en la página 1.
+    this.recordarVista()
+
     this.load()
   }
 

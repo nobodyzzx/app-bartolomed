@@ -114,6 +114,11 @@ export class MedicalRecordsDashboardComponent implements OnInit {
       this.filters = { ...this.filters, isEmergency: true }
     }
 
+    // Guardar lo restaurado, no solo leerlo: si nadie toca un filtro no habría
+    // nada en memoria, y al volver de una ficha —a la que se llega por la ruta
+    // pelada, sin parámetros— la pantalla aparecería sin filtro y en la página 1.
+    this.recordarVista()
+
     this.loadMedicalRecords()
     // Las estadísticas están reservadas a médico/admin (el endpoint es
     // @Auth(DOCTOR, ADMIN)). Enfermería ve la lista de expedientes pero no las

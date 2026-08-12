@@ -201,8 +201,12 @@
             Mostrando <span class="font-semibold text-slate-700">{{ sales.length }}</span>
             de <span class="font-semibold text-slate-700">{{ totalRecords }}</span> ventas
           </span>
+          <!-- `pageIndex` enlazado: el `@if` de arriba recrea el paginador en
+               cada carga y su índice interno vuelve a 0, así que la etiqueta
+               decía «1 – 25 de 120» estando en la página 3. -->
           <mat-paginator
             [length]="totalRecords"
+            [pageIndex]="currentPage"
             [pageSize]="pageSize"
             [pageSizeOptions]="[10, 25, 50, 100]"
             showFirstLastButtons

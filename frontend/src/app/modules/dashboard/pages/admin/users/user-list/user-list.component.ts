@@ -4,8 +4,9 @@ import { MatDialog } from '@angular/material/dialog'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { ordenarComoLasDemas } from '../../../../../../shared/utils/table-sort.util'
+import { ListStateService } from '../../../../../../shared/services/list-state.service'
 import { MatTableDataSource } from '@angular/material/table'
-import { Router } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { UserRoles } from '@core/enums/user-roles.enum'
 import { RoleStateService } from '@core/services/role-state.service'
@@ -48,10 +49,23 @@ export class UserListComponent implements OnInit {
 
   @ViewChild(MatSort)
   set sort(sort: MatSort | undefined) {
-    if (sort) this.dataSource.sort = sort
+    if (!sort) return
+    this.dataSource.sort = sort
+    if (this.ordenPedido) {
+      sort.active = this.ordenPedido.key
+      sort.direction = this.ordenPedido.dir
+      sort.sortChange.emit({ active: sort.active, direction: sort.direction })
+      this.ordenPedido = null
+    }
+    sort.sortChange.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.recordarVista())
   }
 
   private readonly roleState = inject(RoleStateService)
+  private readonly listState = inject(ListStateService)
+  private readonly route = inject(ActivatedRoute)
+
+  /** Clave con la que se recuerda la vista de este listado. */
+  private static readonly RUTA = '/dashboard/users'
 
   constructor(
     private usersService: UsersService,
@@ -87,7 +101,44 @@ export class UserListComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    /**
+     * Volviendo de una ficha manda lo recordado: al abrir un usuario Angular
+     * destruye este componente, y sin esto la vuelta dejaba el staff entero y
+     * sin filtro.
+     */
+    const guardado = this.listState.recuperarSiVuelve(UserListComponent.RUTA)
+    const params = this.route.snapshot.queryParamMap
+    this.searchTerm = String(guardado?.['q'] ?? params.get('q') ?? '')
+    const estado = String(guardado?.['estado'] ?? params.get('estado') ?? '')
+    if (estado === 'active' || estado === 'inactive') this.filterStatus = estado
+    this.ordenPedido = (() => {
+      const sort = String(guardado?.['sort'] ?? params.get('sort') ?? '')
+      const dir = String(guardado?.['dir'] ?? params.get('dir') ?? '')
+      return sort && (dir === 'asc' || dir === 'desc') ? { key: sort, dir } : null
+    })()
+
+    // Guardar lo restaurado, no solo leerlo: si nadie toca un filtro no habría
+    // nada en memoria, y al volver de una ficha —a la que se llega por la ruta
+    // pelada, sin parámetros— la pantalla aparecería sin filtro y en la página 1.
+    this.recordarVista()
+
     this.loadUsers()
+  }
+
+  /** Orden llegado de la URL o de la vuelta; se aplica cuando el ordenador existe. */
+  private ordenPedido: { key: string; dir: 'asc' | 'desc' } | null = null
+
+  /** Deja la vista en la URL y la recuerda para cuando se vuelva de una ficha. */
+  private recordarVista(): void {
+    const estado = {
+      q: this.searchTerm.trim() || undefined,
+      estado: this.filterStatus === 'all' ? undefined : this.filterStatus,
+      sort: this.dataSource.sort?.active || undefined,
+      dir: (this.dataSource.sort?.direction || undefined) as 'asc' | 'desc' | undefined,
+      page: (this.dataSource.paginator?.pageIndex ?? 0) + 1,
+    }
+    this.listState.guardar(UserListComponent.RUTA, estado)
+    this.listState.reflejarEnUrl(this.route, estado)
   }
 
 
@@ -121,10 +172,12 @@ export class UserListComponent implements OnInit {
   // Filtros
   setFilterStatus(status: 'all' | 'active' | 'inactive'): void {
     this.filterStatus = status
+    this.recordarVista()
     this.applyFilters()
   }
 
   applyFilter(): void {
+    this.recordarVista()
     this.applyFilters()
   }
 

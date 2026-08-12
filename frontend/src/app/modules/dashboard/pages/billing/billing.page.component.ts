@@ -4,6 +4,7 @@ import { PageEvent } from '@angular/material/paginator'
 import { Sort } from '@angular/material/sort'
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs'
 import { EstadoOrden, leerOrden } from '../../../../shared/utils/table-sort.util'
+import { ListStateService } from '../../../../shared/services/list-state.service'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
@@ -20,6 +21,10 @@ import { BillingStatistics, RecentInvoice } from './interfaces/billing-ui.interf
 })
 export class BillingPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef)
+  private readonly listState = inject(ListStateService)
+
+  /** Clave con la que se recuerda la vista de este listado. */
+  private static readonly RUTA = '/dashboard/billing'
 
   searchTerm = ''
   statistics: BillingStatistics | null = null
@@ -57,13 +62,15 @@ export class BillingPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.patientIdFilter = this.route.snapshot.queryParamMap.get('patientId')
+    this.restaurarVista()
 
     this.search$
       .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe(term => {
         this.searchTerm = term
         this.page = 0
-        this.loadInvoices()
+        this.recordarVista()
+    this.loadInvoices()
       })
 
     this.loadData()
@@ -73,22 +80,57 @@ export class BillingPageComponent implements OnInit {
     this.search$.next(term)
   }
 
+  /**
+   * Restaura la vista si se vuelve de una factura; si no, lee la URL. Al abrir
+   * una Angular destruye este componente, y sin esto la vuelta dejaba el
+   * listado entero en la página 1.
+   */
+  private restaurarVista(): void {
+    const guardado = this.listState.recuperarSiVuelve(BillingPageComponent.RUTA)
+    const params = this.route.snapshot.queryParamMap
+    this.searchTerm = String(guardado?.['q'] ?? params.get('q') ?? '')
+    this.page = Math.max(0, Number(guardado?.['page'] ?? params.get('page') ?? 1) - 1)
+    const sort = String(guardado?.['sort'] ?? params.get('sort') ?? '')
+    const dir = String(guardado?.['dir'] ?? params.get('dir') ?? '')
+    if (sort && (dir === 'asc' || dir === 'desc')) this.orden = { key: sort, dir }
+
+    // Guardar lo restaurado, no solo leerlo: si nadie toca un filtro no habría
+    // nada en memoria, y al volver de una ficha la pantalla —a la que se llega
+    // por su ruta pelada, sin parámetros— aparecería en la página 1 y sin orden.
+    this.recordarVista()
+  }
+
+  /** Deja la vista en la URL y la recuerda para cuando se vuelva de una factura. */
+  private recordarVista(): void {
+    const estado = {
+      q: this.searchTerm.trim() || undefined,
+      sort: this.orden.dir ? this.orden.key : undefined,
+      dir: this.orden.dir || undefined,
+      page: this.page + 1,
+    }
+    this.listState.guardar(BillingPageComponent.RUTA, estado)
+    this.listState.reflejarEnUrl(this.route, estado)
+  }
+
   onSort(sort: Sort): void {
     this.orden = leerOrden(sort)
     // A la primera página: quien reordena quiere ver lo que quedó arriba.
     this.page = 0
+    this.recordarVista()
     this.loadInvoices()
   }
 
   onPageChange(event: PageEvent): void {
     this.page = event.pageIndex
     this.pageSize = event.pageSize
+    this.recordarVista()
     this.loadInvoices()
   }
 
   clearSearch(): void {
     this.searchTerm = ''
     this.page = 0
+    this.recordarVista()
     this.loadInvoices()
   }
 

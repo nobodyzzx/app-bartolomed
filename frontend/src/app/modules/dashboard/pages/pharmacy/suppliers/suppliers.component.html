@@ -68,8 +68,8 @@
           placeholder="Nombre, contacto, email..."
           [value]="search()"
           [showClear]="!!(search() || statusFilter() !== 'all')"
-          (valueChange)="search.set($event)"
-          (cleared)="search.set(''); setStatusFilter('all')"
+          (valueChange)="setSearch($event)"
+          (cleared)="limpiar()"
           />
       </div>
 

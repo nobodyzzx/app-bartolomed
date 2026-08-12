@@ -1,11 +1,12 @@
 import { Location } from '@angular/common'
 import { Sort } from '@angular/material/sort'
 import { EstadoOrden, leerOrden } from '../../../../../shared/utils/table-sort.util'
+import { ListStateService } from '../../../../../shared/services/list-state.service'
 import { Component, DestroyRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormControl } from '@angular/forms'
 import { MatPaginator, PageEvent } from '@angular/material/paginator'
-import { Router } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { Subject } from 'rxjs'
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators'
 import { PAYMENT_METHODS } from '../../checkout/checkout.service'
@@ -23,6 +24,11 @@ type StatusFilter = 'all' | SaleStatus
 })
 export class SalesDispensingComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef)
+  private readonly listState = inject(ListStateService)
+  private readonly route = inject(ActivatedRoute)
+
+  /** Clave con la que se recuerda la vista de este listado. */
+  private static readonly RUTA = '/dashboard/pharmacy/sales-dispensing'
   private readonly destroy$ = new Subject<void>()
 
   @ViewChild(MatPaginator) paginator!: MatPaginator
@@ -56,12 +62,15 @@ export class SalesDispensingComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.restaurarVista()
+
     // El término se debouncea para no lanzar una consulta por tecla.
     this.search$
       .pipe(debounceTime(350), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(term => {
         this.searchTerm = term
         this.resetToFirstPage()
+        this.recordarVista()
         this.loadSales()
       })
 
@@ -126,16 +135,55 @@ export class SalesDispensingComponent implements OnInit, OnDestroy {
    */
   orden: EstadoOrden = { key: '', dir: '' }
 
+  /**
+   * Restaura la vista si se vuelve de una venta; si no, lee la URL. Al abrir
+   * una Angular destruye este componente, y sin esto la vuelta dejaba el
+   * listado entero en la página 1.
+   */
+  private restaurarVista(): void {
+    const guardado = this.listState.recuperarSiVuelve(SalesDispensingComponent.RUTA)
+    const params = this.route.snapshot.queryParamMap
+    this.searchTerm = String(guardado?.['q'] ?? params.get('q') ?? '')
+    const estado = String(guardado?.['estado'] ?? params.get('estado') ?? '')
+    if (estado) this.statFilter = estado as StatusFilter
+    this.paymentFilter = String(guardado?.['pago'] ?? params.get('pago') ?? '')
+    this.currentPage = Math.max(0, Number(guardado?.['page'] ?? params.get('page') ?? 1) - 1)
+    const sort = String(guardado?.['sort'] ?? params.get('sort') ?? '')
+    const dir = String(guardado?.['dir'] ?? params.get('dir') ?? '')
+    if (sort && (dir === 'asc' || dir === 'desc')) this.orden = { key: sort, dir }
+
+    // Guardar lo restaurado, no solo leerlo: si nadie toca un filtro no habría
+    // nada en memoria, y al volver de una ficha la pantalla —a la que se llega
+    // por su ruta pelada, sin parámetros— aparecería en la página 1 y sin orden.
+    this.recordarVista()
+  }
+
+  /** Deja la vista en la URL y la recuerda para cuando se vuelva de una venta. */
+  private recordarVista(): void {
+    const estado = {
+      q: this.searchTerm.trim() || undefined,
+      estado: this.statFilter === 'all' ? undefined : this.statFilter,
+      pago: this.paymentFilter || undefined,
+      sort: this.orden.dir ? this.orden.key : undefined,
+      dir: this.orden.dir || undefined,
+      page: this.currentPage + 1,
+    }
+    this.listState.guardar(SalesDispensingComponent.RUTA, estado)
+    this.listState.reflejarEnUrl(this.route, estado)
+  }
+
   onSort(sort: Sort): void {
     this.orden = leerOrden(sort)
     // A la primera página: quien reordena quiere ver lo que quedó arriba.
     this.currentPage = 0
+    this.recordarVista()
     this.loadSales()
   }
 
   onPageChange(event: PageEvent): void {
     this.currentPage = event.pageIndex
     this.pageSize = event.pageSize
+    this.recordarVista()
     this.loadSales()
   }
 
@@ -164,6 +212,7 @@ export class SalesDispensingComponent implements OnInit, OnDestroy {
 
   private onFilterChange(): void {
     this.resetToFirstPage()
+    this.recordarVista()
     this.loadSales()
   }
 

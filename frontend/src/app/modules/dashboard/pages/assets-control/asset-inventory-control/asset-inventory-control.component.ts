@@ -203,6 +203,11 @@ export class AssetInventoryControlComponent implements OnInit {
     this.searchTerm = String(guardado?.['q'] ?? params.get('q') ?? '')
     this.verDeBaja = String(guardado?.['baja'] ?? params.get('baja') ?? '') === '1'
 
+    // Guardar lo restaurado, no solo leerlo: si nadie toca un filtro no habría
+    // nada en memoria, y al volver de una ficha —a la que se llega por la ruta
+    // pelada, sin parámetros— la pantalla aparecería sin filtro y en la página 1.
+    this.recordarVista()
+
     this.loadAssets()
   }
 

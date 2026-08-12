@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { of } from 'rxjs'
+import { ListStateService } from '../../../../shared/services/list-state.service'
 import { AppointmentsPageComponent } from './appointments.page.component'
 import { Appointment, AppointmentsService, AppointmentStatus } from './services/appointments.service'
 import { createSpyObj, SpyObj } from '../../../../../testing/spy'
@@ -9,6 +10,7 @@ import { createSpyObj, SpyObj } from '../../../../../testing/spy'
 describe('AppointmentsPageComponent', () => {
   let component: AppointmentsPageComponent
   let appointmentsService: SpyObj<AppointmentsService>
+  let listState: SpyObj<ListStateService>
   let router: SpyObj<Router>
   let alert: SpyObj<AlertService>
 
@@ -27,6 +29,9 @@ describe('AppointmentsPageComponent', () => {
     TestBed.resetTestingModule()
     TestBed.configureTestingModule({
       providers: [
+        // Doble del recuerdo de la vista: aquí se prueba la pantalla, no el
+        // servicio, que tiene su propio spec.
+        { provide: ListStateService, useValue: listState },
         AppointmentsPageComponent,
         { provide: Router, useValue: router },
         { provide: AppointmentsService, useValue: appointmentsService },
@@ -48,6 +53,11 @@ describe('AppointmentsPageComponent', () => {
     ])
     router = createSpyObj('Router', ['navigate'])
     alert = createSpyObj('AlertService', ['fire'])
+    listState = createSpyObj<ListStateService>('ListStateService', [
+      'guardar', 'olvidar', 'recuperarSiVuelve', 'reflejarEnUrl', 'consumirEscrituraPropia',
+    ])
+    listState.recuperarSiVuelve.mockReturnValue(undefined)
+    listState.consumirEscrituraPropia.mockReturnValue(false)
   })
 
   describe('filtro por paciente (llegando desde "Accesos Rápidos" en la ficha del paciente)', () => {

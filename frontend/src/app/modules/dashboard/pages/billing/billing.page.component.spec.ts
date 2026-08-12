@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { of, throwError } from 'rxjs'
+import { ListStateService } from '../../../../shared/services/list-state.service'
 import { BillingPageComponent } from './billing.page.component'
 import { BillingService } from './billing.service'
 import { RecentInvoice } from './interfaces/billing-ui.interfaces'
@@ -14,6 +15,7 @@ describe('BillingPageComponent', () => {
   let alert: SpyObj<AlertService>
   let router: SpyObj<Router>
   let location: SpyObj<Location>
+  let listState: SpyObj<ListStateService>
 
   const makeInvoice = (overrides: Partial<RecentInvoice> = {}): RecentInvoice =>
     ({
@@ -39,6 +41,9 @@ describe('BillingPageComponent', () => {
           provide: ActivatedRoute,
           useValue: { snapshot: { queryParamMap: { get: (k: string) => (k === 'patientId' ? patientIdParam : null) } } },
         },
+        // Doble del recuerdo de la vista: aquí se prueba la pantalla, no el
+        // servicio, que tiene su propio spec.
+        { provide: ListStateService, useValue: listState },
       ],
     })
     return TestBed.inject(BillingPageComponent)
@@ -53,6 +58,11 @@ describe('BillingPageComponent', () => {
     alert = createSpyObj('AlertService', ['error', 'fire'])
     router = createSpyObj('Router', ['navigate'])
     location = createSpyObj('Location', ['back'])
+    listState = createSpyObj<ListStateService>('ListStateService', [
+      'guardar', 'olvidar', 'recuperarSiVuelve', 'reflejarEnUrl', 'consumirEscrituraPropia',
+    ])
+    listState.recuperarSiVuelve.mockReturnValue(undefined)
+    listState.consumirEscrituraPropia.mockReturnValue(false)
   })
 
   describe('loadData / ngOnInit', () => {

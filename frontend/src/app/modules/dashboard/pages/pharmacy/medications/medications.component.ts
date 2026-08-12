@@ -118,6 +118,11 @@ export class MedicationsComponent implements OnInit {
     const dir = String(guardado?.['dir'] ?? params.get('dir') ?? '')
     if (sort && (dir === 'asc' || dir === 'desc')) this.orden.set({ key: sort, dir })
 
+    // Guardar lo restaurado, no solo leerlo: si nadie toca un filtro no habría
+    // nada en memoria, y al volver de una ficha —a la que se llega por la ruta
+    // pelada, sin parámetros— la pantalla aparecería sin filtro y en la página 1.
+    this.recordarVista()
+
     this.loadMedications()
   }
 
