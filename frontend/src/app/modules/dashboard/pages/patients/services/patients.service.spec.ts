@@ -1,7 +1,7 @@
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing'
 import { TestBed } from '@angular/core/testing'
 import { environment } from '../../../../../environments/environments'
-import { CreatePatientDto, Gender } from '../interfaces'
+import { CreatePatientDto, Gender, Patient } from '../interfaces'
 import { PatientsService } from './patients.service'
 
 const BASE = `${environment.baseUrl}/patients`
@@ -132,5 +132,92 @@ describe('PatientsService', () => {
     const req = httpMock.expectOne(`${BASE}/patient-1`)
     expect(req.request.headers.get('Authorization')).toBe('Bearer null')
     req.flush({ id: 'patient-1' })
+  })
+})
+
+/**
+ * Paginando contra el servidor, ordenar por una cabecera solo reordenaba la
+ * página cargada: la lista parecía ordenada sin estarlo. El orden es de este
+ * lado porque el backend no lo admite, así que necesita el conjunto entero.
+ */
+describe('PatientsService · getAllPatients', () => {
+  let service: PatientsService
+  let httpMock: HttpTestingController
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [PatientsService],
+    })
+    service = TestBed.inject(PatientsService)
+    httpMock = TestBed.inject(HttpTestingController)
+  })
+
+  afterEach(() => httpMock.verify())
+
+  function pagina(desde: number, cuantos: number, total: number) {
+    return {
+      data: Array.from({ length: cuantos }, (_, i) => ({ id: `p-${desde + i}` }) as Patient),
+      total,
+      page: 1,
+      limit: 100,
+    }
+  }
+
+  it('pide páginas de 100 y no la de 25 que mostraba la tabla', () => {
+    service.getAllPatients().subscribe()
+
+    const req = httpMock.expectOne(r => r.url.endsWith('/patients'))
+    expect(req.request.params.get('limit')).toBe('100')
+    expect(req.request.params.get('page')).toBe('1')
+    req.flush(pagina(1, 100, 100))
+  })
+
+  it('junta todas las páginas en orden', () => {
+    let datos: Patient[] = []
+    service.getAllPatients().subscribe(r => { datos = r.data })
+
+    httpMock.expectOne(r => r.params.get('page') === '1').flush(pagina(1, 100, 230))
+    httpMock.expectOne(r => r.params.get('page') === '2').flush(pagina(101, 100, 230))
+    httpMock.expectOne(r => r.params.get('page') === '3').flush(pagina(201, 30, 230))
+
+    expect(datos.length).toBe(230)
+    expect(datos[0].id).toBe('p-1')
+    expect(datos[229].id).toBe('p-230')
+  })
+
+  it('con una sola página no dispara una segunda petición', () => {
+    service.getAllPatients().subscribe()
+
+    httpMock.expectOne(r => r.url.endsWith('/patients')).flush(pagina(1, 35, 35))
+
+    httpMock.verify()
+  })
+
+  it('arrastra el filtro de sexo a todas las páginas', () => {
+    service.getAllPatients(Gender.FEMALE).subscribe()
+
+    const primera = httpMock.expectOne(r => r.params.get('page') === '1')
+    expect(primera.request.params.get('gender')).toBe(Gender.FEMALE)
+    primera.flush(pagina(1, 100, 150))
+
+    const segunda = httpMock.expectOne(r => r.params.get('page') === '2')
+    expect(segunda.request.params.get('gender')).toBe(Gender.FEMALE)
+    segunda.flush(pagina(101, 50, 150))
+  })
+
+  /** El total sigue siendo el del servidor: es lo que permite avisar del recorte. */
+  it('no baja del tope de 20 páginas y conserva el total real', () => {
+    let datos: Patient[] = []
+    let total = 0
+    service.getAllPatients().subscribe(r => { datos = r.data; total = r.total })
+
+    httpMock.expectOne(r => r.params.get('page') === '1').flush(pagina(1, 100, 4000))
+    for (let p = 2; p <= 20; p++) {
+      httpMock.expectOne(r => r.params.get('page') === String(p)).flush(pagina((p - 1) * 100 + 1, 100, 4000))
+    }
+
+    expect(datos.length).toBe(2000)
+    expect(total).toBe(4000)
   })
 })

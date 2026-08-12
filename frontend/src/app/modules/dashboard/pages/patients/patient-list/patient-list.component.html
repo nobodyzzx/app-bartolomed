@@ -205,14 +205,22 @@
               <span class="font-semibold text-slate-700">{{ totalRecords }}</span>
               {{ totalRecords === 1 ? 'paciente' : 'pacientes' }}
               {{ activeGenderFilter || searchTerm ? 'encontrados' : 'en total' }}
+              <!-- Una lista recortada que no lo dice se lee como la lista entera. -->
+              @if (faltanPacientes) {
+                <span class="ml-2 inline-flex items-center gap-1 text-amber-700">
+                  <span class="material-symbols-outlined msz-16">warning</span>
+                  se cargaron {{ dataSource.data.length }}
+                </span>
+              }
             </span>
+            <!-- Sin `[length]` ni `(page)`: la tabla tiene todos los pacientes y
+                 el paginador va enganchado al dataSource. Con la paginación en
+                 el servidor, ordenar por una cabecera solo reordenaba la página
+                 cargada. -->
             <mat-paginator
-              [length]="totalRecords"
-              [pageSize]="pageSize"
               [pageSizeOptions]="[10, 25, 50]"
               showFirstLastButtons
               class="bg-transparent"
-              (page)="onPageChange($event)"
               />
           </div>
         </div>

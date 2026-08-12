@@ -67,7 +67,7 @@ describe('PatientListComponent', () => {
   beforeEach(() => {
     patientsService = createSpyObj('PatientsService', [
       'getPatientStatistics',
-      'findAll',
+      'getAllPatients',
       'searchPatients',
       'removePatient',
     ])
@@ -79,7 +79,7 @@ describe('PatientListComponent', () => {
     roles = [UserRoles.ADMIN]
 
     patientsService.getPatientStatistics.mockReturnValue(of(makeStats()))
-    patientsService.findAll.mockReturnValue(of({ data: [makePatient()], total: 1, page: 1, limit: 25 }))
+    patientsService.getAllPatients.mockReturnValue(of({ data: [makePatient()], total: 1, page: 1, limit: 100 }))
     patientsService.searchPatients.mockReturnValue(of([makePatient()]))
   })
 
@@ -89,7 +89,7 @@ describe('PatientListComponent', () => {
       component.ngOnInit()
 
       expect(component.statistics?.totalPatients).toBe(10)
-      expect(patientsService.findAll).toHaveBeenCalled()
+      expect(patientsService.getAllPatients).toHaveBeenCalled()
     })
 
     it('usa el término del query param q como searchTerm inicial', () => {
@@ -118,7 +118,7 @@ describe('PatientListComponent', () => {
       vi.useFakeTimers()
       component = createComponent()
       component.ngOnInit()
-      patientsService.findAll.mockClear()
+      patientsService.getAllPatients.mockClear()
       patientsService.searchPatients.mockClear()
     })
 
@@ -133,12 +133,10 @@ describe('PatientListComponent', () => {
       vi.advanceTimersByTime(150)
     })
 
-    it('dispara loadPatients y resetea a la primera página tras 350ms', () => {
-      component.currentPage = 2
+    it('dispara loadPatients tras 350ms', () => {
       component.applyFilter('juan')
       vi.advanceTimersByTime(350)
 
-      expect(component.currentPage).toBe(0)
       expect(patientsService.searchPatients).toHaveBeenCalledWith('juan')
     })
 
@@ -159,29 +157,32 @@ describe('PatientListComponent', () => {
       component = createComponent()
     })
 
-    it('con searchTerm vacío, usa findAll con paginación y filtro de género', () => {
-      component.currentPage = 1
-      component.pageSize = 10
+    /**
+     * Todos y no una página: el orden lo hace el navegador —el backend no lo
+     * admite— y ordenando solo la página cargada la lista parece ordenada sin
+     * estarlo.
+     */
+    it('con searchTerm vacío, pide todos los pacientes con el filtro de sexo', () => {
       component.activeGenderFilter = Gender.FEMALE
       component.searchTerm = ''
 
       component.loadPatients()
 
-      expect(patientsService.findAll).toHaveBeenCalledWith({ page: 2, limit: 10, gender: Gender.FEMALE })
+      expect(patientsService.getAllPatients).toHaveBeenCalledWith(Gender.FEMALE)
       expect(component.totalRecords).toBe(1)
       expect(component.isLoading).toBe(false)
     })
 
-    it('con searchTerm, usa searchPatients en vez de findAll', () => {
+    it('con searchTerm, usa searchPatients en vez del listado completo', () => {
       component.searchTerm = 'juan'
       component.loadPatients()
 
       expect(patientsService.searchPatients).toHaveBeenCalledWith('juan')
-      expect(patientsService.findAll).not.toHaveBeenCalled()
+      expect(patientsService.getAllPatients).not.toHaveBeenCalled()
     })
 
-    it('en error de findAll, apaga isLoading (la alerta la muestra el servicio)', () => {
-      patientsService.findAll.mockReturnValue(throwError(() => ({ message: 'caído' })))
+    it('en error de carga, apaga isLoading (la alerta la muestra el servicio)', () => {
+      patientsService.getAllPatients.mockReturnValue(throwError(() => ({ message: 'caído' })))
       component.searchTerm = ''
 
       component.loadPatients()
@@ -202,33 +203,38 @@ describe('PatientListComponent', () => {
   describe('paginación y filtros', () => {
     beforeEach(() => {
       component = createComponent()
-      patientsService.findAll.mockClear()
+      patientsService.getAllPatients.mockClear()
     })
 
-    it('onPageChange actualiza página/tamaño y recarga', () => {
-      component.onPageChange({ pageIndex: 2, pageSize: 50, length: 100 })
-      expect(component.currentPage).toBe(2)
-      expect(component.pageSize).toBe(50)
-      expect(patientsService.findAll).toHaveBeenCalled()
-    })
+    // El paginador ya no recarga del servidor: recorta en cliente sobre el
+    // conjunto entero, que es lo que permite ordenar de verdad.
 
-    it('clearFilters resetea término, filtro de género y página', () => {
+    it('clearFilters resetea término y filtro de sexo', () => {
       component.searchTerm = 'juan'
       component.activeGenderFilter = Gender.MALE
-      component.currentPage = 3
 
       component.clearFilters()
 
       expect(component.searchTerm).toBe('')
       expect(component.activeGenderFilter).toBeNull()
-      expect(component.currentPage).toBe(0)
     })
 
-    it('setGenderFilter aplica el filtro y resetea la página', () => {
-      component.currentPage = 3
+    it('setGenderFilter aplica el filtro y recarga', () => {
       component.setGenderFilter(Gender.FEMALE)
+
       expect(component.activeGenderFilter).toBe(Gender.FEMALE)
-      expect(component.currentPage).toBe(0)
+      expect(patientsService.getAllPatients).toHaveBeenCalledWith(Gender.FEMALE)
+    })
+
+    /** El tope de páginas del servicio puede dejar pacientes fuera; hay que decirlo. */
+    it('avisa cuando el total del servidor supera lo cargado', () => {
+      patientsService.getAllPatients.mockReturnValue(
+        of({ data: [makePatient()], total: 300, page: 1, limit: 100 }),
+      )
+
+      component.loadPatients()
+
+      expect(component.faltanPacientes).toBe(true)
     })
   })
 

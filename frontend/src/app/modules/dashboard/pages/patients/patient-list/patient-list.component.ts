@@ -1,7 +1,7 @@
 import { Location } from '@angular/common'
 import { Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
-import { MatPaginator, PageEvent } from '@angular/material/paginator'
+import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { MatTableDataSource } from '@angular/material/table'
 import { ordenarComoLasDemas } from '../../../../../shared/utils/table-sort.util'
@@ -33,19 +33,19 @@ export class PatientListComponent implements OnInit {
   searchTerm = ''
 
   /**
-   * El paginador no se engancha al `dataSource` a propósito: aquí se pagina
-   * contra el servidor (`onPageChange` recarga la página pedida), y dejar que
-   * además `MatTableDataSource` recorte en cliente partiría cada página otra
-   * vez. Se guarda solo para poder volver a la primera al filtrar.
-   */
-  @ViewChild(MatPaginator) paginator?: MatPaginator
-
-  /**
    * Por `set` y no por propiedad: la tabla vive dentro de un `@if` que solo
-   * aparece cuando ya hay filas, así que en `ngAfterViewInit` el ordenador
-   * todavía no existe. Asignándolo allí quedaba en `undefined` para siempre y
-   * las cabeceras no ordenaban nada.
+   * aparece cuando ya hay filas, así que en `ngAfterViewInit` el paginador y el
+   * ordenador todavía no existen. Asignándolos allí quedaban en `undefined`
+   * para siempre y las cabeceras no ordenaban nada.
    */
+  @ViewChild(MatPaginator)
+  set paginatorRef(paginator: MatPaginator | undefined) {
+    this.paginator = paginator
+    if (paginator) this.dataSource.paginator = paginator
+  }
+
+  paginator?: MatPaginator
+
   @ViewChild(MatSort)
   set sort(sort: MatSort | undefined) {
     if (sort) this.dataSource.sort = sort
@@ -53,8 +53,6 @@ export class PatientListComponent implements OnInit {
 
   readonly Gender = Gender
   totalRecords = 0
-  pageSize = 25
-  currentPage = 0
   activeGenderFilter: Gender | null = null
   statistics: PatientStatistics | null = null
 
@@ -98,7 +96,6 @@ export class PatientListComponent implements OnInit {
       distinctUntilChanged(),
       takeUntilDestroyed(this.destroyRef),
     ).subscribe(() => {
-      this.currentPage = 0
       if (this.paginator) this.paginator.firstPage()
       this.loadPatients()
     })
@@ -117,6 +114,15 @@ export class PatientListComponent implements OnInit {
     })
   }
 
+  /**
+   * Se traen todos los pacientes y la tabla ordena y pagina en el navegador.
+   *
+   * Antes se pedía una página al servidor y el orden era de este lado, así que
+   * ordenar por una cabecera solo reordenaba los 25 cargados: los demás
+   * quedaban fuera del orden y la lista parecía ordenada sin estarlo. El
+   * backend no admite ordenar, de modo que o el orden ve el conjunto entero o
+   * engaña.
+   */
   loadPatients(): void {
     this.isLoading = true
 
@@ -132,27 +138,26 @@ export class PatientListComponent implements OnInit {
         },
       })
     } else {
-      this.patientsService.findAll({
-        page: this.currentPage + 1,
-        limit: this.pageSize,
-        gender: this.activeGenderFilter ?? undefined,
-      }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: result => {
-          this.dataSource.data = result.data
-          this.totalRecords = result.total
-          this.isLoading = false
-        },
-        error: () => {
-          this.isLoading = false
-        },
-      })
+      this.patientsService.getAllPatients(this.activeGenderFilter ?? undefined)
+        .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+          next: result => {
+            this.dataSource.data = result.data
+            this.totalRecords = result.total
+            this.isLoading = false
+          },
+          error: () => {
+            this.isLoading = false
+          },
+        })
     }
   }
 
-  onPageChange(event: PageEvent): void {
-    this.currentPage = event.pageIndex
-    this.pageSize = event.pageSize
-    this.loadPatients()
+  /**
+   * El tope de páginas del servicio dejó pacientes fuera. Se avisa: una lista
+   * recortada que no lo dice se lee como la lista entera.
+   */
+  get faltanPacientes(): boolean {
+    return this.totalRecords > this.dataSource.data.length
   }
 
   applyFilter(value: string): void {
@@ -163,14 +168,12 @@ export class PatientListComponent implements OnInit {
   clearFilters(): void {
     this.searchTerm = ''
     this.activeGenderFilter = null
-    this.currentPage = 0
     if (this.paginator) this.paginator.firstPage()
     this.loadPatients()
   }
 
   setGenderFilter(gender: Gender | null): void {
     this.activeGenderFilter = gender
-    this.currentPage = 0
     if (this.paginator) this.paginator.firstPage()
     this.loadPatients()
   }

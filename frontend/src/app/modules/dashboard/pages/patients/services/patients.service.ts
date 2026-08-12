@@ -1,8 +1,8 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http'
 import { Injectable } from '@angular/core'
 import { AlertService } from '@core/services/alert.service'
-import { Observable, throwError } from 'rxjs'
-import { catchError, tap } from 'rxjs/operators'
+import { forkJoin, Observable, of, throwError } from 'rxjs'
+import { catchError, map, switchMap, tap } from 'rxjs/operators'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
 import { environment } from '../../../../../environments/environments'
 import {
@@ -44,6 +44,44 @@ export class PatientsService {
     return this.http
       .get<PaginatedResult<Patient>>(this.baseUrl, { params, headers: this.getHeaders() })
       .pipe(catchError(error => { this.errorService.handleError(error); return throwError(() => error) }))
+  }
+
+  /**
+   * Todos los pacientes de la clínica, para que el listado ordene y pagine en
+   * el navegador sobre el conjunto entero.
+   *
+   * Paginando contra el servidor, ordenar por una cabecera solo reordenaba la
+   * página cargada: con 35 pacientes y páginas de 25, pulsar "Paciente" dejaba
+   * los otros 10 fuera del orden y la lista parecía ordenada sin estarlo. El
+   * backend no admite ordenar —no hay `sort` ni `orderBy` en su controlador ni
+   * en su servicio—, así que el orden tiene que ser de este lado y necesita
+   * tener delante todos los pacientes.
+   *
+   * Mismo criterio que activos e historias clínicas: primera página, se calcula
+   * cuántas faltan y se traen en paralelo.
+   */
+  getAllPatients(gender?: Gender): Observable<PaginatedResult<Patient>> {
+    const TAM = 100
+    // Tope de seguridad: una clínica con decenas de miles de pacientes es
+    // preferible verla recortada a disparar cientos de peticiones. `total`
+    // sigue siendo el del servidor, y con eso la pantalla puede avisar.
+    const MAX_PAGINAS = 20
+
+    return this.findAll({ page: 1, limit: TAM, gender }).pipe(
+      switchMap(primera => {
+        const paginas = Math.min(Math.ceil((primera.total ?? 0) / TAM), MAX_PAGINAS)
+        if (paginas <= 1) return of(primera)
+        const resto = Array.from({ length: paginas - 1 }, (_, i) =>
+          this.findAll({ page: i + 2, limit: TAM, gender }),
+        )
+        return forkJoin(resto).pipe(
+          map(rs => ({
+            ...primera,
+            data: [primera.data, ...rs.map(r => r.data)].flat(),
+          })),
+        )
+      }),
+    )
   }
 
   /** Sin catchError: patient-form.component.ts distingue 404 (paciente no encontrado) de otros errores para decidir el mensaje y la navegación. */
