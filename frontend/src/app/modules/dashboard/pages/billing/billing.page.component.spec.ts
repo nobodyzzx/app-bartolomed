@@ -69,7 +69,7 @@ describe('BillingPageComponent', () => {
 
       expect(component.statistics?.totalInvoices).toBe(10)
       expect(component.isLoading).toBe(false)
-      expect(component.recentInvoices.length).toBe(5)
+      expect(component.invoices.length).toBe(8)
     })
 
     it('en error de estadísticas, muestra alerta e inicializa con ceros', () => {
@@ -91,15 +91,15 @@ describe('BillingPageComponent', () => {
       })
     })
 
-    it('en error de facturas recientes, muestra alerta y deja el arreglo vacío', () => {
+    it('en error de facturas, muestra alerta y deja el arreglo vacío', () => {
       billingService.getStatistics.mockReturnValue(of({} as any))
       billingService.listInvoices.mockReturnValue(throwError(() => ({})))
 
       component = createComponent()
       component.ngOnInit()
 
-      expect(alert.error).toHaveBeenCalledWith('Error al cargar facturas recientes', 'Inténtalo de nuevo')
-      expect(component.recentInvoices).toEqual([])
+      expect(alert.error).toHaveBeenCalledWith('Error al cargar facturas', 'Inténtalo de nuevo')
+      expect(component.invoices).toEqual([])
     })
 
     it('trata response.items ausente como arreglo vacío', () => {
@@ -109,7 +109,7 @@ describe('BillingPageComponent', () => {
       component = createComponent()
       component.ngOnInit()
 
-      expect(component.recentInvoices).toEqual([])
+      expect(component.invoices).toEqual([])
     })
   })
 
@@ -179,27 +179,70 @@ describe('BillingPageComponent', () => {
     })
   })
 
-  describe('performSearch', () => {
+  /**
+   * El buscador estaba puesto y no filtraba nada: la plantilla solo escribía
+   * `searchTerm`, y `performSearch()` —que ni siquiera estaba enlazado— abría
+   * un aviso de "funcionalidad en desarrollo". Escribir no hacía nada.
+   */
+  describe('búsqueda', () => {
     beforeEach(() => {
       billingService.getStatistics.mockReturnValue(of({} as any))
-      billingService.listInvoices.mockReturnValue(of({ items: [] }))
+      billingService.listInvoices.mockReturnValue(of({ items: [], total: 0 }))
       component = createComponent()
+      component.ngOnInit()
+      billingService.listInvoices.mockClear()
     })
 
-    it('no dispara alerta si el término está vacío o son solo espacios', () => {
-      component.searchTerm = '   '
-      component.performSearch()
+    it('el término va a la consulta, no a un aviso', () => {
+      vi.useFakeTimers()
+      component.onSearch('  juan  ')
+      vi.advanceTimersByTime(300)
+
+      expect(billingService.listInvoices).toHaveBeenCalledWith(1, 25, { search: 'juan' })
       expect(alert.fire).not.toHaveBeenCalled()
+      vi.useRealTimers()
     })
 
-    it('dispara la alerta informativa con el término recortado', () => {
-      component.searchTerm = '  juan  '
-      component.performSearch()
-      expect(alert.fire).toHaveBeenCalledWith({
-        icon: 'info',
-        title: 'Búsqueda',
-        text: 'Buscando: "juan". Funcionalidad en desarrollo.',
+    it('vuelve a la primera página al buscar', () => {
+      vi.useFakeTimers()
+      component.onPageChange({ pageIndex: 3, pageSize: 25, length: 200 })
+      billingService.listInvoices.mockClear()
+
+      component.onSearch('ana')
+      vi.advanceTimersByTime(300)
+
+      expect(component.page).toBe(0)
+      expect(billingService.listInvoices).toHaveBeenCalledWith(1, 25, { search: 'ana' })
+      vi.useRealTimers()
+    })
+  })
+
+  /**
+   * El orden va al servidor: la pantalla recibe una página, y ordenar aquí
+   * reordenaría el recorte haciéndolo pasar por la lista entera.
+   */
+  describe('orden', () => {
+    beforeEach(() => {
+      billingService.getStatistics.mockReturnValue(of({} as any))
+      billingService.listInvoices.mockReturnValue(of({ items: [], total: 0 }))
+      component = createComponent()
+      component.ngOnInit()
+      billingService.listInvoices.mockClear()
+    })
+
+    it('manda la columna y el sentido a la consulta', () => {
+      component.onSort({ active: 'totalAmount', direction: 'asc' })
+
+      expect(billingService.listInvoices).toHaveBeenCalledWith(1, 25, {
+        sortBy: 'totalAmount',
+        sortDir: 'ASC',
       })
+    })
+
+    it('sin sentido de orden no manda nada: decide el backend', () => {
+      component.onSort({ active: 'totalAmount', direction: '' })
+
+      expect(billingService.listInvoices).toHaveBeenCalledWith(1, 25, {})
     })
   })
 
@@ -208,26 +251,26 @@ describe('BillingPageComponent', () => {
       billingService.getStatistics.mockReturnValue(of({} as any))
     })
 
-    it('sin patientId en la URL, pide solo las 5 recientes sin filtro', () => {
-      billingService.listInvoices.mockReturnValue(of({ items: [] }))
+    it('sin patientId en la URL, pide la primera página sin filtro', () => {
+      billingService.listInvoices.mockReturnValue(of({ items: [], total: 0 }))
       component = createComponent(null)
 
       component.ngOnInit()
 
-      expect(billingService.listInvoices).toHaveBeenCalledWith(1, 5, {})
+      expect(billingService.listInvoices).toHaveBeenCalledWith(1, 25, {})
       expect(component.patientIdFilter).toBeNull()
     })
 
-    it('con patientId en la URL, pide TODAS las facturas de ese paciente (no solo 5)', () => {
+    it('con patientId en la URL, arrastra el filtro a la consulta', () => {
       billingService.listInvoices.mockReturnValue(
-        of({ items: Array.from({ length: 8 }, (_, i) => makeInvoice({ id: `inv-${i}` })) }),
+        of({ items: Array.from({ length: 8 }, (_, i) => makeInvoice({ id: `inv-${i}` })), total: 8 }),
       )
       component = createComponent('patient-1')
 
       component.ngOnInit()
 
-      expect(billingService.listInvoices).toHaveBeenCalledWith(1, 100, { patientId: 'patient-1' })
-      expect(component.recentInvoices.length).toBe(8)
+      expect(billingService.listInvoices).toHaveBeenCalledWith(1, 25, { patientId: 'patient-1' })
+      expect(component.invoices.length).toBe(8)
     })
 
     it('deriva el nombre del paciente filtrado de la primera factura recibida', () => {
@@ -250,7 +293,7 @@ describe('BillingPageComponent', () => {
 
       expect(component.patientIdFilter).toBeNull()
       expect(component.patientNameFilter).toBeNull()
-      expect(billingService.listInvoices).toHaveBeenCalledWith(1, 5, {})
+      expect(billingService.listInvoices).toHaveBeenCalledWith(1, 25, {})
       expect(router.navigate).toHaveBeenCalledWith([], { queryParams: {} })
     })
   })

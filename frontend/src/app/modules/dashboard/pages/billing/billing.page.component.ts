@@ -1,5 +1,9 @@
 import { Location } from '@angular/common'
 import { Component, DestroyRef, inject, OnInit } from '@angular/core'
+import { PageEvent } from '@angular/material/paginator'
+import { Sort } from '@angular/material/sort'
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs'
+import { EstadoOrden, leerOrden } from '../../../../shared/utils/table-sort.util'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
@@ -19,9 +23,25 @@ export class BillingPageComponent implements OnInit {
 
   searchTerm = ''
   statistics: BillingStatistics | null = null
-  recentInvoices: RecentInvoice[] = []
+  /**
+   * Las facturas que la tabla muestra. Se llamaba `recentInvoices` y traía las
+   * cinco últimas: encima de un buscador que no filtraba nada y sin paginador,
+   * la pantalla enseñaba 5 de N haciéndolas pasar por la lista. Ahora es la
+   * lista, con búsqueda, orden y paginación resueltos en el servidor.
+   */
+  invoices: RecentInvoice[] = []
   isLoading = false
   displayedColumns: string[] = ['number', 'patient', 'date', 'amount', 'status', 'actions']
+
+  totalRecords = 0
+  page = 0
+  pageSize = 25
+
+  /** Columna elegida en la cabecera. El orden lo resuelve el backend. */
+  orden: EstadoOrden = { key: '', dir: '' }
+
+  /** La búsqueda pega al servidor, así que se espera a que se deje de teclear. */
+  private readonly search$ = new Subject<string>()
 
   // Filtro por paciente (llegando desde "Accesos Rápidos" en la ficha del paciente)
   patientIdFilter: string | null = null
@@ -37,7 +57,39 @@ export class BillingPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.patientIdFilter = this.route.snapshot.queryParamMap.get('patientId')
+
+    this.search$
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe(term => {
+        this.searchTerm = term
+        this.page = 0
+        this.loadInvoices()
+      })
+
     this.loadData()
+  }
+
+  onSearch(term: string): void {
+    this.search$.next(term)
+  }
+
+  onSort(sort: Sort): void {
+    this.orden = leerOrden(sort)
+    // A la primera página: quien reordena quiere ver lo que quedó arriba.
+    this.page = 0
+    this.loadInvoices()
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.page = event.pageIndex
+    this.pageSize = event.pageSize
+    this.loadInvoices()
+  }
+
+  clearSearch(): void {
+    this.searchTerm = ''
+    this.page = 0
+    this.loadInvoices()
   }
 
   loadData(): void {
@@ -64,26 +116,39 @@ export class BillingPageComponent implements OnInit {
       },
     })
 
-    // Facturas: "recientes" (top 5) en la vista general, o TODAS las del paciente cuando
-    // se llega filtrado desde "Accesos Rápidos" en su ficha.
-    const filter = this.patientIdFilter ? { patientId: this.patientIdFilter } : {}
-    const pageSize = this.patientIdFilter ? 100 : 5
-    this.billingService.listInvoices(1, pageSize, filter).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (response: any) => {
-        const invoices = response.items || []
-        this.recentInvoices = this.patientIdFilter ? invoices : invoices.slice(0, 5)
-        this.patientNameFilter = this.patientIdFilter && invoices[0]
-          ? `${invoices[0].patient?.firstName ?? ''} ${invoices[0].patient?.lastName ?? ''}`.trim()
-          : null
-      },
-      error: error => {
-        this.alert.error(
-          'Error al cargar facturas recientes',
-          error?.message || 'Inténtalo de nuevo',
-        )
-        this.recentInvoices = []
-      },
-    })
+    this.loadInvoices()
+  }
+
+  /**
+   * Búsqueda, orden y paginación se resuelven en el servidor. En el navegador
+   * solo alcanzarían a la página cargada: buscar una factura de la página 3
+   * devolvería "sin resultados" aunque exista, y ordenar reordenaría un recorte
+   * haciéndolo pasar por la lista entera.
+   */
+  loadInvoices(): void {
+    const filter: Record<string, string> = {}
+    if (this.patientIdFilter) filter['patientId'] = this.patientIdFilter
+    if (this.searchTerm.trim()) filter['search'] = this.searchTerm.trim()
+    if (this.orden.dir) {
+      filter['sortBy'] = this.orden.key
+      filter['sortDir'] = this.orden.dir === 'asc' ? 'ASC' : 'DESC'
+    }
+
+    this.billingService.listInvoices(this.page + 1, this.pageSize, filter)
+      .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: (response: any) => {
+          this.invoices = response.items || []
+          this.totalRecords = response.total ?? this.invoices.length
+          this.patientNameFilter = this.patientIdFilter && this.invoices[0]
+            ? `${this.invoices[0].patient?.firstName ?? ''} ${this.invoices[0].patient?.lastName ?? ''}`.trim()
+            : null
+        },
+        error: error => {
+          this.alert.error('Error al cargar facturas', error?.message || 'Inténtalo de nuevo')
+          this.invoices = []
+          this.totalRecords = 0
+        },
+      })
   }
 
   clearPatientFilter(): void {
@@ -190,14 +255,4 @@ export class BillingPageComponent implements OnInit {
     this.location.back()
   }
 
-  performSearch(): void {
-    const term = this.searchTerm?.trim()
-    if (!term) return
-    // Futuro: filtrar facturas; por ahora navega a lista con query param
-    this.alert.fire({
-      icon: 'info',
-      title: 'Búsqueda',
-      text: `Buscando: "${term}". Funcionalidad en desarrollo.`,
-    })
-  }
 }

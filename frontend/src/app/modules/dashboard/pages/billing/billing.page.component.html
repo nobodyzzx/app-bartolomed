@@ -48,16 +48,16 @@
           placeholder="Número de factura, paciente..."
           [value]="searchTerm"
           [showClear]="!!searchTerm"
-          (valueChange)="searchTerm = $event"
-          (cleared)="searchTerm = ''"
+          (valueChange)="onSearch($event)"
+          (cleared)="clearSearch()"
           />
       </div>
 
-      @if (isLoading && recentInvoices.length === 0) {
+      @if (isLoading && invoices.length === 0) {
         <app-skeleton-table [rows]="5" [columns]="4" />
       }
 
-      @if (!isLoading && recentInvoices.length === 0) {
+      @if (!isLoading && invoices.length === 0) {
         <app-empty-state
           icon="receipt_long"
           title="No hay facturas registradas"
@@ -67,11 +67,13 @@
           />
       }
 
-      @if (recentInvoices.length > 0) {
+      @if (invoices.length > 0) {
         <div class="overflow-x-auto">
-          <table mat-table [dataSource]="recentInvoices" class="w-full bg-transparent">
+          <table mat-table [dataSource]="invoices" matSort
+            [matSortActive]="orden.key" [matSortDirection]="orden.dir"
+            (matSortChange)="onSort($event)" class="w-full bg-transparent">
             <ng-container matColumnDef="number">
-              <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header="invoiceNumber" class="bg-slate-100 px-6 py-4">
                 <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Número</span>
               </th>
               <td mat-cell *matCellDef="let invoice" class="px-6 py-4 font-medium text-slate-900">
@@ -79,7 +81,7 @@
               </td>
             </ng-container>
             <ng-container matColumnDef="patient">
-              <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header="patient" class="bg-slate-100 px-6 py-4">
                 <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Paciente</span>
               </th>
               <td mat-cell *matCellDef="let invoice" class="px-6 py-4 text-slate-900">
@@ -87,7 +89,7 @@
               </td>
             </ng-container>
             <ng-container matColumnDef="date">
-              <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header="issueDate" class="bg-slate-100 px-6 py-4">
                 <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Fecha</span>
               </th>
               <td mat-cell *matCellDef="let invoice" class="px-6 py-4 text-slate-600 text-sm">
@@ -95,7 +97,7 @@
               </td>
             </ng-container>
             <ng-container matColumnDef="amount">
-              <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header="totalAmount" class="bg-slate-100 px-6 py-4">
                 <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Monto</span>
               </th>
               <td mat-cell *matCellDef="let invoice" class="px-6 py-4 font-semibold text-slate-900">
@@ -103,7 +105,7 @@
               </td>
             </ng-container>
             <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef class="bg-slate-100 px-6 py-4">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header="status" class="bg-slate-100 px-6 py-4">
                 <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Estado</span>
               </th>
               <td mat-cell *matCellDef="let invoice" class="px-6 py-4">
@@ -145,6 +147,24 @@
               (click)="viewInvoice(row)"
             class="table-row-hover"></tr>
           </table>
+        </div>
+        <!-- La pantalla no tenía paginador y enseñaba solo las 5 últimas
+             facturas: el resto no se alcanzaba desde ningún sitio. -->
+        <div class="table-footer">
+          <span class="text-sm text-slate-500">
+            <span class="font-semibold text-slate-700">{{ totalRecords }}</span>
+            {{ totalRecords === 1 ? 'factura' : 'facturas' }}
+            {{ searchTerm || patientIdFilter ? (totalRecords === 1 ? 'encontrada' : 'encontradas') : 'en total' }}
+          </span>
+          <mat-paginator
+            [length]="totalRecords"
+            [pageSize]="pageSize"
+            [pageIndex]="page"
+            [pageSizeOptions]="[10, 25, 50]"
+            showFirstLastButtons
+            class="bg-transparent"
+            (page)="onPageChange($event)"
+            />
         </div>
       }
     </div>

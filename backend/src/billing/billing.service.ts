@@ -125,9 +125,28 @@ export class BillingService {
     });
   }
 
+  /**
+   * Columnas por las que se puede ordenar el listado de facturas. Son las que
+   * la tabla enseña. El paciente ordena por apellido, que es como se busca a
+   * alguien en una lista.
+   */
+  private static readonly COLUMNAS_ORDENABLES: Record<string, string> = {
+    invoiceNumber: 'invoice.invoiceNumber',
+    issueDate: 'invoice.issueDate',
+    totalAmount: 'invoice.totalAmount',
+    status: 'invoice.status',
+    patient: 'patient.lastName',
+  };
+
   async findAll(page = 1, pageSize = 20, filter: any = {}, clinicId?: string) {
     if (!clinicId) throw new BadRequestException('clinicId is required');
     const skip = (page - 1) * pageSize;
+
+    // Lista blanca y no el texto que llegue: `orderBy()` interpola el nombre de
+    // columna sin parametrizar, así que aceptarlo tal cual sería una inyección.
+    const columna = BillingService.COLUMNAS_ORDENABLES[filter.sortBy as string] ?? 'invoice.createdAt';
+    const sentido = filter.sortDir === 'ASC' ? 'ASC' : 'DESC';
+
     const qb = this.invoiceRepository
       .createQueryBuilder('invoice')
       .leftJoinAndSelect('invoice.patient', 'patient')
@@ -135,7 +154,10 @@ export class BillingService {
       .leftJoinAndSelect('invoice.items', 'items')
       .leftJoinAndSelect('invoice.payments', 'payments')
       .where('clinic.id = :clinicId', { clinicId })
-      .orderBy('invoice.createdAt', 'DESC')
+      .orderBy(columna, sentido)
+      // Desempate estable: sin él, dos facturas del mismo día pueden cambiar de
+      // sitio entre página y página, repetirse o desaparecer al avanzar.
+      .addOrderBy('invoice.id', 'DESC')
       .skip(skip)
       .take(pageSize);
 
