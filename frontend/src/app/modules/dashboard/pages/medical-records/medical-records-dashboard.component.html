@@ -201,6 +201,13 @@
             <span class="text-sm text-slate-500">
               Mostrando <span class="font-semibold text-slate-700">{{ dataSource.filteredData.length }}</span> de
               <span class="font-semibold text-slate-700">{{ totalRecords }}</span> expedientes
+              <!-- Una lista recortada que no lo dice se lee como la lista entera. -->
+              @if (faltanRegistros) {
+                <span class="ml-2 inline-flex items-center gap-1 text-amber-700">
+                  <span class="material-symbols-outlined msz-16">warning</span>
+                  se cargaron los {{ dataSource.data.length }} más recientes
+                </span>
+              }
             </span>
             <mat-paginator [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons
               aria-label="Seleccionar página" class="bg-transparent border-0" />

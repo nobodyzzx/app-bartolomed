@@ -1,8 +1,8 @@
 import { HttpClient, HttpParams } from '@angular/common/http'
 import { Injectable } from '@angular/core'
 import { AlertService } from '@core/services/alert.service'
-import { Observable, throwError } from 'rxjs'
-import { catchError, tap } from 'rxjs/operators'
+import { forkJoin, Observable, of, throwError } from 'rxjs'
+import { catchError, map, switchMap, tap } from 'rxjs/operators'
 import { ErrorService } from '../../../../../shared/components/services/error.service'
 import { environment } from '../../../../../environments/environments'
 import {
@@ -31,6 +31,8 @@ export class MedicalRecordsService {
   // CRUD Operations para Medical Records
   getMedicalRecords(
     filters?: MedicalRecordFilters,
+    page?: number,
+    limit?: number,
   ): Observable<{ data: MedicalRecord[]; total: number }> {
     let params = new HttpParams()
 
@@ -43,9 +45,47 @@ export class MedicalRecordsService {
       })
     }
 
+    // Sin esto el backend aplica su `limit = 10` por defecto. La pantalla del
+    // listado filtra, ordena y pagina en cliente sobre lo que reciba, así que
+    // pedir una sola página dejaba el resto del expediente inalcanzable
+    // mientras el contador seguía anunciando el total real.
+    if (page !== undefined) params = params.set('page', String(page))
+    if (limit !== undefined) params = params.set('limit', String(limit))
+
     return this.http
       .get<{ data: MedicalRecord[]; total: number }>(this.apiUrl, { params })
       .pipe(catchError(error => { this.errorService.handleError(error); return throwError(() => error) }))
+  }
+
+  /**
+   * Todos los expedientes que la pantalla del listado necesita para filtrar,
+   * ordenar y paginar en cliente. Mismo criterio que el inventario de activos:
+   * se pide la primera página, se calcula cuántas faltan y se traen en paralelo.
+   */
+  getAllMedicalRecords(
+    filters?: MedicalRecordFilters,
+  ): Observable<{ data: MedicalRecord[]; total: number }> {
+    const TAM = 100
+    // Tope de seguridad: un historial de decenas de miles es preferible verlo
+    // recortado a disparar cientos de peticiones. `total` sigue siendo el real,
+    // así que la pantalla puede avisar de que no los tiene todos.
+    const MAX_PAGINAS = 20
+
+    return this.getMedicalRecords(filters, 1, TAM).pipe(
+      switchMap(primera => {
+        const paginas = Math.min(Math.ceil((primera.total ?? 0) / TAM), MAX_PAGINAS)
+        if (paginas <= 1) return of(primera)
+        const resto = Array.from({ length: paginas - 1 }, (_, i) =>
+          this.getMedicalRecords(filters, i + 2, TAM),
+        )
+        return forkJoin(resto).pipe(
+          map(rs => ({
+            data: [primera.data, ...rs.map(r => r.data)].flat(),
+            total: primera.total,
+          })),
+        )
+      }),
+    )
   }
 
   getMedicalRecordById(id: string): Observable<MedicalRecord> {

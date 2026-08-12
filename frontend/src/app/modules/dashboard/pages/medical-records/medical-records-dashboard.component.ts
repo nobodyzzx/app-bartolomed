@@ -79,9 +79,15 @@ export class MedicalRecordsDashboardComponent implements OnInit {
     if (this.canWriteRecords) this.loadStats()
   }
 
+  /**
+   * `getAllMedicalRecords` y no `getMedicalRecords`: este último trae la
+   * primera página que decida el backend —diez— y esta pantalla busca, ordena
+   * y pagina en cliente sobre lo que reciba. El resto del historial quedaba
+   * inalcanzable mientras el contador anunciaba el total de verdad.
+   */
   loadMedicalRecords(): void {
     this.loading = true
-    this.medicalRecordsService.getMedicalRecords(this.filters).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.medicalRecordsService.getAllMedicalRecords(this.filters).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: response => {
         this.dataSource.data = response.data
         this.totalRecords = response.total
@@ -105,6 +111,15 @@ export class MedicalRecordsDashboardComponent implements OnInit {
       },
       error: () => {},
     })
+  }
+
+  /**
+   * El tope de páginas del servicio dejó expedientes fuera. Hay que decirlo:
+   * una lista recortada que no avisa se lee como la lista entera, y en un
+   * historial clínico eso es peor que no mostrarla.
+   */
+  get faltanRegistros(): boolean {
+    return this.totalRecords > this.dataSource.data.length
   }
 
   applyFilter(value: string): void {
