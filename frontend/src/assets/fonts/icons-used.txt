@@ -10,6 +10,7 @@ air
 alternate_email
 analytics
 apartment
+archive
 arrow_back
 arrow_forward
 arrow_right

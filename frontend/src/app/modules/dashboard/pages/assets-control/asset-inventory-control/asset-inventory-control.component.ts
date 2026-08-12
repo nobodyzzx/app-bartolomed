@@ -48,7 +48,20 @@ export class AssetInventoryControlComponent implements OnInit {
     if (sort) this.dataSource.sort = sort
   }
 
+  /** Lo que está en el piso. Es el inventario: lo que hay, dónde y cuánto. */
   assets: BaseAsset[] = []
+
+  /**
+   * Lo retirado, vendido o perdido. Fuera de la tabla y fuera de los totales:
+   * contar un timbre que nadie encuentra entre las existencias es lo que hace
+   * que un inventario deje de servir. La hoja de conteo ya los excluía —esto
+   * alinea la pantalla con lo que el módulo ya daba por cierto.
+   *
+   * Siguen alcanzables desde el enlace del buscador, porque un ítem perdido
+   * puede aparecer y alguien tiene que poder devolverlo al inventario.
+   */
+  deBaja: BaseAsset[] = []
+  verDeBaja = false
 
   /**
    * Las tres preguntas que responde el inventario, más "todo". Y no los estados
@@ -68,20 +81,32 @@ export class AssetInventoryControlComponent implements OnInit {
     // camilla en condición crítica figuraba en las dos, y entre las tres
     // tarjetas salían más ítems de los que hay.
     enUso: a => a.status === AssetStatus.ACTIVE && !this.inservible(a),
-    porConfirmar: a => a.status === AssetStatus.INACTIVE,
+    // También excluye lo inservible: si está gastado da igual que nunca se haya
+    // registrado su entrega, lo que toca es reponerlo, no confirmarlo.
+    porConfirmar: a => a.status === AssetStatus.INACTIVE && !this.inservible(a),
     enDesuso: a => this.inservible(a),
   }
 
   /**
-   * Está pero no sirve. Son dos cosas distintas en la ficha —el estado "dañado"
-   * y una condición mala— y para quien recorre los ambientes es la misma: hay
-   * que reponerlo.
+   * Está pero no sirve. Son varias cosas distintas en la ficha —el estado
+   * "dañado", el estado "en mantenimiento" y una condición mala— y para quien
+   * recorre los ambientes son la misma: hoy no se puede usar.
    */
   private inservible(a: BaseAsset): boolean {
     return (
       a.status === AssetStatus.DAMAGED ||
+      a.status === AssetStatus.MAINTENANCE ||
       a.condition === AssetCondition.POOR ||
       a.condition === AssetCondition.CRITICAL
+    )
+  }
+
+  /** Ya no está en el piso: no es existencia, aunque la ficha siga viva. */
+  private esDeBaja(a: BaseAsset): boolean {
+    return (
+      a.status === AssetStatus.RETIRED ||
+      a.status === AssetStatus.SOLD ||
+      a.status === AssetStatus.LOST
     )
   }
 
@@ -154,7 +179,9 @@ export class AssetInventoryControlComponent implements OnInit {
     // sobre lo que reciba, así que el resto del inventario quedaba invisible.
     this.assetService.getAllAssets().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: result => {
-        this.assets = result
+        this.assets = result.filter(a => !this.esDeBaja(a))
+        this.deBaja = result.filter(a => this.esDeBaja(a))
+        if (this.deBaja.length === 0) this.verDeBaja = false
         this.applyFilters()
         this.isLoading = false
       },
@@ -171,12 +198,22 @@ export class AssetInventoryControlComponent implements OnInit {
 
   setVista(vista: VistaInventario): void {
     this.vista = vista
+    // Las tarjetas cuentan existencias, así que pulsar una siempre devuelve al
+    // inventario: no tendría sentido dejar la tabla en los dados de baja.
+    this.verDeBaja = false
+    this.applyFilters()
+  }
+
+  /** Enseña —o deja de enseñar— lo retirado, vendido y perdido. */
+  toggleDeBaja(): void {
+    this.verDeBaja = !this.verDeBaja
+    if (this.verDeBaja) this.vista = 'todos'
     this.applyFilters()
   }
 
   /** Si la tabla muestra un recorte del inventario y no el inventario entero. */
   get hayFiltro(): boolean {
-    return this.vista !== 'todos' || this.searchTerm.trim() !== ''
+    return this.verDeBaja || this.vista !== 'todos' || this.searchTerm.trim() !== ''
   }
 
   contar(vista: VistaInventario): number {
@@ -184,8 +221,11 @@ export class AssetInventoryControlComponent implements OnInit {
   }
 
   private applyFilters(): void {
-    const filtered =
-      this.vista === 'todos' ? this.assets : this.assets.filter(this.criterios[this.vista])
+    const filtered = this.verDeBaja
+      ? this.deBaja
+      : this.vista === 'todos'
+        ? this.assets
+        : this.assets.filter(this.criterios[this.vista])
     this.dataSource.data = filtered
     this.dataSource.filter = this.searchTerm.trim().toLowerCase()
     if (this.dataSource.paginator) {
@@ -224,6 +264,8 @@ export class AssetInventoryControlComponent implements OnInit {
       this.assetService.deleteAsset(asset.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.assets = this.assets.filter(a => a.id !== asset.id)
+          this.deBaja = this.deBaja.filter(a => a.id !== asset.id)
+          if (this.deBaja.length === 0) this.verDeBaja = false
           this.applyFilters()
           this.alert.success('Eliminado', 'Activo eliminado correctamente')
           this.isLoading = false
@@ -237,7 +279,10 @@ export class AssetInventoryControlComponent implements OnInit {
 
   exportToCSV(): void {
     const headers = ['Código', 'Nombre', 'Cantidad', 'Tipo', 'Estado', 'Ambiente']
-    const rows = this.assets.map(a => [
+    // Lo que la pantalla está mostrando: el inventario, o los dados de baja si
+    // es eso lo que se está mirando. Mezclarlos en un mismo archivo devolvería
+    // el problema que esta pantalla acaba de quitarse de encima.
+    const rows = (this.verDeBaja ? this.deBaja : this.assets).map(a => [
       a.assetTag ?? '',
       a.name,
       String(a.quantity ?? 1),
@@ -249,7 +294,8 @@ export class AssetInventoryControlComponent implements OnInit {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.setAttribute('href', URL.createObjectURL(blob))
-    link.setAttribute('download', `activos_${new Date().toISOString().split('T')[0]}.csv`)
+    const nombre = this.verDeBaja ? 'activos_de_baja' : 'activos'
+    link.setAttribute('download', `${nombre}_${new Date().toISOString().split('T')[0]}.csv`)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()

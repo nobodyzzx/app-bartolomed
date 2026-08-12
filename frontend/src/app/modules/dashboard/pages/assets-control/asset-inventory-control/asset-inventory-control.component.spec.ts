@@ -64,10 +64,14 @@ describe('AssetInventoryControlComponent', () => {
     const dañado = activo({ status: AssetStatus.DAMAGED })
     const gastado = activo({ condition: AssetCondition.POOR })
     const critico = activo({ condition: AssetCondition.CRITICAL })
+    const enTaller = activo({ status: AssetStatus.MAINTENANCE })
     const enUso = activo()
     const porConfirmar = activo({ status: AssetStatus.INACTIVE })
+    const perdido = activo({ status: AssetStatus.LOST })
 
-    beforeEach(() => cargar([dañado, gastado, critico, enUso, porConfirmar]))
+    beforeEach(() =>
+      cargar([dañado, gastado, critico, enTaller, enUso, porConfirmar, perdido]),
+    )
 
     /**
      * El fallo que motivó el criterio compartido: "en desuso" contaba los
@@ -75,14 +79,25 @@ describe('AssetInventoryControlComponent', () => {
      * solo por `status`, así que decía 3 y mostraba 1.
      */
     it('"En Desuso" muestra tantas filas como anuncia', () => {
-      expect(component.contar('enDesuso')).toBe(3)
+      expect(component.contar('enDesuso')).toBe(4)
 
       component.setVista('enDesuso')
 
-      expect(component.dataSource.filteredData.length).toBe(3)
+      expect(component.dataSource.filteredData.length).toBe(4)
       expect(component.dataSource.filteredData).toEqual(
-        expect.arrayContaining([dañado, gastado, critico]),
+        expect.arrayContaining([dañado, gastado, critico, enTaller]),
       )
+    })
+
+    /**
+     * Lo que está en el taller no se puede usar hoy, que es lo único que esta
+     * pantalla necesita saber. Sin esta regla el mantenimiento no caía en
+     * ninguna tarjeta: solo se encontraba escribiendo su nombre en el buscador.
+     */
+    it('lo que está en mantenimiento cuenta como en desuso', () => {
+      component.setVista('enDesuso')
+
+      expect(component.dataSource.filteredData).toContain(enTaller)
     })
 
     /**
@@ -117,8 +132,54 @@ describe('AssetInventoryControlComponent', () => {
       component.setVista('enUso')
       component.setVista('todos')
 
-      expect(component.contar('todos')).toBe(5)
-      expect(component.dataSource.filteredData.length).toBe(5)
+      expect(component.contar('todos')).toBe(6)
+      expect(component.dataSource.filteredData.length).toBe(6)
+    })
+  })
+
+  /**
+   * Lo retirado, vendido y perdido dejó de ser existencia: la hoja de conteo ya
+   * lo excluía y las tarjetas decían otra cosa. Contar un ítem que nadie
+   * encuentra entre lo que hay es lo que hace que un inventario deje de servir.
+   */
+  describe('dados de baja', () => {
+    const enPiso = activo()
+    const perdido = activo({ status: AssetStatus.LOST, quantity: 7 })
+    const retirado = activo({ status: AssetStatus.RETIRED })
+    const vendido = activo({ status: AssetStatus.SOLD })
+
+    beforeEach(() => cargar([enPiso, perdido, retirado, vendido]))
+
+    it('no entran en la tabla ni en los totales', () => {
+      expect(component.contar('todos')).toBe(1)
+      expect(component.dataSource.filteredData).toEqual([enPiso])
+    })
+
+    it('sus unidades no engordan el recuento de existencias', () => {
+      expect(component.getTotalUnits()).toBe(1)
+    })
+
+    it('siguen alcanzables: un perdido puede aparecer y hay que devolverlo', () => {
+      component.toggleDeBaja()
+
+      expect(component.dataSource.filteredData).toEqual(
+        expect.arrayContaining([perdido, retirado, vendido]),
+      )
+      expect(component.dataSource.filteredData).not.toContain(enPiso)
+    })
+
+    it('pulsar una tarjeta devuelve al inventario', () => {
+      component.toggleDeBaja()
+      component.setVista('enUso')
+
+      expect(component.verDeBaja).toBe(false)
+      expect(component.dataSource.filteredData).toEqual([enPiso])
+    })
+
+    it('sin nada dado de baja no queda nada que enseñar', () => {
+      cargar([enPiso])
+
+      expect(component.deBaja).toEqual([])
     })
   })
 
@@ -151,6 +212,13 @@ describe('AssetInventoryControlComponent', () => {
 
     it('es verdadero con una tarjeta activa', () => {
       component.setVista('enUso')
+
+      expect(component.hayFiltro).toBe(true)
+    })
+
+    it('es verdadero mirando los dados de baja', () => {
+      cargar([activo(), activo({ status: AssetStatus.LOST })])
+      component.toggleDeBaja()
 
       expect(component.hayFiltro).toBe(true)
     })
