@@ -68,7 +68,30 @@ export class MedicalRecordsDashboardComponent implements OnInit {
     private medicalRecordsService: MedicalRecordsService,
     private router: Router,
     private location: Location,
-  ) {}
+  ) {
+    /**
+     * Sin esto las cabeceras pintan la flecha y no ordenan nada. Por defecto
+     * `MatTableDataSource` busca un campo con el nombre de la columna, y aquí
+     * no coinciden: la columna "date" se pinta desde `createdAt`, y "patient" y
+     * "doctor" son objetos —comparar objetos no da un orden—.
+     */
+    this.dataSource.sortingDataAccessor = (record, columna) => {
+      switch (columna) {
+        case 'date': return new Date(record.createdAt ?? 0).getTime()
+        // Por apellido, que es como se busca a alguien en una lista.
+        case 'patient': return `${record.patient?.lastName ?? ''} ${record.patient?.firstName ?? ''}`.trim().toLowerCase()
+        // El nombre del médico cuelga de `personalInfo`, no de la raíz: es de
+        // donde lo saca la celda.
+        case 'doctor': return `${record.doctor?.personalInfo?.lastName ?? ''} ${record.doctor?.personalInfo?.firstName ?? ''}`.trim().toLowerCase()
+        // La etiqueta y no el valor del enum: la columna se lee "Seguimiento",
+        // no "follow_up", y ordenar por lo que no se ve desconcierta.
+        case 'type': return this.getTypeText(record.type).toLowerCase()
+        case 'status': return this.getStatusText(record.status).toLowerCase()
+        case 'chiefComplaint': return (record.chiefComplaint ?? '').toLowerCase()
+        default: return ''
+      }
+    }
+  }
 
   ngOnInit(): void {
     this.loadMedicalRecords()
