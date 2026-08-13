@@ -346,6 +346,16 @@ export interface SaleItem {
   id?: string
   medicationStockId: string
   medicationStock?: MedicationStock
+  /**
+   * Nombre del producto tal como estaba al vender. La entidad lo guarda
+   * desnormalizado a propósito: un producto renombrado después no debe
+   * reescribir lo que dice un recibo ya emitido. Faltaba en la interfaz, y por
+   * eso la pantalla de detalle tiraba de la relación —que ese endpoint ni
+   * siquiera carga— y pintaba "Producto" en todas las líneas.
+   */
+  productName?: string
+  productCode?: string
+  brand?: string
   quantity: number
   unitPrice: number
   discountPercent?: number
