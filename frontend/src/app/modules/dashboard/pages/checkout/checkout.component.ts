@@ -50,6 +50,15 @@ export class CheckoutComponent {
   lines: CheckoutLine[] = []
   loadingAccount = false
 
+  /**
+   * Cobro sin paciente registrado. En caja lo más común es que nadie registre
+   * al paciente (laboratorio y farmacia atienden gente sin ficha) y el backend
+   * ya lo soporta (patientId opcional en Charge/Invoice) — esto solo habilita
+   * el mismo flujo en la UI sin exigir una ficha de paciente primero.
+   */
+  walkIn = false
+  walkInName = ''
+
   globalDiscount = 0
   globalDiscountReason = ''
   discountDisplay: DiscountDisplay = DiscountDisplay.ITEMIZED
@@ -123,18 +132,22 @@ export class CheckoutComponent {
   }
 
   get canAddCharge(): boolean {
-    return !!this.patient && !!this.newChargeSelected && this.newChargeQty > 0 && !this.addingCharge
+    return (
+      (!!this.patient || this.walkIn) && !!this.newChargeSelected && this.newChargeQty > 0 && !this.addingCharge
+    )
   }
 
   addCharge(): void {
     const chosen = this.newChargeSelected
-    if (!this.patient || !chosen || !this.canAddCharge) return
+    if ((!this.patient && !this.walkIn) || !chosen || !this.canAddCharge) return
 
     this.addingCharge = true
     this.checkoutService
       .addCharge({
-        patientId: this.patient.id!,
-        patientName: `${this.patient.firstName ?? ''} ${this.patient.lastName ?? ''}`.trim(),
+        ...(this.patient ? { patientId: this.patient.id! } : {}),
+        patientName: this.patient
+          ? `${this.patient.firstName ?? ''} ${this.patient.lastName ?? ''}`.trim()
+          : this.walkInName.trim() || 'Sin paciente registrado',
         origin: this.originForCategory(chosen.category),
         servicePriceId: chosen.id,
         description: chosen.name,
@@ -143,11 +156,18 @@ export class CheckoutComponent {
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
+        next: charge => {
           this.addingCharge = false
           this.newChargeId = ''
           this.newChargeQty = 1
-          this.loadAccount()
+          if (this.patient) {
+            this.loadAccount()
+          } else {
+            // Sin paciente no existe una "cuenta" del servidor que recargar:
+            // el cargo recién creado se agrega directo a la tabla local.
+            this.lines.push({ charge, selected: true, discount: 0, reason: '' })
+            this.paymentAmount = this.totalToCharge
+          }
         },
         error: () => (this.addingCharge = false),
       })
@@ -162,6 +182,21 @@ export class CheckoutComponent {
 
   clearPatient(): void {
     this.patient = null
+    this.lines = []
+    this.resetDiscounts()
+  }
+
+  /** Activa el cobro sin paciente registrado desde la pantalla de búsqueda. */
+  startWalkIn(): void {
+    this.walkIn = true
+    this.results = []
+    this.search = ''
+  }
+
+  /** Vuelve a la búsqueda de paciente, descartando el cobro sin registrar en curso. */
+  cancelWalkIn(): void {
+    this.walkIn = false
+    this.walkInName = ''
     this.lines = []
     this.resetDiscounts()
   }
@@ -296,7 +331,14 @@ export class CheckoutComponent {
         next: invoice => {
           this.processing = false
           this.offerReceipt(invoice.id, invoice.invoiceNumber)
-          this.loadAccount()
+          if (this.patient) {
+            this.loadAccount()
+          } else {
+            // Sin paciente, cada cobro es un hecho aislado: se cierra y queda
+            // lista para el siguiente cliente, en vez de recargar una cuenta
+            // que no existe.
+            this.cancelWalkIn()
+          }
         },
         error: () => {
           this.processing = false
