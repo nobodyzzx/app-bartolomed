@@ -28,8 +28,12 @@ export class CreatePatientDto {
   @IsString()
   @MinLength(5)
   @MaxLength(20)
-  @Matches(/^[A-Za-z0-9-]+$/, {
-    message: 'documentNumber solo permite letras, numeros y guion',
+  // Coincide con validation-patterns.ts del frontend: antes rechazaba puntos
+  // que el frontend sí dejaba escribir, y el guardado fallaba con un 400 sin
+  // explicación visible (el documento de identidad en Bolivia y otros países
+  // se anota comúnmente con puntos como separador).
+  @Matches(/^[A-Za-z0-9.-]+$/, {
+    message: 'documentNumber solo permite letras, numeros, punto y guion',
   })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
   documentNumber: string;

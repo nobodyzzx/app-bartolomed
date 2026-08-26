@@ -116,4 +116,24 @@ describe('CreatePatientDto', () => {
       expect(errors.some(e => e.property === 'clinicId')).toBe(true);
     });
   });
+
+  // ─── documentNumber ─────────────────────────────────────────────────────
+
+  describe('documentNumber', () => {
+    /**
+     * Regresión: bug corregido el 2026-08-26. El regex del backend rechazaba
+     * el punto que validation-patterns.ts sí dejaba escribir en el frontend
+     * (formato común del documento de identidad), y el guardado fallaba con
+     * un 400 sin ninguna explicación visible para quien lo capturaba.
+     */
+    it('acepta documentNumber con puntos', async () => {
+      const { errors } = await validateDto({ ...validBase, documentNumber: '1234567.1.A' });
+      expect(errors.some(e => e.property === 'documentNumber')).toBe(false);
+    });
+
+    it('rechaza documentNumber con caracteres fuera de letras, numeros, punto y guion', async () => {
+      const { errors } = await validateDto({ ...validBase, documentNumber: '1234567/A' });
+      expect(errors.some(e => e.property === 'documentNumber')).toBe(true);
+    });
+  });
 });
