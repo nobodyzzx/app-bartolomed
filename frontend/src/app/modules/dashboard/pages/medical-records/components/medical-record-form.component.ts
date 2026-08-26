@@ -703,7 +703,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
       this.isSaving = true
 
       if (this.isEditMode && this.recordId) {
-        this.updateMedicalRecord(this.createMedicalRecordDto())
+        this.updateMedicalRecord(this.createMedicalRecordDto(RecordStatus.COMPLETED))
       } else {
         this.createMedicalRecord(this.createMedicalRecordDto(RecordStatus.COMPLETED))
       }
@@ -939,16 +939,16 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy, CanCompone
   }
 
   // Métodos auxiliares para validación de signos vitales
-  getVitalSignClasses(controlName: string): { [key: string]: boolean } {
-    return getVitalSignClasses(this.clinicalDataForm.get(controlName))
+  getVitalSignClasses(controlName: keyof typeof VITAL_SIGNS_RANGES): { [key: string]: boolean } {
+    return getVitalSignClasses(this.clinicalDataForm.get(controlName), controlName)
   }
 
-  getVitalSignMessage(controlName: string): string {
-    return getVitalSignMessage(this.clinicalDataForm.get(controlName))
+  getVitalSignMessage(controlName: keyof typeof VITAL_SIGNS_RANGES): string {
+    return getVitalSignMessage(this.clinicalDataForm.get(controlName), controlName)
   }
 
-  getVitalSignIcon(controlName: string): string {
-    return getVitalSignIcon(this.clinicalDataForm.get(controlName))
+  getVitalSignIcon(controlName: keyof typeof VITAL_SIGNS_RANGES): string {
+    return getVitalSignIcon(this.clinicalDataForm.get(controlName), controlName)
   }
 
   // Obtener el paciente seleccionado para mostrar información médica.
