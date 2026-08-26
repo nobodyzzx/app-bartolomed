@@ -49,7 +49,8 @@ export interface PatientAccount {
  * queda trazable a una tarifa y nadie inventa precios en caja.
  */
 export interface NewChargePayload {
-  patientId: string
+  /** Ausente para un cobro sin paciente registrado (walk-in). */
+  patientId?: string
   patientName: string
   origin: ChargeOrigin
   servicePriceId: string
