@@ -55,6 +55,23 @@ export const VITAL_SIGNS_RANGES = {
   },
 }
 
+/**
+ * Límites duros de cordura (coinciden con los @Min/@Max de CreateMedicalRecordDto
+ * en el backend). Fuera de este rango el valor es fisiológicamente imposible —
+ * casi siempre un error de tipeo (ej. Fahrenheit en vez de Celsius) — y sí debe
+ * bloquear el guardado, para evitar el viaje redondo al servidor y su 400.
+ */
+export const VITAL_SIGNS_HARD_LIMITS: Partial<
+  Record<keyof typeof VITAL_SIGNS_RANGES, { min: number; max: number }>
+> = {
+  temperature: { min: 30, max: 45 },
+  systolicBP: { min: 60, max: 250 },
+  diastolicBP: { min: 40, max: 150 },
+  heartRate: { min: 30, max: 200 },
+  respiratoryRate: { min: 8, max: 40 },
+  oxygenSaturation: { min: 80, max: 100 },
+}
+
 export type VitalSignStatus = 'normal' | 'warning' | 'danger'
 
 export interface VitalSignValidation {
@@ -121,89 +138,104 @@ export function validateVitalSign(
 }
 
 /**
- * Validador personalizado para signos vitales
- * Agrega información de validación pero no bloquea el formulario
+ * Validador de cordura para signos vitales.
+ *
+ * Solo bloquea el formulario cuando el valor cae fuera de VITAL_SIGNS_HARD_LIMITS
+ * (fisiológicamente imposible / error de tipeo). Un valor clínicamente anormal
+ * pero real — fiebre, hipotensión, taquicardia — es *información*, no un error
+ * de captura, así que nunca invalida el control: eso se muestra aparte vía
+ * getVitalSignClasses/getVitalSignMessage, sin bloquear "Actualizar Expediente".
  */
 export function vitalSignValidator(signName: keyof typeof VITAL_SIGNS_RANGES): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const value = control.value
 
-    if (!value || value === '') {
+    if (value === null || value === undefined || value === '') {
       return null // Campo opcional
     }
 
-    const validation = validateVitalSign(signName, parseFloat(value))
-
-    if (!validation) {
+    const numValue = parseFloat(value)
+    if (isNaN(numValue)) {
       return null
     }
 
-    // Agregar información de validación sin bloquear el formulario
-    if (validation.status === 'danger') {
-      return { vitalSignDanger: validation }
+    const limits = VITAL_SIGNS_HARD_LIMITS[signName]
+    if (limits && (numValue < limits.min || numValue > limits.max)) {
+      return {
+        vitalSignOutOfRange: {
+          message: `Fuera de rango permitido (${limits.min}-${limits.max} ${VITAL_SIGNS_RANGES[signName].unit})`,
+        },
+      }
     }
 
-    if (validation.status === 'warning') {
-      return { vitalSignWarning: validation }
-    }
-
-    return null // Normal, no hay error
+    return null
   }
 }
 
 /**
- * Obtiene las clases CSS según el estado del signo vital
+ * Obtiene las clases CSS según el estado clínico del signo vital.
+ * Es puramente informativo: se calcula directo del valor, no de control.errors,
+ * para que un estado "warning"/"danger" (clínicamente real) nunca dependa de ni
+ * se confunda con la validez del control (ver vitalSignValidator).
  */
-export function getVitalSignClasses(control: AbstractControl | null): { [key: string]: boolean } {
+export function getVitalSignClasses(
+  control: AbstractControl | null,
+  signName: keyof typeof VITAL_SIGNS_RANGES,
+): { [key: string]: boolean } {
   if (!control || !control.value) {
     return {}
   }
 
-  const isDanger = control.hasError('vitalSignDanger')
-  const isWarning = control.hasError('vitalSignWarning')
+  const validation = validateVitalSign(signName, parseFloat(control.value))
+  if (!validation) {
+    return {}
+  }
 
   return {
-    'vital-sign-normal': !isDanger && !isWarning && control.value,
-    'vital-sign-warning': isWarning,
-    'vital-sign-danger': isDanger,
+    'vital-sign-normal': validation.status === 'normal',
+    'vital-sign-warning': validation.status === 'warning',
+    'vital-sign-danger': validation.status === 'danger',
   }
 }
 
 /**
- * Obtiene el mensaje de validación del signo vital
+ * Obtiene el mensaje de validación del signo vital. Si el control tiene un
+ * error de rango duro (vitalSignOutOfRange) ese mensaje tiene prioridad porque
+ * ahí sí bloquea el guardado; si no, muestra el estado clínico informativo.
  */
-export function getVitalSignMessage(control: AbstractControl | null): string {
+export function getVitalSignMessage(
+  control: AbstractControl | null,
+  signName: keyof typeof VITAL_SIGNS_RANGES,
+): string {
   if (!control || !control.value) {
     return ''
   }
 
-  if (control.hasError('vitalSignDanger')) {
-    return control.errors!['vitalSignDanger'].message
+  if (control.hasError('vitalSignOutOfRange')) {
+    return control.errors!['vitalSignOutOfRange'].message
   }
 
-  if (control.hasError('vitalSignWarning')) {
-    return control.errors!['vitalSignWarning'].message
-  }
-
-  // Buscar el rango normal para mostrar mensaje positivo
-  return ''
+  const validation = validateVitalSign(signName, parseFloat(control.value))
+  return validation && validation.status !== 'normal' ? validation.message : ''
 }
 
 /**
  * Obtiene el ícono según el estado del signo vital
  */
-export function getVitalSignIcon(control: AbstractControl | null): string {
+export function getVitalSignIcon(
+  control: AbstractControl | null,
+  signName: keyof typeof VITAL_SIGNS_RANGES,
+): string {
   if (!control || !control.value) {
     return ''
   }
 
-  if (control.hasError('vitalSignDanger')) {
+  if (control.hasError('vitalSignOutOfRange')) {
     return 'error'
   }
 
-  if (control.hasError('vitalSignWarning')) {
-    return 'warning'
-  }
+  const validation = validateVitalSign(signName, parseFloat(control.value))
+  if (!validation) return ''
 
-  return 'check_circle'
+  return validation.status === 'danger' ? 'error' : validation.status === 'warning' ? 'warning' : 'check_circle'
 }
