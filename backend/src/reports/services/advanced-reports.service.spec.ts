@@ -782,4 +782,69 @@ describe('AdvancedReportsService', () => {
       expect(result.summary.bestMonth).toBe('-');
     });
   });
+
+  /**
+   * En esta clínica no hay roles estancos: "quien cobra" suele ser el mismo
+   * médico haciendo de recepcionista, laboratorista, etc. — por eso el corte
+   * de turno es por persona (userId), no por rol, y junta farmacia (soldById)
+   * con todo lo demás del punto de cobro (createdById), excluyendo el lado
+   * pharmacy de charges para no reintroducir el doble conteo de
+   * getDailySalesSummary.
+   */
+  describe('getStaffShiftDetail (D1)', () => {
+    const USER_ID = 'user-1';
+
+    it('exige userId además de clinicId', async () => {
+      await expect(service.getStaffShiftDetail({ clinicId: CLINIC_ID })).rejects.toThrow(BadRequestException);
+    });
+
+    it('combina farmacia (soldById) y clínica (createdById, sin origin=pharmacy) para el mismo userId', async () => {
+      dataSource.query
+        .mockResolvedValueOnce([{ id: USER_ID, name: 'Harold Navia' }])
+        .mockResolvedValueOnce([{ id: 'sale-1', total: '70.00' }])
+        .mockResolvedValueOnce([{ id: 'chg-1', total: '100.00', status: 'invoiced' }]);
+
+      const result = await service.getStaffShiftDetail({ clinicId: CLINIC_ID, userId: USER_ID });
+
+      expect(result.userName).toBe('Harold Navia');
+      expect(result.summary).toEqual({
+        pharmacyRevenue: 70,
+        pharmacyCount: 1,
+        clinicRevenue: 100,
+        clinicPending: 0,
+        clinicCount: 1,
+        totalRevenue: 170,
+      });
+
+      const pharmacySql = dataSource.query.mock.calls[1][0];
+      const chargeSql = dataSource.query.mock.calls[2][0];
+      expect(pharmacySql).toContain('ps."soldById" = $2');
+      expect(chargeSql).toContain('c.created_by = $2');
+      expect(chargeSql).toContain(`c.origin != 'pharmacy'`);
+    });
+
+    it('un cargo pending no se suma a clinicRevenue: se informa aparte en clinicPending', async () => {
+      dataSource.query
+        .mockResolvedValueOnce([{ id: USER_ID, name: 'Harold Navia' }])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          { id: 'chg-1', total: '100.00', status: 'invoiced' },
+          { id: 'chg-2', total: '250.00', status: 'pending' },
+        ]);
+
+      const result = await service.getStaffShiftDetail({ clinicId: CLINIC_ID, userId: USER_ID });
+
+      expect(result.summary.clinicRevenue).toBe(100);
+      expect(result.summary.clinicPending).toBe(250);
+      expect(result.summary.totalRevenue).toBe(100); // pending no cuenta en el total del turno
+    });
+
+    it('userName es null si el usuario no existe (no revienta el reporte)', async () => {
+      dataSource.query.mockResolvedValueOnce([]).mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+
+      const result = await service.getStaffShiftDetail({ clinicId: CLINIC_ID, userId: USER_ID });
+
+      expect(result.userName).toBeNull();
+    });
+  });
 });

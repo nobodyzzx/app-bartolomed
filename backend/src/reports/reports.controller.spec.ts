@@ -74,6 +74,7 @@ describe('ReportsController', () => {
       'getPrescriptionVsFreeSales',
       'getSalesByPaymentDetailed',
       'getMonthlySalesComparison',
+      'getStaffShiftDetail',
     ]);
     exportService = {
       streamExcel: jest.fn().mockResolvedValue(undefined),
@@ -114,6 +115,7 @@ describe('ReportsController', () => {
       'generateAppointmentsPdf',
       'generateMedicalRecordsPdf',
       'generateDashboardPdf',
+      'generateStaffShiftDetailPdf',
     ]);
     revenueReportsService = mockAll(['getRevenueByOrigin', 'getDiscountsReport', 'getReceivables']);
     controller = new ReportsController(
@@ -736,6 +738,53 @@ describe('ReportsController', () => {
       await controller.exportFinancialPdf(filters, req, res);
 
       expect(reportsPdfService.generateFinancialPdf).toHaveBeenCalledWith({ totalBilled: 500, paymentMethods: [] });
+    });
+  });
+
+  /**
+   * El corte de turno es información de cuánto cobró/vendió una persona — no
+   * es asunto de un colega verlo. Quien no sea admin no puede pedir el corte
+   * de otro userId: se ignora en silencio y se usa el propio del token.
+   */
+  describe('getStaffShiftDetail / exportStaffShiftDetailPdf — resolveStaffUserId', () => {
+    const admin = { id: 'admin-1', roles: ['admin'] } as any;
+    const doctor = { id: 'doc-1', roles: ['doctor'] } as any;
+
+    it('un admin puede pedir el corte de cualquier userId', async () => {
+      await controller.getStaffShiftDetail({ userId: 'otro-user' } as any, makeReq(), admin);
+
+      expect(advancedReportsService.getStaffShiftDetail).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'otro-user' }),
+      );
+    });
+
+    it('un no-admin que pide el userId de otra persona recibe igual su propio corte', async () => {
+      await controller.getStaffShiftDetail({ userId: 'otro-user' } as any, makeReq(), doctor);
+
+      expect(advancedReportsService.getStaffShiftDetail).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'doc-1' }),
+      );
+    });
+
+    it('sin userId en la query, se usa el propio del token', async () => {
+      await controller.getStaffShiftDetail({} as any, makeReq(), doctor);
+
+      expect(advancedReportsService.getStaffShiftDetail).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'doc-1' }),
+      );
+    });
+
+    it('exportStaffShiftDetailPdf aplica la misma restricción antes de generar el PDF', async () => {
+      const res = makeRes();
+      advancedReportsService.getStaffShiftDetail.mockResolvedValue({ userName: 'X', summary: {} } as any);
+      reportsPdfService.generateStaffShiftDetailPdf.mockResolvedValue(Buffer.from('PDF'));
+
+      await controller.exportStaffShiftDetailPdf({ userId: 'otro-user' } as any, makeReq(), res, doctor);
+
+      expect(advancedReportsService.getStaffShiftDetail).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'doc-1' }),
+      );
+      expect(dispositionOf(res)).toContain('corte-turno-');
     });
   });
 });

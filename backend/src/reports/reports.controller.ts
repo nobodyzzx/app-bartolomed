@@ -11,9 +11,10 @@ import {
   Res,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { Auth, AuthClinic } from '../auth/decorators';
+import { Auth, AuthClinic, GetUser } from '../auth/decorators';
 import { resolveClinicId } from '../auth/decorators/clinic-roles.decorator';
 import { todayInClinicTz } from '../common/utils/date-format.util';
+import { User } from '../users/entities/user.entity';
 import { RequirePermissions } from '../auth/permissions/permissions.decorator';
 import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
@@ -48,6 +49,18 @@ export class ReportsController {
       clinicId: resolveClinicId(req)!,
       dateRange: buildDateRange(req.query as Record<string, unknown>),
     };
+  }
+
+  /**
+   * El corte de turno es información de cuánto cobró/vendió una persona — no
+   * es asunto de un colega verlo. Quien no sea admin solo puede pedir el
+   * propio: se ignora cualquier `userId` que venga en la query y se fuerza al
+   * del token, en vez de devolver 403 (más simple para el caso normal: la UI
+   * ni le muestra la opción de elegir a otra persona).
+   */
+  private resolveStaffUserId(requestedUserId: string | undefined, user: User): string {
+    const isAdmin = user.roles?.some(r => r === ValidRoles.ADMIN || r === ValidRoles.SUPER_ADMIN);
+    return isAdmin && requestedUserId ? requestedUserId : user.id;
   }
 
   // ─── Reportes existentes (R-01..R-08) ────────────────────────────────────
@@ -572,6 +585,43 @@ export class ReportsController {
       [{ name: 'Encargado×Día×Med.', build: ws => this.exportService.buildPharmacistDayMedicationSheet(ws, data) }],
       `encargado-dia-medicamento-${new Date().toISOString().slice(0, 10)}.xlsx`,
     );
+  }
+
+  // ─── D1: Corte de turno individual ────────────────────────────────────────
+  // No hay roles estancos en esta clínica — "quien cobra" suele ser el mismo
+  // médico haciendo de recepcionista, laboratorista, etc. Por eso el reporte
+  // es por persona (userId), no por rol, y junta farmacia + punto de cobro.
+
+  @Get('staff-shift-detail')
+  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.RECEPTIONIST, ValidRoles.PHARMACIST, ValidRoles.LABORATORY)
+  getStaffShiftDetail(@Query() filters: ReportFilters & { userId?: string }, @Req() req: Request, @GetUser() user: User) {
+    const scoped = this.scope(filters, req);
+    return this.advancedReportsService.getStaffShiftDetail({
+      ...scoped,
+      userId: this.resolveStaffUserId(filters.userId, user),
+    });
+  }
+
+  @Get('export/pdf/staff-shift-detail')
+  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.RECEPTIONIST, ValidRoles.PHARMACIST, ValidRoles.LABORATORY)
+  async exportStaffShiftDetailPdf(
+    @Query() filters: ReportFilters & { userId?: string },
+    @Req() req: Request,
+    @Res() res: Response,
+    @GetUser() user: User,
+  ) {
+    const scoped = this.scope(filters, req);
+    const data = await this.advancedReportsService.getStaffShiftDetail({
+      ...scoped,
+      userId: this.resolveStaffUserId(filters.userId, user),
+    });
+    const buf = await this.reportsPdfService.generateStaffShiftDetailPdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="corte-turno-${todayInClinicTz()}.pdf"`,
+    );
+    res.end(buf);
   }
 
   // ─── B1: Inventario valorizado ────────────────────────────────────────────

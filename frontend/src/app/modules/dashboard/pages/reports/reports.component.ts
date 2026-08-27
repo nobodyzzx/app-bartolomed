@@ -204,6 +204,9 @@ export class ReportsComponent implements OnInit {
   downloadProfitabilityPdf()    { this.download('profPdf',   () => this.reportsService.downloadProfitabilityPdf(this.buildParams())) }
   downloadStockMovementsExcel() { this.download('movXls',    () => this.reportsService.downloadStockMovementsExcel(this.buildParams())) }
 
+  // ── D1: Corte de turno individual (farmacia + punto de cobro, por persona) ─
+  downloadStaffShiftDetailPdf() { this.download('shiftPdf', () => this.reportsService.downloadStaffShiftDetailPdf(this.buildParams())) }
+
   // ── A1: Ventas por farmacéutico ───────────────────────────────────────────
   downloadSalesByPharmacistPdf()   { this.download('pharmPdf',  () => this.reportsService.downloadSalesByPharmacistPdf(this.buildParams())) }
   downloadSalesByPharmacistExcel() { this.download('pharmXls',  () => this.reportsService.downloadSalesByPharmacistExcel(this.buildParams())) }

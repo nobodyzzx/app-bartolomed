@@ -38,6 +38,31 @@
       </div>
     </div>
 
+    <!-- ── SECCIÓN CORTE DE TURNO ──
+    Sin roles estancos en esta clínica — "quien cobra" suele ser el mismo
+    médico haciendo de recepcionista, laboratorista, etc. Por eso este corte
+    es por persona, no por rol, y no tiene selector de a quién: cada quien
+    baja el propio (el backend fuerza el userId del token si no eres admin),
+    para que quien atiende en la mañana y quien atiende en la tarde puedan
+    sacar cada uno su cierre sin pisarse. -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+      <div class="flex items-center gap-4 px-6 py-4 bg-teal-50 border-b border-teal-100">
+        <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">badge</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Mi Corte de Turno</h3>
+          <p class="text-sm text-slate-500 m-0">Todo lo que cobraste en el período: farmacia, consultas, laboratorio y otros</p>
+        </div>
+      </div>
+      <div class="p-6">
+        <button class="btn btn-primary" (click)="downloadStaffShiftDetailPdf()" [disabled]="downloading['shiftPdf']">
+          <span class="material-symbols-outlined">{{downloading['shiftPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+          {{downloading['shiftPdf'] ? 'Generando...' : 'Descargar mi corte de turno'}}
+        </button>
+      </div>
+    </div>
+
     <!-- ── SECCIÓN CLÍNICA ── -->
     @if (canViewMedical) {
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
