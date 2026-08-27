@@ -1055,11 +1055,8 @@ ${body}
   ]`
       : '';
 
-    // Desglose por método de pago: solo cubre farmacia por ahora (ver
-    // comentario en getDailySalesSummary — taxonomía de métodos distinta
-    // entre pharmacy_sales y payments, no se puede fusionar sin un mapeo).
     const paymentTableTypst = payment.length > 0
-      ? `#section(${typstString('Desglose por Método de Pago — Farmacia')})[
+      ? `#section(${typstString('Desglose por Método de Pago')})[
     #styledTable(
       (${['Método', 'Total (Bs)', 'Transacciones'].map(typstString).join(', ')}),
       (

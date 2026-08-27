@@ -372,6 +372,31 @@ describe('AdvancedReportsService', () => {
       expect(clinicSql).toContain(`c.status = 'invoiced'`);
     });
 
+    /**
+     * Regresión: bug corregido el 2026-08-27. El desglose por método de pago
+     * solo traía farmacia — pharmacy_sales.paymentMethod y payments.method
+     * son catálogos distintos (card/mixed vs credit_card/debit_card/check),
+     * así que no se podían UNIONar sin normalizar antes a una misma etiqueta.
+     */
+    it('normaliza y fusiona farmacia + clínica en el desglose por método de pago', async () => {
+      dataSource.query.mockResolvedValueOnce([]).mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+
+      await service.getDailySalesSummary({ clinicId: CLINIC_ID });
+
+      const paymentSql = dataSource.query.mock.calls[2][0];
+      // farmacia normalizada
+      expect(paymentSql).toContain(`WHEN 'card'      THEN 'Tarjeta'`);
+      expect(paymentSql).toContain(`WHEN 'mixed'     THEN 'Mixto'`);
+      // clínica normalizada a la misma etiqueta que farmacia
+      expect(paymentSql).toContain(`WHEN 'credit_card'   THEN 'Tarjeta'`);
+      expect(paymentSql).toContain(`WHEN 'debit_card'    THEN 'Tarjeta'`);
+      expect(paymentSql).toContain(`WHEN 'check'         THEN 'Cheque'`);
+      // no cuenta dos veces una venta de farmacia "a cuenta" ya invoiced
+      expect(paymentSql).toContain(`c.origin != 'pharmacy'`);
+      expect(paymentSql).toContain('UNION ALL');
+      expect(paymentSql).toContain('GROUP BY method');
+    });
+
     it('un día solo con ventas de un lado deja el otro en 0', async () => {
       dataSource.query
         .mockResolvedValueOnce([{ date: '2026-01-01', revenue: '100', tickets: '2' }])

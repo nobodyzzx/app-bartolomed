@@ -1,8 +1,10 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AuditService } from '../../audit/audit.service';
 import { Charge, ChargeStatus } from '../../charges/entities/charge.entity';
+import { todayInClinicTz } from '../../common/utils/date-format.util';
 import { User } from '../../users/entities/user.entity';
-import { Invoice, InvoiceStatus, Payment, PaymentStatus } from '../entities/billing.entity';
+import { CheckoutDto } from '../dto/checkout.dto';
+import { Invoice, InvoiceItem, InvoiceStatus, Payment, PaymentStatus } from '../entities/billing.entity';
 import { CheckoutService } from './checkout.service';
 
 /**
@@ -170,5 +172,76 @@ describe('CheckoutService — voidInvoice', () => {
         }),
       }),
     );
+  });
+});
+
+/**
+ * Regresión: bug corregido el 2026-08-27. issueDate/dueDate son columnas
+ * `date` y se armaban con `new Date()`/hora del servidor (UTC): un cobro
+ * hecho entre las 20:00 y medianoche en Bolivia salía fechado al día
+ * siguiente en la factura y el recibo.
+ */
+describe('CheckoutService — checkout (issueDate/dueDate)', () => {
+  let service: CheckoutService;
+  let invoiceRepo: any;
+  let chargeRepo: any;
+  let itemRepo: any;
+  let paymentRepo: any;
+
+  const user = { id: 'user-1', email: 'cajero@clinica.local' } as User;
+
+  const pendingCharge = {
+    id: 'chg-1',
+    status: ChargeStatus.PENDING,
+    patientId: null,
+    quantity: 1,
+    listPrice: 100,
+    description: 'Consulta',
+    origin: 'consultation',
+  } as unknown as Charge;
+
+  beforeEach(() => {
+    chargeRepo = { find: jest.fn().mockResolvedValue([pendingCharge]), save: jest.fn(x => Promise.resolve(x)) };
+    itemRepo = { save: jest.fn(x => Promise.resolve(x)) };
+    paymentRepo = { save: jest.fn(x => Promise.resolve(x)), count: jest.fn().mockResolvedValue(0) };
+    invoiceRepo = {
+      count: jest.fn().mockResolvedValue(0),
+      save: jest.fn(x => Promise.resolve({ ...x, id: 'inv-1' })),
+      findOneOrFail: jest.fn().mockResolvedValue({ id: 'inv-1' }),
+      manager: {
+        transaction: jest.fn((fn: (m: any) => any) =>
+          fn({
+            getRepository: (entity: any) => {
+              if (entity === Invoice) return invoiceRepo;
+              if (entity === Charge) return chargeRepo;
+              if (entity === InvoiceItem) return itemRepo;
+              if (entity === Payment) return paymentRepo;
+              return {};
+            },
+          }),
+        ),
+      },
+    };
+
+    service = new CheckoutService(
+      invoiceRepo,
+      chargeRepo,
+      { log: jest.fn() } as unknown as AuditService,
+      { buildReceipt: jest.fn() } as any,
+    );
+  });
+
+  it('fecha la factura con el día de calendario de Bolivia, no el de UTC del servidor', async () => {
+    const dto: CheckoutDto = { chargeIds: ['chg-1'] };
+
+    await service.checkout(dto, user, 'clinic-1');
+
+    const savedInvoice = invoiceRepo.save.mock.calls[0][0];
+    expect(savedInvoice.issueDate).toBe(todayInClinicTz());
+    expect(savedInvoice.dueDate).toBe(todayInClinicTz());
+    // Ninguno de los dos es un objeto Date: eso es justo lo que reintroducía
+    // el desfase de zona horaria al serializarse con hora del servidor.
+    expect(savedInvoice.issueDate).not.toBeInstanceOf(Date);
+    expect(savedInvoice.dueDate).not.toBeInstanceOf(Date);
   });
 });

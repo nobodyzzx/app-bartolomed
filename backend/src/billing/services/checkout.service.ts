@@ -3,18 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { AuditService } from '../../audit/audit.service';
 import { Charge, ChargeStatus, DiscountDisplay } from '../../charges/entities/charge.entity';
+import { todayInClinicTz } from '../../common/utils/date-format.util';
 import { User } from '../../users/entities/user.entity';
 import { CheckoutDto } from '../dto/checkout.dto';
 import { Invoice, InvoiceItem, InvoiceStatus, Payment, PaymentStatus } from '../entities/billing.entity';
 import { prorateDiscount, round2 } from '../utils/discount-proration.util';
 import { ReceiptPdfService } from './receipt-pdf.service';
-
-/** Último instante del día actual, para que una factura no nazca vencida. */
-function endOfToday(): Date {
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
-  return end;
-}
 
 /**
  * Punto de cobro: convierte un conjunto de cargos pendientes en una factura.
@@ -57,15 +51,23 @@ export class CheckoutService {
       const totalAmount = round2(subtotal - discountTotal);
 
       const paidAmount = dto.payment ? round2(Math.min(dto.payment.amount, totalAmount)) : 0;
+      // issueDate/dueDate son columnas `date` (día de calendario, sin hora):
+      // `new Date()` da la fecha en hora del servidor (UTC), y un cobro hecho
+      // de 20:00 a 23:59 en Bolivia ya es "mañana" en UTC — la factura salía
+      // fechada un día adelantada. `todayInClinicTz()` da el día correcto en
+      // hora de Bolivia (mismo criterio que el resto de columnas `date` del
+      // sistema, ver date-format.util.ts).
+      //
+      // dueDate = mismo día que issueDate: al ser una columna `date` no hay
+      // "fin del día" que representar aparte — el hook de la entidad solo
+      // marca OVERDUE al pasar la medianoche de ese día, no antes.
+      const today = todayInClinicTz();
       const invoice = new Invoice();
       Object.assign(invoice, {
         invoiceNumber: await this.nextInvoiceNumber(manager.getRepository(Invoice)),
         status: this.resolveStatus(totalAmount, paidAmount),
-        issueDate: new Date(),
-        // Fin del día de emisión, no "ahora": el hook de la entidad marca la
-        // factura OVERDUE en cuanto `now > dueDate`, así que un cobro parcial
-        // nacía vencido milisegundos después de emitirse.
-        dueDate: endOfToday(),
+        issueDate: today,
+        dueDate: today,
         subtotal,
         discountAmount: discountTotal,
         totalAmount,
