@@ -186,11 +186,19 @@
                         </button>
                       }
                       @if (p.status === 'active' && !isExpired(p.expiryDate)) {
+                        @if (canSellInPharmacy) {
+                          <button
+                            type="button" (click)="goToPharmacySale(p); $event.stopPropagation()"
+                            matTooltip="Vender en Farmacia (descuenta stock y cobra)"
+                            class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border-0">
+                            <span class="material-symbols-outlined msz-18">point_of_sale</span>
+                          </button>
+                        }
                         <button
                           type="button" (click)="changeStatus(p, 'dispensed'); $event.stopPropagation()"
-                          matTooltip="Dispensar"
+                          matTooltip="Marcar surtida fuera de la clínica (no descuenta stock ni cobra)"
                           class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-purple-50 hover:text-purple-600 transition-colors border-0">
-                          <span class="material-symbols-outlined msz-18">local_pharmacy</span>
+                          <span class="material-symbols-outlined msz-18">edit_note</span>
                         </button>
                       }
                       @if (canManagePrescriptions && canRefill(p)) {

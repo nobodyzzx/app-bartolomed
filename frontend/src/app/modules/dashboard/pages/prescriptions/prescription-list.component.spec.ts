@@ -191,4 +191,43 @@ describe('PrescriptionListComponent', () => {
       expect(router.navigate).toHaveBeenCalledWith([], { queryParams: {} })
     })
   })
+
+  /**
+   * Interrelación con Farmacia: "Dispensar" en Recetas solo hacía un PATCH de
+   * status, sin descontar stock ni generar ningún cobro — indistinguible en
+   * la UI de una venta real hecha en Farmacia (que sí hace ambas cosas).
+   */
+  describe('interrelación con Farmacia', () => {
+    it('goToPharmacySale navega al alta de venta con el paciente y la receta precargados', () => {
+      prescriptionsService.list.mockReturnValue(of({ items: [] }))
+      component = createComponent()
+
+      component.goToPharmacySale(makePrescription({ id: 'rx-9', patient: { id: 'p9', firstName: 'A', lastName: 'B', documentNumber: '1' } }))
+
+      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/pharmacy/sales-dispensing/new-sale'], {
+        queryParams: { patientId: 'p9', prescriptionId: 'rx-9' },
+      })
+    })
+
+    it('changeStatus a "dispensed" advierte que no descuenta stock ni cobra, para no confundirlo con una venta real', async () => {
+      prescriptionsService.list.mockReturnValue(of({ items: [] }))
+      component = createComponent()
+
+      await component.changeStatus(makePrescription(), 'dispensed')
+
+      const fireArgs = alert.fire.mock.calls[0][0]
+      expect(fireArgs.text).toContain('sin descontar stock')
+      expect(fireArgs.text).toContain('Vender en Farmacia')
+    })
+
+    it('changeStatus a otros estados conserva el texto genérico anterior', async () => {
+      prescriptionsService.list.mockReturnValue(of({ items: [] }))
+      component = createComponent()
+
+      await component.changeStatus(makePrescription({ status: 'draft' }), 'cancelled')
+
+      const fireArgs = alert.fire.mock.calls[0][0]
+      expect(fireArgs.text).toBe('La receta pasará a estado Cancelada.')
+    })
+  })
 })

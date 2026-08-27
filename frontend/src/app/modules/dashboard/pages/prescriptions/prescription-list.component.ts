@@ -7,6 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { RoleStateService } from '@core/services/role-state.service'
 import { UserRoles } from '@core/enums/user-roles.enum'
+import { Permission } from '@core/enums/permission.enum'
 import { Prescription } from './interfaces/prescription-ui.interface'
 import { PrescriptionsService } from './prescriptions.service'
 import { openPdfInNewTab } from '../../../../shared/utils/pdf-viewer.util'
@@ -48,6 +49,11 @@ export class PrescriptionListComponent implements OnInit {
    */
   get canManagePrescriptions(): boolean {
     return this.roleState.hasAnyRole([UserRoles.DOCTOR, UserRoles.ADMIN, UserRoles.SUPER_ADMIN])
+  }
+
+  /** Quién puede saltar directo a vender/dispensar de verdad en Farmacia. */
+  get canSellInPharmacy(): boolean {
+    return this.roleState.hasPermission(Permission.PharmacyDispense)
   }
 
   prescriptions: Prescription[] = []
@@ -263,14 +269,34 @@ export class PrescriptionListComponent implements OnInit {
     this.loadPrescriptions()
   }
 
+  /**
+   * Vender/dispensar de verdad en Farmacia: descuenta stock, genera el cargo
+   * y marca la receta como Dispensada automáticamente al terminar la venta.
+   * Es el camino que corresponde cuando el medicamento sale de esta clínica.
+   */
+  goToPharmacySale(p: Prescription): void {
+    this.router.navigate(['/dashboard/pharmacy/sales-dispensing/new-sale'], {
+      queryParams: { patientId: p.patient.id, prescriptionId: p.id },
+    })
+  }
+
+  /**
+   * Marcar "Dispensada" a mano, SIN pasar por Farmacia: no descuenta stock ni
+   * genera ningún cobro. Es solo para dejar constancia de que el paciente
+   * surtió la receta en otra farmacia, fuera de esta clínica — para lo que
+   * sí se compra aquí, usar "Vender en Farmacia".
+   */
   changeStatus(p: Prescription, status: string) {
+    const isManualDispense = status === 'dispensed'
     this.alert
       .fire({
         icon: 'question',
         title: '¿Confirmar cambio de estado?',
-        text: `La receta pasará a estado ${this.getStatusLabel(status)}.`,
+        text: isManualDispense
+          ? 'La receta pasará a "Dispensada" sin descontar stock ni generar ningún cobro — úsalo solo si el paciente surtió esta receta en otra farmacia. Si la compró aquí, cancela y usa "Vender en Farmacia".'
+          : `La receta pasará a estado ${this.getStatusLabel(status)}.`,
         showCancelButton: true,
-        confirmButtonText: 'Confirmar',
+        confirmButtonText: isManualDispense ? 'Sí, la surtieron afuera' : 'Confirmar',
         cancelButtonText: 'Cancelar',
       })
       .then(res => {
