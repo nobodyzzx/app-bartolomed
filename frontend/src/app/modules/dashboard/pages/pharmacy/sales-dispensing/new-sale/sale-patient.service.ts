@@ -71,8 +71,14 @@ export class SalePatientService {
   /**
    * Si el paciente no está entre las opciones ya buscadas se pide por id. Ese
    * endpoint necesitó `PharmacyDispense` para no devolver 403 a farmacia.
+   *
+   * `onPrescriptionsReady` es para el acceso directo "Vender en Farmacia"
+   * desde el listado de Recetas: llega con patientId/prescriptionId ya
+   * conocidos y necesita preseleccionar la receta en cuanto termine de
+   * cargar la lista, sin que el componente tenga que conocer el detalle
+   * async de cómo se cargan paciente y recetas.
    */
-  select(id: string): void {
+  select(id: string, onPrescriptionsReady?: () => void): void {
     if (!id) {
       this.clear()
       return
@@ -83,7 +89,7 @@ export class SalePatientService {
     const found = this.options().find(p => p.id === id)
     if (found) {
       this.selectedName.set(this.fullName(found))
-      this.loadPrescriptions(id)
+      this.loadPrescriptions(id, onPrescriptionsReady)
       return
     }
 
@@ -95,12 +101,13 @@ export class SalePatientService {
         next: patient => {
           this.selectedName.set(this.fullName(patient))
           this.loadingPatient.set(false)
-          this.loadPrescriptions(id)
+          this.loadPrescriptions(id, onPrescriptionsReady)
         },
         error: () => {
           this.selectedName.set('')
           this.loadingPatient.set(false)
           this.prescriptions.set([])
+          onPrescriptionsReady?.()
         },
       })
   }
@@ -121,9 +128,10 @@ export class SalePatientService {
   }
 
   /** Solo recetas activas y no vencidas: dispensar una vencida no tiene sentido. */
-  private loadPrescriptions(patientId: string): void {
+  private loadPrescriptions(patientId: string, onReady?: () => void): void {
     if (!patientId) {
       this.prescriptions.set([])
+      onReady?.()
       return
     }
 
@@ -140,10 +148,12 @@ export class SalePatientService {
             ),
           )
           this.loadingPrescriptions.set(false)
+          onReady?.()
         },
         error: () => {
           this.prescriptions.set([])
           this.loadingPrescriptions.set(false)
+          onReady?.()
         },
       })
   }

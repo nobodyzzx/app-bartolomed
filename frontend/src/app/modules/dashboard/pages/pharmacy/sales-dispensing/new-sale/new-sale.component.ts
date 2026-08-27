@@ -2,7 +2,7 @@ import { Location } from '@angular/common'
 import { Component, computed, DestroyRef, ElementRef, inject, OnInit, signal, ViewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
-import { Router } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { ClinicContextService } from '../../../../../clinics/services/clinic-context.service'
 import { Patient } from '../../../patients/interfaces/patient.interface'
@@ -148,6 +148,7 @@ export class NewSaleComponent implements OnInit {
     private clinicContext: ClinicContextService,
     private alert: AlertService,
     private router: Router,
+    private route: ActivatedRoute,
     private location: Location,
   ) {
     this.form = this.fb.group({
@@ -177,6 +178,7 @@ export class NewSaleComponent implements OnInit {
     }
 
     this.loadStocks(clinicId)
+    this.preselectFromQueryParams()
 
     // Auto-cargar precio de venta al seleccionar stock
     this.form.get('tempStockId')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(stockId => {
@@ -203,6 +205,26 @@ export class NewSaleComponent implements OnInit {
     this.formValue.set(this.form.value)
 
     this.syncChargeToAccountControl()
+  }
+
+  /**
+   * Acceso directo "Vender en Farmacia" desde el listado de Recetas: llega
+   * con `?patientId=...&prescriptionId=...` para no obligar al farmacéutico
+   * a volver a buscar al paciente y la receta que ya tenía abierta.
+   */
+  private preselectFromQueryParams(): void {
+    const params = this.route.snapshot.queryParamMap
+    const patientId = params.get('patientId')
+    const prescriptionId = params.get('prescriptionId')
+    if (!patientId) return
+
+    this.patient.select(patientId, () => {
+      this.form.get('patientId')?.setValue(patientId)
+      if (prescriptionId && this.patient.findPrescription(prescriptionId)) {
+        this.onPrescriptionSelected(prescriptionId)
+      }
+      this.syncChargeToAccountControl()
+    })
   }
 
   // Paciente y recetas viven en `SalePatientService`; aquí solo queda enlazar la
