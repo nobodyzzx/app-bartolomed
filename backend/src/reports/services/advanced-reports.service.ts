@@ -7,6 +7,7 @@ import { MedicationStock } from '../../pharmacy/entities/pharmacy.entity';
 import { Prescription } from '../../prescriptions/entities/prescription.entity';
 import { PrescriptionItem } from '../../prescriptions/entities/prescription.entity';
 import { StockTransfer } from '../../transfers/entities/stock-transfer.entity';
+import { addCalendarDays, todayInClinicTz } from '../../common/utils/date-format.util';
 import { ReportFilters } from './reports.service';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -29,6 +30,24 @@ const TIPO_PRODUCTO_SQL = `CASE med.product_type
         WHEN 'personal_care' THEN 'Cuidado personal'
         ELSE 'Sin clasificar'
       END`;
+
+/**
+ * `pharmacy_sales."saleDate"` es `timestamp without time zone`, pero el backend
+ * corre en UTC y la escribe con `new Date()`: el valor guardado es la hora UTC
+ * del reloj del servidor, no la hora de Bolivia. Agrupar o filtrar por
+ * DATE(...)/TO_CHAR(...'YYYY-MM') directo sobre esa columna corta el día a las
+ * 20:00 hora boliviana (medianoche UTC) en vez de medianoche real: una venta
+ * de las 21:00 en La Paz queda contabilizada en el día — o el mes, cerca de
+ * fin de mes — siguiente.
+ *
+ * Mismo root cause que el comentario de `date-format.util.ts` ("pasaba en todo
+ * el sistema"), pero ese util solo corrige el formateo para el usuario; acá
+ * es el agrupamiento SQL mismo, que ese util no toca. Se usa solo donde el
+ * valor se trunca a un día/mes de calendario — comparaciones relativas a
+ * NOW() (últimos 7/30 días, etc.) no lo necesitan: ambos lados ya son
+ * consistentes en base UTC.
+ */
+const SALE_DATE_BO = `(ps."saleDate" AT TIME ZONE 'UTC' AT TIME ZONE 'America/La_Paz')`;
 
 @Injectable()
 export class AdvancedReportsService {
@@ -72,8 +91,11 @@ export class AdvancedReportsService {
       .groupBy('med.id, med.name, med."genericName"')
       .orderBy('SUM(item.quantity)', 'DESC');
 
-    if (dateRange?.startDate) dispatchQb.andWhere('ps."saleDate" >= :startDate', { startDate: dateRange.startDate });
-    if (dateRange?.endDate)   dispatchQb.andWhere('ps."saleDate" <= :endDate',   { endDate: dateRange.endDate });
+    // Ver SALE_DATE_BO más arriba: ps."saleDate" guarda hora UTC del reloj del
+    // servidor, no de Bolivia — hay que convertir antes de comparar contra un
+    // límite de calendario.
+    if (dateRange?.startDate) dispatchQb.andWhere(`${SALE_DATE_BO} >= :startDate`, { startDate: dateRange.startDate });
+    if (dateRange?.endDate)   dispatchQb.andWhere(`${SALE_DATE_BO} <= :endDate`,   { endDate: dateRange.endDate });
 
     const dispensed = await dispatchQb.getRawMany();
 
@@ -398,8 +420,11 @@ export class AdvancedReportsService {
     const { clinicId, dateRange } = filters;
     if (!clinicId) throw new BadRequestException('clinicId es requerido');
 
-    const startDate = dateRange?.startDate ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const endDate   = dateRange?.endDate   ?? new Date().toISOString().slice(0, 10);
+    // `todayInClinicTz` en vez de `new Date().toISOString().slice(0, 10)`: el
+    // backend corre en UTC, así que ese slice da la fecha de calendario UTC,
+    // no la de Bolivia (mismo problema documentado en date-format.util.ts).
+    const startDate = dateRange?.startDate ?? addCalendarDays(todayInClinicTz(), -30);
+    const endDate   = dateRange?.endDate   ?? todayInClinicTz();
 
     const rows: Array<Record<string, unknown>> = await this.dataSource.query(`
       SELECT
@@ -422,8 +447,8 @@ export class AdvancedReportsService {
         JOIN pharmacy_sales ps ON ps.id = psi.sale_id
         WHERE ps.clinic_id = $1
           AND ps.status = 'completed'
-          AND ps."saleDate" >= $2
-          AND ps."saleDate" <= $3
+          AND ${SALE_DATE_BO} >= $2
+          AND ${SALE_DATE_BO} <= $3
         GROUP BY psi."medicationStockId"
       ) sold ON sold."medicationStockId" = ms.id
       WHERE ms.clinic_id = $1
@@ -450,8 +475,8 @@ export class AdvancedReportsService {
     const endDate   = dateRange?.endDate;
 
     const dateFilter = `
-      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
-      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+      ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
     `;
 
     return this.dataSource.query(`
@@ -485,8 +510,8 @@ export class AdvancedReportsService {
     const endDate   = dateRange?.endDate;
 
     const dateFilter = `
-      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
-      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+      ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
     `;
 
     return this.dataSource.query(`
@@ -524,14 +549,14 @@ export class AdvancedReportsService {
     const endDate   = dateRange?.endDate;
 
     const dateFilter = `
-      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
-      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+      ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
     `;
 
     const [dailySales, paymentBreakdown]: [Array<Record<string, unknown>>, Array<Record<string, unknown>>] = await Promise.all([
       this.dataSource.query(`
         SELECT
-          DATE(ps."saleDate")          AS date,
+          DATE(${SALE_DATE_BO})          AS date,
           SUM(ps.total)                AS "totalRevenue",
           COUNT(*)                     AS "ticketCount",
           ROUND(AVG(ps.total), 2)      AS "avgTicket"
@@ -539,8 +564,8 @@ export class AdvancedReportsService {
         WHERE ps.clinic_id = $1
           AND ps.status = 'completed'
           ${dateFilter}
-        GROUP BY DATE(ps."saleDate")
-        ORDER BY DATE(ps."saleDate") ASC
+        GROUP BY DATE(${SALE_DATE_BO})
+        ORDER BY DATE(${SALE_DATE_BO}) ASC
       `, [clinicId]),
 
       this.dataSource.query(`
@@ -639,8 +664,8 @@ export class AdvancedReportsService {
       ${endDate   ? `AND po."orderDate" <= '${endDate}'`   : ''}
     `;
     const dateFilterPS = `
-      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
-      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+      ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
     `;
 
     const [purchased, sold]: [Array<Record<string, unknown>>, Array<Record<string, unknown>>] = await Promise.all([
@@ -663,7 +688,7 @@ export class AdvancedReportsService {
 
       this.dataSource.query(`
         SELECT
-          TO_CHAR(ps."saleDate", 'YYYY-MM')  AS month,
+          TO_CHAR(${SALE_DATE_BO}, 'YYYY-MM')  AS month,
           med.name                            AS "medicationName",
           SUM(psi.quantity)                   AS "qtySold"
         FROM pharmacy_sale_items psi
@@ -673,7 +698,7 @@ export class AdvancedReportsService {
         WHERE ps.clinic_id = $1
           AND ps.status = 'completed'
           ${dateFilterPS}
-        GROUP BY TO_CHAR(ps."saleDate", 'YYYY-MM'), med.id, med.name
+        GROUP BY TO_CHAR(${SALE_DATE_BO}, 'YYYY-MM'), med.id, med.name
         ORDER BY month, med.name
       `, [clinicId]),
     ]);
@@ -710,8 +735,8 @@ export class AdvancedReportsService {
     const endDate   = dateRange?.endDate;
 
     const dateFilter = `
-      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
-      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+      ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
     `;
 
     return this.dataSource.query(`
@@ -891,8 +916,8 @@ export class AdvancedReportsService {
     const endDate   = dateRange?.endDate;
 
     const dateFilter = `
-      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
-      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+      ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
     `;
 
     const [byMethod, monthly]: [Array<Record<string, unknown>>, Array<Record<string, unknown>>] = await Promise.all([
@@ -911,7 +936,7 @@ export class AdvancedReportsService {
 
       this.dataSource.query(`
         SELECT
-          TO_CHAR(ps."saleDate", 'YYYY-MM')  AS month,
+          TO_CHAR(${SALE_DATE_BO}, 'YYYY-MM')  AS month,
           ps."paymentMethod"                 AS method,
           SUM(ps.total)                      AS total,
           COUNT(*)                           AS count
@@ -919,7 +944,7 @@ export class AdvancedReportsService {
         WHERE ps.clinic_id = $1
           AND ps.status = 'completed'
           ${dateFilter}
-        GROUP BY TO_CHAR(ps."saleDate", 'YYYY-MM'), ps."paymentMethod"
+        GROUP BY TO_CHAR(${SALE_DATE_BO}, 'YYYY-MM'), ps."paymentMethod"
         ORDER BY month, method
       `, [clinicId]),
     ]);
@@ -943,13 +968,13 @@ export class AdvancedReportsService {
     const endDate   = dateRange?.endDate;
 
     const dateFilter = `
-      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
-      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+      ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
     `;
 
     const rows: Array<Record<string, unknown>> = await this.dataSource.query(`
       SELECT
-        TO_CHAR(ps."saleDate", 'YYYY-MM')               AS month,
+        TO_CHAR(${SALE_DATE_BO}, 'YYYY-MM')               AS month,
         SUM(ps.total)                                    AS revenue,
         SUM(psi.quantity * ms."unitCost")                AS cogs,
         SUM(ps.total) - SUM(psi.quantity * ms."unitCost") AS "grossMargin"
@@ -959,7 +984,7 @@ export class AdvancedReportsService {
       WHERE ps.clinic_id = $1
         AND ps.status = 'completed'
         ${dateFilter}
-      GROUP BY TO_CHAR(ps."saleDate", 'YYYY-MM')
+      GROUP BY TO_CHAR(${SALE_DATE_BO}, 'YYYY-MM')
       ORDER BY month ASC
     `, [clinicId]);
 
@@ -1056,8 +1081,8 @@ export class AdvancedReportsService {
     const startDate = dateRange?.startDate;
     const endDate   = dateRange?.endDate;
     const dateFilter = `
-      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
-      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+      ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
     `;
 
     const rows: Array<Record<string, unknown>> = await this.dataSource.query(`
@@ -1067,7 +1092,7 @@ export class AdvancedReportsService {
         COUNT(DISTINCT ps.id)::int                                        AS "salesCount",
         ROUND(SUM(ps.total)::numeric, 2)                                  AS "totalRevenue",
         ROUND(AVG(ps.total)::numeric, 2)                                  AS "avgTicket",
-        COUNT(DISTINCT DATE(ps."saleDate"))::int                          AS "workDays",
+        COUNT(DISTINCT DATE(${SALE_DATE_BO}))::int                          AS "workDays",
         SUM(psi.quantity)::int                                            AS "totalUnits",
         MIN(ps."saleDate")                                                AS "firstSale",
         MAX(ps."saleDate")                                                AS "lastSale"
@@ -1098,14 +1123,14 @@ export class AdvancedReportsService {
     const startDate = dateRange?.startDate;
     const endDate   = dateRange?.endDate;
     const dateFilter = `
-      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
-      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+      ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
     `;
 
     const rows: Array<Record<string, unknown>> = await this.dataSource.query(`
       SELECT
         pi."firstName" || ' ' || COALESCE(pi."lastName", '')  AS "pharmacistName",
-        DATE(ps."saleDate")                                    AS "saleDay",
+        DATE(${SALE_DATE_BO})                                    AS "saleDay",
         med.name                                               AS "medicationName",
         med."genericName"                                      AS "genericName",
         ${TIPO_PRODUCTO_SQL}                                           AS category,
@@ -1121,7 +1146,7 @@ export class AdvancedReportsService {
       WHERE ps.clinic_id = $1
         AND ps.status = 'completed'
         ${dateFilter}
-      GROUP BY pi."firstName", pi."lastName", DATE(ps."saleDate"),
+      GROUP BY pi."firstName", pi."lastName", DATE(${SALE_DATE_BO}),
                med.id, med.name, med."genericName", med.product_type
       ORDER BY "saleDay" DESC, "pharmacistName", "totalRevenue" DESC
     `, [clinicId]);
@@ -1279,8 +1304,8 @@ export class AdvancedReportsService {
     const startDate = dateRange?.startDate;
     const endDate   = dateRange?.endDate;
     const dateFilter = `
-      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
-      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+      ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
     `;
 
     return this.dataSource.query(`
@@ -1321,8 +1346,8 @@ export class AdvancedReportsService {
     const startDate = dateRange?.startDate;
     const endDate   = dateRange?.endDate;
     const dateFilter = `
-      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
-      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+      ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
     `;
 
     const [summary, byMedication]: [Array<Record<string, unknown>>, Array<Record<string, unknown>>] =
@@ -1380,8 +1405,8 @@ export class AdvancedReportsService {
     const startDate = dateRange?.startDate;
     const endDate   = dateRange?.endDate;
     const dateFilter = `
-      ${startDate ? `AND ps."saleDate" >= '${startDate}'` : ''}
-      ${endDate   ? `AND ps."saleDate" <= '${endDate}'`   : ''}
+      ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
     `;
 
     const [summary, daily]: [Array<Record<string, unknown>>, Array<Record<string, unknown>>] =
@@ -1403,7 +1428,7 @@ export class AdvancedReportsService {
 
         this.dataSource.query(`
           SELECT
-            DATE(ps."saleDate")                         AS "saleDay",
+            DATE(${SALE_DATE_BO})                         AS "saleDay",
             ps."paymentMethod"                          AS method,
             COUNT(DISTINCT ps.id)::int                 AS "salesCount",
             ROUND(SUM(ps.total)::numeric, 2)           AS "totalRevenue"
@@ -1411,7 +1436,7 @@ export class AdvancedReportsService {
           WHERE ps.clinic_id = $1
             AND ps.status = 'completed'
             ${dateFilter}
-          GROUP BY DATE(ps."saleDate"), ps."paymentMethod"
+          GROUP BY DATE(${SALE_DATE_BO}), ps."paymentMethod"
           ORDER BY "saleDay" DESC, "totalRevenue" DESC
         `, [clinicId]),
       ]);
@@ -1437,7 +1462,7 @@ export class AdvancedReportsService {
 
     const rows: Array<Record<string, unknown>> = await this.dataSource.query(`
       SELECT
-        TO_CHAR(DATE_TRUNC('month', ps."saleDate"), 'YYYY-MM') AS month,
+        TO_CHAR(DATE_TRUNC('month', ${SALE_DATE_BO}), 'YYYY-MM') AS month,
         COUNT(DISTINCT ps.id)::int                             AS "salesCount",
         SUM(psi.quantity)::int                                 AS "totalUnits",
         ROUND(SUM(ps.total)::numeric, 2)                       AS "totalRevenue",
@@ -1450,7 +1475,7 @@ export class AdvancedReportsService {
       WHERE ps.clinic_id = $1
         AND ps.status = 'completed'
         AND ps."saleDate" >= DATE_TRUNC('month', NOW()) - INTERVAL '5 months'
-      GROUP BY DATE_TRUNC('month', ps."saleDate")
+      GROUP BY DATE_TRUNC('month', ${SALE_DATE_BO})
       ORDER BY month ASC
     `, [clinicId]);
 
