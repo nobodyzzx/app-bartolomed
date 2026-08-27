@@ -163,6 +163,7 @@ percent
 person
 person_add
 person_alert
+person_off
 person_search
 phone
 picture_as_pdf
