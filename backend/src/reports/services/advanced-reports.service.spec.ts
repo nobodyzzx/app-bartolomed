@@ -341,15 +341,48 @@ describe('AdvancedReportsService', () => {
   });
 
   describe('getDailySalesSummary (F1-R4)', () => {
-    it('combina dailySales y paymentBreakdown en paralelo', async () => {
+    it('combina dailySales de farmacia + clínica y paymentBreakdown en paralelo', async () => {
       dataSource.query
-        .mockResolvedValueOnce([{ date: '2026-01-01', totalRevenue: '100' }])
+        .mockResolvedValueOnce([{ date: '2026-01-01', revenue: '100', tickets: '2' }])
+        .mockResolvedValueOnce([{ date: '2026-01-01', revenue: '50', tickets: '1' }])
         .mockResolvedValueOnce([{ method: 'cash', total: '100' }]);
 
       const result = await service.getDailySalesSummary({ clinicId: CLINIC_ID });
 
-      expect(result.dailySales).toEqual([{ date: '2026-01-01', totalRevenue: '100' }]);
+      expect(result.dailySales).toEqual([
+        { date: '2026-01-01', pharmacyRevenue: 100, clinicRevenue: 50, totalRevenue: 150, ticketCount: 3, avgTicket: 50 },
+      ]);
       expect(result.paymentBreakdown).toEqual([{ method: 'cash', total: '100' }]);
+    });
+
+    /**
+     * Regresión: bug corregido el 2026-08-27. "Ventas Diarias" solo miraba
+     * pharmacy_sales — todo lo cobrado por consultas, laboratorio u otros vía
+     * el punto de cobro (charges/invoices) no aparecía nunca, aunque fuera la
+     * mayor parte del ingreso real de la clínica.
+     */
+    it('excluye charges con origin=pharmacy del lado clínico para no contar dos veces una venta a cuenta', async () => {
+      dataSource.query.mockResolvedValueOnce([]).mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+
+      await service.getDailySalesSummary({ clinicId: CLINIC_ID });
+
+      const clinicSql = dataSource.query.mock.calls[1][0];
+      expect(clinicSql).toContain('FROM charges c');
+      expect(clinicSql).toContain(`c.origin != 'pharmacy'`);
+      expect(clinicSql).toContain(`c.status = 'invoiced'`);
+    });
+
+    it('un día solo con ventas de un lado deja el otro en 0', async () => {
+      dataSource.query
+        .mockResolvedValueOnce([{ date: '2026-01-01', revenue: '100', tickets: '2' }])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
+
+      const result = await service.getDailySalesSummary({ clinicId: CLINIC_ID });
+
+      expect(result.dailySales).toEqual([
+        { date: '2026-01-01', pharmacyRevenue: 100, clinicRevenue: 0, totalRevenue: 100, ticketCount: 2, avgTicket: 50 },
+      ]);
     });
 
     /**
@@ -361,7 +394,7 @@ describe('AdvancedReportsService', () => {
      * quedaba contada en "Ventas Diarias" del día siguiente.
      */
     it('agrupa por día convirtiendo saleDate a hora de Bolivia, no UTC crudo', async () => {
-      dataSource.query.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+      dataSource.query.mockResolvedValueOnce([]).mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
       await service.getDailySalesSummary({ clinicId: CLINIC_ID });
 

@@ -8,6 +8,7 @@ import { Prescription } from '../../prescriptions/entities/prescription.entity';
 import { PrescriptionItem } from '../../prescriptions/entities/prescription.entity';
 import { StockTransfer } from '../../transfers/entities/stock-transfer.entity';
 import { addCalendarDays, todayInClinicTz } from '../../common/utils/date-format.util';
+import { round2 } from '../../billing/utils/discount-proration.util';
 import { ReportFilters } from './reports.service';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -48,6 +49,9 @@ const TIPO_PRODUCTO_SQL = `CASE med.product_type
  * consistentes en base UTC.
  */
 const SALE_DATE_BO = `(ps."saleDate" AT TIME ZONE 'UTC' AT TIME ZONE 'America/La_Paz')`;
+
+/** Mismo ajuste que SALE_DATE_BO, para `charges.createdAt` (alias `c`). */
+const CHARGE_DATE_BO = `(c."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/La_Paz')`;
 
 @Injectable()
 export class AdvancedReportsService {
@@ -541,6 +545,19 @@ export class AdvancedReportsService {
 
   // ─── F1-R4: Resumen ventas por día ───────────────────────────────────────
 
+  /**
+   * "Ventas Diarias" solo miraba `pharmacy_sales`: el resto del ingreso de la
+   * clínica (consultas, laboratorio, otros — todo lo que pasa por el punto de
+   * cobro) vive en `charges`/`invoices` y no aparecía nunca, aunque fuera la
+   * mayor parte de lo facturado. Se agrega ese lado como `clinicRevenue`.
+   *
+   * `origin != 'pharmacy'` es necesario para no contar dos veces: una venta
+   * de farmacia "a cuenta" (chargeToAccount) YA se cuenta en pharmacy_sales y
+   * además genera un charge con origin='pharmacy' que termina invoiced — sin
+   * este filtro esa venta aparecería en ambos lados. `status = 'invoiced'`
+   * es el equivalente de status='completed' en pharmacy_sales: un cargo
+   * `pending` es todavía una cuenta abierta, no una venta realizada.
+   */
   async getDailySalesSummary(filters: ReportFilters) {
     const { clinicId, dateRange } = filters;
     if (!clinicId) throw new BadRequestException('clinicId es requerido');
@@ -552,22 +569,46 @@ export class AdvancedReportsService {
       ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
       ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
     `;
+    const chargeDateFilter = `
+      ${startDate ? `AND ${CHARGE_DATE_BO} >= '${startDate}'` : ''}
+      ${endDate   ? `AND ${CHARGE_DATE_BO} <= '${endDate}'`   : ''}
+    `;
 
-    const [dailySales, paymentBreakdown]: [Array<Record<string, unknown>>, Array<Record<string, unknown>>] = await Promise.all([
+    const [pharmacyDaily, clinicDaily, paymentBreakdown]: [
+      Array<Record<string, unknown>>,
+      Array<Record<string, unknown>>,
+      Array<Record<string, unknown>>,
+    ] = await Promise.all([
       this.dataSource.query(`
         SELECT
-          DATE(${SALE_DATE_BO})          AS date,
-          SUM(ps.total)                AS "totalRevenue",
-          COUNT(*)                     AS "ticketCount",
-          ROUND(AVG(ps.total), 2)      AS "avgTicket"
+          DATE(${SALE_DATE_BO}) AS date,
+          SUM(ps.total)         AS revenue,
+          COUNT(*)              AS tickets
         FROM pharmacy_sales ps
         WHERE ps.clinic_id = $1
           AND ps.status = 'completed'
           ${dateFilter}
         GROUP BY DATE(${SALE_DATE_BO})
-        ORDER BY DATE(${SALE_DATE_BO}) ASC
       `, [clinicId]),
 
+      this.dataSource.query(`
+        SELECT
+          DATE(${CHARGE_DATE_BO})                                    AS date,
+          SUM(c.total)                                               AS revenue,
+          COUNT(DISTINCT COALESCE(c.invoice_id::text, c.id::text))   AS tickets
+        FROM charges c
+        WHERE c.clinic_id = $1
+          AND c.origin != 'pharmacy'
+          AND c.status = 'invoiced'
+          ${chargeDateFilter}
+        GROUP BY DATE(${CHARGE_DATE_BO})
+      `, [clinicId]),
+
+      // Nota: se deja solo con datos de farmacia por ahora — el desglose por
+      // método de pago de la clínica vive en `payments`, con una taxonomía
+      // de métodos distinta (credit_card/debit_card/... vs cash/card/mixed/...
+      // de pharmacy_sales) que no se puede fusionar 1:1 sin inventar un
+      // mapeo. Pendiente como mejora aparte.
       this.dataSource.query(`
         SELECT
           ps."paymentMethod"           AS method,
@@ -582,7 +623,55 @@ export class AdvancedReportsService {
       `, [clinicId]),
     ]);
 
-    return { dailySales, paymentBreakdown };
+    return { dailySales: this.mergeDailySales(pharmacyDaily, clinicDaily), paymentBreakdown };
+  }
+
+  /** Combina farmacia + clínica por fecha, dejando ambos lados visibles además del total. */
+  private mergeDailySales(
+    pharmacy: Array<Record<string, unknown>>,
+    clinic: Array<Record<string, unknown>>,
+  ): Array<{
+    date: string;
+    pharmacyRevenue: number;
+    clinicRevenue: number;
+    totalRevenue: number;
+    ticketCount: number;
+    avgTicket: number;
+  }> {
+    const byDate = new Map<string, { pharmacyRevenue: number; clinicRevenue: number; pharmacyTickets: number; clinicTickets: number }>();
+
+    const dateKey = (value: unknown): string =>
+      value instanceof Date ? value.toISOString().slice(0, 10) : String(value);
+
+    for (const row of pharmacy) {
+      const key = dateKey(row['date']);
+      const entry = byDate.get(key) ?? { pharmacyRevenue: 0, clinicRevenue: 0, pharmacyTickets: 0, clinicTickets: 0 };
+      entry.pharmacyRevenue = Number(row['revenue'] ?? 0);
+      entry.pharmacyTickets = Number(row['tickets'] ?? 0);
+      byDate.set(key, entry);
+    }
+    for (const row of clinic) {
+      const key = dateKey(row['date']);
+      const entry = byDate.get(key) ?? { pharmacyRevenue: 0, clinicRevenue: 0, pharmacyTickets: 0, clinicTickets: 0 };
+      entry.clinicRevenue = Number(row['revenue'] ?? 0);
+      entry.clinicTickets = Number(row['tickets'] ?? 0);
+      byDate.set(key, entry);
+    }
+
+    return [...byDate.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, e]) => {
+        const totalRevenue = round2(e.pharmacyRevenue + e.clinicRevenue);
+        const ticketCount = e.pharmacyTickets + e.clinicTickets;
+        return {
+          date,
+          pharmacyRevenue: round2(e.pharmacyRevenue),
+          clinicRevenue: round2(e.clinicRevenue),
+          totalRevenue,
+          ticketCount,
+          avgTicket: ticketCount > 0 ? round2(totalRevenue / ticketCount) : 0,
+        };
+      });
   }
 
   // ─── F1-R5: Vencimientos por bucket ──────────────────────────────────────
