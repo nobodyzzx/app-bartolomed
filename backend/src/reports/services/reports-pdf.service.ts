@@ -1032,8 +1032,11 @@ ${body}
     const totalTickets = daily.reduce((s: number, r: any) => s + Number(r.ticketCount ?? 0), 0);
     const avgTicket    = totalTickets > 0 ? totalRevenue / totalTickets : 0;
 
+    // pharmacyRevenue/clinicRevenue solo existen si `daily` viene del
+    // getDailySalesSummary ya combinado — se muestran como 0 si faltan
+    // (defensivo, por si algún consumidor viejo pasa datos con otra forma).
     const dailyRowsTypst = daily.map((d: any) =>
-      `(${typstString(this.fmtDateReport(d.date))}, ${typstString(this.fmtBs(d.totalRevenue))}, ${typstString(this.fmtNum(d.ticketCount))}, ${typstString(this.fmtBs(d.avgTicket))})`,
+      `(${typstString(this.fmtDateReport(d.date))}, ${typstString(this.fmtBs(d.pharmacyRevenue ?? 0))}, ${typstString(this.fmtBs(d.clinicRevenue ?? 0))}, ${typstString(this.fmtBs(d.totalRevenue))}, ${typstString(this.fmtNum(d.ticketCount))}, ${typstString(this.fmtBs(d.avgTicket))})`,
     ).join(',\n        ') + (daily.length > 0 ? ',' : '');
 
     const paymentRowsTypst = payment.map((p: any) =>
@@ -1043,17 +1046,20 @@ ${body}
     const dailyTableTypst = daily.length > 0
       ? `#section(${typstString('Detalle Diario')})[
     #styledTable(
-      (${['Fecha', 'Ingresos', 'Tickets', 'Ticket Promedio'].map(typstString).join(', ')}),
+      (${['Fecha', 'Farmacia (Bs)', 'Clínica (Bs)', 'Ingresos', 'Tickets', 'Ticket Promedio'].map(typstString).join(', ')}),
       (
         ${dailyRowsTypst}
       ),
-      align: (left, right, right, right),
+      align: (left, right, right, right, right, right),
     )
   ]`
       : '';
 
+    // Desglose por método de pago: solo cubre farmacia por ahora (ver
+    // comentario en getDailySalesSummary — taxonomía de métodos distinta
+    // entre pharmacy_sales y payments, no se puede fusionar sin un mapeo).
     const paymentTableTypst = payment.length > 0
-      ? `#section(${typstString('Desglose por Método de Pago')})[
+      ? `#section(${typstString('Desglose por Método de Pago — Farmacia')})[
     #styledTable(
       (${['Método', 'Total (Bs)', 'Transacciones'].map(typstString).join(', ')}),
       (
@@ -1066,7 +1072,7 @@ ${body}
 
     return `#import "/templates/bartolomed-base.typ": bartolomedDoc, header, metaBar, section, kpiCard, kpiGrid, styledTable, noData
 
-#show: bartolomedDoc.with(title: ${typstString('Ventas Diarias — Farmacia')}, paper: "a4", landscape: true)
+#show: bartolomedDoc.with(title: ${typstString('Ventas Diarias')}, paper: "a4", landscape: true)
 
 #header(name: "BARTOLOMED", subtitle: "Sistema de Gestión Clínica", badge: ${typstString('Ventas Diarias')})
 #metaBar((
