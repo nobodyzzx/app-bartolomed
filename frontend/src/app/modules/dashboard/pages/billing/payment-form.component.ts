@@ -9,6 +9,7 @@ import { ErrorService } from '../../../../shared/components/services/error.servi
 import { scrollToFirstInvalidField } from '../../../../shared/utils/form-errors.util'
 import { Clinic } from '../admin/clinics/interfaces/clinic.interface'
 import { ClinicsService } from '../admin/clinics/services/clinics.service'
+import { PAYMENT_METHODS } from '../checkout/checkout.service'
 import { Patient } from '../patients/interfaces/patient.interface'
 import { PatientsService } from '../patients/services/patients.service'
 import { BillingService, InvoiceResponse, PaymentResponse } from './billing.service'
@@ -27,14 +28,14 @@ export class PaymentFormComponent implements OnInit {
   submitting = false
   editMode = false // futuro soporte edición
 
-  paymentMethods = [
-    { value: 'cash', label: 'Efectivo', icon: 'payments' },
-    { value: 'card', label: 'Tarjeta', icon: 'credit_card' },
-    { value: 'transfer', label: 'Transferencia', icon: 'account_balance' },
-    { value: 'qr', label: 'QR', icon: 'qr_code' },
-    { value: 'check', label: 'Cheque', icon: 'receipt_long' },
-    { value: 'other', label: 'Otro', icon: 'pending' },
-  ]
+  /**
+   * `PAYMENT_METHODS`, la lista compartida con el punto de cobro y farmacia:
+   * la clínica solo cobra en efectivo y por QR. La lista local anterior traía
+   * 'card'/'transfer', que ni siquiera son valores válidos del enum
+   * PaymentMethod del backend ('credit_card'/'bank_transfer') — elegirlas
+   * daba 400 al guardar el pago.
+   */
+  paymentMethods = PAYMENT_METHODS
 
   patients: Patient[] = []
   clinics: Clinic[] = []
