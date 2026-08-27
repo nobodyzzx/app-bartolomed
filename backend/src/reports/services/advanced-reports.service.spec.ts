@@ -123,8 +123,12 @@ describe('AdvancedReportsService', () => {
         dateRange: { startDate: '2026-01-01', endDate: '2026-01-31' },
       });
 
-      expect(dispatchQb.andWhere).toHaveBeenCalledWith('ps."saleDate" >= :startDate', { startDate: '2026-01-01' });
-      expect(dispatchQb.andWhere).toHaveBeenCalledWith('ps."saleDate" <= :endDate', { endDate: '2026-01-31' });
+      // Regresión: bug corregido el 2026-08-27. ps."saleDate" guarda hora UTC
+      // del reloj del servidor, no de Bolivia — sin la conversión, el filtro
+      // de fecha comparaba contra el límite equivocado (ver SALE_DATE_BO).
+      const SALE_DATE_BO = `(ps."saleDate" AT TIME ZONE 'UTC' AT TIME ZONE 'America/La_Paz')`;
+      expect(dispatchQb.andWhere).toHaveBeenCalledWith(`${SALE_DATE_BO} >= :startDate`, { startDate: '2026-01-01' });
+      expect(dispatchQb.andWhere).toHaveBeenCalledWith(`${SALE_DATE_BO} <= :endDate`, { endDate: '2026-01-31' });
       expect(receivedQb.andWhere).toHaveBeenCalledWith('st."receivedAt" >= :startDate', { startDate: '2026-01-01' });
       expect(receivedQb.andWhere).toHaveBeenCalledWith('st."receivedAt" <= :endDate', { endDate: '2026-01-31' });
     });
@@ -278,8 +282,10 @@ describe('AdvancedReportsService', () => {
         dateRange: { startDate: '2026-01-01', endDate: '2026-01-31' },
       });
       expect(result).toEqual([{ medicationName: 'A' }]);
-      expect(dataSource.query.mock.calls[0][0]).toContain(`ps."saleDate" >= '2026-01-01'`);
-      expect(dataSource.query.mock.calls[0][0]).toContain(`ps."saleDate" <= '2026-01-31'`);
+      // Regresión: bug corregido el 2026-08-27 (ver SALE_DATE_BO en el servicio).
+      const SALE_DATE_BO = `(ps."saleDate" AT TIME ZONE 'UTC' AT TIME ZONE 'America/La_Paz')`;
+      expect(dataSource.query.mock.calls[0][0]).toContain(`${SALE_DATE_BO} >= '2026-01-01'`);
+      expect(dataSource.query.mock.calls[0][0]).toContain(`${SALE_DATE_BO} <= '2026-01-31'`);
     });
 
     it('getProductMarginReport devuelve el resultado de la query', async () => {
@@ -344,6 +350,26 @@ describe('AdvancedReportsService', () => {
 
       expect(result.dailySales).toEqual([{ date: '2026-01-01', totalRevenue: '100' }]);
       expect(result.paymentBreakdown).toEqual([{ method: 'cash', total: '100' }]);
+    });
+
+    /**
+     * Regresión: bug corregido el 2026-08-27. pharmacy_sales."saleDate" es
+     * `timestamp without time zone` pero se guarda en hora UTC del reloj del
+     * servidor (el contenedor corre en UTC), no en hora de Bolivia. Agrupar
+     * con DATE(ps."saleDate") sin convertir cortaba el día a las 20:00 hora
+     * boliviana en vez de medianoche: una venta de las 21:00 en La Paz
+     * quedaba contada en "Ventas Diarias" del día siguiente.
+     */
+    it('agrupa por día convirtiendo saleDate a hora de Bolivia, no UTC crudo', async () => {
+      dataSource.query.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+
+      await service.getDailySalesSummary({ clinicId: CLINIC_ID });
+
+      const dailySalesSql = dataSource.query.mock.calls[0][0];
+      expect(dailySalesSql).toContain(
+        `DATE((ps."saleDate" AT TIME ZONE 'UTC' AT TIME ZONE 'America/La_Paz'))`,
+      );
+      expect(dailySalesSql).not.toMatch(/DATE\(ps\."saleDate"\)/);
     });
   });
 
