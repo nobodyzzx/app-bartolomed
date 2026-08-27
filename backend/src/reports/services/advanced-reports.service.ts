@@ -47,11 +47,23 @@ const TIPO_PRODUCTO_SQL = `CASE med.product_type
  * valor se trunca a un día/mes de calendario — comparaciones relativas a
  * NOW() (últimos 7/30 días, etc.) no lo necesitan: ambos lados ya son
  * consistentes en base UTC.
+ *
+ * Segundo bug, independiente del anterior (encontrado el 2026-08-27 al pedir
+ * "hoy" con startDate=endDate y no traer ningún resultado): comparar un
+ * timestamp contra `<= 'YYYY-MM-DD'` compara contra la MEDIANOCHE de ese día
+ * (`'2026-08-27'` = `'2026-08-27 00:00:00'`), así que cualquier fila con hora
+ * después de medianoche queda excluida — es decir, casi todas. Filtrar un
+ * único día (startDate = endDate = hoy) no traía nada aunque hubiera ventas
+ * esa misma mañana. Por eso el límite superior de todo filtro de fecha en
+ * este archivo usa `< (fecha::date + INTERVAL '1 day')` en vez de `<= fecha`.
  */
 const SALE_DATE_BO = `(ps."saleDate" AT TIME ZONE 'UTC' AT TIME ZONE 'America/La_Paz')`;
 
 /** Mismo ajuste que SALE_DATE_BO, para `charges.createdAt` (alias `c`). */
 const CHARGE_DATE_BO = `(c."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/La_Paz')`;
+
+/** Mismo ajuste que SALE_DATE_BO, para `stock_transfers.createdAt` (alias `t`). */
+const TRANSFER_DATE_BO = `(t."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/La_Paz')`;
 
 /**
  * Normaliza pharmacy_sales.paymentMethod (cash/card/transfer/insurance/
@@ -127,7 +139,9 @@ export class AdvancedReportsService {
     // servidor, no de Bolivia — hay que convertir antes de comparar contra un
     // límite de calendario.
     if (dateRange?.startDate) dispatchQb.andWhere(`${SALE_DATE_BO} >= :startDate`, { startDate: dateRange.startDate });
-    if (dateRange?.endDate)   dispatchQb.andWhere(`${SALE_DATE_BO} <= :endDate`,   { endDate: dateRange.endDate });
+    // < día+1, no <=: 'YYYY-MM-DD' compara contra medianoche, así que <= excluía
+    // todo lo que no fuera exactamente medianoche (ver comentario de SALE_DATE_BO).
+    if (dateRange?.endDate)   dispatchQb.andWhere(`${SALE_DATE_BO} < (:endDate::date + INTERVAL '1 day')`, { endDate: dateRange.endDate });
 
     const dispensed = await dispatchQb.getRawMany();
 
@@ -145,8 +159,13 @@ export class AdvancedReportsService {
       .andWhere("st.status = 'completed'")
       .groupBy('med.id, med.name');
 
-    if (dateRange?.startDate) receivedQb.andWhere('st."receivedAt" >= :startDate', { startDate: dateRange.startDate });
-    if (dateRange?.endDate)   receivedQb.andWhere('st."receivedAt" <= :endDate',   { endDate: dateRange.endDate });
+    // st."receivedAt" tiene el mismo problema que ps."saleDate": timestamp sin
+    // zona guardado en hora del servidor (UTC), no de Bolivia — y el límite
+    // superior necesita < día+1, no <=, por la misma razón documentada en
+    // SALE_DATE_BO.
+    const RECEIVED_AT_BO = `(st."receivedAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/La_Paz')`;
+    if (dateRange?.startDate) receivedQb.andWhere(`${RECEIVED_AT_BO} >= :startDate`, { startDate: dateRange.startDate });
+    if (dateRange?.endDate)   receivedQb.andWhere(`${RECEIVED_AT_BO} < (:endDate::date + INTERVAL '1 day')`, { endDate: dateRange.endDate });
 
     const received = await receivedQb.getRawMany();
 
@@ -327,8 +346,8 @@ export class AdvancedReportsService {
     if (!clinicId) throw new BadRequestException('clinicId es requerido');
 
     const dateFilter = `
-      ${dateRange?.startDate ? `AND t."createdAt" >= '${dateRange.startDate}'` : ''}
-      ${dateRange?.endDate   ? `AND t."createdAt" <= '${dateRange.endDate}'`   : ''}
+      ${dateRange?.startDate ? `AND ${TRANSFER_DATE_BO} >= '${dateRange.startDate}'` : ''}
+      ${dateRange?.endDate   ? `AND ${TRANSFER_DATE_BO} < ('${dateRange.endDate}'::date + INTERVAL '1 day')` : ''}
     `;
 
     // KPI por par origen-destino
@@ -480,7 +499,7 @@ export class AdvancedReportsService {
         WHERE ps.clinic_id = $1
           AND ps.status = 'completed'
           AND ${SALE_DATE_BO} >= $2
-          AND ${SALE_DATE_BO} <= $3
+          AND ${SALE_DATE_BO} < ($3::date + INTERVAL '1 day')
         GROUP BY psi."medicationStockId"
       ) sold ON sold."medicationStockId" = ms.id
       WHERE ms.clinic_id = $1
@@ -508,7 +527,7 @@ export class AdvancedReportsService {
 
     const dateFilter = `
       ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
-      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
     `;
 
     return this.dataSource.query(`
@@ -543,7 +562,7 @@ export class AdvancedReportsService {
 
     const dateFilter = `
       ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
-      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
     `;
 
     return this.dataSource.query(`
@@ -595,7 +614,7 @@ export class AdvancedReportsService {
 
     const dateFilter = `
       ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
-      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
     `;
     const chargeDateFilter = `
       ${startDate ? `AND ${CHARGE_DATE_BO} >= '${startDate}'` : ''}
@@ -606,7 +625,7 @@ export class AdvancedReportsService {
     // AT TIME ZONE 'UTC', basta reexpresarlo en hora de Bolivia.
     const paymentDateFilter = `
       ${startDate ? `AND (p."paymentDate" AT TIME ZONE 'America/La_Paz') >= '${startDate}'` : ''}
-      ${endDate   ? `AND (p."paymentDate" AT TIME ZONE 'America/La_Paz') <= '${endDate}'`   : ''}
+      ${endDate   ? `AND (p."paymentDate" AT TIME ZONE 'America/La_Paz') < ('${endDate}'::date + INTERVAL '1 day')` : ''}
     `;
 
     const [pharmacyDaily, clinicDaily, paymentBreakdown]: [
@@ -807,7 +826,7 @@ export class AdvancedReportsService {
     `;
     const dateFilterPS = `
       ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
-      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
     `;
 
     const [purchased, sold]: [Array<Record<string, unknown>>, Array<Record<string, unknown>>] = await Promise.all([
@@ -878,7 +897,7 @@ export class AdvancedReportsService {
 
     const dateFilter = `
       ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
-      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
     `;
 
     return this.dataSource.query(`
@@ -924,8 +943,12 @@ export class AdvancedReportsService {
     // servidor, pero se parametrizan igual por coherencia.
     const params: unknown[] = [clinicId];
     const cond: string[] = [];
-    if (startDate) { params.push(startDate); cond.push(`AND sm."movementDate" >= $${params.length}`); }
-    if (endDate)   { params.push(endDate);   cond.push(`AND sm."movementDate" <= $${params.length}`); }
+    // sm."movementDate" sí es `timestamptz` (un instante real) — a diferencia
+    // de saleDate/createdAt no hace falta el doble AT TIME ZONE 'UTC': basta
+    // interpretar el límite de calendario como medianoche de Bolivia. Y el
+    // superior usa < día+1 en vez de <=, mismo motivo que en SALE_DATE_BO.
+    if (startDate) { params.push(startDate); cond.push(`AND sm."movementDate" >= ($${params.length}::date AT TIME ZONE 'America/La_Paz')`); }
+    if (endDate)   { params.push(endDate);   cond.push(`AND sm."movementDate" < (($${params.length}::date + INTERVAL '1 day') AT TIME ZONE 'America/La_Paz')`); }
     if (medicationId) { params.push(medicationId); cond.push(`AND ms.medication_id = $${params.length}`); }
 
     return this.dataSource.query(`
@@ -1059,7 +1082,7 @@ export class AdvancedReportsService {
 
     const dateFilter = `
       ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
-      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
     `;
 
     const [byMethod, monthly]: [Array<Record<string, unknown>>, Array<Record<string, unknown>>] = await Promise.all([
@@ -1111,7 +1134,7 @@ export class AdvancedReportsService {
 
     const dateFilter = `
       ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
-      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
     `;
 
     const rows: Array<Record<string, unknown>> = await this.dataSource.query(`
@@ -1224,7 +1247,7 @@ export class AdvancedReportsService {
     const endDate   = dateRange?.endDate;
     const dateFilter = `
       ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
-      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
     `;
 
     const rows: Array<Record<string, unknown>> = await this.dataSource.query(`
@@ -1266,7 +1289,7 @@ export class AdvancedReportsService {
     const endDate   = dateRange?.endDate;
     const dateFilter = `
       ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
-      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
     `;
 
     const rows: Array<Record<string, unknown>> = await this.dataSource.query(`
@@ -1447,7 +1470,7 @@ export class AdvancedReportsService {
     const endDate   = dateRange?.endDate;
     const dateFilter = `
       ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
-      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
     `;
 
     return this.dataSource.query(`
@@ -1489,7 +1512,7 @@ export class AdvancedReportsService {
     const endDate   = dateRange?.endDate;
     const dateFilter = `
       ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
-      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
     `;
 
     const [summary, byMedication]: [Array<Record<string, unknown>>, Array<Record<string, unknown>>] =
@@ -1548,7 +1571,7 @@ export class AdvancedReportsService {
     const endDate   = dateRange?.endDate;
     const dateFilter = `
       ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
-      ${endDate   ? `AND ${SALE_DATE_BO} <= '${endDate}'`   : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
     `;
 
     const [summary, daily]: [Array<Record<string, unknown>>, Array<Record<string, unknown>>] =

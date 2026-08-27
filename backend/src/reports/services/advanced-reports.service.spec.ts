@@ -127,10 +127,11 @@ describe('AdvancedReportsService', () => {
       // del reloj del servidor, no de Bolivia — sin la conversión, el filtro
       // de fecha comparaba contra el límite equivocado (ver SALE_DATE_BO).
       const SALE_DATE_BO = `(ps."saleDate" AT TIME ZONE 'UTC' AT TIME ZONE 'America/La_Paz')`;
+      const RECEIVED_AT_BO = `(st."receivedAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/La_Paz')`;
       expect(dispatchQb.andWhere).toHaveBeenCalledWith(`${SALE_DATE_BO} >= :startDate`, { startDate: '2026-01-01' });
-      expect(dispatchQb.andWhere).toHaveBeenCalledWith(`${SALE_DATE_BO} <= :endDate`, { endDate: '2026-01-31' });
-      expect(receivedQb.andWhere).toHaveBeenCalledWith('st."receivedAt" >= :startDate', { startDate: '2026-01-01' });
-      expect(receivedQb.andWhere).toHaveBeenCalledWith('st."receivedAt" <= :endDate', { endDate: '2026-01-31' });
+      expect(dispatchQb.andWhere).toHaveBeenCalledWith(`${SALE_DATE_BO} < (:endDate::date + INTERVAL '1 day')`, { endDate: '2026-01-31' });
+      expect(receivedQb.andWhere).toHaveBeenCalledWith(`${RECEIVED_AT_BO} >= :startDate`, { startDate: '2026-01-01' });
+      expect(receivedQb.andWhere).toHaveBeenCalledWith(`${RECEIVED_AT_BO} < (:endDate::date + INTERVAL '1 day')`, { endDate: '2026-01-31' });
     });
 
     it('stockSummary usa 0 si la query de stock devuelve null', async () => {
@@ -285,7 +286,25 @@ describe('AdvancedReportsService', () => {
       // Regresión: bug corregido el 2026-08-27 (ver SALE_DATE_BO en el servicio).
       const SALE_DATE_BO = `(ps."saleDate" AT TIME ZONE 'UTC' AT TIME ZONE 'America/La_Paz')`;
       expect(dataSource.query.mock.calls[0][0]).toContain(`${SALE_DATE_BO} >= '2026-01-01'`);
-      expect(dataSource.query.mock.calls[0][0]).toContain(`${SALE_DATE_BO} <= '2026-01-31'`);
+      expect(dataSource.query.mock.calls[0][0]).toContain(`${SALE_DATE_BO} < ('2026-01-31'::date + INTERVAL '1 day')`);
+    });
+
+    /**
+     * Regresión: bug corregido el 2026-08-27. Pedir "hoy" (startDate = endDate)
+     * no traía ningún resultado aunque hubiera ventas esa misma mañana: 'YYYY-
+     * MM-DD' compara contra la medianoche de ese día, así que `<= endDate`
+     * excluía cualquier hora posterior a las 00:00 — es decir, casi todo.
+     */
+    it('un filtro de un solo día (startDate = endDate) no excluye las ventas de esa misma fecha', async () => {
+      dataSource.query.mockResolvedValue([]);
+      await service.getTopSellingMedications({
+        clinicId: CLINIC_ID,
+        dateRange: { startDate: '2026-08-27', endDate: '2026-08-27' },
+      });
+
+      const sql = dataSource.query.mock.calls[0][0];
+      expect(sql).not.toMatch(/<=\s*'2026-08-27'/);
+      expect(sql).toContain(`< ('2026-08-27'::date + INTERVAL '1 day')`);
     });
 
     it('getProductMarginReport devuelve el resultado de la query', async () => {
