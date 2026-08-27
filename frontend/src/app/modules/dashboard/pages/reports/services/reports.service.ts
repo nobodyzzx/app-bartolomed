@@ -328,6 +328,16 @@ export class ReportsService {
     return this.downloadBlob('export/excel/pharmacy-monthly-comparison', `comparativo-mensual-${date}.xlsx`, params)
   }
 
+  // ─── D1: Corte de turno individual ───────────────────────────────────────
+  // Sin roles estancos en esta clínica, el corte es por persona, no por rol:
+  // junta farmacia + punto de cobro de quien lo pide. El backend ignora
+  // cualquier `userId` si quien pide no es admin y usa el propio del token,
+  // así que un usuario normal ni necesita mandarlo.
+  downloadStaffShiftDetailPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = todayLocalISO()
+    return this.downloadReportPdf('staff-shift-detail', `corte-turno-${date}.pdf`, params)
+  }
+
   // ─── Activos fijos ────────────────────────────────────────────────────────
   // Cuelgan de /assets, no de /reports: el permiso que los cubre es
   // AssetsManage (ADMIN/SUPER_ADMIN) y no los ReportsMedical/Financial/Stock de

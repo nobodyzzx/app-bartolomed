@@ -1895,4 +1895,73 @@ ${body}
     ], body);
   }
 
+  // ─── D1: PDF Corte de Turno Individual ────────────────────────────────────
+
+  private static readonly ORIGIN_LABELS: Record<string, string> = {
+    consultation: 'Consulta',
+    laboratory: 'Laboratorio',
+    other: 'Otro',
+  };
+
+  async generateStaffShiftDetailPdf(data: any): Promise<Buffer> {
+    const pharmacySales: any[] = data.pharmacySales ?? [];
+    const clinicCharges: any[] = data.clinicCharges ?? [];
+    const summary = data.summary ?? {};
+
+    const pharmacyTableTypst = this.typstTableSection(
+      'Farmacia',
+      ['Hora', 'N° Venta', 'Paciente', 'Productos', 'Pago', 'Total'],
+      pharmacySales.map(s => [
+        typstString(`${s.saleDateFmt ?? '-'} ${s.saleTimeFmt ?? ''}`.trim()),
+        typstString(s.saleNumber ?? '-'),
+        typstString(s.patientName ?? '-'),
+        typstString((s.items ?? []).map((i: any) => `${i.product} ×${i.quantity}`).join(', ') || '-'),
+        typstString(s.paymentMethod ?? '-'),
+        typstString(this.fmtBs(s.total)),
+      ]),
+      ['left', 'left', 'left', 'left', 'left', 'right'],
+      'omit',
+    );
+
+    const clinicTableTypst = this.typstTableSection(
+      'Consultas, Laboratorio y Otros',
+      ['Hora', 'Tipo', 'Descripción', 'Paciente', 'Estado', 'Total'],
+      clinicCharges.map(c => [
+        typstString(`${c.chargeDateFmt ?? '-'} ${c.chargeTimeFmt ?? ''}`.trim()),
+        typstString(ReportsPdfService.ORIGIN_LABELS[c.origin] ?? c.origin ?? '-'),
+        typstString(c.description ?? '-'),
+        typstString(c.patientName ?? '-'),
+        typstString(c.status === 'invoiced' ? 'Facturado' : c.status === 'pending' ? 'Pendiente' : (c.status ?? '-')),
+        typstString(this.fmtBs(c.total)),
+      ]),
+      ['left', 'left', 'left', 'left', 'center', 'right'],
+      'omit',
+    );
+
+    const body = `
+  #kpiGrid((
+    kpiCard(${typstString('Total del Turno')}, ${typstString(this.fmtBs(summary.totalRevenue))}, ${typstString('Farmacia + Clínica, cobrado')}, color: "orange"),
+    kpiCard(${typstString('Farmacia')}, ${typstString(this.fmtBs(summary.pharmacyRevenue))}, ${typstString(`${this.fmtNum(summary.pharmacyCount)} venta(s)`)}, color: "blue"),
+    kpiCard(${typstString('Clínica')}, ${typstString(this.fmtBs(summary.clinicRevenue))}, ${typstString(`${this.fmtNum(summary.clinicCount)} atención(es)`)}, color: "green"),
+  ), columns: 3)
+
+  ${summary.clinicPending > 0
+    ? `#text(size: 9pt, fill: rgb("#92400e"))[#strong[${this.fmtBs(summary.clinicPending)}] en cargos aún pendientes de facturar — no se cuentan en el total del turno.]`
+    : ''}
+
+  ${pharmacyTableTypst}
+
+  ${clinicTableTypst}
+
+  ${pharmacySales.length === 0 && clinicCharges.length === 0 ? '#noData()' : ''}
+  `;
+
+    return this.typstCompiler.compile(
+      this.wrapTypstDoc('Corte de Turno', 'Corte de Turno', [
+        ['Generado', this.nowBO()],
+        ['Encargado', data.userName ?? '-'],
+        ['Total del Turno', this.fmtBs(summary.totalRevenue)],
+      ], body),
+    );
+  }
 }

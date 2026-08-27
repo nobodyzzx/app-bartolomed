@@ -1671,4 +1671,110 @@ export class AdvancedReportsService {
       },
     };
   }
+
+  // ─── D1: Reporte individual de turno ──────────────────────────────────────
+
+  /**
+   * Corte de turno de una persona: en esta clínica no hay roles estancos —
+   * "quien cobra" suele ser el mismo médico haciendo de recepcionista,
+   * laboratorista, etc., a veces todo a la vez. No tiene sentido un reporte
+   * "por farmacéutico" o "por recepcionista" separados: hace falta uno solo,
+   * por persona, que junte todo lo que esa persona cobró en el rango — venta
+   * de farmacia (pharmacy_sales.soldById) y todo lo demás del punto de cobro
+   * (charges.createdById: consultas, laboratorio, otros) — para que alguien
+   * que entra en la mañana y otra persona que entra en la tarde puedan sacar
+   * cada quien su propio corte al cerrar su turno.
+   *
+   * `clinicCharges` solo cuenta como ingreso real (`clinicRevenue`) los que ya
+   * están `invoiced` — un cargo `pending` es una cuenta todavía abierta, se
+   * informa aparte en `clinicPending` para que no se sume como si ya se
+   * hubiera cobrado.
+   */
+  async getStaffShiftDetail(filters: ReportFilters & { userId?: string }) {
+    const { clinicId, dateRange, userId } = filters;
+    if (!clinicId) throw new BadRequestException('clinicId es requerido');
+    if (!userId) throw new BadRequestException('userId es requerido');
+
+    const startDate = dateRange?.startDate;
+    const endDate   = dateRange?.endDate;
+    const pharmacyDateFilter = `
+      ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
+      ${endDate   ? `AND ${SALE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
+    `;
+    const chargeDateFilter = `
+      ${startDate ? `AND ${CHARGE_DATE_BO} >= '${startDate}'` : ''}
+      ${endDate   ? `AND ${CHARGE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
+    `;
+
+    const [staff, pharmacySales, clinicCharges]: [
+      Array<Record<string, unknown>>,
+      Array<Record<string, unknown>>,
+      Array<Record<string, unknown>>,
+    ] = await Promise.all([
+      this.dataSource.query(`
+        SELECT u.id, pi."firstName" || ' ' || COALESCE(pi."lastName", '') AS name
+        FROM users u
+        JOIN personal_info pi ON pi.id = u."personalInfoId"
+        WHERE u.id = $1
+      `, [userId]),
+
+      this.dataSource.query(`
+        SELECT
+          ps.id, ps."saleNumber", ps."patientName", ps.total, ps."paymentMethod",
+          -- Formateado acá y no en JS: saleDate es naive-pero-UTC (ver
+          -- SALE_DATE_BO) y pasar el Date crudo al PDF arriesga reinterpretarlo
+          -- en la zona del proceso Node en vez de la de Bolivia.
+          TO_CHAR(DATE(${SALE_DATE_BO}), 'DD/MM/YYYY') AS "saleDateFmt",
+          TO_CHAR(${SALE_DATE_BO}, 'HH24:MI') AS "saleTimeFmt",
+          (
+            SELECT json_agg(json_build_object(
+              'product', psi."productName", 'quantity', psi.quantity,
+              'unitPrice', psi."unitPrice", 'subtotal', psi.subtotal
+            ) ORDER BY psi."createdAt")
+            FROM pharmacy_sale_items psi
+            WHERE psi.sale_id = ps.id
+          ) AS items
+        FROM pharmacy_sales ps
+        WHERE ps.clinic_id = $1
+          AND ps."soldById" = $2
+          AND ps.status = 'completed'
+          ${pharmacyDateFilter}
+        ORDER BY ps."saleDate" ASC
+      `, [clinicId, userId]),
+
+      this.dataSource.query(`
+        SELECT c.id, c.origin, c.description, c.quantity, c.total, c.status,
+               c.patient_name AS "patientName",
+               TO_CHAR(DATE(${CHARGE_DATE_BO}), 'DD/MM/YYYY') AS "chargeDateFmt",
+               TO_CHAR(${CHARGE_DATE_BO}, 'HH24:MI') AS "chargeTimeFmt"
+        FROM charges c
+        WHERE c.clinic_id = $1
+          AND c.created_by = $2
+          AND c.origin != 'pharmacy'
+          ${chargeDateFilter}
+        ORDER BY c."createdAt" ASC
+      `, [clinicId, userId]),
+    ]);
+
+    const pharmacyRevenue = round2(pharmacySales.reduce((s, r) => s + Number(r['total'] ?? 0), 0));
+    const invoicedCharges = clinicCharges.filter(c => c['status'] === 'invoiced');
+    const pendingCharges  = clinicCharges.filter(c => c['status'] === 'pending');
+    const clinicRevenue = round2(invoicedCharges.reduce((s, r) => s + Number(r['total'] ?? 0), 0));
+    const clinicPending = round2(pendingCharges.reduce((s, r) => s + Number(r['total'] ?? 0), 0));
+
+    return {
+      userId,
+      userName: (staff[0]?.['name'] as string) ?? null,
+      pharmacySales,
+      clinicCharges,
+      summary: {
+        pharmacyRevenue,
+        pharmacyCount: pharmacySales.length,
+        clinicRevenue,
+        clinicPending,
+        clinicCount: clinicCharges.length,
+        totalRevenue: round2(pharmacyRevenue + clinicRevenue),
+      },
+    };
+  }
 }
