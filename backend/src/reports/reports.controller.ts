@@ -13,6 +13,7 @@ import {
 import { Request, Response } from 'express';
 import { Auth, AuthClinic } from '../auth/decorators';
 import { resolveClinicId } from '../auth/decorators/clinic-roles.decorator';
+import { todayInClinicTz } from '../common/utils/date-format.util';
 import { RequirePermissions } from '../auth/permissions/permissions.decorator';
 import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
@@ -326,7 +327,10 @@ export class ReportsController {
     return this.advancedReportsService.getProductMarginReport(this.scope(filters, req));
   }
 
-  @Get('pharmacy/daily-sales')
+  // Antes 'pharmacy/daily-sales': el reporte ya no es solo de farmacia
+  // (incluye ingresos de la clínica vía charges/invoices), el nombre de la
+  // ruta quedaba desalineado con lo que realmente devuelve.
+  @Get('daily-sales')
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getDailySalesSummary(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getDailySalesSummary(this.scope(filters, req));
@@ -414,15 +418,18 @@ export class ReportsController {
     res.end(buf);
   }
 
-  @Get('export/pdf/pharmacy-daily-sales')
+  // Antes 'export/pdf/pharmacy-daily-sales' — ver nota en GET 'daily-sales'.
+  @Get('export/pdf/daily-sales')
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportDailySalesPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getDailySalesSummary(this.scope(filters, req));
     const buf = await this.reportsPdfService.generateDailySalesPdf(data);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
+      // todayInClinicTz(), no new Date().toISOString(): el nombre del archivo
+      // salía fechado un día adelante al descargarlo de noche en Bolivia.
       'Content-Disposition',
-      `attachment; filename="ventas-diarias-${new Date().toISOString().slice(0, 10)}.pdf"`,
+      `attachment; filename="ventas-diarias-${todayInClinicTz()}.pdf"`,
     );
     res.end(buf);
   }

@@ -128,7 +128,7 @@ export class ReportsService {
 
   downloadDailySalesPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = todayLocalISO()
-    return this.downloadReportPdf('pharmacy-daily-sales', `ventas-diarias-${date}.pdf`, params)
+    return this.downloadReportPdf('daily-sales', `ventas-diarias-${date}.pdf`, params)
   }
 
   downloadExpiryBucketsPdf(params: Record<string, string> = {}): Observable<Blob> {

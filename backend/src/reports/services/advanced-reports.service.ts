@@ -53,6 +53,34 @@ const SALE_DATE_BO = `(ps."saleDate" AT TIME ZONE 'UTC' AT TIME ZONE 'America/La
 /** Mismo ajuste que SALE_DATE_BO, para `charges.createdAt` (alias `c`). */
 const CHARGE_DATE_BO = `(c."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/La_Paz')`;
 
+/**
+ * Normaliza pharmacy_sales.paymentMethod (cash/card/transfer/insurance/
+ * mixed/qr) y payments.method (cash/credit_card/debit_card/bank_transfer/
+ * check/insurance/other/qr) a una misma etiqueta en español, para poder
+ * combinar el desglose por método de pago de farmacia y clínica en un solo
+ * reporte sin que "card" y "credit_card" salgan como filas separadas.
+ */
+const PHARMACY_PAYMENT_METHOD_SQL = `CASE ps."paymentMethod"
+        WHEN 'cash'      THEN 'Efectivo'
+        WHEN 'card'      THEN 'Tarjeta'
+        WHEN 'transfer'  THEN 'Transferencia'
+        WHEN 'insurance' THEN 'Seguro'
+        WHEN 'qr'        THEN 'QR'
+        WHEN 'mixed'     THEN 'Mixto'
+        ELSE 'Otro'
+      END`;
+
+const CLINIC_PAYMENT_METHOD_SQL = `CASE p.method
+        WHEN 'cash'          THEN 'Efectivo'
+        WHEN 'credit_card'   THEN 'Tarjeta'
+        WHEN 'debit_card'    THEN 'Tarjeta'
+        WHEN 'bank_transfer' THEN 'Transferencia'
+        WHEN 'insurance'     THEN 'Seguro'
+        WHEN 'qr'            THEN 'QR'
+        WHEN 'check'         THEN 'Cheque'
+        ELSE 'Otro'
+      END`;
+
 @Injectable()
 export class AdvancedReportsService {
   constructor(
@@ -573,6 +601,13 @@ export class AdvancedReportsService {
       ${startDate ? `AND ${CHARGE_DATE_BO} >= '${startDate}'` : ''}
       ${endDate   ? `AND ${CHARGE_DATE_BO} <= '${endDate}'`   : ''}
     `;
+    // payments."paymentDate" ya es `timestamp with time zone` (un instante
+    // real) — a diferencia de saleDate/createdAt no hace falta el doble
+    // AT TIME ZONE 'UTC', basta reexpresarlo en hora de Bolivia.
+    const paymentDateFilter = `
+      ${startDate ? `AND (p."paymentDate" AT TIME ZONE 'America/La_Paz') >= '${startDate}'` : ''}
+      ${endDate   ? `AND (p."paymentDate" AT TIME ZONE 'America/La_Paz') <= '${endDate}'`   : ''}
+    `;
 
     const [pharmacyDaily, clinicDaily, paymentBreakdown]: [
       Array<Record<string, unknown>>,
@@ -604,22 +639,40 @@ export class AdvancedReportsService {
         GROUP BY DATE(${CHARGE_DATE_BO})
       `, [clinicId]),
 
-      // Nota: se deja solo con datos de farmacia por ahora — el desglose por
-      // método de pago de la clínica vive en `payments`, con una taxonomía
-      // de métodos distinta (credit_card/debit_card/... vs cash/card/mixed/...
-      // de pharmacy_sales) que no se puede fusionar 1:1 sin inventar un
-      // mapeo. Pendiente como mejora aparte.
+      // Farmacia (pharmacy_sales.paymentMethod: cash/card/transfer/insurance/
+      // mixed/qr) y clínica (payments.method: cash/credit_card/debit_card/
+      // bank_transfer/check/insurance/other/qr) usan catálogos de método
+      // distintos — PAYMENT_METHOD_LABEL_SQL normaliza ambos a la misma
+      // etiqueta en español para poder sumarlos en una sola fila por método.
+      //
+      // El `EXISTS` excluye pagos de facturas 100% de farmacia (misma razón
+      // que origin != 'pharmacy' arriba: una venta "a cuenta" ya se cuenta
+      // del lado de pharmacy_sales). Una factura mixta (farmacia + clínica en
+      // el mismo cobro) es hoy imposible de generar desde la UI, pero si
+      // llegara a existir, este EXISTS la deja pasar completa — sobreconteo
+      // menor y acotado, preferible a excluirla entera y subcontar la parte
+      // real de clínica.
       this.dataSource.query(`
-        SELECT
-          ps."paymentMethod"           AS method,
-          SUM(ps.total)                AS total,
-          COUNT(*)                     AS count
-        FROM pharmacy_sales ps
-        WHERE ps.clinic_id = $1
-          AND ps.status = 'completed'
-          ${dateFilter}
-        GROUP BY ps."paymentMethod"
-        ORDER BY SUM(ps.total) DESC
+        SELECT method, SUM(total) AS total, COUNT(*) AS count
+        FROM (
+          SELECT ${PHARMACY_PAYMENT_METHOD_SQL} AS method, ps.total AS total
+          FROM pharmacy_sales ps
+          WHERE ps.clinic_id = $1
+            AND ps.status = 'completed'
+            ${dateFilter}
+
+          UNION ALL
+
+          SELECT ${CLINIC_PAYMENT_METHOD_SQL} AS method, p.amount AS total
+          FROM payments p
+          JOIN invoices i ON i.id = p.invoice_id
+          WHERE i.clinic_id = $1
+            AND p.status = 'completed'
+            AND EXISTS (SELECT 1 FROM charges c WHERE c.invoice_id = i.id AND c.origin != 'pharmacy')
+            ${paymentDateFilter}
+        ) combined
+        GROUP BY method
+        ORDER BY SUM(total) DESC
       `, [clinicId]),
     ]);
 

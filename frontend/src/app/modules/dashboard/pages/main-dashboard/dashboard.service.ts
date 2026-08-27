@@ -92,7 +92,7 @@ export class DashboardService {
     const fmt   = (d: Date) => toLocalISODate(d)
     const params = new HttpParams()
       .set('startDate', fmt(start)).set('endDate', fmt(end)).set('clinicId', clinicId)
-    return this.http.get<any>(`${this.base}/reports/pharmacy/daily-sales`, { params }).pipe(
+    return this.http.get<any>(`${this.base}/reports/daily-sales`, { params }).pipe(
       map(r => {
         const days = r?.dailySales ?? []
         // Generar labels para los 7 días aunque no haya ventas
