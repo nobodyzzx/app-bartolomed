@@ -516,80 +516,6 @@ export class AdvancedReportsService {
     }));
   }
 
-  // ─── F1-R2: Top medicamentos vendidos ────────────────────────────────────
-
-  async getTopSellingMedications(filters: ReportFilters) {
-    const { clinicId, dateRange } = filters;
-    if (!clinicId) throw new BadRequestException('clinicId es requerido');
-
-    const startDate = dateRange?.startDate;
-    const endDate   = dateRange?.endDate;
-
-    const dateFilter = `
-      ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
-      ${endDate   ? `AND ${SALE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
-    `;
-
-    return this.dataSource.query(`
-      SELECT
-        med.name                          AS "medicationName",
-        med."genericName"                 AS "genericName",
-        ${TIPO_PRODUCTO_SQL}                      AS category,
-        SUM(psi.quantity)                 AS "totalQty",
-        SUM(psi.subtotal)                 AS "totalRevenue",
-        ROUND(AVG(psi."unitPrice"), 2)    AS "avgUnitPrice"
-      FROM pharmacy_sale_items psi
-      JOIN pharmacy_sales ps   ON ps.id  = psi.sale_id
-      JOIN medication_stock ms ON ms.id  = psi.medication_stock_id
-      JOIN medications med     ON med.id = ms.medication_id
-      WHERE ps.clinic_id = $1
-        AND ps.status = 'completed'
-        ${dateFilter}
-      GROUP BY med.id, med.name, med."genericName", med.product_type
-      ORDER BY SUM(psi.quantity) DESC
-      LIMIT 30
-    `, [clinicId]);
-  }
-
-  // ─── F1-R3: Margen bruto por producto ────────────────────────────────────
-
-  async getProductMarginReport(filters: ReportFilters) {
-    const { clinicId, dateRange } = filters;
-    if (!clinicId) throw new BadRequestException('clinicId es requerido');
-
-    const startDate = dateRange?.startDate;
-    const endDate   = dateRange?.endDate;
-
-    const dateFilter = `
-      ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
-      ${endDate   ? `AND ${SALE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
-    `;
-
-    return this.dataSource.query(`
-      SELECT
-        med.name                                                          AS "medicationName",
-        med."genericName"                                                 AS "genericName",
-        ROUND(AVG(ms."unitCost"), 2)                                      AS "unitCost",
-        ROUND(AVG(psi."unitPrice"), 2)                                    AS "sellingPrice",
-        SUM(psi.quantity)                                                 AS "qtySold",
-        ROUND(SUM((psi."unitPrice" - ms."unitCost") * psi.quantity), 2)   AS "marginAbs",
-        CASE
-          WHEN SUM(psi."unitPrice" * psi.quantity) = 0 THEN 0
-          ELSE ROUND(SUM((psi."unitPrice" - ms."unitCost") * psi.quantity)
-               / SUM(psi."unitPrice" * psi.quantity) * 100, 2)
-        END                                                               AS "marginPct"
-      FROM pharmacy_sale_items psi
-      JOIN pharmacy_sales ps   ON ps.id  = psi.sale_id
-      JOIN medication_stock ms ON ms.id  = psi.medication_stock_id
-      JOIN medications med     ON med.id = ms.medication_id
-      WHERE ps.clinic_id = $1
-        AND ps.status = 'completed'
-        ${dateFilter}
-      GROUP BY med.id, med.name, med."genericName"
-      ORDER BY "marginAbs" DESC
-    `, [clinicId]);
-  }
-
   // ─── F1-R4: Resumen ventas por día ───────────────────────────────────────
 
   /**
@@ -1071,58 +997,6 @@ export class AdvancedReportsService {
     ];
   }
 
-  // ─── F3-R12: Ventas por método de pago ───────────────────────────────────
-
-  async getSalesByPaymentMethod(filters: ReportFilters) {
-    const { clinicId, dateRange } = filters;
-    if (!clinicId) throw new BadRequestException('clinicId es requerido');
-
-    const startDate = dateRange?.startDate;
-    const endDate   = dateRange?.endDate;
-
-    const dateFilter = `
-      ${startDate ? `AND ${SALE_DATE_BO} >= '${startDate}'` : ''}
-      ${endDate   ? `AND ${SALE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
-    `;
-
-    const [byMethod, monthly]: [Array<Record<string, unknown>>, Array<Record<string, unknown>>] = await Promise.all([
-      this.dataSource.query(`
-        SELECT
-          ps."paymentMethod"        AS method,
-          SUM(ps.total)             AS total,
-          COUNT(*)                  AS count
-        FROM pharmacy_sales ps
-        WHERE ps.clinic_id = $1
-          AND ps.status = 'completed'
-          ${dateFilter}
-        GROUP BY ps."paymentMethod"
-        ORDER BY SUM(ps.total) DESC
-      `, [clinicId]),
-
-      this.dataSource.query(`
-        SELECT
-          TO_CHAR(${SALE_DATE_BO}, 'YYYY-MM')  AS month,
-          ps."paymentMethod"                 AS method,
-          SUM(ps.total)                      AS total,
-          COUNT(*)                           AS count
-        FROM pharmacy_sales ps
-        WHERE ps.clinic_id = $1
-          AND ps.status = 'completed'
-          ${dateFilter}
-        GROUP BY TO_CHAR(${SALE_DATE_BO}, 'YYYY-MM'), ps."paymentMethod"
-        ORDER BY month, method
-      `, [clinicId]),
-    ]);
-
-    const grandTotal = byMethod.reduce((s, r) => s + Number(r['total'] ?? 0), 0);
-    const byMethodWithPct = byMethod.map(r => ({
-      ...r,
-      pct: grandTotal > 0 ? Math.round((Number(r['total'] ?? 0) / grandTotal) * 100 * 10) / 10 : 0,
-    }));
-
-    return { byMethod: byMethodWithPct, monthly };
-  }
-
   // ─── F3-R13: Rentabilidad mensual farmacia ────────────────────────────────
 
   async getMonthlyProfitability(filters: ReportFilters) {
@@ -1563,6 +1437,14 @@ export class AdvancedReportsService {
 
   // ─── C3: Ventas por método de pago (detallado) ───────────────────────────
 
+  /**
+   * Consolidado con lo que era F3-R12 (`getSalesByPaymentMethod`, sin ningún
+   * botón en el frontend — quedó huérfano): ese solo tenía `byMethod` +
+   * `monthly`, y este ya traía lo mismo en `summary` con más columnas
+   * (avgTicket, totalChange) más el desglose diario. Se le agrega acá el
+   * `monthly` que era lo único que no tenía, en vez de mantener dos
+   * endpoints casi idénticos.
+   */
   async getSalesByPaymentDetailed(filters: ReportFilters) {
     const { clinicId, dateRange } = filters;
     if (!clinicId) throw new BadRequestException('clinicId es requerido');
@@ -1574,8 +1456,11 @@ export class AdvancedReportsService {
       ${endDate   ? `AND ${SALE_DATE_BO} < ('${endDate}'::date + INTERVAL '1 day')` : ''}
     `;
 
-    const [summary, daily]: [Array<Record<string, unknown>>, Array<Record<string, unknown>>] =
-      await Promise.all([
+    const [summary, daily, monthly]: [
+      Array<Record<string, unknown>>,
+      Array<Record<string, unknown>>,
+      Array<Record<string, unknown>>,
+    ] = await Promise.all([
         this.dataSource.query(`
           SELECT
             ps."paymentMethod"                          AS method,
@@ -1604,6 +1489,20 @@ export class AdvancedReportsService {
           GROUP BY DATE(${SALE_DATE_BO}), ps."paymentMethod"
           ORDER BY "saleDay" DESC, "totalRevenue" DESC
         `, [clinicId]),
+
+        this.dataSource.query(`
+          SELECT
+            TO_CHAR(${SALE_DATE_BO}, 'YYYY-MM')  AS month,
+            ps."paymentMethod"                 AS method,
+            SUM(ps.total)                      AS total,
+            COUNT(*)                           AS count
+          FROM pharmacy_sales ps
+          WHERE ps.clinic_id = $1
+            AND ps.status = 'completed'
+            ${dateFilter}
+          GROUP BY TO_CHAR(${SALE_DATE_BO}, 'YYYY-MM'), ps."paymentMethod"
+          ORDER BY month, method
+        `, [clinicId]),
       ]);
 
     const grandTotal = summary.reduce((s, r) => s + Number(r['totalRevenue'] ?? 0), 0);
@@ -1615,6 +1514,7 @@ export class AdvancedReportsService {
         pct: grandTotal > 0 ? Math.round((Number(r['totalRevenue'] ?? 0) / grandTotal) * 1000) / 10 : 0,
       })),
       daily: daily.map(r => ({ ...r, saleDay: fmtDay(r['saleDay']) })),
+      monthly,
       grandTotal: Math.round(grandTotal * 100) / 100,
     };
   }

@@ -199,12 +199,12 @@ export class ReportsComponent implements OnInit {
   downloadTransfersPdf()       { this.download('transfers',      () => this.reportsService.downloadTransferEfficiencyPdf(this.buildParams())) }
 
   // ── Farmacia: nuevas descargas (F1-R1..F3-R13) ───────────────────────────
+  // downloadMarginsPdf/Excel y downloadTopSellingExcel se quitaron: eran
+  // "Ventas por Med." (downloadMedicationDetailPdf/Excel, más abajo) con
+  // menos columnas — mismo corte de datos, dos pantallas separadas.
   downloadRotationPdf()         { this.download('rotPdf',    () => this.reportsService.downloadRotationPdf(this.buildParams())) }
   downloadRotationExcel()       { this.download('rotXls',    () => this.reportsService.downloadRotationExcel(this.buildParams())) }
-  downloadMarginsPdf()          { this.download('margPdf',   () => this.reportsService.downloadMarginsPdf(this.buildParams())) }
-  downloadMarginsExcel()        { this.download('margXls',   () => this.reportsService.downloadMarginsExcel(this.buildParams())) }
   downloadDailySalesPdf()       { this.download('dailyPdf',  () => this.reportsService.downloadDailySalesPdf(this.buildParams())) }
-  downloadTopSellingExcel()     { this.download('topXls',    () => this.reportsService.downloadTopSellingExcel(this.buildParams())) }
   downloadExpiryBucketsPdf()    { this.download('expBktPdf', () => this.reportsService.downloadExpiryBucketsPdf(this.buildParams())) }
   downloadProfitabilityPdf()    { this.download('profPdf',   () => this.reportsService.downloadProfitabilityPdf(this.buildParams())) }
   downloadStockMovementsExcel() { this.download('movXls',    () => this.reportsService.downloadStockMovementsExcel(this.buildParams())) }

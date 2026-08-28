@@ -460,11 +460,6 @@
             Rotación stock PDF
           </button>
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadMarginsPdf()" [disabled]="downloading['margPdf']">
-            <span class="material-symbols-outlined text-orange-500">{{downloading['margPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
-            Márgenes PDF
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadDailySalesPdf()" [disabled]="downloading['dailyPdf']">
             <span class="material-symbols-outlined text-orange-500">{{downloading['dailyPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
             Ventas diarias PDF
@@ -497,16 +492,6 @@
             (click)="downloadRotationExcel()" [disabled]="downloading['rotXls']">
             <span class="material-symbols-outlined text-orange-500">{{downloading['rotXls'] ? 'hourglass_top' : 'table_chart'}}</span>
             Rotación Excel
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadMarginsExcel()" [disabled]="downloading['margXls']">
-            <span class="material-symbols-outlined text-orange-500">{{downloading['margXls'] ? 'hourglass_top' : 'table_chart'}}</span>
-            Márgenes Excel
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadTopSellingExcel()" [disabled]="downloading['topXls']">
-            <span class="material-symbols-outlined text-orange-500">{{downloading['topXls'] ? 'hourglass_top' : 'table_chart'}}</span>
-            Top vendidos Excel
           </button>
           <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
             (click)="downloadStockMovementsExcel()" [disabled]="downloading['movXls']">
@@ -632,11 +617,15 @@
         </div>
         <div>
           <h3 class="font-semibold text-slate-900 m-0 leading-tight">Ventas Detalladas</h3>
-          <p class="text-sm text-slate-500 m-0">Márgenes por medicamento y comparativa receta vs. venta libre</p>
+          <p class="text-sm text-slate-500 m-0">Ranking, márgenes por medicamento y comparativa receta vs. venta libre</p>
         </div>
       </div>
       <div class="p-6">
-        <p class="text-sm text-slate-500 mb-4">Análisis de ventas por medicamento con márgenes, y comparativa entre ventas con receta y ventas libres.</p>
+        <!-- "Ventas por Med." reemplaza a los antiguos "Top Vendidos" y "Márgenes"
+        (pantallas separadas, mismo corte de datos con menos columnas cada una):
+        ya trae unidades, ingresos, costo, margen Bs y margen % en una sola tabla,
+        ordenada por ingresos — sirve como ranking sin necesitar un reporte aparte. -->
+        <p class="text-sm text-slate-500 mb-4">Ranking de medicamentos por ingresos, con unidades, costo y margen — y comparativa entre ventas con receta y ventas libres.</p>
 
         <p class="text-xs text-slate-400 font-medium mb-2">PDFs</p>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">

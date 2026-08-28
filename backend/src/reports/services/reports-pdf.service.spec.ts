@@ -48,7 +48,7 @@ describe('ReportsPdfService', () => {
     });
   });
 
-  describe('wiring de los 22 generate*Pdf() públicos', () => {
+  describe('wiring de los 23 generate*Pdf() públicos', () => {
     it('cada método público compila vía TypstCompilerService con el título correcto (detecta copy-paste entre reportes)', async () => {
       const cases: Array<[() => Promise<Buffer>, string]> = [
         [() => service.generateFinancialPdf({} as any), 'Reporte Financiero'],
@@ -60,7 +60,6 @@ describe('ReportsPdfService', () => {
         [() => service.generateCriticalStockPdf({} as any), 'Stock Crítico'],
         [() => service.generateTransferEfficiencyPdf({} as any), 'Eficiencia de Traspasos'],
         [() => service.generateRotationPdf([]), 'Rotación y Días de Stock'],
-        [() => service.generateMarginsPdf([]), 'Márgenes por Producto'],
         [() => service.generateDailySalesPdf({} as any), 'Ventas Diarias'],
         [() => service.generateExpiryBucketsPdf({} as any), 'Vencimientos por Período'],
         [() => service.generateProfitabilityPdf([]), 'Rentabilidad Mensual'],
@@ -73,9 +72,11 @@ describe('ReportsPdfService', () => {
         [() => service.generatePrescriptionVsFreePdf({} as any), 'Ventas con Receta vs'],
         [() => service.generateSalesByPaymentMethodPdf({} as any), 'Ventas por Método de Pago'],
         [() => service.generateMonthlySalesComparisonPdf({} as any), 'Comparativo Mensual de Ventas'],
+        [() => service.generateStaffShiftDetailPdf({} as any), 'Corte de Turno'],
+        [() => service.generateLabActivityPdf({} as any), 'Laboratorio y Estudios Especiales'],
       ];
 
-      expect(cases).toHaveLength(22);
+      expect(cases).toHaveLength(23);
 
       for (const [call, expectedTitle] of cases) {
         mockTypstCompile.mockClear();
@@ -322,40 +323,6 @@ describe('ReportsPdfService', () => {
     });
   });
 
-  describe('marginsTypst', () => {
-    const typ = (data: any[]) => (service as any).marginsTypst(data);
-
-    it('colorea el badge de margen según el umbral (>=20 verde, >=10 ámbar, resto rojo)', () => {
-      const result = typ([
-        { medicationName: 'Alto', marginPct: 25 },
-        { medicationName: 'Medio', marginPct: 12 },
-        { medicationName: 'Bajo', marginPct: 5 },
-      ]);
-      expect(result).toContain('color: "green"');
-      expect(result).toContain('color: "amber"');
-      expect(result).toContain('color: "red"');
-    });
-
-    it('avgMarginPct es 0 si no hay ingresos', () => {
-      const result = typ([{ medicationName: 'A' }]);
-      expect(result).toContain('0,0%');
-    });
-
-    it('usa #noData() si no hay productos', () => {
-      const result = typ([]);
-      expect(result).toContain('#noData()');
-    });
-
-    /**
-     * Regresión: un nombre de medicamento con comillas no debe romper el
-     * `.typ` generado (ver typst-escape.util.ts).
-     */
-    it('escapa comillas dobles en nombres de medicamento', () => {
-      const result = typ([{ medicationName: 'Jarabe "Fuerte"', marginPct: 15 }]);
-      expect(result).toContain('Jarabe \\"Fuerte\\"');
-    });
-  });
-
   describe('generateDailySalesPdf (con gráfico)', () => {
     it('rasteriza el gráfico de barras y compila vía Typst', async () => {
       const result = await service.generateDailySalesPdf({
@@ -523,6 +490,19 @@ describe('ReportsPdfService', () => {
       expect(result).toContain('color: "green"');
       expect(result).toContain('color: "red"');
     });
+
+    /**
+     * Regresión: un nombre de medicamento con comillas no debe romper el
+     * `.typ` generado (ver typst-escape.util.ts). Migrado de marginsTypst,
+     * que se quitó junto con getProductMarginReport.
+     */
+    it('escapa comillas dobles en nombres de medicamento', () => {
+      const result = (service as any).medicationDetailTypst(
+        [{ medicationName: 'Jarabe "Fuerte"', marginPct: 15 }],
+        '#noData()',
+      );
+      expect(result).toContain('Jarabe \\"Fuerte\\"');
+    });
   });
 
   describe('generatePrescriptionVsFreePdf / prescriptionVsFreeTypst (Typst)', () => {
@@ -557,6 +537,22 @@ describe('ReportsPdfService', () => {
       });
       expect(result).toContain('QR');
       expect(result).not.toContain('Detalle Diario por Método');
+    });
+
+    /**
+     * Regresión: bug corregido el 2026-08-27. `monthly` reemplaza al antiguo
+     * pharmacy/payment-methods (huérfano, sin botón en el frontend),
+     * consolidado en este reporte.
+     */
+    it('incluye la tendencia mensual si viene informada', () => {
+      const result = typ({
+        summary: [],
+        daily: [],
+        monthly: [{ month: '2026-01', method: 'qr', total: 300, count: 3 }],
+        grandTotal: 0,
+      });
+      expect(result).toContain('Tendencia Mensual por Método');
+      expect(result).toContain('2026-01');
     });
 
     it('arma un config de Chart.js válido para el gráfico de dona (bug heredado de Puppeteer: antes faltaba envolver en `data:`)', async () => {

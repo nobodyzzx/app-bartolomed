@@ -14,7 +14,6 @@ import {
   ExpiryBucketsReportData,
   FinancialReportData,
   InventoryByCategoryRow,
-  MarginRow,
   MedicalRecordsReportData,
   MedicationDetailRow,
   MonthlySalesComparisonData,
@@ -918,64 +917,8 @@ ${body}
     return `#align(center, image(${typstString(filename)}, width: ${Math.round(canvasWidthPx * 0.74)}pt))`;
   }
 
-  // ─── Pharmacy Margins PDF ─────────────────────────────────────────────────
-  // Piloto A de la migración a Typst (sin gráfico) — ver plan
-  // enchanted-percolating-candle.md. Los otros 21 reportes de este archivo
-  // siguen en Puppeteer hasta la Fase 2.
-
-  async generateMarginsPdf(data: MarginRow[]): Promise<Buffer> {
-    return this.typstCompiler.compile(this.marginsTypst(data));
-  }
-
-  private marginsTypst(data: any[]): string {
-    const totalMarginAbs = data.reduce((s, r) => s + Number(r.marginAbs ?? 0), 0);
-    const totalRevenue   = data.reduce((s, r) => s + Number(r.sellingPrice ?? 0) * Number(r.qtySold ?? 0), 0);
-    const avgMarginPct   = totalRevenue > 0 ? (totalMarginAbs / totalRevenue) * 100 : 0;
-
-    const rowsTypst = data.map(r => {
-      const marginPct = Number(r.marginPct ?? 0);
-      const badgeColor = marginPct >= 20 ? 'green' : marginPct >= 10 ? 'amber' : 'red';
-      return `(strong(${typstString(r.medicationName ?? '-')}), ${typstString(r.genericName ?? '-')}, ${typstString(this.fmtBs(r.unitCost))}, ${typstString(this.fmtBs(r.sellingPrice))}, ${typstString(this.fmtNum(r.qtySold))}, ${typstString(this.fmtBs(r.marginAbs))}, badge(${typstString(this.fmtPct(r.marginPct))}, color: "${badgeColor}"))`;
-    }).join(',\n        ') + (data.length > 0 ? ',' : '');
-
-    const headers = ['Medicamento', 'Genérico', 'Costo Unit.', 'Precio Venta', 'Qty Vendida', 'Margen Bs', 'Margen %']
-      .map(typstString).join(', ');
-
-    const tableOrEmpty = data.length > 0
-      ? `#styledTable(
-        (${headers}),
-        (
-        ${rowsTypst}
-        ),
-        align: (left, left, right, right, right, right, center),
-      )`
-      : '#noData()';
-
-    return `#import "/templates/bartolomed-base.typ": bartolomedDoc, header, metaBar, section, kpiCard, kpiGrid, styledTable, badge, noData
-
-#show: bartolomedDoc.with(title: ${typstString('Márgenes por Producto — Farmacia')}, paper: "a4", landscape: true)
-
-#header(name: "BARTOLOMED", subtitle: "Sistema de Gestión Clínica", badge: ${typstString('Márgenes por Producto')})
-#metaBar((
-  (${typstString('Generado')}, ${typstString(this.nowBO())}),
-  (${typstString('Productos')}, ${typstString(this.fmtNum(data.length))}),
-  (${typstString('Margen Bruto Total')}, ${typstString(this.fmtBs(totalMarginAbs))}),
-  (${typstString('Margen Promedio')}, ${typstString(this.fmtPct(avgMarginPct))}),
-))
-
-#pad(x: 28pt, y: 12pt)[
-  #kpiGrid((
-    kpiCard(${typstString('Productos Analizados')}, ${typstString(this.fmtNum(data.length))}, ${typstString('Con ventas')}, color: "blue"),
-    kpiCard(${typstString('Margen Bruto Total')}, ${typstString(this.fmtBs(totalMarginAbs))}, ${typstString('Ganancia bruta')}, color: "green"),
-    kpiCard(${typstString('Margen % Promedio')}, ${typstString(this.fmtPct(avgMarginPct))}, ${typstString('Ponderado por ventas')}, color: "purple"),
-  ), columns: 3)
-
-  #section(${typstString('Detalle de Márgenes por Producto')})[
-    ${tableOrEmpty}
-  ]
-]
-`;
-  }
+  // generateMarginsPdf/marginsTypst se quitaron junto con getProductMarginReport
+  // (consolidado en generateMedicationDetailPdf, que ya trae margen Bs y %).
 
   // ─── Pharmacy Daily Sales PDF ─────────────────────────────────────────────
   // Piloto B de la migración a Typst (con gráfico) — ver plan
@@ -1758,6 +1701,10 @@ ${body}
   private salesByPaymentMethodTypst(data: any, chartTypst: string): string {
     const summary: any[] = data.summary ?? [];
     const daily: any[]   = data.daily ?? [];
+    // `monthly` es lo que traía el antiguo pharmacy/payment-methods (sin
+    // ningún botón en el frontend, huérfano) — consolidado acá en vez de
+    // mantener dos endpoints casi idénticos.
+    const monthly: any[] = data.monthly ?? [];
     const grandTotal: number = data.grandTotal ?? 0;
 
     const methodLabel: Record<string, string> = {
@@ -1782,6 +1729,13 @@ ${body}
       `strong(${typstString(methodLabel[r.method] ?? r.method)})`,
       typstString(this.fmtNum(r.salesCount)),
       typstString(this.fmtBs(r.totalRevenue)),
+    ]);
+
+    const monthlyRows = monthly.map((r: any) => [
+      typstString(r.month ?? '-'),
+      `strong(${typstString(methodLabel[r.method] ?? r.method)})`,
+      typstString(this.fmtNum(r.count)),
+      typstString(this.fmtBs(r.total)),
     ]);
 
     const body = `
@@ -1809,6 +1763,14 @@ ${body}
     'Detalle Diario por Método (máx. 150)',
     ['Fecha', 'Método', 'N° Ventas', 'Total'],
     dailyRows,
+    ['center', 'left', 'right', 'right'],
+    'omit',
+  )}
+
+  ${this.typstTableSection(
+    'Tendencia Mensual por Método',
+    ['Mes', 'Método', 'N° Ventas', 'Total'],
+    monthlyRows,
     ['center', 'left', 'right', 'right'],
     'omit',
   )}
