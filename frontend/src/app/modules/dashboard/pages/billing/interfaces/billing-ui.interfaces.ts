@@ -21,10 +21,18 @@ export interface BillingStatistics {
 export interface RecentInvoice {
   id: string
   invoiceNumber: string
+  /**
+   * Puede venir null: una factura nace de los cargos del checkout, y estos
+   * no siempre tienen paciente detrás (venta de mostrador, ver
+   * CheckoutService.assertSinglePatient). La interfaz lo declaraba
+   * obligatorio, así que cualquier factura sin paciente rompía
+   * `getPatientName()` (accedía a `.firstName` de null) al renderizar esa
+   * fila de la tabla.
+   */
   patient: {
     firstName: string
     lastName: string
-  }
+  } | null
   issueDate: string
   totalAmount: number
   status: 'paid' | 'pending' | 'overdue' | 'cancelled' | 'draft'

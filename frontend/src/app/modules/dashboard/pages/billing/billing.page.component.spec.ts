@@ -134,6 +134,14 @@ describe('BillingPageComponent', () => {
       expect(component.getPatientName(makeInvoice())).toBe('Juan Perez')
     })
 
+    /**
+     * Factura de una venta de mostrador (sin patientId): antes accedía
+     * directo a `invoice.patient.firstName` y rompía al renderizar esa fila.
+     */
+    it('getPatientName no revienta si la factura no tiene paciente', () => {
+      expect(component.getPatientName(makeInvoice({ patient: null }))).toBe('Cliente sin registrar')
+    })
+
     it('getStatusLabel traduce estados conocidos y deja el resto tal cual', () => {
       expect(component.getStatusLabel('paid')).toBe('Pagada')
       expect(component.getStatusLabel('overdue')).toBe('Vencida')
