@@ -365,19 +365,11 @@ export class ReportsController {
     return this.advancedReportsService.getRotationReport(this.scope(filters, req));
   }
 
-  @Get('pharmacy/top-selling')
-  @RequirePermissions(Permission.ReportsPharmacy)
-  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
-  getTopSellingMedications(@Query() filters: ReportFilters, @Req() req: Request) {
-    return this.advancedReportsService.getTopSellingMedications(this.scope(filters, req));
-  }
-
-  @Get('pharmacy/margins')
-  @RequirePermissions(Permission.ReportsPharmacy)
-  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
-  getProductMarginReport(@Query() filters: ReportFilters, @Req() req: Request) {
-    return this.advancedReportsService.getProductMarginReport(this.scope(filters, req));
-  }
+  // 'pharmacy/top-selling' y 'pharmacy/margins' se quitaron: getSalesByMedicationDetail
+  // (más abajo, 'pharmacy/medication-detail') ya traía exactamente las mismas
+  // columnas de ambos (unidades, ingresos, costo, margen Bs, margen %) más
+  // categoría/forma farmacéutica — dos pantallas y 3 botones de descarga para
+  // el mismo corte de datos, solo con menos columnas cada una.
 
   // Antes 'pharmacy/daily-sales': el reporte ya no es solo de farmacia
   // (incluye ingresos de la clínica vía charges/invoices), el nombre de la
@@ -438,12 +430,10 @@ export class ReportsController {
     return this.advancedReportsService.getCreditSales(this.scope(filters, req));
   }
 
-  @Get('pharmacy/payment-methods')
-  @RequirePermissions(Permission.ReportsPharmacy)
-  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
-  getSalesByPaymentMethod(@Query() filters: ReportFilters, @Req() req: Request) {
-    return this.advancedReportsService.getSalesByPaymentMethod(this.scope(filters, req));
-  }
+  // 'pharmacy/payment-methods' se quitó: no tenía ningún botón en el
+  // frontend (huérfano) y getSalesByPaymentDetailed ('pharmacy/sales-by-payment',
+  // más abajo) ya traía lo mismo con más detalle — se le agregó el desglose
+  // mensual que era lo único que le faltaba.
 
   @Get('pharmacy/profitability')
   @RequirePermissions(Permission.ReportsPharmacy)
@@ -468,19 +458,8 @@ export class ReportsController {
     res.end(buf);
   }
 
-  @Get('export/pdf/pharmacy-margins')
-  @RequirePermissions(Permission.ReportsPharmacy)
-  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
-  async exportMarginsPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
-    const data = await this.advancedReportsService.getProductMarginReport(this.scope(filters, req));
-    const buf = await this.reportsPdfService.generateMarginsPdf(data);
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="margenes-producto-${new Date().toISOString().slice(0, 10)}.pdf"`,
-    );
-    res.end(buf);
-  }
+  // export/pdf/pharmacy-margins se quitó junto con getProductMarginReport —
+  // ver export/pdf/pharmacy-medication-detail, que ya trae margen Bs y %.
 
   // Antes 'export/pdf/pharmacy-daily-sales' — ver nota en GET 'daily-sales'.
   @Get('export/pdf/daily-sales')
@@ -541,29 +520,8 @@ export class ReportsController {
     );
   }
 
-  @Get('export/excel/pharmacy-margins')
-  @RequirePermissions(Permission.ReportsPharmacy)
-  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
-  async exportMarginsExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
-    const data = await this.advancedReportsService.getProductMarginReport(this.scope(filters, req));
-    await this.exportService.streamExcel(
-      res,
-      [{ name: 'Márgenes', build: ws => this.exportService.buildMarginsSheet(ws, data) }],
-      `margenes-producto-${new Date().toISOString().slice(0, 10)}.xlsx`,
-    );
-  }
-
-  @Get('export/excel/pharmacy-top-selling')
-  @RequirePermissions(Permission.ReportsPharmacy)
-  @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
-  async exportTopSellingExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
-    const data = await this.advancedReportsService.getTopSellingMedications(this.scope(filters, req));
-    await this.exportService.streamExcel(
-      res,
-      [{ name: 'Top Vendidos', build: ws => this.exportService.buildTopSellingSheet(ws, data) }],
-      `top-vendidos-${new Date().toISOString().slice(0, 10)}.xlsx`,
-    );
-  }
+  // export/excel/pharmacy-margins y export/excel/pharmacy-top-selling se
+  // quitaron junto con sus reportes — ver export/excel/pharmacy-medication-detail.
 
   @Get('export/excel/pharmacy-stock-movements')
   @RequirePermissions(Permission.ReportsPharmacy)

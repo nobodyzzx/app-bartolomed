@@ -273,65 +273,9 @@ export class ExportService {
     }
   }
 
-  buildMarginsSheet(ws: ExcelJS.Worksheet, data: any[]): void {
-    const headerStyle: Partial<ExcelJS.Style> = {
-      font: { bold: true, color: { argb: 'FFFFFFFF' } },
-      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF7C3AED' } },
-    };
-
-    ws.columns = [
-      { header: 'Medicamento',  key: 'medicationName', width: 32 },
-      { header: 'Genérico',     key: 'genericName',    width: 24 },
-      { header: 'Costo Unit.',  key: 'unitCost',       width: 14 },
-      { header: 'Precio Venta', key: 'sellingPrice',   width: 14 },
-      { header: 'Cant. Vendida', key: 'qtySold',       width: 14 },
-      { header: 'Margen Bs',    key: 'marginAbs',      width: 16 },
-      { header: 'Margen %',     key: 'marginPct',      width: 12 },
-    ];
-
-    ws.getRow(1).eachCell(cell => Object.assign(cell, headerStyle));
-
-    for (const r of data) {
-      ws.addRow({
-        medicationName: r.medicationName ?? '-',
-        genericName:    r.genericName ?? '-',
-        unitCost:       Number(r.unitCost ?? 0),
-        sellingPrice:   Number(r.sellingPrice ?? 0),
-        qtySold:        Number(r.qtySold ?? 0),
-        marginAbs:      Number(r.marginAbs ?? 0),
-        marginPct:      Number(r.marginPct ?? 0),
-      });
-    }
-  }
-
-  buildTopSellingSheet(ws: ExcelJS.Worksheet, data: any[]): void {
-    const headerStyle: Partial<ExcelJS.Style> = {
-      font: { bold: true, color: { argb: 'FFFFFFFF' } },
-      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } },
-    };
-
-    ws.columns = [
-      { header: 'Medicamento',  key: 'medicationName', width: 32 },
-      { header: 'Genérico',     key: 'genericName',    width: 24 },
-      { header: 'Categoría',    key: 'category',       width: 16 },
-      { header: 'Cant. Total',  key: 'totalQty',       width: 14 },
-      { header: 'Ingresos Bs',  key: 'totalRevenue',   width: 16 },
-      { header: 'Precio Prom.', key: 'avgUnitPrice',   width: 14 },
-    ];
-
-    ws.getRow(1).eachCell(cell => Object.assign(cell, headerStyle));
-
-    for (const r of data) {
-      ws.addRow({
-        medicationName: r.medicationName ?? '-',
-        genericName:    r.genericName ?? '-',
-        category:       r.category ?? '-',
-        totalQty:       Number(r.totalQty ?? 0),
-        totalRevenue:   Number(r.totalRevenue ?? 0),
-        avgUnitPrice:   Number(r.avgUnitPrice ?? 0),
-      });
-    }
-  }
+  // buildMarginsSheet/buildTopSellingSheet se quitaron junto con
+  // getProductMarginReport/getTopSellingMedications — ver
+  // buildMedicationDetailSheet, que ya trae las mismas columnas (y más).
 
   buildStockMovementsSheet(ws: ExcelJS.Worksheet, data: any[]): void {
     const headerStyle: Partial<ExcelJS.Style> = {
@@ -627,6 +571,17 @@ export class ExportService {
       ws.addRow(['Fecha', 'Método', 'N° Ventas', 'Total (Bs)']);
       for (const r of data.daily) {
         ws.addRow([r.saleDay, methodLabel[r.method] ?? r.method, Number(r.salesCount ?? 0), Number(r.totalRevenue ?? 0)]);
+      }
+    }
+
+    // Tendencia mensual: lo que traía el antiguo pharmacy/payment-methods
+    // (sin ningún botón en el frontend, huérfano) — consolidado acá.
+    if ((data.monthly ?? []).length > 0) {
+      ws.addRow([]);
+      ws.addRow(['Tendencia Mensual']);
+      ws.addRow(['Mes', 'Método', 'N° Ventas', 'Total (Bs)']);
+      for (const r of data.monthly) {
+        ws.addRow([r.month, methodLabel[r.method] ?? r.method, Number(r.count ?? 0), Number(r.total ?? 0)]);
       }
     }
   }

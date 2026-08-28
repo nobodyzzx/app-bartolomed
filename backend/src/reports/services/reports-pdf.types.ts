@@ -91,10 +91,6 @@ export interface RotationRow extends ReportRow {
   alertLevel?: string;
 }
 
-export interface MarginRow extends ReportRow {
-  medicationName?: string;
-}
-
 export interface ProfitabilityRow extends ReportRow {
   month?: unknown;
   revenue?: Numeric;

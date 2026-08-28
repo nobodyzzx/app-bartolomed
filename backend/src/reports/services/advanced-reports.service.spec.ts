@@ -46,8 +46,6 @@ describe('AdvancedReportsService', () => {
         ['getTransferEfficiencyReport', f => service.getTransferEfficiencyReport(f)],
         ['getCriticalStockReport', f => service.getCriticalStockReport(f)],
         ['getRotationReport', f => service.getRotationReport(f)],
-        ['getTopSellingMedications', f => service.getTopSellingMedications(f)],
-        ['getProductMarginReport', f => service.getProductMarginReport(f)],
         ['getDailySalesSummary', f => service.getDailySalesSummary(f)],
         ['getExpiryBucketReport', f => service.getExpiryBucketReport(f)],
         ['getPurchaseVsConsumption', f => service.getPurchaseVsConsumption(f)],
@@ -56,7 +54,6 @@ describe('AdvancedReportsService', () => {
         ['getSupplierAnalysis', f => service.getSupplierAnalysis(f)],
         ['getPrescriptionDispensingSummary', f => service.getPrescriptionDispensingSummary(f)],
         ['getCreditSales', f => service.getCreditSales(f)],
-        ['getSalesByPaymentMethod', f => service.getSalesByPaymentMethod(f)],
         ['getMonthlyProfitability', f => service.getMonthlyProfitability(f)],
         ['getPrescriptionDispensationAudit', f => service.getPrescriptionDispensationAudit(f)],
         ['getSalesByPharmacist', f => service.getSalesByPharmacist(f)],
@@ -276,9 +273,9 @@ describe('AdvancedReportsService', () => {
   });
 
   describe('reportes de pass-through simple (guard + delega en dataSource.query)', () => {
-    it('getTopSellingMedications aplica el filtro de fechas embebido en el SQL', async () => {
+    it('getSalesByMedicationDetail aplica el filtro de fechas embebido en el SQL', async () => {
       dataSource.query.mockResolvedValue([{ medicationName: 'A' }]);
-      const result = await service.getTopSellingMedications({
+      const result = await service.getSalesByMedicationDetail({
         clinicId: CLINIC_ID,
         dateRange: { startDate: '2026-01-01', endDate: '2026-01-31' },
       });
@@ -297,7 +294,7 @@ describe('AdvancedReportsService', () => {
      */
     it('un filtro de un solo día (startDate = endDate) no excluye las ventas de esa misma fecha', async () => {
       dataSource.query.mockResolvedValue([]);
-      await service.getTopSellingMedications({
+      await service.getSalesByMedicationDetail({
         clinicId: CLINIC_ID,
         dateRange: { startDate: '2026-08-27', endDate: '2026-08-27' },
       });
@@ -305,12 +302,6 @@ describe('AdvancedReportsService', () => {
       const sql = dataSource.query.mock.calls[0][0];
       expect(sql).not.toMatch(/<=\s*'2026-08-27'/);
       expect(sql).toContain(`< ('2026-08-27'::date + INTERVAL '1 day')`);
-    });
-
-    it('getProductMarginReport devuelve el resultado de la query', async () => {
-      dataSource.query.mockResolvedValue([{ medicationName: 'A', marginPct: '10' }]);
-      const result = await service.getProductMarginReport({ clinicId: CLINIC_ID });
-      expect(result).toEqual([{ medicationName: 'A', marginPct: '10' }]);
     });
 
     it('getSalesByCategory devuelve el resultado de la query', async () => {
@@ -560,30 +551,6 @@ describe('AdvancedReportsService', () => {
     });
   });
 
-  describe('getSalesByPaymentMethod (F3-R12)', () => {
-    it('calcula pct sobre el grandTotal de byMethod', async () => {
-      dataSource.query
-        .mockResolvedValueOnce([
-          { method: 'cash', total: '750' },
-          { method: 'qr', total: '250' },
-        ])
-        .mockResolvedValueOnce([]);
-
-      const result = await service.getSalesByPaymentMethod({ clinicId: CLINIC_ID });
-
-      expect(result.byMethod).toEqual([
-        { method: 'cash', total: '750', pct: 75 },
-        { method: 'qr', total: '250', pct: 25 },
-      ]);
-    });
-
-    it('pct es 0 si grandTotal es 0', async () => {
-      dataSource.query.mockResolvedValueOnce([{ method: 'cash', total: '0' }]).mockResolvedValueOnce([]);
-      const result = await service.getSalesByPaymentMethod({ clinicId: CLINIC_ID });
-      expect(result.byMethod[0].pct).toBe(0);
-    });
-  });
-
   describe('getMonthlyProfitability (F3-R13)', () => {
     it('calcula grossMarginPct redondeado a 1 decimal', async () => {
       dataSource.query.mockResolvedValue([{ month: '2026-01', revenue: '1000', cogs: '600', grossMargin: '400' }]);
@@ -735,13 +702,31 @@ describe('AdvancedReportsService', () => {
     it('calcula pct y formatea saleDay en el detalle diario', async () => {
       dataSource.query
         .mockResolvedValueOnce([{ method: 'cash', totalRevenue: '1000' }])
-        .mockResolvedValueOnce([{ saleDay: new Date('2026-01-01'), method: 'cash', totalRevenue: '100' }]);
+        .mockResolvedValueOnce([{ saleDay: new Date('2026-01-01'), method: 'cash', totalRevenue: '100' }])
+        .mockResolvedValueOnce([]);
 
       const result = await service.getSalesByPaymentDetailed({ clinicId: CLINIC_ID });
 
       expect(result.summary[0].pct).toBe(100);
       expect(result.daily[0].saleDay).toBe('2026-01-01');
       expect(result.grandTotal).toBe(1000);
+    });
+
+    /**
+     * Regresión: bug corregido el 2026-08-27. Este `monthly` reemplaza al
+     * antiguo endpoint pharmacy/payment-methods (getSalesByPaymentMethod,
+     * F3-R12) — sin ningún botón en el frontend, huérfano — que solo traía
+     * esto y un `byMethod` que este reporte ya cubre en `summary`.
+     */
+    it('incluye el desglose mensual por método, consolidado del antiguo F3-R12', async () => {
+      dataSource.query
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ month: '2026-01', method: 'cash', total: '750', count: '3' }]);
+
+      const result = await service.getSalesByPaymentDetailed({ clinicId: CLINIC_ID });
+
+      expect(result.monthly).toEqual([{ month: '2026-01', method: 'cash', total: '750', count: '3' }]);
     });
   });
 

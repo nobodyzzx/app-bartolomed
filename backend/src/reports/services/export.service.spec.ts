@@ -342,6 +342,24 @@ describe('ExportService', () => {
       service.buildSalesByPaymentMethodSheet(ws, { summary: [], daily: [] });
       expect(ws.rowCount).toBe(1); // solo el header
     });
+
+    /**
+     * Regresión: bug corregido el 2026-08-27. `monthly` es lo que traía el
+     * antiguo pharmacy/payment-methods (huérfano, sin botón en el frontend),
+     * consolidado en este reporte en vez de mantener dos endpoints casi
+     * idénticos.
+     */
+    it('agrega el bloque de tendencia mensual si monthly viene informado', () => {
+      const ws = new ExcelJS.Workbook().addWorksheet('test');
+      service.buildSalesByPaymentMethodSheet(ws, {
+        summary: [],
+        daily: [],
+        monthly: [{ month: '2026-01', method: 'qr', count: 3, total: 300 }],
+      });
+      const rows: string[] = [];
+      ws.eachRow(row => rows.push(String(row.getCell(1).value ?? '')));
+      expect(rows).toContain('Tendencia Mensual');
+    });
   });
 
   describe('buildNoMovementSheet', () => {
@@ -361,18 +379,6 @@ describe('ExportService', () => {
   });
 
   describe('sheets simples de mapeo directo (defaults con ?? y Number())', () => {
-    it('buildMarginsSheet aplica defaults numéricos', () => {
-      const ws = new ExcelJS.Workbook().addWorksheet('test');
-      service.buildMarginsSheet(ws, [{ medicationName: 'A' }]);
-      expect(ws.getRow(2).getCell('unitCost').value).toBe(0);
-    });
-
-    it('buildTopSellingSheet aplica defaults numéricos', () => {
-      const ws = new ExcelJS.Workbook().addWorksheet('test');
-      service.buildTopSellingSheet(ws, [{ medicationName: 'A' }]);
-      expect(ws.getRow(2).getCell('totalQty').value).toBe(0);
-    });
-
     it('buildStockMovementsSheet formatea la fecha si viene informada', () => {
       const ws = new ExcelJS.Workbook().addWorksheet('test');
       service.buildStockMovementsSheet(ws, [{ date: '2026-01-01T10:00:00Z', type: 'in' }]);

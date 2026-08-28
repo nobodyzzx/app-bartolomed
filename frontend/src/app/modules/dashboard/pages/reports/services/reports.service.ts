@@ -121,11 +121,6 @@ export class ReportsService {
     return this.downloadReportPdf('pharmacy-rotation', `rotacion-stock-${date}.pdf`, params)
   }
 
-  downloadMarginsPdf(params: Record<string, string> = {}): Observable<Blob> {
-    const date = todayLocalISO()
-    return this.downloadReportPdf('pharmacy-margins', `margenes-producto-${date}.pdf`, params)
-  }
-
   downloadDailySalesPdf(params: Record<string, string> = {}): Observable<Blob> {
     const date = todayLocalISO()
     return this.downloadReportPdf('daily-sales', `ventas-diarias-${date}.pdf`, params)
@@ -148,15 +143,8 @@ export class ReportsService {
     return this.downloadBlob('export/excel/pharmacy-rotation', `rotacion-stock-${date}.xlsx`, params)
   }
 
-  downloadMarginsExcel(params: Record<string, string> = {}): Observable<Blob> {
-    const date = todayLocalISO()
-    return this.downloadBlob('export/excel/pharmacy-margins', `margenes-producto-${date}.xlsx`, params)
-  }
-
-  downloadTopSellingExcel(params: Record<string, string> = {}): Observable<Blob> {
-    const date = todayLocalISO()
-    return this.downloadBlob('export/excel/pharmacy-top-selling', `top-vendidos-${date}.xlsx`, params)
-  }
+  // downloadMarginsExcel/downloadTopSellingExcel se quitaron junto con sus
+  // rutas — ver downloadMedicationDetailExcel más abajo.
 
   downloadStockMovementsExcel(params: Record<string, string> = {}): Observable<Blob> {
     const date = todayLocalISO()
