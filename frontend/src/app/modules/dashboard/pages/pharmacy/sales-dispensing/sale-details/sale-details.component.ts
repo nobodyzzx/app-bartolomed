@@ -18,7 +18,16 @@ export class SaleDetailsComponent implements OnInit {
   loading = signal(false)
   sale = signal<Sale | null>(null)
 
-  isPending = computed(() => this.sale()?.status === SaleStatus.PENDING)
+  /**
+   * En la práctica toda venta nace COMPLETED (ver PharmacySalesService.create):
+   * no hay un flujo real de "venta pendiente" que alguien complete después, así
+   * que la única acción que existe de verdad es cancelar. Antes el botón
+   * "Completar Venta" solo se mostraba si `isPending()`, condición que nunca se
+   * daba — un botón que nadie podía ver — mientras que "Cancelar" también
+   * exigía `isPending()`, así que una venta COMPLETED (el 100% de los casos)
+   * no se podía cancelar desde esta pantalla.
+   */
+  canCancel = computed(() => this.sale()?.status !== SaleStatus.CANCELLED)
 
   /**
    * Ítems con descuento propio (independiente del descuento sobre el total).
@@ -65,45 +74,12 @@ export class SaleDetailsComponent implements OnInit {
     })
   }
 
-  async completeSale(): Promise<void> {
-    const s = this.sale()
-    if (!s) return
-
-    if (s.status !== SaleStatus.PENDING) {
-      this.alert.warning('Advertencia', 'Solo se pueden completar ventas pendientes')
-      return
-    }
-
-    const result = await this.alert.fire({
-      icon: 'question',
-      title: '¿Completar venta?',
-      text: 'Se reducirá el inventario automáticamente',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, completar',
-      cancelButtonText: 'Cancelar',
-    })
-
-    if (result.isConfirmed) {
-      this.loading.set(true)
-      this.salesService.updateSaleStatus(s.id, SaleStatus.COMPLETED).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: updated => {
-          this.sale.set(updated)
-          this.loading.set(false)
-          this.alert.success('Éxito', 'Venta completada correctamente')
-        },
-        error: () => {
-          this.loading.set(false)
-        },
-      })
-    }
-  }
-
   async cancelSale(): Promise<void> {
     const s = this.sale()
     if (!s) return
 
-    if (s.status !== SaleStatus.PENDING) {
-      this.alert.warning('Advertencia', 'Solo se pueden cancelar ventas pendientes')
+    if (s.status === SaleStatus.CANCELLED) {
+      this.alert.warning('Advertencia', 'Esta venta ya está cancelada')
       return
     }
 
