@@ -829,6 +829,33 @@ describe('AdvancedReportsService', () => {
       expect(result.summary.totalDiscount).toBe(35);
     });
 
+    /**
+     * Caso real (SAL-20260827-0003): la venta no tiene descuento a nivel
+     * venta (discount=0), pero uno de sus ítems sí — y ahí es donde vive el
+     * motivo. Antes solo se sumaba `ps.discount`, así que esta venta parecía
+     * "sin descuento" en el corte pese a haber rebajado Bs 15.
+     */
+    it('suma el descuento de los ítems cuando la venta no tiene descuento a nivel venta', async () => {
+      dataSource.query
+        .mockResolvedValueOnce([{ id: USER_ID, name: 'Harold Navia' }])
+        .mockResolvedValueOnce([{
+          id: 'sale-1',
+          total: '0.00',
+          discount: '0',
+          discountReason: null,
+          items: [
+            { product: 'Metformina 850mg', quantity: 10, unitPrice: '1.50', subtotal: '0.00', discount: '15.00', discountReason: 'dra marza' },
+          ],
+        }])
+        .mockResolvedValueOnce([]);
+
+      const result = await service.getStaffShiftDetail({ clinicId: CLINIC_ID, userId: USER_ID });
+
+      expect(result.summary.pharmacyDiscount).toBe(15);
+      expect((result.pharmacySales[0] as any).discountTotal).toBe(15);
+      expect((result.pharmacySales[0] as any).discountReasons).toBe('dra marza');
+    });
+
     it('un cargo pending no se suma a clinicRevenue: se informa aparte en clinicPending', async () => {
       dataSource.query
         .mockResolvedValueOnce([{ id: USER_ID, name: 'Harold Navia' }])

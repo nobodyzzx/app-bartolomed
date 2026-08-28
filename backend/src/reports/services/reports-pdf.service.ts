@@ -1870,6 +1870,16 @@ ${body}
     const clinicCharges: any[] = data.clinicCharges ?? [];
     const summary = data.summary ?? {};
 
+    // "Bs 15.00 (dra marza)": el motivo solo tiene sentido junto al importe
+    // —esta tabla no tiene una columna aparte para no volverse ilegible—, y
+    // sin él el corte solo confirmaba que hubo una rebaja, no por qué.
+    const fmtDescuento = (amount: unknown, reason: unknown): string => {
+      const n = Number(amount);
+      if (!(n > 0)) return '-';
+      const r = typeof reason === 'string' ? reason.trim() : '';
+      return r ? `${this.fmtBs(n)} (${r})` : this.fmtBs(n);
+    };
+
     const pharmacyTableTypst = this.typstTableSection(
       'Farmacia',
       ['Hora', 'N° Venta', 'Paciente', 'Productos', 'Pago', 'Desc.', 'Total'],
@@ -1879,7 +1889,10 @@ ${body}
         typstString(s.patientName ?? '-'),
         typstString((s.items ?? []).map((i: any) => `${i.product} ×${i.quantity}`).join(', ') || '-'),
         typstString(s.paymentMethod ?? '-'),
-        typstString(Number(s.discount) > 0 ? this.fmtBs(s.discount) : '-'),
+        // discountTotal ya suma el descuento a nivel venta con el de cada
+        // ítem (ver getStaffShiftDetail): una venta puede tener discount=0
+        // a nivel venta y el descuento solo en una línea.
+        typstString(fmtDescuento(s.discountTotal, s.discountReasons)),
         typstString(this.fmtBs(s.total)),
       ]),
       ['left', 'left', 'left', 'left', 'left', 'right', 'right'],
@@ -1895,7 +1908,7 @@ ${body}
         typstString(c.description ?? '-'),
         typstString(c.patientName ?? '-'),
         typstString(c.status === 'invoiced' ? 'Facturado' : c.status === 'pending' ? 'Pendiente' : (c.status ?? '-')),
-        typstString(Number(c.discountAmount) > 0 ? this.fmtBs(c.discountAmount) : '-'),
+        typstString(fmtDescuento(c.discountAmount, c.discountReason)),
         typstString(this.fmtBs(c.total)),
       ]),
       ['left', 'left', 'left', 'left', 'center', 'right', 'right'],

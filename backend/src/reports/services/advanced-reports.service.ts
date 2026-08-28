@@ -1637,7 +1637,12 @@ export class AdvancedReportsService {
           (
             SELECT json_agg(json_build_object(
               'product', psi."productName", 'quantity', psi.quantity,
-              'unitPrice', psi."unitPrice", 'subtotal', psi.subtotal
+              'unitPrice', psi."unitPrice", 'subtotal', psi.subtotal,
+              -- El descuento también se aplica por línea (no solo sobre el
+              -- total de la venta): la SAL-20260827-0003 real tiene discount=0
+              -- a nivel venta pero Bs 15 de descuento en un ítem — sin esto
+              -- el corte mostraba "sin descuento" en una venta que sí tuvo uno.
+              'discount', psi.discount, 'discountReason', psi.discount_reason
             ) ORDER BY psi."createdAt")
             FROM pharmacy_sale_items psi
             WHERE psi.sale_id = ps.id
@@ -1665,7 +1670,22 @@ export class AdvancedReportsService {
       `, [clinicId, userId]),
     ]);
 
-    const pharmacyRevenue = round2(pharmacySales.reduce((s, r) => s + Number(r['total'] ?? 0), 0));
+    // El descuento de una venta puede venir del total (ps.discount) o de sus
+    // ítems (psi.discount) — hay ventas reales con discount=0 a nivel venta
+    // y un descuento solo en una línea (ej. SAL-20260827-0003: Bs 15 de
+    // descuento en un ítem, nada a nivel venta). Se combinan acá para que
+    // el corte no diga "sin descuento" en una venta que sí tuvo uno, y para
+    // que el motivo (que solo se guarda en la línea) llegue al PDF.
+    const pharmacySalesConDescuento = pharmacySales.map(sale => {
+      const items = (sale['items'] as Array<Record<string, unknown>>) ?? [];
+      const itemsDiscount = items.reduce((s, it) => s + Number(it['discount'] ?? 0), 0);
+      const discountTotal = round2(Number(sale['discount'] ?? 0) + itemsDiscount);
+      const reasons = [sale['discountReason'], ...items.map(it => it['discountReason'])]
+        .filter((r): r is string => !!r && String(r).trim().length > 0);
+      return { ...sale, discountTotal, discountReasons: [...new Set(reasons)].join('; ') || null };
+    });
+
+    const pharmacyRevenue = round2(pharmacySalesConDescuento.reduce((s, r) => s + Number(r['total'] ?? 0), 0));
     const invoicedCharges = clinicCharges.filter(c => c['status'] === 'invoiced');
     const pendingCharges  = clinicCharges.filter(c => c['status'] === 'pending');
     const clinicRevenue = round2(invoicedCharges.reduce((s, r) => s + Number(r['total'] ?? 0), 0));
@@ -1674,13 +1694,13 @@ export class AdvancedReportsService {
     // No sale al cliente en ningún recibo (por eso vive solo en este corte,
     // que solo ve quien atendió y quien administra): antes no había forma de
     // saber, ni siquiera para uno mismo, cuánto se rebajó en el turno.
-    const pharmacyDiscount = round2(pharmacySales.reduce((s, r) => s + Number(r['discount'] ?? 0), 0));
+    const pharmacyDiscount = round2(pharmacySalesConDescuento.reduce((s, r) => s + Number(r['discountTotal'] ?? 0), 0));
     const clinicDiscount = round2(clinicCharges.reduce((s, r) => s + Number(r['discountAmount'] ?? 0), 0));
 
     return {
       userId,
       userName: (staff[0]?.['name'] as string) ?? null,
-      pharmacySales,
+      pharmacySales: pharmacySalesConDescuento,
       clinicCharges,
       summary: {
         pharmacyRevenue,
