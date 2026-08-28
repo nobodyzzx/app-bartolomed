@@ -8,6 +8,17 @@ import { Observable, forkJoin } from 'rxjs'
 import { finalize } from 'rxjs/operators'
 import { ReportsService } from './services/reports.service'
 import { toLocalISODate } from '../../../../shared/utils/date-format.util'
+import {
+  ReportDownloadColor,
+  ReportDownloadFormat,
+} from '../../../../shared/components/report-download-button/report-download-button.component'
+
+/** Una tarjeta de descarga: un reporte, uno o dos formatos (PDF/Excel). */
+export interface ReportCard {
+  label: string
+  color: ReportDownloadColor
+  formats: ReportDownloadFormat[]
+}
 
 @Component({
     selector: 'app-reports',
@@ -268,6 +279,102 @@ export class ReportsComponent implements OnInit {
   // sentido (el resumen justamente compara ambientes entre sí).
   downloadAssetSummary()      { this.download('assetSum',   () => this.reportsService.downloadAssetSummaryPdf()) }
   downloadAssetCondition()    { this.download('assetCond',  () => this.reportsService.downloadAssetConditionPdf()) }
+
+  // ── Tarjetas de descarga (F4) ────────────────────────────────────────────
+  // Antes cada sección de farmacia repetía "fila de botones PDF" + "fila de
+  // botones Excel", con el mismo reporte apareciendo dos veces con nombres
+  // parecidos. Ahora cada reporte es una sola tarjeta con 1 o 2 formatos;
+  // `downloading` se lee en cada getter (no se cachea) para que el spinner
+  // del botón refleje el estado real mientras se genera el archivo.
+  private fmt(label: string, icon: string, key: string, action: () => void): ReportDownloadFormat {
+    return { label, icon, key, downloading: this.downloading[key], action }
+  }
+
+  get pharmacyGeneralReports(): ReportCard[] {
+    const cards: ReportCard[] = [
+      { label: 'Stock crítico', color: 'orange', formats: [
+        this.fmt('PDF', 'picture_as_pdf', 'critStockPdf', () => this.downloadCriticalStockPdf()),
+        this.fmt('Excel', 'table_chart', 'critStockXls', () => this.downloadCriticalStockExcel()),
+      ] },
+      { label: 'Ventas diarias', color: 'orange', formats: [
+        this.fmt('PDF', 'picture_as_pdf', 'dailyPdf', () => this.downloadDailySalesPdf()),
+      ] },
+      { label: 'Rotación de stock', color: 'orange', formats: [
+        this.fmt('PDF', 'picture_as_pdf', 'rotPdf', () => this.downloadRotationPdf()),
+        this.fmt('Excel', 'table_chart', 'rotXls', () => this.downloadRotationExcel()),
+      ] },
+      { label: 'Vencimientos', color: 'orange', formats: [
+        this.fmt('PDF', 'picture_as_pdf', 'expBktPdf', () => this.downloadExpiryBucketsPdf()),
+      ] },
+      { label: 'Rentabilidad', color: 'orange', formats: [
+        this.fmt('PDF', 'picture_as_pdf', 'profPdf', () => this.downloadProfitabilityPdf()),
+      ] },
+      { label: 'Consumo de farmacia', color: 'orange', formats: [
+        this.fmt('Excel', 'table_chart', 'consumption', () => this.downloadConsumptionExcel()),
+      ] },
+      { label: 'Movimientos de stock', color: 'orange', formats: [
+        this.fmt('Excel', 'table_chart', 'movXls', () => this.downloadStockMovementsExcel()),
+      ] },
+    ]
+    if (this.canViewFinancial) {
+      cards.splice(1, 0, { label: 'Eficiencia de traslados', color: 'orange', formats: [
+        this.fmt('PDF', 'picture_as_pdf', 'transfers', () => this.downloadTransfersPdf()),
+      ] })
+    }
+    return cards
+  }
+
+  get pharmacistReports(): ReportCard[] {
+    return [
+      { label: 'Resumen por Encargado', color: 'purple', formats: [
+        this.fmt('PDF', 'picture_as_pdf', 'pharmPdf', () => this.downloadSalesByPharmacistPdf()),
+        this.fmt('Excel', 'table_chart', 'pharmXls', () => this.downloadSalesByPharmacistExcel()),
+      ] },
+      { label: 'Encargado × Día × Medicamento', color: 'purple', formats: [
+        this.fmt('PDF', 'picture_as_pdf', 'pharmDayPdf', () => this.downloadPharmacistDayPdf()),
+        this.fmt('Excel', 'table_chart', 'pharmDayXls', () => this.downloadPharmacistDayExcel()),
+      ] },
+    ]
+  }
+
+  get inventoryReports(): ReportCard[] {
+    return [
+      { label: 'Listado para imprimir', color: 'teal', formats: [
+        this.fmt('PDF', 'checklist', 'invListPdf', () => this.downloadInventoryListPdf()),
+      ] },
+      { label: 'Inventario valorizado', color: 'teal', formats: [
+        this.fmt('PDF', 'picture_as_pdf', 'invValPdf', () => this.downloadValorizedInventoryPdf()),
+        this.fmt('Excel', 'table_chart', 'invValXls', () => this.downloadValorizedInventoryExcel()),
+      ] },
+      { label: 'Por categoría', color: 'teal', formats: [
+        this.fmt('PDF', 'picture_as_pdf', 'invCatPdf', () => this.downloadInventoryByCategoryPdf()),
+      ] },
+      { label: 'Sin movimiento', color: 'teal', formats: [
+        this.fmt('PDF', 'picture_as_pdf', 'noMovPdf', () => this.downloadNoMovementPdf()),
+        this.fmt('Excel', 'table_chart', 'noMovXls', () => this.downloadNoMovementExcel()),
+      ] },
+    ]
+  }
+
+  get detailedSalesReports(): ReportCard[] {
+    return [
+      { label: 'Ventas por medicamento', color: 'indigo', formats: [
+        this.fmt('PDF', 'picture_as_pdf', 'medDetPdf', () => this.downloadMedicationDetailPdf()),
+        this.fmt('Excel', 'table_chart', 'medDetXls', () => this.downloadMedicationDetailExcel()),
+      ] },
+      { label: 'Receta vs. libre', color: 'indigo', formats: [
+        this.fmt('PDF', 'picture_as_pdf', 'rxFreePdf', () => this.downloadPrescriptionVsFreePdf()),
+      ] },
+      { label: 'Método de pago', color: 'indigo', formats: [
+        this.fmt('PDF', 'picture_as_pdf', 'payPdf', () => this.downloadSalesByPaymentPdf()),
+        this.fmt('Excel', 'table_chart', 'payXls', () => this.downloadSalesByPaymentExcel()),
+      ] },
+      { label: 'Comparativo mensual', color: 'indigo', formats: [
+        this.fmt('PDF', 'picture_as_pdf', 'monthlyPdf', () => this.downloadMonthlySalesComparisonPdf()),
+        this.fmt('Excel', 'table_chart', 'monthlyXls', () => this.downloadMonthlySalesComparisonExcel()),
+      ] },
+    ]
+  }
 
   goBack(): void { this.router.navigateByUrl('/dashboard/home') }
 

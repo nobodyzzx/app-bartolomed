@@ -8,6 +8,7 @@ import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dial
 import { EmptyStateComponent } from './components/empty-state/empty-state.component'
 import { NavbarComponent } from './components/navbar/navbar.component'
 import { PageHeaderComponent } from './components/page-header/page-header.component'
+import { ReportDownloadButtonComponent } from './components/report-download-button/report-download-button.component'
 import { SearchBarComponent } from './components/search-bar/search-bar.component'
 import { SectionErrorBadgeComponent } from './components/section-error-badge/section-error-badge.component'
 import { SidebarMenuItemComponent } from './components/sidebar/sidebar-menu-item/sidebar-menu-item.component'
@@ -37,6 +38,7 @@ import { StatusBadgeComponent } from './components/status-badge/status-badge.com
     SkeletonTableComponent,
     StatusBadgeComponent,
     SectionErrorBadgeComponent,
+    ReportDownloadButtonComponent,
   ],
   exports: [
     SidebarComponent,
@@ -53,6 +55,7 @@ import { StatusBadgeComponent } from './components/status-badge/status-badge.com
     SkeletonTableComponent,
     StatusBadgeComponent,
     SectionErrorBadgeComponent,
+    ReportDownloadButtonComponent,
   ],
 })
 export class SharedModule {}
