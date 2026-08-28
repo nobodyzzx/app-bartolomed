@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Appointment, AppointmentStatus } from '../appointments/entities/appointment.entity';
+import { Charge } from '../charges/entities/charge.entity';
 import { Clinic } from '../clinics/entities/clinic.entity';
 import { Patient } from '../patients/entities/patient.entity';
 import { User } from '../users/entities/user.entity';
@@ -25,6 +26,8 @@ export class BillingService {
     private appointmentRepository: Repository<Appointment>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(Charge)
+    private chargeRepository: Repository<Charge>,
   ) {}
 
   async create(createDto: CreateInvoiceDto, user: User, scopedClinicId?: string): Promise<Invoice> {
@@ -187,6 +190,32 @@ export class BillingService {
     }
 
     const [items, total] = await qb.getManyAndCount();
+
+    // El motivo del descuento vive en Charge, no en Invoice/InvoiceItem (el
+    // checkout lo guarda por cargo, ver CheckoutService) — se pierde apenas
+    // se factura salvo que se lo vuelva a buscar acá. Nunca sale en el
+    // recibo del paciente (ver ReceiptPdfService): esto es solo para que el
+    // staff, revisando la lista, sepa por qué se descontó una factura.
+    const invoiceIds = items.map(i => i.id);
+    if (invoiceIds.length > 0) {
+      const chargesConDescuento = await this.chargeRepository
+        .createQueryBuilder('charge')
+        .select(['charge.invoiceId AS "invoiceId"', 'charge.discountReason AS "discountReason"'])
+        .where('charge.invoiceId IN (:...invoiceIds)', { invoiceIds })
+        .andWhere('charge.discountAmount > 0')
+        .getRawMany();
+
+      const reasonsByInvoice = new Map<string, string[]>();
+      for (const c of chargesConDescuento) {
+        if (!c.discountReason) continue;
+        const list = reasonsByInvoice.get(c.invoiceId) ?? [];
+        if (!list.includes(c.discountReason)) list.push(c.discountReason);
+        reasonsByInvoice.set(c.invoiceId, list);
+      }
+      for (const invoice of items) {
+        (invoice as any).discountReasons = reasonsByInvoice.get(invoice.id)?.join('; ') || null;
+      }
+    }
 
     return { items, total, page, pageSize };
   }
