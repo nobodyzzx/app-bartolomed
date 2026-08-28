@@ -38,29 +38,54 @@
       </div>
     </div>
 
-    <!-- ── SECCIÓN CORTE DE TURNO ──
+    <!-- ── ACCESOS RÁPIDOS ──
+    "Mi Corte de Turno" y "Ventas Diarias" son los de uso diario (cada quien
+    cierra su turno; farmacia revisa cómo le fue en el día), así que van
+    primero y con entrada directa — sin tener que abrir un módulo con tabs.
     Sin roles estancos en esta clínica — "quien cobra" suele ser el mismo
-    médico haciendo de recepcionista, laboratorista, etc. Por eso este corte
-    es por persona, no por rol, y no tiene selector de a quién: cada quien
-    baja el propio (el backend fuerza el userId del token si no eres admin),
-    para que quien atiende en la mañana y quien atiende en la tarde puedan
-    sacar cada uno su cierre sin pisarse. -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-      <div class="flex items-center gap-4 px-6 py-4 bg-teal-50 border-b border-teal-100">
-        <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center flex-shrink-0">
-          <span class="material-symbols-outlined msz-20">badge</span>
+    médico haciendo de recepcionista, laboratorista, etc. Por eso el corte
+    de turno es por persona, no por rol, y no tiene selector de a quién: cada
+    quien baja el propio (el backend fuerza el userId del token si no eres
+    admin), para que quien atiende en la mañana y quien atiende en la tarde
+    puedan sacar cada uno su cierre sin pisarse. -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-teal-50 border-b border-teal-100">
+          <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">badge</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Mi Corte de Turno</h3>
+            <p class="text-sm text-slate-500 m-0">Todo lo que cobraste: farmacia, consultas, laboratorio y otros</p>
+          </div>
         </div>
-        <div>
-          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Mi Corte de Turno</h3>
-          <p class="text-sm text-slate-500 m-0">Todo lo que cobraste en el período: farmacia, consultas, laboratorio y otros</p>
+        <div class="p-6">
+          <button class="btn btn-primary" (click)="downloadStaffShiftDetailPdf()" [disabled]="downloading['shiftPdf']">
+            <span class="material-symbols-outlined">{{downloading['shiftPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            {{downloading['shiftPdf'] ? 'Generando...' : 'Descargar mi corte de turno'}}
+          </button>
         </div>
       </div>
-      <div class="p-6">
-        <button class="btn btn-primary" (click)="downloadStaffShiftDetailPdf()" [disabled]="downloading['shiftPdf']">
-          <span class="material-symbols-outlined">{{downloading['shiftPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
-          {{downloading['shiftPdf'] ? 'Generando...' : 'Descargar mi corte de turno'}}
-        </button>
+
+      @if (canViewPharmacy) {
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="flex items-center gap-4 px-6 py-4 bg-orange-50 border-b border-orange-100">
+          <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined msz-20">point_of_sale</span>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 m-0 leading-tight">Ventas Diarias</h3>
+            <p class="text-sm text-slate-500 m-0">Cómo fue la venta de farmacia día por día en el período</p>
+          </div>
+        </div>
+        <div class="p-6">
+          <button class="btn btn-primary" (click)="downloadDailySalesPdf()" [disabled]="downloading['dailyPdf']">
+            <span class="material-symbols-outlined">{{downloading['dailyPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+            {{downloading['dailyPdf'] ? 'Generando...' : 'Descargar ventas diarias'}}
+          </button>
+        </div>
       </div>
+      }
     </div>
 
     <!-- ── SECCIÓN LABORATORIO Y ESTUDIOS ESPECIALES ──
@@ -193,7 +218,10 @@
     </div>
     }
 
-    <!-- ── SECCIÓN FINANZAS ── -->
+    <!-- ── MÓDULO FINANZAS ──
+    Antes "Finanzas" y "Control de Ingresos" eran 2 tarjetas planas seguidas
+    con el mismo permiso (ReportsFinancial) — ahora son 2 pestañas de un
+    mismo módulo, que es lo que realmente son. -->
     @if (canViewFinancial) {
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
       <div class="flex items-center gap-4 px-6 py-4 bg-blue-50 border-b border-blue-100">
@@ -206,6 +234,8 @@
         </div>
       </div>
 
+      <mat-tab-group animationDuration="150ms" class="px-2">
+      <mat-tab label="Resumen">
       <div class="p-6">
         <!-- Stats -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -261,22 +291,9 @@
           </button>
         </div>
       </div>
-    </div>
-    }
+      </mat-tab>
 
-    <!-- ── SECCIÓN CONTROL DE INGRESOS ── -->
-    @if (canViewFinancial) {
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-      <div class="flex items-center gap-4 px-6 py-4 bg-emerald-50 border-b border-emerald-100">
-        <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
-          <span class="material-symbols-outlined msz-20">account_balance_wallet</span>
-        </div>
-        <div>
-          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Control de Ingresos</h3>
-          <p class="text-sm text-slate-500 m-0">De dónde viene el dinero, cuánto se descontó y qué falta cobrar</p>
-        </div>
-      </div>
-
+      <mat-tab label="Control de Ingresos">
       <div class="p-6">
         <!-- Resumen -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -407,10 +424,18 @@
           </div>
         }
       </div>
+      </mat-tab>
+      </mat-tab-group>
     </div>
     }
 
-    <!-- ── SECCIÓN FARMACIA ── -->
+    <!-- ── MÓDULO FARMACIA ──
+    Antes 4 tarjetas planas seguidas ("Farmacia", "Ventas por Encargado",
+    "Inventario", "Ventas Detalladas"), todas con el mismo permiso
+    (ReportsPharmacy) y cada una con "fila de botones PDF" + "fila de botones
+    Excel" repitiendo el nombre del reporte dos veces. Ahora es un solo
+    módulo con 4 pestañas, y cada reporte es una tarjeta con un botón que abre
+    un menú de formato cuando tiene más de uno (ver ReportDownloadButtonComponent). -->
     @if (canViewPharmacy) {
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
       <div class="flex items-center gap-4 px-6 py-4 bg-orange-50 border-b border-orange-100">
@@ -419,10 +444,12 @@
         </div>
         <div>
           <h3 class="font-semibold text-slate-900 m-0 leading-tight">Farmacia</h3>
-          <p class="text-sm text-slate-500 m-0">Stock, vencimientos y rentabilidad del inventario</p>
+          <p class="text-sm text-slate-500 m-0">Stock, ventas, inventario y rentabilidad del período</p>
         </div>
       </div>
 
+      <mat-tab-group animationDuration="150ms" class="px-2">
+      <mat-tab label="General">
       <div class="p-6">
         <!-- Stats -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -439,237 +466,51 @@
 
         <!-- Descargas farmacia -->
         <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Descargar reportes</p>
-
-        <p class="text-xs text-slate-400 font-medium mb-2">PDFs</p>
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadCriticalStockPdf()" [disabled]="downloading['critStockPdf']">
-            <span class="material-symbols-outlined text-orange-500">{{downloading['critStockPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
-            Stock crítico PDF
-          </button>
-          @if (canViewFinancial) {
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadTransfersPdf()" [disabled]="downloading['transfers']">
-            <span class="material-symbols-outlined text-orange-500">{{downloading['transfers'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
-            Eficiencia traslados
-          </button>
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+          @for (r of pharmacyGeneralReports; track r.label) {
+            <app-report-download-button [label]="r.label" [formats]="r.formats" [color]="r.color" />
           }
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadRotationPdf()" [disabled]="downloading['rotPdf']">
-            <span class="material-symbols-outlined text-orange-500">{{downloading['rotPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
-            Rotación stock PDF
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadDailySalesPdf()" [disabled]="downloading['dailyPdf']">
-            <span class="material-symbols-outlined text-orange-500">{{downloading['dailyPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
-            Ventas diarias PDF
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadExpiryBucketsPdf()" [disabled]="downloading['expBktPdf']">
-            <span class="material-symbols-outlined text-orange-500">{{downloading['expBktPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
-            Vencimientos PDF
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadProfitabilityPdf()" [disabled]="downloading['profPdf']">
-            <span class="material-symbols-outlined text-orange-500">{{downloading['profPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
-            Rentabilidad PDF
-          </button>
-        </div>
-
-        <p class="text-xs text-slate-400 font-medium mb-2">Excel</p>
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadCriticalStockExcel()" [disabled]="downloading['critStockXls']">
-            <span class="material-symbols-outlined text-orange-500">{{downloading['critStockXls'] ? 'hourglass_top' : 'table_chart'}}</span>
-            Stock crítico Excel
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadConsumptionExcel()" [disabled]="downloading['consumption']">
-            <span class="material-symbols-outlined text-orange-500">{{downloading['consumption'] ? 'hourglass_top' : 'table_chart'}}</span>
-            Consumo farmacia
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadRotationExcel()" [disabled]="downloading['rotXls']">
-            <span class="material-symbols-outlined text-orange-500">{{downloading['rotXls'] ? 'hourglass_top' : 'table_chart'}}</span>
-            Rotación Excel
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadStockMovementsExcel()" [disabled]="downloading['movXls']">
-            <span class="material-symbols-outlined text-orange-500">{{downloading['movXls'] ? 'hourglass_top' : 'table_chart'}}</span>
-            Movimientos Excel
-          </button>
         </div>
       </div>
-    </div>
-    }
+      </mat-tab>
 
-    <!-- ── SECCIÓN VENTAS POR ENCARGADO ── -->
-    @if (canViewPharmacy) {
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-      <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
-        <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
-          <span class="material-symbols-outlined msz-20">badge</span>
-        </div>
-        <div>
-          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Ventas por Encargado</h3>
-          <p class="text-sm text-slate-500 m-0">Desglose de ventas por farmacéutico, día y medicamento</p>
-        </div>
-      </div>
+      <mat-tab label="Por Encargado">
       <div class="p-6">
         <p class="text-sm text-slate-500 mb-4">Control de cuánto vendió cada farmacéutico en el período, desglosado por día y medicamento.</p>
-
-        <p class="text-xs text-slate-400 font-medium mb-2">PDFs</p>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadSalesByPharmacistPdf()" [disabled]="downloading['pharmPdf']">
-            <span class="material-symbols-outlined text-purple-600">{{downloading['pharmPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
-            Resumen por Encargado
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadPharmacistDayPdf()" [disabled]="downloading['pharmDayPdf']">
-            <span class="material-symbols-outlined text-purple-600">{{downloading['pharmDayPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
-            Encargado × Día × Med.
-          </button>
-        </div>
-
-        <p class="text-xs text-slate-400 font-medium mb-2">Excel</p>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadSalesByPharmacistExcel()" [disabled]="downloading['pharmXls']">
-            <span class="material-symbols-outlined text-purple-600">{{downloading['pharmXls'] ? 'hourglass_top' : 'table_chart'}}</span>
-            Resumen Excel
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadPharmacistDayExcel()" [disabled]="downloading['pharmDayXls']">
-            <span class="material-symbols-outlined text-purple-600">{{downloading['pharmDayXls'] ? 'hourglass_top' : 'table_chart'}}</span>
-            Detalle Excel
-          </button>
+          @for (r of pharmacistReports; track r.label) {
+            <app-report-download-button [label]="r.label" [formats]="r.formats" [color]="r.color" />
+          }
         </div>
       </div>
-    </div>
-    }
+      </mat-tab>
 
-    <!-- ── SECCIÓN INVENTARIO ── -->
-    @if (canViewPharmacy) {
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-      <div class="flex items-center gap-4 px-6 py-4 bg-teal-50 border-b border-teal-100">
-        <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center flex-shrink-0">
-          <span class="material-symbols-outlined msz-20">inventory_2</span>
-        </div>
-        <div>
-          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Inventario</h3>
-          <p class="text-sm text-slate-500 m-0">Valorización del stock y medicamentos sin movimiento</p>
-        </div>
-      </div>
+      <mat-tab label="Inventario">
       <div class="p-6">
         <p class="text-sm text-slate-500 mb-4">Listado para imprimir, valorización del stock, distribución por categoría y medicamentos sin movimiento.</p>
-
-        <p class="text-xs text-slate-400 font-medium mb-2">PDFs</p>
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
-          <!-- Primero el listado: es el de uso diario, el que se imprime para
-               recorrer el estante. El valorizado es de valoración y ocupa 27
-               hojas. -->
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadInventoryListPdf()" [disabled]="downloading['invListPdf']">
-            <span class="material-symbols-outlined text-teal-600">{{downloading['invListPdf'] ? 'hourglass_top' : 'checklist'}}</span>
-            Listado para Imprimir
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadValorizedInventoryPdf()" [disabled]="downloading['invValPdf']">
-            <span class="material-symbols-outlined text-teal-600">{{downloading['invValPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
-            Inventario Valorizado
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadInventoryByCategoryPdf()" [disabled]="downloading['invCatPdf']">
-            <span class="material-symbols-outlined text-teal-600">{{downloading['invCatPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
-            Por Categoría PDF
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadNoMovementPdf()" [disabled]="downloading['noMovPdf']">
-            <span class="material-symbols-outlined text-teal-600">{{downloading['noMovPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
-            Sin Movimiento PDF
-          </button>
-        </div>
-
-        <p class="text-xs text-slate-400 font-medium mb-2">Excel</p>
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadValorizedInventoryExcel()" [disabled]="downloading['invValXls']">
-            <span class="material-symbols-outlined text-teal-600">{{downloading['invValXls'] ? 'hourglass_top' : 'table_chart'}}</span>
-            Inventario Valorizado
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadNoMovementExcel()" [disabled]="downloading['noMovXls']">
-            <span class="material-symbols-outlined text-teal-600">{{downloading['noMovXls'] ? 'hourglass_top' : 'table_chart'}}</span>
-            Sin Movimiento Excel
-          </button>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          @for (r of inventoryReports; track r.label) {
+            <app-report-download-button [label]="r.label" [formats]="r.formats" [color]="r.color" />
+          }
         </div>
       </div>
-    </div>
-    }
+      </mat-tab>
 
-    <!-- ── SECCIÓN VENTAS DETALLADAS ── -->
-    @if (canViewPharmacy) {
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-      <div class="flex items-center gap-4 px-6 py-4 bg-indigo-50 border-b border-indigo-100">
-        <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
-          <span class="material-symbols-outlined msz-20">bar_chart</span>
-        </div>
-        <div>
-          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Ventas Detalladas</h3>
-          <p class="text-sm text-slate-500 m-0">Ranking, márgenes por medicamento y comparativa receta vs. venta libre</p>
-        </div>
-      </div>
+      <mat-tab label="Ventas Detalladas">
       <div class="p-6">
         <!-- "Ventas por Med." reemplaza a los antiguos "Top Vendidos" y "Márgenes"
         (pantallas separadas, mismo corte de datos con menos columnas cada una):
         ya trae unidades, ingresos, costo, margen Bs y margen % en una sola tabla,
         ordenada por ingresos — sirve como ranking sin necesitar un reporte aparte. -->
         <p class="text-sm text-slate-500 mb-4">Ranking de medicamentos por ingresos, con unidades, costo y margen — y comparativa entre ventas con receta y ventas libres.</p>
-
-        <p class="text-xs text-slate-400 font-medium mb-2">PDFs</p>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadMedicationDetailPdf()" [disabled]="downloading['medDetPdf']">
-            <span class="material-symbols-outlined text-indigo-600">{{downloading['medDetPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
-            Ventas por Med. PDF
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadPrescriptionVsFreePdf()" [disabled]="downloading['rxFreePdf']">
-            <span class="material-symbols-outlined text-indigo-600">{{downloading['rxFreePdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
-            Receta vs Libre PDF
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadSalesByPaymentPdf()" [disabled]="downloading['payPdf']">
-            <span class="material-symbols-outlined text-indigo-600">{{downloading['payPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
-            Método de Pago PDF
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadMonthlySalesComparisonPdf()" [disabled]="downloading['monthlyPdf']">
-            <span class="material-symbols-outlined text-indigo-600">{{downloading['monthlyPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
-            Comparativo Mensual PDF
-          </button>
-        </div>
-
-        <p class="text-xs text-slate-400 font-medium mb-2">Excel</p>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadMedicationDetailExcel()" [disabled]="downloading['medDetXls']">
-            <span class="material-symbols-outlined text-indigo-600">{{downloading['medDetXls'] ? 'hourglass_top' : 'table_chart'}}</span>
-            Ventas por Med. Excel
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadSalesByPaymentExcel()" [disabled]="downloading['payXls']">
-            <span class="material-symbols-outlined text-indigo-600">{{downloading['payXls'] ? 'hourglass_top' : 'table_chart'}}</span>
-            Método de Pago Excel
-          </button>
-          <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
-            (click)="downloadMonthlySalesComparisonExcel()" [disabled]="downloading['monthlyXls']">
-            <span class="material-symbols-outlined text-indigo-600">{{downloading['monthlyXls'] ? 'hourglass_top' : 'table_chart'}}</span>
-            Comparativo Mensual Excel
-          </button>
+          @for (r of detailedSalesReports; track r.label) {
+            <app-report-download-button [label]="r.label" [formats]="r.formats" [color]="r.color" />
+          }
         </div>
       </div>
+      </mat-tab>
+      </mat-tab-group>
     </div>
     }
 

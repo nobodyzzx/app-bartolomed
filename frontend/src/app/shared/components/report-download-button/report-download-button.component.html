@@ -1,0 +1,24 @@
+@if (formats.length <= 1) {
+  <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium w-full"
+    (click)="onSingleClick()" [disabled]="isBusy">
+    <span class="material-symbols-outlined" [class]="iconColorClass">{{ primaryIcon }}</span>
+    {{ label }}
+  </button>
+} @else {
+  <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium w-full"
+    [matMenuTriggerFor]="fmtMenu" [disabled]="isBusy">
+    <span class="flex items-center gap-0.5">
+      <span class="material-symbols-outlined" [class]="iconColorClass">{{ primaryIcon }}</span>
+      <span class="material-symbols-outlined msz-16 text-slate-400">expand_more</span>
+    </span>
+    {{ label }}
+  </button>
+  <mat-menu #fmtMenu="matMenu">
+    @for (f of formats; track f.key) {
+      <button mat-menu-item (click)="f.action()" [disabled]="f.downloading">
+        <span class="material-symbols-outlined msz-18 mr-2 align-middle" [class]="iconColorClass">{{ f.downloading ? 'hourglass_top' : (f.icon ?? defaultIcon) }}</span>
+        {{ f.label }}
+      </button>
+    }
+  </mat-menu>
+}
