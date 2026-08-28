@@ -366,6 +366,7 @@ export interface SaleItem {
    * leer un valor real.
    */
   discount?: number
+  discountReason?: string | null
   subtotal: number
   batchNumber?: string
   expiryDate?: string
@@ -392,6 +393,7 @@ export interface Sale {
   taxRate?: number
   tax?: number
   discount?: number
+  discountReason?: string | null
   total: number
   amountPaid: number
   change?: number

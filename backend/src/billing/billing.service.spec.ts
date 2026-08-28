@@ -3,6 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { BillingService } from './billing.service';
 import { Invoice, InvoiceItem, InvoiceStatus, Payment } from './entities/billing.entity';
+import { Charge } from 'src/charges/entities/charge.entity';
 import { Patient } from 'src/patients/entities/patient.entity';
 import { Clinic } from 'src/clinics/entities/clinic.entity';
 import { Appointment, AppointmentStatus } from 'src/appointments/entities/appointment.entity';
@@ -51,6 +52,7 @@ describe('BillingService', () => {
   let patientRepo: MockRepository<Patient>;
   let clinicRepo: MockRepository<Clinic>;
   let appointmentRepo: MockRepository<Appointment>;
+  let chargeRepo: MockRepository<Charge>;
 
   // Repos internos al manager (usados dentro de create())
   let managerInvoiceRepo: MockRepository<Invoice>;
@@ -75,6 +77,7 @@ describe('BillingService', () => {
         { provide: getRepositoryToken(Clinic), useValue: createMockRepository() },
         { provide: getRepositoryToken(Appointment), useValue: createMockRepository() },
         { provide: getRepositoryToken(User), useValue: createMockRepository() },
+        { provide: getRepositoryToken(Charge), useValue: createMockRepository() },
       ],
     }).compile();
 
@@ -83,6 +86,7 @@ describe('BillingService', () => {
     patientRepo = module.get(getRepositoryToken(Patient));
     clinicRepo = module.get(getRepositoryToken(Clinic));
     appointmentRepo = module.get(getRepositoryToken(Appointment));
+    chargeRepo = module.get(getRepositoryToken(Charge));
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -181,6 +185,38 @@ describe('BillingService', () => {
   describe('findAll', () => {
     it('lanza BadRequestException si clinicId no se provee', async () => {
       await expect(service.findAll(undefined as any)).rejects.toThrow(BadRequestException);
+    });
+
+    /**
+     * El motivo del descuento vive en Charge, no en Invoice — se pierde en
+     * el checkout salvo que se lo vuelva a buscar acá. Nunca sale en el
+     * recibo del paciente; es solo para que el staff lo vea en la lista.
+     */
+    it('adjunta el motivo del descuento buscándolo en los cargos de cada factura', async () => {
+      const invoices = [makeInvoice({ id: 'inv-1' }), makeInvoice({ id: 'inv-2' })];
+      invoiceRepo.createQueryBuilder!.mockReturnValue({
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([invoices, invoices.length]),
+      } as any);
+      chargeRepo.createQueryBuilder!.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getRawMany: jest.fn().mockResolvedValue([
+          { invoiceId: 'inv-1', discountReason: 'cliente frecuente' },
+        ]),
+      } as any);
+
+      const result = await service.findAll(1, 20, {}, 'clinic-1');
+
+      expect((result.items[0] as any).discountReasons).toBe('cliente frecuente');
+      expect((result.items[1] as any).discountReasons).toBeNull();
     });
   });
 

@@ -101,7 +101,20 @@
                 <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Monto</span>
               </th>
               <td mat-cell *matCellDef="let invoice" class="px-6 py-4 font-semibold text-slate-900">
-                {{ formatCurrency(invoice.totalAmount) }}
+                <span class="inline-flex items-center gap-1.5">
+                  {{ formatCurrency(invoice.totalAmount) }}
+                  <!-- Motivo del descuento: solo para el staff revisando la lista.
+                       Nunca sale en el recibo del paciente (ver ReceiptPdfService) —
+                       por eso vive acá como tooltip y no en el PDF. -->
+                  @if (invoice.discountAmount > 0) {
+                    <span class="material-symbols-outlined msz-16 text-purple-500"
+                      [matTooltip]="invoice.discountReasons
+                        ? 'Descuento: ' + formatCurrency(invoice.discountAmount) + ' — ' + invoice.discountReasons
+                        : 'Descuento: ' + formatCurrency(invoice.discountAmount)">
+                      sell
+                    </span>
+                  }
+                </span>
               </td>
             </ng-container>
             <ng-container matColumnDef="status">

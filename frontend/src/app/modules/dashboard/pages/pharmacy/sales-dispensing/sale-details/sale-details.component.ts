@@ -20,6 +20,19 @@ export class SaleDetailsComponent implements OnInit {
 
   isPending = computed(() => this.sale()?.status === SaleStatus.PENDING)
 
+  /**
+   * Ítems con descuento propio (independiente del descuento sobre el total).
+   * Solo para el bloque de staff, marcado `no-print`: esta pantalla dobla de
+   * recibo imprimible y el motivo del descuento no debe salir de cara al
+   * paciente — ver el comentario en el template.
+   */
+  discountedItems = computed(() => (this.sale()?.items ?? []).filter(i => (i.discount ?? 0) > 0))
+
+  hasDiscount = computed(() => {
+    const s = this.sale()
+    return !!s && ((s.discount ?? 0) > 0 || this.discountedItems().length > 0)
+  })
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,

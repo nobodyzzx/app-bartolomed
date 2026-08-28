@@ -117,6 +117,38 @@
                 </div>
               </div>
             </div>
+            <!-- Descuento (staff, oculto al imprimir): la tabla de productos, más
+                 abajo, nunca muestra el importe del descuento porque esta misma
+                 pantalla dobla de recibo imprimible (ver printReceipt() y la
+                 clase .no-print en el css) — el motivo tampoco debe salir de
+                 cara al paciente, pero sí lo necesita quien revisa la venta. -->
+            @if (hasDiscount()) {
+              <div class="no-print bg-white rounded-2xl shadow-sm border border-purple-200 overflow-hidden">
+                <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
+                  <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined msz-20">sell</span>
+                  </div>
+                  <div>
+                    <h3 class="font-semibold text-slate-900 m-0 leading-tight">Descuento aplicado</h3>
+                    <p class="text-sm text-slate-500 m-0">Solo para el staff — no sale en el recibo</p>
+                  </div>
+                </div>
+                <div class="p-6 space-y-2">
+                  @if (s.discount && s.discount > 0) {
+                    <div class="flex justify-between text-sm gap-3">
+                      <span class="text-slate-600">Sobre el total{{ s.discountReason ? ' — ' + s.discountReason : '' }}:</span>
+                      <span class="font-semibold text-purple-700 whitespace-nowrap">Bs {{ s.discount | number: '1.2-2' }}</span>
+                    </div>
+                  }
+                  @for (item of discountedItems(); track $index) {
+                    <div class="flex justify-between text-sm gap-3">
+                      <span class="text-slate-600">{{ item.productName }}{{ item.discountReason ? ' — ' + item.discountReason : '' }}:</span>
+                      <span class="font-semibold text-purple-700 whitespace-nowrap">Bs {{ item.discount | number: '1.2-2' }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
             <!-- Notas (amber, condicional) -->
             @if (s.notes) {
               <div class="bg-white rounded-2xl shadow-sm border border-amber-200 overflow-hidden">
