@@ -281,21 +281,13 @@ export class SalesDispensingComponent implements OnInit, OnDestroy {
     this.router.navigate(['/dashboard/pharmacy/sales-dispensing', sale.id])
   }
 
-  canComplete(sale: Sale): boolean {
-    return sale.status === SaleStatus.PENDING
-  }
-
+  /**
+   * En la práctica toda venta nace COMPLETED (ver PharmacySalesService.create):
+   * no hay un flujo real de venta "pendiente" que alguien complete después,
+   * así que ese botón no tenía forma de aparecer nunca — se quita.
+   */
   canCancel(sale: Sale): boolean {
     return sale.status !== SaleStatus.CANCELLED
-  }
-
-  completeSale(sale: Sale): void {
-    this.salesService.updateSaleStatus(sale.id, SaleStatus.COMPLETED).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(updated => {
-      if (updated) {
-        this.loadSales()
-        this.loadSummary()
-      }
-    })
   }
 
   cancelSale(sale: Sale): void {

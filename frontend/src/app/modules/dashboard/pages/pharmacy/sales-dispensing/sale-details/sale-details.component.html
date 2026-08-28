@@ -15,17 +15,7 @@
           <span class="material-symbols-outlined msz-18 leading-none">print</span>
           Imprimir
         </button>
-        @if (isPending()) {
-          <button
-            type="button"
-            (click)="completeSale()"
-            class="inline-flex items-center gap-2 px-5 h-11 rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 transition-all border-0"
-            >
-            <span class="material-symbols-outlined msz-18 leading-none">check_circle</span>
-            Completar Venta
-          </button>
-        }
-        @if (isPending()) {
+        @if (canCancel()) {
           <button
             type="button"
             (click)="cancelSale()"
@@ -60,19 +50,21 @@
               </p>
             </div>
             <div class="text-right">
+              <!-- Sin rama "refunded": SaleStatus (backend) solo tiene
+                   pending/completed/cancelled — esa 4ta rama era código
+                   muerto que nunca podía dispararse. -->
               <span
                 class="inline-flex items-center gap-2 px-4 h-11 rounded-full text-sm font-bold shadow-md"
               [ngClass]="{
                 'bg-green-500 text-white': s.status === 'completed',
                 'bg-orange-500 text-white': s.status === 'pending',
-                'bg-red-500 text-white': s.status === 'cancelled',
-                'bg-purple-500 text-white': s.status === 'refunded'
+                'bg-red-500 text-white': s.status === 'cancelled'
               }"
                 >
                 <span class="material-symbols-outlined">
-                  {{ s.status === 'completed' ? 'check_circle' : s.status === 'pending' ? 'pending' : s.status === 'cancelled' ? 'cancel' : 'undo' }}
+                  {{ s.status === 'completed' ? 'check_circle' : s.status === 'pending' ? 'pending' : 'cancel' }}
                 </span>
-                {{ s.status === 'completed' ? 'COMPLETADA' : s.status === 'pending' ? 'PENDIENTE' : s.status === 'cancelled' ? 'CANCELADA' : 'REEMBOLSADA' }}
+                {{ s.status === 'completed' ? 'COMPLETADA' : s.status === 'pending' ? 'PENDIENTE' : 'CANCELADA' }}
               </span>
             </div>
           </div>
