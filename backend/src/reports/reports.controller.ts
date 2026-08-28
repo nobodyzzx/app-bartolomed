@@ -20,13 +20,27 @@ import { Permission } from '../auth/permissions/permissions.enum';
 import { ValidRoles } from '../auth/interfaces';
 import { AdvancedReportsService } from './services/advanced-reports.service';
 import { ExportService } from './services/export.service';
+import { LabReportsService } from './services/lab-reports.service';
 import { ReportsPdfService } from './services/reports-pdf.service';
 import { buildDateRange, ReportFilters, ReportsService } from './services/reports.service';
 import { RevenueReportsService } from './services/revenue-reports.service';
 
+// El de clase es solo el piso mínimo para entrar al controller (basta con
+// tener CUALQUIERA de los 5) — cada endpoint abajo tiene su propio
+// @RequirePermissions específico que sí decide qué puede ver, vía
+// getAllAndOverride en PermissionsGuard (el del método reemplaza, no suma,
+// al de la clase). Antes solo existía este nivel, con 3 permisos genéricos:
+// el control real quedaba en las listas de roles (@Auth) de cada método, y
+// no había forma de dar acceso a un reporte puntual sin tocar código.
 @Controller('reports')
 @AuthClinic()
-@RequirePermissions(Permission.ReportsMedical, Permission.ReportsFinancial, Permission.ReportsStock)
+@RequirePermissions(
+  Permission.ReportsClinical,
+  Permission.ReportsFinancial,
+  Permission.ReportsPharmacy,
+  Permission.ReportsLab,
+  Permission.ReportsStaff,
+)
 export class ReportsController {
   private readonly logger = new Logger(ReportsController.name);
 
@@ -34,6 +48,7 @@ export class ReportsController {
     private readonly reportsService: ReportsService,
     private readonly revenueReportsService: RevenueReportsService,
     private readonly advancedReportsService: AdvancedReportsService,
+    private readonly labReportsService: LabReportsService,
     private readonly exportService: ExportService,
     private readonly reportsPdfService: ReportsPdfService,
   ) {}
@@ -66,36 +81,41 @@ export class ReportsController {
   // ─── Reportes existentes (R-01..R-08) ────────────────────────────────────
 
   @Get('dashboard')
+  @RequirePermissions(Permission.ReportsClinical)
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR)
   getDashboardReport(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.reportsService.getDashboardReport(this.scope(filters, req));
   }
 
-  // Enfermería entra acá: tiene `ReportsMedical` en el mapa de permisos y la ruta
+  // Enfermería entra acá: tiene `ReportsClinical` en el mapa de permisos y la ruta
   // `/dashboard/reports` la lista en `allowedRoles`, pero el rol faltaba en estos dos
   // handlers, que son los únicos que pueblan la sección "Clínica". Resultado: la
   // pantalla cargaba, pedía los dos endpoints, recibía 403 en ambos y se quedaba con
   // los contadores en "—" y los gráficos en esqueleto para siempre. Son agregados
   // clínicos sin datos financieros ni de paciente identificable.
   @Get('patients/demographics')
+  @RequirePermissions(Permission.ReportsClinical)
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
   getPatientDemographicsReport(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.reportsService.getPatientDemographicsReport(this.scope(filters, req));
   }
 
   @Get('appointments/statistics')
+  @RequirePermissions(Permission.ReportsClinical)
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
   getAppointmentStatisticsReport(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.reportsService.getAppointmentStatisticsReport(this.scope(filters, req));
   }
 
   @Get('doctors/performance')
+  @RequirePermissions(Permission.ReportsClinical)
   @Auth(ValidRoles.ADMIN)
   getDoctorPerformanceReport(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.reportsService.getDoctorPerformanceReport(this.scope(filters, req));
   }
 
   @Get('medical-records')
+  @RequirePermissions(Permission.ReportsClinical)
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
   getMedicalRecordsReport(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.reportsService.getMedicalRecordsReport(this.scope(filters, req));
@@ -107,6 +127,7 @@ export class ReportsController {
    * facturas sin desglose.
    */
   @Get('revenue/by-origin')
+  @RequirePermissions(Permission.ReportsFinancial)
   @Auth(ValidRoles.ADMIN)
   getRevenueByOrigin(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.revenueReportsService.getRevenueByOrigin(this.scope(filters, req));
@@ -117,6 +138,7 @@ export class ReportsController {
    * queda: incluye los "absorbidos", que el recibo del paciente no muestra.
    */
   @Get('revenue/discounts')
+  @RequirePermissions(Permission.ReportsFinancial)
   @Auth(ValidRoles.ADMIN)
   getDiscountsReport(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.revenueReportsService.getDiscountsReport(this.scope(filters, req));
@@ -124,24 +146,28 @@ export class ReportsController {
 
   /** Cuentas por cobrar: cargos generados que todavía nadie pagó. */
   @Get('revenue/receivables')
+  @RequirePermissions(Permission.ReportsFinancial)
   @Auth(ValidRoles.ADMIN)
   getReceivables(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.revenueReportsService.getReceivables(this.scope(filters, req));
   }
 
   @Get('financial/summary')
+  @RequirePermissions(Permission.ReportsFinancial)
   @Auth(ValidRoles.ADMIN)
   getFinancialSummaryReport(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.reportsService.getFinancialSummaryReport(this.scope(filters, req));
   }
 
   @Get('financial/payment-methods')
+  @RequirePermissions(Permission.ReportsFinancial)
   @Auth(ValidRoles.ADMIN)
   getPaymentMethodReport(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.reportsService.getPaymentMethodReport(this.scope(filters, req));
   }
 
   @Get('inventory/stock')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getStockReport(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.reportsService.getStockReport(this.scope(filters, req));
@@ -154,6 +180,7 @@ export class ReportsController {
    * GET /api/reports/pharmacy/consumption?startDate=&endDate=
    */
   @Get('pharmacy/consumption')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getPharmacyConsumption(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getPharmacyConsumptionReport(this.scope(filters, req));
@@ -164,6 +191,7 @@ export class ReportsController {
    * GET /api/reports/patients/:id/timeline
    */
   @Get('patients/:id/timeline')
+  @RequirePermissions(Permission.ReportsClinical)
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
   getPatientTimeline(@Param('id', ParseUUIDPipe) patientId: string, @Req() req: Request) {
     const clinicId = resolveClinicId(req)!;
@@ -175,6 +203,7 @@ export class ReportsController {
    * GET /api/reports/transfers/efficiency?startDate=&endDate=
    */
   @Get('transfers/efficiency')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN)
   getTransferEfficiency(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getTransferEfficiencyReport(this.scope(filters, req));
@@ -185,6 +214,7 @@ export class ReportsController {
    * GET /api/reports/inventory/critical?expiryDays=60
    */
   @Get('inventory/critical')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getCriticalStock(
     @Query() filters: ReportFilters,
@@ -199,6 +229,7 @@ export class ReportsController {
    * GET /api/reports/audit/prescriptions?doctorId=&startDate=&endDate=
    */
   @Get('audit/prescriptions')
+  @RequirePermissions(Permission.ReportsClinical)
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR)
   getPrescriptionAudit(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getPrescriptionDispensationAudit(this.scope(filters, req));
@@ -211,6 +242,7 @@ export class ReportsController {
    * GET /api/reports/export/pdf/critical-stock
    */
   @Get('export/pdf/critical-stock')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportCriticalStockPdf(
     @Query() filters: ReportFilters,
@@ -236,6 +268,7 @@ export class ReportsController {
    * cuentas por cobrar, en un solo documento.
    */
   @Get('export/pdf/revenue-control')
+  @RequirePermissions(Permission.ReportsFinancial)
   @Auth(ValidRoles.ADMIN)
   async exportRevenueControlPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     try {
@@ -270,6 +303,7 @@ export class ReportsController {
    * GET /api/reports/export/pdf/transfer-efficiency
    */
   @Get('export/pdf/transfer-efficiency')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN)
   async exportTransferEfficiencyPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     try {
@@ -290,6 +324,7 @@ export class ReportsController {
    * GET /api/reports/export/excel/critical-stock
    */
   @Get('export/excel/critical-stock')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportCriticalStockExcel(
     @Query() filters: ReportFilters,
@@ -310,6 +345,7 @@ export class ReportsController {
    * GET /api/reports/export/excel/pharmacy-consumption
    */
   @Get('export/excel/pharmacy-consumption')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportPharmacyConsumptionExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getPharmacyConsumptionReport(this.scope(filters, req));
@@ -323,18 +359,21 @@ export class ReportsController {
   // ─── Farmacia: reportes JSON (F1-R1..F3-R13) ─────────────────────────────
 
   @Get('pharmacy/rotation')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getRotationReport(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getRotationReport(this.scope(filters, req));
   }
 
   @Get('pharmacy/top-selling')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getTopSellingMedications(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getTopSellingMedications(this.scope(filters, req));
   }
 
   @Get('pharmacy/margins')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getProductMarginReport(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getProductMarginReport(this.scope(filters, req));
@@ -344,60 +383,70 @@ export class ReportsController {
   // (incluye ingresos de la clínica vía charges/invoices), el nombre de la
   // ruta quedaba desalineado con lo que realmente devuelve.
   @Get('daily-sales')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getDailySalesSummary(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getDailySalesSummary(this.scope(filters, req));
   }
 
   @Get('pharmacy/expiry-buckets')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getExpiryBucketReport(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getExpiryBucketReport(this.scope(filters, req));
   }
 
   @Get('pharmacy/purchase-vs-consumption')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getPurchaseVsConsumption(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getPurchaseVsConsumption(this.scope(filters, req));
   }
 
   @Get('pharmacy/by-category')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getSalesByCategory(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getSalesByCategory(this.scope(filters, req));
   }
 
   @Get('pharmacy/stock-movements')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getStockMovementsReport(@Query() filters: ReportFilters & { medicationId?: string }, @Req() req: Request) {
     return this.advancedReportsService.getStockMovementsReport(this.scope(filters, req) as any);
   }
 
   @Get('pharmacy/suppliers')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getSupplierAnalysis(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getSupplierAnalysis(this.scope(filters, req));
   }
 
   @Get('pharmacy/prescription-summary')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getPrescriptionDispensingSummary(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getPrescriptionDispensingSummary(this.scope(filters, req));
   }
 
   @Get('pharmacy/credit-sales')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getCreditSales(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getCreditSales(this.scope(filters, req));
   }
 
   @Get('pharmacy/payment-methods')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getSalesByPaymentMethod(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getSalesByPaymentMethod(this.scope(filters, req));
   }
 
   @Get('pharmacy/profitability')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getMonthlyProfitability(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getMonthlyProfitability(this.scope(filters, req));
@@ -406,6 +455,7 @@ export class ReportsController {
   // ─── Farmacia: PDF exports ─────────────────────────────────────────────────
 
   @Get('export/pdf/pharmacy-rotation')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportRotationPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getRotationReport(this.scope(filters, req));
@@ -419,6 +469,7 @@ export class ReportsController {
   }
 
   @Get('export/pdf/pharmacy-margins')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportMarginsPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getProductMarginReport(this.scope(filters, req));
@@ -433,6 +484,7 @@ export class ReportsController {
 
   // Antes 'export/pdf/pharmacy-daily-sales' — ver nota en GET 'daily-sales'.
   @Get('export/pdf/daily-sales')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportDailySalesPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getDailySalesSummary(this.scope(filters, req));
@@ -448,6 +500,7 @@ export class ReportsController {
   }
 
   @Get('export/pdf/pharmacy-expiry-buckets')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportExpiryBucketsPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getExpiryBucketReport(this.scope(filters, req));
@@ -461,6 +514,7 @@ export class ReportsController {
   }
 
   @Get('export/pdf/pharmacy-profitability')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportProfitabilityPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getMonthlyProfitability(this.scope(filters, req));
@@ -476,6 +530,7 @@ export class ReportsController {
   // ─── Farmacia: Excel exports ───────────────────────────────────────────────
 
   @Get('export/excel/pharmacy-rotation')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportRotationExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getRotationReport(this.scope(filters, req));
@@ -487,6 +542,7 @@ export class ReportsController {
   }
 
   @Get('export/excel/pharmacy-margins')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportMarginsExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getProductMarginReport(this.scope(filters, req));
@@ -498,6 +554,7 @@ export class ReportsController {
   }
 
   @Get('export/excel/pharmacy-top-selling')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportTopSellingExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getTopSellingMedications(this.scope(filters, req));
@@ -509,6 +566,7 @@ export class ReportsController {
   }
 
   @Get('export/excel/pharmacy-stock-movements')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportStockMovementsExcel(
     @Query() filters: ReportFilters & { medicationId?: string },
@@ -526,12 +584,14 @@ export class ReportsController {
   // ─── A1: Ventas por farmacéutico ──────────────────────────────────────────
 
   @Get('pharmacy/by-pharmacist')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getSalesByPharmacist(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getSalesByPharmacist(this.scope(filters, req));
   }
 
   @Get('export/pdf/pharmacy-by-pharmacist')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportSalesByPharmacistPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getSalesByPharmacist(this.scope(filters, req));
@@ -545,6 +605,7 @@ export class ReportsController {
   }
 
   @Get('export/excel/pharmacy-by-pharmacist')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportSalesByPharmacistExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getSalesByPharmacist(this.scope(filters, req));
@@ -558,12 +619,14 @@ export class ReportsController {
   // ─── A2: Encargado × Día × Medicamento ───────────────────────────────────
 
   @Get('pharmacy/pharmacist-medication-day')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getSalesByPharmacistMedicationDay(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getSalesByPharmacistMedicationDay(this.scope(filters, req));
   }
 
   @Get('export/pdf/pharmacy-pharmacist-day')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportPharmacistDayPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getSalesByPharmacistMedicationDay(this.scope(filters, req));
@@ -577,6 +640,7 @@ export class ReportsController {
   }
 
   @Get('export/excel/pharmacy-pharmacist-day')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportPharmacistDayExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getSalesByPharmacistMedicationDay(this.scope(filters, req));
@@ -593,7 +657,8 @@ export class ReportsController {
   // es por persona (userId), no por rol, y junta farmacia + punto de cobro.
 
   @Get('staff-shift-detail')
-  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.RECEPTIONIST, ValidRoles.PHARMACIST, ValidRoles.LABORATORY)
+  @RequirePermissions(Permission.ReportsStaff)
+  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.RECEPTIONIST, ValidRoles.PHARMACIST, ValidRoles.LABORATORY, ValidRoles.SPECIAL_STUDIES)
   getStaffShiftDetail(@Query() filters: ReportFilters & { userId?: string }, @Req() req: Request, @GetUser() user: User) {
     const scoped = this.scope(filters, req);
     return this.advancedReportsService.getStaffShiftDetail({
@@ -603,7 +668,8 @@ export class ReportsController {
   }
 
   @Get('export/pdf/staff-shift-detail')
-  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.RECEPTIONIST, ValidRoles.PHARMACIST, ValidRoles.LABORATORY)
+  @RequirePermissions(Permission.ReportsStaff)
+  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.RECEPTIONIST, ValidRoles.PHARMACIST, ValidRoles.LABORATORY, ValidRoles.SPECIAL_STUDIES)
   async exportStaffShiftDetailPdf(
     @Query() filters: ReportFilters & { userId?: string },
     @Req() req: Request,
@@ -624,15 +690,45 @@ export class ReportsController {
     res.end(buf);
   }
 
+  // ─── D2: Laboratorio y Estudios Especiales ────────────────────────────────
+  // Antes ningún reporte cubría este módulo — ni el permiso existía
+  // (ReportsLab, nuevo). Un solo endpoint con volumen, tiempo de respuesta,
+  // exámenes/estudios más pedidos y por médico solicitante: no hace falta
+  // partirlo en varios como se hizo con farmacia, el volumen actual no lo
+  // justifica.
+
+  @Get('lab/activity')
+  @RequirePermissions(Permission.ReportsLab)
+  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.LABORATORY, ValidRoles.SPECIAL_STUDIES)
+  getLabActivity(@Query() filters: ReportFilters, @Req() req: Request) {
+    return this.labReportsService.getLabActivityReport(this.scope(filters, req));
+  }
+
+  @Get('export/pdf/lab-activity')
+  @RequirePermissions(Permission.ReportsLab)
+  @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE, ValidRoles.LABORATORY, ValidRoles.SPECIAL_STUDIES)
+  async exportLabActivityPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
+    const data = await this.labReportsService.getLabActivityReport(this.scope(filters, req));
+    const buf = await this.reportsPdfService.generateLabActivityPdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="laboratorio-estudios-${todayInClinicTz()}.pdf"`,
+    );
+    res.end(buf);
+  }
+
   // ─── B1: Inventario valorizado ────────────────────────────────────────────
 
   @Get('pharmacy/inventory-valorized')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getValorizedInventory(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getValorizedInventory(this.scope(filters, req));
   }
 
   @Get('export/pdf/pharmacy-inventory-valorized')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportValorizedInventoryPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getValorizedInventory(this.scope(filters, req));
@@ -646,6 +742,7 @@ export class ReportsController {
   }
 
   @Get('export/excel/pharmacy-inventory-valorized')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportValorizedInventoryExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getValorizedInventory(this.scope(filters, req));
@@ -663,6 +760,7 @@ export class ReportsController {
    * 488 ítems y este entra en un tercio, a dos columnas por hoja.
    */
   @Get('export/pdf/pharmacy-inventory-list')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportInventoryListPdf(
     @Query() filters: ReportFilters,
@@ -686,12 +784,14 @@ export class ReportsController {
   // ─── B2: Inventario por categoría ────────────────────────────────────────
 
   @Get('pharmacy/inventory-by-category')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getInventoryByCategory(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getInventoryByCategory(this.scope(filters, req));
   }
 
   @Get('export/pdf/pharmacy-inventory-by-category')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportInventoryByCategoryPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getInventoryByCategory(this.scope(filters, req));
@@ -707,6 +807,7 @@ export class ReportsController {
   // ─── B3: Sin movimiento ───────────────────────────────────────────────────
 
   @Get('pharmacy/no-movement')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getMedicationsWithoutMovement(
     @Query() filters: ReportFilters,
@@ -717,6 +818,7 @@ export class ReportsController {
   }
 
   @Get('export/pdf/pharmacy-no-movement')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportNoMovementPdf(
     @Query() filters: ReportFilters,
@@ -735,6 +837,7 @@ export class ReportsController {
   }
 
   @Get('export/excel/pharmacy-no-movement')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportNoMovementExcel(
     @Query() filters: ReportFilters,
@@ -753,12 +856,14 @@ export class ReportsController {
   // ─── C1: Ventas por medicamento detalle ──────────────────────────────────
 
   @Get('pharmacy/medication-detail')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getSalesByMedicationDetail(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getSalesByMedicationDetail(this.scope(filters, req));
   }
 
   @Get('export/pdf/pharmacy-medication-detail')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportMedicationDetailPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getSalesByMedicationDetail(this.scope(filters, req));
@@ -772,6 +877,7 @@ export class ReportsController {
   }
 
   @Get('export/excel/pharmacy-medication-detail')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportMedicationDetailExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getSalesByMedicationDetail(this.scope(filters, req));
@@ -785,12 +891,14 @@ export class ReportsController {
   // ─── C2: Receta vs Venta libre ────────────────────────────────────────────
 
   @Get('pharmacy/prescription-vs-free')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getPrescriptionVsFreeSales(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getPrescriptionVsFreeSales(this.scope(filters, req));
   }
 
   @Get('export/pdf/pharmacy-prescription-vs-free')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportPrescriptionVsFreePdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getPrescriptionVsFreeSales(this.scope(filters, req));
@@ -806,12 +914,14 @@ export class ReportsController {
   // ─── C3: Ventas por método de pago (detallado) ───────────────────────────
 
   @Get('pharmacy/sales-by-payment')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getSalesByPaymentDetailed(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getSalesByPaymentDetailed(this.scope(filters, req));
   }
 
   @Get('export/pdf/pharmacy-sales-by-payment')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportSalesByPaymentPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getSalesByPaymentDetailed(this.scope(filters, req));
@@ -825,6 +935,7 @@ export class ReportsController {
   }
 
   @Get('export/excel/pharmacy-sales-by-payment')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportSalesByPaymentExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getSalesByPaymentDetailed(this.scope(filters, req));
@@ -838,12 +949,14 @@ export class ReportsController {
   // ─── C6: Comparativo mensual ─────────────────────────────────────────────
 
   @Get('pharmacy/monthly-comparison')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   getMonthlySalesComparison(@Query() filters: ReportFilters, @Req() req: Request) {
     return this.advancedReportsService.getMonthlySalesComparison(this.scope(filters, req));
   }
 
   @Get('export/pdf/pharmacy-monthly-comparison')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportMonthlySalesComparisonPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getMonthlySalesComparison(this.scope(filters, req));
@@ -857,6 +970,7 @@ export class ReportsController {
   }
 
   @Get('export/excel/pharmacy-monthly-comparison')
+  @RequirePermissions(Permission.ReportsPharmacy)
   @Auth(ValidRoles.ADMIN, ValidRoles.PHARMACIST)
   async exportMonthlySalesComparisonExcel(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.advancedReportsService.getMonthlySalesComparison(this.scope(filters, req));
@@ -874,6 +988,7 @@ export class ReportsController {
    * GET /api/reports/export/pdf/financial
    */
   @Get('export/pdf/financial')
+  @RequirePermissions(Permission.ReportsFinancial)
   @Auth(ValidRoles.ADMIN)
   async exportFinancialPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const scoped = this.scope(filters, req);
@@ -894,6 +1009,7 @@ export class ReportsController {
    * GET /api/reports/export/pdf/demographics
    */
   @Get('export/pdf/demographics')
+  @RequirePermissions(Permission.ReportsClinical)
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
   async exportDemographicsPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.reportsService.getPatientDemographicsReport(this.scope(filters, req));
@@ -909,6 +1025,7 @@ export class ReportsController {
    * GET /api/reports/export/pdf/doctor-performance
    */
   @Get('export/pdf/doctor-performance')
+  @RequirePermissions(Permission.ReportsClinical)
   @Auth(ValidRoles.ADMIN)
   async exportDoctorPerformancePdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.reportsService.getDoctorPerformanceReport(this.scope(filters, req));
@@ -924,6 +1041,7 @@ export class ReportsController {
    * GET /api/reports/export/pdf/appointments
    */
   @Get('export/pdf/appointments')
+  @RequirePermissions(Permission.ReportsClinical)
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
   async exportAppointmentsPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.reportsService.getAppointmentStatisticsReport(this.scope(filters, req));
@@ -939,6 +1057,7 @@ export class ReportsController {
    * GET /api/reports/export/pdf/medical-records
    */
   @Get('export/pdf/medical-records')
+  @RequirePermissions(Permission.ReportsClinical)
   @Auth(ValidRoles.ADMIN, ValidRoles.DOCTOR, ValidRoles.NURSE)
   async exportMedicalRecordsPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.reportsService.getMedicalRecordsReport(this.scope(filters, req));
@@ -954,6 +1073,7 @@ export class ReportsController {
    * GET /api/reports/export/pdf/dashboard
    */
   @Get('export/pdf/dashboard')
+  @RequirePermissions(Permission.ReportsClinical)
   @Auth(ValidRoles.ADMIN)
   async exportDashboardPdf(@Query() filters: ReportFilters, @Req() req: Request, @Res() res: Response) {
     const data = await this.reportsService.getDashboardReport(this.scope(filters, req));

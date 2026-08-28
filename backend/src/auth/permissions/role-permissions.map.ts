@@ -23,9 +23,11 @@ export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
     Permission.BillingRead,
     Permission.BillingManage,
 
-    Permission.ReportsMedical,
+    Permission.ReportsClinical,
     Permission.ReportsFinancial,
-    Permission.ReportsStock,
+    Permission.ReportsPharmacy,
+    Permission.ReportsLab,
+    Permission.ReportsStaff,
 
     Permission.AssetsManage,
 
@@ -55,7 +57,9 @@ export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
     Permission.RecordsWrite,
     Permission.PrescriptionsRead,
     Permission.PrescriptionsSign,
-    Permission.ReportsMedical,
+    Permission.ReportsClinical,
+    Permission.ReportsLab,
+    Permission.ReportsStaff,
     Permission.LabRead,
     Permission.LabOrder,
     // Un estudio especial también lo indica el médico, y necesita leer su
@@ -78,11 +82,13 @@ export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
     // (chequeo a nivel de clase en ReportsController) bloqueaba a NURSE con
     // 403 antes de llegar al chequeo de rol. Coherente con RecordsRead: ver
     // el timeline clínico de un paciente es parte de la atención de enfermería.
-    Permission.ReportsMedical,
+    Permission.ReportsClinical,
+    Permission.ReportsStaff,
     // Igual criterio que RecordsRead: ver resultados de laboratorio es parte
     // de la atención de enfermería, sin poder solicitar ni cargar resultados.
     Permission.LabRead,
     Permission.SpecialRead,
+    Permission.ReportsLab,
   ],
   [ValidRoles.RECEPTIONIST]: [
     Permission.PatientsRead,
@@ -97,13 +103,18 @@ export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
     // (`LabOrder`) ni carga resultados.
     Permission.LabRead,
     Permission.LabOrderExternal,
+    // Recepción no tiene acceso al resto de "Reportes" (nunca lo tuvo, no es
+    // parte de este cambio) — pero sí necesita poder sacar su propio corte de
+    // turno: es quien más seguido cobra en el punto de cobro.
+    Permission.ReportsStaff,
   ],
   [ValidRoles.PHARMACIST]: [
     Permission.PrescriptionsRead,
     Permission.PharmacyInventoryManage,
     Permission.PharmacyDispense,
     Permission.PharmacyBilling,
-    Permission.ReportsStock,
+    Permission.ReportsPharmacy,
+    Permission.ReportsStaff,
   ],
   [ValidRoles.SPECIAL_STUDIES]: [
     Permission.SpecialRead,
@@ -112,6 +123,11 @@ export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
     // rotular el estudio, y puede recibir solicitudes que llegan de fuera.
     Permission.PatientsRead,
     Permission.LabOrderExternal,
+    // Antes no tenía NINGÚN permiso de reportes pese a ser un módulo clínico
+    // completo — no había forma de ver cuántos estudios se hicieron ni con
+    // qué demora, aunque el propio ReportsLab (nuevo) sí cubre este módulo.
+    Permission.ReportsLab,
+    Permission.ReportsStaff,
   ],
   [ValidRoles.LABORATORY]: [
     Permission.LabRead,
@@ -122,6 +138,10 @@ export const ROLE_PERMISSIONS: Record<ValidRoles, Permission[]> = {
     // Solo lectura — el laboratorio no crea ni edita fichas.
     Permission.PatientsRead,
     Permission.LabOrderExternal,
+    // Mismo caso que SPECIAL_STUDIES: sin esto no había ningún reporte de
+    // laboratorio disponible para quien más lo necesita.
+    Permission.ReportsLab,
+    Permission.ReportsStaff,
   ],
 };
 

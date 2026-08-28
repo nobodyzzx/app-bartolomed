@@ -26,9 +26,11 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   [Permission.BillingRead]: 'ver caja y facturación',
   [Permission.BillingManage]: 'cobrar y emitir facturas',
 
-  [Permission.ReportsMedical]: 'ver reportes clínicos',
+  [Permission.ReportsClinical]: 'ver reportes clínicos',
   [Permission.ReportsFinancial]: 'ver reportes financieros',
-  [Permission.ReportsStock]: 'ver reportes de inventario',
+  [Permission.ReportsPharmacy]: 'ver reportes de farmacia',
+  [Permission.ReportsLab]: 'ver reportes de laboratorio y estudios especiales',
+  [Permission.ReportsStaff]: 'ver el propio corte de turno',
 
   [Permission.AssetsManage]: 'gestionar activos',
 

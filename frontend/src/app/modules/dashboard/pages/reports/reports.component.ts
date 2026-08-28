@@ -26,22 +26,27 @@ export class ReportsComponent implements OnInit {
   // en el backend (ver reports.controller.ts) — antes se mostraban las 6
   // secciones y ~50 botones a todos los roles por igual, sin importar si el
   // usuario realmente podía generarlos.
-  get canViewMedical(): boolean {
-    return this.roleState.hasPermission(Permission.ReportsMedical)
+  get canViewClinical(): boolean {
+    return this.roleState.hasPermission(Permission.ReportsClinical)
   }
 
   get canViewFinancial(): boolean {
     return this.roleState.hasPermission(Permission.ReportsFinancial)
   }
 
-  get canViewStock(): boolean {
-    return this.roleState.hasPermission(Permission.ReportsStock)
+  get canViewPharmacy(): boolean {
+    return this.roleState.hasPermission(Permission.ReportsPharmacy)
+  }
+
+  /** Laboratorio y Estudios Especiales — antes ningún rol de ese módulo tenía acceso a Reportes. */
+  get canViewLab(): boolean {
+    return this.roleState.hasPermission(Permission.ReportsLab)
   }
 
   /**
    * Los informes de activos cuelgan de `/assets` y el backend los cubre con
    * `AssetsManage` (ADMIN/SUPER_ADMIN), no con los permisos de reportes: gatear
-   * la sección por `ReportsStock` mostraría al farmacéutico cinco botones que
+   * la sección por `ReportsPharmacy` mostraría al farmacéutico cinco botones que
    * siempre le devolverían 403.
    */
   get canViewAssets(): boolean {
@@ -130,12 +135,12 @@ export class ReportsComponent implements OnInit {
     this.paymentMethodsChart = null
 
     // Bug real: forkJoin con las 5 llamadas fijas fallaba completo si UNA
-    // sola devolvía 403 (p. ej. DOCTOR no tiene ReportsFinancial/ReportsStock,
-    // PHARMACIST no tiene ReportsMedical) — la página quedaba en blanco
+    // sola devolvía 403 (p. ej. DOCTOR no tiene ReportsFinancial/ReportsPharmacy,
+    // PHARMACIST no tiene ReportsClinical) — la página quedaba en blanco
     // incluso para los datos que el rol sí puede ver. Ahora solo se piden los
     // reportes permitidos por el rol actual.
     const requests: Record<string, Observable<any>> = {}
-    if (this.canViewMedical) {
+    if (this.canViewClinical) {
       requests['patients'] = this.reportsService.getPatientStats(params)
       requests['appointments'] = this.reportsService.getAppointmentStats(params)
     }
@@ -149,7 +154,7 @@ export class ReportsComponent implements OnInit {
       requests['discounts'] = this.reportsService.getDiscountsReport(params)
       requests['receivables'] = this.reportsService.getReceivables(params)
     }
-    if (this.canViewStock) {
+    if (this.canViewPharmacy) {
       requests['stock'] = this.reportsService.getStockStats(params)
     }
 
@@ -206,6 +211,9 @@ export class ReportsComponent implements OnInit {
 
   // ── D1: Corte de turno individual (farmacia + punto de cobro, por persona) ─
   downloadStaffShiftDetailPdf() { this.download('shiftPdf', () => this.reportsService.downloadStaffShiftDetailPdf(this.buildParams())) }
+
+  // ── D2: Laboratorio y Estudios Especiales ─────────────────────────────────
+  downloadLabActivityPdf() { this.download('labPdf', () => this.reportsService.downloadLabActivityPdf(this.buildParams())) }
 
   // ── A1: Ventas por farmacéutico ───────────────────────────────────────────
   downloadSalesByPharmacistPdf()   { this.download('pharmPdf',  () => this.reportsService.downloadSalesByPharmacistPdf(this.buildParams())) }

@@ -208,10 +208,29 @@ export const MENU_ITEMS: MenuItem[] = [
     label: 'Reportes',
     icon: 'analytics',
     route: '/dashboard/reports',
-    allowedRoles: [UserRoles.DOCTOR, UserRoles.NURSE, UserRoles.PHARMACIST, UserRoles.ADMIN, UserRoles.SUPER_ADMIN],
+    // RECEPTIONIST, LABORATORY y SPECIAL_STUDIES se agregan junto con los
+    // permisos atómicos: antes no tenían NINGÚN acceso a "Reportes" — ni
+    // siquiera para bajar su propio corte de turno (ReportsStaff) o ver lo
+    // poco que había de laboratorio (ReportsLab, nuevo).
+    allowedRoles: [
+      UserRoles.DOCTOR,
+      UserRoles.NURSE,
+      UserRoles.PHARMACIST,
+      UserRoles.RECEPTIONIST,
+      UserRoles.LABORATORY,
+      UserRoles.SPECIAL_STUDIES,
+      UserRoles.ADMIN,
+      UserRoles.SUPER_ADMIN,
+    ],
     // Debe coincidir con requiredPermissions de la ruta 'reports' en dashboard-routing.module.ts
-    // (permissionsGuard usa hasAnyPermission — cualquiera de los 3 alcanza)
-    requiredPermissions: [Permission.ReportsMedical, Permission.ReportsFinancial, Permission.ReportsStock],
+    // (permissionsGuard usa hasAnyPermission — cualquiera de los 5 alcanza)
+    requiredPermissions: [
+      Permission.ReportsClinical,
+      Permission.ReportsFinancial,
+      Permission.ReportsPharmacy,
+      Permission.ReportsLab,
+      Permission.ReportsStaff,
+    ],
   },
 
   {

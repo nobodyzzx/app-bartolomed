@@ -63,8 +63,31 @@
       </div>
     </div>
 
+    <!-- ── SECCIÓN LABORATORIO Y ESTUDIOS ESPECIALES ──
+    Antes NO existía ningún reporte de este módulo, ni el permiso ReportsLab. -->
+    @if (canViewLab) {
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+      <div class="flex items-center gap-4 px-6 py-4 bg-cyan-50 border-b border-cyan-100">
+        <div class="w-10 h-10 rounded-full bg-cyan-100 text-cyan-600 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined msz-20">biotech</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900 m-0 leading-tight">Laboratorio y Estudios Especiales</h3>
+          <p class="text-sm text-slate-500 m-0">Volumen, tiempo de respuesta, exámenes más pedidos y por médico solicitante</p>
+        </div>
+      </div>
+      <div class="p-6">
+        <button class="btn btn-ghost flex-col h-auto py-3 gap-1 text-xs font-medium"
+          (click)="downloadLabActivityPdf()" [disabled]="downloading['labPdf']">
+          <span class="material-symbols-outlined text-cyan-600">{{downloading['labPdf'] ? 'hourglass_top' : 'picture_as_pdf'}}</span>
+          Actividad de Laboratorio PDF
+        </button>
+      </div>
+    </div>
+    }
+
     <!-- ── SECCIÓN CLÍNICA ── -->
-    @if (canViewMedical) {
+    @if (canViewClinical) {
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
       <div class="flex items-center gap-4 px-6 py-4 bg-green-50 border-b border-green-100">
         <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
@@ -388,7 +411,7 @@
     }
 
     <!-- ── SECCIÓN FARMACIA ── -->
-    @if (canViewStock) {
+    @if (canViewPharmacy) {
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
       <div class="flex items-center gap-4 px-6 py-4 bg-orange-50 border-b border-orange-100">
         <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0">
@@ -496,7 +519,7 @@
     }
 
     <!-- ── SECCIÓN VENTAS POR ENCARGADO ── -->
-    @if (canViewStock) {
+    @if (canViewPharmacy) {
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
       <div class="flex items-center gap-4 px-6 py-4 bg-purple-50 border-b border-purple-100">
         <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
@@ -542,7 +565,7 @@
     }
 
     <!-- ── SECCIÓN INVENTARIO ── -->
-    @if (canViewStock) {
+    @if (canViewPharmacy) {
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
       <div class="flex items-center gap-4 px-6 py-4 bg-teal-50 border-b border-teal-100">
         <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center flex-shrink-0">
@@ -601,7 +624,7 @@
     }
 
     <!-- ── SECCIÓN VENTAS DETALLADAS ── -->
-    @if (canViewStock) {
+    @if (canViewPharmacy) {
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
       <div class="flex items-center gap-4 px-6 py-4 bg-indigo-50 border-b border-indigo-100">
         <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">

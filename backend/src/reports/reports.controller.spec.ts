@@ -1,9 +1,13 @@
+import { PATH_METADATA } from '@nestjs/common/constants';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './services/reports.service';
 import { RevenueReportsService } from './services/revenue-reports.service';
 import { AdvancedReportsService } from './services/advanced-reports.service';
+import { LabReportsService } from './services/lab-reports.service';
 import { ExportService } from './services/export.service';
 import { ReportsPdfService } from './services/reports-pdf.service';
+import { META_PERMISSIONS } from '../auth/permissions/permissions.decorator';
+import { Permission } from '../auth/permissions/permissions.enum';
 
 const CLINIC_ID = 'clinic-1';
 const filters = { startDate: '2026-01-01', endDate: '2026-01-31' } as any;
@@ -32,6 +36,7 @@ describe('ReportsController', () => {
   let reportsService: jest.Mocked<ReportsService>;
   let revenueReportsService: jest.Mocked<RevenueReportsService>;
   let advancedReportsService: jest.Mocked<AdvancedReportsService>;
+  let labReportsService: jest.Mocked<LabReportsService>;
   let exportService: jest.Mocked<ExportService>;
   let reportsPdfService: jest.Mocked<ReportsPdfService>;
 
@@ -116,12 +121,15 @@ describe('ReportsController', () => {
       'generateMedicalRecordsPdf',
       'generateDashboardPdf',
       'generateStaffShiftDetailPdf',
+      'generateLabActivityPdf',
     ]);
     revenueReportsService = mockAll(['getRevenueByOrigin', 'getDiscountsReport', 'getReceivables']);
+    labReportsService = mockAll(['getLabActivityReport']);
     controller = new ReportsController(
       reportsService,
       revenueReportsService,
       advancedReportsService,
+      labReportsService,
       exportService,
       reportsPdfService,
     );
@@ -785,6 +793,55 @@ describe('ReportsController', () => {
         expect.objectContaining({ userId: 'doc-1' }),
       );
       expect(dispositionOf(res)).toContain('corte-turno-');
+    });
+  });
+
+  /**
+   * Guardrail (mismo espíritu que icons:check en el frontend): antes solo
+   * existía el @RequirePermissions de la CLASE (3 permisos amplios) y el
+   * control real de cada endpoint quedaba en @Auth(roles) — atómico de
+   * nombre, no de hecho. Si alguien agrega un endpoint nuevo y olvida su
+   * propio @RequirePermissions, este test lo marca en vez de dejarlo caer
+   * en silencio en el permiso genérico de la clase.
+   */
+  describe('permisos atómicos por endpoint (guardrail)', () => {
+    const proto = ReportsController.prototype as unknown as Record<string, (...args: any[]) => unknown>;
+    const endpointNames = Object.getOwnPropertyNames(proto).filter(
+      name => name !== 'constructor' && Reflect.getMetadata(PATH_METADATA, proto[name]) !== undefined,
+    );
+
+    it('encuentra los endpoints GET esperados (regresión si alguien borra el decorator @Get de uno)', () => {
+      expect(endpointNames.length).toBeGreaterThanOrEqual(70);
+    });
+
+    it('todo endpoint GET declara su propio Permission.Reports*, no depende solo del de la clase', () => {
+      const sinPermisoPropio = endpointNames.filter(name => {
+        const perms = Reflect.getMetadata(META_PERMISSIONS, proto[name]) as Permission[] | undefined;
+        return !perms || perms.length === 0;
+      });
+      expect(sinPermisoPropio).toEqual([]);
+    });
+
+    it('un reporte de farmacia usa ReportsPharmacy, no un permiso más amplio', () => {
+      expect(Reflect.getMetadata(META_PERMISSIONS, proto['getDailySalesSummary'])).toEqual([
+        Permission.ReportsPharmacy,
+      ]);
+    });
+
+    it('un reporte financiero usa ReportsFinancial', () => {
+      expect(Reflect.getMetadata(META_PERMISSIONS, proto['getRevenueByOrigin'])).toEqual([
+        Permission.ReportsFinancial,
+      ]);
+    });
+
+    it('un reporte clínico usa ReportsClinical', () => {
+      expect(Reflect.getMetadata(META_PERMISSIONS, proto['getPatientDemographicsReport'])).toEqual([
+        Permission.ReportsClinical,
+      ]);
+    });
+
+    it('el corte de turno usa ReportsStaff en vez de cualquier otro', () => {
+      expect(Reflect.getMetadata(META_PERMISSIONS, proto['getStaffShiftDetail'])).toEqual([Permission.ReportsStaff]);
     });
   });
 });
