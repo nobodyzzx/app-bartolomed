@@ -1623,7 +1623,12 @@ export class AdvancedReportsService {
           ps.id, ps."saleNumber", ps."patientName", ps.total, ps."paymentMethod",
           -- Rebaja de la venta: no sale al cliente en el recibo, pero quien
           -- cobró sí necesita ver cuánto descontó en su propio corte.
-          ps.discount, ps."discountReason",
+          -- Columna real en la tabla es snake_case (discount_reason) pese a
+          -- que la entidad la mapea a discountReason; el resto de columnas
+          -- de esta consulta SÍ son camelCase reales (columnas creadas por
+          -- TypeORM con ese nombre literal), lo que llevó a copiar el patrón
+          -- equivocado acá y tumbar la consulta entera con un 500.
+          ps.discount, ps.discount_reason AS "discountReason",
           -- Formateado acá y no en JS: saleDate es naive-pero-UTC (ver
           -- SALE_DATE_BO) y pasar el Date crudo al PDF arriesga reinterpretarlo
           -- en la zona del proceso Node en vez de la de Bolivia.
