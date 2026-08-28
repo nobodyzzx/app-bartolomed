@@ -1964,4 +1964,88 @@ ${body}
       ], body),
     );
   }
+
+  // ─── D2: PDF Laboratorio y Estudios Especiales ────────────────────────────
+
+  async generateLabActivityPdf(data: any): Promise<Buffer> {
+    const byTypeAndStatus: any[] = data.byTypeAndStatus ?? [];
+    const turnaround: any[] = data.turnaround ?? [];
+    const topTests: any[] = data.topTests ?? [];
+    const byDoctor: any[] = data.byDoctor ?? [];
+    const summary = data.summary ?? {};
+
+    const volumeTableTypst = this.typstTableSection(
+      'Volumen por Tipo y Estado',
+      ['Tipo', 'Estado', 'Órdenes'],
+      byTypeAndStatus.map(r => [
+        typstString(r.orderTypeLabel ?? '-'),
+        typstString(r.statusLabel ?? '-'),
+        typstString(this.fmtNum(r.count)),
+      ]),
+      ['left', 'left', 'right'],
+      'omit',
+    );
+
+    const turnaroundTableTypst = this.typstTableSection(
+      'Tiempo de Respuesta (orden → resultado)',
+      ['Tipo', 'Con resultado', 'Promedio (horas)'],
+      turnaround.map(r => [
+        typstString(r.orderTypeLabel ?? '-'),
+        typstString(this.fmtNum(r.resultedCount)),
+        typstString(this.fmtNum(r.avgResponseHours, 1)),
+      ]),
+      ['left', 'right', 'right'],
+      'omit',
+    );
+
+    const topTestsTableTypst = this.typstTableSection(
+      'Exámenes / Estudios Más Pedidos',
+      ['Examen/Estudio', 'Tipo', 'Veces pedido'],
+      topTests.map(r => [
+        typstString(r.testName ?? '-'),
+        typstString(r.orderTypeLabel ?? '-'),
+        typstString(this.fmtNum(r.count)),
+      ]),
+      ['left', 'left', 'right'],
+      'omit',
+    );
+
+    const byDoctorTableTypst = this.typstTableSection(
+      'Órdenes por Médico Solicitante',
+      ['Médico', 'Tipo', 'Órdenes'],
+      byDoctor.map(r => [
+        typstString(r.doctorName ?? '-'),
+        typstString(r.orderTypeLabel ?? '-'),
+        typstString(this.fmtNum(r.orderCount)),
+      ]),
+      ['left', 'left', 'right'],
+      'omit',
+    );
+
+    const body = `
+  #kpiGrid((
+    kpiCard(${typstString('Total Órdenes')}, ${typstString(this.fmtNum(summary.totalOrders))}, ${typstString('Período seleccionado')}, color: "blue"),
+    kpiCard(${typstString('Completadas')}, ${typstString(this.fmtNum(summary.completedOrders))}, ${typstString('Con resultado entregado')}, color: "green"),
+    kpiCard(${typstString('Canceladas')}, ${typstString(`${this.fmtPct(summary.cancellationRate)} del total`)}, ${typstString(this.fmtNum(summary.cancelledOrders))}, color: "red"),
+  ), columns: 3)
+
+  ${volumeTableTypst}
+
+  ${turnaroundTableTypst}
+
+  ${topTestsTableTypst}
+
+  ${byDoctorTableTypst}
+
+  ${byTypeAndStatus.length === 0 ? '#noData()' : ''}
+  `;
+
+    return this.typstCompiler.compile(
+      this.wrapTypstDoc('Laboratorio y Estudios Especiales', 'Laboratorio y Estudios', [
+        ['Generado', this.nowBO()],
+        ['Total Órdenes', this.fmtNum(summary.totalOrders)],
+        ['Completadas', this.fmtNum(summary.completedOrders)],
+      ], body),
+    );
+  }
 }

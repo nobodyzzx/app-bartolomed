@@ -13,6 +13,7 @@ import { StockTransfer } from '../transfers/entities/stock-transfer.entity';
 import { ReportsController } from './reports.controller';
 import { AdvancedReportsService } from './services/advanced-reports.service';
 import { ExportService } from './services/export.service';
+import { LabReportsService } from './services/lab-reports.service';
 import { ReportsPdfService } from './services/reports-pdf.service';
 import { ReportsService } from './services/reports.service';
 import { RevenueReportsService } from './services/revenue-reports.service';
@@ -40,7 +41,14 @@ import { Charge } from '../charges/entities/charge.entity';
     PdfModule,
   ],
   controllers: [ReportsController],
-  providers: [RevenueReportsService, ReportsService, AdvancedReportsService, ExportService, ReportsPdfService],
+  providers: [
+    RevenueReportsService,
+    ReportsService,
+    AdvancedReportsService,
+    LabReportsService,
+    ExportService,
+    ReportsPdfService,
+  ],
   exports: [ReportsService, AdvancedReportsService],
 })
 export class ReportsModule {}

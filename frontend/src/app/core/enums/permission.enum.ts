@@ -25,9 +25,11 @@ export enum Permission {
   BillingManage = 'billing.manage',
 
   // Reportes
-  ReportsMedical = 'reports.medical',
+  ReportsClinical = 'reports.clinical',
   ReportsFinancial = 'reports.financial',
-  ReportsStock = 'reports.stock',
+  ReportsPharmacy = 'reports.pharmacy',
+  ReportsLab = 'reports.lab',
+  ReportsStaff = 'reports.staff',
 
   // Activos
   AssetsManage = 'assets.manage',

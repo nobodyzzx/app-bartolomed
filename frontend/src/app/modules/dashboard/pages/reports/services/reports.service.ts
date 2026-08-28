@@ -338,9 +338,17 @@ export class ReportsService {
     return this.downloadReportPdf('staff-shift-detail', `corte-turno-${date}.pdf`, params)
   }
 
+  // ─── D2: Laboratorio y Estudios Especiales ───────────────────────────────
+  // Antes no existía ningún reporte de este módulo.
+  downloadLabActivityPdf(params: Record<string, string> = {}): Observable<Blob> {
+    const date = todayLocalISO()
+    return this.downloadReportPdf('lab-activity', `laboratorio-estudios-${date}.pdf`, params)
+  }
+
   // ─── Activos fijos ────────────────────────────────────────────────────────
   // Cuelgan de /assets, no de /reports: el permiso que los cubre es
-  // AssetsManage (ADMIN/SUPER_ADMIN) y no los ReportsMedical/Financial/Stock de
+  // AssetsManage (ADMIN/SUPER_ADMIN) y no los Reports* (Clinical/Financial/
+  // Pharmacy/Lab/Staff) de
   // esta página, así que el guard del backend vive en AssetsController.
 
   private readonly assetsPrintUrl = `${environment.baseUrl}/assets/reports/print`

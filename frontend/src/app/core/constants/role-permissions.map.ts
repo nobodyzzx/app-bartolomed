@@ -19,9 +19,11 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
     Permission.BillingRead,
     Permission.BillingManage,
 
-    Permission.ReportsMedical,
+    Permission.ReportsClinical,
     Permission.ReportsFinancial,
-    Permission.ReportsStock,
+    Permission.ReportsPharmacy,
+    Permission.ReportsLab,
+    Permission.ReportsStaff,
 
     Permission.AssetsManage,
 
@@ -50,7 +52,9 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
     Permission.RecordsWrite,
     Permission.PrescriptionsRead,
     Permission.PrescriptionsSign,
-    Permission.ReportsMedical,
+    Permission.ReportsClinical,
+    Permission.ReportsLab,
+    Permission.ReportsStaff,
     Permission.LabRead,
     Permission.LabOrder,
     // El médico también indica estudios especiales y lee su resultado.
@@ -70,9 +74,11 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
     // Ruta 'reports' de dashboard-routing.module.ts y menu-items.ts ya incluyen
     // NURSE en allowedRoles (bug real cerrado en la auditoría de interrelación
     // de módulos, 2026-08-04 — el permiso no habilitaba nada real antes de eso).
-    Permission.ReportsMedical,
+    Permission.ReportsClinical,
+    Permission.ReportsStaff,
     Permission.LabRead,
     Permission.SpecialRead,
+    Permission.ReportsLab,
   ],
   [UserRoles.RECEPTIONIST]: [
     Permission.PatientsRead,
@@ -86,13 +92,17 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
     // indica exámenes ni carga resultados.
     Permission.LabRead,
     Permission.LabOrderExternal,
+    // No tiene acceso al resto de "Reportes", pero sí a su propio corte de
+    // turno: es quien más seguido cobra en el punto de cobro.
+    Permission.ReportsStaff,
   ],
   [UserRoles.PHARMACIST]: [
     Permission.PrescriptionsRead,
     Permission.PharmacyInventoryManage,
     Permission.PharmacyDispense,
     Permission.PharmacyBilling,
-    Permission.ReportsStock,
+    Permission.ReportsPharmacy,
+    Permission.ReportsStaff,
   ],
   [UserRoles.SPECIAL_STUDIES]: [
     // Espejo del backend: realiza los estudios y carga sus resultados. No ve
@@ -101,6 +111,8 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
     Permission.SpecialResultEnter,
     Permission.PatientsRead,
     Permission.LabOrderExternal,
+    Permission.ReportsLab,
+    Permission.ReportsStaff,
   ],
   [UserRoles.LABORATORY]: [
     Permission.LabRead,
@@ -109,6 +121,8 @@ export const ROLE_PERMISSIONS: Record<UserRoles, Permission[]> = {
     // externa y al rotular la muestra. Solo lectura.
     Permission.PatientsRead,
     Permission.LabOrderExternal,
+    Permission.ReportsLab,
+    Permission.ReportsStaff,
   ],
 }
 

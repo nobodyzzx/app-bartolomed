@@ -24,10 +24,22 @@ export enum Permission {
   BillingRead = 'billing.read',
   BillingManage = 'billing.manage',
 
-  // Reportes
-  ReportsMedical = 'reports.medical',
+  // Reportes — antes 3 genéricos (Medical/Financial/Stock) con el control real
+  // hecho por listas de roles hardcodeadas (@Auth) en cada endpoint, no por
+  // estos permisos: no se podía dar acceso a un reporte puntual sin tocar
+  // código, y ni Laboratorio ni Estudios Especiales tenían ningún permiso de
+  // reportes aunque el módulo existiera. Ahora hay uno por familia real de
+  // reporte, aplicado en @RequirePermissions de cada endpoint —no solo a nivel
+  // de clase—, así que el permiso mismo dice qué se puede ver, sin tener que
+  // leer la lista de roles de cada método para saberlo.
+  ReportsClinical = 'reports.clinical',
   ReportsFinancial = 'reports.financial',
-  ReportsStock = 'reports.stock',
+  ReportsPharmacy = 'reports.pharmacy',
+  ReportsLab = 'reports.lab',
+  /** El corte de turno propio — separado de los demás porque lo necesita
+   *  cualquiera que cobre algo (incluida recepción, que no tiene acceso a
+   *  ningún otro reporte), y el endpoint ya se autolimita al propio usuario. */
+  ReportsStaff = 'reports.staff',
 
   // Activos
   AssetsManage = 'assets.manage',
