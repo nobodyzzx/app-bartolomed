@@ -200,7 +200,14 @@ export class BillingPageComponent implements OnInit {
     this.loadData()
   }
 
+  /**
+   * `invoice.patient` puede ser null (venta de mostrador, sin paciente
+   * registrado) — antes se accedía directo a `.firstName` y rompía el
+   * render de esa fila (y arrastraba la tabla entera) apenas apareciera
+   * una factura así.
+   */
   getPatientName(invoice: RecentInvoice): string {
+    if (!invoice.patient) return 'Cliente sin registrar'
     return `${invoice.patient.firstName} ${invoice.patient.lastName}`
   }
 
