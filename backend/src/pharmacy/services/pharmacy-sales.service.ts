@@ -98,7 +98,7 @@ export class PharmacySalesService {
     }
 
     const lineaSinMotivo = createPharmacySaleDto.items.find(
-      i => (i.discountPercent ?? 0) > 0 && !i.discountReason?.trim(),
+      i => (i.discountAmount ?? 0) > 0 && !i.discountReason?.trim(),
     );
     if (lineaSinMotivo) {
       throw new BadRequestException('Cada descuento por línea requiere un motivo');
@@ -107,8 +107,14 @@ export class PharmacySalesService {
     // Calculate totals
     let subtotal = 0;
     const items = createPharmacySaleDto.items.map(item => {
-      const discountAmount = item.discountPercent ? (item.quantity * item.unitPrice * item.discountPercent) / 100 : 0;
-      const itemSubtotal = item.quantity * item.unitPrice - discountAmount;
+      const lineTotal = item.quantity * item.unitPrice;
+      const discountAmount = item.discountAmount ?? 0;
+      if (discountAmount > lineTotal) {
+        throw new BadRequestException(
+          `El descuento de la línea (Bs ${discountAmount}) no puede superar su importe (Bs ${lineTotal})`,
+        );
+      }
+      const itemSubtotal = lineTotal - discountAmount;
       subtotal += itemSubtotal;
       return {
         ...item,
@@ -413,10 +419,14 @@ export class PharmacySalesService {
       // Calculate new totals
       let subtotal = 0;
       for (const itemDto of updatePharmacySaleDto.items) {
-        const itemDiscountAmount = itemDto.discountPercent
-          ? (itemDto.quantity * itemDto.unitPrice * itemDto.discountPercent) / 100
-          : 0;
-        const itemSubtotal = itemDto.quantity * itemDto.unitPrice - itemDiscountAmount;
+        const lineTotal = itemDto.quantity * itemDto.unitPrice;
+        const itemDiscountAmount = itemDto.discountAmount ?? 0;
+        if (itemDiscountAmount > lineTotal) {
+          throw new BadRequestException(
+            `El descuento de la línea (Bs ${itemDiscountAmount}) no puede superar su importe (Bs ${lineTotal})`,
+          );
+        }
+        const itemSubtotal = lineTotal - itemDiscountAmount;
         subtotal += itemSubtotal;
 
         const item = this.pharmacySaleItemRepository.create({

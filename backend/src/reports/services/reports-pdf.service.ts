@@ -1872,31 +1872,33 @@ ${body}
 
     const pharmacyTableTypst = this.typstTableSection(
       'Farmacia',
-      ['Hora', 'N° Venta', 'Paciente', 'Productos', 'Pago', 'Total'],
+      ['Hora', 'N° Venta', 'Paciente', 'Productos', 'Pago', 'Desc.', 'Total'],
       pharmacySales.map(s => [
         typstString(`${s.saleDateFmt ?? '-'} ${s.saleTimeFmt ?? ''}`.trim()),
         typstString(s.saleNumber ?? '-'),
         typstString(s.patientName ?? '-'),
         typstString((s.items ?? []).map((i: any) => `${i.product} ×${i.quantity}`).join(', ') || '-'),
         typstString(s.paymentMethod ?? '-'),
+        typstString(Number(s.discount) > 0 ? this.fmtBs(s.discount) : '-'),
         typstString(this.fmtBs(s.total)),
       ]),
-      ['left', 'left', 'left', 'left', 'left', 'right'],
+      ['left', 'left', 'left', 'left', 'left', 'right', 'right'],
       'omit',
     );
 
     const clinicTableTypst = this.typstTableSection(
       'Consultas, Laboratorio y Otros',
-      ['Hora', 'Tipo', 'Descripción', 'Paciente', 'Estado', 'Total'],
+      ['Hora', 'Tipo', 'Descripción', 'Paciente', 'Estado', 'Desc.', 'Total'],
       clinicCharges.map(c => [
         typstString(`${c.chargeDateFmt ?? '-'} ${c.chargeTimeFmt ?? ''}`.trim()),
         typstString(ReportsPdfService.ORIGIN_LABELS[c.origin] ?? c.origin ?? '-'),
         typstString(c.description ?? '-'),
         typstString(c.patientName ?? '-'),
         typstString(c.status === 'invoiced' ? 'Facturado' : c.status === 'pending' ? 'Pendiente' : (c.status ?? '-')),
+        typstString(Number(c.discountAmount) > 0 ? this.fmtBs(c.discountAmount) : '-'),
         typstString(this.fmtBs(c.total)),
       ]),
-      ['left', 'left', 'left', 'left', 'center', 'right'],
+      ['left', 'left', 'left', 'left', 'center', 'right', 'right'],
       'omit',
     );
 
@@ -1905,7 +1907,8 @@ ${body}
     kpiCard(${typstString('Total del Turno')}, ${typstString(this.fmtBs(summary.totalRevenue))}, ${typstString('Farmacia + Clínica, cobrado')}, color: "orange"),
     kpiCard(${typstString('Farmacia')}, ${typstString(this.fmtBs(summary.pharmacyRevenue))}, ${typstString(`${this.fmtNum(summary.pharmacyCount)} venta(s)`)}, color: "blue"),
     kpiCard(${typstString('Clínica')}, ${typstString(this.fmtBs(summary.clinicRevenue))}, ${typstString(`${this.fmtNum(summary.clinicCount)} atención(es)`)}, color: "green"),
-  ), columns: 3)
+    kpiCard(${typstString('Descuentos Otorgados')}, ${typstString(this.fmtBs(summary.totalDiscount))}, ${typstString('No sale en el recibo del paciente')}, color: "red"),
+  ), columns: 4)
 
   ${summary.clinicPending > 0
     ? `#text(size: 9pt, fill: rgb("#92400e"))[#strong[${this.fmtBs(summary.clinicPending)}] en cargos aún pendientes de facturar — no se cuentan en el total del turno.]`

@@ -3,6 +3,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -25,11 +26,16 @@ export class CreatePharmacySaleItemDto {
   @IsNumber()
   unitPrice: number;
 
+  /**
+   * Rebaja de esta línea en bolivianos enteros — no un porcentaje. Antes era
+   * `discountPercent`: para dar una rebaja de "Bs 5" en mostrador había que
+   * calcular a qué porcentaje del precio equivalía.
+   */
   @IsOptional()
-  @IsNumber()
-  discountPercent?: number;
+  @IsInt()
+  discountAmount?: number;
 
-  /** Obligatorio si `discountPercent` > 0; lo valida el servicio. */
+  /** Obligatorio si `discountAmount` > 0; lo valida el servicio. */
   @IsOptional()
   @IsString()
   discountReason?: string;

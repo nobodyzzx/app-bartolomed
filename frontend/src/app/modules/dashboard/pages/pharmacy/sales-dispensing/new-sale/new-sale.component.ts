@@ -164,7 +164,7 @@ export class NewSaleComponent implements OnInit {
       tempStockId: [''],
       tempQuantity: [1, [Validators.min(1)]],
       tempUnitPrice: [0, [Validators.min(0)]],
-      tempDiscountPercent: [0, [Validators.min(0), Validators.max(100)]],
+      tempDiscountAmount: [0, [Validators.min(0)]],
     })
   }
 
@@ -361,7 +361,7 @@ export class NewSaleComponent implements OnInit {
     const stockId = this.form.get('tempStockId')?.value
     const quantity = this.form.get('tempQuantity')?.value
     const unitPrice = this.form.get('tempUnitPrice')?.value
-    const discountPercent = this.form.get('tempDiscountPercent')?.value || 0
+    const discountAmount = this.form.get('tempDiscountAmount')?.value || 0
 
     if (!stockId || quantity <= 0 || unitPrice < 0) {
       this.alert.warning('Datos incompletos', 'Complete todos los campos del producto')
@@ -416,7 +416,7 @@ export class NewSaleComponent implements OnInit {
       }
     }
 
-    const err = this.cart.addOrUpdate(stock, quantity, unitPrice, discountPercent)
+    const err = this.cart.addOrUpdate(stock, quantity, unitPrice, discountAmount)
     if (!err) {
       if (existingItem) {
         this.alert.success('Cantidad actualizada', `Nueva cantidad: ${existingItem.quantity + quantity} unidades`)
@@ -424,7 +424,7 @@ export class NewSaleComponent implements OnInit {
     }
 
     // Reset temp fields
-    this.form.patchValue({ tempStockId: '', tempQuantity: 1, tempUnitPrice: 0, tempDiscountPercent: 0 })
+    this.form.patchValue({ tempStockId: '', tempQuantity: 1, tempUnitPrice: 0, tempDiscountAmount: 0 })
     this.selectedStockId.set(null)
   }
 
@@ -441,12 +441,19 @@ export class NewSaleComponent implements OnInit {
     if (err) this.alert.error('Stock insuficiente', err)
   }
 
-  updateItemDiscount(index: number, newDiscountPercent: number): void {
-    if (newDiscountPercent < 0 || newDiscountPercent > 100) {
-      this.alert.warning('Descuento inválido', 'El descuento debe estar entre 0% y 100%')
+  updateItemDiscount(index: number, newDiscountAmount: number): void {
+    if (newDiscountAmount < 0) {
+      this.alert.warning('Descuento inválido', 'El descuento no puede ser negativo')
       return
     }
-    this.cart.updateDiscount(index, newDiscountPercent)
+    const item = this.cart.items()[index]
+    const lineTotal = item ? item.quantity * item.unitPrice : 0
+    if (item && newDiscountAmount > lineTotal) {
+      this.alert.warning('Descuento inválido', `El descuento no puede superar Bs ${lineTotal.toFixed(2)} (importe de la línea)`)
+      return
+    }
+    // Bs enteros: el mostrador rebaja "Bs 5", no "Bs 5.30".
+    this.cart.updateDiscount(index, Math.round(newDiscountAmount))
   }
 
   getStockDisplay(stock: MedicationStock): string {
@@ -556,7 +563,7 @@ export class NewSaleComponent implements OnInit {
         medicationStockId: item.medicationStock.id,
         quantity: Number(item.quantity),
         unitPrice: Number(item.unitPrice),
-        discountPercent: Number(item.discountPercent) || 0,
+        discountAmount: Number(item.discountAmount) || 0,
         discountReason: item.discountReason?.trim() || undefined,
         batchNumber: item.medicationStock.batchNumber,
         // El lote puede no tener vencimiento registrado; se omite en vez de

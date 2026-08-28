@@ -294,7 +294,23 @@ describe('PharmacySalesService', () => {
     it('rechaza un descuento por línea sin motivo', async () => {
       setupHappyPath();
       const dto = { ...baseSaleDto() };
-      dto.items[0] = { ...dto.items[0], discountPercent: 10 } as any;
+      dto.items[0] = { ...dto.items[0], discountAmount: 10 } as any;
+
+      await expect(service.create(dto as any, 'user-1', 'clinic-1')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    /**
+     * El descuento por línea ahora es un importe plano en bolivianos (antes un
+     * porcentaje, que nunca podía superar el 100% del importe por construcción).
+     * Un importe plano sí puede pasarse de la raya si alguien escribe mal.
+     */
+    it('rechaza un descuento por línea mayor al importe de esa línea', async () => {
+      setupHappyPath();
+      const dto = { ...baseSaleDto() };
+      // quantity 5 × unitPrice 25.5 = 127.5 de importe de línea
+      dto.items[0] = { ...dto.items[0], discountAmount: 200, discountReason: 'Error de tipeo' } as any;
 
       await expect(service.create(dto as any, 'user-1', 'clinic-1')).rejects.toThrow(
         BadRequestException,
