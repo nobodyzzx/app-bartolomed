@@ -358,8 +358,14 @@ export interface SaleItem {
   brand?: string
   quantity: number
   unitPrice: number
-  discountPercent?: number
-  discountAmount?: number
+  /**
+   * Rebaja de esta línea en bolivianos (no un porcentaje). El nombre real de
+   * la columna en `pharmacy_sale_items` es `discount` — la interfaz declaraba
+   * `discountPercent`/`discountAmount`, que el backend nunca manda en la
+   * respuesta, así que la columna "Desc." del detalle de venta nunca podía
+   * leer un valor real.
+   */
+  discount?: number
   subtotal: number
   batchNumber?: string
   expiryDate?: string
@@ -430,9 +436,9 @@ export interface CreateSaleItemDto {
   medicationStockId: string
   quantity: number
   unitPrice: number
-  discountPercent?: number
-  discountReason?: string
+  /** Rebaja de esta línea en bolivianos enteros (no un porcentaje). */
   discountAmount?: number
+  discountReason?: string
   totalPrice?: number
   batchNumber?: string
   expiryDate?: string

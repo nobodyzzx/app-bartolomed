@@ -1621,6 +1621,9 @@ export class AdvancedReportsService {
       this.dataSource.query(`
         SELECT
           ps.id, ps."saleNumber", ps."patientName", ps.total, ps."paymentMethod",
+          -- Rebaja de la venta: no sale al cliente en el recibo, pero quien
+          -- cobró sí necesita ver cuánto descontó en su propio corte.
+          ps.discount, ps."discountReason",
           -- Formateado acá y no en JS: saleDate es naive-pero-UTC (ver
           -- SALE_DATE_BO) y pasar el Date crudo al PDF arriesga reinterpretarlo
           -- en la zona del proceso Node en vez de la de Bolivia.
@@ -1645,6 +1648,7 @@ export class AdvancedReportsService {
       this.dataSource.query(`
         SELECT c.id, c.origin, c.description, c.quantity, c.total, c.status,
                c.patient_name AS "patientName",
+               c.discount_amount AS "discountAmount", c.discount_reason AS "discountReason",
                TO_CHAR(DATE(${CHARGE_DATE_BO}), 'DD/MM/YYYY') AS "chargeDateFmt",
                TO_CHAR(${CHARGE_DATE_BO}, 'HH24:MI') AS "chargeTimeFmt"
         FROM charges c
@@ -1662,6 +1666,12 @@ export class AdvancedReportsService {
     const clinicRevenue = round2(invoicedCharges.reduce((s, r) => s + Number(r['total'] ?? 0), 0));
     const clinicPending = round2(pendingCharges.reduce((s, r) => s + Number(r['total'] ?? 0), 0));
 
+    // No sale al cliente en ningún recibo (por eso vive solo en este corte,
+    // que solo ve quien atendió y quien administra): antes no había forma de
+    // saber, ni siquiera para uno mismo, cuánto se rebajó en el turno.
+    const pharmacyDiscount = round2(pharmacySales.reduce((s, r) => s + Number(r['discount'] ?? 0), 0));
+    const clinicDiscount = round2(clinicCharges.reduce((s, r) => s + Number(r['discountAmount'] ?? 0), 0));
+
     return {
       userId,
       userName: (staff[0]?.['name'] as string) ?? null,
@@ -1674,6 +1684,9 @@ export class AdvancedReportsService {
         clinicPending,
         clinicCount: clinicCharges.length,
         totalRevenue: round2(pharmacyRevenue + clinicRevenue),
+        pharmacyDiscount,
+        clinicDiscount,
+        totalDiscount: round2(pharmacyDiscount + clinicDiscount),
       },
     };
   }

@@ -190,10 +190,14 @@
                           </span>
                         </td>
                         <td class="px-6 py-4 text-right text-sm text-slate-700 font-medium">Bs {{ item.unitPrice | number: '1.2-2' }}</td>
+                        <!-- Esta pantalla dobla de recibo imprimible (ver print() en el
+                             .ts): el descuento no debe salir de cara al paciente, así que
+                             la columna siempre queda en "—" aunque la línea sí tenga uno.
+                             (Antes comparaba contra `discountPercent`/`discountAmount`, que
+                             el backend nunca manda — el campo real es `discount` — así que
+                             esta celda quedaba vacía en vez de mostrar el guion.) -->
                         <td class="px-6 py-4 text-right text-sm">
-                          @if (!item.discountPercent && !item.discountAmount) {
-                            <span class="text-slate-400">—</span>
-                          }
+                          <span class="text-slate-400">—</span>
                         </td>
                         <td class="px-6 py-4 text-right text-base font-bold text-slate-900">Bs {{ item.subtotal | number: '1.2-2' }}</td>
                       </tr>

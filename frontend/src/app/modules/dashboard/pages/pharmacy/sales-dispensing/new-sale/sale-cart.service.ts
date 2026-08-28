@@ -7,7 +7,8 @@ export interface CartItem {
   medicationStock: MedicationStock
   quantity: number
   unitPrice: number
-  discountPercent: number
+  /** Rebaja de esta línea en bolivianos enteros (no un porcentaje). */
+  discountAmount: number
   /** Obligatorio si hay descuento: el backend rechaza una rebaja sin motivo. */
   discountReason: string
   subtotal: number
@@ -51,7 +52,7 @@ export class SaleCartService {
     stock: MedicationStock,
     quantity: number,
     unitPrice: number,
-    discountPercent: number,
+    discountAmount: number,
   ): string | null {
     const availableQty = stock.availableQuantity || 0
     const existingIndex = this._items().findIndex(it => it.medicationStock.id === stock.id)
@@ -61,10 +62,15 @@ export class SaleCartService {
       const newQuantity = existing.quantity + quantity
 
       const cap = Math.min(newQuantity, availableQty)
-      const discountAmount = (cap * existing.unitPrice * existing.discountPercent) / 100
-      const subtotal = cap * existing.unitPrice - discountAmount
+      // La rebaja es un importe plano en Bs, no un porcentaje: no escala con
+      // la cantidad. Solo se tope para que el subtotal no quede negativo si
+      // la línea terminó más chica que el descuento ya cargado.
+      const cappedDiscount = Math.min(existing.discountAmount, cap * existing.unitPrice)
+      const subtotal = cap * existing.unitPrice - cappedDiscount
       this._items.update(items =>
-        items.map((it, i) => (i === existingIndex ? { ...it, quantity: cap, subtotal } : it)),
+        items.map((it, i) =>
+          i === existingIndex ? { ...it, quantity: cap, discountAmount: cappedDiscount, subtotal } : it,
+        ),
       )
 
       if (newQuantity > availableQty) {
@@ -76,11 +82,11 @@ export class SaleCartService {
     const take = Math.min(quantity, availableQty)
     if (take <= 0) return `Stock insuficiente (${availableQty} disponibles)`
 
-    const discountAmount = (take * unitPrice * discountPercent) / 100
-    const subtotal = take * unitPrice - discountAmount
+    const cappedDiscount = Math.min(discountAmount, take * unitPrice)
+    const subtotal = take * unitPrice - cappedDiscount
     this._items.update(items => [
       ...items,
-      { medicationStock: stock, quantity: take, unitPrice, discountPercent, discountReason: '', subtotal },
+      { medicationStock: stock, quantity: take, unitPrice, discountAmount: cappedDiscount, discountReason: '', subtotal },
     ])
     return null
   }
@@ -96,10 +102,12 @@ export class SaleCartService {
     const availableQty = item.medicationStock.availableQuantity || 0
     if (newQuantity > availableQty) return `Solo hay ${availableQty} unidades disponibles`
 
-    const discountAmount = (newQuantity * item.unitPrice * item.discountPercent) / 100
-    const subtotal = newQuantity * item.unitPrice - discountAmount
+    const cappedDiscount = Math.min(item.discountAmount, newQuantity * item.unitPrice)
+    const subtotal = newQuantity * item.unitPrice - cappedDiscount
     this._items.update(items =>
-      items.map((it, i) => (i === index ? { ...it, quantity: newQuantity, subtotal } : it)),
+      items.map((it, i) =>
+        i === index ? { ...it, quantity: newQuantity, discountAmount: cappedDiscount, subtotal } : it,
+      ),
     )
     return null
   }
@@ -113,17 +121,19 @@ export class SaleCartService {
 
   /** Cuántas líneas tienen descuento sin justificar; bloquea el registro. */
   readonly linesMissingReason = computed(
-    () => this._items().filter(it => it.discountPercent > 0 && !it.discountReason.trim()).length,
+    () => this._items().filter(it => it.discountAmount > 0 && !it.discountReason.trim()).length,
   )
 
-  updateDiscount(index: number, discountPercent: number): string | null {
+  /** Tope al importe de la línea: un descuento no puede volverla negativa. */
+  updateDiscount(index: number, discountAmount: number): string | null {
     const item = this._items()[index]
     if (!item) return 'Ítem no encontrado'
 
-    const discountAmount = (item.quantity * item.unitPrice * discountPercent) / 100
-    const subtotal = item.quantity * item.unitPrice - discountAmount
+    const lineTotal = item.quantity * item.unitPrice
+    const cappedDiscount = Math.min(Math.max(0, discountAmount), lineTotal)
+    const subtotal = lineTotal - cappedDiscount
     this._items.update(items =>
-      items.map((it, i) => (i === index ? { ...it, discountPercent, subtotal } : it)),
+      items.map((it, i) => (i === index ? { ...it, discountAmount: cappedDiscount, subtotal } : it)),
     )
     return null
   }

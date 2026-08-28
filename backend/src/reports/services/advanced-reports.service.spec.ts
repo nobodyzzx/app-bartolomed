@@ -799,6 +799,9 @@ describe('AdvancedReportsService', () => {
         clinicPending: 0,
         clinicCount: 1,
         totalRevenue: 170,
+        pharmacyDiscount: 0,
+        clinicDiscount: 0,
+        totalDiscount: 0,
       });
 
       const pharmacySql = dataSource.query.mock.calls[1][0];
@@ -806,6 +809,24 @@ describe('AdvancedReportsService', () => {
       expect(pharmacySql).toContain('ps."soldById" = $2');
       expect(chargeSql).toContain('c.created_by = $2');
       expect(chargeSql).toContain(`c.origin != 'pharmacy'`);
+    });
+
+    it('suma los descuentos de farmacia y clínica del turno, por separado y en total', async () => {
+      dataSource.query
+        .mockResolvedValueOnce([{ id: USER_ID, name: 'Harold Navia' }])
+        .mockResolvedValueOnce([
+          { id: 'sale-1', total: '80.00', discount: '20.00' },
+          { id: 'sale-2', total: '50.00', discount: '0' },
+        ])
+        .mockResolvedValueOnce([
+          { id: 'chg-1', total: '100.00', status: 'invoiced', discountAmount: '15.00' },
+        ]);
+
+      const result = await service.getStaffShiftDetail({ clinicId: CLINIC_ID, userId: USER_ID });
+
+      expect(result.summary.pharmacyDiscount).toBe(20);
+      expect(result.summary.clinicDiscount).toBe(15);
+      expect(result.summary.totalDiscount).toBe(35);
     });
 
     it('un cargo pending no se suma a clinicRevenue: se informa aparte en clinicPending', async () => {

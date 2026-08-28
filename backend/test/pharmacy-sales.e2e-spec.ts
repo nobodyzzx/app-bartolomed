@@ -6,6 +6,7 @@ import * as request from 'supertest';
 import { PharmacySalesController } from '../src/pharmacy/controllers/pharmacy-sales.controller';
 import { PharmacySalesService } from '../src/pharmacy/services/pharmacy-sales.service';
 import { InventoryService } from '../src/pharmacy/services/inventory.service';
+import { ChargesService } from '../src/charges/charges.service';
 import { AuditService } from '../src/audit/audit.service';
 import {
   PharmacySale,
@@ -62,6 +63,10 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
 
   const auditServiceMock = { log: jest.fn() };
   const inventoryServiceMock = { getStockAlerts: jest.fn() };
+  // Fase 4: la venta con receta puede quedar a cuenta del paciente (ver
+  // pharmacy-sales.service.spec.ts) — sin este mock, PharmacySalesService no
+  // resuelve sus dependencias y la suite entera falla al compilar el módulo.
+  const chargesServiceMock = { create: jest.fn(), findByOrigin: jest.fn(), cancel: jest.fn() };
 
   beforeAll(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -69,6 +74,7 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
       providers: [
         PharmacySalesService,
         { provide: InventoryService, useValue: inventoryServiceMock },
+        { provide: ChargesService, useValue: chargesServiceMock },
         { provide: AuditService, useValue: auditServiceMock },
         { provide: getRepositoryToken(PharmacySale), useValue: createMockRepository() },
         { provide: getRepositoryToken(PharmacySaleItem), useValue: createMockRepository() },
@@ -302,12 +308,15 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
         .post('/api/pharmacy-sales')
         .set('X-Clinic-Id', TEST_CLINIC_ID)
         .send(buildValidSaleBody({
-          items: [{ medicationStockId: 'stock-1', quantity: 10, unitPrice: 20, discountPercent: 10 }],
+          items: [{
+            medicationStockId: 'stock-1', quantity: 10, unitPrice: 20,
+            discountAmount: 20, discountReason: 'Cliente frecuente',
+          }],
         }))
         .expect(201);
 
       const saved = saleRepo.save!.mock.calls[0][0];
-      // 10 × 20 = 200, 10% = 20, subtotal efectivo = 180
+      // 10 × 20 = 200, descuento plano de Bs 20, subtotal efectivo = 180
       expect(saved.subtotal).toBeCloseTo(180);
     });
   });
