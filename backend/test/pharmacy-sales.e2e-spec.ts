@@ -30,6 +30,13 @@ import { makeMedicationStock } from '../src/test/helpers/test-data.factory';
 const TEST_USER_ID = 'user-1';
 const TEST_USER_EMAIL = 'pharmacist@test.com';
 const TEST_CLINIC_ID = 'clinic-1';
+// El controlador valida `:id` con ParseUUIDPipe — un id como 'sale-1' nunca
+// llega al servicio: Nest lo rechaza con 400 antes de resolver la ruta. Los
+// tests de abajo usaban 'sale-1'/'nonexistent' y varios "pasaban" por ese 400
+// equivocado (ej. los que esperaban 400 por regla de negocio), sin ejercitar
+// nunca el código que dicen probar.
+const TEST_SALE_ID = '11111111-1111-4111-8111-111111111111';
+const TEST_NONEXISTENT_ID = '22222222-2222-4222-8222-222222222222';
 
 @Injectable()
 class MockAuthGuard implements CanActivate {
@@ -123,6 +130,16 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
         }),
       ),
     };
+
+    // El stock se relee CON LOCK vía QueryBuilder dentro de la transacción (ver
+    // el comentario en pharmacy-sales.service.ts), no con `findOne` directo.
+    // El mock delega en `stockRepo.findOne` para que los tests de este archivo
+    // sigan expresándose con él, igual que en pharmacy-sales.service.spec.ts.
+    stockRepo.createQueryBuilder!.mockImplementation(() => ({
+      setLock: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: () => stockRepo.findOne!(),
+    } as any));
   });
 
   afterAll(async () => {
@@ -149,12 +166,12 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
   const happyPathStock = (overrides: Record<string, any> = {}) => {
     const stock = makeMedicationStock({ quantity: 100, reservedQuantity: 0, ...overrides });
     stockRepo.findOne!.mockResolvedValue(stock);
-    saleRepo.save!.mockImplementation(async (entity: any) => ({ id: 'sale-1', ...entity }));
+    saleRepo.save!.mockImplementation(async (entity: any) => ({ id: TEST_SALE_ID, ...entity }));
     saleItemRepo.save!.mockResolvedValue({});
     stockRepo.save!.mockImplementation(async (entity: any) => entity);
     movementRepo.save!.mockResolvedValue({});
     saleRepo.findOne!.mockResolvedValue({
-      id: 'sale-1',
+      id: TEST_SALE_ID,
       saleNumber: 'SAL-TEST-0001',
       items: [],
       status: SaleStatus.COMPLETED,
@@ -174,7 +191,7 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
         .send(buildValidSaleBody())
         .expect(201);
 
-      expect(res.body).toMatchObject({ id: 'sale-1' });
+      expect(res.body).toMatchObject({ id: TEST_SALE_ID });
     });
 
     it('reduce el stock y crea un movimiento SALE', async () => {
@@ -242,7 +259,12 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
         .expect(400);
     });
 
-    it('calcula correctamente subtotal, tax (13%) y total', async () => {
+    // Sin IVA (decisión del 2026-08-08, ver pharmacy-sales.service.ts): el
+    // precio del tarifario ya es el precio final. Estos dos tests seguían
+    // afirmando el 13% que el service ya no aplica desde antes de esta
+    // sesión — pasaban por casualidad porque ParseUUIDPipe/el check de
+    // clinicId cortaban la request antes de llegar a esta aserción.
+    it('calcula correctamente subtotal, tax y total (sin IVA)', async () => {
       happyPathStock();
 
       await request(app.getHttpServer())
@@ -253,8 +275,8 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
 
       const saved = saleRepo.save!.mock.calls[0][0];
       expect(saved.subtotal).toBeCloseTo(127.5);  // 5 × 25.5
-      expect(saved.tax).toBeCloseTo(16.575);      // 127.5 × 0.13
-      expect(saved.total).toBeCloseTo(144.075);   // subtotal + tax
+      expect(saved.tax).toBe(0);
+      expect(saved.total).toBeCloseTo(127.5);     // subtotal, sin impuesto
     });
 
     it('calcula cambio correctamente cuando se paga de más', async () => {
@@ -267,7 +289,7 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
         .expect(201);
 
       const saved = saleRepo.save!.mock.calls[0][0];
-      expect(saved.change).toBeCloseTo(200 - 144.075);
+      expect(saved.change).toBeCloseTo(200 - 127.5);
     });
 
     it('procesa múltiples ítems reduciendo stock individualmente', async () => {
@@ -277,11 +299,11 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
       stockRepo.findOne!
         .mockResolvedValueOnce(stock1)
         .mockResolvedValueOnce(stock2);
-      saleRepo.save!.mockImplementation(async (e: any) => ({ id: 'sale-1', ...e }));
+      saleRepo.save!.mockImplementation(async (e: any) => ({ id: TEST_SALE_ID, ...e }));
       saleItemRepo.save!.mockResolvedValue({});
       stockRepo.save!.mockImplementation(async (e: any) => e);
       movementRepo.save!.mockResolvedValue({});
-      saleRepo.findOne!.mockResolvedValue({ id: 'sale-1', items: [] });
+      saleRepo.findOne!.mockResolvedValue({ id: TEST_SALE_ID, items: [] });
       saleRepo.count!.mockResolvedValue(0);
 
       await request(app.getHttpServer())
@@ -375,10 +397,14 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
       const mockQb: any = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
+        // Desempate estable por id (ver listWithFilters): faltaba en este mock
+        // y el service real sí lo encadena, así que la ruta completa fallaba
+        // con 500 ("addOrderBy is not a function") antes de llegar al test.
+        addOrderBy: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest.fn().mockResolvedValue([[{ id: 'sale-1' }], 1]),
+        getManyAndCount: jest.fn().mockResolvedValue([[{ id: TEST_SALE_ID }], 1]),
       };
       saleRepo.createQueryBuilder!.mockReturnValue(mockQb);
 
@@ -387,7 +413,7 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
         .set('X-Clinic-Id', TEST_CLINIC_ID)
         .expect(200);
 
-      expect(res.body).toMatchObject({ data: [{ id: 'sale-1' }], total: 1, page: 1, limit: 25 });
+      expect(res.body).toMatchObject({ data: [{ id: TEST_SALE_ID }], total: 1, page: 1, limit: 25 });
       expect(mockQb.andWhere).toHaveBeenCalledWith(
         expect.stringContaining('clinicId'),
         { clinicId: TEST_CLINIC_ID },
@@ -400,13 +426,14 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
   describe('PATCH /api/pharmacy-sales/:id', () => {
     it('rechaza actualizar venta COMPLETED (400)', async () => {
       saleRepo.findOne!.mockResolvedValue({
-        id: 'sale-1',
+        id: TEST_SALE_ID,
+        clinicId: TEST_CLINIC_ID,
         status: SaleStatus.COMPLETED,
         items: [],
       });
 
       await request(app.getHttpServer())
-        .patch('/api/pharmacy-sales/sale-1')
+        .patch(`/api/pharmacy-sales/${TEST_SALE_ID}`)
         .set('X-Clinic-Id', TEST_CLINIC_ID)
         .send({ patientName: 'Nuevo nombre' })
         .expect(400);
@@ -418,27 +445,29 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
   describe('DELETE /api/pharmacy-sales/:id', () => {
     it('rechaza eliminar venta COMPLETED (400)', async () => {
       saleRepo.findOne!.mockResolvedValue({
-        id: 'sale-1',
+        id: TEST_SALE_ID,
+        clinicId: TEST_CLINIC_ID,
         status: SaleStatus.COMPLETED,
         items: [],
       });
 
       await request(app.getHttpServer())
-        .delete('/api/pharmacy-sales/sale-1')
+        .delete(`/api/pharmacy-sales/${TEST_SALE_ID}`)
         .set('X-Clinic-Id', TEST_CLINIC_ID)
         .expect(400);
     });
 
     it('permite eliminar venta PENDING (200)', async () => {
       saleRepo.findOne!.mockResolvedValue({
-        id: 'sale-1',
+        id: TEST_SALE_ID,
+        clinicId: TEST_CLINIC_ID,
         status: SaleStatus.PENDING,
         items: [],
       });
       saleRepo.remove!.mockResolvedValue({});
 
       await request(app.getHttpServer())
-        .delete('/api/pharmacy-sales/sale-1')
+        .delete(`/api/pharmacy-sales/${TEST_SALE_ID}`)
         .set('X-Clinic-Id', TEST_CLINIC_ID)
         .expect(200);
 
@@ -452,7 +481,8 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
     it('cancela venta y restaura stock', async () => {
       const stock = makeMedicationStock({ id: 'stock-1', quantity: 50 });
       const sale = {
-        id: 'sale-1',
+        id: TEST_SALE_ID,
+        clinicId: TEST_CLINIC_ID,
         saleNumber: 'SAL-001',
         status: SaleStatus.COMPLETED,
         notes: '',
@@ -475,7 +505,7 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
       saleRepo.save!.mockResolvedValue({ ...sale, status: SaleStatus.CANCELLED });
 
       await request(app.getHttpServer())
-        .patch('/api/pharmacy-sales/sale-1/status')
+        .patch(`/api/pharmacy-sales/${TEST_SALE_ID}/status`)
         .set('X-Clinic-Id', TEST_CLINIC_ID)
         .send({ status: SaleStatus.CANCELLED, notes: 'Devolución cliente' })
         .expect(200);
@@ -494,14 +524,15 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
   describe('PATCH /api/pharmacy-sales/:id/adjust-payment', () => {
     it('rechaza corregir pago de venta CANCELLED (400)', async () => {
       saleRepo.findOne!.mockResolvedValue({
-        id: 'sale-1',
+        id: TEST_SALE_ID,
+        clinicId: TEST_CLINIC_ID,
         status: SaleStatus.CANCELLED,
         total: 100,
         items: [],
       });
 
       await request(app.getHttpServer())
-        .patch('/api/pharmacy-sales/sale-1/adjust-payment')
+        .patch(`/api/pharmacy-sales/${TEST_SALE_ID}/adjust-payment`)
         .set('X-Clinic-Id', TEST_CLINIC_ID)
         .send({
           paymentMethod: PaymentMethod.CASH,
@@ -513,7 +544,8 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
 
     it('actualiza método de pago y registra auditoría', async () => {
       const sale = {
-        id: 'sale-1',
+        id: TEST_SALE_ID,
+        clinicId: TEST_CLINIC_ID,
         saleNumber: 'SAL-001',
         status: SaleStatus.COMPLETED,
         total: 100,
@@ -527,7 +559,7 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
       saleRepo.save!.mockImplementation(async (e: any) => e);
 
       await request(app.getHttpServer())
-        .patch('/api/pharmacy-sales/sale-1/adjust-payment')
+        .patch(`/api/pharmacy-sales/${TEST_SALE_ID}/adjust-payment`)
         .set('X-Clinic-Id', TEST_CLINIC_ID)
         .send({
           paymentMethod: PaymentMethod.QR,
@@ -542,7 +574,7 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
       expect(auditServiceMock.log).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'PAYMENT_ADJUSTED',
-          resourceId: 'sale-1',
+          resourceId: TEST_SALE_ID,
         }),
       );
     });
@@ -555,25 +587,26 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
       saleRepo.findOne!.mockResolvedValue(null);
 
       await request(app.getHttpServer())
-        .get('/api/pharmacy-sales/nonexistent')
+        .get(`/api/pharmacy-sales/${TEST_NONEXISTENT_ID}`)
         .set('X-Clinic-Id', TEST_CLINIC_ID)
         .expect(404);
     });
 
     it('devuelve la venta si existe', async () => {
       saleRepo.findOne!.mockResolvedValue({
-        id: 'sale-1',
+        id: TEST_SALE_ID,
+        clinicId: TEST_CLINIC_ID,
         saleNumber: 'SAL-001',
         total: 100,
         items: [],
       });
 
       const res = await request(app.getHttpServer())
-        .get('/api/pharmacy-sales/sale-1')
+        .get(`/api/pharmacy-sales/${TEST_SALE_ID}`)
         .set('X-Clinic-Id', TEST_CLINIC_ID)
         .expect(200);
 
-      expect(res.body).toMatchObject({ id: 'sale-1', saleNumber: 'SAL-001' });
+      expect(res.body).toMatchObject({ id: TEST_SALE_ID, saleNumber: 'SAL-001' });
     });
   });
 });
