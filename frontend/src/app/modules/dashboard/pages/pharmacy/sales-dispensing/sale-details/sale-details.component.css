@@ -1,7 +1,7 @@
-/* Bloque de descuento para staff: printReceipt() hace window.print() de toda
-   la página (no hay una plantilla de recibo aparte), así que lo único que
-   evita que el motivo del descuento salga en el papel que se lleva el
-   paciente es ocultarlo acá quirúrgicamente al imprimir. */
+/* Bloque de descuento para staff: el recibo que se lleva el paciente ahora es
+   un PDF generado aparte (ver downloadReceipt(), PharmacyReceiptPdfService),
+   que nunca menciona el descuento — esto es solo un respaldo por si alguien
+   igual imprime esta pantalla de detalle desde el navegador. */
 @media print {
   .no-print { display: none !important; }
 }

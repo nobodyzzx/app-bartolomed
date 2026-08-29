@@ -108,6 +108,20 @@ export class SalesDispensingService {
     )
   }
 
+  /**
+   * Antes esta pantalla imprimía su propia página (window.print(), con menús
+   * y botones incluidos) en vez de un comprobante real — esto trae el PDF
+   * que genera el backend, mismo mecanismo que el recibo del punto de cobro.
+   */
+  downloadReceipt(id: string): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${id}/receipt`, { responseType: 'blob' }).pipe(
+      catchError(error => {
+        this.errorService.handleError(error)
+        throw error
+      }),
+    )
+  }
+
   createSale(dto: CreateSaleDto): Observable<Sale> {
     return this.http.post<Sale>(this.apiUrl, dto).pipe(
       tap(() => this.alertService.success('Éxito', 'Venta registrada correctamente')),

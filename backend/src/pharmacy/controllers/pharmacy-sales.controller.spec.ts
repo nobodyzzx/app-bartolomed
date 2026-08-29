@@ -20,6 +20,7 @@ describe('PharmacySalesController', () => {
       getDailySalesTotal: jest.fn().mockResolvedValue(500),
       getSalesSummary: jest.fn().mockResolvedValue({ total: 0 }),
       findOne: jest.fn().mockResolvedValue({ id: 'sale-1' }),
+      buildReceipt: jest.fn().mockResolvedValue({ buffer: Buffer.from('%PDF'), fileName: 'SAL-001.pdf' }),
       update: jest.fn().mockResolvedValue({ id: 'sale-1' }),
       updateStatus: jest.fn().mockResolvedValue({ id: 'sale-1' }),
       adjustPayment: jest.fn().mockResolvedValue({ id: 'sale-1' }),
@@ -91,6 +92,17 @@ describe('PharmacySalesController', () => {
   it('findOne resuelve y delega el clinicId (bug real: antes no scopeaba por clínica)', async () => {
     await controller.findOne('sale-1', makeReq());
     expect(service.findOne).toHaveBeenCalledWith('sale-1', 'clinic-1');
+  });
+
+  it('receipt arma el PDF con el nombre de archivo del recibo (Frente 3: reemplaza el print() de pantalla)', async () => {
+    const res = { setHeader: jest.fn(), send: jest.fn() } as any;
+
+    await controller.receipt('sale-1', makeReq(), res);
+
+    expect(service.buildReceipt).toHaveBeenCalledWith('sale-1', 'clinic-1');
+    expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/pdf');
+    expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename="SAL-001.pdf"');
+    expect(res.send).toHaveBeenCalledWith(Buffer.from('%PDF'));
   });
 
   it('update resuelve y delega el clinicId (bug real: antes no scopeaba por clínica)', async () => {

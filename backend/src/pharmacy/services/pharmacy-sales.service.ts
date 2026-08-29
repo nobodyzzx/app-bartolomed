@@ -23,6 +23,7 @@ import {
 import { PharmacySale, PharmacySaleItem, SaleStatus } from '../entities/pharmacy-sale.entity';
 import { Medication, MedicationStock, MovementType, StockMovement } from '../entities/pharmacy.entity';
 import { InventoryService } from './inventory.service';
+import { PharmacyReceiptPdfService } from './pharmacy-receipt-pdf.service';
 
 @Injectable()
 export class PharmacySalesService {
@@ -50,6 +51,7 @@ export class PharmacySalesService {
     private inventoryService: InventoryService,
     private auditService: AuditService,
     private chargesService: ChargesService,
+    private receiptPdfService: PharmacyReceiptPdfService,
   ) {}
 
   /**
@@ -390,6 +392,17 @@ export class PharmacySalesService {
     }
 
     return pharmacySale;
+  }
+
+  /**
+   * Recibo en PDF (Frente 3 de la revisión ventas de farmacia vs punto de
+   * cobro). Antes era `window.print()` de la pantalla del panel; ahora es un
+   * documento real, mismo motor que el recibo de facturación.
+   */
+  async buildReceipt(id: string, clinicId?: string): Promise<{ buffer: Buffer; fileName: string }> {
+    const sale = await this.findOne(id, clinicId);
+    const buffer = await this.receiptPdfService.generate(sale);
+    return { buffer, fileName: `${sale.saleNumber}.pdf` };
   }
 
   async update(id: string, updatePharmacySaleDto: UpdatePharmacySaleDto, clinicId: string): Promise<PharmacySale> {
