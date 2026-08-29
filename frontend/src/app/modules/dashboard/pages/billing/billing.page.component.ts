@@ -260,6 +260,23 @@ export class BillingPageComponent implements OnInit {
     this.router.navigate(['/dashboard/checkout'])
   }
 
+  /**
+   * Una factura anulada o devuelta no debe nada (ver Invoice.calculateAmounts,
+   * remainingAmount = 0 en esos estados) — el resto de estados vivos sí puede
+   * tener saldo si el punto de cobro registró un pago parcial.
+   */
+  canCollectBalance(invoice: RecentInvoice): boolean {
+    return (
+      Number(invoice.remainingAmount ?? 0) > 0 &&
+      invoice.status !== 'cancelled' &&
+      invoice.status !== 'refunded'
+    )
+  }
+
+  collectBalance(invoice: RecentInvoice): void {
+    this.router.navigate(['/dashboard/billing/payments/new', invoice.id])
+  }
+
   navigateToInvoicesList(): void {
     // Aún no existe componente de lista dedicado, se reutiliza dashboard filtrando en el futuro
     this.router.navigate(['/dashboard/billing'])

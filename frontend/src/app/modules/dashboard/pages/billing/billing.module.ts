@@ -10,7 +10,11 @@ import { PaymentFormComponent } from './payment-form.component'
 
 const routes: Routes = [
   { path: '', component: BillingPageComponent },
-  { path: 'payments/new', component: PaymentFormComponent },
+  // Sin variante "en blanco": PaymentFormComponent siempre cobra el saldo de
+  // UNA factura puntual (llega desde "Cobrar saldo" en la lista) — la ruta
+  // sin :invoiceId pedía elegir paciente/clínica a mano y tipear un UUID de
+  // factura en un input de texto, campos que además nunca llegaban al
+  // backend (CreatePaymentDto no los declara).
   { path: 'payments/new/:invoiceId', component: PaymentFormComponent },
 ]
 
