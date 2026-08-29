@@ -1,6 +1,7 @@
 import { Component, Inject, OnInit, inject } from '@angular/core'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog'
+import { matchesSearch } from '../../../../../shared/utils/text-search.util'
 import { BaseAsset, TargetClinic } from '../interfaces/assets.interfaces'
 import { AssetRegistrationService } from '../services/asset-registration.service'
 import { InventoryCountsService } from '../services/inventory-counts.service'
@@ -68,17 +69,9 @@ export class MoveAssetDialogComponent implements OnInit {
    * exacta que le tocó a cada uno.
    */
   get filteredLocations(): string[] {
-    const escrito = this.normalizar(this.form?.value?.toLocation ?? '')
-    if (!escrito) return this.locations
-    return this.locations.filter(l => this.normalizar(l).includes(escrito))
-  }
-
-  private normalizar(texto: string): string {
-    return texto
-      .trim()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
+    const escrito = this.form?.value?.toLocation ?? ''
+    if (!escrito.trim()) return this.locations
+    return this.locations.filter(l => matchesSearch(escrito, l))
   }
 
   ngOnInit(): void {
