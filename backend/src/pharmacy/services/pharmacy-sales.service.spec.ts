@@ -21,6 +21,7 @@ describe('PharmacySalesService', () => {
   let lockedBuilder: any;
   let prescriptionRepo: MockRepository<Prescription>;
   let chargesService: { create: jest.Mock; findByOrigin: jest.Mock; cancel: jest.Mock };
+  let auditService: { log: jest.Mock };
 
   const mockInventoryService = { getStockAlerts: jest.fn() };
 
@@ -63,6 +64,7 @@ describe('PharmacySalesService', () => {
     movementRepo = module.get(getRepositoryToken(StockMovement));
     prescriptionRepo = module.get(getRepositoryToken(Prescription));
     chargesService = module.get(ChargesService);
+    auditService = module.get(AuditService);
     medicationRepo = {
       createQueryBuilder: jest.fn().mockReturnValue({
         innerJoin: jest.fn().mockReturnThis(),
@@ -458,6 +460,56 @@ describe('PharmacySalesService', () => {
 
       expect(chargesService.findByOrigin).not.toHaveBeenCalled();
       expect(chargesService.cancel).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Rastro estructurado de la cancelación (Frente 2 de la revisión ventas de
+     * farmacia vs punto de cobro): antes el único registro era un
+     * "STATUS_CHANGED" genérico del AuditInterceptor, sin motivo ni detalle de
+     * lo revertido — mismo criterio que CheckoutService.voidInvoice().
+     */
+    it('guarda el motivo, quién y cuándo canceló, y deja un log de auditoría detallado', async () => {
+      const sale = setupCancel({ chargedToAccount: false });
+      // `sale` es la misma referencia que usa el service (findOne mockeado
+      // resuelve este objeto) y updateStatus la muta in-place: hay que leer
+      // el estado ANTES de llamarlo, o para la aserción ya dice "cancelled".
+      const saleNumber = sale.saleNumber;
+      const previousStatus = sale.status;
+      const actor = { id: 'user-9', email: 'staff@bartolomed.com', name: 'Harold Navia' };
+
+      await service.updateStatus(
+        'sale-1',
+        { status: SaleStatus.CANCELLED, notes: 'Cliente se arrepintió' },
+        'clinic-1',
+        actor,
+      );
+
+      const saved = saleRepo.save!.mock.calls[0][0];
+      expect(saved.cancelReason).toBe('Cliente se arrepintió');
+      expect(saved.cancelledAt).toBeInstanceOf(Date);
+      expect(saved.cancelledById).toBe('user-9');
+
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'SALE_CANCELLED',
+          resourceId: 'sale-1',
+          userId: 'user-9',
+          userEmail: 'staff@bartolomed.com',
+          details: expect.objectContaining({
+            saleNumber,
+            previousStatus,
+            reason: 'Cliente se arrepintió',
+          }),
+        }),
+      );
+    });
+
+    it('no deja log de auditoría de cancelación si la venta ya estaba cancelada', async () => {
+      setupCancel({ status: SaleStatus.CANCELLED });
+
+      await service.updateStatus('sale-1', { status: SaleStatus.CANCELLED, notes: 'Otra vez' }, 'clinic-1');
+
+      expect(auditService.log).not.toHaveBeenCalled();
     });
 
     // El bloque de ajuste leía `(sale as any).totalAmount` —inexistente— así que

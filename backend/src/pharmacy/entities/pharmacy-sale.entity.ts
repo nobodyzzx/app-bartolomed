@@ -140,6 +140,25 @@ export class PharmacySale {
   @Column('text', { nullable: true })
   notes: string | undefined;
 
+  /**
+   * Rastro de la cancelación — mismo criterio que `Invoice.voidReason`:
+   * cancelar revierte stock, cargo a cuenta y receta dispensada, y el motivo
+   * estructurado es lo único que queda para revisarlo después (antes se
+   * mezclaba, si acaso, en el campo libre `notes`).
+   */
+  @Column('text', { name: 'cancel_reason', nullable: true })
+  cancelReason: string | null;
+
+  @Column('timestamp', { name: 'cancelled_at', nullable: true })
+  cancelledAt: Date | null;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'cancelled_by' })
+  cancelledBy: User | null;
+
+  @Column('uuid', { name: 'cancelled_by', nullable: true })
+  cancelledById: string | null;
+
   @ManyToOne(() => User)
   @JoinColumn({ name: 'sold_by' })
   soldBy: User;

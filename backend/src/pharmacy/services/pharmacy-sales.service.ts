@@ -468,6 +468,7 @@ export class PharmacySalesService {
     id: string,
     updateStatusDto: UpdatePharmacySaleStatusDto,
     clinicId: string,
+    actor?: { id: string; email: string; name?: string; ip?: string },
   ): Promise<PharmacySale> {
     const pharmacySale = await this.findOne(id, clinicId);
 
@@ -489,6 +490,7 @@ export class PharmacySalesService {
     }
 
     // If cancelling a sale, restore stock
+    let itemsRestored = 0;
     if (cancelling) {
       const saleWithItems = await this.pharmacySaleRepository.findOne({
         where: { id },
@@ -505,6 +507,7 @@ export class PharmacySalesService {
 
         if (!stock) continue;
 
+        itemsRestored++;
         stock.quantity = stock.quantity + item.quantity;
         await this.medicationStockRepository.save(stock);
 
@@ -558,7 +561,43 @@ export class PharmacySalesService {
       pharmacySale.notes = updateStatusDto.notes;
     }
 
+    if (cancelling) {
+      pharmacySale.cancelReason = updateStatusDto.notes ?? null;
+      pharmacySale.cancelledAt = new Date();
+      pharmacySale.cancelledById = actor?.id ?? null;
+    }
+
     await this.pharmacySaleRepository.save(pharmacySale);
+
+    // El AuditInterceptor ya deja un "STATUS_CHANGED" genérico para cualquier
+    // PATCH a este endpoint (sin motivo ni detalle de lo revertido); esto es
+    // aparte, con el detalle que hace falta para revisar una cancelación
+    // después — mismo criterio que CheckoutService.voidInvoice().
+    if (cancelling) {
+      await this.auditService.log({
+        action: 'SALE_CANCELLED',
+        resource: 'Farmacia — Ventas',
+        resourceId: id,
+        userId: actor?.id,
+        userEmail: actor?.email,
+        userName: actor?.name,
+        clinicId,
+        ipAddress: actor?.ip,
+        method: 'PATCH',
+        path: `/api/pharmacy-sales/${id}/status`,
+        statusCode: 200,
+        status: 'success',
+        details: {
+          saleNumber: pharmacySale.saleNumber,
+          previousStatus,
+          reason: updateStatusDto.notes,
+          itemsRestored,
+          chargeCancelled: !!charge && charge.status !== ChargeStatus.CANCELLED,
+          prescriptionReactivated: !!pharmacySale.prescriptionId,
+        },
+      });
+    }
+
     return await this.findOne(id);
   }
 

@@ -93,13 +93,27 @@ export class SaleDetailsComponent implements OnInit {
     })
 
     if (result.isConfirmed) {
-      const { value: notes } = await this.alert.fire({
+      // Bug real: esto usaba `this.alert.fire({ input: 'textarea', ... })`,
+      // pero `fire()` ignora `input`/`inputPlaceholder` por completo —
+      // `_openConfirmDialog()` nunca les pasa `inputLabel` a ConfirmDialogComponent,
+      // así que el diálogo mostraba un simple sí/no SIN caja de texto y cerraba
+      // con `true` (sin `.value`). `notes` quedaba siempre `undefined` y el
+      // `if (notes)` de abajo nunca se cumplía: cancelar una venta desde acá
+      // no hacía nada, con o sin el fix del estado. `prompt()` sí abre un
+      // input de verdad (es lo que ya usa correctamente el punto de cobro
+      // para anular una factura).
+      //
+      // El backend exige mínimo 5 caracteres para cancelar (mismo criterio
+      // que anular una factura) — validado acá también para no hacer ir y
+      // volver a alguien que escribió "ok" solo para que el 400 se lo rebote.
+      const { value: notes } = await this.alert.prompt({
         title: 'Motivo de cancelación',
-        input: 'textarea',
+        inputLabel: 'Motivo',
         inputPlaceholder: 'Ingrese el motivo...',
-        showCancelButton: true,
         confirmButtonText: 'Confirmar',
         cancelButtonText: 'Volver',
+        inputValidator: value =>
+          (value ?? '').trim().length < 5 ? 'Explique por qué se cancela (mínimo 5 caracteres)' : null,
       })
 
       if (notes) {

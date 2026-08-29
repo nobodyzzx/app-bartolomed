@@ -517,6 +517,30 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
         expect.objectContaining({ type: MovementType.ADJUSTMENT }),
       );
     });
+
+    /**
+     * Frente 2 (rastro de auditoría) de la revisión ventas de farmacia vs
+     * punto de cobro: cancelar sin motivo, o con uno demasiado corto, se
+     * rechaza en el ValidationPipe — no llega ni a intentar tocar el stock.
+     * Mismo criterio que VoidInvoiceDto en facturación.
+     */
+    it('rechaza cancelar sin motivo (400, ValidationPipe)', async () => {
+      await request(app.getHttpServer())
+        .patch(`/api/pharmacy-sales/${TEST_SALE_ID}/status`)
+        .set('X-Clinic-Id', TEST_CLINIC_ID)
+        .send({ status: SaleStatus.CANCELLED })
+        .expect(400);
+
+      expect(stockRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('rechaza cancelar con un motivo demasiado corto (400, ValidationPipe)', async () => {
+      await request(app.getHttpServer())
+        .patch(`/api/pharmacy-sales/${TEST_SALE_ID}/status`)
+        .set('X-Clinic-Id', TEST_CLINIC_ID)
+        .send({ status: SaleStatus.CANCELLED, notes: 'x' })
+        .expect(400);
+    });
   });
 
   // ─── PATCH /pharmacy-sales/:id/adjust-payment ─────────────────────────────
