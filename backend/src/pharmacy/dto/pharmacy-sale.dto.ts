@@ -9,6 +9,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Min,
   MinLength,
   ValidateIf,
   ValidateNested,
@@ -189,9 +190,16 @@ export class AdjustPaymentDto {
 
   @IsNotEmpty()
   @IsNumber()
+  @Min(0)
   amountPaid: number;
 
+  /**
+   * Sin mínimo, un "ok" pasaba igual — mismo criterio que cancelar una venta
+   * o anular una factura (VoidInvoiceDto): con un pago corregido a mano no
+   * hay más rastro que el motivo.
+   */
   @IsNotEmpty()
   @IsString()
+  @MinLength(5, { message: 'Explique por qué se corrige el pago (mínimo 5 caracteres)' })
   reason: string;
 }

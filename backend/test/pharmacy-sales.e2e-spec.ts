@@ -608,6 +608,39 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
         }),
       );
     });
+
+    /**
+     * Frente 4 (adjustPayment "prolijo"): mismo mínimo de motivo que cancelar
+     * una venta o anular una factura.
+     */
+    it('rechaza corregir el pago con un motivo demasiado corto (400, ValidationPipe)', async () => {
+      await request(app.getHttpServer())
+        .patch(`/api/pharmacy-sales/${TEST_SALE_ID}/adjust-payment`)
+        .set('X-Clinic-Id', TEST_CLINIC_ID)
+        .send({ paymentMethod: PaymentMethod.CASH, amountPaid: 100, reason: 'x' })
+        .expect(400);
+    });
+
+    /**
+     * Farmacia no admite pagos parciales (confirmado con el usuario): un
+     * monto corregido por debajo del total dejaría una "deuda" que ningún
+     * reporte sabe mostrar.
+     */
+    it('rechaza corregir a un monto menor al total de la venta (400)', async () => {
+      saleRepo.findOne!.mockResolvedValue({
+        id: TEST_SALE_ID,
+        clinicId: TEST_CLINIC_ID,
+        status: SaleStatus.COMPLETED,
+        total: 100,
+        items: [],
+      });
+
+      await request(app.getHttpServer())
+        .patch(`/api/pharmacy-sales/${TEST_SALE_ID}/adjust-payment`)
+        .set('X-Clinic-Id', TEST_CLINIC_ID)
+        .send({ paymentMethod: PaymentMethod.CASH, amountPaid: 50, reason: 'Error de tipeo' })
+        .expect(400);
+    });
   });
 
   // ─── GET /pharmacy-sales/:id ──────────────────────────────────────────────
