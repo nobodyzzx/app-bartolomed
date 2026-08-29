@@ -8,6 +8,7 @@ import { ChargesService } from '../../charges/charges.service';
 import { Medication, MedicationStock, MovementType, StockMovement } from '../entities/pharmacy.entity';
 import { Prescription, PrescriptionStatus } from 'src/prescriptions/entities/prescription.entity';
 import { InventoryService } from './inventory.service';
+import { PharmacyReceiptPdfService } from './pharmacy-receipt-pdf.service';
 import { createMockRepository, MockRepository } from 'src/test/helpers/mock-repository.factory';
 import { makeMedicationStock } from 'src/test/helpers/test-data.factory';
 
@@ -22,6 +23,7 @@ describe('PharmacySalesService', () => {
   let prescriptionRepo: MockRepository<Prescription>;
   let chargesService: { create: jest.Mock; findByOrigin: jest.Mock; cancel: jest.Mock };
   let auditService: { log: jest.Mock };
+  let receiptPdfService: { generate: jest.Mock };
 
   const mockInventoryService = { getStockAlerts: jest.fn() };
 
@@ -54,6 +56,7 @@ describe('PharmacySalesService', () => {
           provide: ChargesService,
           useValue: { create: jest.fn(), findByOrigin: jest.fn(), cancel: jest.fn() },
         },
+        { provide: PharmacyReceiptPdfService, useValue: { generate: jest.fn() } },
       ],
     }).compile();
 
@@ -64,6 +67,7 @@ describe('PharmacySalesService', () => {
     movementRepo = module.get(getRepositoryToken(StockMovement));
     prescriptionRepo = module.get(getRepositoryToken(Prescription));
     chargesService = module.get(ChargesService);
+    receiptPdfService = module.get(PharmacyReceiptPdfService);
     auditService = module.get(AuditService);
     medicationRepo = {
       createQueryBuilder: jest.fn().mockReturnValue({
@@ -674,6 +678,27 @@ describe('PharmacySalesService', () => {
       saleRepo.findOne!.mockResolvedValue(otherClinicSale);
 
       await expect(service.remove('sale-1', 'clinic-1')).rejects.toThrow('Access denied to this sale');
+    });
+  });
+
+  // ─── buildReceipt (Frente 3: PDF real en vez de window.print()) ──────────
+
+  describe('buildReceipt', () => {
+    it('arma el nombre de archivo a partir del número de venta', async () => {
+      const sale = { id: 'sale-1', saleNumber: 'SAL-000042', status: SaleStatus.COMPLETED, items: [] };
+      jest.spyOn(service, 'findOne').mockResolvedValue(sale as any);
+      receiptPdfService.generate.mockResolvedValue(Buffer.from('%PDF'));
+
+      const result = await service.buildReceipt('sale-1', 'clinic-1');
+
+      expect(receiptPdfService.generate).toHaveBeenCalledWith(sale);
+      expect(result).toEqual({ buffer: Buffer.from('%PDF'), fileName: 'SAL-000042.pdf' });
+    });
+
+    it('propaga el ForbiddenException de findOne si la venta es de otra clínica', async () => {
+      saleRepo.findOne!.mockResolvedValue({ id: 'sale-1', clinicId: 'clinic-OTHER', items: [] });
+
+      await expect(service.buildReceipt('sale-1', 'clinic-1')).rejects.toThrow('Access denied to this sale');
     });
   });
 

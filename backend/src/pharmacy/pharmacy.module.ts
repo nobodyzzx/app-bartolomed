@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChargesModule } from '../charges/charges.module';
 import { AuditModule } from '../audit/audit.module';
+import { PdfModule } from '../pdf/pdf.module';
 
 // Entities
 import { Clinic } from '../clinics/entities/clinic.entity';
@@ -24,6 +25,7 @@ import { SuppliersController } from './controllers/suppliers.controller';
 
 // Services
 import { PharmacyInvoicesService } from './services/pharmacy-invoices.service';
+import { PharmacyReceiptPdfService } from './services/pharmacy-receipt-pdf.service';
 import { PharmacySalesService } from './services/pharmacy-sales.service';
 import { PurchaseOrdersService } from './services/purchase-orders.service';
 import { SuppliersService } from './services/suppliers.service';
@@ -32,6 +34,7 @@ import { SuppliersService } from './services/suppliers.service';
   imports: [
     ChargesModule,
     AuditModule,
+    PdfModule,
     TypeOrmModule.forFeature([
       Clinic,
       Prescription,
@@ -53,7 +56,14 @@ import { SuppliersService } from './services/suppliers.service';
     PharmacyInvoicesController,
     InventoryController,
   ],
-  providers: [SuppliersService, PurchaseOrdersService, PharmacySalesService, PharmacyInvoicesService, InventoryService],
+  providers: [
+    SuppliersService,
+    PurchaseOrdersService,
+    PharmacySalesService,
+    PharmacyInvoicesService,
+    PharmacyReceiptPdfService,
+    InventoryService,
+  ],
   exports: [
     TypeOrmModule,
     SuppliersService,

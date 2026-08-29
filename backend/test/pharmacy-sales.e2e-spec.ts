@@ -5,6 +5,7 @@ import * as request from 'supertest';
 
 import { PharmacySalesController } from '../src/pharmacy/controllers/pharmacy-sales.controller';
 import { PharmacySalesService } from '../src/pharmacy/services/pharmacy-sales.service';
+import { PharmacyReceiptPdfService } from '../src/pharmacy/services/pharmacy-receipt-pdf.service';
 import { InventoryService } from '../src/pharmacy/services/inventory.service';
 import { ChargesService } from '../src/charges/charges.service';
 import { AuditService } from '../src/audit/audit.service';
@@ -74,6 +75,10 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
   // pharmacy-sales.service.spec.ts) — sin este mock, PharmacySalesService no
   // resuelve sus dependencias y la suite entera falla al compilar el módulo.
   const chargesServiceMock = { create: jest.fn(), findByOrigin: jest.fn(), cancel: jest.fn() };
+  // Frente 3 (recibo PDF): PharmacySalesService también depende de este
+  // servicio para armar el recibo — sin el mock, la suite entera vuelve a
+  // fallar al compilar el módulo, igual que pasó con ChargesService.
+  const receiptPdfServiceMock = { generate: jest.fn().mockResolvedValue(Buffer.from('%PDF')) };
 
   beforeAll(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -82,6 +87,7 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
         PharmacySalesService,
         { provide: InventoryService, useValue: inventoryServiceMock },
         { provide: ChargesService, useValue: chargesServiceMock },
+        { provide: PharmacyReceiptPdfService, useValue: receiptPdfServiceMock },
         { provide: AuditService, useValue: auditServiceMock },
         { provide: getRepositoryToken(PharmacySale), useValue: createMockRepository() },
         { provide: getRepositoryToken(PharmacySaleItem), useValue: createMockRepository() },
@@ -631,6 +637,29 @@ describe('Pharmacy Sales (e2e — mocks)', () => {
         .expect(200);
 
       expect(res.body).toMatchObject({ id: TEST_SALE_ID, saleNumber: 'SAL-001' });
+    });
+  });
+
+  // ─── GET /pharmacy-sales/:id/receipt (Frente 3: PDF real) ─────────────────
+
+  describe('GET /api/pharmacy-sales/:id/receipt', () => {
+    it('devuelve el PDF con el nombre de archivo del recibo', async () => {
+      saleRepo.findOne!.mockResolvedValue({
+        id: TEST_SALE_ID,
+        clinicId: TEST_CLINIC_ID,
+        saleNumber: 'SAL-001',
+        total: 100,
+        items: [],
+      });
+
+      const res = await request(app.getHttpServer())
+        .get(`/api/pharmacy-sales/${TEST_SALE_ID}/receipt`)
+        .set('X-Clinic-Id', TEST_CLINIC_ID)
+        .expect(200);
+
+      expect(res.headers['content-type']).toContain('application/pdf');
+      expect(res.headers['content-disposition']).toContain('SAL-001.pdf');
+      expect(receiptPdfServiceMock.generate).toHaveBeenCalled();
     });
   });
 });

@@ -3,6 +3,7 @@ import { Component, DestroyRef, inject, OnInit, computed, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
+import { openPdfInNewTab } from '../../../../../../shared/utils/pdf-viewer.util'
 import { Sale, SaleStatus } from '../../interfaces/pharmacy.interfaces'
 import { SalesDispensingService } from '../../services/sales-dispensing.service'
 
@@ -132,9 +133,18 @@ export class SaleDetailsComponent implements OnInit {
     }
   }
 
-  printReceipt(): void {
-    // Estrategia simple: imprimir toda la página; para plantillas avanzadas, aislar sección con CSS @media print
-    window.print()
+  /**
+   * Antes esto era `window.print()` de esta misma pantalla (con menús,
+   * botones y el bloque de descuento oculto por CSS al imprimir) — ahora
+   * trae el recibo en PDF que genera el backend, igual que el punto de
+   * cobro. La pantalla vuelve a ser solo el detalle interno de la venta.
+   */
+  downloadReceipt(): void {
+    const s = this.sale()
+    if (!s) return
+    this.salesService.downloadReceipt(s.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: blob => openPdfInNewTab(blob, `${s.saleNumber}.pdf`),
+    })
   }
 
   goBack(): void {

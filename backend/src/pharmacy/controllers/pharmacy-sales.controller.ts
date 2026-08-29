@@ -11,7 +11,9 @@ import {
   Query,
   Request,
   ParseUUIDPipe,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { AuthClinic } from '../../auth/decorators';
 import { SkipAutoAudit } from '../../audit/decorators/skip-auto-audit.decorator';
 import { resolveClinicId } from '../../auth/decorators/clinic-roles.decorator';
@@ -91,6 +93,16 @@ export class PharmacySalesController {
   findOne(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
     const clinicId = resolveClinicId(req);
     return this.pharmacySalesService.findOne(id, clinicId);
+  }
+
+  /** Recibo en PDF — reemplaza el print() de pantalla de la ficha de venta. */
+  @Get(':id/receipt')
+  async receipt(@Param('id', ParseUUIDPipe) id: string, @Request() req: any, @Res() res: Response) {
+    const clinicId = resolveClinicId(req);
+    const { buffer, fileName } = await this.pharmacySalesService.buildReceipt(id, clinicId);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.send(buffer);
   }
 
   @Patch(':id')

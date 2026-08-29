@@ -11,6 +11,7 @@ import { Subject } from 'rxjs'
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators'
 import { PAYMENT_METHODS } from '../../checkout/checkout.service'
 import { toLocalISODate } from '../../../../../shared/utils/date-format.util'
+import { openPdfInNewTab } from '../../../../../shared/utils/pdf-viewer.util'
 import { AlertService } from '@core/services/alert.service'
 import { Sale, SaleStatus } from '../interfaces/pharmacy.interfaces'
 import { SalesDispensingService, SalesSummary } from '../services/sales-dispensing.service'
@@ -281,6 +282,13 @@ export class SalesDispensingComponent implements OnInit, OnDestroy {
 
   viewSaleDetails(sale: Sale): void {
     this.router.navigate(['/dashboard/pharmacy/sales-dispensing', sale.id])
+  }
+
+  /** Mismo atajo que ya tiene la lista de facturas del punto de cobro. */
+  downloadReceipt(sale: Sale): void {
+    this.salesService.downloadReceipt(sale.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: blob => openPdfInNewTab(blob, `${sale.saleNumber}.pdf`),
+    })
   }
 
   /**
