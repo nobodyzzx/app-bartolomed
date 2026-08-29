@@ -9,6 +9,8 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  MinLength,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { PaymentMethod, SaleStatus } from '../entities/pharmacy-sale.entity';
@@ -123,8 +125,16 @@ export class UpdatePharmacySaleStatusDto {
   @IsNumber()
   amountPaid?: number;
 
-  @IsOptional()
+  /**
+   * Motivo obligatorio (mínimo razonable) cuando `status` es CANCELLED —
+   * mismo criterio que `VoidInvoiceDto` en facturación. Cancelar revierte
+   * stock, cargo a cuenta y receta dispensada; el motivo es lo único que
+   * queda para revisarlo después. Para cualquier otro status sigue siendo
+   * una nota libre opcional, sin exigencia de formato.
+   */
+  @ValidateIf(o => o.status === SaleStatus.CANCELLED)
   @IsString()
+  @MinLength(5, { message: 'Explique por qué se cancela la venta (mínimo 5 caracteres)' })
   notes?: string;
 }
 

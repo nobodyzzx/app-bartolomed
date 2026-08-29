@@ -102,7 +102,15 @@ export class PharmacySalesController {
   @Patch(':id/status')
   updateStatus(@Param('id', ParseUUIDPipe) id: string, @Body() updateStatusDto: UpdatePharmacySaleStatusDto, @Request() req: any) {
     const clinicId = resolveClinicId(req)!;
-    return this.pharmacySalesService.updateStatus(id, updateStatusDto, clinicId);
+    const user = req.user;
+    return this.pharmacySalesService.updateStatus(id, updateStatusDto, clinicId, {
+      id: user?.id ?? user?.sub,
+      email: user?.email ?? '',
+      name: user?.personalInfo
+        ? `${user.personalInfo.firstName ?? ''} ${user.personalInfo.lastName ?? ''}`.trim()
+        : undefined,
+      ip: req.ip,
+    });
   }
 
   @Patch(':id/adjust-payment')

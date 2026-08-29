@@ -102,7 +102,28 @@ describe('PharmacySalesController', () => {
   it('updateStatus resuelve y delega el clinicId (bug real: antes no scopeaba por clínica)', async () => {
     const dto = { status: 'completed' } as any;
     await controller.updateStatus('sale-1', dto, makeReq());
-    expect(service.updateStatus).toHaveBeenCalledWith('sale-1', dto, 'clinic-1');
+    expect(service.updateStatus).toHaveBeenCalledWith('sale-1', dto, 'clinic-1', {
+      id: 'user-1',
+      email: 'doc@example.com',
+      name: undefined,
+      ip: '10.0.0.1',
+    });
+  });
+
+  it('updateStatus arma el actor con nombre completo desde personalInfo (para el rastro de cancelación)', async () => {
+    const dto = { status: 'cancelled', notes: 'Cliente se arrepintió' } as any;
+    const req = makeReq({
+      user: { id: 'user-1', email: 'doc@example.com', personalInfo: { firstName: 'Ana', lastName: 'Perez' } },
+    });
+
+    await controller.updateStatus('sale-1', dto, req);
+
+    expect(service.updateStatus).toHaveBeenCalledWith('sale-1', dto, 'clinic-1', {
+      id: 'user-1',
+      email: 'doc@example.com',
+      name: 'Ana Perez',
+      ip: '10.0.0.1',
+    });
   });
 
   describe('adjustPayment', () => {

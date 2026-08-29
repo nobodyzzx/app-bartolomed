@@ -406,6 +406,10 @@ export interface Sale {
   clinicId: string
   soldById?: string
   soldBy?: any
+  /** Rastro de la cancelación — ver migración AddPharmacySaleCancelTrail. */
+  cancelReason?: string | null
+  cancelledAt?: string | null
+  cancelledBy?: any
   createdAt?: string
   updatedAt?: string
 }

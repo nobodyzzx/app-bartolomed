@@ -11,6 +11,7 @@ import { Subject } from 'rxjs'
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators'
 import { PAYMENT_METHODS } from '../../checkout/checkout.service'
 import { toLocalISODate } from '../../../../../shared/utils/date-format.util'
+import { AlertService } from '@core/services/alert.service'
 import { Sale, SaleStatus } from '../interfaces/pharmacy.interfaces'
 import { SalesDispensingService, SalesSummary } from '../services/sales-dispensing.service'
 
@@ -59,6 +60,7 @@ export class SalesDispensingComponent implements OnInit, OnDestroy {
     private salesService: SalesDispensingService,
     private router: Router,
     private location: Location,
+    private alert: AlertService,
   ) {}
 
   ngOnInit(): void {
@@ -290,8 +292,36 @@ export class SalesDispensingComponent implements OnInit, OnDestroy {
     return sale.status !== SaleStatus.CANCELLED
   }
 
-  cancelSale(sale: Sale): void {
-    this.salesService.updateSaleStatus(sale.id, SaleStatus.CANCELLED).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(updated => {
+  /**
+   * Bug real: cancelaba directo con `updateSaleStatus(sale.id, CANCELLED)`,
+   * sin motivo y sin confirmar — un clic en el ícono de la fila anulaba una
+   * venta ya cobrada sin avisar. El backend ahora exige un motivo de al
+   * menos 5 caracteres para cancelar (mismo criterio que anular una
+   * factura), así que sin este cambio el clic quedaría en un 400 silencioso.
+   */
+  async cancelSale(sale: Sale): Promise<void> {
+    const confirm = await this.alert.fire({
+      icon: 'warning',
+      title: '¿Cancelar venta?',
+      text: 'Esta acción no se puede deshacer',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cancelar',
+      cancelButtonText: 'No',
+    })
+    if (!confirm.isConfirmed) return
+
+    const { value: notes } = await this.alert.prompt({
+      title: 'Motivo de cancelación',
+      inputLabel: 'Motivo',
+      inputPlaceholder: 'Ingrese el motivo...',
+      confirmButtonText: 'Confirmar',
+      cancelButtonText: 'Volver',
+      inputValidator: value =>
+        (value ?? '').trim().length < 5 ? 'Explique por qué se cancela (mínimo 5 caracteres)' : null,
+    })
+    if (!notes) return
+
+    this.salesService.updateSaleStatus(sale.id, SaleStatus.CANCELLED, notes).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(updated => {
       if (updated) {
         this.loadSales()
         this.loadSummary()
