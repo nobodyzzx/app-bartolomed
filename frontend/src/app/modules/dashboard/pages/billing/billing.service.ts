@@ -54,6 +54,9 @@ export interface InvoiceResponse {
   issueDate: string
   dueDate: string
   totalAmount: number
+  /** Ausentes del tipo pese a que el backend siempre las manda (columnas reales). */
+  paidAmount?: number
+  remainingAmount?: number
   taxRate?: number
   discountRate?: number
   discountAmount?: number

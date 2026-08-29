@@ -140,6 +140,18 @@
                     <span class="material-symbols-outlined msz-18">receipt_long</span>
                   </button>
                   <!--
+                    Una factura con saldo (pending/partially_paid/overdue) se
+                    queda así para siempre si nadie la termina de cobrar — el
+                    endpoint y la pantalla ya existían, pero nada enlazaba acá.
+                  -->
+                  @if (canCollectBalance(invoice)) {
+                    <button type="button" (click)="collectBalance(invoice); $event.stopPropagation()"
+                      matTooltip="Cobrar saldo pendiente"
+                      class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors border-0">
+                      <span class="material-symbols-outlined msz-18">payments</span>
+                    </button>
+                  }
+                  <!--
                     Anular es la vía para corregir un descuento mal aplicado que
                     se detecta después de emitir el recibo: los cargos vuelven a
                     la cuenta del paciente y se cobra de nuevo. Una factura ya

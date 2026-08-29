@@ -35,7 +35,14 @@ export interface RecentInvoice {
   } | null
   issueDate: string
   totalAmount: number
-  status: 'paid' | 'pending' | 'overdue' | 'cancelled' | 'draft'
+  /**
+   * Faltaban 'partially_paid' y 'refunded': son estados reales de
+   * InvoiceStatus (backend) y getStatusLabel()/getStatusClass() ya los
+   * traducían, pero el tipo no los reconocía.
+   */
+  status: 'paid' | 'pending' | 'overdue' | 'cancelled' | 'draft' | 'partially_paid' | 'refunded'
+  /** Ausente del tipo pese a que el backend siempre la manda (columna real). */
+  remainingAmount?: number
   discountAmount?: number
   /**
    * El motivo vive en los cargos (Charge), no en la factura — el backend lo

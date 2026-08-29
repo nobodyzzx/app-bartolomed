@@ -179,6 +179,33 @@ describe('BillingPageComponent', () => {
       expect(router.navigate).toHaveBeenCalledWith(['/dashboard/billing'])
     })
 
+    it('collectBalance navega a la pantalla de cobro con el id de la factura', () => {
+      component.collectBalance(makeInvoice({ id: 'inv-7' }))
+      expect(router.navigate).toHaveBeenCalledWith(['/dashboard/billing/payments/new', 'inv-7'])
+    })
+
+    /**
+     * El endpoint y la pantalla de pago ya existían, pero nada enlazaba a
+     * "cobrar el resto" — una factura con saldo se quedaba así para siempre.
+     */
+    describe('canCollectBalance', () => {
+      it('true si tiene saldo pendiente y no está anulada/devuelta', () => {
+        expect(component.canCollectBalance(makeInvoice({ remainingAmount: 50, status: 'partially_paid' }))).toBe(true)
+      })
+
+      it('false sin saldo pendiente', () => {
+        expect(component.canCollectBalance(makeInvoice({ remainingAmount: 0, status: 'paid' }))).toBe(false)
+      })
+
+      it('false en una factura anulada, aunque remainingAmount venga en 0 por el hook del backend', () => {
+        expect(component.canCollectBalance(makeInvoice({ remainingAmount: 0, status: 'cancelled' }))).toBe(false)
+      })
+
+      it('false en una factura devuelta', () => {
+        expect(component.canCollectBalance(makeInvoice({ remainingAmount: 0, status: 'refunded' }))).toBe(false)
+      })
+    })
+
     // Este test fijaba la ruta rota: afirmaba la navegación a
     // `/dashboard/billing/invoices/:id/edit`, que no existe en ningún módulo, así
     // que el comodín del router devolvía al usuario al dashboard y hacer clic en
