@@ -755,6 +755,18 @@ export class PharmacySalesService {
       throw new BadRequestException('No se puede corregir el pago de una venta cancelada');
     }
 
+    // Farmacia no tiene concepto de pago parcial ni de saldo pendiente (a
+    // diferencia de facturación): una venta siempre se cobra completa al
+    // momento. Sin este chequeo, corregir el pago a un monto menor al total
+    // dejaba la venta con una "deuda" que ningún reporte ni pantalla sabe
+    // mostrar — el dinero simplemente desaparecía de la caja sin que nada lo
+    // marcara como pendiente.
+    if (Number(dto.amountPaid) < Number(sale.total)) {
+      throw new BadRequestException(
+        `El monto corregido (Bs ${dto.amountPaid}) no puede ser menor al total de la venta (Bs ${sale.total}): farmacia no admite pagos parciales`,
+      );
+    }
+
     const before = {
       paymentMethod: sale.paymentMethod,
       amountPaid: Number(sale.amountPaid),

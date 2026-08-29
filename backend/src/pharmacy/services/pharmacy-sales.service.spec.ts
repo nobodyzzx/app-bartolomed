@@ -702,6 +702,89 @@ describe('PharmacySalesService', () => {
     });
   });
 
+  // ─── adjustPayment (Frente 4: sin tests hasta ahora) ─────────────────────
+
+  describe('adjustPayment', () => {
+    const actor = { id: 'user-9', email: 'staff@bartolomed.com', name: 'Harold Navia', clinicId: 'clinic-1' };
+
+    const setupSale = (overrides: Record<string, any> = {}) => {
+      const sale = {
+        id: 'sale-1',
+        saleNumber: 'SAL-001',
+        status: SaleStatus.COMPLETED,
+        total: 100,
+        amountPaid: 100,
+        change: 0,
+        paymentMethod: 'cash',
+        notes: '',
+        ...overrides,
+      };
+      jest.spyOn(service, 'findOne').mockResolvedValue(sale as any);
+      saleRepo.save!.mockImplementation(async (v: any) => v);
+      return sale;
+    };
+
+    it('corrige método y monto, y calcula el vuelto contra el total', async () => {
+      setupSale();
+
+      const result = await service.adjustPayment(
+        'sale-1',
+        { paymentMethod: 'qr' as any, amountPaid: 120, reason: 'Cliente pagó por QR' },
+        actor,
+      );
+
+      expect(result.paymentMethod).toBe('qr');
+      expect(result.amountPaid).toBe(120);
+      expect(result.change).toBe(20);
+    });
+
+    it('deja el motivo y el before/after en el log de auditoría', async () => {
+      setupSale();
+
+      await service.adjustPayment(
+        'sale-1',
+        { paymentMethod: 'qr' as any, amountPaid: 100, reason: 'Cliente pagó por QR' },
+        actor,
+      );
+
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'PAYMENT_ADJUSTED',
+          resourceId: 'sale-1',
+          userId: 'user-9',
+          details: expect.objectContaining({
+            saleNumber: 'SAL-001',
+            before: { paymentMethod: 'cash', amountPaid: 100, change: 0 },
+            after: { paymentMethod: 'qr', amountPaid: 100, change: 0 },
+            reason: 'Cliente pagó por QR',
+          }),
+        }),
+      );
+    });
+
+    it('rechaza corregir el pago de una venta cancelada', async () => {
+      setupSale({ status: SaleStatus.CANCELLED });
+
+      await expect(
+        service.adjustPayment('sale-1', { paymentMethod: 'cash' as any, amountPaid: 100, reason: 'x' }, actor),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    /**
+     * Farmacia no tiene concepto de pago parcial (confirmado con el usuario,
+     * ver Frente 1: toda venta se cobra completa al momento). Sin este
+     * chequeo, corregir a un monto menor al total dejaba una "deuda" que
+     * ningún reporte sabe mostrar — el dinero desaparecía de la caja.
+     */
+    it('rechaza corregir a un monto menor al total de la venta', async () => {
+      setupSale({ total: 100 });
+
+      await expect(
+        service.adjustPayment('sale-1', { paymentMethod: 'cash' as any, amountPaid: 50, reason: 'Error de tipeo' }, actor),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
   // ─── update: recálculo de totales al editar ítems ────────────────────────
 
   describe('update — recálculo de totales al editar ítems', () => {
