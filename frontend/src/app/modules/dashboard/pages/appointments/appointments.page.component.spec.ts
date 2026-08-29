@@ -123,7 +123,7 @@ describe('AppointmentsPageComponent', () => {
           makeAppointment({
             id: 'a',
             status: AppointmentStatus.SCHEDULED,
-            patient: { firstName: 'Juan', lastName: 'Perez' } as any,
+            patient: { firstName: 'Juan', lastName: 'Pérez' } as any,
             doctor: { firstName: 'Carlos', lastName: 'Rios' } as any,
           }),
           makeAppointment({
@@ -151,6 +151,13 @@ describe('AppointmentsPageComponent', () => {
       component.searchTerm = 'ana'
       component.onSearch()
       expect(component.filteredAppointments.map(a => a.id)).toEqual(['b'])
+    })
+
+    /** Unificado con matchesSearch: antes era un .includes() a mano, sin tildes. */
+    it('onSearch ignora tildes', () => {
+      component.searchTerm = 'perez'
+      component.onSearch()
+      expect(component.filteredAppointments.map(a => a.id)).toEqual(['a'])
     })
   })
 

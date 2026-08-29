@@ -4,6 +4,7 @@ import { MatDialog } from '@angular/material/dialog'
 import { MatPaginator } from '@angular/material/paginator'
 import { MatSort } from '@angular/material/sort'
 import { ordenarComoLasDemas } from '../../../../../../shared/utils/table-sort.util'
+import { matchesSearch } from '../../../../../../shared/utils/text-search.util'
 import { ListStateService } from '../../../../../../shared/services/list-state.service'
 import { MatTableDataSource } from '@angular/material/table'
 import { ActivatedRoute, Router } from '@angular/router'
@@ -75,7 +76,10 @@ export class UserListComponent implements OnInit {
   ) {
     this.dataSource = new MatTableDataSource<User>([])
     ordenarComoLasDemas(this.dataSource)
-    this.dataSource.filterPredicate = this.createFilter()
+    // El filtro se resuelve a mano en applyFilters() (setea dataSource.data
+    // directo); dataSource.filter nunca se usa, así que filterPredicate no
+    // llega a ejecutarse — antes había uno acá que siempre devolvía `true`,
+    // sin hacer nada, dejado de una limpieza anterior.
 
     /**
      * Ninguna de estas columnas es un campo del usuario: el nombre cuelga de
@@ -191,24 +195,20 @@ export class UserListComponent implements OnInit {
       filtered = filtered.filter(user => !user.isActive)
     }
 
-    // Filtrar por búsqueda
+    // Filtrar por búsqueda. matchesSearch ignora tildes además de
+    // mayúsculas — un nombre como "José Núñez" no aparecía si se buscaba
+    // "jose nuñez" o "josé nunez", con o sin tilde en cualquiera de las dos.
     if (this.searchTerm.trim()) {
-      const term = this.searchTerm.toLowerCase().trim()
-      filtered = filtered.filter(user => {
-        const fullName =
-          `${user.personalInfo?.firstName} ${user.personalInfo?.lastName}`.toLowerCase()
-        const email = user.email?.toLowerCase() || ''
-        return fullName.includes(term) || email.includes(term)
-      })
+      filtered = filtered.filter(user =>
+        matchesSearch(
+          this.searchTerm,
+          `${user.personalInfo?.firstName ?? ''} ${user.personalInfo?.lastName ?? ''}`,
+          user.email,
+        ),
+      )
     }
 
     this.dataSource.data = filtered
-  }
-
-  private createFilter(): (data: User, filter: string) => boolean {
-    return (data: User, filter: string): boolean => {
-      return true // El filtro se maneja manualmente en applyFilters
-    }
   }
 
   getActiveUsersCount(): number {

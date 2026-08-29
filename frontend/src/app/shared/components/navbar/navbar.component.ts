@@ -8,6 +8,7 @@ import { BILLING_ROLES, CLINICAL_ROLES, PHARMACY_ROLES } from '@core/constants/r
 import { Permission } from '@core/enums/permission.enum'
 import { UserRoles } from '@core/enums/user-roles.enum'
 import { RoleStateService } from '@core/services/role-state.service'
+import { matchesSearch } from '../../utils/text-search.util'
 import { AuthService } from '../../../modules/auth/services/auth.service'
 import { ClinicContextService } from '../../../modules/clinics/services/clinic-context.service'
 import { Clinic } from '../../../modules/dashboard/pages/admin/clinics/interfaces/clinic.interface'
@@ -205,15 +206,14 @@ export class NavbarComponent implements OnInit {
     })
   }
 
+  // matchesSearch ignora tildes además de mayúsculas: antes buscar
+  // "cochabamba" no encontraba una clínica cargada como "Cochabambá" (o
+  // viceversa) porque el .includes() a mano comparaba tal cual.
   onClinicSearchChange(searchTerm: string) {
-    this._searchLower = searchTerm.toLowerCase().trim()
+    this._searchLower = searchTerm.trim()
     this.filteredClinics = !this._searchLower
       ? [...this.clinics]
-      : this.clinics.filter(
-          c =>
-            c.name.toLowerCase().includes(this._searchLower) ||
-            c.address?.toLowerCase().includes(this._searchLower),
-        )
+      : this.clinics.filter(c => matchesSearch(this._searchLower, c.name, c.address))
   }
 
   resetClinicSearch() {

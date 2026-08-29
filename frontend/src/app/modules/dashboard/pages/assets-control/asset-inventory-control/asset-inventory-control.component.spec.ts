@@ -241,4 +241,16 @@ describe('AssetInventoryControlComponent', () => {
       expect(component.hayFiltro).toBe(false)
     })
   })
+
+  /**
+   * Unificado con matchesSearch (mismo criterio que farmacia): antes el
+   * filtro comparaba con .includes() a mano, sin ignorar tildes.
+   */
+  describe('buscador: ignora tildes', () => {
+    it('encuentra "Bisturí" buscando "bisturi"', () => {
+      cargar([activo({ name: 'Bisturí' }), activo({ name: 'Guantes' })])
+      component.applyFilter('bisturi')
+      expect(component.dataSource.filteredData.map(a => a.name)).toEqual(['Bisturí'])
+    })
+  })
 })

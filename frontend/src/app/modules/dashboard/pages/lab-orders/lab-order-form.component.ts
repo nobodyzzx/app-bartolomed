@@ -15,6 +15,7 @@ import {
 } from 'rxjs/operators'
 import { toLocalISODate } from '../../../../shared/utils/date-format.util'
 import { countInvalidFields, scrollToFirstInvalidField } from '../../../../shared/utils/form-errors.util'
+import { matchesSearch } from '../../../../shared/utils/text-search.util'
 import { Patient } from '../patients/interfaces'
 import { PatientsService } from '../patients/services/patients.service'
 import { UsersService } from '../admin/users/users.service'
@@ -101,10 +102,11 @@ export class LabOrderFormComponent implements CanComponentDeactivate {
   private catalogSignal = signal<ServicePriceCatalogItem[]>([])
 
   filteredCatalog = computed(() => {
-    const q = this.catalogQuery().trim().toLowerCase()
-    const items = this.catalogSignal().filter(
-      p => !q || p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q),
-    )
+    const q = this.catalogQuery().trim()
+    // matchesSearch ignora tildes: muchos nombres de estudio las llevan
+    // ("Reacción en cadena...", "Función hepática") y un .includes() a mano
+    // no los encontraba si se buscaba sin tildes.
+    const items = this.catalogSignal().filter(p => matchesSearch(q, p.name, p.code))
 
     const grupos = new Map<string, { key: string; label: string; items: ServicePriceCatalogItem[] }>()
     for (const item of items) {

@@ -4,6 +4,7 @@ import { Sort } from '@angular/material/sort'
 import { ListStateService } from '../../../../shared/services/list-state.service'
 import { ActivatedRoute, Router } from '@angular/router'
 import { EstadoOrden, leerOrden, ordenar } from '../../../../shared/utils/table-sort.util'
+import { matchesSearch } from '../../../../shared/utils/text-search.util'
 import { AlertService } from '@core/services/alert.service'
 import {
   Appointment,
@@ -175,21 +176,18 @@ export class AppointmentsPageComponent implements OnInit {
   }
 
   applyFilters() {
-    const term = this.searchTerm?.toLowerCase() ?? ''
+    const term = this.searchTerm ?? ''
     this.filteredAppointments = this.appointments.filter(apt => {
-      // Todo va por `?? ''`: el buscador leía `apt.doctor.firstName`, que no existe
-      // (el nombre del médico está en `personalInfo`), así que el primer carácter
-      // tecleado reventaba con "Cannot read properties of undefined".
-      const matchesSearch =
+      // `matchesSearch` (la función compartida) ignora tildes y mayúsculas en
+      // los dos lados. Antes era un `.toLowerCase().includes()` a mano, sin
+      // eso: buscar "García" no encontraba "Garcia" tal como está cargado.
+      const matches =
         !term ||
-        (apt.patient?.firstName ?? '').toLowerCase().includes(term) ||
-        (apt.patient?.lastName ?? '').toLowerCase().includes(term) ||
-        this.getDoctorFullName(apt).toLowerCase().includes(term) ||
-        (apt.reason ?? '').toLowerCase().includes(term)
+        matchesSearch(term, apt.patient?.firstName, apt.patient?.lastName, this.getDoctorFullName(apt), apt.reason)
 
       const matchesStatus = this.selectedStatus === 'all' || apt.status === this.selectedStatus
 
-      return matchesSearch && matchesStatus
+      return matches && matchesStatus
     })
   }
 

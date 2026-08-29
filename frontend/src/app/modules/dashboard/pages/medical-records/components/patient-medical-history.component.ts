@@ -14,6 +14,7 @@ import { RoleStateService } from '@core/services/role-state.service'
 import { Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
 import { formatPlainDate } from '../../../../../shared/utils/date-format.util'
+import { matchesSearch } from '../../../../../shared/utils/text-search.util'
 import {
   LAB_MODULE_CONFIG,
   LABORATORY_MODULE_CONFIG,
@@ -218,14 +219,14 @@ export class PatientMedicalHistoryComponent implements OnInit, OnDestroy {
       filtered = filtered.filter(r => new Date(r.createdAt || '') <= to)
     }
 
-    // Búsqueda por texto (motivo de consulta, diagnóstico)
+    // Búsqueda por texto (motivo de consulta, diagnóstico). matchesSearch
+    // ignora tildes además de mayúsculas — texto clínico en español las usa
+    // todo el tiempo ("bronquitis crónica", "revisión") y un .includes() a
+    // mano no encontraba nada si quien buscaba no las tecleaba exactamente
+    // igual que quien las cargó.
     if (this.searchTerm.trim()) {
-      const term = this.searchTerm.toLowerCase()
-      filtered = filtered.filter(
-        r =>
-          (r.chiefComplaint || '').toLowerCase().includes(term) ||
-          (r.diagnosis || '').toLowerCase().includes(term) ||
-          (r.assessment || '').toLowerCase().includes(term),
+      filtered = filtered.filter(r =>
+        matchesSearch(this.searchTerm, r.chiefComplaint, r.diagnosis, r.assessment),
       )
     }
 

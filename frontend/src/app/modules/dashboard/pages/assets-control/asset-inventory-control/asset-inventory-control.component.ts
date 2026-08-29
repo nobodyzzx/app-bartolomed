@@ -8,6 +8,7 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { AlertService } from '@core/services/alert.service'
 import { MatDialog } from '@angular/material/dialog'
 import { ordenarComoLasDemas } from '../../../../../shared/utils/table-sort.util'
+import { matchesSearch } from '../../../../../shared/utils/text-search.util'
 import { ListStateService } from '../../../../../shared/services/list-state.service'
 import { AssetCondition, AssetStatus, BaseAsset } from '../interfaces/assets.interfaces'
 import { MoveAssetDialogComponent } from '../move-asset-dialog/move-asset-dialog.component'
@@ -180,16 +181,11 @@ export class AssetInventoryControlComponent implements OnInit {
       }
     }
 
-    this.dataSource.filterPredicate = (asset: BaseAsset, filter: string) => {
-      const term = filter.toLowerCase()
-      return (
-        asset.name.toLowerCase().includes(term) ||
-        (asset.assetTag ?? '').toLowerCase().includes(term) ||
-        (asset.location ?? '').toLowerCase().includes(term) ||
-        this.getTypeLabel(asset.type).toLowerCase().includes(term) ||
-        (asset.manufacturer ?? '').toLowerCase().includes(term)
-      )
-    }
+    // matchesSearch ignora tildes además de mayúsculas: antes un
+    // .toLowerCase().includes() a mano no encontraba "Bisturí" al buscar
+    // "bisturi", el mismo síntoma que ya se había resuelto en farmacia.
+    this.dataSource.filterPredicate = (asset: BaseAsset, filter: string) =>
+      matchesSearch(filter, asset.name, asset.assetTag, asset.location, this.getTypeLabel(asset.type), asset.manufacturer)
   }
 
   ngOnInit(): void {
