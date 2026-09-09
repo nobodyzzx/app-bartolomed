@@ -10,9 +10,14 @@ export class CreateAssetDto {
   @IsString()
   name: string;
 
-  /** Unidades del ítem en su ubicación. Por defecto 1. */
+  /**
+   * Unidades del ítem en su ubicación. Por defecto 1.
+   *
+   * Cero es válido: es el renglón del conteo que hoy está sin existencias
+   * (ver `AllowZeroQuantityAssets`). Dar de baja es otra cosa y va en `status`.
+   */
   @IsInt()
-  @Min(1)
+  @Min(0)
   @IsOptional()
   quantity?: number;
 

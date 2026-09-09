@@ -188,11 +188,15 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Costo unitario *</mat-label>
+              <!-- `min="0"` y no `min="0.01"`: el navegador valida este atributo
+                   por su cuenta, así que dejarlo en 0.01 bloqueaba el guardado
+                   aunque el validador reactivo ya aceptara Bs 0. Ver el comentario
+                   de `initForm` en el .ts. -->
               <span matTextPrefix>Bs </span>
               <input
                 matInput
                 type="number"
-                min="0.01"
+                min="0"
                 step="0.01"
                 formControlName="unitCost"
                 placeholder="0.00"
@@ -216,7 +220,7 @@
               <input
                 matInput
                 type="number"
-                min="0.01"
+                min="0"
                 step="0.01"
                 formControlName="sellingPrice"
                 placeholder="0.00"

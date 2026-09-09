@@ -141,7 +141,10 @@ export class AssetsFormComponent implements OnInit {
   initForm(): void {
     this.assetForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(200)]],
-      quantity: [1, [Validators.required, Validators.min(1)]],
+      // `min(0)`: un renglón del conteo puede estar sin existencias sin estar
+      // dado de baja —cajas de jeringas vacías, guantes agotados—. La baja se
+      // dice en `estado`, no poniendo la cantidad en cero.
+      quantity: [1, [Validators.required, Validators.min(0)]],
       type: ['other', Validators.required],
       estado: ['en_uso', Validators.required],
       location: ['', Validators.required],
