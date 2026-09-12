@@ -129,8 +129,11 @@ export class UserRegisterComponent implements OnInit {
     }),
     professionalInfo: new FormGroup({
       title:          new FormControl('', Validators.required),
-      specialization: new FormControl('', Validators.required),
-      license:        new FormControl('', Validators.required),
+      // Sin `required`: enfermería, recepción y administración no llevan
+      // especialidad ni matrícula, y exigirlas obligaba a inventarlas. El
+      // título sí, que todos tienen uno. Ver `OptionalLicenseAndSpecialization`.
+      specialization: new FormControl(''),
+      license:        new FormControl(''),
       certifications: new FormControl([]),
       startDate:      new FormControl(null, Validators.required),
       description:    new FormControl(''),
@@ -284,6 +287,14 @@ export class UserRegisterComponent implements OnInit {
         ...raw.professionalInfo,
         startDate: this.toISODate(raw.professionalInfo?.startDate),
       },
+    }
+
+    // Un campo en blanco significa "este puesto no lo tiene", y eso se dice
+    // con ausencia, no con una cadena vacía que después parece un descuido.
+    for (const campo of ['specialization', 'license'] as const) {
+      if (!userData.professionalInfo?.[campo]?.trim()) {
+        delete userData.professionalInfo[campo]
+      }
     }
 
     // Si no se seleccionó clínica, eliminar el campo

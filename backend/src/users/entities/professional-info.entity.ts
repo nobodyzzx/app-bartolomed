@@ -17,11 +17,12 @@ export class ProfessionalInfo {
   })
   role: ProfessionalRoles;
 
-  @Column('text')
-  specialization: string;
+  @Column('text', { nullable: true })
+  specialization?: string;
 
-  @Column('text')
-  license: string;
+  /** Nulo = este puesto no lleva matrícula. Ver `ProfessionalInfoDto`. */
+  @Column('text', { nullable: true })
+  license?: string;
 
   @Column('text', { array: true, default: [] })
   certifications: string[];

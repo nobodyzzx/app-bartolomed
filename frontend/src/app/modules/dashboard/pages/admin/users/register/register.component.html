@@ -241,22 +241,22 @@
             <mat-label>Especialización</mat-label>
             <mat-icon matPrefix class="text-purple-400">local_hospital</mat-icon>
             <mat-select formControlName="specialization">
+              <!-- Opción vacía: sin ella, una especialidad elegida por error no
+                   se puede quitar, y los puestos que no tienen ninguna quedaban
+                   obligados a cargar una. -->
+              <mat-option [value]="''">Ninguna</mat-option>
               @for (spec of specializations; track spec) {
                 <mat-option [value]="spec">{{ spec }}</mat-option>
               }
             </mat-select>
-            @if (registerForm.get('professionalInfo.specialization')?.hasError('required')) {
-              <mat-error>La especialización es obligatoria</mat-error>
-            }
+            <mat-hint>Solo para los puestos que tienen una</mat-hint>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Número de Licencia</mat-label>
+            <mat-label>Matrícula profesional</mat-label>
             <mat-icon matPrefix class="text-purple-400">card_membership</mat-icon>
-            <input matInput formControlName="license" placeholder="Ej: MED-12345" />
-            @if (registerForm.get('professionalInfo.license')?.hasError('required')) {
-              <mat-error>La licencia es obligatoria</mat-error>
-            }
+            <input matInput formControlName="license" placeholder="Ej: C-9988294" />
+            <mat-hint>Déjala vacía si el puesto no lleva matrícula</mat-hint>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">

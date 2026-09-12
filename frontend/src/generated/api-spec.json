@@ -1337,6 +1337,37 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "Columna por la que ordenar. La lista blanca no es cosmética: el valor entra\nen `orderBy()`, que TypeORM interpola en el SQL sin parametrizar, así que\naceptar texto libre aquí sería una inyección.\n\nEl orden tiene que ser del servidor: el registro puede tener decenas de\nmiles de eventos y la pantalla solo recibe una página, de modo que ordenar\nen el navegador reordenaría lo cargado y dejaría el resto fuera.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "createdAt",
+                "userEmail",
+                "action",
+                "resource",
+                "method",
+                "statusCode",
+                "status",
+                "ipAddress"
+              ]
+            }
+          },
+          {
+            "name": "sortDir",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ASC",
+                "DESC"
+              ]
+            }
           }
         ],
         "responses": {
@@ -3221,49 +3252,7 @@
         ]
       }
     },
-    "/api/reports/pharmacy/top-selling": {
-      "get": {
-        "operationId": "ReportsController_getTopSellingMedications",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Reports"
-        ]
-      }
-    },
-    "/api/reports/pharmacy/margins": {
-      "get": {
-        "operationId": "ReportsController_getProductMarginReport",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Reports"
-        ]
-      }
-    },
-    "/api/reports/pharmacy/daily-sales": {
+    "/api/reports/daily-sales": {
       "get": {
         "operationId": "ReportsController_getDailySalesSummary",
         "parameters": [],
@@ -3396,20 +3385,6 @@
         ]
       }
     },
-    "/api/reports/pharmacy/payment-methods": {
-      "get": {
-        "operationId": "ReportsController_getSalesByPaymentMethod",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Reports"
-        ]
-      }
-    },
     "/api/reports/pharmacy/profitability": {
       "get": {
         "operationId": "ReportsController_getMonthlyProfitability",
@@ -3438,21 +3413,7 @@
         ]
       }
     },
-    "/api/reports/export/pdf/pharmacy-margins": {
-      "get": {
-        "operationId": "ReportsController_exportMarginsPdf",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Reports"
-        ]
-      }
-    },
-    "/api/reports/export/pdf/pharmacy-daily-sales": {
+    "/api/reports/export/pdf/daily-sales": {
       "get": {
         "operationId": "ReportsController_exportDailySalesPdf",
         "parameters": [],
@@ -3497,34 +3458,6 @@
     "/api/reports/export/excel/pharmacy-rotation": {
       "get": {
         "operationId": "ReportsController_exportRotationExcel",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Reports"
-        ]
-      }
-    },
-    "/api/reports/export/excel/pharmacy-margins": {
-      "get": {
-        "operationId": "ReportsController_exportMarginsExcel",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Reports"
-        ]
-      }
-    },
-    "/api/reports/export/excel/pharmacy-top-selling": {
-      "get": {
-        "operationId": "ReportsController_exportTopSellingExcel",
         "parameters": [],
         "responses": {
           "200": {
@@ -3623,6 +3556,62 @@
     "/api/reports/export/excel/pharmacy-pharmacist-day": {
       "get": {
         "operationId": "ReportsController_exportPharmacistDayExcel",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/api/reports/staff-shift-detail": {
+      "get": {
+        "operationId": "ReportsController_getStaffShiftDetail",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/api/reports/export/pdf/staff-shift-detail": {
+      "get": {
+        "operationId": "ReportsController_exportStaffShiftDetailPdf",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/api/reports/lab/activity": {
+      "get": {
+        "operationId": "ReportsController_getLabActivity",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/api/reports/export/pdf/lab-activity": {
+      "get": {
+        "operationId": "ReportsController_exportLabActivityPdf",
         "parameters": [],
         "responses": {
           "200": {
@@ -4573,6 +4562,22 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDir",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4730,6 +4735,30 @@
             "description": ""
           }
         },
+        "tags": [
+          "PharmacySales"
+        ]
+      }
+    },
+    "/api/pharmacy-sales/{id}/receipt": {
+      "get": {
+        "operationId": "PharmacySalesController_receipt",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Recibo en PDF — reemplaza el print() de pantalla de la ficha de venta.",
         "tags": [
           "PharmacySales"
         ]
@@ -8465,7 +8494,8 @@
             ]
           },
           "specialization": {
-            "type": "string"
+            "type": "string",
+            "description": "Especialidad y matrícula solo las tiene el personal que las tiene.\n\nEnfermería, recepción y administración no llevan matrícula profesional, y\nobligarlas a una solo consigue que se invente («N/A», «SIN MATRÍCULA»), que\nes peor que no tener el dato: después no se distingue a quien no la tiene de\naquel a quien no se la cargamos. El único lugar donde la matrícula se\nmuestra —el PDF de la receta— ya imprime «—» cuando falta."
           },
           "license": {
             "type": "string"
@@ -8491,8 +8521,6 @@
         },
         "required": [
           "title",
-          "specialization",
-          "license",
           "startDate"
         ]
       },
@@ -8604,7 +8632,8 @@
             "type": "string"
           },
           "license": {
-            "type": "string"
+            "type": "string",
+            "description": "Nulo = este puesto no lleva matrícula. Ver `ProfessionalInfoDto`."
           },
           "certifications": {
             "type": "array",
@@ -8633,8 +8662,6 @@
           "id",
           "title",
           "role",
-          "specialization",
-          "license",
           "certifications",
           "startDate",
           "user"
@@ -9100,7 +9127,7 @@
             "type": "string",
             "minLength": 5,
             "maxLength": 20,
-            "pattern": "^[A-Za-z0-9-]+$"
+            "pattern": "^[A-Za-z0-9.-]+$"
           },
           "documentType": {
             "type": "string"
@@ -11412,12 +11439,13 @@
           "unitPrice": {
             "type": "number"
           },
-          "discountPercent": {
-            "type": "number"
+          "discountAmount": {
+            "type": "number",
+            "description": "Rebaja de esta línea en bolivianos enteros — no un porcentaje. Antes era\n`discountPercent`: para dar una rebaja de \"Bs 5\" en mostrador había que\ncalcular a qué porcentaje del precio equivalía."
           },
           "discountReason": {
             "type": "string",
-            "description": "Obligatorio si `discountPercent` > 0; lo valida el servicio."
+            "description": "Obligatorio si `discountAmount` > 0; lo valida el servicio."
           },
           "batchNumber": {
             "type": "string"
@@ -11711,6 +11739,29 @@
           "notes": {
             "type": "string"
           },
+          "cancelReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Rastro de la cancelación — mismo criterio que `Invoice.voidReason`:\ncancelar revierte stock, cargo a cuenta y receta dispensada, y el motivo\nestructurado es lo único que queda para revisarlo después (antes se\nmezclaba, si acaso, en el campo libre `notes`)."
+          },
+          "cancelledAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "cancelledBy": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              }
+            ]
+          },
+          "cancelledById": {
+            "type": "string",
+            "nullable": true
+          },
           "soldBy": {
             "$ref": "#/components/schemas/User"
           },
@@ -11759,6 +11810,10 @@
           "change",
           "chargedToAccount",
           "notes",
+          "cancelReason",
+          "cancelledAt",
+          "cancelledBy",
+          "cancelledById",
           "soldBy",
           "soldById",
           "items",
@@ -12160,7 +12215,9 @@
             "type": "number"
           },
           "notes": {
-            "type": "string"
+            "type": "string",
+            "description": "Motivo obligatorio (mínimo razonable) cuando `status` es CANCELLED —\nmismo criterio que `VoidInvoiceDto` en facturación. Cancelar revierte\nstock, cargo a cuenta y receta dispensada; el motivo es lo único que\nqueda para revisarlo después. Para cualquier otro status sigue siendo\nuna nota libre opcional, sin exigencia de formato.",
+            "minLength": 5
           }
         },
         "required": [
@@ -12182,10 +12239,13 @@
             ]
           },
           "amountPaid": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0
           },
           "reason": {
-            "type": "string"
+            "type": "string",
+            "description": "Sin mínimo, un \"ok\" pasaba igual — mismo criterio que cancelar una venta\no anular una factura (VoidInvoiceDto): con un pago corregido a mano no\nhay más rastro que el motivo.",
+            "minLength": 5
           }
         },
         "required": [
@@ -13938,8 +13998,8 @@
           },
           "quantity": {
             "type": "number",
-            "description": "Unidades del ítem en su ubicación. Por defecto 1.",
-            "minimum": 1
+            "description": "Unidades del ítem en su ubicación. Por defecto 1.\n\nCero es válido: es el renglón del conteo que hoy está sin existencias\n(ver `AllowZeroQuantityAssets`). Dar de baja es otra cosa y va en `status`.",
+            "minimum": 0
           },
           "type": {
             "type": "string",

@@ -13,7 +13,12 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, PASSWORD_POLICY_MESSAGE, PASSWORD_POLICY_REGEX } from '../../auth/constants/password-policy';
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_POLICY_MESSAGE,
+  PASSWORD_POLICY_REGEX,
+} from '../../auth/constants/password-policy';
 import { ValidRoles } from '../interfaces';
 import { PersonalInfoDto, ProfessionalInfoDto } from './';
 
@@ -34,7 +39,14 @@ export class CreateUserDto {
   @Type(() => PersonalInfoDto)
   personalInfo: PersonalInfoDto;
 
+  // `@ValidateNested()` y `@Type()` no estaban: sin ellos class-validator no
+  // entra en el objeto y el bloque profesional viajaba **sin validar ni una
+  // sola de sus reglas**. Desde fuera del formulario se le podía mandar
+  // cualquier cosa y solo fallaba al chocar contra la base, con un error de
+  // driver en vez de un mensaje de validación.
   @IsOptional()
+  @ValidateNested()
+  @Type(() => ProfessionalInfoDto)
   professionalInfo?: ProfessionalInfoDto;
 
   // Sin @IsOptional() ni default: un usuario creado sin roles explícitos

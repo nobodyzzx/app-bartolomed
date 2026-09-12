@@ -1447,39 +1447,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/reports/pharmacy/top-selling": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ReportsController_getTopSellingMedications"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/reports/pharmacy/margins": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ReportsController_getProductMarginReport"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/reports/pharmacy/daily-sales": {
+    "/api/reports/daily-sales": {
         parameters: {
             query?: never;
             header?: never;
@@ -1607,22 +1575,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/reports/pharmacy/payment-methods": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ReportsController_getSalesByPaymentMethod"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/reports/pharmacy/profitability": {
         parameters: {
             query?: never;
@@ -1655,23 +1607,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/reports/export/pdf/pharmacy-margins": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ReportsController_exportMarginsPdf"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/reports/export/pdf/pharmacy-daily-sales": {
+    "/api/reports/export/pdf/daily-sales": {
         parameters: {
             query?: never;
             header?: never;
@@ -1727,38 +1663,6 @@ export interface paths {
             cookie?: never;
         };
         get: operations["ReportsController_exportRotationExcel"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/reports/export/excel/pharmacy-margins": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ReportsController_exportMarginsExcel"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/reports/export/excel/pharmacy-top-selling": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ReportsController_exportTopSellingExcel"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1871,6 +1775,70 @@ export interface paths {
             cookie?: never;
         };
         get: operations["ReportsController_exportPharmacistDayExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/staff-shift-detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getStaffShiftDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/staff-shift-detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportStaffShiftDetailPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/lab/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_getLabActivity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/export/pdf/lab-activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReportsController_exportLabActivityPdf"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2511,6 +2479,23 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["PharmacySalesController_update"];
+        trace?: never;
+    };
+    "/api/pharmacy-sales/{id}/receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recibo en PDF — reemplaza el print() de pantalla de la ficha de venta. */
+        get: operations["PharmacySalesController_receipt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/pharmacy-sales/{id}/status": {
@@ -4040,8 +4025,17 @@ export interface components {
             title: string;
             /** @enum {string} */
             role?: "Doctor" | "Nurse" | "Pharmacist" | "Laboratory Technician" | "Physiotherapist" | "Dentist" | "Nutritionist" | "Psychologist" | "Radiologist" | "Administrative" | "Receptionist" | "Other";
-            specialization: string;
-            license: string;
+            /**
+             * @description Especialidad y matrícula solo las tiene el personal que las tiene.
+             *
+             *     Enfermería, recepción y administración no llevan matrícula profesional, y
+             *     obligarlas a una solo consigue que se invente («N/A», «SIN MATRÍCULA»), que
+             *     es peor que no tener el dato: después no se distingue a quien no la tiene de
+             *     aquel a quien no se la cargamos. El único lugar donde la matrícula se
+             *     muestra —el PDF de la receta— ya imprime «—» cuando falta.
+             */
+            specialization?: string;
+            license?: string;
             certifications?: string[];
             startDate: string;
             description?: string;
@@ -4071,8 +4065,9 @@ export interface components {
             title: string;
             /** @enum {string} */
             role: "Doctor" | "Nurse" | "Pharmacist" | "Laboratory Technician" | "Physiotherapist" | "Dentist" | "Nutritionist" | "Psychologist" | "Radiologist" | "Administrative" | "Receptionist" | "Other";
-            specialization: string;
-            license: string;
+            specialization?: string;
+            /** @description Nulo = este puesto no lleva matrícula. Ver `ProfessionalInfoDto`. */
+            license?: string;
             certifications: string[];
             /** Format: date-time */
             startDate: string;
@@ -4954,8 +4949,13 @@ export interface components {
             medicationStockId: string;
             quantity: number;
             unitPrice: number;
-            discountPercent?: number;
-            /** @description Obligatorio si `discountPercent` > 0; lo valida el servicio. */
+            /**
+             * @description Rebaja de esta línea en bolivianos enteros — no un porcentaje. Antes era
+             *     `discountPercent`: para dar una rebaja de "Bs 5" en mostrador había que
+             *     calcular a qué porcentaje del precio equivalía.
+             */
+            discountAmount?: number;
+            /** @description Obligatorio si `discountAmount` > 0; lo valida el servicio. */
             discountReason?: string;
             batchNumber?: string;
             expiryDate?: string;
@@ -5059,6 +5059,17 @@ export interface components {
              */
             chargedToAccount: boolean;
             notes: string;
+            /**
+             * @description Rastro de la cancelación — mismo criterio que `Invoice.voidReason`:
+             *     cancelar revierte stock, cargo a cuenta y receta dispensada, y el motivo
+             *     estructurado es lo único que queda para revisarlo después (antes se
+             *     mezclaba, si acaso, en el campo libre `notes`).
+             */
+            cancelReason: string | null;
+            /** Format: date-time */
+            cancelledAt: string | null;
+            cancelledBy: components["schemas"]["User"] | null;
+            cancelledById: string | null;
             soldBy: components["schemas"]["User"];
             soldById: string;
             items: components["schemas"]["PharmacySaleItem"][];
@@ -5203,12 +5214,24 @@ export interface components {
             /** @enum {string} */
             status: "pending" | "completed" | "cancelled";
             amountPaid?: number;
+            /**
+             * @description Motivo obligatorio (mínimo razonable) cuando `status` es CANCELLED —
+             *     mismo criterio que `VoidInvoiceDto` en facturación. Cancelar revierte
+             *     stock, cargo a cuenta y receta dispensada; el motivo es lo único que
+             *     queda para revisarlo después. Para cualquier otro status sigue siendo
+             *     una nota libre opcional, sin exigencia de formato.
+             */
             notes?: string;
         };
         AdjustPaymentDto: {
             /** @enum {string} */
             paymentMethod: "cash" | "card" | "transfer" | "insurance" | "mixed" | "qr";
             amountPaid: number;
+            /**
+             * @description Sin mínimo, un "ok" pasaba igual — mismo criterio que cancelar una venta
+             *     o anular una factura (VoidInvoiceDto): con un pago corregido a mano no
+             *     hay más rastro que el motivo.
+             */
             reason: string;
         };
         CreatePharmacyInvoiceDto: {
@@ -5796,7 +5819,12 @@ export interface components {
         };
         CreateAssetDto: {
             name: string;
-            /** @description Unidades del ítem en su ubicación. Por defecto 1. */
+            /**
+             * @description Unidades del ítem en su ubicación. Por defecto 1.
+             *
+             *     Cero es válido: es el renglón del conteo que hoy está sin existencias
+             *     (ver `AllowZeroQuantityAssets`). Dar de baja es otra cosa y va en `status`.
+             */
             quantity?: number;
             /** @enum {string} */
             type: "medical_equipment" | "furniture" | "computer" | "vehicle" | "building" | "other";
@@ -6911,6 +6939,17 @@ export interface operations {
                 search?: string;
                 startDate?: string;
                 endDate?: string;
+                /**
+                 * @description Columna por la que ordenar. La lista blanca no es cosmética: el valor entra
+                 *     en `orderBy()`, que TypeORM interpola en el SQL sin parametrizar, así que
+                 *     aceptar texto libre aquí sería una inyección.
+                 *
+                 *     El orden tiene que ser del servidor: el registro puede tener decenas de
+                 *     miles de eventos y la pantalla solo recibe una página, de modo que ordenar
+                 *     en el navegador reordenaría lo cargado y dejaría el resto fuera.
+                 */
+                sortBy?: "createdAt" | "userEmail" | "action" | "resource" | "method" | "statusCode" | "status" | "ipAddress";
+                sortDir?: "ASC" | "DESC";
             };
             header?: never;
             path?: never;
@@ -8254,44 +8293,6 @@ export interface operations {
             };
         };
     };
-    ReportsController_getTopSellingMedications: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-        };
-    };
-    ReportsController_getProductMarginReport: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-        };
-    };
     ReportsController_getDailySalesSummary: {
         parameters: {
             query?: never;
@@ -8434,23 +8435,6 @@ export interface operations {
             };
         };
     };
-    ReportsController_getSalesByPaymentMethod: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     ReportsController_getMonthlyProfitability: {
         parameters: {
             query?: never;
@@ -8469,23 +8453,6 @@ export interface operations {
         };
     };
     ReportsController_exportRotationPdf: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ReportsController_exportMarginsPdf: {
         parameters: {
             query?: never;
             header?: never;
@@ -8554,40 +8521,6 @@ export interface operations {
         };
     };
     ReportsController_exportRotationExcel: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ReportsController_exportMarginsExcel: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ReportsController_exportTopSellingExcel: {
         parameters: {
             query?: never;
             header?: never;
@@ -8707,6 +8640,74 @@ export interface operations {
         };
     };
     ReportsController_exportPharmacistDayExcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getStaffShiftDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportStaffShiftDetailPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_getLabActivity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_exportLabActivityPdf: {
         parameters: {
             query?: never;
             header?: never;
@@ -9492,6 +9493,8 @@ export interface operations {
                 search?: string;
                 startDate?: string;
                 endDate?: string;
+                sortBy?: string;
+                sortDir?: string;
             };
             header?: never;
             path?: never;
@@ -9633,6 +9636,25 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PharmacySale"];
                 };
+            };
+        };
+    };
+    PharmacySalesController_receipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
