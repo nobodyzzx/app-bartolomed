@@ -26,12 +26,17 @@ const routes: Routes = [
           // secciones ve cada uno. Dejar fuera a LABORATORY hacía que el
           // roleGuard lo rechazara aquí y, al no haber a dónde mandarlo,
           // cerrara su sesión: podía autenticarse pero no usar el sistema.
+          // SPECIAL_STUDIES repetía la omisión: el roleGuard lo desviaba a su
+          // módulo y nunca veía la home, pese a que el dashboard ya le pinta
+          // su propia tarjeta. Espejo de MENU_ITEMS: las dos listas cambian
+          // juntas.
           allowedRoles: [
             UserRoles.RECEPTIONIST,
             UserRoles.PHARMACIST,
             UserRoles.NURSE,
             UserRoles.DOCTOR,
             UserRoles.LABORATORY,
+            UserRoles.SPECIAL_STUDIES,
             UserRoles.ADMIN,
             UserRoles.SUPER_ADMIN,
           ],

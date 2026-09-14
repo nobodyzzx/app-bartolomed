@@ -14,6 +14,7 @@ export const MENU_ITEMS: MenuItem[] = [
       UserRoles.NURSE,
       UserRoles.DOCTOR,
       UserRoles.LABORATORY,
+      UserRoles.SPECIAL_STUDIES,
       UserRoles.ADMIN,
       UserRoles.SUPER_ADMIN,
     ],
