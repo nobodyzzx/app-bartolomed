@@ -18,7 +18,7 @@ export class AddQrToPaymentMethod1786118900000 implements MigrationInterface {
     await queryRunner.query(`ALTER TYPE "payments_method_enum" ADD VALUE IF NOT EXISTS 'qr'`);
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
+  public async down(_queryRunner: QueryRunner): Promise<void> {
     // Postgres no sabe quitar un valor de un enum: habría que recrear el tipo y
     // reescribir la columna. No compensa para un valor que, además, pasa a estar
     // en uso real en cuanto se cobre el primer QR.

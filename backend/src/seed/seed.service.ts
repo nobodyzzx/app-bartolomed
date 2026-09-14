@@ -266,12 +266,10 @@ export class SeedService {
       this.logger.warn('createAdditionalPatients falló: ' + e.message);
     }
 
-    // Citas adicionales
-    let addApptsChu: { id: string }[] = [];
-    let addApptsIru: { id: string }[] = [];
+    // Citas adicionales. Solo interesa el efecto: nadie lee las citas creadas.
     try {
-      addApptsChu = await this.createAdditionalAppointments(clinicChu, staffChu.doctor, addPatsChu, 'CHU');
-      addApptsIru = await this.createAdditionalAppointments(clinicIru, staffIru.doctor, addPatsIru, 'IRU');
+      await this.createAdditionalAppointments(clinicChu, staffChu.doctor, addPatsChu, 'CHU');
+      await this.createAdditionalAppointments(clinicIru, staffIru.doctor, addPatsIru, 'IRU');
     } catch (e) {
       this.logger.warn('createAdditionalAppointments falló: ' + e.message);
     }

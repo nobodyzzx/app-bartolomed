@@ -2,10 +2,6 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from '@nes
 import { InjectRepository } from '@nestjs/typeorm';
 import { ObjectLiteral, Repository, SelectQueryBuilder } from 'typeorm';
 
-// Cap defensivo para listados sin paginación explícita: evita que un cliente
-// (o una llamada interna mal escrita) materialice cientos de miles de filas.
-const MAX_UNPAGINATED_ROWS = 1000;
-
 export interface PaginatedResult<T> {
   data: T[];
   total: number;

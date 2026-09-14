@@ -24,6 +24,18 @@ module.exports = {
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
+    // Lo que se descarta a propósito se nombra con guion bajo: el parámetro que
+    // exige una interfaz pero no se usa (el `down()` de una migración
+    // irreversible) y la propiedad que se separa de un objeto para excluirla.
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+        ignoreRestSiblings: true,
+      },
+    ],
   },
   ignorePatterns: ['dist/**/*'], // Ignora la carpeta dist
 };
