@@ -16,6 +16,8 @@ import { UserRoleGuard } from '../src/auth/guards/user-role.guard';
 import { PermissionsGuard } from '../src/auth/permissions/permissions.guard';
 import { BillingController } from '../src/billing/billing.controller';
 import { BillingService } from '../src/billing/billing.service';
+import { CheckoutService } from '../src/billing/services/checkout.service';
+import { ReceiptPdfService } from '../src/billing/services/receipt-pdf.service';
 import {
   Invoice,
   InvoiceItem,
@@ -24,6 +26,7 @@ import {
   PaymentMethod,
   PaymentStatus,
 } from '../src/billing/entities/billing.entity';
+import { Charge } from '../src/charges/entities/charge.entity';
 import { Clinic } from '../src/clinics/entities/clinic.entity';
 import { Patient } from '../src/patients/entities/patient.entity';
 import { User } from '../src/users/entities/user.entity';
@@ -77,6 +80,9 @@ describe('Billing (e2e — mocks)', () => {
     clinicRepo = createMockRepository<Clinic>();
     const appointmentRepo = createMockRepository<Appointment>();
     const userRepo = createMockRepository<User>();
+    // La facturación por cargos sumó este repositorio al servicio; sin él Nest
+    // no puede construir BillingService y la suite entera no arranca.
+    const chargeRepo = createMockRepository<Charge>();
 
     // Mock manager.transaction → ejecuta el callback con un manager que devuelve nuestros repos
     (invoiceRepo as any).manager = {
@@ -102,6 +108,11 @@ describe('Billing (e2e — mocks)', () => {
         { provide: getRepositoryToken(Clinic), useValue: clinicRepo },
         { provide: getRepositoryToken(Appointment), useValue: appointmentRepo },
         { provide: getRepositoryToken(User), useValue: userRepo },
+        { provide: getRepositoryToken(Charge), useValue: chargeRepo },
+        // El controlador creció con el punto de cobro y el recibo en PDF. Esta
+        // suite solo ejercita facturas y pagos, así que basta con que existan.
+        { provide: CheckoutService, useValue: {} },
+        { provide: ReceiptPdfService, useValue: {} },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -149,19 +160,6 @@ describe('Billing (e2e — mocks)', () => {
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
-  const buildInvoiceBody = (overrides: Record<string, any> = {}) => ({
-    invoiceNumber: 'INV-2026-0001',
-    issueDate: '2026-05-06',
-    dueDate: '2026-06-05',
-    patientId: TEST_PATIENT_ID,
-    clinicId: TEST_CLINIC_ID,
-    items: [
-      { description: 'Consulta general', quantity: 1, unitPrice: 150 },
-      { description: 'Examen de laboratorio', quantity: 2, unitPrice: 75 },
-    ],
-    ...overrides,
-  });
-
   const buildPaymentBody = (overrides: Record<string, any> = {}) => ({
     paymentNumber: 'PAY-2026-0001',
     invoiceId: TEST_INVOICE_ID,
@@ -171,81 +169,12 @@ describe('Billing (e2e — mocks)', () => {
     ...overrides,
   });
 
-  const happyCreatePath = () => {
-    patientRepo.findOne!.mockResolvedValue({ id: TEST_PATIENT_ID, isActive: true });
-    clinicRepo.findOne!.mockResolvedValue({ id: TEST_CLINIC_ID });
-    invoiceRepo.create!.mockImplementation((entity: any) => entity);
-    invoiceRepo.save!.mockImplementation(async (entity: any) => ({
-      id: TEST_INVOICE_ID,
-      ...entity,
-    }));
-    invoiceItemRepo.create!.mockImplementation((entity: any) => entity);
-    invoiceItemRepo.save!.mockResolvedValue([]);
-    invoiceRepo.findOne!.mockResolvedValue({
-      id: TEST_INVOICE_ID,
-      invoiceNumber: 'INV-2026-0001',
-      status: InvoiceStatus.DRAFT,
-      subtotal: 300,
-      totalAmount: 300,
-      paidAmount: 0,
-      remainingAmount: 300,
-      items: [],
-      patient: { id: TEST_PATIENT_ID },
-      clinic: { id: TEST_CLINIC_ID },
-    });
-  };
-
-  // ─── POST /billing/invoices — Creación ─────────────────────────────────────
-
-  describe('POST /api/billing/invoices', () => {
-    it('crea una factura multi-item correctamente (201)', async () => {
-      happyCreatePath();
-
-      const res = await request(app.getHttpServer())
-        .post('/api/billing/invoices')
-        .set('X-Clinic-Id', TEST_CLINIC_ID)
-        .send(buildInvoiceBody())
-        .expect(201);
-
-      expect(res.body).toMatchObject({ id: TEST_INVOICE_ID });
-      expect(invoiceItemRepo.save).toHaveBeenCalled();
-    });
-
-    it('rechaza con 400 si clinicId del body no coincide con el header', async () => {
-      await request(app.getHttpServer())
-        .post('/api/billing/invoices')
-        .set('X-Clinic-Id', OTHER_CLINIC_ID)
-        .send(buildInvoiceBody())
-        .expect(400);
-    });
-
-    it('rechaza con 404 si el paciente no existe en la clínica', async () => {
-      patientRepo.findOne!.mockResolvedValue(null);
-
-      await request(app.getHttpServer())
-        .post('/api/billing/invoices')
-        .set('X-Clinic-Id', TEST_CLINIC_ID)
-        .send(buildInvoiceBody())
-        .expect(404);
-    });
-
-    it('rechaza con 400 si el array de items está vacío (validación DTO)', async () => {
-      await request(app.getHttpServer())
-        .post('/api/billing/invoices')
-        .set('X-Clinic-Id', TEST_CLINIC_ID)
-        .send(buildInvoiceBody({ items: [{ description: '', quantity: 0, unitPrice: -1 }] }))
-        .expect(400);
-    });
-
-    it('rechaza con 400 si se envía status no permitido en creación', async () => {
-      happyCreatePath();
-      await request(app.getHttpServer())
-        .post('/api/billing/invoices')
-        .set('X-Clinic-Id', TEST_CLINIC_ID)
-        .send(buildInvoiceBody({ status: InvoiceStatus.PAID }))
-        .expect(400);
-    });
-  });
+  // La creación directa de facturas (POST /billing/invoices) ya no existe: con
+  // la facturación unificada se emite desde el punto de cobro, POST
+  // /billing/checkout. Los cinco tests que la cubrían apuntaban a una ruta
+  // retirada y devolvían 404 —uno de ellos esperaba justo un 404 y pasaba por
+  // accidente—. El checkout se sirve de CheckoutService, que esta suite no
+  // monta, así que su cobertura e2e es un trabajo aparte.
 
   // ─── POST /billing/payments — Pagos ────────────────────────────────────────
 
